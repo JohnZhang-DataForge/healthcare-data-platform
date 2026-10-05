@@ -1,0 +1,88 @@
+executor: LocalExecutor
+
+postgresql:
+  enabled: false
+
+redis:
+  enabled: false
+
+pgbouncer:
+  enabled: false
+
+statsd:
+  enabled: false
+
+data:
+  metadataSecretName: dw-airflow-db-secret
+
+dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: true
+    repo: https://github.com/JohnZhang-DataForge/healthcare-data-platform.git
+    ref: main
+    subPath: airflow/dags
+    depth: 1
+    period: 10s
+
+scheduler:
+  nodeSelector:
+    workload: platform
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+apiServer:
+  nodeSelector:
+    workload: platform
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+dagProcessor:
+  enabled: true
+  nodeSelector:
+    workload: platform
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+triggerer:
+  enabled: true
+  persistence:
+    enabled: false
+  nodeSelector:
+    workload: platform
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+createUserJob:
+  nodeSelector:
+    workload: platform
+
+migrateDatabaseJob:
+  nodeSelector:
+    workload: platform
+
+config:
+  core:
+    parallelism: 4
+    max_active_tasks_per_dag: 2
