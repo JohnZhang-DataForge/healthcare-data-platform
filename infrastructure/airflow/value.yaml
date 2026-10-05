@@ -1,0 +1,287 @@
+executor: LocalExecutor
+
+# ------------------------------------------------------------
+# External PostgreSQL
+# Airflow 不部署自己的 PostgreSQL，
+# 使用 worker03 上现有 PostgreSQL 的 airflow database。
+# ------------------------------------------------------------
+postgresql:
+  enabled: false
+
+data:
+  metadataSecretName: dw-airflow-db-secret
+
+# ------------------------------------------------------------
+# LocalExecutor 不需要 Redis / Celery
+# ------------------------------------------------------------
+redis:
+  enabled: false
+
+pgbouncer:
+  enabled: false
+
+statsd:
+  enabled: false
+
+# ------------------------------------------------------------
+# Airflow DAG
+# GitHub 是 DAG 的唯一 Source of Truth
+# DAG 不使用 PVC，不存 SeaweedFS
+# ------------------------------------------------------------
+dags:
+  persistence:
+    enabled: false
+
+  gitSync:
+    enabled: true
+    repo: https://github.com/JohnZhang-DataForge/healthcare-data-platform.git
+    branch: main
+    rev: HEAD
+    subPath: airflow/dags
+    depth: 1
+    period: 30s
+
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# ------------------------------------------------------------
+# Scheduler
+# ------------------------------------------------------------
+scheduler:
+  replicas: 1
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# ------------------------------------------------------------
+# Airflow 3 API Server / UI
+# ------------------------------------------------------------
+apiServer:
+  replicas: 1
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# ------------------------------------------------------------
+# Airflow 3 Standalone DAG Processor
+# ------------------------------------------------------------
+dagProcessor:
+  enabled: true
+  replicas: 1
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ------------------------------------------------------------
+# Triggerer
+# ------------------------------------------------------------
+triggerer:
+  enabled: true
+  replicas: 1
+
+  persistence:
+    enabled: false
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ------------------------------------------------------------
+# Airflow Helm Jobs
+# ------------------------------------------------------------
+createUserJob:
+  nodeSelector:
+    workload: platform
+
+migrateDatabaseJob:
+  nodeSelector:
+    workload: platform
+
+# ------------------------------------------------------------
+# Airflow Runtime Config
+# Lab 环境降低并发，避免 worker02 资源压力过大
+# ------------------------------------------------------------
+config:
+  core:
+    parallelism: 4
+    max_active_tasks_per_dag: 2
+root@master01:/data/airflow# cat values.yaml
+executor: LocalExecutor
+
+# ------------------------------------------------------------
+# External PostgreSQL
+# Airflow 不部署自己的 PostgreSQL，
+# 使用 worker03 上现有 PostgreSQL 的 airflow database。
+# ------------------------------------------------------------
+postgresql:
+  enabled: false
+
+data:
+  metadataSecretName: dw-airflow-db-secret
+
+# ------------------------------------------------------------
+# LocalExecutor 不需要 Redis / Celery
+# ------------------------------------------------------------
+redis:
+  enabled: false
+
+pgbouncer:
+  enabled: false
+
+statsd:
+  enabled: false
+
+# ------------------------------------------------------------
+# Airflow DAG
+# GitHub 是 DAG 的唯一 Source of Truth
+# DAG 不使用 PVC，不存 SeaweedFS
+# ------------------------------------------------------------
+dags:
+  persistence:
+    enabled: false
+
+  gitSync:
+    enabled: true
+    repo: https://github.com/JohnZhang-DataForge/healthcare-data-platform.git
+    branch: main
+    rev: HEAD
+    subPath: airflow/dags
+    depth: 1
+    period: 30s
+
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# ------------------------------------------------------------
+# Scheduler
+# ------------------------------------------------------------
+scheduler:
+  replicas: 1
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# ------------------------------------------------------------
+# Airflow 3 API Server / UI
+# ------------------------------------------------------------
+apiServer:
+  replicas: 1
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# ------------------------------------------------------------
+# Airflow 3 Standalone DAG Processor
+# ------------------------------------------------------------
+dagProcessor:
+  enabled: true
+  replicas: 1
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ------------------------------------------------------------
+# Triggerer
+# ------------------------------------------------------------
+triggerer:
+  enabled: true
+  replicas: 1
+
+  persistence:
+    enabled: false
+
+  nodeSelector:
+    workload: platform
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ------------------------------------------------------------
+# Airflow Helm Jobs
+# ------------------------------------------------------------
+createUserJob:
+  nodeSelector:
+    workload: platform
+
+migrateDatabaseJob:
+  nodeSelector:
+    workload: platform
+
+# ------------------------------------------------------------
+# Airflow Runtime Config
+# Lab 环境降低并发，避免 worker02 资源压力过大
+# ------------------------------------------------------------
+config:
+  core:
+    parallelism: 4
+    max_active_tasks_per_dag: 2
