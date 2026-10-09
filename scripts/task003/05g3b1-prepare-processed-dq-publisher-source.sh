@@ -419,25 +419,25 @@ def publish_dq(
         )
 
     else:
-        local_path = (
-            jvm.org.apache.hadoop.fs.Path(
-                str(
-                    Path(
-                        dq_local_path
-                    ).resolve(
-                        strict=True
-                    )
-                )
-            )
+        # Write directly from the already-validated in-memory
+        # artifact.  Do not use copyFromLocalFile here:
+        # Kubernetes projected ConfigMap files resolve through
+        # ..data symlinks, which S3A copyFromLocalFile cannot
+        # safely relativize.
+        output = fs.create(
+            dq_path,
+            False,
         )
 
-        # overwrite=False provides write-once behavior.
-        fs.copyFromLocalFile(
-            False,
-            False,
-            local_path,
-            dq_path,
-        )
+        try:
+            output.write(
+                bytearray(
+                    dq_bytes
+                )
+            )
+
+        finally:
+            output.close()
 
         publication_status = (
             'CREATED'
@@ -689,6 +689,32 @@ def fixture():
 class DQPublisherTests(
     unittest.TestCase
 ):
+
+    def test_s3_write_uses_create_stream_not_copy_from_local(self):
+        source = (
+            ROOT
+            / 'spark/apps/visit/publish_processed_dq.py'
+        ).read_text()
+
+        self.assertIn(
+            'output = fs.create(',
+            source,
+        )
+
+        self.assertIn(
+            'bytearray(',
+            source,
+        )
+
+        self.assertIn(
+            'dq_bytes',
+            source,
+        )
+
+        self.assertNotIn(
+            'fs.copyFromLocalFile(',
+            source,
+        )
 
     def test_uri_conversion(self):
         self.assertEqual(
@@ -956,7 +982,8 @@ from pathlib import Path
 source = Path(sys.argv[1]).read_text()
 
 required = (
-    'fs.copyFromLocalFile(',
+    'fs.create(',
+    'bytearray(',
     "'REUSED_IDENTICAL'",
     "'CREATED'",
     'DQ_PUBLICATION_PASS',
@@ -971,6 +998,7 @@ for token in required:
 
 for forbidden in (
     'overwrite=True',
+    'fs.copyFromLocalFile(',
     'copyFromLocalFile(False, True',
     'manifest_path,',
     '.write.parquet',

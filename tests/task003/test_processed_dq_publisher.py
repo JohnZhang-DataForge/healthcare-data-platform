@@ -91,6 +91,32 @@ class DQPublisherTests(
     unittest.TestCase
 ):
 
+    def test_s3_write_uses_create_stream_not_copy_from_local(self):
+        source = (
+            ROOT
+            / 'spark/apps/visit/publish_processed_dq.py'
+        ).read_text()
+
+        self.assertIn(
+            'output = fs.create(',
+            source,
+        )
+
+        self.assertIn(
+            'bytearray(',
+            source,
+        )
+
+        self.assertIn(
+            'dq_bytes',
+            source,
+        )
+
+        self.assertNotIn(
+            'fs.copyFromLocalFile(',
+            source,
+        )
+
     def test_uri_conversion(self):
         self.assertEqual(
             canonical_to_s3a(

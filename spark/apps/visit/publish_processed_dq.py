@@ -374,25 +374,25 @@ def publish_dq(
         )
 
     else:
-        local_path = (
-            jvm.org.apache.hadoop.fs.Path(
-                str(
-                    Path(
-                        dq_local_path
-                    ).resolve(
-                        strict=True
-                    )
-                )
-            )
+        # Write directly from the already-validated in-memory
+        # artifact.  Do not use copyFromLocalFile here:
+        # Kubernetes projected ConfigMap files resolve through
+        # ..data symlinks, which S3A copyFromLocalFile cannot
+        # safely relativize.
+        output = fs.create(
+            dq_path,
+            False,
         )
 
-        # overwrite=False provides write-once behavior.
-        fs.copyFromLocalFile(
-            False,
-            False,
-            local_path,
-            dq_path,
-        )
+        try:
+            output.write(
+                bytearray(
+                    dq_bytes
+                )
+            )
+
+        finally:
+            output.close()
 
         publication_status = (
             'CREATED'
