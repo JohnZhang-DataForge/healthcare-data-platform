@@ -1,0 +1,84 @@
+{
+  "mapping_name": "synthea-encounter-class-to-omop-visit-v1",
+  "mapping_version": "v1",
+
+  "source_system": "synthea",
+  "source_version": "v3.3.0",
+
+  "visit_model": {
+    "mode": "one_source_encounter_per_visit_occurrence",
+    "source_key": "source_encounter_id",
+    "stable_id_map": "etl.visit_occurrence_id_map",
+    "aggregation": false,
+    "note": "MVP preserves one Synthea encounter UUID per OMOP visit_occurrence. Reference OHDSI ETL-Synthea aggregation is deferred."
+  },
+
+  "visit_type_concept_id": 32827,
+  "visit_type_concept_name": "EHR encounter record",
+
+  "visit_source_value": "encounter_class",
+  "visit_source_concept_id": null,
+
+  "class_to_visit_concept": {
+    "ambulatory": {
+      "concept_id": 9202,
+      "concept_name": "Outpatient Visit"
+    },
+    "emergency": {
+      "concept_id": 9203,
+      "concept_name": "Emergency Room Visit"
+    },
+    "home": {
+      "concept_id": 581476,
+      "concept_name": "Home Visit"
+    },
+    "hospice": {
+      "concept_id": 581476,
+      "concept_name": "Home Visit"
+    },
+    "inpatient": {
+      "concept_id": 9201,
+      "concept_name": "Inpatient Visit"
+    },
+    "outpatient": {
+      "concept_id": 9202,
+      "concept_name": "Outpatient Visit"
+    },
+    "snf": {
+      "concept_id": 9201,
+      "concept_name": "Inpatient Visit"
+    },
+    "urgentcare": {
+      "concept_id": 9202,
+      "concept_name": "Outpatient Visit"
+    },
+    "virtual": {
+      "concept_id": 722455,
+      "concept_name": "Telehealth"
+    },
+    "wellness": {
+      "concept_id": 9202,
+      "concept_name": "Outpatient Visit"
+    }
+  },
+
+  "deferred_target_fields": [
+    "provider_id",
+    "care_site_id",
+    "admitted_from_concept_id",
+    "admitted_from_source_value",
+    "discharged_to_concept_id",
+    "discharged_to_source_value",
+    "preceding_visit_occurrence_id"
+  ],
+
+  "source_fields_preserved_for_future_mapping": [
+    "source_code",
+    "source_description",
+    "source_organization_id",
+    "source_provider_id",
+    "source_payer_id",
+    "reason_code",
+    "reason_description"
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "contract_name": "canonical.patient",
+  "canonical_version": "v1",
+  "entity": "patient",
+  "primary_key": [
+    "source_system",
+    "source_record_id"
+  ],
+  "fields": [
+    {
+      "name": "source_record_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "birth_date",
+      "type": "date",
+      "nullable": false
+    },
+    {
+      "name": "death_date",
+      "type": "date",
+      "nullable": true
+    },
+    {
+      "name": "gender_code",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "race_code",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "ethnicity_code",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_system",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_version",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_batch_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_ingest_date",
+      "type": "date",
+      "nullable": false
+    },
+    {
+      "name": "source_file",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_file_sha256",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_file_size_bytes",
+      "type": "bigint",
+      "nullable": false
+    },
+    {
+      "name": "adapter_name",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "adapter_version",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "canonical_version",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "processing_run_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "processed_at",
+      "type": "timestamp",
+      "nullable": false
+    }
+  ]
+}

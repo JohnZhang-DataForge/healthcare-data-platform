@@ -1,0 +1,103 @@
+{
+  "contract_name": "omop.person",
+  "omop_version": "v5.4",
+  "entity": "person",
+  "primary_key": [
+    "person_id"
+  ],
+  "source_key": [
+    "person_source_value"
+  ],
+  "fields": [
+    {
+      "name": "person_id",
+      "type": "int",
+      "nullable": false
+    },
+    {
+      "name": "gender_concept_id",
+      "type": "int",
+      "nullable": false
+    },
+    {
+      "name": "year_of_birth",
+      "type": "int",
+      "nullable": false
+    },
+    {
+      "name": "month_of_birth",
+      "type": "int",
+      "nullable": true
+    },
+    {
+      "name": "day_of_birth",
+      "type": "int",
+      "nullable": true
+    },
+    {
+      "name": "birth_datetime",
+      "type": "timestamp",
+      "nullable": true
+    },
+    {
+      "name": "race_concept_id",
+      "type": "int",
+      "nullable": false
+    },
+    {
+      "name": "ethnicity_concept_id",
+      "type": "int",
+      "nullable": false
+    },
+    {
+      "name": "location_id",
+      "type": "int",
+      "nullable": true
+    },
+    {
+      "name": "provider_id",
+      "type": "int",
+      "nullable": true
+    },
+    {
+      "name": "care_site_id",
+      "type": "int",
+      "nullable": true
+    },
+    {
+      "name": "person_source_value",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "gender_source_value",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "gender_source_concept_id",
+      "type": "int",
+      "nullable": true
+    },
+    {
+      "name": "race_source_value",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "race_source_concept_id",
+      "type": "int",
+      "nullable": true
+    },
+    {
+      "name": "ethnicity_source_value",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "ethnicity_source_concept_id",
+      "type": "int",
+      "nullable": true
+    }
+  ]
+}

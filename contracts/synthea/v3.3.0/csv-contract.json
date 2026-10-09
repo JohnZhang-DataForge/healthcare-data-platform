@@ -1,0 +1,373 @@
+{
+  "contract_version": "1.0",
+  "source": "synthea",
+  "source_version": "v3.3.0",
+  "expected_file_count": 18,
+  "require_nonempty_data_rows": true,
+  "files": [
+    {
+      "filename": "allergies.csv",
+      "dataset": "allergies",
+      "header": [
+        "START",
+        "STOP",
+        "PATIENT",
+        "ENCOUNTER",
+        "CODE",
+        "SYSTEM",
+        "DESCRIPTION",
+        "TYPE",
+        "CATEGORY",
+        "REACTION1",
+        "DESCRIPTION1",
+        "SEVERITY1",
+        "REACTION2",
+        "DESCRIPTION2",
+        "SEVERITY2"
+      ]
+    },
+    {
+      "filename": "careplans.csv",
+      "dataset": "careplans",
+      "header": [
+        "Id",
+        "START",
+        "STOP",
+        "PATIENT",
+        "ENCOUNTER",
+        "CODE",
+        "DESCRIPTION",
+        "REASONCODE",
+        "REASONDESCRIPTION"
+      ]
+    },
+    {
+      "filename": "claims.csv",
+      "dataset": "claims",
+      "header": [
+        "Id",
+        "PATIENTID",
+        "PROVIDERID",
+        "PRIMARYPATIENTINSURANCEID",
+        "SECONDARYPATIENTINSURANCEID",
+        "DEPARTMENTID",
+        "PATIENTDEPARTMENTID",
+        "DIAGNOSIS1",
+        "DIAGNOSIS2",
+        "DIAGNOSIS3",
+        "DIAGNOSIS4",
+        "DIAGNOSIS5",
+        "DIAGNOSIS6",
+        "DIAGNOSIS7",
+        "DIAGNOSIS8",
+        "REFERRINGPROVIDERID",
+        "APPOINTMENTID",
+        "CURRENTILLNESSDATE",
+        "SERVICEDATE",
+        "SUPERVISINGPROVIDERID",
+        "STATUS1",
+        "STATUS2",
+        "STATUSP",
+        "OUTSTANDING1",
+        "OUTSTANDING2",
+        "OUTSTANDINGP",
+        "LASTBILLEDDATE1",
+        "LASTBILLEDDATE2",
+        "LASTBILLEDDATEP",
+        "HEALTHCARECLAIMTYPEID1",
+        "HEALTHCARECLAIMTYPEID2"
+      ]
+    },
+    {
+      "filename": "claims_transactions.csv",
+      "dataset": "claims_transactions",
+      "header": [
+        "ID",
+        "CLAIMID",
+        "CHARGEID",
+        "PATIENTID",
+        "TYPE",
+        "AMOUNT",
+        "METHOD",
+        "FROMDATE",
+        "TODATE",
+        "PLACEOFSERVICE",
+        "PROCEDURECODE",
+        "MODIFIER1",
+        "MODIFIER2",
+        "DIAGNOSISREF1",
+        "DIAGNOSISREF2",
+        "DIAGNOSISREF3",
+        "DIAGNOSISREF4",
+        "UNITS",
+        "DEPARTMENTID",
+        "NOTES",
+        "UNITAMOUNT",
+        "TRANSFEROUTID",
+        "TRANSFERTYPE",
+        "PAYMENTS",
+        "ADJUSTMENTS",
+        "TRANSFERS",
+        "OUTSTANDING",
+        "APPOINTMENTID",
+        "LINENOTE",
+        "PATIENTINSURANCEID",
+        "FEESCHEDULEID",
+        "PROVIDERID",
+        "SUPERVISINGPROVIDERID"
+      ]
+    },
+    {
+      "filename": "conditions.csv",
+      "dataset": "conditions",
+      "header": [
+        "START",
+        "STOP",
+        "PATIENT",
+        "ENCOUNTER",
+        "SYSTEM",
+        "CODE",
+        "DESCRIPTION"
+      ]
+    },
+    {
+      "filename": "devices.csv",
+      "dataset": "devices",
+      "header": [
+        "START",
+        "STOP",
+        "PATIENT",
+        "ENCOUNTER",
+        "CODE",
+        "DESCRIPTION",
+        "UDI"
+      ]
+    },
+    {
+      "filename": "encounters.csv",
+      "dataset": "encounters",
+      "header": [
+        "Id",
+        "START",
+        "STOP",
+        "PATIENT",
+        "ORGANIZATION",
+        "PROVIDER",
+        "PAYER",
+        "ENCOUNTERCLASS",
+        "CODE",
+        "DESCRIPTION",
+        "BASE_ENCOUNTER_COST",
+        "TOTAL_CLAIM_COST",
+        "PAYER_COVERAGE",
+        "REASONCODE",
+        "REASONDESCRIPTION"
+      ]
+    },
+    {
+      "filename": "imaging_studies.csv",
+      "dataset": "imaging_studies",
+      "header": [
+        "Id",
+        "DATE",
+        "PATIENT",
+        "ENCOUNTER",
+        "SERIES_UID",
+        "BODYSITE_CODE",
+        "BODYSITE_DESCRIPTION",
+        "MODALITY_CODE",
+        "MODALITY_DESCRIPTION",
+        "INSTANCE_UID",
+        "SOP_CODE",
+        "SOP_DESCRIPTION",
+        "PROCEDURE_CODE"
+      ]
+    },
+    {
+      "filename": "immunizations.csv",
+      "dataset": "immunizations",
+      "header": [
+        "DATE",
+        "PATIENT",
+        "ENCOUNTER",
+        "CODE",
+        "DESCRIPTION",
+        "BASE_COST"
+      ]
+    },
+    {
+      "filename": "medications.csv",
+      "dataset": "medications",
+      "header": [
+        "START",
+        "STOP",
+        "PATIENT",
+        "PAYER",
+        "ENCOUNTER",
+        "CODE",
+        "DESCRIPTION",
+        "BASE_COST",
+        "PAYER_COVERAGE",
+        "DISPENSES",
+        "TOTALCOST",
+        "REASONCODE",
+        "REASONDESCRIPTION"
+      ]
+    },
+    {
+      "filename": "observations.csv",
+      "dataset": "observations",
+      "header": [
+        "DATE",
+        "PATIENT",
+        "ENCOUNTER",
+        "CATEGORY",
+        "CODE",
+        "DESCRIPTION",
+        "VALUE",
+        "UNITS",
+        "TYPE"
+      ]
+    },
+    {
+      "filename": "organizations.csv",
+      "dataset": "organizations",
+      "header": [
+        "Id",
+        "NAME",
+        "ADDRESS",
+        "CITY",
+        "STATE",
+        "ZIP",
+        "LAT",
+        "LON",
+        "PHONE",
+        "REVENUE",
+        "UTILIZATION"
+      ]
+    },
+    {
+      "filename": "patients.csv",
+      "dataset": "patients",
+      "header": [
+        "Id",
+        "BIRTHDATE",
+        "DEATHDATE",
+        "SSN",
+        "DRIVERS",
+        "PASSPORT",
+        "PREFIX",
+        "FIRST",
+        "MIDDLE",
+        "LAST",
+        "SUFFIX",
+        "MAIDEN",
+        "MARITAL",
+        "RACE",
+        "ETHNICITY",
+        "GENDER",
+        "BIRTHPLACE",
+        "ADDRESS",
+        "CITY",
+        "STATE",
+        "COUNTY",
+        "FIPS",
+        "ZIP",
+        "LAT",
+        "LON",
+        "HEALTHCARE_EXPENSES",
+        "HEALTHCARE_COVERAGE",
+        "INCOME"
+      ]
+    },
+    {
+      "filename": "payers.csv",
+      "dataset": "payers",
+      "header": [
+        "Id",
+        "NAME",
+        "OWNERSHIP",
+        "ADDRESS",
+        "CITY",
+        "STATE_HEADQUARTERED",
+        "ZIP",
+        "PHONE",
+        "AMOUNT_COVERED",
+        "AMOUNT_UNCOVERED",
+        "REVENUE",
+        "COVERED_ENCOUNTERS",
+        "UNCOVERED_ENCOUNTERS",
+        "COVERED_MEDICATIONS",
+        "UNCOVERED_MEDICATIONS",
+        "COVERED_PROCEDURES",
+        "UNCOVERED_PROCEDURES",
+        "COVERED_IMMUNIZATIONS",
+        "UNCOVERED_IMMUNIZATIONS",
+        "UNIQUE_CUSTOMERS",
+        "QOLS_AVG",
+        "MEMBER_MONTHS"
+      ]
+    },
+    {
+      "filename": "payer_transitions.csv",
+      "dataset": "payer_transitions",
+      "header": [
+        "PATIENT",
+        "MEMBERID",
+        "START_DATE",
+        "END_DATE",
+        "PAYER",
+        "SECONDARY_PAYER",
+        "PLAN_OWNERSHIP",
+        "OWNER_NAME"
+      ]
+    },
+    {
+      "filename": "procedures.csv",
+      "dataset": "procedures",
+      "header": [
+        "START",
+        "STOP",
+        "PATIENT",
+        "ENCOUNTER",
+        "SYSTEM",
+        "CODE",
+        "DESCRIPTION",
+        "BASE_COST",
+        "REASONCODE",
+        "REASONDESCRIPTION"
+      ]
+    },
+    {
+      "filename": "providers.csv",
+      "dataset": "providers",
+      "header": [
+        "Id",
+        "ORGANIZATION",
+        "NAME",
+        "GENDER",
+        "SPECIALITY",
+        "ADDRESS",
+        "CITY",
+        "STATE",
+        "ZIP",
+        "LAT",
+        "LON",
+        "ENCOUNTERS",
+        "PROCEDURES"
+      ]
+    },
+    {
+      "filename": "supplies.csv",
+      "dataset": "supplies",
+      "header": [
+        "DATE",
+        "PATIENT",
+        "ENCOUNTER",
+        "CODE",
+        "DESCRIPTION",
+        "QUANTITY"
+      ]
+    }
+  ]
+}

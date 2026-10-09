@@ -1,0 +1,171 @@
+{
+  "contract_name": "canonical-encounter-v1",
+  "entity": "encounter",
+  "canonical_version": "v1",
+
+  "primary_key": [
+    "source_system",
+    "source_encounter_id"
+  ],
+
+  "references": [
+    {
+      "field": "source_person_id",
+      "target_entity": "patient",
+      "target_field": "source_record_id",
+      "required": true
+    }
+  ],
+
+  "fields": [
+    {
+      "name": "source_encounter_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_person_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "start_datetime",
+      "type": "timestamp",
+      "nullable": false
+    },
+    {
+      "name": "end_datetime",
+      "type": "timestamp",
+      "nullable": false
+    },
+    {
+      "name": "encounter_class",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_code",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_description",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "name": "source_organization_id",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "name": "source_provider_id",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "name": "source_payer_id",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "name": "base_encounter_cost",
+      "type": "decimal(18,2)",
+      "nullable": true
+    },
+    {
+      "name": "total_claim_cost",
+      "type": "decimal(18,2)",
+      "nullable": true
+    },
+    {
+      "name": "payer_coverage",
+      "type": "decimal(18,2)",
+      "nullable": true
+    },
+    {
+      "name": "reason_code",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "name": "reason_description",
+      "type": "string",
+      "nullable": true
+    },
+
+    {
+      "name": "source_system",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_version",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_batch_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_ingest_date",
+      "type": "date",
+      "nullable": false
+    },
+    {
+      "name": "source_file",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_file_sha256",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_file_size_bytes",
+      "type": "bigint",
+      "nullable": false
+    },
+    {
+      "name": "adapter_name",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "adapter_version",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "canonical_version",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "processing_run_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "processed_at",
+      "type": "timestamp",
+      "nullable": false
+    }
+  ],
+
+  "allowed_encounter_classes": [
+    "ambulatory",
+    "emergency",
+    "home",
+    "hospice",
+    "inpatient",
+    "outpatient",
+    "snf",
+    "urgentcare",
+    "virtual",
+    "wellness"
+  ]
+}
