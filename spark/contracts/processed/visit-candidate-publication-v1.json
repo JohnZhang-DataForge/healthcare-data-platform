@@ -1,0 +1,26 @@
+{
+  "contract_name": "omop.visit_candidate.processed_publication",
+  "contract_version": "v1",
+  "input_step": "STEP-05F2",
+  "output_bucket": "health-processed",
+  "entity": "visit_occurrence",
+  "format": "parquet",
+  "candidate_contract": "spark/contracts/omop/visit-candidate-v1.json",
+  "source_key": [
+    "source_system",
+    "source_encounter_id"
+  ],
+  "final_visit_id_allocated": false,
+  "publication_gate": "APPROVED_manifest_last",
+  "objects": [
+    "data/",
+    "dq/result.json",
+    "manifest.json"
+  ],
+  "same_run_replay": "REUSE_ONLY_IF_VERIFIED_IDENTICAL",
+  "same_run_conflict": "STOP_WITHOUT_OVERWRITE",
+  "different_run": "ISOLATED_PREFIX",
+  "person_map_snapshot": "REQUIRE_FINGERPRINT_AT_WRITE_TIME",
+  "data_validation": "SPARK_READBACK_AND_DQ_BEFORE_MANIFEST",
+  "database_write": false
+}
