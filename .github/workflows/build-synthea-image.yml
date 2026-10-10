@@ -1,0 +1,103 @@
+name: Build Synthea Generator Image
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-synthea-image.yml"
+      - "images/synthea/**"
+      - "apps/task004/validate_generated_synthea_batch.py"
+      - "contracts/synthea/v3.3.0/csv-contract.json"
+      - "scripts/task004/01-prepare-synthea-generator-image-source.sh"
+      - "tests/task004/test_synthea_generator_image_source.py"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: synthea-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build and push Synthea image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve immutable image identity
+        id: image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          owner_lc="${GITHUB_REPOSITORY_OWNER,,}"
+          image="ghcr.io/${owner_lc}/healthcare-data-platform-synthea"
+          tag="git-${GITHUB_SHA}"
+
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "ref=${image}:${tag}" >> "${GITHUB_OUTPUT}"
+
+          echo "IMAGE=${image}"
+          echo "TAG=${tag}"
+          echo "REF=${image}:${tag}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push linux/amd64 image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./images/synthea/Dockerfile
+          platforms: linux/amd64
+          push: true
+          pull: true
+          provenance: true
+          sbom: true
+          tags: ${{ steps.image.outputs.ref }}
+          build-args: |
+            PROJECT_GIT_SHA=${{ github.sha }}
+            SYNTHEA_VERSION=v3.3.0
+            SYNTHEA_COMMIT=995cf2fd33e67918d4e33110d9f68ad248002221
+
+      - name: Record immutable image evidence
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+
+          [[ -n "${IMAGE_REF}" ]]
+          [[ "${IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
+
+          {
+            echo "## TASK004 Synthea image"
+            echo
+            echo "- Git commit: \`${GITHUB_SHA}\`"
+            echo "- Image tag: \`${IMAGE_REF}\`"
+            echo "- Image digest: \`${IMAGE_DIGEST}\`"
+            echo "- Platform: \`linux/amd64\`"
+            echo "- Synthea version: \`v3.3.0\`"
+            echo "- Synthea commit: \`995cf2fd33e67918d4e33110d9f68ad248002221\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          echo "IMAGE_BUILD=PASS"
+          echo "IMAGE_REF=${IMAGE_REF}"
+          echo "IMAGE_DIGEST=${IMAGE_DIGEST}"
