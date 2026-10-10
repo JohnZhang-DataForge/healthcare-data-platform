@@ -1075,6 +1075,7 @@ cat > \
 # syntax=docker/dockerfile:1
 
 ARG BUILDER_IMAGE=eclipse-temurin:17-jdk-jammy
+ARG RUNTIME_IMAGE=eclipse-temurin:17-jre-jammy
 
 FROM ${BUILDER_IMAGE} AS synthea-builder
 
@@ -1103,8 +1104,6 @@ WORKDIR /src/synthea
 RUN ./gradlew --no-daemon clean uberJar \
     && test -s build/libs/synthea-with-dependencies.jar
 
-
-ARG RUNTIME_IMAGE=eclipse-temurin:17-jre-jammy
 
 FROM ${RUNTIME_IMAGE}
 
@@ -1541,6 +1540,48 @@ class SyntheaGeneratorImageSourceTests(
         self.assertNotIn(
             ":latest",
             text,
+        )
+
+    def test_runtime_image_arg_is_global(
+        self,
+    ):
+        text = DOCKERFILE.read_text(
+            encoding="utf-8"
+        )
+
+        runtime_arg = (
+            "ARG RUNTIME_IMAGE="
+            "eclipse-temurin:17-jre-jammy"
+        )
+
+        builder_from = (
+            "FROM ${BUILDER_IMAGE}"
+        )
+
+        runtime_from = (
+            "FROM ${RUNTIME_IMAGE}"
+        )
+
+        runtime_arg_position = text.index(
+            runtime_arg
+        )
+
+        builder_from_position = text.index(
+            builder_from
+        )
+
+        runtime_from_position = text.index(
+            runtime_from
+        )
+
+        self.assertLess(
+            runtime_arg_position,
+            builder_from_position,
+        )
+
+        self.assertLess(
+            builder_from_position,
+            runtime_from_position,
         )
 
     def test_entrypoint_pins_deterministic_controls(

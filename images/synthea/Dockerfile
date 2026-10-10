@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ARG BUILDER_IMAGE=eclipse-temurin:17-jdk-jammy
+ARG RUNTIME_IMAGE=eclipse-temurin:17-jre-jammy
 
 FROM ${BUILDER_IMAGE} AS synthea-builder
 
@@ -29,8 +30,6 @@ WORKDIR /src/synthea
 RUN ./gradlew --no-daemon clean uberJar \
     && test -s build/libs/synthea-with-dependencies.jar
 
-
-ARG RUNTIME_IMAGE=eclipse-temurin:17-jre-jammy
 
 FROM ${RUNTIME_IMAGE}
 
