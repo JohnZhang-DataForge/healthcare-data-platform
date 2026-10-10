@@ -1,0 +1,108 @@
+{
+  "canonical_verification": {
+    "database_access": "READ_ONLY",
+    "database_mutation": false,
+    "ready_for_git_checkpoint": true,
+    "s3_access": "NONE",
+    "s3_mutation": false
+  },
+  "contract_name": "visit-cdm-materialization-result",
+  "contract_version": "v1",
+  "execution": {
+    "automatic_retry_performed": false,
+    "commit_returned_successfully": true,
+    "commit_statement_count": 1,
+    "explicit_target_column_count": 17,
+    "insert_rows": 5799,
+    "persistent_insert_statement_count": 1,
+    "psql_exit_code": 0,
+    "real_materialization_sql_sha256": "627056f9169fe0615c1649c8785623d240c8d6a562ba0ed993da537f2bafa214",
+    "sequence_mutation": false,
+    "visit_id_reallocation": false
+  },
+  "foreign_key_gates": {
+    "care_site": "PASS",
+    "concept": "PASS",
+    "person": "PASS",
+    "preceding_visit": "PASS",
+    "provider": "PASS"
+  },
+  "frozen_source_checkpoint": "46bf2f7348029d1a17ed3db178fc93ea3a6a97ca",
+  "lineage": {
+    "authoritative_mapping_sha256": "7e74c9c0a179e6222a7c4ded2993b8cf61a20d9b06b1d6349d7f21f6a0c03c9f",
+    "candidate_business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+    "candidate_rows": 5799,
+    "candidate_unique_business_keys": 5799,
+    "frozen_payload_columns": 17,
+    "frozen_payload_rows": 5799,
+    "frozen_payload_sha256": "995724ba282f443892074d9b189be134fde8819b2afda05f021729323b0ebce1",
+    "person_map_rows": 113,
+    "person_map_sha256": "f52f95120b8a9bd80d33029d04d9abf4cb1c59206d00b745b59e39b5a89c9a98",
+    "visit_id_map_rows": 5799
+  },
+  "mutation_boundaries": {
+    "git_changed_by_materialization": false,
+    "persistent_table_changed": "cdm.visit_occurrence",
+    "person_map_changed": false,
+    "s3_changed": false,
+    "visit_id_map_changed": false,
+    "visit_id_sequence_changed": false
+  },
+  "reconciliation": {
+    "cdm_visit_rows": 5799,
+    "cdm_visit_unique_ids": 5799,
+    "database_mutation": false,
+    "fresh_read_only_reconciliation": true,
+    "required_null_rows": 0,
+    "status": "PASS",
+    "target_map_id_mismatch": 0,
+    "visit_occurrence_id_max": 5800,
+    "visit_occurrence_id_min": 2
+  },
+  "recovered_tooling_errors": {
+    "d2_false_ambiguous": "SEQUENCE_BOOLEAN_TEXT_FORMAT",
+    "database_state_impacted": false,
+    "r1_failure": "GREP_FIXED_STRING_ANCHOR_MISUSE",
+    "real_mutation_retried": false
+  },
+  "runtime_evidence": {
+    "c4a_mutation_contract_sha256": "ab2d43d465b974aaf1d8c691dfd60fec97d807f6e09470a069fe50d043fc6859",
+    "d1_design_metadata_sha256": "5404f2fdca36cfdbc0f2094f1fc5a7b365a5a0408c2ac52a3bc38abc5b225ccc",
+    "d2_execution_output_sha256": "4ba017643edd1873507ccf3e5b489773fcf33c28f807d93a113a6fb0e3237858",
+    "d2_post_state_sha256": "e8ac76c6954b1e9a99293f6e90d7294e7d1bfae50ff1f5b053a358a48cbe6ce7",
+    "d2_summary_sha256": "f6ddda0d2c3c7c2c53dbcdcd4f11b5ab7d290f7b184d426c6d80c314ecc3ca2d",
+    "payload_metadata_sha256": "df17f57c267e32eafb11bd47cc3aad1d0343fea852581683d1e962a8f8cdeef8",
+    "r2_state_sha256": "4ca1df21370eb6d6599e45ce51d62099983e3eab3eac0f95542f7f0243331c85",
+    "r2_summary_sha256": "0ac2ae071d48a3f54c97748616e8ab38d20a58d41461653b326cdc2ad262c3ce",
+    "rehearsal_sql_sha256": "59b1843959ecaf686d1d1e16e5801fb83f5bc30db708f4f00257abc04deacb31",
+    "rehearsal_summary_sha256": "4ded2b3d08312b19542460ab38143b0561dc2ae5d3ad68127f4e082070509c5c",
+    "verified_preinsert_prefix_sha256": "fde40c3a4fd84bbbe1fd6b9b660833de1cee73ffc662acc2d697e25d6c0284d5"
+  },
+  "sequence": {
+    "id_1_gap_preserved": true,
+    "is_called": true,
+    "last_value": 5800,
+    "mutated_by_materialization": false
+  },
+  "status": "CDM_VISIT_MATERIALIZATION_COMMITTED_FROZEN",
+  "step": "STEP-06C4E",
+  "target": {
+    "column_count": 17,
+    "required_null_rows": 0,
+    "row_count": 5799,
+    "row_shape_sha256": "995724ba282f443892074d9b189be134fde8819b2afda05f021729323b0ebce1",
+    "table": "cdm.visit_occurrence",
+    "target_map_id_mismatch": 0,
+    "unique_visit_occurrence_ids": 5799,
+    "visit_occurrence_id_max": 5800,
+    "visit_occurrence_id_min": 2
+  },
+  "task": "TASK-003",
+  "terminal_policy": {
+    "blind_retry": "FORBIDDEN",
+    "empty_target_contract_reuse": "FORBIDDEN",
+    "future_work_baseline": "COMMITTED_CDM_VISIT_STATE",
+    "materialization_rerun": "FORBIDDEN",
+    "visit_id_reallocation": "FORBIDDEN"
+  }
+}
