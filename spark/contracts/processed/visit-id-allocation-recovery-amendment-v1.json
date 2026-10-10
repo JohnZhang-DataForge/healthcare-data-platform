@@ -1,0 +1,51 @@
+{
+  "amends": {
+    "mutation_contract": "spark/contracts/processed/visit-id-mutation-contract-v1.json",
+    "reason": "The original pre-mutation discovery checked column_default but did not inspect PostgreSQL identity metadata. visit_occurrence_id is GENERATED ALWAYS AS IDENTITY."
+  },
+  "corrected_mutation_requirements": {
+    "explicit_identity_insert": {
+      "required_clause": "OVERRIDING SYSTEM VALUE",
+      "visit_occurrence_id_is_identity": true,
+      "identity_generation": "ALWAYS"
+    },
+    "fresh_locked_revalidation_required": true,
+    "old_b4b_rerun_allowed": false,
+    "sequence_gap_policy": "ACCEPT_GAPS_NEVER_REWIND",
+    "setval_backward_allowed": false
+  },
+  "failed_attempt": {
+    "allocation_sql_sha256": "46ba2f9f1ffad0fbbe1415f27122c04c23b2422c34e93ab836dcdf87e00570f6",
+    "failure_class": "GENERATED_ALWAYS_IDENTITY_OVERRIDE_REQUIRED",
+    "mutation_intent_sha256": "e089d6a7d4adb00f2af4095715f926141611dd2315d9f4b8b3a99a9b5136b664",
+    "psql_output_sha256": "bea7b2bbaa61de00accbc6f181782f257c6fe846d618c747b6790514b600c997"
+  },
+  "git_checkpoint": "a4d4381dfa6541b10f8e22dd01cb3b8f50ab0a62",
+  "identity": {
+    "column": "etl.visit_occurrence_id_map.visit_occurrence_id",
+    "dependency_type": "i",
+    "identity_cycle": false,
+    "identity_generation": "ALWAYS",
+    "identity_increment": 1,
+    "identity_start": 1,
+    "is_identity": true,
+    "ordinary_column_default": null,
+    "sequence": "etl.visit_occurrence_id_map_visit_occurrence_id_seq"
+  },
+  "recovery_baseline": {
+    "candidate_business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+    "cdm_visit_rows": 0,
+    "committed_visit_map_rows": 0,
+    "person_map_rows": 113,
+    "predicted_next_sequence_value": 2,
+    "predicted_next_value_authoritative": false,
+    "sequence_is_called": true,
+    "sequence_last_value": 1,
+    "sequence_value_1_consumed": true
+  },
+  "recovery_state_sha256": "c34f6682f5a4482f1ef33f8a085463c4714fe858cd72c14bc03d75be3608dcc2",
+  "status": "VISIT_ID_ALLOCATION_RECOVERY_AMENDMENT_READY",
+  "step": "STEP-06B4B-R1",
+  "task": "TASK-003",
+  "version": "v1"
+}
