@@ -1,0 +1,46 @@
+{
+  "business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+  "format": {
+    "columns": [
+      "source_system",
+      "source_encounter_id"
+    ],
+    "delimiter": "TAB",
+    "encoding": "UTF-8",
+    "header": false,
+    "line_ending": "LF",
+    "ordering": [
+      "source_system ASC",
+      "source_encounter_id ASC"
+    ]
+  },
+  "git_checkpoint": "6d8ef90ac50b4ce96cbde16b7b3c0a68a7574d4a",
+  "intended_database_transport": {
+    "method": "COPY temporary table FROM STDIN",
+    "persistent_stage": false
+  },
+  "lineage": {
+    "step06a_candidate_business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+    "step06b1_mutation_contract_sha256": "58cd44b22eaf15674a7277c51c66418c305bd3743b403c7612d458453d87f9f0"
+  },
+  "rows": 5799,
+  "run_id": "visit-proc-20261009t192437z-2081886",
+  "safety": {
+    "cdm_visit_occurrence_write": false,
+    "database_access": "NONE",
+    "nextval_called": false,
+    "s3_access": "READ_ONLY",
+    "sequence_advanced": false,
+    "setval_called": false,
+    "visit_id_allocation_started": false,
+    "visit_id_map_mutated": false
+  },
+  "snapshot_file_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+  "snapshot_version": "v1",
+  "source": "frozen Processed visit_occurrence Candidate",
+  "source_system": "synthea",
+  "status": "VISIT_BUSINESS_KEY_SNAPSHOT_FROZEN",
+  "step": "STEP-06B2",
+  "task": "TASK-003",
+  "unique_business_keys": 5799
+}

@@ -1,0 +1,170 @@
+{
+  "allocation_policy": {
+    "authoritative_state": "committed etl.visit_occurrence_id_map rows",
+    "existing_mapping_reassignment": "FORBIDDEN",
+    "method": "explicit nextval in deterministic business-key order",
+    "predicted_first_id": 1,
+    "predicted_last_id": 5799,
+    "predicted_range_authoritative": false,
+    "sequence_gap_policy": "ACCEPT_GAPS_NEVER_REWIND",
+    "setval_backward": "FORBIDDEN"
+  },
+  "candidate_key_transport": {
+    "columns": [
+      "source_system",
+      "source_encounter_id"
+    ],
+    "database_ingest": "COPY temporary table FROM STDIN",
+    "expected_business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+    "expected_rows": 5799,
+    "expected_unique_rows": 5799,
+    "format": "UTF-8 TSV",
+    "ordering": [
+      "source_system ASC",
+      "source_encounter_id ASC"
+    ],
+    "persistent_staging_table": false,
+    "producer_step": "STEP-06B2",
+    "required_before_mutation": true,
+    "temporary_table_primary_key": [
+      "source_system",
+      "source_encounter_id"
+    ]
+  },
+  "contract_version": "v1",
+  "failure_policy": {
+    "after_commit": {
+      "mapping_authoritative": true,
+      "required_action": "independent verification before any CDM Visit write"
+    },
+    "after_first_nextval_before_commit": {
+      "blind_retry": false,
+      "map_rows_may_rollback": true,
+      "required_action": "preserve evidence and enter explicit recovery reconciliation",
+      "sequence_may_have_advanced": true
+    },
+    "before_first_nextval": {
+      "retry": "allowed only after fresh full revalidation",
+      "sequence_may_have_advanced": false
+    },
+    "never": [
+      "blindly retry after uncertain nextval execution",
+      "rewind sequence with setval",
+      "reassign an existing business key to another Visit ID",
+      "combine Visit ID allocation with cdm.visit_occurrence loading"
+    ]
+  },
+  "git_checkpoint": "6d8ef90ac50b4ce96cbde16b7b3c0a68a7574d4a",
+  "lineage": {
+    "allocation_plan_sha256": "28cf06fecb744c8da477221abde37e7afd72ba7d974ef2c93f847a3d79b63c93",
+    "reconciliation_result_sha256": "fb2905064173c564a8074b7f946c976b8d2ea1e0165ce7f2f3f2b3feb258eb31"
+  },
+  "post_commit_verification": {
+    "cdm_write_allowed_during_verification": false,
+    "independent_session": true,
+    "required_candidate_coverage": 5799,
+    "required_cdm_visit_rows": 0,
+    "required_unique_business_keys": 5799,
+    "required_unique_visit_ids": 5799,
+    "verify_mapping_fingerprint": true,
+    "verify_sequence_state": true
+  },
+  "required_pre_mutation_state": {
+    "cdm_map_overlap_rows": 0,
+    "cdm_visit_rows": 0,
+    "map_business_key_collision_groups": 0,
+    "map_visit_id_collision_groups": 0,
+    "person_map_rows": 113,
+    "sequence": {
+      "automatic_default_nextval": false,
+      "column_default": null,
+      "cycle": false,
+      "increment_by": 1,
+      "is_called": false,
+      "last_value": 1,
+      "name": "etl.visit_occurrence_id_map_visit_occurrence_id_seq"
+    },
+    "visit_map_rows": 0
+  },
+  "run_id": "visit-proc-20261009t192437z-2081886",
+  "safety": {
+    "advisory_lock_acquired": false,
+    "cdm_visit_occurrence_write": false,
+    "contract_build_database_access": "READ_ONLY",
+    "contract_build_s3_access": "NONE",
+    "nextval_called": false,
+    "sequence_advanced": false,
+    "setval_called": false,
+    "visit_id_allocation_started": false,
+    "visit_id_map_mutated": false
+  },
+  "scope": {
+    "business_key": [
+      "source_system",
+      "source_encounter_id"
+    ],
+    "candidate_business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+    "candidate_rows": 5799,
+    "candidate_unique_business_keys": 5799,
+    "cdm_visit_occurrence_write": false,
+    "mutation_target": "etl.visit_occurrence_id_map",
+    "s3_write": false
+  },
+  "serialization": {
+    "advisory_lock": {
+      "function": "pg_advisory_xact_lock(bigint)",
+      "key": 5947676943154735385,
+      "purpose": "TASK003 Visit ID allocation serialization",
+      "scope": "transaction"
+    },
+    "lock_order": [
+      "pg_advisory_xact_lock",
+      "etl.visit_occurrence_id_map",
+      "etl.person_id_map",
+      "cdm.visit_occurrence"
+    ],
+    "table_locks": [
+      {
+        "mode": "SHARE ROW EXCLUSIVE",
+        "purpose": "block concurrent map mutations",
+        "relation": "etl.visit_occurrence_id_map"
+      },
+      {
+        "mode": "SHARE",
+        "purpose": "freeze Person mapping during allocation validation",
+        "relation": "etl.person_id_map"
+      },
+      {
+        "mode": "SHARE",
+        "purpose": "prevent concurrent Visit CDM mutation while map IDs are allocated",
+        "relation": "cdm.visit_occurrence"
+      }
+    ]
+  },
+  "status": "VISIT_ID_MUTATION_CONTRACT_READY",
+  "step": "STEP-06B1",
+  "task": "TASK-003",
+  "transaction_protocol": [
+    "BEGIN",
+    "SET LOCAL lock_timeout",
+    "SET LOCAL statement_timeout",
+    "pg_advisory_xact_lock",
+    "LOCK etl.visit_occurrence_id_map",
+    "LOCK etl.person_id_map",
+    "LOCK cdm.visit_occurrence",
+    "revalidate exact frozen database state",
+    "create transaction-local candidate key temporary table",
+    "COPY exact STEP06B2 candidate key snapshot through STDIN",
+    "verify 5799 rows and 5799 unique business keys",
+    "verify zero existing Candidate mappings",
+    "verify zero DB-only conflicting Synthea keys for this frozen batch",
+    "verify sequence state immediately before first nextval",
+    "allocate only in deterministic business-key order",
+    "call explicit nextval once per new business key",
+    "insert explicit visit_occurrence_id and business key",
+    "verify exact 5799-key map coverage",
+    "verify no duplicate business keys or Visit IDs",
+    "verify cdm.visit_occurrence remains unchanged",
+    "COMMIT"
+  ]
+}
