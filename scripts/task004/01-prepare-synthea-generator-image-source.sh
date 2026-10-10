@@ -1094,8 +1094,10 @@ WORKDIR /src
 RUN git init synthea \
     && cd synthea \
     && git remote add origin "${SYNTHEA_REPOSITORY}" \
-    && git fetch --depth=1 origin "${SYNTHEA_COMMIT}" \
-    && git checkout --detach FETCH_HEAD \
+    && git fetch --depth=1 origin \
+       "refs/tags/${SYNTHEA_VERSION}:refs/tags/${SYNTHEA_VERSION}" \
+    && test "$(git rev-parse "refs/tags/${SYNTHEA_VERSION}^{commit}")" = "${SYNTHEA_COMMIT}" \
+    && git checkout --detach "refs/tags/${SYNTHEA_VERSION}" \
     && test "$(git rev-parse HEAD)" = "${SYNTHEA_COMMIT}" \
     && test "$(git describe --tags --exact-match HEAD)" = "${SYNTHEA_VERSION}"
 
@@ -1582,6 +1584,60 @@ class SyntheaGeneratorImageSourceTests(
         self.assertLess(
             builder_from_position,
             runtime_from_position,
+        )
+
+    def test_synthea_tag_is_fetched_and_verified(
+        self,
+    ):
+        text = DOCKERFILE.read_text(
+            encoding="utf-8"
+        )
+
+        exact_tag_fetch = (
+            'git fetch --depth=1 origin \\\n'
+            '       "refs/tags/${SYNTHEA_VERSION}:'
+            'refs/tags/${SYNTHEA_VERSION}"'
+        )
+
+        tag_commit_check = (
+            'test "$(git rev-parse '
+            '"refs/tags/${SYNTHEA_VERSION}^{commit}")" '
+            '= "${SYNTHEA_COMMIT}"'
+        )
+
+        tag_checkout = (
+            'git checkout --detach '
+            '"refs/tags/${SYNTHEA_VERSION}"'
+        )
+
+        old_commit_only_fetch = (
+            'git fetch --depth=1 origin '
+            '"${SYNTHEA_COMMIT}"'
+        )
+
+        self.assertIn(
+            exact_tag_fetch,
+            text,
+        )
+
+        self.assertIn(
+            tag_commit_check,
+            text,
+        )
+
+        self.assertIn(
+            tag_checkout,
+            text,
+        )
+
+        self.assertIn(
+            'git describe --tags --exact-match HEAD',
+            text,
+        )
+
+        self.assertNotIn(
+            old_commit_only_fetch,
+            text,
         )
 
     def test_entrypoint_pins_deterministic_controls(

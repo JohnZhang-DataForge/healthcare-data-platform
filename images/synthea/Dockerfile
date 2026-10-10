@@ -20,8 +20,10 @@ WORKDIR /src
 RUN git init synthea \
     && cd synthea \
     && git remote add origin "${SYNTHEA_REPOSITORY}" \
-    && git fetch --depth=1 origin "${SYNTHEA_COMMIT}" \
-    && git checkout --detach FETCH_HEAD \
+    && git fetch --depth=1 origin \
+       "refs/tags/${SYNTHEA_VERSION}:refs/tags/${SYNTHEA_VERSION}" \
+    && test "$(git rev-parse "refs/tags/${SYNTHEA_VERSION}^{commit}")" = "${SYNTHEA_COMMIT}" \
+    && git checkout --detach "refs/tags/${SYNTHEA_VERSION}" \
     && test "$(git rev-parse HEAD)" = "${SYNTHEA_COMMIT}" \
     && test "$(git describe --tags --exact-match HEAD)" = "${SYNTHEA_VERSION}"
 
