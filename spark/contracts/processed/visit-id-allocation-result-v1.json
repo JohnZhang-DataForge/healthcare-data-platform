@@ -1,0 +1,43 @@
+{
+  "candidate_business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+  "candidate_rows": 5799,
+  "candidate_unique_business_keys": 5799,
+  "cdm_visit_occurrence_write": false,
+  "cdm_visit_rows_after_allocation": 0,
+  "committed_mapping": {
+    "business_key_order": [
+      "source_system",
+      "source_encounter_id"
+    ],
+    "mapping_sha256": "7e74c9c0a179e6222a7c4ded2993b8cf61a20d9b06b1d6349d7f21f6a0c03c9f",
+    "max_visit_occurrence_id": 5800,
+    "min_visit_occurrence_id": 2,
+    "rows": 5799,
+    "unique_visit_occurrence_ids": 5799,
+    "visit_ids_contiguous_2_through_5800": true
+  },
+  "corrected_allocation": {
+    "allocation_sql_sha256": "4e0f7ba8c81639d601df832781515d1b2e6084706f9e96f1829ec12a2937bf7e",
+    "explicit_identity_insert": "OVERRIDING SYSTEM VALUE",
+    "identity_generation": "ALWAYS",
+    "independent_post_commit_verification": true,
+    "psql_output_sha256": "db7add87ae7185dc2127b21230ce7756e2ec3c11bb80676c023fed0e066c59a3",
+    "transaction_committed": true
+  },
+  "git_checkpoint_before_corrected_mutation": "d2bddab5ffee00df0f42db8273379b89364be115",
+  "recovery_lineage": {
+    "recovery_amendment_sha256": "f3f81af4effadc65e73255837f5cf79fe74050f2bf3f4685385f360b20a76a03",
+    "recovery_state_sha256": "c34f6682f5a4482f1ef33f8a085463c4714fe858cd72c14bc03d75be3608dcc2",
+    "sequence_value_1_consumed_gap": true
+  },
+  "sequence": {
+    "gap_policy": "ACCEPT_GAPS_NEVER_REWIND",
+    "is_called": true,
+    "last_value": 5800,
+    "setval_backward_used": false
+  },
+  "status": "VISIT_ID_ALLOCATION_COMMITTED_AND_FROZEN",
+  "step": "STEP-06B4C",
+  "task": "TASK-003",
+  "version": "v1"
+}
