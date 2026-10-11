@@ -1,0 +1,93 @@
+name: Generic Task Executor
+
+on:
+  push:
+    branches:
+      - feature/generic-task-runner-v1
+    paths:
+      - .github/workflows/generic-task-executor.yml
+      - scripts/ci/**
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Task directory name under scripts/ci/tasks"
+        required: true
+        default: demo
+        type: string
+      step:
+        description: "Step shell basename (without .sh)"
+        required: true
+        default: smoke
+        type: string
+      mode:
+        description: "validate (read-only) or execute (requires main)"
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - execute
+
+permissions:
+  contents: read
+
+concurrency:
+  group: generic-task-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  run-task:
+    runs-on: dw-runner-set
+    timeout-minutes: 20
+    env:
+      CI_REPORT_DIR: ${{ github.workspace }}/ci-output
+      TASK: ${{ github.event_name == 'push' && 'demo' || inputs.task }}
+      STEP: ${{ github.event_name == 'push' && 'smoke' || inputs.step }}
+      MODE: ${{ github.event_name == 'push' && 'validate' || inputs.mode }}
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+
+      - name: Print revision and invocation
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "===== TASK_CHECKOUT_BEGIN ====="
+          echo "BRANCH=$GITHUB_REF_NAME"
+          echo "COMMIT=$GITHUB_SHA"
+          echo "RUNNER=$RUNNER_NAME"
+          echo "TASK=$TASK STEP=$STEP MODE=$MODE"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "===== TASK_CHECKOUT_END ====="
+
+      - name: Execute fixed shell gate
+        id: execute
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/ci/run-task.sh "$TASK" "$STEP" "$MODE"
+
+      - name: Publish condensed result
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Generic task execution"
+            printf 'Branch: `%s`\n\nCommit: `%s`\n\n' "$GITHUB_REF_NAME" "$GITHUB_SHA"
+            if [[ -f "$CI_REPORT_DIR/result.txt" ]]; then
+              echo '~~~text'
+              cat "$CI_REPORT_DIR/result.txt"
+              echo '~~~'
+            else
+              echo "No result was produced. Check the job log."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generic-task-report
+          path: ci-output/
+          if-no-files-found: warn
+          retention-days: 14
