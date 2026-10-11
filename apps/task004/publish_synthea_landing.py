@@ -1736,6 +1736,11 @@ def main() -> int:
     )
 
     print(
+        "PREFIX_MODE="
+        + result["prefix_mode"]
+    )
+
+    print(
         "UPLOADED_THIS_RUN="
         + str(
             result[

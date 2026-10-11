@@ -456,13 +456,198 @@ do
     || fail "Missing runtime marker: ${marker}"
 done
 
-kubectl exec \
-  "$POD_NAME" \
-  -n "$NAMESPACE" \
-  -- \
-  cat \
-    /work/evidence/landing-publication.json \
-  > "$REPORT_FILE"
+python3 - \
+  "$LOG_FILE" \
+  "$REPORT_FILE" \
+  "$BATCH_ID" \
+  <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+log_path = Path(sys.argv[1])
+report_path = Path(sys.argv[2])
+batch_id = sys.argv[3]
+
+lines = log_path.read_text(
+    encoding="utf-8"
+).splitlines()
+
+
+def one(key):
+    prefix = key + "="
+
+    values = [
+        line[len(prefix):]
+        for line in lines
+        if line.startswith(prefix)
+    ]
+
+    if len(values) != 1:
+        raise SystemExit(
+            f"ERROR: expected exactly one "
+            f"{key}; found {len(values)}"
+        )
+
+    return values[0]
+
+
+status = one(
+    "MANIFEST_STATUS"
+)
+
+publish_mode = one(
+    "PUBLISH_MODE"
+)
+
+prefix_mode = one(
+    "PREFIX_MODE"
+)
+
+uploaded = int(
+    one(
+        "UPLOADED_THIS_RUN"
+    )
+)
+
+reused = int(
+    one(
+        "REUSED_THIS_RUN"
+    )
+)
+
+fingerprint = one(
+    "PAYLOAD_FINGERPRINT"
+)
+
+landing_uri = one(
+    "LANDING_URI"
+)
+
+manifest_uri = one(
+    "MANIFEST_URI"
+)
+
+manifest_sha = one(
+    "MANIFEST_SHA256"
+)
+
+readback = one(
+    "S3_PAYLOAD_READBACK_SHA256"
+)
+
+if status != "INTAKE_VERIFIED":
+    raise SystemExit(
+        "ERROR: Landing log status "
+        "is not INTAKE_VERIFIED"
+    )
+
+if readback != "18/18":
+    raise SystemExit(
+        "ERROR: Landing readback "
+        "is not 18/18"
+    )
+
+if not re.fullmatch(
+    r"[0-9a-f]{64}",
+    fingerprint,
+):
+    raise SystemExit(
+        "ERROR: invalid payload fingerprint"
+    )
+
+if not re.fullmatch(
+    r"[0-9a-f]{64}",
+    manifest_sha,
+):
+    raise SystemExit(
+        "ERROR: invalid manifest SHA256"
+    )
+
+if manifest_uri != (
+    landing_uri
+    + "manifest.json"
+):
+    raise SystemExit(
+        "ERROR: manifest URI does not "
+        "match landing URI"
+    )
+
+# The actual ingest date is authoritative from
+# the resolved Landing URI.  This matters when
+# a batch is replayed on a later UTC date.
+landing_match = re.search(
+    r"/ingest_date=([^/]+)/"
+    + r"batch_id="
+    + re.escape(batch_id)
+    + r"/$",
+    landing_uri,
+)
+
+if landing_match is None:
+    raise SystemExit(
+        "ERROR: unable to derive ingest_date "
+        "from Landing URI"
+    )
+
+ingest_date = landing_match.group(1)
+
+report = {
+    "batch_id":
+        batch_id,
+
+    "ingest_date":
+        ingest_date,
+
+    "landing_uri":
+        landing_uri,
+
+    "manifest_uri":
+        manifest_uri,
+
+    "manifest_sha256":
+        manifest_sha,
+
+    "payload_fingerprint":
+        fingerprint,
+
+    "prefix_mode":
+        prefix_mode,
+
+    "publish_mode":
+        publish_mode,
+
+    "reused_this_run":
+        reused,
+
+    "uploaded_this_run":
+        uploaded,
+
+    "verified_file_count":
+        18,
+
+    "status":
+        status,
+
+    "report_source":
+        "POD_LOG",
+}
+
+report_path.write_text(
+    json.dumps(
+        report,
+        indent=2,
+        sort_keys=True,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+
+print(
+    "REPORT_SOURCE=POD_LOG"
+)
+PY
 
 python3 - "$REPORT_FILE" "$BATCH_ID" <<'PY'
 import json

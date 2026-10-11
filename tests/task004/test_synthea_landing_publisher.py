@@ -545,5 +545,60 @@ class LandingPublisherTests(
         )
 
 
+    def test_publisher_logs_prefix_mode(self):
+        source = APP.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            '"PREFIX_MODE="',
+            source,
+        )
+
+        self.assertIn(
+            'result["prefix_mode"]',
+            source,
+        )
+
+    def test_runner_collects_evidence_from_pod_log(self):
+        source = RUNNER.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "REPORT_SOURCE=POD_LOG",
+            source,
+        )
+
+        self.assertIn(
+            '"report_source":',
+            source,
+        )
+
+        self.assertIn(
+            '"POD_LOG"',
+            source,
+        )
+
+        self.assertNotIn(
+            "kubectl exec",
+            source,
+        )
+
+    def test_runner_derives_ingest_date_from_landing_uri(self):
+        source = RUNNER.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "landing_match = re.search(",
+            source,
+        )
+
+        self.assertIn(
+            "ingest_date = landing_match.group(1)",
+            source,
+        )
+
 if __name__ == "__main__":
     unittest.main()
