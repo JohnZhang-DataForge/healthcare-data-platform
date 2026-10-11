@@ -87,6 +87,48 @@ class PersonVisitRuntimeInterfaceTests(
         )
 
 
+    def test_bridge_direct_mode_exists(self):
+        source = read(
+            BRIDGE
+        )
+
+        self.assertIn(
+            'TASK004_RUNTIME_CONTEXT="${TASK004_RUNTIME_CONTEXT:-manual}"',
+            source,
+        )
+
+        self.assertIn(
+            "in-cluster)",
+            source,
+        )
+
+        self.assertIn(
+            'exec python3 \\\n      "$RESOLVER"',
+            source,
+        )
+
+
+    def test_bridge_manual_mode_preserved(self):
+        source = read(
+            BRIDGE
+        )
+
+        self.assertIn(
+            "manual)",
+            source,
+        )
+
+        self.assertIn(
+            "kubectl exec",
+            source,
+        )
+
+        self.assertIn(
+            "dw-airflow-scheduler-",
+            source,
+        )
+
+
     def test_person_requires_lineage(self):
         source = read(
             PERSON

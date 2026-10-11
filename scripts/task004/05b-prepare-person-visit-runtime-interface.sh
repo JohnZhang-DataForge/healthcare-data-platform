@@ -35,6 +35,8 @@ VERIFY_CONTAINER="${VERIFY_CONTAINER:-scheduler}"
 S3_ENDPOINT="${S3_ENDPOINT:-http://dw-seaweedfs-s3.dw-seaweedfs.svc.cluster.local:8333}"
 S3_REGION="${S3_REGION:-us-east-1}"
 
+TASK004_RUNTIME_CONTEXT="${TASK004_RUNTIME_CONTEXT:-manual}"
+
 DATASET="${1:-}"
 
 fail() {
@@ -55,64 +57,89 @@ fail() {
 [[ "$MANIFEST_SHA256" =~ ^[0-9a-f]{64}$ ]] \
   || fail "MANIFEST_SHA256 is invalid"
 
-VERIFY_POD="$(
-  kubectl get pods \
-    -n "$VERIFY_NAMESPACE" \
-    --no-headers \
-  | awk '
-      $1 ~ /^dw-airflow-scheduler-/ &&
-      $3 == "Running" {
-        print $1
-        exit
-      }
-    '
-)"
+case "$TASK004_RUNTIME_CONTEXT" in
 
-[[ -n "$VERIFY_POD" ]] \
-  || fail "No Running Airflow scheduler Pod"
+  in-cluster)
+    : "${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required in-cluster}"
+    : "${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required in-cluster}"
 
-AWS_ACCESS_KEY_ID="$(
-  kubectl get secret \
-    "$S3_SECRET_NAME" \
-    -n "$SPARK_NAMESPACE" \
-    -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' \
-  | base64 --decode
-)"
-
-AWS_SECRET_ACCESS_KEY="$(
-  kubectl get secret \
-    "$S3_SECRET_NAME" \
-    -n "$SPARK_NAMESPACE" \
-    -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' \
-  | base64 --decode
-)"
-
-[[ -n "$AWS_ACCESS_KEY_ID" ]] \
-  || fail "AWS access key is empty"
-
-[[ -n "$AWS_SECRET_ACCESS_KEY" ]] \
-  || fail "AWS secret key is empty"
-
-kubectl exec \
-  -i \
-  "$VERIFY_POD" \
-  -n "$VERIFY_NAMESPACE" \
-  -c "$VERIFY_CONTAINER" \
-  -- env \
-    AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
-    AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-    S3_ENDPOINT="$S3_ENDPOINT" \
-    S3_REGION="$S3_REGION" \
-    python3 - \
+    exec python3 \
+      "$RESOLVER" \
       "$DATASET" \
       --batch-id "$BATCH_ID" \
       --manifest-uri "$MANIFEST_URI" \
       --manifest-sha256 "$MANIFEST_SHA256" \
-      --format json \
-  < "$RESOLVER"
+      --endpoint "$S3_ENDPOINT" \
+      --region "$S3_REGION" \
+      --format json
+    ;;
 
-unset AWS_ACCESS_KEY_ID
-unset AWS_SECRET_ACCESS_KEY
+  manual)
+    VERIFY_POD="$(
+      kubectl get pods \
+        -n "$VERIFY_NAMESPACE" \
+        --no-headers \
+      | awk '
+          $1 ~ /^dw-airflow-scheduler-/ &&
+          $3 == "Running" {
+            print $1
+            exit
+          }
+        '
+    )"
+
+    [[ -n "$VERIFY_POD" ]] \
+      || fail "No Running Airflow scheduler Pod"
+
+    AWS_ACCESS_KEY_ID="$(
+      kubectl get secret \
+        "$S3_SECRET_NAME" \
+        -n "$SPARK_NAMESPACE" \
+        -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' \
+      | base64 --decode
+    )"
+
+    AWS_SECRET_ACCESS_KEY="$(
+      kubectl get secret \
+        "$S3_SECRET_NAME" \
+        -n "$SPARK_NAMESPACE" \
+        -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' \
+      | base64 --decode
+    )"
+
+    [[ -n "$AWS_ACCESS_KEY_ID" ]] \
+      || fail "AWS access key is empty"
+
+    [[ -n "$AWS_SECRET_ACCESS_KEY" ]] \
+      || fail "AWS secret key is empty"
+
+    kubectl exec \
+      -i \
+      "$VERIFY_POD" \
+      -n "$VERIFY_NAMESPACE" \
+      -c "$VERIFY_CONTAINER" \
+      -- env \
+        AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+        AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+        S3_ENDPOINT="$S3_ENDPOINT" \
+        S3_REGION="$S3_REGION" \
+        python3 - \
+          "$DATASET" \
+          --batch-id "$BATCH_ID" \
+          --manifest-uri "$MANIFEST_URI" \
+          --manifest-sha256 "$MANIFEST_SHA256" \
+          --format json \
+      < "$RESOLVER"
+
+    unset AWS_ACCESS_KEY_ID
+    unset AWS_SECRET_ACCESS_KEY
+    ;;
+
+  *)
+    fail "TASK004_RUNTIME_CONTEXT must be manual or in-cluster"
+    ;;
+
+esac
 BRIDGE_EOF
 
 # ============================================================
@@ -1168,6 +1195,48 @@ class PersonVisitRuntimeInterfaceTests(
 
         self.assertNotIn(
             "task-001",
+            source,
+        )
+
+
+    def test_bridge_direct_mode_exists(self):
+        source = read(
+            BRIDGE
+        )
+
+        self.assertIn(
+            'TASK004_RUNTIME_CONTEXT="${TASK004_RUNTIME_CONTEXT:-manual}"',
+            source,
+        )
+
+        self.assertIn(
+            "in-cluster)",
+            source,
+        )
+
+        self.assertIn(
+            'exec python3 \\\n      "$RESOLVER"',
+            source,
+        )
+
+
+    def test_bridge_manual_mode_preserved(self):
+        source = read(
+            BRIDGE
+        )
+
+        self.assertIn(
+            "manual)",
+            source,
+        )
+
+        self.assertIn(
+            "kubectl exec",
+            source,
+        )
+
+        self.assertIn(
+            "dw-airflow-scheduler-",
             source,
         )
 

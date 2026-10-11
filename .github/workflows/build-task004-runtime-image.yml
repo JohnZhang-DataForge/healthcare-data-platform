@@ -1,0 +1,116 @@
+name: Build TASK004 Runtime Image
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/build-task004-runtime-image.yml"
+      - "images/task004-runtime/**"
+      - "apps/task004/resolve_verified_landing_file.py"
+      - "apps/task004/publish_synthea_landing.py"
+      - "scripts/task004/04c-run-synthea-generate-publish.sh"
+      - "scripts/task004/05b-prepare-person-visit-runtime-interface.sh"
+      - "scripts/task004/05c-resolve-runtime-lineage.sh"
+      - "scripts/task004/05d-run-person-canonical.sh"
+      - "scripts/task004/05e-run-visit-canonical.sh"
+      - "scripts/task004/06a-prepare-unified-runtime-image.sh"
+      - "kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl"
+      - "spark/apps/person/synthea_patient_adapter.py"
+      - "spark/common/batch_manifest.py"
+      - "spark/contracts/canonical/patient-v1.json"
+      - "spark/manifests/task002/person-canonical-adapter.yaml.tpl"
+      - "spark/apps/visit/synthea_encounter_adapter.py"
+      - "spark/contracts/canonical/encounter-v1.json"
+      - "spark/manifests/task003/encounter-canonical-adapter.yaml.tpl"
+      - "tests/task004/test_person_visit_runtime_interface.py"
+      - "tests/task004/test_unified_runtime_image_source.py"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: task004-runtime-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-push:
+    name: Build and push TASK004 runtime
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve immutable image identity
+        id: image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          owner_lc="${GITHUB_REPOSITORY_OWNER,,}"
+
+          image="ghcr.io/${owner_lc}/healthcare-data-platform-task004-runtime"
+          tag="git-${GITHUB_SHA}"
+
+          echo "image=${image}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "ref=${image}:${tag}" >> "${GITHUB_OUTPUT}"
+
+          echo "IMAGE=${image}"
+          echo "TAG=${tag}"
+          echo "REF=${image}:${tag}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push linux/amd64 runtime image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./images/task004-runtime/Dockerfile
+          platforms: linux/amd64
+          push: true
+          pull: true
+          provenance: true
+          sbom: true
+          tags: ${{ steps.image.outputs.ref }}
+          build-args: |
+            PROJECT_GIT_SHA=${{ github.sha }}
+            KUBECTL_VERSION=v1.32.5
+
+      - name: Record immutable runtime image evidence
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+
+          [[ -n "${IMAGE_REF}" ]]
+          [[ "${IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
+
+          {
+            echo "## TASK004 control runtime image"
+            echo
+            echo "- Git commit: \`${GITHUB_SHA}\`"
+            echo "- Image tag: \`${IMAGE_REF}\`"
+            echo "- Image digest: \`${IMAGE_DIGEST}\`"
+            echo "- Platform: \`linux/amd64\`"
+            echo "- kubectl: \`v1.32.5\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          echo "TASK004_RUNTIME_IMAGE_BUILD=PASS"
+          echo "IMAGE_REF=${IMAGE_REF}"
+          echo "IMAGE_DIGEST=${IMAGE_DIGEST}"
