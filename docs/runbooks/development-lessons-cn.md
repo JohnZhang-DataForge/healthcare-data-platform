@@ -945,3 +945,289 @@ SKILL-cn.md
 5. 将具体历史和抽象规则分开。
 
 本文件会随项目演进持续更新。
+
+
+## 30. 容器目录权限必须和文件权限分开验证
+
+TASK004 Phase 9 证明，仅检查文件本身是否为：
+
+```text
+0644
+0755
+```
+
+是不够的。
+
+如果任意父目录缺少 execute / traverse 权限，即使目标文件本身可读，non-root 用户仍无法访问该文件。
+
+典型失败：
+
+```text
+file mode      = 0644
+parent dir     = 0644
+directory read = YES
+directory exec = NO
+```
+
+最终表现为：
+
+```text
+PermissionError
+```
+
+因此以后自定义 runtime image 的验收必须同时检查：
+
+```text
+1. runtime file exists
+2. runtime file readable
+3. every parent directory traversable
+4. actual non-root UID can open the file
+```
+
+推荐目录模式：
+
+```text
+0755
+```
+
+普通只读文件仍可保持：
+
+```text
+0644
+```
+
+---
+
+## 31. Docker COPY --chmod 需要真实镜像验证
+
+`Dockerfile` 中写了：
+
+```text
+COPY --chmod=0644 ...
+```
+
+并不代表最终镜像内所有相关目录权限一定正确。
+
+TASK004 曾出现：
+
+```text
+COPY source file
+  ↓
+Docker creates destination path
+  ↓
+parent directory mode unexpectedly unusable for non-root runtime
+```
+
+因此以后镜像验收分三层：
+
+```text
+Dockerfile static test
+        ↓
+OCI config / metadata verification
+        ↓
+real Kubernetes Pod filesystem verification
+```
+
+只有第三层能够真正证明：
+
+```text
+runtime UID
++
+filesystem permissions
++
+packaged source closure
+```
+
+可以工作。
+
+---
+
+## 32. 镜像身份必须绑定 Git Commit 和 Immutable Digest
+
+推荐镜像身份模型：
+
+```text
+Git commit
+  ↓
+CI build
+  ↓
+Git-SHA tag
+  ↓
+OCI root digest
+  ↓
+Kubernetes runtime
+```
+
+其中：
+
+```text
+Git SHA tag
+```
+
+用于人类追踪 source。
+
+真正运行时应使用：
+
+```text
+image@sha256:<digest>
+```
+
+而不是 mutable tag。
+
+最终验证至少包含：
+
+```text
+OCI revision label == Git commit
+platform == expected platform
+runtime user == expected UID/GID
+entrypoint == expected entrypoint
+runtime digest == verified digest
+```
+
+如果一次 build 已被证明存在缺陷：
+
+```text
+old failed digest
+```
+
+应永久视为不可复用证据，而不是继续用相同镜像重试。
+
+---
+
+## 33. 失败资源保留到 Replacement PASS 再清理
+
+失败后的 Job / Pod / SparkApplication / ConfigMap 不是普通垃圾。
+
+推荐流程：
+
+```text
+failure
+  ↓
+retain runtime evidence
+  ↓
+diagnose exact failure domain
+  ↓
+patch canonical source
+  ↓
+tests
+  ↓
+new immutable artifact
+  ↓
+replacement runtime verification
+  ↓
+replacement PASS
+  ↓
+cleanup historical failed resources
+```
+
+这样可以避免：
+
+```text
+错误日志丢失
+Pod 状态丢失
+filesystem evidence 丢失
+imageID 丢失
+无法判断 wrapper FAIL 还是 workload FAIL
+```
+
+原则继续保持：
+
+```text
+success → cleanup
+failure → retain until diagnosis / replacement verification
+```
+
+---
+
+## 34. Render-only PASS 不等于 Runtime PASS
+
+Render-only 可以验证：
+
+```text
+lineage resolution
+template substitution
+required parameters
+YAML syntax
+resource shape
+dynamic expected rows
+```
+
+但它不能证明：
+
+```text
+container can start
+dependency can resolve
+S3 can be read
+Spark transformation is correct
+Processing write works
+persisted readback works
+```
+
+因此正式接入 orchestrator 之前，应先对每个 workload 独立完成真实 runtime：
+
+```text
+render PASS
+  ↓
+standalone runtime PASS
+  ↓
+persistent output readback PASS
+  ↓
+cleanup / evidence freeze
+  ↓
+orchestration
+```
+
+这样进入 Airflow、Argo 或其他 orchestrator 后，失败域可以集中在：
+
+```text
+orchestration
+RBAC
+task dependencies
+runtime parameter passing
+```
+
+而不是同时怀疑业务 transformation。
+
+---
+
+## 35. 大型 Markdown 不通过 Shell Heredoc 交付
+
+如果文档包含大量：
+
+```text
+Markdown code fence
+反引号
+${...}
+$()
+Shell 示例
+YAML
+JSON
+```
+
+不要把整篇文档嵌入用户执行的 Bash heredoc。
+
+推荐流程：
+
+```text
+直接生成独立 .md artifact
+  ↓
+放到明确 repo path
+  ↓
+检查 EOF / whitespace
+  ↓
+git diff --check
+  ↓
+内容 gate
+  ↓
+Git checkpoint
+```
+
+这条规则不仅适用于 Markdown，也适用于任何：
+
+```text
+内容中包含大量 Shell 特殊字符
++
+需要保持原样
+```
+
+的长文本 artifact。
