@@ -116,6 +116,22 @@ COPY --chown=10001:10001 --chmod=0644 \
   spark/manifests/task003/encounter-canonical-adapter.yaml.tpl \
   /data/spark/healthcare-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl
 
+# Docker COPY --chmod applies the supplied mode to destination
+# path components it creates. Read-only assets copied with 0644
+# can therefore leave newly-created parent directories without
+# the execute/traverse bit for the non-root runtime user.
+#
+# Normalize every runtime source directory to 0755 after all
+# source COPY operations. Individual file modes remain unchanged.
+RUN find /data/spark/healthcare-data-platform \
+      -type d \
+      -exec chmod 0755 {} + \
+    && test "$(stat -c '%a' /data/spark/healthcare-data-platform/kubernetes)" = "755" \
+    && test "$(stat -c '%a' /data/spark/healthcare-data-platform/kubernetes/manifests)" = "755" \
+    && test "$(stat -c '%a' /data/spark/healthcare-data-platform/spark/common)" = "755" \
+    && test "$(stat -c '%a' /data/spark/healthcare-data-platform/spark/contracts)" = "755" \
+    && test "$(stat -c '%a' /data/spark/healthcare-data-platform/spark/manifests)" = "755"
+
 COPY --chown=10001:10001 --chmod=0755 \
   images/task004-runtime/entrypoint.sh \
   /usr/local/bin/task004-runtime

@@ -87,6 +87,39 @@ class UnifiedRuntimeImageSourceTests(
         )
 
 
+    def test_dockerfile_normalizes_runtime_directories(self):
+        text = DOCKERFILE.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "find /data/spark/healthcare-data-platform",
+            text,
+        )
+
+        self.assertIn(
+            "-type d",
+            text,
+        )
+
+        self.assertIn(
+            "-exec chmod 0755 {} +",
+            text,
+        )
+
+        for directory in (
+            "/data/spark/healthcare-data-platform/kubernetes",
+            "/data/spark/healthcare-data-platform/kubernetes/manifests",
+            "/data/spark/healthcare-data-platform/spark/common",
+            "/data/spark/healthcare-data-platform/spark/contracts",
+            "/data/spark/healthcare-data-platform/spark/manifests",
+        ):
+            self.assertIn(
+                directory,
+                text,
+            )
+
+
     def test_dockerfile_sets_project_root(self):
         text = DOCKERFILE.read_text(
             encoding="utf-8"
