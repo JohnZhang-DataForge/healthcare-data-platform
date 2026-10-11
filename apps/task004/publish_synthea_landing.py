@@ -405,17 +405,24 @@ def validate_local_draft(
         )
 
     if (
-        isinstance(
+        not isinstance(
             population_size,
             int,
         )
-        and patient.get(
-            "row_count"
-        ) != population_size
+        or population_size <= 0
     ):
         raise PublishError(
-            "patients row count differs "
-            "from population_size"
+            "invalid source population_size"
+        )
+
+    if (
+        patient.get(
+            "row_count"
+        ) < population_size
+    ):
+        raise PublishError(
+            "patients row count is less "
+            "than population_size"
         )
 
     return fingerprint.hexdigest()

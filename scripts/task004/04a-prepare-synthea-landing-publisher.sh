@@ -432,17 +432,24 @@ def validate_local_draft(
         )
 
     if (
-        isinstance(
+        not isinstance(
             population_size,
             int,
         )
-        and patient.get(
-            "row_count"
-        ) != population_size
+        or population_size <= 0
     ):
         raise PublishError(
-            "patients row count differs "
-            "from population_size"
+            "invalid source population_size"
+        )
+
+    if (
+        patient.get(
+            "row_count"
+        ) < population_size
+    ):
+        raise PublishError(
+            "patients row count is less "
+            "than population_size"
         )
 
     return fingerprint.hexdigest()
@@ -3420,6 +3427,127 @@ class LandingPublisherTests(
             "ingest_date = landing_match.group(1)",
             source,
         )
+
+    def test_local_draft_allows_patient_rows_above_requested_population(self):
+        draft = sample_draft()
+
+        draft["source_parameters"][
+            "population_size"
+        ] = 20
+
+        with tempfile.TemporaryDirectory() as temporary:
+
+            source_dir = Path(
+                temporary
+            )
+
+            patient_item = None
+
+            for item in draft["files"]:
+
+                filename = Path(
+                    item["path"]
+                ).name
+
+                row_count = (
+                    21
+                    if item["dataset"] == "patients"
+                    else 1
+                )
+
+                payload = (
+                    "A\n"
+                    + "".join(
+                        f"{index}\n"
+                        for index in range(
+                            row_count
+                        )
+                    )
+                ).encode("utf-8")
+
+                local_path = (
+                    source_dir
+                    / filename
+                )
+
+                local_path.write_bytes(
+                    payload
+                )
+
+                item["row_count"] = (
+                    row_count
+                )
+
+                item["size_bytes"] = (
+                    len(payload)
+                )
+
+                item["sha256"] = (
+                    module.sha256_file(
+                        local_path
+                    )
+                )
+
+                if item["dataset"] == "patients":
+                    patient_item = item
+
+            fingerprint = (
+                module.validate_local_draft(
+                    draft,
+                    source_dir,
+                    "batch-001",
+                )
+            )
+
+            self.assertEqual(
+                len(fingerprint),
+                64,
+            )
+
+            self.assertIsNotNone(
+                patient_item
+            )
+
+            # A requested population of 20 may produce
+            # more than 20 patient records.  Fewer than
+            # the requested population remains invalid.
+            patient_payload = (
+                "A\n"
+                + "".join(
+                    f"{index}\n"
+                    for index in range(19)
+                )
+            ).encode("utf-8")
+
+            patient_path = (
+                source_dir
+                / Path(
+                    patient_item["path"]
+                ).name
+            )
+
+            patient_path.write_bytes(
+                patient_payload
+            )
+
+            patient_item["row_count"] = 19
+            patient_item["size_bytes"] = len(
+                patient_payload
+            )
+            patient_item["sha256"] = (
+                module.sha256_file(
+                    patient_path
+                )
+            )
+
+            with self.assertRaises(
+                module.PublishError
+            ):
+                module.validate_local_draft(
+                    draft,
+                    source_dir,
+                    "batch-001",
+                )
 
 if __name__ == "__main__":
     unittest.main()
