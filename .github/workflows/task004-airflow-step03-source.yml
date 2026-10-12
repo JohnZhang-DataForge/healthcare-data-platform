@@ -31,7 +31,7 @@ jobs:
 
           bash -n             scripts/task004/04c-run-synthea-generate-publish.sh
 
-          python3 -m py_compile             apps/task004/publish_synthea_landing.py
+          python3 -m py_compile             apps/task004/publish_synthea_landing.py             airflow/dags/task004_full_pipeline.py
 
           python3 -m unittest discover             -s tests/task004             -p 'test_airflow_task004_upstream_source.py'             -v
 
