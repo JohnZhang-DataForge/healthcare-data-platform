@@ -3326,6 +3326,10 @@ class LandingPublisherTests(
     def test_runner_render_only_executes_with_default_ingest_date(self):
         env = os.environ.copy()
 
+        env["PROJECT_ROOT"] = str(
+            ROOT
+        )
+
         env.update(
             {
                 "BATCH_ID":
