@@ -4,6 +4,8 @@ export PYTHONDONTWRITEBYTECODE=1
 
 ROOT="${PROJECT_ROOT:-/data/spark/healthcare-data-platform}"
 
+TASK004_RUNTIME_CONTEXT="${TASK004_RUNTIME_CONTEXT:-manual}"
+
 APP="${ROOT}/apps/task004/publish_synthea_landing.py"
 
 TEMPLATE="${ROOT}/kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl"
@@ -311,24 +313,40 @@ if [[ "$RENDER_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
-kubectl get namespace \
-  "$NAMESPACE" \
-  >/dev/null \
-  || fail "dw-synthea namespace missing"
+case "$TASK004_RUNTIME_CONTEXT" in
+
+  in-cluster)
+    echo "TASK004_GENERATE_PUBLISH_CLUSTER_PREFLIGHT=SKIPPED_IN_CLUSTER"
+    ;;
+
+  manual)
+    kubectl get namespace \
+      "$NAMESPACE" \
+      >/dev/null \
+      || fail "dw-synthea namespace missing"
+
+    NODE_READY="$(
+      kubectl get node "$NODE" \
+        -o jsonpath='{range .status.conditions[?(@.type=="Ready")]}{.status}{end}'
+    )"
+
+    [[ "$NODE_READY" == "True" ]] \
+      || fail "worker01 is not Ready"
+
+    echo "TASK004_GENERATE_PUBLISH_CLUSTER_PREFLIGHT=PASS_MANUAL"
+    ;;
+
+  *)
+    fail "TASK004_RUNTIME_CONTEXT must be manual or in-cluster"
+    ;;
+
+esac
 
 kubectl get secret \
   "$SECRET_NAME" \
   -n "$NAMESPACE" \
   >/dev/null \
   || fail "Run 04b secret sync first"
-
-NODE_READY="$(
-  kubectl get node "$NODE" \
-    -o jsonpath='{range .status.conditions[?(@.type=="Ready")]}{.status}{end}'
-)"
-
-[[ "$NODE_READY" == "True" ]] \
-  || fail "worker01 is not Ready"
 
 kubectl create configmap \
   "$CONFIGMAP_NAME" \
