@@ -41,10 +41,10 @@ GENERATE_PUBLISH_ENV = {
     "POPULATION_SIZE": "{{ params.population_size }}",
     "SEED": "{{ params.seed }}",
     "CLINICIAN_SEED": "{{ params.clinician_seed }}",
-    "REFERENCE_DATE": "{{ ds_nodash }}",
+    "REFERENCE_DATE": "{{ dag_run.run_after.strftime('%Y%m%d') }}",
     "STATE": "{{ params.state }}",
     "CITY": "{{ params.city }}",
-    "LANDING_INGEST_DATE": "{{ ds }}",
+    "LANDING_INGEST_DATE": "{{ dag_run.run_after.strftime('%Y-%m-%d') }}",
 }
 
 PROCESSING_ENV = {

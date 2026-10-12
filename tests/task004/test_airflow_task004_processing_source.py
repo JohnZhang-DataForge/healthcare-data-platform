@@ -136,12 +136,12 @@ class Task004AirflowProcessingSourceTests(
         )
 
         self.assertIn(
-            '"REFERENCE_DATE": "{{ ds_nodash }}"',
+            '"REFERENCE_DATE": "{{ dag_run.run_after.strftime(\'%Y%m%d\') }}"',
             source,
         )
 
         self.assertIn(
-            '"LANDING_INGEST_DATE": "{{ ds }}"',
+            '"LANDING_INGEST_DATE": "{{ dag_run.run_after.strftime(\'%Y-%m-%d\') }}"',
             source,
         )
 
