@@ -9,7 +9,7 @@ RUNTIME_IMAGE = (
     "ghcr.io/johnzhang-dataforge/"
     "healthcare-data-platform-task004-runtime"
     "@sha256:"
-    "9438df07c495c5a408a856fbe8091f93b8ef1d1b2402645b37a71a42618f4ed0"
+    "c00d0ca805f7b10c5448476829d98c8582279fc038c306959203e08c0c46232c"
 )
 
 CONTROL_NAMESPACE = "dw-spark"

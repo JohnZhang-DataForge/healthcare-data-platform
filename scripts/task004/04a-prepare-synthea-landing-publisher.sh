@@ -2542,7 +2542,10 @@ EXIT_CODE="$(
 [[ "$EXIT_CODE" == "0" ]] \
   || fail "Container exited non-zero"
 
-if git check-ignore \
+if [[ "${TASK004_RUNTIME_CONTEXT:-}" == "in-cluster" ]]; then
+  REPORT_DIR="${ROOT}/runtime/reports/task004/landing"
+elif command -v git >/dev/null 2>&1 \
+  && git check-ignore \
     -q \
     --no-index \
     "runtime/reports/task004/landing/probe"
