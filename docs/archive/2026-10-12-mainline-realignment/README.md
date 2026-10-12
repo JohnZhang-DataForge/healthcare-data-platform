@@ -20,6 +20,7 @@ Source main before realignment = 3ff07a76e99630818ffbcbf9777e18d07a26f197
 Realignment PR = #21
 Realignment merge SHA = 4a08c623dca52d7d43abe0290d989753033ee2ae
 Archive snapshot PR = #22
+Archive snapshot merge SHA = 03388449f7dbbde2e54ac0ed18fb30dec931da58
 ```
 
 ## 3. 归档映射
