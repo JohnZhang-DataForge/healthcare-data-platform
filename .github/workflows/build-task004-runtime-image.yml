@@ -16,6 +16,7 @@ on:
       - "scripts/task004/05c-resolve-runtime-lineage.sh"
       - "scripts/task004/05d-run-person-canonical.sh"
       - "scripts/task004/05e-run-visit-canonical.sh"
+      - "scripts/task004/05f-reconcile-person-visit.sh"
       - "scripts/task004/06a-prepare-unified-runtime-image.sh"
       - "kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl"
       - "spark/apps/person/synthea_patient_adapter.py"
@@ -25,6 +26,8 @@ on:
       - "spark/apps/visit/synthea_encounter_adapter.py"
       - "spark/contracts/canonical/encounter-v1.json"
       - "spark/manifests/task003/encounter-canonical-adapter.yaml.tpl"
+      - "spark/apps/task004/reconcile_person_visit.py"
+      - "spark/manifests/task004/person-visit-reconciliation.yaml.tpl"
       - "tests/task004/test_person_visit_runtime_interface.py"
       - "tests/task004/test_unified_runtime_image_source.py"
 
@@ -44,6 +47,46 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Validate runtime source and generator determinism
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          bash -n images/task004-runtime/entrypoint.sh
+          bash -n scripts/task004/05f-reconcile-person-visit.sh
+
+          python3 -m py_compile \
+            spark/apps/task004/reconcile_person_visit.py
+
+          python3 -m unittest discover \
+            -s tests/task004 \
+            -p 'test_unified_runtime_image_source.py' \
+            -v
+
+          tmp_root="${RUNNER_TEMP}/task004-runtime-reconstruct"
+          rm -rf "${tmp_root}"
+
+          PROJECT_ROOT="${tmp_root}" \
+            bash scripts/task004/06a-prepare-unified-runtime-image.sh
+
+          cmp \
+            images/task004-runtime/Dockerfile \
+            "${tmp_root}/images/task004-runtime/Dockerfile"
+
+          cmp \
+            images/task004-runtime/entrypoint.sh \
+            "${tmp_root}/images/task004-runtime/entrypoint.sh"
+
+          cmp \
+            .github/workflows/build-task004-runtime-image.yml \
+            "${tmp_root}/.github/workflows/build-task004-runtime-image.yml"
+
+          cmp \
+            tests/task004/test_unified_runtime_image_source.py \
+            "${tmp_root}/tests/task004/test_unified_runtime_image_source.py"
+
+          echo "TASK004_RUNTIME_SOURCE_GATE=PASS"
 
       - name: Resolve immutable image identity
         id: image

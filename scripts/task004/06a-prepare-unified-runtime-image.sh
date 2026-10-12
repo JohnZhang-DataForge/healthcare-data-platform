@@ -100,6 +100,10 @@ COPY --chown=10001:10001 --chmod=0755 \
   scripts/task004/05e-run-visit-canonical.sh \
   /data/spark/healthcare-data-platform/scripts/task004/05e-run-visit-canonical.sh
 
+COPY --chown=10001:10001 --chmod=0755 \
+  scripts/task004/05f-reconcile-person-visit.sh \
+  /data/spark/healthcare-data-platform/scripts/task004/05f-reconcile-person-visit.sh
+
 COPY --chown=10001:10001 --chmod=0644 \
   kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl \
   /data/spark/healthcare-data-platform/kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl
@@ -131,6 +135,14 @@ COPY --chown=10001:10001 --chmod=0644 \
 COPY --chown=10001:10001 --chmod=0644 \
   spark/manifests/task003/encounter-canonical-adapter.yaml.tpl \
   /data/spark/healthcare-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl
+
+COPY --chown=10001:10001 --chmod=0755 \
+  spark/apps/task004/reconcile_person_visit.py \
+  /data/spark/healthcare-data-platform/spark/apps/task004/reconcile_person_visit.py
+
+COPY --chown=10001:10001 --chmod=0644 \
+  spark/manifests/task004/person-visit-reconciliation.yaml.tpl \
+  /data/spark/healthcare-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl
 
 # Docker COPY --chmod applies the supplied mode to destination
 # path components it creates. Read-only assets copied with 0644
@@ -182,6 +194,7 @@ Commands:
   generate-publish [runner args]
   person [--render-only]
   visit [--render-only]
+  reconcile [--render-only]
 
 Runtime contract:
   TASK004_RUNTIME_CONTEXT=in-cluster
@@ -250,6 +263,16 @@ case "$command_name" in
       "$@"
     ;;
 
+  reconcile)
+    shift
+
+    export TASK004_RUNTIME_CONTEXT=in-cluster
+
+    exec \
+      "${PROJECT_ROOT}/scripts/task004/05f-reconcile-person-visit.sh" \
+      "$@"
+    ;;
+
   *)
     echo "ERROR=unsupported command: ${command_name}" >&2
     usage >&2
@@ -278,6 +301,7 @@ on:
       - "scripts/task004/05c-resolve-runtime-lineage.sh"
       - "scripts/task004/05d-run-person-canonical.sh"
       - "scripts/task004/05e-run-visit-canonical.sh"
+      - "scripts/task004/05f-reconcile-person-visit.sh"
       - "scripts/task004/06a-prepare-unified-runtime-image.sh"
       - "kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl"
       - "spark/apps/person/synthea_patient_adapter.py"
@@ -287,6 +311,8 @@ on:
       - "spark/apps/visit/synthea_encounter_adapter.py"
       - "spark/contracts/canonical/encounter-v1.json"
       - "spark/manifests/task003/encounter-canonical-adapter.yaml.tpl"
+      - "spark/apps/task004/reconcile_person_visit.py"
+      - "spark/manifests/task004/person-visit-reconciliation.yaml.tpl"
       - "tests/task004/test_person_visit_runtime_interface.py"
       - "tests/task004/test_unified_runtime_image_source.py"
 
@@ -306,6 +332,46 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Validate runtime source and generator determinism
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          bash -n images/task004-runtime/entrypoint.sh
+          bash -n scripts/task004/05f-reconcile-person-visit.sh
+
+          python3 -m py_compile \
+            spark/apps/task004/reconcile_person_visit.py
+
+          python3 -m unittest discover \
+            -s tests/task004 \
+            -p 'test_unified_runtime_image_source.py' \
+            -v
+
+          tmp_root="${RUNNER_TEMP}/task004-runtime-reconstruct"
+          rm -rf "${tmp_root}"
+
+          PROJECT_ROOT="${tmp_root}" \
+            bash scripts/task004/06a-prepare-unified-runtime-image.sh
+
+          cmp \
+            images/task004-runtime/Dockerfile \
+            "${tmp_root}/images/task004-runtime/Dockerfile"
+
+          cmp \
+            images/task004-runtime/entrypoint.sh \
+            "${tmp_root}/images/task004-runtime/entrypoint.sh"
+
+          cmp \
+            .github/workflows/build-task004-runtime-image.yml \
+            "${tmp_root}/.github/workflows/build-task004-runtime-image.yml"
+
+          cmp \
+            tests/task004/test_unified_runtime_image_source.py \
+            "${tmp_root}/tests/task004/test_unified_runtime_image_source.py"
+
+          echo "TASK004_RUNTIME_SOURCE_GATE=PASS"
 
       - name: Resolve immutable image identity
         id: image
@@ -383,9 +449,7 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(
-    "/data/spark/healthcare-data-platform"
-)
+ROOT = Path(__file__).resolve().parents[2]
 
 DOCKERFILE = (
     ROOT
@@ -537,6 +601,7 @@ class UnifiedRuntimeImageSourceTests(
             "05c-resolve-runtime-lineage.sh",
             "05d-run-person-canonical.sh",
             "05e-run-visit-canonical.sh",
+            "05f-reconcile-person-visit.sh",
         ):
             self.assertIn(
                 path,
@@ -586,6 +651,21 @@ class UnifiedRuntimeImageSourceTests(
             )
 
 
+    def test_dockerfile_copies_reconciliation_assets(self):
+        text = DOCKERFILE.read_text(
+            encoding="utf-8"
+        )
+
+        for path in (
+            "reconcile_person_visit.py",
+            "person-visit-reconciliation.yaml.tpl",
+        ):
+            self.assertIn(
+                path,
+                text,
+            )
+
+
     def test_entrypoint_exposes_required_commands(self):
         text = ENTRYPOINT.read_text(
             encoding="utf-8"
@@ -596,6 +676,7 @@ class UnifiedRuntimeImageSourceTests(
             "generate-publish)",
             "person)",
             "visit)",
+            "reconcile)",
             "version)",
         ):
             self.assertIn(
@@ -637,6 +718,27 @@ class UnifiedRuntimeImageSourceTests(
 
         self.assertNotIn(
             "spark-submit",
+            text,
+        )
+
+
+    def test_workflow_tracks_reconciliation_sources(self):
+        text = WORKFLOW.read_text(
+            encoding="utf-8"
+        )
+
+        for path in (
+            "05f-reconcile-person-visit.sh",
+            "reconcile_person_visit.py",
+            "person-visit-reconciliation.yaml.tpl",
+        ):
+            self.assertIn(
+                path,
+                text,
+            )
+
+        self.assertIn(
+            "TASK004_RUNTIME_SOURCE_GATE=PASS",
             text,
         )
 
