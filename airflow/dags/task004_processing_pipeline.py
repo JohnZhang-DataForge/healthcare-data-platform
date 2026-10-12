@@ -9,7 +9,7 @@ RUNTIME_IMAGE = (
     "ghcr.io/johnzhang-dataforge/"
     "healthcare-data-platform-task004-runtime"
     "@sha256:"
-    "bf7f4611a9dcbd8bd79b420f80c5f97f4ec92e0dbd5ba8132cea4be59fdf57bf"
+    "9438df07c495c5a408a856fbe8091f93b8ef1d1b2402645b37a71a42618f4ed0"
 )
 
 CONTROL_NAMESPACE = "dw-spark"
@@ -29,10 +29,37 @@ AWS_SECRET_KEY = Secret(
     key="AWS_SECRET_ACCESS_KEY",
 )
 
-COMMON_ENV = {
-    "BATCH_ID": "{{ params.batch_id }}",
-    "MANIFEST_URI": "{{ params.manifest_uri }}",
-    "MANIFEST_SHA256": "{{ params.manifest_sha256 }}",
+GENERATE_PUBLISH_ENV = {
+    "BATCH_ID": (
+        "task004-airflow-"
+        "{{ run_id "
+        "| replace(':', '-') "
+        "| replace('+', '-') "
+        "| replace('/', '-') "
+        "| replace(' ', '-') }}"
+    ),
+    "POPULATION_SIZE": "{{ params.population_size }}",
+    "SEED": "{{ params.seed }}",
+    "CLINICIAN_SEED": "{{ params.clinician_seed }}",
+    "REFERENCE_DATE": "{{ ds_nodash }}",
+    "STATE": "{{ params.state }}",
+    "CITY": "{{ params.city }}",
+    "LANDING_INGEST_DATE": "{{ ds }}",
+}
+
+PROCESSING_ENV = {
+    "BATCH_ID": (
+        "{{ ti.xcom_pull(task_ids='generate_publish')"
+        "['batch_id'] }}"
+    ),
+    "MANIFEST_URI": (
+        "{{ ti.xcom_pull(task_ids='generate_publish')"
+        "['manifest_uri'] }}"
+    ),
+    "MANIFEST_SHA256": (
+        "{{ ti.xcom_pull(task_ids='generate_publish')"
+        "['manifest_sha256'] }}"
+    ),
 }
 
 BASE_CONTAINER_SECURITY_CONTEXT = {
@@ -48,6 +75,84 @@ BASE_CONTAINER_SECURITY_CONTEXT = {
 POD_SECURITY_CONTEXT = {
     "fsGroup": 10001,
 }
+
+GENERATE_PUBLISH_COMMAND = r"""
+set -Eeuo pipefail
+
+LOG=/tmp/task004-generate-publish.log
+
+task004-runtime generate-publish 2>&1 | tee "$LOG"
+
+STATE_FILE="$(
+  awk -F= '
+    $1 == "STATE_FILE" {
+      print substr($0, index($0, "=") + 1)
+    }
+  ' "$LOG" | tail -1
+)"
+
+test -n "$STATE_FILE"
+test -s "$STATE_FILE"
+
+mkdir -p /airflow/xcom
+
+python3 - "$STATE_FILE" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+
+state = json.loads(
+    Path(sys.argv[1]).read_text(
+        encoding="utf-8"
+    )
+)
+
+assert state["status"] == "INTAKE_VERIFIED"
+assert state["source_version"] == "v3.3.0"
+assert state["verified_file_count"] == 18
+assert state["report_source"] == "POD_LOG"
+
+assert re.fullmatch(
+    r"[0-9a-f]{64}",
+    state["manifest_sha256"],
+)
+
+assert state["manifest_uri"] == (
+    state["landing_uri"]
+    + "manifest.json"
+)
+
+result = {
+    "batch_id":
+        state["batch_id"],
+    "source_version":
+        state["source_version"],
+    "ingest_date":
+        state["ingest_date"],
+    "landing_uri":
+        state["landing_uri"],
+    "manifest_uri":
+        state["manifest_uri"],
+    "manifest_sha256":
+        state["manifest_sha256"],
+    "verified_file_count":
+        state["verified_file_count"],
+    "status":
+        state["status"],
+}
+
+Path(
+    "/airflow/xcom/return.json"
+).write_text(
+    json.dumps(
+        result,
+        sort_keys=True,
+    ),
+    encoding="utf-8",
+)
+PY
+"""
 
 PERSON_COMMAND = r"""
 set -Eeuo pipefail
@@ -190,8 +295,8 @@ def control_pod(task_id, **kwargs):
 with DAG(
     dag_id="task004_processing_pipeline",
     description=(
-        "TASK004 canonical Person and Visit processing "
-        "followed by batch reconciliation"
+        "TASK004 Synthea generation and Landing publication "
+        "followed by Person, Visit, and batch reconciliation"
     ),
     start_date=datetime(2026, 1, 1),
     schedule=None,
@@ -199,28 +304,33 @@ with DAG(
     max_active_runs=1,
     is_paused_upon_creation=False,
     params={
-        "batch_id":
-            "task004-p20-first-landing-20261011",
-        "manifest_uri": (
-            "s3://health-landing/"
-            "source=synthea/"
-            "source_version=v3.3.0/"
-            "ingest_date=2026-10-11/"
-            "batch_id="
-            "task004-p20-first-landing-20261011/"
-            "manifest.json"
-        ),
-        "manifest_sha256": (
-            "d7a1ce5fb3cc1e25737b2ed5c35b7d463bbc8e7523b6531dcd1ce819360ff445"
-        ),
+        "population_size": "20",
+        "seed": "20261012",
+        "clinician_seed": "20261012",
+        "state": "Georgia",
+        "city": "",
     },
     tags=[
         "task004",
         "synthea",
+        "landing",
         "spark",
         "processing",
     ],
 ) as dag:
+
+    generate_publish = control_pod(
+        task_id="generate_publish",
+        cmds=[
+            "/bin/bash",
+            "-lc",
+        ],
+        arguments=[
+            GENERATE_PUBLISH_COMMAND,
+        ],
+        env_vars=GENERATE_PUBLISH_ENV,
+        do_xcom_push=True,
+    )
 
     person = control_pod(
         task_id="person",
@@ -231,7 +341,7 @@ with DAG(
         arguments=[
             PERSON_COMMAND,
         ],
-        env_vars=COMMON_ENV,
+        env_vars=PROCESSING_ENV,
         secrets=[
             AWS_ACCESS_KEY,
             AWS_SECRET_KEY,
@@ -248,7 +358,7 @@ with DAG(
         arguments=[
             VISIT_COMMAND,
         ],
-        env_vars=COMMON_ENV,
+        env_vars=PROCESSING_ENV,
         secrets=[
             AWS_ACCESS_KEY,
             AWS_SECRET_KEY,
@@ -262,8 +372,10 @@ with DAG(
             "reconcile",
         ],
         env_vars={
-            "BATCH_ID":
-                "{{ params.batch_id }}",
+            "BATCH_ID": (
+                "{{ ti.xcom_pull(task_ids='generate_publish')"
+                "['batch_id'] }}"
+            ),
             "PATIENT_PROCESSING_URI": (
                 "{{ ti.xcom_pull(task_ids='person')"
                 "['processing_data_uri'] }}"
@@ -283,4 +395,5 @@ with DAG(
         },
     )
 
+    generate_publish >> [person, visit]
     [person, visit] >> reconcile

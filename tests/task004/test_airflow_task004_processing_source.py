@@ -36,6 +36,8 @@ class Task004AirflowProcessingSourceTests(
             'on_kill_action="keep_pod"',
             "is_paused_upon_creation=False",
             "/airflow/xcom/return.json",
+            'task_id="generate_publish"',
+            "generate_publish >> [person, visit]",
             "[person, visit] >> reconcile",
         ):
             self.assertIn(
@@ -50,8 +52,8 @@ class Task004AirflowProcessingSourceTests(
         )
 
         self.assertIn(
-            "bf7f4611a9dcbd8bd79b420f80c5f97"
-            "f4ec92e0dbd5ba8132cea4be59fdf57bf",
+            "9438df07c495c5a408a856fbe8091f93"
+            "b8ef1d1b2402645b37a71a42618f4ed0",
             source,
         )
 
@@ -78,6 +80,70 @@ class Task004AirflowProcessingSourceTests(
                 value,
                 source,
             )
+
+
+    def test_generate_publish_feeds_processing_lineage(self):
+        source = DAG.read_text(
+            encoding="utf-8"
+        )
+
+        for value in (
+            "GENERATE_PUBLISH_COMMAND",
+            "GENERATE_PUBLISH_ENV",
+            'task004-runtime generate-publish',
+            '"source_version":',
+            '"manifest_uri":',
+            '"manifest_sha256":',
+            '"verified_file_count":',
+            "xcom_pull(task_ids='generate_publish')",
+            "generate_publish >> [person, visit]",
+        ):
+            self.assertIn(
+                value,
+                source,
+            )
+
+
+    def test_historical_landing_manifest_is_not_hardcoded(self):
+        source = DAG.read_text(
+            encoding="utf-8"
+        )
+
+        for value in (
+            "task004-p20-first-landing-20261011",
+            "d7a1ce5fb3cc1e25737b2ed5c35b7d463bbc8e7523b6531dcd1ce819360ff445",
+            "ingest_date=2026-10-11",
+        ):
+            self.assertNotIn(
+                value,
+                source,
+            )
+
+
+    def test_generate_publish_batch_identity_is_airflow_run_scoped(self):
+        source = DAG.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            '"BATCH_ID": (',
+            source,
+        )
+
+        self.assertIn(
+            "{{ run_id ",
+            source,
+        )
+
+        self.assertIn(
+            '"REFERENCE_DATE": "{{ ds_nodash }}"',
+            source,
+        )
+
+        self.assertIn(
+            '"LANDING_INGEST_DATE": "{{ ds }}"',
+            source,
+        )
 
 
     def test_airflow_scheduler_has_pod_launcher_rbac(self):
