@@ -197,6 +197,7 @@ with DAG(
     schedule=None,
     catchup=False,
     max_active_runs=1,
+    is_paused_upon_creation=False,
     params={
         "batch_id":
             "task004-p20-first-landing-20261011",
