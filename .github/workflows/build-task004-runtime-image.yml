@@ -20,6 +20,7 @@ on:
       - "scripts/task004/05f-reconcile-person-visit.sh"
       - "scripts/task004/06a-prepare-unified-runtime-image.sh"
       - "kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl"
+      - "kubernetes/manifests/task004/control-runtime-rbac.yaml"
       - "spark/apps/person/synthea_patient_adapter.py"
       - "spark/common/batch_manifest.py"
       - "spark/contracts/canonical/patient-v1.json"

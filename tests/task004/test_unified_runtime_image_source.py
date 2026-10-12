@@ -275,6 +275,72 @@ class UnifiedRuntimeImageSourceTests(
         )
 
 
+    def test_control_runtime_rbac_is_namespaced_and_least_privilege(self):
+        rbac = (
+            ROOT
+            / "kubernetes/manifests/task004/"
+            "control-runtime-rbac.yaml"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        for value in (
+            "name: task004-control-runtime",
+            "namespace: dw-spark",
+            "kind: Role",
+            "kind: RoleBinding",
+            "- sparkapplications",
+            "- configmaps",
+            "- pods/log",
+            "- dw-spark-s3-secret",
+            "- spark-job",
+        ):
+            self.assertIn(
+                value,
+                rbac,
+            )
+
+        self.assertNotIn(
+            "kind: ClusterRole",
+            rbac,
+        )
+
+        self.assertNotIn(
+            "kind: ClusterRoleBinding",
+            rbac,
+        )
+
+        self.assertNotIn(
+            'resources:\n      - "*"',
+            rbac,
+        )
+
+        self.assertNotIn(
+            'verbs:\n      - "*"',
+            rbac,
+        )
+
+
+    def test_reconciliation_runtime_avoids_cluster_scope_preflight(self):
+        source = (
+            ROOT
+            / "scripts/task004/"
+            "05f-reconcile-person-visit.sh"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertNotIn(
+            'kubectl get namespace "$NS"',
+            source,
+        )
+
+        self.assertNotIn(
+            "kubectl get crd",
+            source,
+        )
+
+
     def test_workflow_tracks_reconciliation_sources(self):
         text = WORKFLOW.read_text(
             encoding="utf-8"
