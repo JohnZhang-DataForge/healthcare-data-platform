@@ -19,7 +19,7 @@ Repository = JohnZhang-DataForge/healthcare-data-platform
 Source main before realignment = 3ff07a76e99630818ffbcbf9777e18d07a26f197
 Realignment PR = #21
 Realignment merge SHA = 4a08c623dca52d7d43abe0290d989753033ee2ae
-Archive snapshot PR = THIS PR
+Archive snapshot PR = #22
 ```
 
 ## 3. 归档映射
