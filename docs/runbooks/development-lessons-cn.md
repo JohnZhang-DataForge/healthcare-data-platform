@@ -2,7 +2,7 @@
 
 > 文件定位：项目开发期长期维护的经验总表。
 > 语言：中文。
-> 维护规则：各 TASK / STEP 的原始经验文档长期保留；其中具有普适价值的经验定期汇总到本文件。
+> 维护规则：各 TASK / STEP 的原始经验必须可追溯；有价值的经验汇总到本文件，过时或重复原文按归档规范移动到 `docs/archive/YYYY-MM-DD/`。
 > 建议仓库路径：`docs/runbooks/development-lessons-cn.md`
 
 ---
@@ -22,7 +22,7 @@ development-lessons-task003-step04-cn.md
 development-lessons-task003-step06-cn.md
 ```
 
-这些阶段文档用于保留当时真实的问题、修复、恢复过程和上下文，不因为内容已经汇总到本文件就删除。
+这些阶段文档用于保留当时真实的问题、修复、恢复过程和上下文，即使内容已汇总也不能直接丢弃；可以按正式归档规范**保留原文迁入 archive**，而非永远占据当前 runbooks。
 
 本文件：
 
@@ -34,7 +34,7 @@ development-lessons-cn.md
 
 维护原则：
 
-1. STEP 文档保留真实历史。
+1. STEP 文档保留真实历史；被取代的原始文档归档，不改写历史正文。
 2. 本文件只吸收具有长期复用价值的规则。
 3. 已过时规则应标明原因，不静默删除历史背景。
 4. 真实运行结果优先于旧文档和聊天记录。
@@ -938,7 +938,7 @@ SKILL-cn.md
 
 每完成若干 STEP：
 
-1. 保留对应 STEP lessons。
+1. 保留对应 STEP lessons 的原始证据；重复或过时的文件可按规范归档。
 2. 找出可跨任务复用的规则。
 3. 整理进本文件。
 4. 不重复粘贴只对某个 run 有意义的 runtime ID。
@@ -1231,3 +1231,24 @@ Git checkpoint
 ```
 
 的长文本 artifact。
+
+---
+
+## 36. GitHub + Self-Runner 正式开发闭环（V8/V9 真实验证）
+
+> 来源：Self-Runner V8/V9 和 Healthcare TASK004 Visit/Batch Reconciliation。**当前操作细节以** `docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md` **为准**。
+
+1. 正式源码属于 Healthcare，执行控制属于 Self-Runner；用完整 40 位 PR HEAD SHA 绑定 Request，不依赖可变 branch 最新指针。
+2. Self-Runner 固定 JSON + Workflow + Policy Gate；Policy 失败时 ARC 业务 Job 必须 SKIPPED。**不要**把 JSON 参数当任意 Shell 命令。
+3. ARC Pod 不是 runner01 文件系统；必须 checkout 目标 SHA，显式安装/校验 kubectl 等依赖；Spark 业务工作负载仍由 Kubernetes 执行。
+4. V8 Run `38250467965` 验证 2459 Encounter；V9 负测 `38251924029` 正确 fail-closed；合并前 `38251984921` 和合并后 `38252497171` 验证 20 Patient、2459 Encounter、0 orphan。
+5. 每次 PR HEAD 或输入/执行入口变化都需重测；GitHub Actions SUCCESS 不代表所有业务 Gate 自动 PASS；需要独立 readback、Artifact 和 Checkpoint。
+6. 当前不需要企业级 CI/CD、自动跨仓库 PR Dispatch、第二套只读 Runner；仅在真实 TASK 阻塞时最小适配。
+7. 已冻结 TASK003/004 的永久 Generator 原样保留；**新 STEP 直接在 GitHub 修改 canonical source**，Shell 作为稳定验证入口。
+
+## 37. 文档生命周期与避免重复开发
+
+1. 新 Agent 从 `docs/README.md` → `docs/tasks/TASK-STATUS.md` → 正式 Operations/Skill/General Lessons → 当前 TASK Contract/Closeout 读取；不要只看旧 Handoff。
+2. 旧 STEP04 复盘与 TASK003 英文 Lessons 的通用技术经验已归纳在本文件：S3 空列表、Manifest Last、resume、幂等重放、Git 认证与 Commit 身份、不能全量覆盖 remote、Bash stdin/`COLUMNS`/`grep -F`、PG Sequence/Identity、COMMIT uncertainty、独立 reconciliation、runtime evidence。
+3. 旧原文移入 `docs/archive/2026-10-12/`，当前通用规则在这里，详细 Raw/PG 原始案例仍在 `development-lessons-task003-step04-cn.md` 与 `development-lessons-task003-step06-cn.md`。
+4. 归档不是删除证据；旧文件的 `NEXT` 只是历史状态。TASK004 Visit/Recon 已 PASS；Airflow orchestration 仍是 NEXT。

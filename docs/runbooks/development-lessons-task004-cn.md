@@ -1,8 +1,8 @@
 # TASK-004 开发经验总结
 
-> 当前范围：TASK004 从 Synthea Generator、Landing publication、generic lineage resolver，到 Phase 9 control runtime image，以及 Phase 10 standalone Person runtime。
+> **CURRENT TECHNICAL LESSONS / 历史案例原文与最新状态区分**：本文最初记录 TASK004 Synthea、Landing、resolver、Phase9、Standalone Person 的真实经验；下面原始案例按发生时的状态保留。
 >
-> TASK004 尚未整体完成；Visit、batch reconciliation、Airflow orchestration 仍在后续阶段。
+> **截至 2026-10-12：Standalone Visit 与 Batch Reconciliation 已 PASS，只有 Airflow Orchestration 尚未验收。** 最新权威状态见 `docs/tasks/TASK-STATUS.md`、`docs/tasks/TASK-004-BATCH-RECONCILIATION-CLOSEOUT.md`。第21/22节旧 `NEXT` 仅表示当时的开发顺序，不是当前待办。
 
 ---
 
@@ -580,7 +580,9 @@ TASK004 wrapper 负责：
 
 ## 21. Airflow 必须最后接入
 
-当前已经独立证明：
+> **当前解释**：这条是 TASK004 的业务编排顺序：先验收 Person/Visit/Recon，再验证真正 Airflow DAG Run。它**不是**要求每个新 STEP 都重新建设 Airflow CI 基建。下方为当时记录的历史顺序。
+
+当时已经独立证明：
 
 ```text
 generator
@@ -617,7 +619,7 @@ task dependency
 
 ---
 
-## 22. 当前 TASK004 Reference Flow
+## 22. TASK004 Reference Flow（原始阶段快照）
 
 已经验证：
 
@@ -652,3 +654,12 @@ Processing Encounter
 ```
 
 最后才由 Airflow 编排完整链路。
+
+---
+
+## 23. 2026-10-12 真实验收补充（不改写历史案例）
+
+- **Standalone Visit**：Self-Runner V8 Run `38250467965`，Encounter Processing 2459 行，PASS；无 PostgreSQL 写入。
+- **Person/Visit Batch Reconciliation**：Healthcare PR #16，V9 pre-merge Run `38251984921`，20 Patient / 2459 Encounter / 0 orphan；negative Run `38251924029` 正确 Policy FAIL 且 ARC SKIPPED；post-merge Run `38252497171` PASS。
+- **下一步**：Airflow DAG 的真实编排、参数/依赖、RBAC 和运行结果验证。不能把 DAG parse、render-only、CI 基础链路 PASS 冒充 Airflow Scheduler + Metadata DB 的真实 DAG Run。
+- **新的 GitHub 开发规则**：新 STEP 直接维护 Git canonical source；旧依赖 Generator 的冻结实现必须同步 Generator；跨仓库 PR/SHA 手工绑定与 Runner 操作见正式 Development Operations。

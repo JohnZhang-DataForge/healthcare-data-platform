@@ -6,8 +6,8 @@
 - 当前开发流程：[`../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md`](../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
 - 归档按 `YYYY-MM-DD/` 或 `YYYY-MM-DD-topic/` 分批，每批必须有 README，保留原目录层级和原始正文。
 - 每个归档批次完成后，在这里新增一条：**日期 / 主题 / PR / 归档说明路径**。
-- 当前状态：**规则已建立，尚未开始首批历史文档迁移**。
+- 当前状态：**首批历史文档归档已在文档治理分支执行；合并后以 main 实际文件树为准。**
 
 ## 归档批次
 
-（首次实际归档合并后补充；不得预先将候选文件标为已归档。）
+- **2026-10-12 / Healthcare GitOps + Runner Pilot + 过期 TASK Handoff/Checkpoint + 重复 Lessons**：参见 [2026-10-12/README.md](2026-10-12/README.md)。本次仅整理文档，不修改业务代码或运行环境。

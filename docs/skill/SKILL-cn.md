@@ -5,8 +5,20 @@ description: Healthcare Data Platform 项目中文开发规范。定义一步一
 
 # Healthcare Data Platform 开发 Skill（中文）
 
-> 建议路径：`docs/skill/SKILL-cn.md`
-> 本文件属于开发治理资料，主要用于项目开发期保持统一规则。项目成熟后可转为归档资料，不属于生产运行依赖。
+> **CURRENT AGENT SKILL**｜先读 `docs/README.md`、`docs/tasks/TASK-STATUS.md` 和 `docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md`。
+> 本 Skill 负责具体技术行为和数据安全，不替代正式跨仓库 PR/SHA/Runner 操作手册。旧 TASK Generator 的规则只在其原有生成链中生效。
+
+---
+
+## 当前执行模式（2026-10-12，覆盖旧的候选流程叙述）
+
+- **开发控制**：正式业务 Python/PySpark/YAML/SQL/Tests/Shell 在 Healthcare；Self-Runner 维护受控 Workflow、Request JSON、Policy 和 Artifact；ARC Runner Checkout 目标 Healthcare **完整 SHA**。
+- **人工跨仓库绑定可接受**：Healthcare PR HEAD + SHA 手工写入对应固定 Request；Push Self-Runner 触发；每次 HEAD 更新必须重新验证；合并后需要验证时使用准确 main SHA。
+- **新 STEP**：直接编辑 Git 中的 canonical source，Shell 负责预检、执行、测试、报告。**不强制**新写永久 Shell Generator 来生成每一个源码文件。
+- **历史 STEP**：已冻结且依赖永久 Generator 的代码，修复时仍必须同步 Generator 和生成产物；不能反向重写 TASK001–TASK004 冻结实现。
+- **Runner 安全**：现阶段已接受开发集群高权限 Runner；不要求先建生产级 RBAC、第二 Runner、自动跨仓库事件或 Required Checks；仍禁止泄漏 Secret、任意命令入口与破坏共享数据。
+- **状态**：TASK004 Person/Visit/Batch Recon 已 PASS，Airflow 真 DAG 编排 **NEXT**。以 `docs/tasks/TASK-STATUS.md` 为当前状态索引。
+- **文档治理**：过时 Pilot、Migration、Handoff 原文归档；当前规范、有效经验与最新状态留在 main。详见归档规范。
 
 ---
 
@@ -297,7 +309,7 @@ SKILL-cn.md
 docs/runbooks/development-lessons-taskNNN-stepNN-cn.md
 ```
 
-这些历史文件永久保留。
+这些历史文件的**原始内容必须可追溯**；当内容已被当前 Lessons/Contract 吸收且经过引用检查，可按 `docs/development/DOCUMENT-LIFECYCLE-AND-ARCHIVE-v1.0.zh-CN.md` 移入 `docs/archive/YYYY-MM-DD/`，不要求永远占据当前 runbooks 目录。
 
 同时维护总表：
 
@@ -314,7 +326,7 @@ STEP lessons = 原始开发历史
 总 lessons = 归纳后的长期规则
 ```
 
-不能因为总表已经吸收而删除 STEP lessons。
+不能因为总表已经吸收就**无审查地删除** STEP lessons；允许在知识核对后原文归档，保持 Git 可追溯。
 
 ---
 
