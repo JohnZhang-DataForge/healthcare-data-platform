@@ -324,6 +324,37 @@ SUCCESSFUL_CONTROL_RUNTIME_POD_RESIDUAL=NO
 RESULT=PASS
 ~~~
 
+### Self-Runner STEP02 validation formalization
+
+完成 live acceptance 后，将本轮 STEP02 验证代码整理为正式主线：
+
+~~~text
+Self-Runner PR #35
+squash merge/main SHA =
+a67a75c15e5c6385131b056c1af0d1aa8eb34077
+~~~
+
+正式保留：
+
+~~~text
+Airflow DAG parse gate
+KPO PodSpec dry-run gate
+scheduler → dw-spark RBAC gate
+control-runtime in-cluster kubectl gate
+live orchestration gate
+post-merge git-sync / unpaused gate
+~~~
+
+未进入 Self-Runner main 的一次性调试 workflow：
+
+~~~text
+task004-airflow-step02-live-probe.yml
+task004-airflow-step02-unpause.yml
+~~~
+
+其中 unpause 仅用于首次 live run 解除新 DAG 的 paused 状态；后续已由 Healthcare PR #28 的
+`is_paused_upon_creation=False` 固化为正式 Git source 行为。
+
 ---
 
 ## 6. Live Airflow orchestration acceptance
