@@ -2,7 +2,7 @@
 
 > **CURRENT TECHNICAL LESSONS / 历史案例原文与最新状态区分**：本文最初记录 TASK004 Synthea、Landing、resolver、Phase9、Standalone Person 的真实经验；下面原始案例按发生时的状态保留。
 >
-> **截至 2026-10-12：Standalone Visit 与 Batch Reconciliation 已 PASS，只有 Airflow Orchestration 尚未验收。** 最新权威状态见 `docs/tasks/TASK-STATUS.md`、`docs/tasks/TASK-004-BATCH-RECONCILIATION-CLOSEOUT.md`。第21/22节旧 `NEXT` 仅表示当时的开发顺序，不是当前待办。
+> **截至 2026-10-12：Standalone Visit 与 Batch Reconciliation 已正式 MAINLINE PASS，只有 Airflow Orchestration 尚未验收。** 最新权威状态见 `docs/tasks/TASK-STATUS.md`、`docs/tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md`。第21/22节旧 `NEXT` 仅表示当时的开发顺序，不是当前待办。
 
 ---
 
