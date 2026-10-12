@@ -146,8 +146,8 @@ class Task004AirflowStep03CSourceTests(
         )
 
         self.assertIn(
-            "c00d0ca805f7b10c5448476829d98c85"
-            "82279fc038c306959203e08c0c46232c",
+            "8d55a150e7fcd8ea9a1ed8e8c2c64d0"
+            "9bf4d19687822c0ec84857fdf429c05a7",
             source,
         )
 
