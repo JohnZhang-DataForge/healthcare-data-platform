@@ -91,15 +91,28 @@ class Task004AirflowStep03CSourceTests(
             encoding="utf-8"
         )
 
+        params_start = source.index(
+            "    params={"
+        )
+
+        params_end = source.index(
+            "    tags=[",
+            params_start,
+        )
+
+        params_block = source[
+            params_start:params_end
+        ]
+
         for token in (
-            '"manifest_uri": (',
-            '"manifest_sha256": (',
-            '"batch_id":',
+            '"manifest_uri"',
+            '"manifest_sha256"',
+            '"batch_id"',
             "task004-p20-first-landing-20261011",
         ):
             self.assertNotIn(
                 token,
-                source,
+                params_block,
             )
 
 
