@@ -291,6 +291,7 @@ on:
   push:
     branches:
       - main
+      - 'feature/**'
     paths:
       - ".github/workflows/build-task004-runtime-image.yml"
       - "images/task004-runtime/**"
