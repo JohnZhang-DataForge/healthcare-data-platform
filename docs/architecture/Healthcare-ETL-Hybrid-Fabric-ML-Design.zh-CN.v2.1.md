@@ -1,5 +1,7 @@
 # Healthcare Data Platform — Synthea Batch ETL + Azure/Fabric/ML 混合架构与开发基线
 
+> **文档定位：专项详细设计参考（Azure/Fabric/ML 等尚未完成的目标），非当前总架构或任务状态权威；当前主设计为 V4。**
+> **最新任务进度**：[`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md)；本文 2026-10-08 的 `NEXT` / `NOT_YET` 只代表当时状态。本文独有的混合云详细设计仍有参考价值，暂不归档。
 > **文档版本：V2.1（Batch-first Hybrid Roadmap）**  
 > **更新日期：2026-10-08**  
 > **状态：正式目标设计；本地 Person 旧版已验证，Batch V2 / Azure / Fabric / ML 部分尚待独立验收**  
