@@ -14,10 +14,90 @@
 | TASK004 — Person | **PASS** | frozen baseline |
 | TASK004 — Visit | **PASS** | frozen baseline |
 | TASK004 — Batch Reconciliation | **PASS / MAINLINE ACCEPTED** | frozen baseline；正式证据见 Mainline Closeout |
-| **TASK004 — Airflow orchestration** | **NOT YET VERIFIED** | **NEXT：定义并实现第一个 bounded Airflow orchestration STEP** |
+| **TASK004 — Airflow Processing orchestration** | **PASS / PROCESSING MAINLINE ACCEPTED** | **NEXT：将 Generate Synthea → Landing 接到现有 DAG 上游** |
 | Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞当前 Airflow MVP |
 
 **TASK004 overall status = IN PROGRESS。**
+
+## Airflow Processing orchestration 正式主线验收
+
+当前正式 Processing DAG：
+
+~~~text
+GitHub main
+→ git-sync
+→ Airflow 3.2.2
+→ Person + Visit (KubernetesPodOperator, parallel)
+→ dynamic XCom
+→ Reconcile
+~~~
+
+Healthcare：
+
+~~~text
+PR #26 merge/main = e99a68e8b24a3dee97ea38ce7dc426a63c6fb119
+runtime image digest =
+sha256:bf7f4611a9dcbd8bd79b420f80c5f97f4ec92e0dbd5ba8132cea4be59fdf57bf
+
+PR #27 merge/main = f82a70e28038d87bb9e7e60670dfb0c39e928b0b
+PR #28 merge/main = 5e043b8f00d89a01b72ae6264f35903ceff93de9
+~~~
+
+Self-Runner acceptance：
+
+~~~text
+Airflow parse             38309576088  PASS
+KPO PodSpec dry-run       38309911048  PASS
+scheduler RBAC            38311231070  PASS
+control-runtime kubectl   38311402840  PASS
+live orchestration        38311805385  PASS
+DAG unpause               38312544761  PASS
+post-merge git-sync       38313275171  PASS
+~~~
+
+Live evidence：
+
+~~~text
+AIRFLOW_GITSYNC_DAG_VISIBLE=YES
+AIRFLOW_GITSYNC_EXACT_SOURCE_GATE=PASS
+AIRFLOW_DAG_TRIGGER=PASS
+TASK_STATE_PERSON=success
+TASK_STATE_VISIT=success
+TASK_STATE_RECONCILE=success
+AIRFLOW_DAG_RUN=PASS
+SUCCESSFUL_SPARKAPPLICATION_RESIDUAL=NO
+SUCCESSFUL_CONTROL_POD_RESIDUAL=NO
+POSTGRESQL_MUTATION=NO
+TASK004_AIRFLOW_STEP02C_LIVE=PASS
+RESULT=PASS
+~~~
+
+Live artifact：
+
+~~~text
+Artifact = 11775098927
+Digest =
+sha256:570901ce456778457fecc3a1c718ea88aa9ea9dafe8281028e917b3f678cf0ed
+~~~
+
+Post-merge authority：
+
+~~~text
+Healthcare main =
+5e043b8f00d89a01b72ae6264f35903ceff93de9
+
+LOCAL_DAG_SHA256 =
+6269920737ca616194f6282994dca711dac98afabf7a4b4f992c01d84789ac1c
+
+GITSYNC_DAG_SHA256 =
+6269920737ca616194f6282994dca711dac98afabf7a4b4f992c01d84789ac1c
+
+DAG_IS_PAUSED=false
+~~~
+
+正式 Closeout：
+
+- TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md
 
 ## Batch Reconciliation 正式主线验收
 
@@ -87,15 +167,15 @@ post-merge:
 ## 下一位 Agent 如何开始
 
 1. 阅读 `../README.md`、本文件、Reconciliation Mainline Closeout、Operations、Skill、TASK004 Lessons。
-2. 不重新开发 Person / Visit / Reconciliation。
-3. 只读检查当前 Airflow DAG、Airflow 3.2.2 / Provider、TASK004 runtime image、ServiceAccount、现有 RBAC、gitSync 和可复用 runners。
-4. 定义一个 **bounded Airflow STEP**，先明确输入参数、Task dependency、执行 operator、RBAC、PASS/FAIL evidence 与 cleanup。
+2. 不重新开发 Person / Visit / Reconciliation，也不重新设计已经验收的 Airflow Processing DAG。
+3. 当前唯一主线目标是把 Generate Synthea → Landing publish / validate 接到现有 DAG 上游。
+4. 先检查 04c-run-synthea-generate-publish.sh、dw-synthea RBAC、Landing 输出 contract，以及如何把 manifest URI / SHA 动态交给现有 Person / Visit。
 5. 使用正式流程：Healthcare feature PR → exact PR HEAD → Self-Runner fixed validation → real Airflow/K8s runtime → PASS → merge → 必要的 post-merge exact-main validation → checkpoint。
 
 ## 冻结与安全
 
 - TASK001–TASK003：task-level frozen。
-- TASK004 当前 frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation。
+- TASK004 当前 frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / Airflow Processing orchestration。
 - TASK004 整体：**IN PROGRESS**。
 - 不把 DAG parse、render-only 或单个 operator 构造成功冒充真实 Airflow orchestration PASS。
 - 历史文档原文归档，不追溯改写。
@@ -103,6 +183,7 @@ post-merge:
 ## 相关文档
 
 - `TASK-004-PHASE9-CLOSEOUT.md`
+- `TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md`
 - `TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md`
 - `../archive/2026-10-12-mainline-reconciliation-acceptance/tasks/TASK-004-BATCH-RECONCILIATION-CANDIDATE-STATUS.md`
 - `../archive/2026-10-12/tasks/TASK-004-BATCH-RECONCILIATION-CLOSEOUT-V9-TEST-PERIOD.md`
