@@ -10,14 +10,16 @@ description: Healthcare Data Platform 项目中文开发规范。定义一步一
 
 ---
 
-## 当前执行模式（2026-10-12，覆盖旧的候选流程叙述）
+## 当前执行模式（2026-10-12，主线纠偏后）
 
+- **唯一业务主线**：Healthcare 正式 TASK 开发只有一条主线。Self-Runner / ARC 测试期可以验证既有主线代码，但测试期间新增的 Healthcare 业务实现不能自动升级为主线已验收功能。
 - **开发控制**：正式业务 Python/PySpark/YAML/SQL/Tests/Shell 在 Healthcare；Self-Runner 维护受控 Workflow、Request JSON、Policy 和 Artifact；ARC Runner Checkout 目标 Healthcare **完整 SHA**。
 - **人工跨仓库绑定可接受**：Healthcare PR HEAD + SHA 手工写入对应固定 Request；Push Self-Runner 触发；每次 HEAD 更新必须重新验证；合并后需要验证时使用准确 main SHA。
 - **新 STEP**：直接编辑 Git 中的 canonical source，Shell 负责预检、执行、测试、报告。**不强制**新写永久 Shell Generator 来生成每一个源码文件。
-- **历史 STEP**：已冻结且依赖永久 Generator 的代码，修复时仍必须同步 Generator 和生成产物；不能反向重写 TASK001–TASK004 冻结实现。
+- **历史 STEP**：已冻结且依赖永久 Generator 的代码，修复时仍必须同步 Generator 和生成产物。TASK001–TASK003 为 task-level frozen；TASK004 只冻结已验收阶段，不把整个 TASK004 视为 CLOSED。
 - **Runner 安全**：现阶段已接受开发集群高权限 Runner；不要求先建生产级 RBAC、第二 Runner、自动跨仓库事件或 Required Checks；仍禁止泄漏 Secret、任意命令入口与破坏共享数据。
-- **状态**：TASK004 Person/Visit/Batch Recon 已 PASS，Airflow 真 DAG 编排 **NEXT**。以 `docs/tasks/TASK-STATUS.md` 为当前状态索引。
+- **状态**：TASK004 Synthea / Landing / Resolver / Control Runtime / Person / Visit = PASS；Batch Reconciliation = **CANDIDATE / NOT MAINLINE ACCEPTED**；Airflow = **NOT YET**。
+- **当前 NEXT**：先 review / adopt / modify / revalidate Batch Reconciliation candidate；正式 MAINLINE PASS 后才进入 Airflow。以 `docs/tasks/TASK-STATUS.md` 为当前状态索引。
 - **文档治理**：过时 Pilot、Migration、Handoff 原文归档；当前规范、有效经验与最新状态留在 main。详见归档规范。
 
 ---
@@ -770,6 +772,18 @@ Visit
 Reconcile
 ```
 
+当前不能直接开始 Airflow。必须先完成：
+
+```text
+Batch Reconciliation candidate
+↓
+mainline review
+↓
+mainline acceptance
+↓
+Airflow
+```
+
 使用新生成的小 batch：
 
 ```text
@@ -821,7 +835,9 @@ FAIL
 NOT RUN
 ```
 
-- 不把未来架构描述成已经实施。
+- 不把未来架构描述成已经实施；
+- 不把 test-period feature development 自动当成主线开发；
+- 清楚区分 `CANDIDATE` 与 `MAINLINE ACCEPTED`。
 
 ---
 

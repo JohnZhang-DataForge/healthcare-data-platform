@@ -5,6 +5,8 @@
 > 适用：`JohnZhang-DataForge/Self-Runner` 与 `JohnZhang-DataForge/healthcare-data-platform`  
 > 两仓库保存**同一份规范正文**；本文件是后续 Agent 的开发流程入口，而非生产级 CI/CD 合规证明。  
 > **当前目标：快速、可靠地开发平台功能；不要为了 CI/CD 完善度延误业务开发。**
+>
+> **主线声明**：Healthcare 正式业务开发只有一条主线。Self-Runner / ARC 测试期可以验证既有主线代码；测试期间新增的 Healthcare 业务实现必须经过主线 review / adoption / revalidation 后，才可升级为 MAINLINE PASS。
 
 ## 0. Agent 开始工作前必须知道的结论
 
@@ -14,7 +16,8 @@
 4. **当前 `dw-runner-set` 使用开发集群高权限 ServiceAccount 是有意选择。** 不得将只读 Runner、NetworkPolicy、企业级审批、强制 Branch Protection 作为普通开发 STEP 的前置任务；同样不得在日志泄漏凭据或擅自删除共享资源。
 5. **测试结果必须绑定准确源码版本。** PR 的 HEAD SHA 变化，旧 PASS 不能代表新 HEAD；修改后重新验证。
 6. **V8/V9 验证的是固定请求 + 固定 STEP Workflow，不是已经实现的任意 TASK 通用执行器。** 新 TASK 优先复用现有已验证模式；只做必要的轻量适配，不要声称通用自动路由已存在。
-7. **历史 TASK001–TASK004 已冻结的源码/生成器/Contract/Checkpoint 不可擅自改写。** 新功能以新增文件和新 STEP 为主；如确实需要修改冻结文件，先提出明确的变更范围与恢复方案。
+7. **冻结边界按主线真实状态判断。** TASK001–TASK003 为 task-level frozen；TASK004 已验收的 Synthea、Landing、Resolver、Control Runtime、Person、Visit 为 frozen baseline；Batch Reconciliation 当前为 candidate；TASK004 overall 仍为 **IN PROGRESS**。
+8. **Current NEXT 由 Healthcare `docs/tasks/TASK-STATUS.md` 定义。** 当前先做 Batch Reconciliation candidate review / acceptance，不直接进入 Airflow。
 
 ## 1. 角色、位置与职责
 
@@ -86,16 +89,21 @@
 
 **不得直接复制上述示意触发运行。** 具体 JSON 路径、字段、Schema、白名单、Workflow trigger 必须查看当前 Self-Runner 实际文件；新 TASK 尚无白名单时，先做最小增量适配。禁止把 `script` 变成“任意 Shell 命令”入口。
 
-### 2.3 当前已经验证的可参考实现
+### 2.3 当前已经验证的开发流程参考
 
-**V8：真实 Visit canonical STEP**
+**V8：真实 Visit canonical STEP — 接受为主线业务验证**
 
 - Workflow: `Self-Runner/.github/workflows/cross-repo-task004-visit-v8.yml`
 - Request: `Self-Runner/config/targets/healthcare/steps/task004-visit-runtime-v8.json`
 - Healthcare 执行入口: `scripts/task004/05e-run-visit-canonical.sh`
 - 正向 Run `38250467965`：exact SHA / kubectl / Spark / Processing readback PASS；2459 Encounter；PostgreSQL 未写入。
+- V8 target Healthcare SHA：`40f9c37a303b95330a503ba69b99e5fc7014aca6`。
+- 从主线 checkpoint `5c8677e2c46bea6eda0576d4c63c2612f599ff1a` 到 V8 target 没有 Healthcare 业务代码变化。
+- `05e-run-visit-canonical.sh` 在 checkpoint、V8 target、当前 main 的 Git blob 均为 `afc25d47e32497334f3988d7568d9d5bd0aca4e8`。
 
-**V9：真实 Person/Visit Batch Reconciliation**
+**结论**：V8 是对既有主线 Visit implementation 的 runtime validation，可接受为主线 Visit PASS。
+
+**V9：真实 Person/Visit Batch Reconciliation — candidate / historical evidence**
 
 - Workflow: `Self-Runner/.github/workflows/cross-repo-task004-reconciliation-v9.yml`
 - Request: `Self-Runner/config/targets/healthcare/steps/task004-batch-reconciliation-v9.json`
@@ -106,7 +114,27 @@
 - 合并后 Run `38252497171`：Healthcare main exact SHA PASS；20 Patient、2459 Encounter、0 orphan、Processing/PostgreSQL 无新数据写入。
 - Healthcare PR #16、#17 已合并；Self-Runner PR #25 已合并。
 
-**结论边界**：V8/V9 证明了实际开发闭环；**没有**证明任意新 TASK 自动被发现、任意多仓库 PR 自动同步、GitHub 自动阻止所有未验证 PR 合并。不要把这些未实现功能写成 PASS。
+V9 同时新增 Healthcare 业务实现：
+
+```text
+scripts/task004/05f-reconcile-person-visit.sh
+spark/apps/task004/reconcile_person_visit.py
+spark/manifests/task004/person-visit-reconciliation.yaml.tpl
+tests/task004/test_person_visit_reconciliation_source.py
+```
+
+因此必须区分：
+
+```text
+V9 workflow / policy / ARC execution evidence = VALID REFERENCE
+V9 observed runtime PASS                     = VALID HISTORICAL EVIDENCE
+V9 reconciliation business implementation    = CANDIDATE
+V9 reconciliation MAINLINE PASS              = NO
+```
+
+当前业务主线地位见 Healthcare `docs/tasks/TASK-004-BATCH-RECONCILIATION-CANDIDATE-STATUS.md`。
+
+**结论边界**：V8/V9 证明开发执行方法可用，但“开发方法被验证”不等于“测试期间新增业务实现自动成为主线”。
 
 ### 2.4 Agent 如何触发与检查（现阶段）
 
@@ -220,7 +248,8 @@ AUTOMATIC_CROSS_REPO_PR_DISPATCH=NOT_IMPLEMENTED_NOT_REQUIRED
 MANDATORY_PR_STATUS_CHECK=NOT_REQUIRED
 PRODUCTION_GRADE_RBAC=NOT_REQUIRED
 GENERIC_ARBITRARY_TASK_DISPATCHER=NOT_IMPLEMENTED_NOT_REQUIRED
-NEXT_PRIORITY=HEALTHCARE_PLATFORM_FEATURE_DEVELOPMENT
+BUSINESS_MAINLINE_AUTHORITY=HEALTHCARE_TASK_STATUS_AND_ACCEPTED_CHECKPOINTS
+CURRENT_TASK004_NEXT=MAINLINE_RECONCILIATION_CANDIDATE_REVIEW
 ```
 
 **Agent 的执行指令：不要再以完善 CI/CD 为目标重复开展 V10/V11 基建实验。直接使用本手册进行正式平台代码开发；仅在某个真实 TASK 被现有流程阻塞时，做最小必要修复。**
