@@ -1,0 +1,51 @@
+name: TASK004 Airflow STEP03 Source Gate
+
+on:
+  push:
+    branches:
+      - 'feature/task004-airflow-step03-*'
+    paths:
+      - 'scripts/task004/04c-run-synthea-generate-publish.sh'
+      - 'kubernetes/manifests/task004/control-runtime-synthea-rbac.yaml'
+      - 'airflow/dags/task004_full_pipeline.py'
+      - 'tests/task004/test_airflow_task004_upstream_source.py'
+      - '.github/workflows/task004-airflow-step03-source.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate STEP03 upstream source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          bash -n             scripts/task004/04c-run-synthea-generate-publish.sh
+
+          python3 -m py_compile             apps/task004/publish_synthea_landing.py
+
+          python3 -m unittest discover             -s tests/task004             -p 'test_airflow_task004_upstream_source.py'             -v
+
+          tmp="$(mktemp)"
+
+          PROJECT_ROOT="$GITHUB_WORKSPACE"           TASK004_RUNTIME_CONTEXT=in-cluster           BATCH_ID=task004-step03-render           POPULATION_SIZE=20           SEED=42           REFERENCE_DATE=20261012           STATE=Georgia           LANDING_INGEST_DATE=2026-10-12             bash               scripts/task004/04c-run-synthea-generate-publish.sh               --render-only               > "$tmp"
+
+          grep -Fx             '  namespace: dw-synthea'             "$tmp"
+
+          grep -F             'kubernetes.io/hostname: worker01'             "$tmp"
+
+          grep -F             'name: dw-synthea-s3-secret'             "$tmp"
+
+          rm -f "$tmp"
+
+          echo "TASK004_AIRFLOW_STEP03_SOURCE_GATE=PASS"
+          echo "RESULT=PASS"
