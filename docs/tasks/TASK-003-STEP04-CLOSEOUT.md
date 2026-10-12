@@ -63,5 +63,5 @@ prepare 与运行源码已同步；干净环境从零重建尚未验收。
 ## 5. 后续入口
 
 下一业务目标为 TASK-003 STEP05：Approved Canonical Encounter → OMOP Visit。
-交接详见 `docs/handoffs/HANDOFF-2026-10-09-STEP04.md`。
-开发经验详见 `docs/runbooks/DEVELOPMENT-LESSONS-STEP04.md`。
+交接详见 `docs/archive/2026-10-12/handoffs/HANDOFF-2026-10-09-STEP04.md`。
+开发经验详见 `docs/archive/2026-10-12/runbooks/DEVELOPMENT-LESSONS-STEP04.md`。
