@@ -2428,24 +2428,28 @@ if [[ "$RENDER_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
-kubectl get namespace \
-  "$NAMESPACE" \
-  >/dev/null \
-  || fail "dw-synthea namespace missing"
+if [[ "${TASK004_RUNTIME_CONTEXT:-}" == "in-cluster" ]]; then
+  echo "CLUSTER_SCOPE_PREFLIGHT=SKIPPED_IN_CLUSTER"
+else
+  kubectl get namespace \
+    "$NAMESPACE" \
+    >/dev/null \
+    || fail "dw-synthea namespace missing"
+
+  NODE_READY="$(
+    kubectl get node "$NODE" \
+      -o jsonpath='{range .status.conditions[?(@.type=="Ready")]}{.status}{end}'
+  )"
+
+  [[ "$NODE_READY" == "True" ]] \
+    || fail "worker01 is not Ready"
+fi
 
 kubectl get secret \
   "$SECRET_NAME" \
   -n "$NAMESPACE" \
   >/dev/null \
   || fail "Run 04b secret sync first"
-
-NODE_READY="$(
-  kubectl get node "$NODE" \
-    -o jsonpath='{range .status.conditions[?(@.type=="Ready")]}{.status}{end}'
-)"
-
-[[ "$NODE_READY" == "True" ]] \
-  || fail "worker01 is not Ready"
 
 kubectl create configmap \
   "$CONFIGMAP_NAME" \
@@ -2695,7 +2699,8 @@ if manifest_uri != (
 # the resolved Landing URI.  This matters when
 # a batch is replayed on a later UTC date.
 landing_match = re.search(
-    r"/ingest_date=([^/]+)/"
+    r"/source_version=([^/]+)/"
+    + r"ingest_date=([^/]+)/"
     + r"batch_id="
     + re.escape(batch_id)
     + r"/$",
@@ -2704,15 +2709,25 @@ landing_match = re.search(
 
 if landing_match is None:
     raise SystemExit(
-        "ERROR: unable to derive ingest_date "
-        "from Landing URI"
+        "ERROR: unable to derive source_version "
+        "and ingest_date from Landing URI"
     )
 
-ingest_date = landing_match.group(1)
+source_version = landing_match.group(1)
+ingest_date = landing_match.group(2)
+
+if source_version != "v3.3.0":
+    raise SystemExit(
+        "ERROR: unexpected source_version "
+        + source_version
+    )
 
 report = {
     "batch_id":
         batch_id,
+
+    "source_version":
+        source_version,
 
     "ingest_date":
         ingest_date,
@@ -2792,6 +2807,11 @@ if data["verified_file_count"] != 18:
         "ERROR: report file count mismatch"
     )
 
+if data["source_version"] != "v3.3.0":
+    raise SystemExit(
+        "ERROR: report source_version mismatch"
+    )
+
 print(
     "LANDING_REPORT_GATE=PASS"
 )
@@ -2813,6 +2833,7 @@ kubectl delete configmap \
 
 CONFIGMAP_CREATED=0
 
+echo "STATE_FILE=${REPORT_FILE}"
 echo "GENERATE_PUBLISH_RUNNER=PASS"
 echo "KUBERNETES_RESIDUAL_JOB=NO"
 echo "POSTGRESQL_WRITE=NO"
@@ -3424,9 +3445,76 @@ class LandingPublisherTests(
         )
 
         self.assertIn(
-            "ingest_date = landing_match.group(1)",
+            "source_version = landing_match.group(1)",
             source,
         )
+
+        self.assertIn(
+            "ingest_date = landing_match.group(2)",
+            source,
+        )
+
+    def test_runner_exposes_airflow_state_file(self):
+        source = RUNNER.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            'echo "STATE_FILE=${REPORT_FILE}"',
+            source,
+        )
+
+        self.assertIn(
+            '"source_version":',
+            source,
+        )
+
+        self.assertIn(
+            'source_version != "v3.3.0"',
+            source,
+        )
+
+
+    def test_incluster_mode_skips_cluster_scope_preflight(self):
+        source = RUNNER.read_text(
+            encoding="utf-8"
+        )
+
+        start = source.index(
+            'if [[ "${TASK004_RUNTIME_CONTEXT:-}" '
+            '== "in-cluster" ]]; then'
+        )
+
+        end = source.index(
+            'kubectl get secret',
+            start,
+        )
+
+        block = source[
+            start:end
+        ]
+
+        self.assertIn(
+            "CLUSTER_SCOPE_PREFLIGHT="
+            "SKIPPED_IN_CLUSTER",
+            block,
+        )
+
+        self.assertIn(
+            "else",
+            block,
+        )
+
+        self.assertIn(
+            "kubectl get namespace",
+            block,
+        )
+
+        self.assertIn(
+            'kubectl get node "$NODE"',
+            block,
+        )
+
 
     def test_local_draft_allows_patient_rows_above_requested_population(self):
         draft = sample_draft()
