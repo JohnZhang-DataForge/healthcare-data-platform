@@ -477,6 +477,10 @@ class LandingPublisherTests(
     def test_runner_render_only_executes_with_default_ingest_date(self):
         env = os.environ.copy()
 
+        env["PROJECT_ROOT"] = str(
+            ROOT
+        )
+
         env.update(
             {
                 "BATCH_ID":
@@ -596,9 +600,76 @@ class LandingPublisherTests(
         )
 
         self.assertIn(
-            "ingest_date = landing_match.group(1)",
+            "source_version = landing_match.group(1)",
             source,
         )
+
+        self.assertIn(
+            "ingest_date = landing_match.group(2)",
+            source,
+        )
+
+    def test_runner_exposes_airflow_state_file(self):
+        source = RUNNER.read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            'echo "STATE_FILE=${REPORT_FILE}"',
+            source,
+        )
+
+        self.assertIn(
+            '"source_version":',
+            source,
+        )
+
+        self.assertIn(
+            'source_version != "v3.3.0"',
+            source,
+        )
+
+
+    def test_incluster_mode_skips_cluster_scope_preflight(self):
+        source = RUNNER.read_text(
+            encoding="utf-8"
+        )
+
+        start = source.index(
+            'if [[ "${TASK004_RUNTIME_CONTEXT:-}" '
+            '== "in-cluster" ]]; then'
+        )
+
+        end = source.index(
+            'kubectl get secret',
+            start,
+        )
+
+        block = source[
+            start:end
+        ]
+
+        self.assertIn(
+            "CLUSTER_SCOPE_PREFLIGHT="
+            "SKIPPED_IN_CLUSTER",
+            block,
+        )
+
+        self.assertIn(
+            "else",
+            block,
+        )
+
+        self.assertIn(
+            "kubectl get namespace",
+            block,
+        )
+
+        self.assertIn(
+            'kubectl get node "$NODE"',
+            block,
+        )
+
 
     def test_local_draft_allows_patient_rows_above_requested_population(self):
         draft = sample_draft()
