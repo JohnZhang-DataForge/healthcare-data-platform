@@ -2,7 +2,8 @@
 
 > **版本：V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **更新日期：2026-10-10**
-> **状态：当前权威总设计（Authoritative Master Design）**
+> **状态：当前权威总设计（Authoritative Master Design），2026-10-10 的状态段落为历史快照**
+> **最新任务状态与开发入口**：[`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md)；[`../README.md`](../README.md)。TASK004 Visit/Recon 已在 2026-10-12 验收；Airflow 真编排仍 NEXT。本文旧阶段 Roadmap 的 `NEXT` 不代表当前任务进度。
 > **仓库：** `JohnZhang-DataForge/healthcare-data-platform`
 > **适用环境：** Kubernetes + SeaweedFS(S3) + Airflow + Spark Operator/PySpark + PostgreSQL 17 / OMOP CDM 5.4.3 + GitHub
 > **后续扩展：** Azure Blob/ADLS Gen2、Microsoft Fabric、dbt-fabric、MLflow、Mirth/HL7、FHIR、GitHub Actions、Argo CD
