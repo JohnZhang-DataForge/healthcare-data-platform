@@ -62,3 +62,19 @@ V8/V9 已验证跨仓库固定 SHA、GitHub Policy、ARC/Kubernetes/Spark 真运
 - 归档文件正文内容不改；旧 STEP04 Closeout 也按归档前的原文保存，其历史引用保留当时路径。**当前文档不得继续指向已移动的旧路径**。
 - 当前文档如需引用旧历史，请使用 `docs/archive/2026-10-12/...` 路径。
 - 验收必须核对每个归档文件原始/新内容相同、所有原路径已移除、当前入口有效、当前状态没有旧 `NEXT` 误导、变更仅限 `docs/`、没有业务/Workflow/运行环境修改。
+
+## 7. 主线纠偏增补（2026-10-12）
+
+在测试新的 Self-Runner / ARC 开发方法后，主线重新核对业务代码边界：
+
+- V8 Visit 只执行既有 `scripts/task004/05e-run-visit-canonical.sh`，没有修改 Healthcare Visit 业务代码，因此 V8 runtime PASS 被正式主线接受。
+- V9 Batch Reconciliation 在测试期新增了 Healthcare 业务实现，因此其真实运行 PASS 保留为历史证据，但相关实现当前定义为 **candidate / not mainline accepted**。
+- 当前主线状态以 `docs/tasks/TASK-STATUS.md` 和 `docs/tasks/TASK-004-BATCH-RECONCILIATION-CANDIDATE-STATUS.md` 为准。
+
+本次新增归档映射：
+
+| 原路径 | 新归档路径 | 处理 |
+|---|---|---|
+| `docs/tasks/TASK-004-BATCH-RECONCILIATION-CLOSEOUT.md` | `docs/archive/2026-10-12/tasks/TASK-004-BATCH-RECONCILIATION-CLOSEOUT-V9-TEST-PERIOD.md` | 原文保存 V9 当时真实运行 PASS；当前主线状态由 Candidate Status 定义 |
+
+归档原则保持不变：**历史正文不追溯重写；当前状态通过 current 文档纠偏。**
