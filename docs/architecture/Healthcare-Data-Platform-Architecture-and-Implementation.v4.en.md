@@ -2,7 +2,8 @@
 
 > **Version: V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **Updated: 2026-10-10**
-> **Status: Authoritative Master Design**
+> **Status: Authoritative Master Design; implementation status sections are snapshots as of 2026-10-10.**
+> **Current task progress and agent entry:** [`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md) and [`../README.md`](../README.md). TASK004 standalone Visit and batch reconciliation passed on 2026-10-12; real Airflow orchestration is next. Historical NEXT markers below are not current progress.
 > **Repository:** `JohnZhang-DataForge/healthcare-data-platform`
 > **Current environment:** Kubernetes + SeaweedFS(S3) + Airflow + Spark Operator/PySpark + PostgreSQL 17 / OMOP CDM 5.4.3 + GitHub
 > **Planned extensions:** Azure Blob/ADLS Gen2, Microsoft Fabric, dbt-fabric, MLflow, Mirth/HL7, FHIR, GitHub Actions, Argo CD
