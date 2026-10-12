@@ -14,23 +14,34 @@ V8/V9 已验证跨仓库固定 SHA、GitHub Policy、ARC/Kubernetes/Spark 真运
 - Work branch: `docs/cleanup-current-and-archive-20261012`
 - Archive PR / merge SHA: 在本次 PR 合并后，以 GitHub PR 和 commit 记录为准；本文件不预填尚未发生的 SHA。
 
-## 3. 逐文件归档清单
+## 3. 逐文件归档清单（完整 22 项）
 
-| 原路径（均位于 docs/ 下） | 新路径（均位于本目录下） | 原因/替代入口 |
+本次 GitHub compare 将以下 **22** 个文件识别为 **renamed**，而不是删除历史。移动的正文以归档前 `main` 对应 Git Blob 为准；最终 SHA 核对另行验收。
+
+| 原路径 | 新归档路径 | 处理与替代 |
 |---|---|---|
-| `migration/HEALTHCARE-GITOPS-MIGRATION-v1.0-zh-CN.md` | `migration/HEALTHCARE-GITOPS-MIGRATION-v1.0-zh-CN.md` | 初期候选方案 → 正式 Operations |
-| `migration/HEALTHCARE-GITOPS-MIGRATION-v1.1-zh-CN.md` | `migration/HEALTHCARE-GITOPS-MIGRATION-v1.1-zh-CN.md` | M2 设计稿，状态已过时 → 正式 Operations |
-| `migration/M1-CROSS-REPO-READONLY-BASELINE-2026-10-12.zh-CN.md` | `migration/M1-CROSS-REPO-READONLY-BASELINE-2026-10-12.zh-CN.md` | 历史基线审计 → V8/V9 证据 |
-| `runbooks/GITHUB-SELF-HOSTED-RUNNER-DEVELOPMENT-V2.zh-CN.md` | `runbooks/GITHUB-SELF-HOSTED-RUNNER-DEVELOPMENT-V2.zh-CN.md` | Pilot 流程被跨仓库模式替代 → 正式 Operations |
-| `handoffs/TASK-003-COMPLETION-HANDOFF.md` | `handoffs/TASK-003-COMPLETION-HANDOFF.md` | 旧交接 → TASK003 Final Closeout |
-| `handoffs/TASK-004-PHASE10-AFTER-PERSON.md` | `handoffs/TASK-004-PHASE10-AFTER-PERSON.md` | Visit 尚未完成时的快照 → TASK004 Closeout + TASK-STATUS |
-| `tasks/TASK-004-PROGRESS-CHECKPOINT-AFTER-PERSON.md` | `tasks/TASK-004-PROGRESS-CHECKPOINT-AFTER-PERSON.md` | 旧 Person 阶段状态 → TASK004 Closeout + TASK-STATUS |
-| `tasks/TASK-004-BATCH-RECONCILIATION-PILOT.md` | `tasks/TASK-004-BATCH-RECONCILIATION-PILOT.md` | Runtime 尚未验收时的草稿 → TASK004 Batch Reconciliation Closeout |
-| `runbooks/TASK-003-DEVELOPMENT-LESSONS.md` | `runbooks/TASK-003-DEVELOPMENT-LESSONS.md` | 通用经验已在当前 development-lessons-cn.md 中汇总 |
-| `runbooks/DEVELOPMENT-LESSONS-STEP04.md` | `runbooks/DEVELOPMENT-LESSONS-STEP04.md` | STEP04 复盘已由当前 General Lessons + STEP04 专项 Lessons 覆盖 |
-| `handoffs/HANDOFF-2026-10-09-STEP04.md` | `handoffs/HANDOFF-2026-10-09-STEP04.md` | 旧交接，当前 TASK003 已完整 Closeout |
-
-所有移动文件的正文应逐字与原文相同，保留当时事实；本次更新的现行 Skill、Lessons、Index 另行列为 UPDATE。
+| `docs/handoffs/HANDOFF-2026-10-09-STEP04.md` | `docs/archive/2026-10-12/handoffs/HANDOFF-2026-10-09-STEP04.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/handoffs/TASK-003-COMPLETION-HANDOFF.md` | `docs/archive/2026-10-12/handoffs/TASK-003-COMPLETION-HANDOFF.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/handoffs/TASK-004-PHASE10-AFTER-PERSON.md` | `docs/archive/2026-10-12/handoffs/TASK-004-PHASE10-AFTER-PERSON.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/migration/HEALTHCARE-GITOPS-MIGRATION-v1.0-zh-CN.md` | `docs/archive/2026-10-12/migration/HEALTHCARE-GITOPS-MIGRATION-v1.0-zh-CN.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/migration/HEALTHCARE-GITOPS-MIGRATION-v1.1-zh-CN.md` | `docs/archive/2026-10-12/migration/HEALTHCARE-GITOPS-MIGRATION-v1.1-zh-CN.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/migration/M1-CROSS-REPO-READONLY-BASELINE-2026-10-12.zh-CN.md` | `docs/archive/2026-10-12/migration/M1-CROSS-REPO-READONLY-BASELINE-2026-10-12.zh-CN.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/runbooks/DEVELOPMENT-LESSONS-STEP04.md` | `docs/archive/2026-10-12/runbooks/DEVELOPMENT-LESSONS-STEP04.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/runbooks/GITHUB-SELF-HOSTED-RUNNER-DEVELOPMENT-V2.zh-CN.md` | `docs/archive/2026-10-12/runbooks/GITHUB-SELF-HOSTED-RUNNER-DEVELOPMENT-V2.zh-CN.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/runbooks/TASK-003-DEVELOPMENT-LESSONS.md` | `docs/archive/2026-10-12/runbooks/TASK-003-DEVELOPMENT-LESSONS.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/task003/TASK003-STEP06A-ReadOnly-Preflight.md` | `docs/archive/2026-10-12/task003/TASK003-STEP06A-ReadOnly-Preflight.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/task003/TASK003-STEP06B-PreMutation-Gate.md` | `docs/archive/2026-10-12/task003/TASK003-STEP06B-PreMutation-Gate.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/task003/TASK003-STEP06B4A-Allocation-Rehearsal.md` | `docs/archive/2026-10-12/task003/TASK003-STEP06B4A-Allocation-Rehearsal.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/task003/TASK003-STEP06B4B-R1-Allocation-Recovery.md` | `docs/archive/2026-10-12/task003/TASK003-STEP06B4B-R1-Allocation-Recovery.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/task003/TASK003-STEP06B4C-Committed-Visit-ID-Mapping.md` | `docs/archive/2026-10-12/task003/TASK003-STEP06B4C-Committed-Visit-ID-Mapping.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/task003/TASK003-STEP06C-CDM-Visit-Materialization-Preflight.md` | `docs/archive/2026-10-12/task003/TASK003-STEP06C-CDM-Visit-Materialization-Preflight.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/task003/TASK003-STEP06C4E-Committed-CDM-Visit-Materialization.md` | `docs/archive/2026-10-12/task003/TASK003-STEP06C4E-Committed-CDM-Visit-Materialization.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/tasks/TASK-003-STEP04-CLOSEOUT.md` | `docs/archive/2026-10-12/tasks/TASK-003-STEP04-CLOSEOUT.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/tasks/TASK-003-STEP04-RAW-PUBLISH.md` | `docs/archive/2026-10-12/tasks/TASK-003-STEP04-RAW-PUBLISH.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/tasks/TASK-003-STEP05-AE-FREEZE.md` | `docs/archive/2026-10-12/tasks/TASK-003-STEP05-AE-FREEZE.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/tasks/TASK-003-STEP05F2-CANDIDATE-PREFLIGHT.md` | `docs/archive/2026-10-12/tasks/TASK-003-STEP05F2-CANDIDATE-PREFLIGHT.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/tasks/TASK-004-BATCH-RECONCILIATION-PILOT.md` | `docs/archive/2026-10-12/tasks/TASK-004-BATCH-RECONCILIATION-PILOT.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
+| `docs/tasks/TASK-004-PROGRESS-CHECKPOINT-AFTER-PERSON.md` | `docs/archive/2026-10-12/tasks/TASK-004-PROGRESS-CHECKPOINT-AFTER-PERSON.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
 
 ## 4. 保留在当前 main 的资料（KEEP / DEFER）
 
@@ -47,6 +58,6 @@ V8/V9 已验证跨仓库固定 SHA、GitHub Policy、ARC/Kubernetes/Spark 真运
 
 ## 6. 引用与验证
 
-- 归档文件正文内容不改；旧 STEP04 Closeout 中的两个原始链接将只更新**文档路径**指向本批次归档（不修改业务验收结果）。
+- 归档文件正文内容不改；旧 STEP04 Closeout 也按归档前的原文保存，其历史引用保留当时路径。**当前文档不得继续指向已移动的旧路径**。
 - 当前文档如需引用旧历史，请使用 `docs/archive/2026-10-12/...` 路径。
 - 验收必须核对每个归档文件原始/新内容相同、所有原路径已移除、当前入口有效、当前状态没有旧 `NEXT` 误导、变更仅限 `docs/`、没有业务/Workflow/运行环境修改。
