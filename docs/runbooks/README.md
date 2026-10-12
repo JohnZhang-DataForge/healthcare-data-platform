@@ -7,6 +7,18 @@
 | [development-lessons-cn.md](development-lessons-cn.md) | 每个新 TASK：Shell、S3、PostgreSQL、幂等、恢复、K8s、镜像、Git 的跨任务经验 |
 | [development-lessons-task003-step04-cn.md](development-lessons-task003-step04-cn.md) | Raw/S3 发布、manifest、幂等重放和原始故障细节 |
 | [development-lessons-task003-step06-cn.md](development-lessons-task003-step06-cn.md) | OMOP CDM、Sequence、事务不确定性、ID allocation |
-| [development-lessons-task004-cn.md](development-lessons-task004-cn.md) | TASK004 Generator、Landing、Control runtime、Spark、Airflow 接入的具体经验 |
+| [development-lessons-task004-cn.md](development-lessons-task004-cn.md) | TASK004 Generator、Landing、Control runtime、Spark，以及 Airflow 接入前的约束和准备经验 |
 
-历史 Lessons 只记录发生时的背景；**当前 TASK 进度以 [TASK-STATUS](../tasks/TASK-STATUS.md) 为准**。历史依赖 Generator 的修复必须同步 Generator，但**新 STEP 默认直接维护 GitHub 中的 canonical source**。
+历史 Lessons 只记录发生时的背景；**当前 TASK 进度以 [TASK-STATUS](../tasks/TASK-STATUS.md) 为准**。
+
+TASK004 当前特别规则：
+
+```text
+Visit V8 validation = accepted mainline evidence
+V9 Batch Reconciliation = candidate / historical test-period evidence
+Airflow = not yet
+```
+
+Reconciliation 当前地位见 `../tasks/TASK-004-BATCH-RECONCILIATION-CANDIDATE-STATUS.md`。
+
+历史依赖 Generator 的修复必须同步 Generator，但**新 STEP 默认直接维护 GitHub 中的 canonical source**。
