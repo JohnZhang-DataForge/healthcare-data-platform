@@ -18,8 +18,8 @@ description: Healthcare Data Platform 项目中文开发规范。定义一步一
 - **新 STEP**：直接编辑 Git 中的 canonical source，Shell 负责预检、执行、测试、报告。**不强制**新写永久 Shell Generator 来生成每一个源码文件。
 - **历史 STEP**：已冻结且依赖永久 Generator 的代码，修复时仍必须同步 Generator 和生成产物。TASK001–TASK003 为 task-level frozen；TASK004 只冻结已验收阶段，不把整个 TASK004 视为 CLOSED。
 - **Runner 安全**：现阶段已接受开发集群高权限 Runner；不要求先建生产级 RBAC、第二 Runner、自动跨仓库事件或 Required Checks；仍禁止泄漏 Secret、任意命令入口与破坏共享数据。
-- **状态**：TASK004 Synthea / Landing / Resolver / Control Runtime / Person / Visit = PASS；Batch Reconciliation = **CANDIDATE / NOT MAINLINE ACCEPTED**；Airflow = **NOT YET**。
-- **当前 NEXT**：先 review / adopt / modify / revalidate Batch Reconciliation candidate；正式 MAINLINE PASS 后才进入 Airflow。以 `docs/tasks/TASK-STATUS.md` 为当前状态索引。
+- **状态**：TASK004 Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation = **PASS / frozen baseline**；Airflow = **NOT YET VERIFIED**。
+- **当前 NEXT**：TASK004 Airflow orchestration 的第一个 bounded STEP。以 `docs/tasks/TASK-STATUS.md` 为当前状态索引。
 - **文档治理**：过时 Pilot、Migration、Handoff 原文归档；当前规范、有效经验与最新状态留在 main。详见归档规范。
 
 ---
@@ -772,16 +772,20 @@ Visit
 Reconcile
 ```
 
-当前不能直接开始 Airflow。必须先完成：
+Batch Reconciliation 已完成 mainline review / modify / pre-merge exact HEAD / post-merge exact main 验收，因此现在可以进入 Airflow。
+
+Airflow 第一阶段仍坚持 bounded development：
 
 ```text
-Batch Reconciliation candidate
+read current Airflow state
 ↓
-mainline review
+define one bounded orchestration STEP
 ↓
-mainline acceptance
+feature PR + exact SHA
 ↓
-Airflow
+real Scheduler / task execution evidence
+↓
+PASS / FAIL
 ```
 
 使用新生成的小 batch：
