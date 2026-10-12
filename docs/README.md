@@ -5,12 +5,13 @@
 ## 按顺序阅读
 
 1. [当前 TASK 状态与下一步](tasks/TASK-STATUS.md)：当前主线真实完成什么、下一步是什么。
-2. [TASK004 Batch Reconciliation Mainline Closeout](tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md)：本轮 Reconciliation 正式主线验收证据。
-3. [正式双仓库开发操作手册](development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)：Healthcare feature PR → exact SHA → Self-Runner / ARC → PASS → Merge → post-merge validation → Checkpoint。
-4. [Agent 开发 Skill](skill/SKILL-cn.md)：一步一验、canonical source、数据安全、Git 与文档治理。
-5. [通用开发经验](runbooks/development-lessons-cn.md) 与 [TASK004 专项经验](runbooks/development-lessons-task004-cn.md)。
-6. [当前总架构（中文）](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md) / [English](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md)。
-7. [文档生命周期规范](development/DOCUMENT-LIFECYCLE-AND-ARCHIVE-v1.0.zh-CN.md) / [历史归档](archive/README.md)。
+2. [TASK004 Airflow Processing Orchestration Mainline Closeout](tasks/TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md)：GitHub → git-sync → Airflow → Person/Visit → Reconcile 正式主线验收。
+3. [TASK004 Batch Reconciliation Mainline Closeout](tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md)：Reconciliation 正式主线验收证据。
+4. [正式双仓库开发操作手册](development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)：Healthcare feature PR → exact SHA → Self-Runner / ARC → PASS → Merge → post-merge validation → Checkpoint。
+5. [Agent 开发 Skill](skill/SKILL-cn.md)：一步一验、canonical source、数据安全、Git 与文档治理。
+6. [通用开发经验](runbooks/development-lessons-cn.md) 与 [TASK004 专项经验](runbooks/development-lessons-task004-cn.md)。
+7. [当前总架构（中文）](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md) / [English](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md)。
+8. [文档生命周期规范](development/DOCUMENT-LIFECYCLE-AND-ARCHIVE-v1.0.zh-CN.md) / [历史归档](archive/README.md)。
 
 ## 当前主线状态
 
@@ -24,8 +25,33 @@ Control runtime             PASS
 Standalone Person           PASS
 Standalone Visit            PASS
 Batch Reconciliation        PASS / MAINLINE ACCEPTED
-Airflow orchestration       NOT YET VERIFIED
+Airflow Processing           PASS / MAINLINE ACCEPTED
+Airflow upstream ingestion   NEXT
 ```
+
+Airflow Processing orchestration 已完成正式主线验收：
+
+~~~text
+Healthcare main = 5e043b8f00d89a01b72ae6264f35903ceff93de9
+DAG = task004_processing_pipeline
+Airflow = 3.2.2
+Kubernetes provider = 10.17.1
+
+Self-Runner live Run = 38311805385
+Artifact = 11775098927
+Digest = sha256:570901ce456778457fecc3a1c718ea88aa9ea9dafe8281028e917b3f678cf0ed
+
+Person    success
+Visit     success
+Reconcile success
+DAG run   success
+
+Successful SparkApplication residual = NO
+Successful control Pod residual       = NO
+PostgreSQL mutation                    = NO
+~~~
+
+Post-merge git-sync exact source、default unpaused 和 runtime unpaused 均已再次验证 PASS。
 
 Batch Reconciliation 已完成正式主线验收：
 
@@ -45,26 +71,35 @@ Self-Runner PR #31 merge   = 8ab26784cd0229cce96989e3691c122049e3c23a
 
 ## 当前开发目标
 
-**TASK004 下一步：Airflow orchestration 的第一个 bounded STEP。**
+**TASK004 下一步：Airflow upstream ingestion orchestration。**
 
-目标业务链：
+当前已经冻结并验收：
 
-```text
-Generate Synthea
-→ Landing Validate
-→ Person
-→ Visit
+~~~text
+Landing manifest
+→ Person + Visit
 → Reconcile
-```
+~~~
 
-Airflow 阶段不能只证明 DAG parse/render；必须最终证明真实 Scheduler / Metadata DB / Task execution / downstream evidence。开始前先读取当前 Airflow DAG、镜像、Provider、ServiceAccount、RBAC 与现有 runtime interface，再定义一个小范围 STEP。
+下一步只扩展上游：
+
+~~~text
+Generate Synthea
+→ Landing publish / validate
+→ dynamic manifest URI + SHA
+→ existing Person + Visit
+→ existing Reconcile
+~~~
+
+不重新开发 Person / Visit / Reconcile；优先复用现有 task004-control-runtime 和 04c-run-synthea-generate-publish.sh，并为 dw-synthea 设计最小 namespace-scoped RBAC。
 
 ## 冲突优先级
 
 - 当前业务进度：`docs/tasks/TASK-STATUS.md`。
+- 当前 Airflow Processing 验收：`docs/tasks/TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md`。
 - 当前 Reconciliation 验收：`docs/tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md`。
 - 开发工作流：当前 Operations。
 - 业务语义与冻结边界：Contract / 已验收主线 Checkpoint。
 - 历史状态：Archive / historical Closeout / GitHub Actions。
-- TASK001–TASK003 整体冻结；TASK004 已验收的 Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation 均为 frozen baseline；TASK004 整体仍 IN PROGRESS。
+- TASK001–TASK003 整体冻结；TASK004 已验收的 Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / Airflow Processing orchestration 均为 frozen baseline；TASK004 整体仍 IN PROGRESS。
 - 新 STEP 默认直接维护 Git canonical source；历史 generator-owned 文件修复仍必须同步 Generator。
