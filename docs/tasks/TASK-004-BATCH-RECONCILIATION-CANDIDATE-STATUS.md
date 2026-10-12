@@ -121,19 +121,47 @@ RESULT=PASS
 14. future Airflow compatibility
 ```
 
-必须明确结论：
+主线 review 已完成，结论为：
 
 ```text
-ADOPT_AS_IS
+REVIEW_DECISION=MODIFY_BEFORE_ACCEPTANCE
 ```
 
-或：
+本次 review 发现并要求修正：
 
 ```text
-MODIFY_BEFORE_ACCEPTANCE
+1. lineage single-value 还必须 non-null / non-blank
+2. ORPHAN_ENCOUNTERS 必须统计 orphan encounter rows，而不是 distinct patient references
+3. runner 必须在 URI 层提前验证 source/version/date/batch/entity/run_id
+4. 任意失败路径必须保留并报告已创建的 SparkApplication / ConfigMap / driver Pod
+5. 成功 cleanup 后必须独立确认资源确实不存在
+6. reconciliation 必须生成结构化 run-state.json
+7. source tests 必须使用 repo-relative root，并锁住以上 acceptance rules
 ```
 
-然后按正式 feature PR + exact SHA + Self-Runner/ARC 流程重新验证。
+当前 feature branch：
+
+```text
+feature/task004-reconciliation-mainline-acceptance
+```
+
+正在完成这些 canonical source 修正。
+
+主线接受条件仍然是：
+
+```text
+source review PASS
++
+source tests PASS
++
+exact PR HEAD Self-Runner/ARC runtime PASS
++
+evidence PASS
++
+merge
++
+mainline checkpoint
+```
 
 ## 6. 历史 closeout
 
@@ -157,9 +185,11 @@ VISIT_STANDALONE=PASS
 
 RECONCILIATION_CODE_EXISTS=YES
 RECONCILIATION_HISTORICAL_RUNTIME_PASS=YES
-RECONCILIATION_MAINLINE_REVIEWED=NO
+RECONCILIATION_MAINLINE_REVIEWED=YES
+REVIEW_DECISION=MODIFY_BEFORE_ACCEPTANCE
+RECONCILIATION_SOURCE_REVISION=IN_PROGRESS
 RECONCILIATION_MAINLINE_ACCEPTED=NO
 
 AIRFLOW_ORCHESTRATION=NOT_YET
-NEXT=MAINLINE_RECONCILIATION_CANDIDATE_REVIEW
+NEXT=RECONCILIATION_EXACT_PR_HEAD_VALIDATION
 ```
