@@ -16,7 +16,7 @@ V8/V9 已验证跨仓库固定 SHA、GitHub Policy、ARC/Kubernetes/Spark 真运
 
 ## 3. 逐文件归档清单（完整 22 项）
 
-本次 GitHub compare 将以下 **22** 个文件识别为 **renamed**，而不是删除历史。移动的正文以归档前 `main` 对应 Git Blob 为准；最终 SHA 核对另行验收。
+本次 GitHub compare 将以下 **22** 个文件识别为 **renamed**，而不是删除历史。移动的正文以归档前 `main` 对应 Git Blob 为准；已通过 Git Tree SHA 核对：22/22 个归档文件与归档前 main 原始 Git Blob SHA 一致，原路径均不存在。
 
 | 原路径 | 新归档路径 | 处理与替代 |
 |---|---|---|
@@ -43,11 +43,12 @@ V8/V9 已验证跨仓库固定 SHA、GitHub Policy、ARC/Kubernetes/Spark 真运
 | `docs/tasks/TASK-004-BATCH-RECONCILIATION-PILOT.md` | `docs/archive/2026-10-12/tasks/TASK-004-BATCH-RECONCILIATION-PILOT.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
 | `docs/tasks/TASK-004-PROGRESS-CHECKPOINT-AFTER-PERSON.md` | `docs/archive/2026-10-12/tasks/TASK-004-PROGRESS-CHECKPOINT-AFTER-PERSON.md` | 原文归档；当前状态见 [TASK-STATUS](../../tasks/TASK-STATUS.md) / [开发手册](../../development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) |
 
-## 4. 保留在当前 main 的资料（KEEP / DEFER）
+## 4. 当前资料（KEEP / DEFER / ARCHIVE）
 
-- **KEEP**：`docs/BASELINE.md`、正式开发/归档规范、`docs/skill/SKILL-cn.md`、当前通用和 TASK 专项 Lessons、TASK003 Final Closeout、TASK004 Phase9/Batch Recon Closeout、Contract/冻结记录、`docs/task003/` 的细粒度验收、V4 中英文架构、TASK003 Blueprint。
-- **DEFER**：`docs/architecture/Healthcare-ETL-Hybrid-Fabric-ML-Design.zh-CN.v2.1.md`，虽然 V4 是当前总架构，但 v2.1 包含 Azure/Fabric/ML 的独立详细设计；在独有内容纳入现行架构前不贸然归档。
-- **KEEP（历史步骤证据）**：`docs/tasks/TASK-003-STEP04-*.md`、`STEP05*.md` 等为具体 Contract/运行证据，不能按“旧”字批量删除。
+- **KEEP**：`docs/BASELINE.md`、正式开发/归档规范、`docs/skill/SKILL-cn.md`、当前通用和 TASK 专项 Lessons、`docs/tasks/TASK-003-FINAL-CLOSEOUT.md`、TASK004 Phase9/Batch Reconciliation Closeout、业务 Contract/冻结代码、V4 中英文总架构和 TASK003 Reference Blueprint。
+- **DEFER**：`docs/architecture/Healthcare-ETL-Hybrid-Fabric-ML-Design.zh-CN.v2.1.md` 仍有 Azure/Fabric/ML 的独有详细设计；未完整合并前继续保留，明确其不是当前任务状态权威。
+- **ARCHIVE**：原 `docs/task003/` 下 7 份 STEP06 细粒度证据，以及原 `docs/tasks/` 的 STEP04/STEP05 中间 Checkpoint 已原文迁入本目录；它们仍可查阅，不能当作最新开发状态。TASK003 Final Closeout 仍留在当前目录。
+- **UPDATE**：当前 `docs/README.md`、`docs/tasks/TASK-STATUS.md`、`docs/runbooks/README.md`、Skill、通用 Lessons、TASK004 Lessons 和架构状态提示。
 
 ## 5. 已提炼的当前有效经验
 
