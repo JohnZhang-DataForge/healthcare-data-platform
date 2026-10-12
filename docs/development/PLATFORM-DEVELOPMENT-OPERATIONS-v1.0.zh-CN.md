@@ -16,8 +16,8 @@
 4. **当前 `dw-runner-set` 使用开发集群高权限 ServiceAccount 是有意选择。** 不得将只读 Runner、NetworkPolicy、企业级审批、强制 Branch Protection 作为普通开发 STEP 的前置任务；同样不得在日志泄漏凭据或擅自删除共享资源。
 5. **测试结果必须绑定准确源码版本。** PR 的 HEAD SHA 变化，旧 PASS 不能代表新 HEAD；修改后重新验证。
 6. **V8/V9 验证的是固定请求 + 固定 STEP Workflow，不是已经实现的任意 TASK 通用执行器。** 新 TASK 优先复用现有已验证模式；只做必要的轻量适配，不要声称通用自动路由已存在。
-7. **冻结边界按主线真实状态判断。** TASK001–TASK003 为 task-level frozen；TASK004 已验收的 Synthea、Landing、Resolver、Control Runtime、Person、Visit 为 frozen baseline；Batch Reconciliation 当前为 candidate；TASK004 overall 仍为 **IN PROGRESS**。
-8. **Current NEXT 由 Healthcare `docs/tasks/TASK-STATUS.md` 定义。** 当前先做 Batch Reconciliation candidate review / acceptance，不直接进入 Airflow。
+7. **冻结边界按主线真实状态判断。** TASK001–TASK003 为 task-level frozen；TASK004 已验收的 Synthea、Landing、Resolver、Control Runtime、Person、Visit、Batch Reconciliation 为 frozen baseline；TASK004 overall 仍为 **IN PROGRESS**。
+8. **Current NEXT 由 Healthcare `docs/tasks/TASK-STATUS.md` 定义。** Batch Reconciliation 已完成正式主线验收；当前 NEXT 是 TASK004 Airflow orchestration 的第一个 bounded STEP。
 
 ## 1. 角色、位置与职责
 
@@ -103,7 +103,7 @@
 
 **结论**：V8 是对既有主线 Visit implementation 的 runtime validation，可接受为主线 Visit PASS。
 
-**V9：真实 Person/Visit Batch Reconciliation — candidate / historical evidence**
+**V9 / Mainline Acceptance：Person/Visit Batch Reconciliation**
 
 - Workflow: `Self-Runner/.github/workflows/cross-repo-task004-reconciliation-v9.yml`
 - Request: `Self-Runner/config/targets/healthcare/steps/task004-batch-reconciliation-v9.json`
@@ -132,9 +132,21 @@ V9 reconciliation business implementation    = CANDIDATE
 V9 reconciliation MAINLINE PASS              = NO
 ```
 
-当前业务主线地位见 Healthcare `docs/tasks/TASK-004-BATCH-RECONCILIATION-CANDIDATE-STATUS.md`。
+上述 V9 仍是测试期历史证据；它没有自动形成主线 acceptance。
 
-**结论边界**：V8/V9 证明开发执行方法可用，但“开发方法被验证”不等于“测试期间新增业务实现自动成为主线”。
+之后主线正式完成 review / modify / revalidate：
+
+```text
+Healthcare PR #24 final HEAD = ee16f5265b0ebb8c30e7e65ec665215613956e77
+Healthcare merge/main        = 91d96f436e7697d70025cc1c9a045ecfb20f41b1
+pre-merge Run                = 38287060452 PASS
+post-merge Run               = 38287401518 PASS
+Self-Runner PR #31 merge     = 8ab26784cd0229cce96989e3691c122049e3c23a
+```
+
+正式业务结果：20 Patient、2459 Encounter、20 referenced Patient、0 orphan；Processing/PostgreSQL Mutation=NO；结构化 run-state PASS；成功临时 K8s 资源 residual=NO。
+
+**结论边界**：测试期 Runtime PASS 与主线 Acceptance 是两个状态；当前 Batch Reconciliation 已通过正式主线 Acceptance。
 
 ### 2.4 Agent 如何触发与检查（现阶段）
 
@@ -212,7 +224,7 @@ FINAL_STATUS=PASS/FAIL/IN_PROGRESS
 ## 5. 新 Agent 接手时的最小阅读与执行顺序
 
 1. 阅读**本文件**（两仓库相同内容，任取一份即可）。
-2. 阅读 Healthcare `docs/skill/SKILL-cn.md`、本 TASK 最新 Checkpoint、Contract、冻结边界、`docs/runbooks/development-lessons-cn.md`。
+2. 阅读 Healthcare `docs/skill/SKILL-cn.md`、`docs/tasks/TASK-STATUS.md`、最新 Mainline Closeout、Contract、冻结边界、`docs/runbooks/development-lessons-cn.md`。
 3. 阅读 Self-Runner V9 Workflow、Request、Policy、最终 Checkpoint；如业务 STEP 更接近 V8，则看 V8。
 4. 查询两仓库 `main` 的真实 HEAD、当前 feature 分支、未合并 PR、Actions 最新结果；**不要依赖旧会话记忆替代 GitHub 当前状态**。
 5. 说明本次变更的 TASK/STEP、允许路径、测试计划和副作用；按**一个 bounded STEP**迭代。
@@ -249,7 +261,7 @@ MANDATORY_PR_STATUS_CHECK=NOT_REQUIRED
 PRODUCTION_GRADE_RBAC=NOT_REQUIRED
 GENERIC_ARBITRARY_TASK_DISPATCHER=NOT_IMPLEMENTED_NOT_REQUIRED
 BUSINESS_MAINLINE_AUTHORITY=HEALTHCARE_TASK_STATUS_AND_ACCEPTED_CHECKPOINTS
-CURRENT_TASK004_NEXT=MAINLINE_RECONCILIATION_CANDIDATE_REVIEW
+CURRENT_TASK004_NEXT=TASK004_AIRFLOW_ORCHESTRATION
 ```
 
 **Agent 的执行指令：不要再以完善 CI/CD 为目标重复开展 V10/V11 基建实验。直接使用本手册进行正式平台代码开发；仅在某个真实 TASK 被现有流程阻塞时，做最小必要修复。**

@@ -2,7 +2,7 @@
 
 > **CURRENT TECHNICAL LESSONS / 历史案例原文与最新状态区分**：本文最初记录 TASK004 Synthea、Landing、resolver、Phase9、Standalone Person 的真实经验；下面原始案例按发生时的状态保留。
 >
-> **截至 2026-10-12：Standalone Visit 与 Batch Reconciliation 已 PASS，只有 Airflow Orchestration 尚未验收。** 最新权威状态见 `docs/tasks/TASK-STATUS.md`、`docs/tasks/TASK-004-BATCH-RECONCILIATION-CLOSEOUT.md`。第21/22节旧 `NEXT` 仅表示当时的开发顺序，不是当前待办。
+> **截至 2026-10-12：Standalone Visit 与 Batch Reconciliation 已正式 MAINLINE PASS，只有 Airflow Orchestration 尚未验收。** 最新权威状态见 `docs/tasks/TASK-STATUS.md`、`docs/tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md`。第21/22节旧 `NEXT` 仅表示当时的开发顺序，不是当前待办。
 
 ---
 
@@ -663,3 +663,138 @@ Processing Encounter
 - **Person/Visit Batch Reconciliation**：Healthcare PR #16，V9 pre-merge Run `38251984921`，20 Patient / 2459 Encounter / 0 orphan；negative Run `38251924029` 正确 Policy FAIL 且 ARC SKIPPED；post-merge Run `38252497171` PASS。
 - **下一步**：Airflow DAG 的真实编排、参数/依赖、RBAC 和运行结果验证。不能把 DAG parse、render-only、CI 基础链路 PASS 冒充 Airflow Scheduler + Metadata DB 的真实 DAG Run。
 - **新的 GitHub 开发规则**：新 STEP 直接维护 Git canonical source；旧依赖 Generator 的冻结实现必须同步 Generator；跨仓库 PR/SHA 手工绑定与 Runner 操作见正式 Development Operations。
+
+---
+
+## 24. Workflow Parse FAIL 与 Runtime FAIL 必须分开
+
+本轮第一次 Self-Runner 运行：
+
+```text
+Run 38286850393
+jobs = 0
+```
+
+失败发生在 GitHub Workflow YAML 解析阶段。
+
+这意味着：
+
+```text
+Policy      = NOT RUN
+ARC Runner  = NOT RUN
+Kubernetes  = NOT RUN
+Spark       = NOT RUN
+Data        = NOT MUTATED
+```
+
+所以不能把所有 Actions failure 都归类为 workload failure。
+
+推荐先判断 failure domain：
+
+```text
+workflow parse
+→ policy
+→ source gate
+→ runner bootstrap
+→ Kubernetes
+→ Spark
+→ business evidence
+```
+
+---
+
+## 25. Source Test 也可能自己写错，不能绕过 Gate
+
+Run `38286943030` 中：
+
+```text
+policy        PASS
+exact PR HEAD PASS
+source tests  FAIL
+Spark         SKIPPED
+```
+
+失败的两个 assertion 都是测试自身缺陷：
+
+- negative string test 把被禁止的字符串写进 test source，导致匹配自己；
+- test 期待一个固定错误字符串，但实现使用通用参数化错误信息。
+
+正确处理不是删掉 test gate，也不是直接跑 Spark，而是：
+
+```text
+定位 test defect
+→ 修同一 feature branch
+→ PR HEAD 变化
+→ Self-Runner request 重新绑定新 exact SHA
+→ 从 policy/source gate 重新验证
+```
+
+---
+
+## 26. 重要 STEP 推荐同时做 PR HEAD 和 merged main 验证
+
+本轮正式 Reconciliation 使用：
+
+```text
+Healthcare PR exact HEAD
+→ real ARC / Spark PASS
+→ merge
+→ merged main exact SHA
+→ real ARC / Spark PASS
+```
+
+对应：
+
+```text
+PR #24 final HEAD = ee16f5265b0ebb8c30e7e65ec665215613956e77
+pre-merge Run     = 38287060452 PASS
+
+merged main       = 91d96f436e7697d70025cc1c9a045ecfb20f41b1
+post-merge Run    = 38287401518 PASS
+```
+
+这比“PR 里测过，所以 merge 后默认相同”更强。
+
+不是所有小文档改动都需要 post-merge runtime；但对关键业务 STEP，这种模式应优先采用。
+
+---
+
+## 27. Runtime PASS、Historical Evidence、Mainline Acceptance 是三个不同状态
+
+TASK004 Reconciliation 明确证明：
+
+```text
+代码能真实运行 PASS
+!=
+它已经属于正式主线
+```
+
+状态应区分：
+
+```text
+HISTORICAL_RUNTIME_PASS
+CANDIDATE
+MAINLINE_REVIEWED
+MAINLINE_ACCEPTED
+```
+
+测试期 V9 的真实 PASS 没有被删除，但只有在主线完成：
+
+```text
+review
+→ modify
+→ source tests
+→ exact PR HEAD real runtime
+→ merge
+→ exact main real runtime
+→ closeout
+```
+
+之后才升级为：
+
+```text
+MAINLINE_ACCEPTED
+```
+
+这条原则以后同样适用于 Airflow、OMOP 新实体和其他平台组件。
+
