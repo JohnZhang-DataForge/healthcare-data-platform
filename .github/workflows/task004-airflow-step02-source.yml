@@ -3,7 +3,7 @@ name: TASK004 Airflow STEP02 Source Gate
 on:
   push:
     branches:
-      - 'feature/task004-airflow-step02-processing-dag'
+      - 'feature/task004-airflow-step02-*'
     paths:
       - 'airflow/dags/task004_processing_pipeline.py'
       - 'kubernetes/manifests/task004/airflow-task004-control-runtime-rbac.yaml'

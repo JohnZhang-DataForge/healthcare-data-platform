@@ -34,6 +34,7 @@ class Task004AirflowProcessingSourceTests(
             'do_xcom_push=True',
             'on_finish_action="delete_succeeded_pod"',
             'on_kill_action="keep_pod"',
+            "is_paused_upon_creation=False",
             "/airflow/xcom/return.json",
             "[person, visit] >> reconcile",
         ):
