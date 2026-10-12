@@ -2,9 +2,7 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(
-    "/data/spark/healthcare-data-platform"
-)
+ROOT = Path(__file__).resolve().parents[2]
 
 DOCKERFILE = (
     ROOT
@@ -156,6 +154,7 @@ class UnifiedRuntimeImageSourceTests(
             "05c-resolve-runtime-lineage.sh",
             "05d-run-person-canonical.sh",
             "05e-run-visit-canonical.sh",
+            "05f-reconcile-person-visit.sh",
         ):
             self.assertIn(
                 path,
@@ -205,6 +204,21 @@ class UnifiedRuntimeImageSourceTests(
             )
 
 
+    def test_dockerfile_copies_reconciliation_assets(self):
+        text = DOCKERFILE.read_text(
+            encoding="utf-8"
+        )
+
+        for path in (
+            "reconcile_person_visit.py",
+            "person-visit-reconciliation.yaml.tpl",
+        ):
+            self.assertIn(
+                path,
+                text,
+            )
+
+
     def test_entrypoint_exposes_required_commands(self):
         text = ENTRYPOINT.read_text(
             encoding="utf-8"
@@ -215,6 +229,7 @@ class UnifiedRuntimeImageSourceTests(
             "generate-publish)",
             "person)",
             "visit)",
+            "reconcile)",
             "version)",
         ):
             self.assertIn(
@@ -256,6 +271,93 @@ class UnifiedRuntimeImageSourceTests(
 
         self.assertNotIn(
             "spark-submit",
+            text,
+        )
+
+
+    def test_control_runtime_rbac_is_namespaced_and_least_privilege(self):
+        rbac = (
+            ROOT
+            / "kubernetes/manifests/task004/"
+            "control-runtime-rbac.yaml"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        for value in (
+            "name: task004-control-runtime",
+            "namespace: dw-spark",
+            "kind: Role",
+            "kind: RoleBinding",
+            "- sparkapplications",
+            "- configmaps",
+            "- pods/log",
+            "- dw-spark-s3-secret",
+            "- spark-job",
+        ):
+            self.assertIn(
+                value,
+                rbac,
+            )
+
+        self.assertNotIn(
+            "kind: ClusterRole",
+            rbac,
+        )
+
+        self.assertNotIn(
+            "kind: ClusterRoleBinding",
+            rbac,
+        )
+
+        self.assertNotIn(
+            'resources:\n      - "*"',
+            rbac,
+        )
+
+        self.assertNotIn(
+            'verbs:\n      - "*"',
+            rbac,
+        )
+
+
+    def test_reconciliation_runtime_avoids_cluster_scope_preflight(self):
+        source = (
+            ROOT
+            / "scripts/task004/"
+            "05f-reconcile-person-visit.sh"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertNotIn(
+            'kubectl get namespace "$NS"',
+            source,
+        )
+
+        self.assertNotIn(
+            "kubectl get crd",
+            source,
+        )
+
+
+    def test_workflow_tracks_reconciliation_sources(self):
+        text = WORKFLOW.read_text(
+            encoding="utf-8"
+        )
+
+        for path in (
+            "05f-reconcile-person-visit.sh",
+            "reconcile_person_visit.py",
+            "person-visit-reconciliation.yaml.tpl",
+        ):
+            self.assertIn(
+                path,
+                text,
+            )
+
+        self.assertIn(
+            "TASK004_RUNTIME_SOURCE_GATE=PASS",
             text,
         )
 

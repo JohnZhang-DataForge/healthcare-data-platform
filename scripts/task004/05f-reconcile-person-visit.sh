@@ -287,13 +287,9 @@ if [[ "$MODE" == "render" ]]; then
   exit 0
 fi
 
-kubectl get namespace "$NS" >/dev/null
-
 kubectl get secret   dw-spark-s3-secret   -n "$NS"   >/dev/null
 
 kubectl get serviceaccount   spark-job   -n "$NS"   >/dev/null
-
-kubectl get crd   sparkapplications.sparkoperator.k8s.io   >/dev/null
 
 kubectl create configmap   "$CM_NAME"   -n "$NS"   --from-file=reconcile_person_visit.py="$APP"   --dry-run=client   -o yaml | kubectl apply     -f -     >/dev/null
 

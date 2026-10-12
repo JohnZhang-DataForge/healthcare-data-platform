@@ -84,6 +84,10 @@ COPY --chown=10001:10001 --chmod=0755 \
   scripts/task004/05e-run-visit-canonical.sh \
   /data/spark/healthcare-data-platform/scripts/task004/05e-run-visit-canonical.sh
 
+COPY --chown=10001:10001 --chmod=0755 \
+  scripts/task004/05f-reconcile-person-visit.sh \
+  /data/spark/healthcare-data-platform/scripts/task004/05f-reconcile-person-visit.sh
+
 COPY --chown=10001:10001 --chmod=0644 \
   kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl \
   /data/spark/healthcare-data-platform/kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl
@@ -115,6 +119,14 @@ COPY --chown=10001:10001 --chmod=0644 \
 COPY --chown=10001:10001 --chmod=0644 \
   spark/manifests/task003/encounter-canonical-adapter.yaml.tpl \
   /data/spark/healthcare-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl
+
+COPY --chown=10001:10001 --chmod=0755 \
+  spark/apps/task004/reconcile_person_visit.py \
+  /data/spark/healthcare-data-platform/spark/apps/task004/reconcile_person_visit.py
+
+COPY --chown=10001:10001 --chmod=0644 \
+  spark/manifests/task004/person-visit-reconciliation.yaml.tpl \
+  /data/spark/healthcare-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl
 
 # Docker COPY --chmod applies the supplied mode to destination
 # path components it creates. Read-only assets copied with 0644

@@ -15,6 +15,7 @@ Commands:
   generate-publish [runner args]
   person [--render-only]
   visit [--render-only]
+  reconcile [--render-only]
 
 Runtime contract:
   TASK004_RUNTIME_CONTEXT=in-cluster
@@ -80,6 +81,16 @@ case "$command_name" in
 
     exec \
       "${PROJECT_ROOT}/scripts/task004/05e-run-visit-canonical.sh" \
+      "$@"
+    ;;
+
+  reconcile)
+    shift
+
+    export TASK004_RUNTIME_CONTEXT=in-cluster
+
+    exec \
+      "${PROJECT_ROOT}/scripts/task004/05f-reconcile-person-visit.sh" \
       "$@"
     ;;
 
