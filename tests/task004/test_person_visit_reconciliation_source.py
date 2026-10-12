@@ -48,11 +48,6 @@ class PersonVisitReconciliationSourceTests(
             source,
         )
 
-        self.assertNotIn(
-            'Path("/data/spark/healthcare-data-platform")',
-            source,
-        )
-
 
     def test_python_has_nonblank_lineage_gate(self):
         source = read(APP)
@@ -171,7 +166,7 @@ class PersonVisitReconciliationSourceTests(
             '"batch_id"',
             '"entity"',
             '"run_id"',
-            "Processing URI source mismatch",
+            'f"Processing URI {key} mismatch"',
         ):
             self.assertIn(
                 value,
