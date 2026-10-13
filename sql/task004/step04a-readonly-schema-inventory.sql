@@ -57,4 +57,30 @@ WHERE (n.nspname,c.relname) IN (
  ('etl','person_stage'),('etl','person_id_map'),
  ('etl','visit_occurrence_id_map'))
 ORDER BY 1,2;
+SELECT n.nspname AS schema_name, c.relname AS table_name,
+       tg.tgname AS trigger_name, pg_get_triggerdef(tg.oid,true) AS trigger_definition
+FROM pg_trigger tg JOIN pg_class c ON c.oid=tg.tgrelid
+JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE NOT tg.tgisinternal AND (n.nspname,c.relname) IN (
+ ('cdm','person'),('cdm','visit_occurrence'),
+ ('etl','person_stage'),('etl','person_id_map'),
+ ('etl','visit_occurrence_id_map'))
+ORDER BY 1,2,3;
+SELECT seq_ns.nspname AS sequence_schema, seq.relname AS sequence_name,
+       table_ns.nspname AS related_schema, tab.relname AS related_table,
+       att.attname AS related_column
+FROM pg_class seq
+JOIN pg_namespace seq_ns ON seq_ns.oid=seq.relnamespace
+LEFT JOIN pg_depend dep ON dep.objid=seq.oid AND dep.classid='pg_class'::regclass
+  AND dep.refclassid='pg_class'::regclass AND dep.deptype IN ('a','i')
+LEFT JOIN pg_class tab ON tab.oid=dep.refobjid
+LEFT JOIN pg_namespace table_ns ON table_ns.oid=tab.relnamespace
+LEFT JOIN pg_attribute att ON att.attrelid=tab.oid AND att.attnum=dep.refobjsubid
+WHERE seq.relkind='S'
+  AND (seq_ns.nspname IN ('cdm','etl')
+       OR (table_ns.nspname,tab.relname) IN (
+         ('cdm','person'),('cdm','visit_occurrence'),
+         ('etl','person_stage'),('etl','person_id_map'),
+         ('etl','visit_occurrence_id_map')))
+ORDER BY 1,2,3,4,5;
 COMMIT;
