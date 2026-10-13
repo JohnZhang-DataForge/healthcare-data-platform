@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 最新真实验收：S3 Discovery 已与 PostgreSQL Claim Guard 在同一个 15 分钟 Airflow DAG 正式串联。** [Landing Discovery→Claim Live Closeout](tasks/LANDING-DISCOVERY-TO-CLAIM-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [真实 Airflow Run 38471287896](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38471287896) **SUCCESS**：`scan_ready_manifests → evaluate_batch_claims` 两个 KPO Task 均 success；Main GitSync SHA/真实 Scheduler DagBag PASS；PostgreSQL 独立读回 Claim Ledger=0、OMOP Person=136、Visit=9391 不变。Claim 持久化目前**故意关闭**（`CLAIM_ENABLE=NO` / 空 allowlist），因为 Spark/Writer 尚未对接，也防止自动误领已入库的 6 个历史 S3 Batch。此阶段完成**实际接线/历史排除验证**，没有 CLAIMED 真实批次、没有 Spark、没有动态 PG COMMIT。**当前 NEXT = 受控 Landing Consumer → Spark Person/Visit → Writer 安全设计及单批闭环**，不是重新实现 Discovery/Claim。TASK004 IN PROGRESS、TASK005 ON HOLD；以下旧 NEXT 已过时。
+
+
 > **2026-10-13 最新开发：Landing Batch Claim / Processing Ledger 安全核心已实际验证。** [真实 PostgreSQL ROLLBACK Closeout](tasks/LANDING-BATCH-CLAIM-ROLLBACK-CLOSEOUT-2026-10-13.zh-CN.md) / [Self-Runner Run 38468961485](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38468961485)：在 `omop` 新增独立 `etl.landing_batch_ledger`、`landing_claim_worker` 最小权限身份 + K8s Secret（确有 DB schema/role 持久变更），12 tests PASS，真实 worker02 PG 独立领取/重复 BUSY/身份漂移/FAILED 显式重试/旧 token/过期 lease 等 ROLLBACK 验收；模拟记录没有持久留下，CDM Person=136 Visit=9391 未变。**现有 `landing_batch_discovery` 仍然只做 S3 Inventory，并未自动调用 Claim 或 Spark、PG Writer。新 CURRENT NEXT = 独立 Consumer Claim 接线/历史批次保护，再逐步 Spark / Dynamic PG COMMIT。** 以下旧 NEXT 已过时。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
