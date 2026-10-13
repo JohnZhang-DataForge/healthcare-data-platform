@@ -11,6 +11,17 @@ from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
 from airflow.operators.python import PythonOperator, ShortCircuitOperator
+
+# Airflow 3 DagBag imports a gitSync file by absolute path without always
+# adding that file's sibling directory to sys.path. Ensure sibling helpers
+# resolve both in the scheduler DAG parser and in execution workers.
+from pathlib import Path
+import sys
+
+_DAG_MODULE_DIRECTORY = str(Path(__file__).absolute().parent)
+if _DAG_MODULE_DIRECTORY not in sys.path:
+    sys.path.insert(0, _DAG_MODULE_DIRECTORY)
+
 from landing_spark_processing import (
     select_verified_processing_replay,
     processing_gate,
