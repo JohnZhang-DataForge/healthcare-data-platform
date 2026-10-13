@@ -71,29 +71,13 @@ Self-Runner PR #31 merge   = 8ab26784cd0229cce96989e3691c122049e3c23a
 
 测试期 Candidate Status 已按文档治理规则原文归档，不再是 current 状态。
 
-## 当前开发目标
+## 当前开发目标：STEP03E 收尾（不是再次开发 upstream ingestion）
 
-**TASK004 下一步：Airflow upstream ingestion orchestration。**
+**真实 Airflow 业务链已 PASS。** Generate → Landing verified → Person (23) / Visit (3592) → Reconcile：Airflow run `task004-step03e-38324111846` 四个 Task 和 DAG 都 success。原始 GitHub workflow 因后置 XCom 取证返回 failure；独立 post-success Run `38326695107` 已 PASS。
 
-当前已经冻结并验收：
+Healthcare main：`d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`。
 
-~~~text
-Landing manifest
-→ Person + Visit
-→ Reconcile
-~~~
-
-下一步只扩展上游：
-
-~~~text
-Generate Synthea
-→ Landing publish / validate
-→ dynamic manifest URI + SHA
-→ existing Person + Visit
-→ existing Reconcile
-~~~
-
-不重新开发 Person / Visit / Reconcile；优先复用现有 task004-control-runtime 和 04c-run-synthea-generate-publish.sh，并为 dw-synthea 设计最小 namespace-scoped RBAC。
+当前只剩 Self-Runner PR #38 的正式代码整理、最终 CI 验证、merge、post-merge checkpoint，以及 STEP03E 文档一致性修复。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一业务阶段未在本次收尾中确定。
 
 ## 冲突优先级
 
