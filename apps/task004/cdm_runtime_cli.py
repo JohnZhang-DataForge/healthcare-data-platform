@@ -11,6 +11,7 @@ from task004_cdm_materialization_plan import plan
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--plan-file", required=True)
+    parser.add_argument("--validate-source", choices=("person", "visit"))
     args = parser.parse_args()
     supplied = json.loads(Path(args.plan_file).read_text(encoding="utf-8"))
     keys = ("batch_id", "manifest_sha256", "manifest_uri",
@@ -24,6 +25,22 @@ def main():
         raise ValueError("BLOCKED=plan_drift")
     if supplied.get("database_mutation_authorized") is not False:
         raise ValueError("BLOCKED=database_mutation_forbidden")
+    if args.validate_source:
+        # Defer optional imports until real source validation is requested.
+        import io
+        import os
+        import boto3
+        import pyarrow.parquet as parquet
+        from task004_cdm_dynamic_source import read
+        endpoint = os.environ.get("TASK004_S3_ENDPOINT_URL")
+        if not endpoint or not endpoint.startswith(("http://", "https://")):
+            raise ValueError("BLOCKED=missing_s3_endpoint")
+        s3 = boto3.client("s3", endpoint_url=endpoint)
+        items = read(s3, supplied, args.validate_source,
+                     lambda data: parquet.read_table(io.BytesIO(data)).to_pylist())
+        print("DYNAMIC_SOURCE_VALIDATED=PASS")
+        print("ENTITY=" + args.validate_source)
+        print("ROW_COUNT=" + str(len(items)))
     print("DYNAMIC_CDM_PLAN_VALIDATED=PASS")
     print("DATABASE_MUTATION=NO")
 
