@@ -10,6 +10,13 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
+from airflow.operators.python import PythonOperator, ShortCircuitOperator
+from landing_spark_processing import (
+    select_verified_processing_replay,
+    processing_gate,
+    validate_processing_output,
+    make_processing_pod,
+)
 
 
 CLAIM_IMAGE = (
@@ -38,7 +45,7 @@ S3_SECRET_KEY = Secret(
 
 with DAG(
     dag_id="landing_batch_discovery",
-    description="Periodic S3 READY discovery and guarded PostgreSQL batch claim decisions",
+    description="Periodic Landing discovery with optional safeguarded historical Spark processing replay",
     start_date=datetime(2026, 10, 13),
     schedule="*/15 * * * *",
     catchup=False,
@@ -122,4 +129,66 @@ with DAG(
         execution_timeout=timedelta(minutes=6),
     )
 
-    scan_ready_manifests >> evaluate_batch_claims
+    authorize_processing_replay = PythonOperator(
+        task_id="authorize_processing_replay",
+        python_callable=select_verified_processing_replay,
+        op_args=[
+            "{{ ti.xcom_pull(task_ids='scan_ready_manifests') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='evaluate_batch_claims') | tojson }}",
+            "{{ dag_run.conf | tojson }}",
+            "{{ dag_run.run_type.value }}",
+        ],
+    )
+
+    processing_only_gate = ShortCircuitOperator(
+        task_id="processing_only_gate",
+        python_callable=processing_gate,
+        op_args=[
+            "{{ ti.xcom_pull(task_ids='authorize_processing_replay') | tojson }}",
+        ],
+    )
+
+    SELECTED = {
+        "BATCH_ID": "{{ ti.xcom_pull(task_ids='authorize_processing_replay')['batch_id'] }}",
+        "MANIFEST_URI": "{{ ti.xcom_pull(task_ids='authorize_processing_replay')['manifest_uri'] }}",
+        "MANIFEST_SHA256": "{{ ti.xcom_pull(task_ids='authorize_processing_replay')['manifest_sha256'] }}",
+    }
+
+    spark_patient = make_processing_pod(
+        "spark_patient", process="person", env_vars=SELECTED, with_xcom=True
+    )
+    spark_encounter = make_processing_pod(
+        "spark_encounter", process="visit", env_vars=SELECTED, with_xcom=True
+    )
+
+    spark_reconcile = make_processing_pod(
+        "spark_reconcile",
+        process="reconcile",
+        env_vars={
+            "BATCH_ID": SELECTED["BATCH_ID"],
+            "PATIENT_PROCESSING_URI":
+                "{{ ti.xcom_pull(task_ids='spark_patient')['processing_data_uri'] }}",
+            "ENCOUNTER_PROCESSING_URI":
+                "{{ ti.xcom_pull(task_ids='spark_encounter')['processing_data_uri'] }}",
+            "EXPECTED_PATIENT_ROWS":
+                "{{ ti.xcom_pull(task_ids='spark_patient')['canonical_rows'] }}",
+            "EXPECTED_ENCOUNTER_ROWS":
+                "{{ ti.xcom_pull(task_ids='spark_encounter')['canonical_rows'] }}",
+        },
+        with_xcom=False,
+    )
+
+    verify_spark_processing = PythonOperator(
+        task_id="verify_spark_processing",
+        python_callable=validate_processing_output,
+        op_args=[
+            "{{ ti.xcom_pull(task_ids='authorize_processing_replay') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='spark_patient') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='spark_encounter') | tojson }}",
+        ],
+    )
+
+    scan_ready_manifests >> evaluate_batch_claims >> authorize_processing_replay
+    authorize_processing_replay >> processing_only_gate
+    processing_only_gate >> [spark_patient, spark_encounter]
+    [spark_patient, spark_encounter] >> spark_reconcile >> verify_spark_processing
