@@ -9,10 +9,10 @@
 | TASK001 | 历史冻结 Landing / batch 基线 | 不重跑、不改冻结文件 |
 | TASK002 | Person V2 历史回归与冻结基线 | 不擅自修改 |
 | TASK003 | **COMPLETE / CLOSED** | 只读参考实现 |
-| **TASK004 — overall（完整闭环）** | **IN PROGRESS** | **STEP04A INVESTIGATION COMPLETE (read-only), NEXT: STEP04B design / simulation only**；正式开发计划见 [Person/Visit CDM + Idempotency Plan](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) |
+| **TASK004 — overall（完整闭环）** | **IN PROGRESS** | **STEP04A CLOSED; STEP04B OFFLINE REPLAY CONTRACT BASELINE PASS (15/15), NEXT: controlled mapping/loader implementation subject to separate DB write authorization**；正式开发计划见 [Person/Visit CDM + Idempotency Plan](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) |
 | TASK004 — Processing MVP（既有验收） | **COMPLETE / CLOSED / FROZEN** | 保持历史业务/Runner PASS，见 [MVP Closeout](TASK-004-FINAL-CLOSEOUT.md) |
-| TASK004 — CDM Person/Visit Materialization | **NOT IMPLEMENTED / NOT VERIFIED** | STEP04A 已完成调查，STEP04B 仅做安全设计/模拟；实际写库需另行授权 |
-| TASK004 — 同批次 Airflow replay/retry 幂等性 | **NOT VERIFIED** | 必须数据库级 A1–A11 验收及恢复用例通过 |
+| TASK004 — CDM Person/Visit Materialization | **NOT IMPLEMENTED / NOT VERIFIED** | STEP04A 调查完成；STEP04B 设计与离线模拟通过，见 [04B Replay Contract](TASK-004-STEP04B-REPLAY-CONTRACT-v1.0.zh-CN.md)；实际入库/DDL 仍需另行授权 |
+| TASK004 — 同批次 Airflow replay/retry 幂等性 | **LIVE DB NOT VERIFIED** | STEP04B A1–A11 仅 Python 内存模拟 PASS，不代表数据库幂等；仍需真实 PostgreSQL / Airflow 重放验收 |
 | TASK004 — Synthea | **PASS** | frozen baseline |
 | TASK004 — Resolver / Control | **PASS** | frozen baseline |
 | TASK004 — Person | **PASS** | frozen baseline |
