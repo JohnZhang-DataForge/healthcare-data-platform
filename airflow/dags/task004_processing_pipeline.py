@@ -2,10 +2,15 @@ from datetime import datetime
 import json
 from airflow.operators.python import PythonOperator
 from task004_cdm_preflight_contract import validate_handoff
+from task004_cdm_materialization_plan import plan as prepare_cdm_plan
 
 
 def _validate_handoff_json(generate, person, visit):
     return validate_handoff(json.loads(generate), json.loads(person), json.loads(visit))
+
+
+def _prepare_cdm_plan_json(handoff):
+    return prepare_cdm_plan(json.loads(handoff))
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
@@ -414,4 +419,10 @@ with DAG(
 
     generate_publish >> [person, visit]
     [person, visit] >> reconcile
-    reconcile >> cdm_load_preflight
+    cdm_materialization_plan = PythonOperator(
+        task_id="cdm_materialization_plan",
+        python_callable=_prepare_cdm_plan_json,
+        op_args=["{{ ti.xcom_pull(task_ids='cdm_load_preflight') | tojson }}"],
+    )
+
+    reconcile >> cdm_load_preflight >> cdm_materialization_plan
