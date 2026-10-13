@@ -20,7 +20,7 @@ def validate(uri,entity):
     return uri
 
 for task,entity,expected in (("person","patient",23),("visit","encounter",3592)):
-        val=XCom.get_one(run_id=RUN,task_id=task,dag_id=DAG)
+        val=XCom.get_one(run_id=RUN,task_id=task,dag_id=DAG,key='return_value')
         require(isinstance(val,dict),"xcom_missing_"+task)
         require(int(val.get("canonical_rows",-1))==expected,"row_count_"+task)
         uri=validate(val.get("processing_data_uri"),entity)
