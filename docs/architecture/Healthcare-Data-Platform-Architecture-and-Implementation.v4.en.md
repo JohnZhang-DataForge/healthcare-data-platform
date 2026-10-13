@@ -3,7 +3,7 @@
 > **Version: V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **Updated: 2026-10-10**
 > **Status: Authoritative Master Design; implementation status sections are snapshots as of 2026-10-10.**
-> **Current task progress and agent entry:** [`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md) and [`../README.md`](../README.md). TASK004 STEP03E end-to-end Airflow business orchestration was accepted on 2026-10-12; the Self-Runner read-only acceptance gate has also merged. No new business phase has been approved yet; Phase E Condition remains a candidate. Historical NEXT markers below describe the original 2026-10-10 roadmap, not current progress.
+> **Current task progress and agent entry:** [`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md) and [`../README.md`](../README.md). TASK004 STEP03E end-to-end Airflow business orchestration was accepted on 2026-10-12; the Self-Runner read-only acceptance gate has also merged. TASK004's bounded Processing-first Airflow MVP is now **COMPLETE / CLOSED / FROZEN** following the final 2026-10-13 UTC read-only runtime audit; see [`../tasks/TASK-004-FINAL-CLOSEOUT.md`](../tasks/TASK-004-FINAL-CLOSEOUT.md). TASK005 Condition is the next planned business entity; only the STEP00 read-only preflight is authorized, and implementation has not started. Historical NEXT markers below describe the original 2026-10-10 roadmap, not current progress.
 > **Repository:** `JohnZhang-DataForge/healthcare-data-platform`
 > **Current environment:** Kubernetes + SeaweedFS(S3) + Airflow + Spark Operator/PySpark + PostgreSQL 17 / OMOP CDM 5.4.3 + GitHub
 > **Planned extensions:** Azure Blob/ADLS Gen2, Microsoft Fabric, dbt-fabric, MLflow, Mirth/HL7, FHIR, GitHub Actions, Argo CD
