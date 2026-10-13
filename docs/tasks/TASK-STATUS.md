@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 CURRENT NEXT：独立 NEW_ONLY S3 Ready 发布（不是重新生成）**。NEW_ONLY v2 local Contract + S3/PG 历史 Source ID READ-ONLY LIVE PASS，[验收](SYNTHEA-NEW-ONLY-PREPUBLISH-SOURCE-IDENTITY-LIVE-2026-10-13.zh-CN.md) / [Run 38486092750](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38486092750)：固定本地批次 Person=73、Encounter=12159、18 CSV 全部非空、历史 S3 14 个源 CSV + 真 PG Person 136/Visit 9391 source keys，**Person/Visit overlap 均为 0**。streaming CSV 修复 64MiB 问题；Source ID 审计不是并发事务锁。下一轮先通过旧 v1 validator 验证当前这批数据，再独立 S3 18 object upload/checksum GET + 最后 Manifest immutable READY，保留 `CLAIM_ENABLE=NO` / Writer Drift Guard；新 v2 Consumer 仍未启用。**S3 READY/PG ROLLBACK 正例/COMMIT 均未完成**。TASK004 IN PROGRESS，TASK005 ON HOLD。
+
+
 > **2026-10-13 最新 NEW_ONLY 真实 Local Generator 验收**：[LIVE Closeout](SYNTHEA-NEW-ONLY-LOCAL-GENERATOR-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38484300008](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38484300008) 全部 Job SUCCESS：`synthea-local` Retain StorageClass + worker01 5Gi PVC Bound / 实际 Person=73 Encounter=12159 18 CSV，重放同一个冻结 request ID 没有重新生成，`S3_READY=NO` / `PG_MUTATION=NO`。**当前 NEXT 改为 NEW_ONLY S3 发布准备：正式 versioned contract（零行辅助表需兼容消费者）、PG/S3 历史 source IDs 全局 read-only 防撞、独立镜像 Digest、Manifest 最后发布与读回。** 不重做前轮存储 PVC、也不在此刻直接开放动态 COMMIT；TASK004 IN PROGRESS，TASK005 ON HOLD。下方历史 NEXT 仅作历史记录。
 
 
