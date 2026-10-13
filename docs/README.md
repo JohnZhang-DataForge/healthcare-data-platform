@@ -5,14 +5,15 @@
 ## 按顺序阅读
 
 1. [当前 TASK 状态与下一步](tasks/TASK-STATUS.md)：当前主线真实完成什么、下一步是什么。
-2. [STEP03E End-to-End Acceptance](tasks/TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md)：Synthea→Landing→Person/Visit→Reconcile；本次正式验收。
-3. [TASK004 Airflow Processing Orchestration Mainline Closeout](tasks/TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md)：GitHub → git-sync → Airflow → Person/Visit → Reconcile 正式主线验收。
-4. [TASK004 Batch Reconciliation Mainline Closeout](tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md)：Reconciliation 正式主线验收证据。
-5. [正式双仓库开发操作手册](development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)：Healthcare feature PR → exact SHA → Self-Runner / ARC → PASS → Merge → post-merge validation → Checkpoint。
-6. [Agent 开发 Skill](skill/SKILL-cn.md)：一步一验、canonical source、数据安全、Git 与文档治理。
-7. [通用开发经验](runbooks/development-lessons-cn.md) 与 [TASK004 专项经验](runbooks/development-lessons-task004-cn.md)。
-8. [当前总架构（中文）](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md) / [English](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md)。
-9. [文档生命周期规范](development/DOCUMENT-LIFECYCLE-AND-ARCHIVE-v1.0.zh-CN.md) / [历史归档](archive/README.md)。
+2. [TASK005 Condition 开发方案 v1.0](tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)：下一业务任务的设计基线、Processing/DB 分段授权与 STEP00 唯一开工入口。
+3. [STEP03E End-to-End Acceptance](tasks/TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md)：Synthea→Landing→Person/Visit→Reconcile；本次正式验收。
+4. [TASK004 Airflow Processing Orchestration Mainline Closeout](tasks/TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md)：GitHub → git-sync → Airflow → Person/Visit → Reconcile 正式主线验收。
+5. [TASK004 Batch Reconciliation Mainline Closeout](tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md)：Reconciliation 正式主线验收证据。
+6. [正式双仓库开发操作手册](development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)：Healthcare feature PR → exact SHA → Self-Runner / ARC → PASS → Merge → post-merge validation → Checkpoint。
+7. [Agent 开发 Skill](skill/SKILL-cn.md)：一步一验、canonical source、数据安全、Git 与文档治理。
+8. [通用开发经验](runbooks/development-lessons-cn.md) 与 [TASK004 专项经验](runbooks/development-lessons-task004-cn.md)。
+9. [当前总架构（中文）](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md) / [English](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md)。
+10. [文档生命周期规范](development/DOCUMENT-LIFECYCLE-AND-ARCHIVE-v1.0.zh-CN.md) / [历史归档](archive/README.md)。
 
 ## 当前主线状态
 
@@ -77,11 +78,12 @@ Self-Runner PR #31 merge   = 8ab26784cd0229cce96989e3691c122049e3c23a
 
 STEP03E **当时验收的 Healthcare 源码 SHA**：`d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`。当前 `main` 可以继续前进，新 Agent 须实时查询 GitHub HEAD，不能把此历史 SHA 当成今天的 `main`。
 
-Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`），post-merge 只读 Run `38328600074` 已 PASS。本 STEP03E 收尾已包含 Self-Runner 正式验证与文档归档。**Phase E / Condition 只是 V4 中的候选下一方向，尚未获批准**；不能自行开始开发或产生新数据。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一业务阶段未在本次收尾中确定。
+Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`），post-merge 只读 Run `38328600074` 已 PASS。本 STEP03E 收尾已包含 Self-Runner 正式验证与文档归档。**Phase E 的第一实体已确定为 TASK005 Condition，设计与分步验收方案已形成；实施尚未开始**。当前 NEXT 仅是 TASK005 STEP00 的只读预检，不授权自行生成 batch、写 Processing 或写 PostgreSQL。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一阶段具体步骤请以 TASK005 Condition 正式计划和 TASK-STATUS 为准。
 
 ## 冲突优先级
 
 - 当前业务进度：`docs/tasks/TASK-STATUS.md`。
+- TASK005 Condition 受控开发设计与唯一 NEXT：`docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md`。
 - 最新 STEP03E 全链验收：`docs/tasks/TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`。
 - 历史 STEP02 Airflow Processing 验收：`docs/tasks/TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md`。
 - 当前 Reconciliation 验收：`docs/tasks/TASK-004-BATCH-RECONCILIATION-MAINLINE-CLOSEOUT.md`。
