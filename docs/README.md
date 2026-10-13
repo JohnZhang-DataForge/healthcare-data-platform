@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **新 Session 的唯一最新交接（2026-10-13）**：先读 [当前 TASK004 Agent Handoff](tasks/TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md) → [用户已批准的 Producer/Consumer 解耦架构](architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md) → [最新真 S3→Writer 验收](tasks/OMOP-WRITER-REAL-S3-PG-ROLLBACK-GATE-2026-10-13.zh-CN.md)。**旧累积式 Handoff 的多个“CURRENT NEXT”已归档**。当前准确状态：Airflow Discovery/Claim 只读、手动历史 Spark PASS；真正新 Batch Claim 自动消费未启用；PG Writer 真 S3 漂移拦截 PASS、无冲突真实正向 ROLLBACK 和 COMMIT 均未完成；新 Generator NEW_ONLY 仅设计获批、未部署。NEXT：先做 worker01 NEW_ONLY 只读前置审计和 Writer Plan ID 版本兼容预检，再制造真正无撞车 S3 READY Batch，用于第三层正向 ROLLBACK。TASK004 IN PROGRESS、TASK005 ON HOLD。以下旧阶段 banner 请看对应历史 Closeout，**不能作为最新 NEXT**。
+
+
 > **2026-10-13 第三层 Writer 真 S3 接线已验收“预期冲突阻断”，而非成功 ROLLBACK 正例。** [OMOP S3→PG Gate 实测](tasks/OMOP-WRITER-REAL-S3-PG-ROLLBACK-GATE-2026-10-13.zh-CN.md) / [Self-Runner Run 38479591382](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38479591382)：真实 SeaweedFS immutable Manifest SHA/Person 23 + Visit 3588 Parquet PASS → 固定 CDM Writer Runtime 实际连 PG，预期 `BLOCKED:EXISTING_TARGET_DRIFT` PASS → 独立读回 Person=136/Visit=9391/Claim=0、该 Batch Ledger/Stage/Commit=0，**无数据持久化**。**该 Run Workflow SUCCESS 仅表示安全拒绝正确，Writer Job 没有完成整笔 ROLLBACK 正例，COMMIT 禁止。** 当前下一步是取得真正无 Source ID 撞车的 NEW_ONLY 批次（并处理 Writer Plan 的旧 `task004-airflow-` ID 依赖），然后 Person→Visit 真 S3-to-PG 成功 ROLLBACK→Claim fencing→COMMIT/对账；不能拿旧批强行入库。Task004 IN PROGRESS / Task005 ON HOLD。下方旧 NEXT 为历史阶段。
 
 
