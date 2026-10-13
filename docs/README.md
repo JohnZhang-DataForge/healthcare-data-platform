@@ -1,4 +1,7 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
+
+> **2026-10-13 最新进度：STEP04F Person Source-ID READONLY AUDIT = PASS。** [实时证据 Closeout](tasks/TASK-004-STEP04F-PERSON-SOURCE-ID-READONLY-RECONCILIATION-CLOSEOUT.md)：Self-Runner [Run 38435544614](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38435544614) SUCCESS；新批次 23 个 Source ID 全部存在于 mapping、相同 Person=0、不同 Person=23、新 Person=0、dangling=0；失败批次 ledger/stage/commit=0/0/0。Self-Runner [PR #69](https://github.com/JohnZhang-DataForge/Self-Runner/pull/69) 已合并。**目前唯一 NEXT = 下一轮审查 Synthea Seed / Reference Date 与 Source ID 批次隔离策略（仍需单独授权）；禁止 Writer COMMIT、禁止开始 TASK005。**下文旧“修复只读审计”和 STEP04A NEXT 均为历史记录。
+
 > **2026-10-13 当前状态更新：先读 [TASK004 最新 Agent 交接](tasks/TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md)。** 新 Synthea 全流程已 PASS（Person 23/Visit 3588），新批次 Person Writer 因 EXISTING_TARGET_DRIFT 正确拒绝；最新只读审计 Run 38434861465 因 Python 模块路径错误 FAILURE。**唯一 NEXT = 修复只读审计并得出 Source ID overlap 汇总；本文后面旧“STEP04A NEXT”已过时，不是新 Agent 的开工点。**
 
 

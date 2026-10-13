@@ -1,5 +1,8 @@
 # TASK004 STEP04F — Fresh Synthea / Person S3→PostgreSQL ROLLBACK Test: Target Drift Blocker
 
+> **2026-10-13 只读后续结论（优先级高于本文下面的原始排查建议）：** [Person Source ID Reconciliation Closeout](TASK-004-STEP04F-PERSON-SOURCE-ID-READONLY-RECONCILIATION-CLOSEOUT.md) 已记录实际 [Self-Runner Run 38435544614](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38435544614) **SUCCESS**：23 Source ID 已有映射，其中 0 identical、23 different、0 new、0 dangling；失败批次 Ledger/Stage/Commit=0/0/0、CDM Person/Visit=136/9391。**Source ID 重合及 OMOP payload drift 已证实**；相同 seed 与变更 reference date 是否为根因仍需独立确认。Person Writer 继续 BLOCKED；不得自动重跑或 COMMIT。
+
+
 **Fresh Airflow source / Processing = PASS; live dynamic Person writer ROLLBACK success = NOT YET.**
 
 ## Fresh Source Verified
