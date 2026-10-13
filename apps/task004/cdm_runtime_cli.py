@@ -13,6 +13,8 @@ def main():
     parser.add_argument("--plan-file", required=True)
     parser.add_argument("--validate-source", choices=("person", "visit"))
     parser.add_argument("--validate-postgres", action="store_true")
+    parser.add_argument("--rollback-entity", choices=("person", "visit"))
+    parser.add_argument("--rollback-rows-file")
     args = parser.parse_args()
     supplied = json.loads(Path(args.plan_file).read_text(encoding="utf-8"))
     keys = ("batch_id", "manifest_sha256", "manifest_uri",
@@ -26,6 +28,17 @@ def main():
         raise ValueError("BLOCKED=plan_drift")
     if supplied.get("database_mutation_authorized") is not False:
         raise ValueError("BLOCKED=database_mutation_forbidden")
+    if args.rollback_entity:
+        if not args.rollback_rows_file:
+            raise ValueError("BLOCKED=missing_rollback_rows")
+        from task004_cdm_postgres_rollback_executor import execute_rollback
+        rows=json.loads(Path(args.rollback_rows_file).read_text(encoding="utf-8"))
+        result=execute_rollback(supplied,rows,args.rollback_entity)
+        print("CDM_WRITER_RUNTIME_ROLLBACK=PASS")
+        print("ROLLBACK_ENTITY=" + result["entity"])
+        print("ROLLBACK_ROWS=" + str(result["row_count"]))
+    elif args.rollback_rows_file:
+        raise ValueError("BLOCKED=unused_rollback_rows")
     if args.validate_postgres:
         from task004_cdm_postgres_readonly import validate_readonly
         result=validate_readonly(supplied)
