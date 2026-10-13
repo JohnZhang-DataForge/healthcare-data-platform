@@ -1,6 +1,6 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
-> **CURRENT / 2026-10-12**。本目录是新 Agent 的唯一文档入口。历史资料移入 `docs/archive/YYYY-MM-DD[-topic]/`，**不要将 Archive 的 NEXT / Candidate / Pilot 状态当成当前状态**。
+> **CURRENT / 2026-10-12 EDT（2026-10-13 UTC 审计）**。本目录是新 Agent 的唯一文档入口。历史资料移入 `docs/archive/YYYY-MM-DD[-topic]/`，**不要将 Archive 的 NEXT / Candidate / Pilot 状态当成当前状态**。
 
 ## 按顺序阅读
 
@@ -79,11 +79,12 @@ Self-Runner PR #31 merge   = 8ab26784cd0229cce96989e3691c122049e3c23a
 
 STEP03E **当时验收的 Healthcare 源码 SHA**：`d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`。当前 `main` 可以继续前进，新 Agent 须实时查询 GitHub HEAD，不能把此历史 SHA 当成今天的 `main`。
 
-Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`），post-merge 只读 Run `38328600074` 已 PASS。本 STEP03E 收尾已包含 Self-Runner 正式验证与文档归档。**Phase E 的第一实体已确定为 TASK005 Condition，设计与分步验收方案已形成；实施尚未开始**。当前 NEXT 仅是 TASK005 STEP00 的只读预检，不授权自行生成 batch、写 Processing 或写 PostgreSQL。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一阶段具体步骤请以 TASK005 Condition 正式计划和 TASK-STATUS 为准。
+Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`），post-merge 只读 Run `38328600074` 已 PASS；Self-Runner PR #39 的历史只读 SHA gate 修复亦已合并，post-merge Run `38329852476` = SUCCESS。本 STEP03E 收尾已包含 Self-Runner 正式验证与文档归档；TASK004 Final Audit 又确认 Airflow Metadata、git-sync 源码、成功运行资源清理及 `dw-seaweedfs` S3 健康，正式关闭，见 [Final Closeout](tasks/TASK-004-FINAL-CLOSEOUT.md)。**Phase E 的第一实体已确定为 TASK005 Condition，设计与分步验收方案已形成；实施尚未开始**。当前 NEXT 仅是 TASK005 STEP00 的只读预检，不授权自行生成 batch、写 Processing 或写 PostgreSQL。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一阶段具体步骤请以 TASK005 Condition 正式计划和 TASK-STATUS 为准。
 
 ## 冲突优先级
 
 - 当前业务进度：`docs/tasks/TASK-STATUS.md`。
+- TASK004 全任务正式验收及已知边界：`docs/tasks/TASK-004-FINAL-CLOSEOUT.md`。
 - TASK005 Condition 受控开发设计与唯一 NEXT：`docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md`。
 - 最新 STEP03E 全链验收：`docs/tasks/TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`。
 - 历史 STEP02 Airflow Processing 验收：`docs/tasks/TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md`。
