@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 三独立 Generator 命名冻结**：`synthea-new-only-`（现有本地生成已验证）、`synthea-update-only-`（既有人更新，ON HOLD）、`synthea-mix-data-`（新旧混合，ON HOLD），[版本化 Batch ID 合同](../contracts/synthea/producer-batch-identity-v1.json)及[架构命名修订](architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)。SeaweedFS PV 不是 Synthea 的存储前置依赖：`synthea-local` Retain / worker01 `/data/synthea/` 已持久验收，剩余容量监控不是 NEW_ONLY S3 发布前的无条件阻塞。**未开放新前缀 Writer 权限，旧 `task004-airflow-` 仍按原样安全拒绝**。当前 NEXT 仍是固定 73 Person 批次的严格 v1 CSV 验证和受控独立 S3 发布；TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 NEW_ONLY 全局源 ID 发布前安全预检 LIVE PASS（尚未 S3 READY）**：[正式 Closeout](tasks/SYNTHEA-NEW-ONLY-PREPUBLISH-SOURCE-IDENTITY-LIVE-2026-10-13.zh-CN.md) / [Self-Runner Run 38486092750](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38486092750) / Healthcare PR #89。现存 LocalPath Batch `synthea-new-only-gh-38484300008` 真正 73 Person/12159 Encounter，18 CSV 全部非空，历史 S3 14 个 Person/Encounter CSV + PG Person map 136/Visit map 9391 源 ID overlap 均 **0**；只读核验 PASS 不等于 S3 READY/PG COMMIT。已开发 NEW_ONLY versioned v2 Contract 和 streaming prepublish gate，但当前运行 Consumer 仅 v1，因此 **NEXT 首选用这个非空批次验证既有 v1 严格 Validator，再做独立 Immutable S3 Payload→Readback→最后 Manifest 发布**；未来空表要另走版本化 Consumer。PG Writer Existing Target Drift 保留，TASK004 IN PROGRESS，TASK005 ON HOLD。
 
 
