@@ -160,7 +160,7 @@ Mutating STEP03E Live workflow 已更改为显式 `workflow_dispatch`，不得�
 
 [Post-merge exact-main Run 38328600074](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38328600074) = **SUCCESS**，Policy / ARC Verify 均成功，并已上传正式证据 Artifact。Self-Runner STEP03E 验证代码现为正式 mainline。
 
-**文档收尾：**合并本 Healthcare 文档 PR；然后以此 Closeout 作为当前 Agent 权威资料。不得依据 STEP02 的旧 `Airflow upstream ingestion NEXT` 再重复开发 STEP03E，后续新业务阶段另行确认。
+**当前维护规则：**本 STEP03E Closeout 与 `docs/tasks/TASK-STATUS.md`、`docs/README.md` 是新 Agent 的当前权威资料。不得依据 STEP02 的旧 `Airflow upstream ingestion NEXT` 再重复开发 STEP03E，后续新业务阶段另行确认。
 
 ## 7. 关键注意事项
 
