@@ -1,0 +1,52 @@
+name: Build Landing Claim Runtime Image
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feature/landing-discovery-to-claim-20261013
+    paths:
+      - .github/workflows/build-landing-claim-image.yml
+      - apps/landing_claim/**
+      - images/landing-claim-runtime/**
+      - tests/landing_claim/**
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify isolated consumer claim gate
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s tests/landing_claim -p 'test_*.py' -v
+          python3 -m py_compile apps/landing_claim/*.py
+          echo LANDING_CLAIM_GUARD_TESTS=PASS
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push immutable claim runtime
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: images/landing-claim-runtime/Dockerfile
+          platforms: linux/amd64
+          push: true
+          provenance: true
+          sbom: true
+          tags: ghcr.io/johnzhang-dataforge/healthcare-landing-claim:git-${{ github.sha }}
+      - name: Record digest
+        env:
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "LANDING_CLAIM_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-landing-claim@$IMAGE_DIGEST"
+          echo LANDING_CLAIM_IMAGE_PUBLISHED=PASS

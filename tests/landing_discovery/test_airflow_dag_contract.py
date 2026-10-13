@@ -1,4 +1,4 @@
-"""Static gates for scheduled read-only Landing discovery."""
+"""Static gates for discovery -> guarded Claim scheduled Airflow DAG."""
 import ast
 from pathlib import Path
 import re
@@ -15,7 +15,7 @@ class ScheduledDagTests(unittest.TestCase):
         cls.source = DAG_FILE.read_text(encoding="utf-8")
         cls.tree = ast.parse(cls.source)
 
-    def test_read_only_scheduled_dag(self):
+    def test_scheduled_discovery_then_guarded_claim(self):
         s = self.source
         for token in [
             'dag_id="landing_batch_discovery"',
@@ -26,6 +26,11 @@ class ScheduledDagTests(unittest.TestCase):
             "do_xcom_push=True",
             '"dw-spark-s3-secret"',
             '"worker02"',
+            'task_id="evaluate_batch_claims"',
+            'scan_ready_manifests >> evaluate_batch_claims',
+            '"CLAIM_ENABLE": "NO"',
+            '"CLAIM_ALLOWLIST": ""',
+            '"landing-claim-db"',
         ]:
             self.assertIn(token, s)
         self.assertNotIn("generate_publish", s)
@@ -34,9 +39,11 @@ class ScheduledDagTests(unittest.TestCase):
         self.assertNotIn("cdm.person", s)
         self.assertNotIn("PostgresOperator", s)
 
-    def test_pinned_immutable_discovery_image(self):
+    def test_both_images_are_digest_pinned(self):
         self.assertRegex(self.source, r'@sha256:[a-f0-9]{64}')
         self.assertIn("healthcare-landing-discovery", self.source)
+        self.assertIn("healthcare-landing-claim", self.source)
+        self.assertEqual(self.source.count("@sha256:"), 2)
         self.assertNotIn("latest", self.source)
 
 
