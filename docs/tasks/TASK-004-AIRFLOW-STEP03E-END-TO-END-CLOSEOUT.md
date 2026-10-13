@@ -141,10 +141,23 @@ RESULT=PASS
 
 Self-Runner [PR #38](https://github.com/JohnZhang-DataForge/Self-Runner/pull/38) 用独立收尾分支重新整理原 STEP03E 的 31-commit 实验分支。选取正式 live / post-success workflow、固定 request、policy、source tests 和执行脚本；**不把** failure-probe、log-probe、xcom-api-probe、postsuccess-probe、diagnose 或一次性 trigger 作为主线正式文件。
 
-[Read-only validation Run 38327919249](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38327919249) = SUCCESS（Policy + 真实 Runner）。
-最终改动在合并前还须核实 [Run 38328025745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38328025745) 与 PR HEAD 的关系，并记录最终 merge SHA / post-merge 验证状态。没有验证过的步骤不得写 PASS。
+正式 Self-Runner 合并证据：
 
-**下一步仅收尾：**完成 Self-Runner 最终版验证、合并、exact-main post-merge gate，并使 `docs/README.md` / `docs/tasks/TASK-STATUS.md` 指向本 Closeout。不得因为旧文档中的 `Airflow upstream ingestion NEXT` 再重复开发已通过的 STEP03E；新业务阶段需另行明确范围。
+```text
+Self-Runner feature HEAD = 49da2267aed6eca73b2fa735d5145f3ee9427e51
+Read-only pre-merge run = 38328528372  SUCCESS
+Policy job             = SUCCESS
+ARC verify job         = SUCCESS
+Evidence artifact ID   = 11781352153
+PR #38 squash/main     = 6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87
+Post-merge exact-main  = 38328600074  (请读取最终 GitHub 结论)
+```
+
+[Pre-merge Run 38328528372](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38328528372) 的 workflow conclusion 为 SUCCESS，原始 GitHub Run `38324111846` 的 FAILURE 历史保持不变。先前 `38328025745` 的读日志、验证步骤成功，但 artifact upload 卡住；不将这个整次 workflow 冒充 SUCCESS。
+
+Mutating STEP03E Live workflow 已更改为显式 `workflow_dispatch`，不得通过普通 source push 意外创建新的 Landing/Processing 数据。修复后的 Live Shell 虽已在正式 CI 做 Shell 语法检查，但**没有重新执行一个新的业务 batch**；正式验收属于已有的原始成功 Airflow run + 只读日志核验。
+
+**文档收尾：**完成 Self-Runner `main` 的最终 post-merge gate 记录，合并本 Healthcare 文档 PR；然后以此 Closeout 作为当前 Agent 权威资料。不得依据 STEP02 的旧 `Airflow upstream ingestion NEXT` 再重复开发 STEP03E，后续新业务阶段另行确认。
 
 ## 7. 关键注意事项
 
