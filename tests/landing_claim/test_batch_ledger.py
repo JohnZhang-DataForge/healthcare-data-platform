@@ -25,6 +25,7 @@ class Cursor:
     def __init__(self, insert_rowcount, existing=None, updated=1, update_result=None):
         self.calls = []
         self.rowcount = insert_rowcount
+        self.insert_rowcount = insert_rowcount
         self.existing = existing
         self.updated = updated
         self.update_result = update_result
