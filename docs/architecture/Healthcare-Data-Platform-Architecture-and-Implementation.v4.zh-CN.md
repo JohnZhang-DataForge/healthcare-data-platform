@@ -3,7 +3,7 @@
 > **版本：V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **更新日期：2026-10-10**
 > **状态：当前权威总设计（Authoritative Master Design），2026-10-10 的状态段落为历史快照**
-> **最新任务状态与开发入口**：[`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md)；[`../README.md`](../README.md)。TASK004 Airflow STEP03E 端到端业务链已在 2026-10-12 验收，Self-Runner 正式只读验收也已进入 main。TASK004 既定 Processing-first Airflow MVP 已于 2026-10-12 EDT（2026-10-13 UTC 审计）整体 **COMPLETE / CLOSED / FROZEN**，正式证据见 [`../tasks/TASK-004-FINAL-CLOSEOUT.md`](../tasks/TASK-004-FINAL-CLOSEOUT.md)。下一任务为 TASK005 Condition，唯一当前 NEXT 为 STEP00 只读预检，实施尚未开始。本文 2026-10-10 的状态表和旧阶段 Roadmap 保留为历史设计快照，`NEXT` 不代表当前任务进度。
+> **最新任务状态与开发入口**：[`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md)；[`../README.md`](../README.md)。TASK004 Airflow STEP03E 端到端业务链已在 2026-10-12 验收，Self-Runner 正式只读验收也已进入 main。TASK004 原限定 Processing-first Airflow MVP 已于 2026-10-12 EDT（2026-10-13 UTC 审计）**COMPLETE / CLOSED / FROZEN**，历史证据见 [`../tasks/TASK-004-FINAL-CLOSEOUT.md`](../tasks/TASK-004-FINAL-CLOSEOUT.md)。**最新 TASK004 overall = IN PROGRESS**：用户已将完整结束目标扩展为 Airflow 同 batch 的 PostgreSQL Person/Visit OMOP 物化、数据库对账和幂等重放；当前唯一 NEXT = [`STEP04A 只读 PG/source preflight`](../tasks/TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md)。TASK005 Condition ON HOLD。本文 2026-10-10 的状态表和旧阶段 Roadmap 保留为历史设计快照，`NEXT` 不代表当前任务进度。
 > **仓库：** `JohnZhang-DataForge/healthcare-data-platform`
 > **适用环境：** Kubernetes + SeaweedFS(S3) + Airflow + Spark Operator/PySpark + PostgreSQL 17 / OMOP CDM 5.4.3 + GitHub
 > **后续扩展：** Azure Blob/ADLS Gen2、Microsoft Fabric、dbt-fabric、MLflow、Mirth/HL7、FHIR、GitHub Actions、Argo CD
