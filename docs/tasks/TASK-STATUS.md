@@ -16,7 +16,8 @@
 | TASK004 — Batch Reconciliation | **PASS / MAINLINE ACCEPTED** | frozen baseline；正式证据见 Mainline Closeout |
 | TASK004 — Airflow STEP02 Processing orchestration | **PASS / HISTORICAL MAINLINE ACCEPTED** | frozen baseline |
 | **TASK004 — Airflow STEP03E end-to-end** | **PASS / BUSINESS + SELF-RUNNER MAINLINE ACCEPTED** | frozen STEP03E baseline；新业务阶段待决定 |
-| Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞当前 Airflow MVP |
+| Phase E — Condition / Clinical Facts | **CANDIDATE / NOT APPROVED** | 须先新建受控 TASK/STEP 范围与验收标准；不能自动开始 |
+| Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞已完成的 Airflow MVP |
 
 **TASK004 overall status = IN PROGRESS。**
 
@@ -170,7 +171,7 @@ post-merge:
 
 ## 最新 STEP03E 全链业务验收（2026-10-12）
 
-正式 Healthcare main = `d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`；DAG = `task004_processing_pipeline`，现已形成 `generate_publish >> [person, visit] >> reconcile`。
+STEP03E 业务验收时固定的 Healthcare 源码 SHA = `d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`（**历史已验收 SHA，不是持续变化的当前 main**；新 Agent 先查当前 GitHub main）；DAG = `task004_processing_pipeline`，现已形成 `generate_publish >> [person, visit] >> reconcile`。
 
 - Self-Runner live Run `38324111846`：**GitHub failure**（发生在 DAG 成功后的后置 XCom 取证）。Airflow DagRun 及 generate_publish、person、visit、reconcile 四个 Task 均为 **success**。
 - 新 Landing batch = `task004-airflow-task004-step03e-38324111846`；source_version `v3.3.0`；ingest date `2026-10-12`；18 verified files；manifest SHA256 `ecc7cf3b75240e530f2cc96635b25e4eaf0794403e1b04d50d2248cd3aaa5cb1`。
@@ -184,7 +185,7 @@ post-merge:
 
 1. 先读 `../README.md`、本文件、最新 STEP03E End-to-End Closeout、Operations、Skill、Lessons。
 2. 核对 Healthcare / Self-Runner 的实际 main SHA（Self-Runner 接受时 main 为 `6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`）及正式 Closeout，避免被老 STEP02 的 NEXT 误导。
-3. STEP03E Business + Self-Runner Validation **已完成主线验收**。下一业务阶段尚未决定，不因聊天里的旧计划自动开工。
+3. STEP03E Business + Self-Runner Validation **已完成主线验收**。下一业务阶段**尚未批准**；V4 Phase E Condition 是候选，需要正式确定 source/OMOP target、Processing 与 PostgreSQL 入库的边界、FK/DQ/证据，再单独开发，不能按旧文档自动开工。
 4. 不重复部署或重跑已验收的 Person / Visit / Reconcile / Synthea → Landing；除非明确开立下一业务阶段，不进行新数据 mutation。
 5. 后续范围另行决策；严格维持一次一个有边界的 STEP 和固定 SHA 验证。
 

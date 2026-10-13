@@ -71,13 +71,13 @@ Self-Runner PR #31 merge   = 8ab26784cd0229cce96989e3691c122049e3c23a
 
 测试期 Candidate Status 已按文档治理规则原文归档，不再是 current 状态。
 
-## 当前开发目标：STEP03E 收尾（不是再次开发 upstream ingestion）
+## 当前正式状态与下一业务阶段入口
 
 **真实 Airflow 业务链已 PASS。** Generate → Landing verified → Person (23) / Visit (3592) → Reconcile：Airflow run `task004-step03e-38324111846` 四个 Task 和 DAG 都 success。原始 GitHub workflow 因后置 XCom 取证返回 failure；独立 post-success Run `38326695107` 已 PASS。
 
-Healthcare main：`d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`。
+STEP03E **当时验收的 Healthcare 源码 SHA**：`d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`。当前 `main` 可以继续前进，新 Agent 须实时查询 GitHub HEAD，不能把此历史 SHA 当成今天的 `main`。
 
-Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`），post-merge 只读 Run `38328600074` 已 PASS。本 STEP03E 收尾已包含 Self-Runner 正式验证与文档归档；下一业务阶段尚未决定。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一业务阶段未在本次收尾中确定。
+Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`），post-merge 只读 Run `38328600074` 已 PASS。本 STEP03E 收尾已包含 Self-Runner 正式验证与文档归档。**Phase E / Condition 只是 V4 中的候选下一方向，尚未获批准**；不能自行开始开发或产生新数据。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一业务阶段未在本次收尾中确定。
 
 ## 冲突优先级
 
