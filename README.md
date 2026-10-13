@@ -1,5 +1,8 @@
 # Healthcare Data Platform
 
+> **CURRENT Agent START HERE:** [docs/README.md](docs/README.md) → [TASK-STATUS](docs/tasks/TASK-STATUS.md) → [TASK004 Person/Visit OMOP 入库与批次幂等实施计划](docs/tasks/TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md)。TASK004 已验收的 Processing MVP 保留冻结，但 **TASK004 overall = IN PROGRESS**，唯一 NEXT = STEP04A read-only preflight；TASK005 Condition ON HOLD。以下早期 TASK001/phase3c 描述属于历史工程背景。
+
+
 Hybrid healthcare data engineering lab based on:
 
 - Kubernetes
