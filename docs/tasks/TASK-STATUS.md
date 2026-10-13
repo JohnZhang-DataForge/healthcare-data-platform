@@ -1,4 +1,7 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
+
+> **2026-10-13 新增权威状态：READONLY Person Source ID Reconciliation 已 PASS（STEP04F DB 写入仍 BLOCKED）**。[验收记录](TASK-004-STEP04F-PERSON-SOURCE-ID-READONLY-RECONCILIATION-CLOSEOUT.md) / [Self-Runner Run 38435544614](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38435544614) ：固定新批次 Person 23，Source ID 已存在 23（完全一致 0，内容不同 23），全新 0，dangling map 0；数据库 Person 136 / Visit 9391；失败批次 Ledger/Stage/Commit 0/0/0；`DATABASE_MUTATION=NO`。审计路径修复、Self-Runner PR #69 已合并。**唯一 NEXT = 独立规划/验证 Source ID + Seed/Reference Date 隔离语义，不开始新的批次，不执行 Writer COMMIT，TASK005 ON HOLD。**以下旧 STEP04A/04B/只读审计 NEXT 均为历史阶段说明。
+
 > **2026-10-13 当前权威 NEXT / 见 [TASK004 最新交接](TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md)：** 固定批次 STEP04C/D/E 已完成；STEP04F S3/CDM Runtime reader+rollback writer 已构建实测，新 Airflow Synthea Batch `task004-airflow-task004-step03e-38431103586` Processing PASS（Person=23，Visit=3588），但新 Person 入库测试 `BLOCKED:EXISTING_TARGET_DRIFT`，不允许 COMMIT。最新只读 Source ID 审计 Run `38434861465` 为 FAILURE（`ModuleNotFoundError: task004_cdm_materialization_plan`），Self-Runner feature `feature/task004-person-readonly-audit-20261013` 尚未合并。**唯一 NEXT = 修复该测试 Job PYTHONPATH，真实只读查 23 人的 existing/changed/new/dangling 数量与失败批次 DB residual；不重新跑 Synthea、不得绕过漂移保护。**本文件后面遗留 STEP04A/04B NEXT 是过期阶段说明，以最新交接为准。TASK005 仍 ON HOLD。
 
 
