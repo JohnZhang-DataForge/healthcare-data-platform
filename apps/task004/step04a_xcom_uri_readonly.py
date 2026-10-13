@@ -2,7 +2,6 @@
 """Read-only Airflow XCom inspection for the accepted TASK004 batch. No patient data."""
 import re
 from airflow.models.xcom import XCom
-from airflow.utils.session import create_session
 
 DAG="task004_processing_pipeline"
 RUN="task004-step03e-38324111846"
@@ -20,9 +19,8 @@ def validate(uri,entity):
     require(re.search(r"/run_id=[a-zA-Z0-9-]+/",uri) is not None,"run_id_"+entity)
     return uri
 
-with create_session() as session:
-    for task,entity,expected in (("person","patient",23),("visit","encounter",3592)):
-        val=XCom.get_one(run_id=RUN,task_id=task,dag_id=DAG,session=session)
+for task,entity,expected in (("person","patient",23),("visit","encounter",3592)):
+        val=XCom.get_one(run_id=RUN,task_id=task,dag_id=DAG)
         require(isinstance(val,dict),"xcom_missing_"+task)
         require(int(val.get("canonical_rows",-1))==expected,"row_count_"+task)
         uri=validate(val.get("processing_data_uri"),entity)
