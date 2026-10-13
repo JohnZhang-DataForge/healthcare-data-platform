@@ -1,4 +1,11 @@
 from datetime import datetime
+import json
+from airflow.operators.python import PythonOperator
+from task004_cdm_preflight_contract import validate_handoff
+
+
+def _validate_handoff_json(generate, person, visit):
+    return validate_handoff(json.loads(generate), json.loads(person), json.loads(visit))
 
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
@@ -395,5 +402,16 @@ with DAG(
         },
     )
 
+    cdm_load_preflight = PythonOperator(
+        task_id="cdm_load_preflight",
+        python_callable=_validate_handoff_json,
+        op_args=[
+            "{{ ti.xcom_pull(task_ids='generate_publish') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='person') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='visit') | tojson }}",
+        ],
+    )
+
     generate_publish >> [person, visit]
     [person, visit] >> reconcile
+    reconcile >> cdm_load_preflight
