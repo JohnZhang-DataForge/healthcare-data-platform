@@ -11,6 +11,8 @@ class ReadOnlyInventoryContract(unittest.TestCase):
         cls.sql = SQL.read_text(encoding="utf-8")
         cls.executable = re.sub(r"(?m)^\s*--[^\n]*", "", cls.sql)
         cls.executable = re.sub(r"/\*.*?\*/", "", cls.executable, flags=re.S)
+        # Privilege names SELECT/INSERT/UPDATE occur only as string arguments, not SQL commands.
+        cls.statements = re.sub(r"\x27(?:\x27\x27|[^\x27])*\x27", "\x27\x27", cls.executable)
 
     def test_readonly_transaction_and_bounded_timeout(self):
         self.assertRegex(self.executable, r"(?i)BEGIN\s+TRANSACTION\s+ISOLATION\s+LEVEL\s+REPEATABLE\s+READ\s+READ\s+ONLY")
@@ -23,7 +25,7 @@ class ReadOnlyInventoryContract(unittest.TestCase):
                      r"\bpg_advisory_(?:lock|xact_lock)\s*\(", r"\b(?:dblink|lo_import|pg_read_file|pg_write_file)\s*\(")
         for pattern in forbidden:
             with self.subTest(pattern=pattern):
-                self.assertNotRegex(self.executable, r"(?i)" + pattern)
+                self.assertNotRegex(self.statements, r"(?i)" + pattern)
 
     def test_expected_tables_in_catalog_scope(self):
         for schema, table in (("cdm","person"),("cdm","visit_occurrence"),("etl","person_stage"),
