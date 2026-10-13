@@ -14,6 +14,12 @@ class PersonContract(unittest.TestCase):
             self.assertIn(gate,sql)
     def test_explicit_commit(self):
         self.assertTrue(generate(prepare([row(i) for i in range(23)]),rollback=False).endswith("COMMIT;\n"))
+    def test_other_race_maps_explicitly_to_unmapped_concept_zero(self):
+        a=[row(i) for i in range(23)];a[0]['race_code']='other'
+        mapped=prepare(a)
+        person=next(v for v in mapped if v['source_key']=='person-00')
+        self.assertEqual(person['canonical_payload']['race_concept_id'],0)
+        self.assertEqual(person['canonical_payload']['race_source_value'],'other')
     def test_duplicate_key_fail(self):
         with self.assertRaises(RuntimeError):prepare([row(0)]*23)
     def test_unknown_concept_fail(self):
