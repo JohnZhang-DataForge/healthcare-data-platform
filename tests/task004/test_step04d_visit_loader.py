@@ -21,7 +21,8 @@ class VisitContract(unittest.TestCase):
  def test_inverted_dates_blocked(self):
   a=[row(i) for i in range(3592)];a[0]["end_datetime"]="2026-01-01T11:00:00Z"
   with self.assertRaises(RuntimeError):prepare(a)
- def test_no_timezone_blocked(self):
+ def test_canonical_ntz_assumed_utc(self):
   a=[row(i) for i in range(3592)];a[0]["start_datetime"]="2026-01-01 12:00:00"
-  with self.assertRaises(RuntimeError):prepare(a)
+  mapped=prepare(a)
+  self.assertEqual(mapped[0]['canonical_payload']['visit_start_datetime'],'2026-01-01 12:00:00.000000')
 if __name__=="__main__":unittest.main()
