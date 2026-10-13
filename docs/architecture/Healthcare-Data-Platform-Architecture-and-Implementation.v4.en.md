@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Architecture & Implementation Baseline V4
 
+> **2026-10-13 architecture decision (supersedes the historical V4 Airflow-generated-source plan):** Synthea is an **independent producer** and Airflow is an **S3 batch consumer**. Three distinct Kubernetes Job/Pod workloads, images, and business entry points are intended (NEW_ONLY, EXISTING_ONLY, MIXED), **implement NEW_ONLY first**. The producer randomizes the target population (1-100, strictly cap actual patients at 100), US state and seed; worker01 / `dw-synthea` will use a dedicated LocalPath persistent volume for producer-owned state. The producer publishes a verified immutable S3 Manifest last; Airflow only polls and consumes completed batches, and never starts or parameterizes Synthea. **Design agreed, not yet implemented/deployed.** See the [authoritative Chinese detailed design](TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md) and [NEW_ONLY implementation plan](../tasks/TASK-004-INDEPENDENT-GENERATOR-NEW-ONLY-NEXT-v1.0.zh-CN.md). Historical STEP03E DAG behavior is retained as a frozen evidence baseline. TASK004 IN PROGRESS; TASK005 ON HOLD.
+
+
 > **Version: V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **Updated: 2026-10-10**
 > **Status: Authoritative Master Design; implementation status sections are snapshots as of 2026-10-10.**

@@ -1,5 +1,8 @@
 # TASK004 — Person / Visit OMOP 入库与 Airflow 批次幂等闭环实施计划 v1.0
 
+> **2026-10-13 架构调整说明（仅更新未来接线方式，保留本文历史 CDM/事务验证事实）：** 原设计的 `Airflow → Synthea generate_publish` 及“Airflow 负责产生新批次随机生成参数”**不再是新目标架构**。用户已批准 Producer/Consumer 解耦、三套独立生成 Job/Pod（首先 NEW_ONLY）、worker01 专用 LocalPath 状态持久化，以及由 Airflow 定时发现和消费已发布的 S3 verified Manifest。请优先遵循 [新权威架构 v1.0](../architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md) 和 [NEW_ONLY 当前 NEXT](TASK-004-INDEPENDENT-GENERATOR-NEW-ONLY-NEXT-v1.0.zh-CN.md)。**本文先前 STEP04A 和原 04F/04G 计划仍有历史技术价值，但不能当作当前开工顺序/已实施新架构的证据。** 现有 `task004_processing_pipeline` 冻结保留；新消费 DAG、PVC、新 Generator 与新的 DB COMMIT 均尚未实施。TASK004 IN PROGRESS，TASK005 ON HOLD。
+
+
 > **CURRENT / AUTHORITATIVE IMPLEMENTATION PLAN — 2026-10-12 America/New_York（2026-10-13 UTC）**
 > **TASK004 overall = IN PROGRESS / EXTENDED ACCEPTANCE NOT YET PASS。**
 > 用户明确要求 TASK004 最终交付是 **一个受 Airflow 编排、可对同一批次安全重放且 Person + Visit 真正写入 PostgreSQL OMOP 并完成数据库对账的完整流程**。

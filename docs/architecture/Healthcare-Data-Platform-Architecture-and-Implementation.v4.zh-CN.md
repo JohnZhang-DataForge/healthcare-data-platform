@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Architecture & Implementation Baseline V4
 
+> **2026-10-13 UPDATE / 覆盖本 V4 第1节旧决策 #4 “数据产生也是 DAG 的一部分”：** 用户已明确将 Synthea Generator 与 Airflow **彻底解耦**；Generator 使用 NEW_ONLY / EXISTING_ONLY / MIXED **三套独立 Job/Pod 和业务代码**，独立产生并验证 SeaweedFS S3 Batch，Airflow 只定时发现 verified Manifest、消费已有数据，不触发生成；worker01 `dw-synthea` 专用 LocalPath 持久化供 Generator 自身恢复。**仅 NEW_ONLY 是下一个实施目标，未部署/未验证，EXISTING_ONLY/MIXED ON HOLD。** 新的权威设计在 [Independent Synthea Producer & S3 Consumer v1.0](TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)；本 V4 原第1节描述保留为已验收的历史 STEP03E 架构，不是现在应实现的新入口。
+
+
 > **版本：V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **更新日期：2026-10-10**
 > **状态：当前权威总设计（Authoritative Master Design），2026-10-10 的状态段落为历史快照**

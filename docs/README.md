@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 架构决议（最高优先级；覆盖本文历史 Airflow generate_publish NEXT）：Synthea 独立 Producer / Airflow 仅按时读取 S3 verified Manifest，完全解耦。** **不是**由 Airflow 向 Synthea 传随机 Seed/人口/州，也**不是** Airflow 运行/重试时重新生成数据。用户要求三套各自独立的 Kubernetes Job/Pod、业务代码/镜像（NEW_ONLY、EXISTING_ONLY、MIXED），只先开发 **NEW_ONLY**（人数随机 1～100，随机州、Seed、当次日期）；Synthea 在 worker01 / dw-synthea 使用待验证的**专用 LocalPath 磁盘/PVC**保存自身恢复状态，发布后 SeaweedFS verified Manifest 为数据交换接口。**已批准设计，尚未部署新 Pod/PVC/DAG、未生成新批次或写库。** 下一步只执行 [NEW_ONLY 实施 NEXT](tasks/TASK-004-INDEPENDENT-GENERATOR-NEW-ONLY-NEXT-v1.0.zh-CN.md)，完整设计见 [独立 Generator & Airflow S3 Consumer 架构 v1.0](architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)。历史 STEP03E 的四任务 DAG 和旧 CDM 计划原样保留为验收证据，绝不当作新架构已实现；**TASK004 IN PROGRESS、TASK005 ON HOLD**。
+
+
 > **2026-10-13 最新技术排查：Synthea Seed / Reference Date Source ID 冲突根因已通过真实 READ-ONLY AUDIT 验证。** 见 [根因验收文档](tasks/TASK-004-STEP04F-SYNTHEA-SEED-REFERENCE-DATE-ROOTCAUSE-READONLY-CLOSEOUT.md) 和 [Self-Runner Run 38447127571](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38447127571)。两批 23 人的 seed/clinician_seed 均为 `20261012`，唯一不同的生成入参是 reference_date（20261012→20261013）；原始 23/23 Patient Id 完全重合，23/23 BIRTHDATE 恰好 +1 天；OMOP 只在 23 人的 `birth_datetime` / `day_of_birth` 存在漂移。**新 NEXT = 明确跨批次 Seed/Source ID 与 batch replay 固定 Reference Date 策略；不是重新调查、不是新批次运行。Person Writer 继续 BLOCKED，不允许 COMMIT；TASK005 ON HOLD。**下文旧 NEXT 段落保留为历史说明。
 
 
