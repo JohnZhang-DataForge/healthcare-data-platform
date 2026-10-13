@@ -70,15 +70,15 @@ END $$;
 """
     concepts=([8507,8532,8515,8516,8557,8527,38003563,38003564] if entity=="person"
               else [9201,9202,9203,581476,722455,32827])
-    sql+="""DO $
+    sql+="""DO $$
 BEGIN
  IF (SELECT count(*) FROM cdm.concept WHERE concept_id IN ("""+",".join(map(str,concepts))+""")
  AND standard_concept='S' AND invalid_reason IS NULL)<>"""+str(len(concepts))+"""
  THEN RAISE EXCEPTION 'BLOCKED:VOCABULARY_INVALID';END IF;
-END $;
+END $$;
 """
     if entity=="visit":
-        sql+="""DO $
+        sql+="""DO $$
 BEGIN
  IF NOT EXISTS (SELECT 1 FROM etl.task004_batch_commit WHERE batch_id="""+batch+""" AND entity='person' AND commit_state='VERIFIED')
  THEN RAISE EXCEPTION 'BLOCKED:PERSON_COMMIT_MISSING';END IF;
