@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 当前最高优先级 / 用户新批准的开发顺序：先 Landing S3 Discovery + Airflow 消费侧，再动态 PostgreSQL Writer。** **已真实验证** [Landing Discovery 只读 Checkpoint](LANDING-BATCH-DISCOVERY-READONLY-CHECKPOINT-2026-10-13.zh-CN.md) / [Run 38460137577](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38460137577)：6 verified READY + 1 legacy quarantine、8 tests PASS、S3 真读、DB mutation NO。**当前 NEXT** = 做有周期的、功能命名 `landing_batch_discovery` DAG（独立只读镜像、Airflow gitSync/parse/runtime 验证），与 Generator 无耦合；后续 Claim/Ledger → Spark → CDM Dynamic COMMIT → DB Reconciliation/Replay。**目前只读 Scanner 已完成，Airflow 自动调度/Claim 尚未实现**。Synthea NEW_ONLY 实施暂不抢占此消费端优先级；EXISTING_ONLY/MIXED 继续 ON HOLD。TASK004 IN PROGRESS，TASK005 ON HOLD。下方曾写 NEW_ONLY NEXT 或 STEP04A 等均是旧顺序，不再作为当前开工点。
+
+
 > **2026-10-13 当前最高优先级 NEXT（覆盖下面历次旧 NEXT）：独立 Synthea NEW_ONLY Producer 设计已确定，实施尚未开始。** Airflow 与 Generator **完全解耦**：三个独立的短生命周期 Job/Pod 代码和镜像（NEW_ONLY / EXISTING_ONLY / MIXED），生产侧自行决定随机人数 1～100、州、Seed、生成日期，worker01 `dw-synthea` 上的**专用 LocalPath PVC/磁盘**保存生成恢复状态；SeaweedFS S3 通过 verified immutable Manifest 发布 READY；新 Airflow Consumer DAG（尚未开发）只定期发现/读取已存在的批次，不能调用 Generator。**当前只允许按步骤推进 NEW_ONLY**：先 local-path/18 CSV 契约只读 preflight，再 NEW_ONLY 独立实现+测试、最后单批 S3 实证；**EXISTING_ONLY、MIXED 代码/Pod 暂不实施**。具体 [架构权威 v1.0](../architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md) 和 [NEW_ONLY NEXT](TASK-004-INDEPENDENT-GENERATOR-NEW-ONLY-NEXT-v1.0.zh-CN.md)。**本轮文档 PR 不代表已部署/运行；旧 DAG 仍耦合并被冻结。** 完整 CDM Writer 仍未闭环，TASK004 IN PROGRESS，TASK005 ON HOLD。以下旧 STEP04A / seed/date 排查 NEXT 不再是当前开工点。
 
 
