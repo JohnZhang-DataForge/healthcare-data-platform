@@ -31,7 +31,7 @@ with Session() as session:
             ORDER BY map_index LIMIT 2"""),{"dag":DAG,"run":RUN,"task":task}).fetchall()
         require(len(rows)==1,"xcom_cardinality_"+task)
         raw=rows[0][0]
-        val=json.loads(raw if isinstance(raw,(str,bytes)) else bytes(raw))
+        val=raw if isinstance(raw,dict) else json.loads(raw if isinstance(raw,(str,bytes)) else bytes(raw))
         require(isinstance(val,dict),"xcom_missing_"+task)
         require(int(val.get("canonical_rows",-1))==expected,"row_count_"+task)
         uri=validate(val.get("processing_data_uri"),entity)
