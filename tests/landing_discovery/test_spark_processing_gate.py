@@ -61,6 +61,16 @@ class SparkSelectionTests(unittest.TestCase):
         self.assertEqual(r["batch_id"],BATCH)
         self.assertEqual(r["manifest_sha256"],SHA)
 
+    def test_airflow_jinja_conf_json_string_selects_exact_historic_batch(self):
+        selected=select(discovery(),claims(),json.dumps(conf()),"manual")
+        self.assertIsInstance(selected,dict)
+        self.assertEqual(selected["batch_id"],BATCH)
+        self.assertTrue(gate(json.dumps(selected)))
+
+    def test_malformed_manual_conf_json_blocks(self):
+        with self.assertRaisesRegex(ValueError,"INVALID_MANUAL_DAGRUN_CONF"):
+            select(discovery(),claims(),"{bad","manual")
+
     def test_unknown_new_batch_blocked_until_real_ledger_claim(self):
         with self.assertRaisesRegex(ValueError,"HISTORICAL"):
             select(discovery(),claims("OBSERVED_ONLY"),conf(),"manual")

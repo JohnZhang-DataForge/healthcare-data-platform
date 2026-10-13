@@ -44,6 +44,13 @@ def select_verified_processing_replay(
     """
     if str(run_type).lower() != "manual":
         return None
+    # Airflow's default Jinja renderer passes `| tojson` as a JSON string,
+    # not as a Python dict. Decode it before checking manual opt-in.
+    if isinstance(conf, str):
+        try:
+            conf = json.loads(conf)
+        except (ValueError, TypeError) as exc:
+            raise ValueError("BLOCKED:INVALID_MANUAL_DAGRUN_CONF") from exc
     if not isinstance(conf, dict) or conf.get("processing_only") is not True:
         return None
 
