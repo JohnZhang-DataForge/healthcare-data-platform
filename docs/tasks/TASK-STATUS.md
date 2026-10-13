@@ -14,14 +14,15 @@
 | TASK004 — Person | **PASS** | frozen baseline |
 | TASK004 — Visit | **PASS** | frozen baseline |
 | TASK004 — Batch Reconciliation | **PASS / MAINLINE ACCEPTED** | frozen baseline；正式证据见 Mainline Closeout |
-| **TASK004 — Airflow Processing orchestration** | **PASS / PROCESSING MAINLINE ACCEPTED** | **NEXT：将 Generate Synthea → Landing 接到现有 DAG 上游** |
+| TASK004 — Airflow STEP02 Processing orchestration | **PASS / HISTORICAL MAINLINE ACCEPTED** | frozen baseline |
+| **TASK004 — Airflow STEP03E end-to-end** | **PASS / BUSINESS MAINLINE ACCEPTED** | **Self-Runner PR #38 final CI / merge closeout; no additional ingestion development** |
 | Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞当前 Airflow MVP |
 
 **TASK004 overall status = IN PROGRESS。**
 
-## Airflow Processing orchestration 正式主线验收
+## 历史 STEP02 Airflow Processing orchestration 正式主线验收
 
-当前正式 Processing DAG：
+以下是历史 STEP02 Processing DAG（STEP03E 的最新四 Task DAG 见新增 Closeout）：
 
 ~~~text
 GitHub main
