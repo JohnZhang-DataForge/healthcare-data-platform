@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 NEW_ONLY 全局源 ID 发布前安全预检 LIVE PASS（尚未 S3 READY）**：[正式 Closeout](tasks/SYNTHEA-NEW-ONLY-PREPUBLISH-SOURCE-IDENTITY-LIVE-2026-10-13.zh-CN.md) / [Self-Runner Run 38486092750](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38486092750) / Healthcare PR #89。现存 LocalPath Batch `synthea-new-only-gh-38484300008` 真正 73 Person/12159 Encounter，18 CSV 全部非空，历史 S3 14 个 Person/Encounter CSV + PG Person map 136/Visit map 9391 源 ID overlap 均 **0**；只读核验 PASS 不等于 S3 READY/PG COMMIT。已开发 NEW_ONLY versioned v2 Contract 和 streaming prepublish gate，但当前运行 Consumer 仅 v1，因此 **NEXT 首选用这个非空批次验证既有 v1 严格 Validator，再做独立 Immutable S3 Payload→Readback→最后 Manifest 发布**；未来空表要另走版本化 Consumer。PG Writer Existing Target Drift 保留，TASK004 IN PROGRESS，TASK005 ON HOLD。
+
+
 > **2026-10-13 独立 NEW_ONLY Generator 的 LocalPath 阶段已经真实 PASS**：[完整 LIVE Closeout](tasks/SYNTHEA-NEW-ONLY-LOCAL-GENERATOR-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Self-Runner Run 38484300008](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38484300008) / Healthcare [PR #87](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/87)。worker01 `/data/synthea/` 的 `synthea-local` Retain SC、5Gi Bound PVC 已部署，真实 Synthea v3.3.0 独立 Job 生成 Person **73**、Encounter **12159**、CSV **18/18**，第二 Pod same request 固定重放 PASS；8 单测通过。**这还不是全局 Source ID 无撞车 / 完整 S3 READY Producer**：仅 NEW_ONLY 本地注册表防撞；未验证 PG 历史 source keys、未上传 S3、未发布独立镜像 Digest、未执行 Writer；NEXT 是 versioned 18-CSV Landing 合同与全局源键只读核验 → immutable S3 READY。TASK004 IN PROGRESS；TASK005 ON HOLD。
 
 
