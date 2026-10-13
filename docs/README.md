@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 最新已完成：真正独立的 Landing S3 Discovery 已接入 Airflow 3 并启用每 15 分钟调度。** [权威 Live Closeout](tasks/LANDING-BATCH-DISCOVERY-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Self-Runner 实际 DagRun Run 38466518057](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38466518057)：GHCR 独立 digest 镜像、13 Tests、真实 Scheduler DagBag、main GitSync exact source、`landing_batch_discovery` DAG 可见+无导入错误、`*/15` 调度已解除暂停、一次真实手工 DagRun + KPO Task = **success**，无 Generator/Spark/PG mutation。**新 CURRENT NEXT = Landing Batch Claim / Ledger（并发、SHA、SKIP/RETRY）；不是再做 S3 Discovery，也不是 NEW_ONLY Generator**。此步骤只发现 Inventory，尚未自动处理数据/动态 COMMIT，TASK004 IN PROGRESS、TASK005 ON HOLD。下方旧 NEXT 均是历史快照。
+
+
 > **2026-10-13 最新开发进度 / 新优先级（当前 NEXT）：S3 READY Batch Discovery 核心逻辑已通过真实 SeaweedFS 只读验证。** [实测 Checkpoint](tasks/LANDING-BATCH-DISCOVERY-READONLY-CHECKPOINT-2026-10-13.zh-CN.md) / [Self-Runner Run 38460137577](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38460137577)：8 单元测试 PASS、6 个 verified READY Batch、1 个旧格式 Manifest 隔离、K8s worker02 Pod 真实读取、**DAG_TRIGGER=NO / DATABASE_MUTATION=NO**。用户正式批准**先完成 Airflow S3 消费侧**：新 NEXT = 以业务语义命名的 `landing_batch_discovery` 定时 Airflow DAG + 独立发现镜像 / Secret / 实际 Airflow 验收；**此 DAG 还没开发/部署**。之后才完成 PostgreSQL 动态 COMMIT + DB Reconciliation。Synthea NEW_ONLY 仍是独立后续工作，非当前唯一 NEXT。历史编号命名保留为冻结源码，**新模块按功能命名**。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 

@@ -1,5 +1,7 @@
 # TASK004 v1.0 — 独立 Synthea 数据生产与 Airflow S3 消费（2026-10-13）
 
+> **2026-10-13 运行时进度更新：独立 S3 Discovery Core + Airflow 定时发现 DAG 已真实完成。** [Airflow Live Closeout](../tasks/LANDING-BATCH-DISCOVERY-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) 验证 gitSync exact source、每15分钟 Cron 已启用、实际人工 DagRun KPO SUCCESS；此时**只能 INVENTORY**，仍未实现 atomic Claim、Spark 自动消费、动态 OMOP COMMIT；Generator 三 Pod 仍是已批准设计而非部署。下文早期“consumer 尚未实现”指的是完整消费/入库闭环，不应否认只读 Discovery 已通过。
+
 > **状态：DESIGN ACCEPTED / IMPLEMENTATION PENDING。** 这是 2026-10-13 用户明确确认的 **新目标架构**，优先级高于 2026-10-10 V4 架构中“Airflow 自己运行 generate_publish”的历史决策。本文仅是设计与开发边界，不表示新的 Pod、PVC、DAG、Writer 或 S3 生成已经部署/验证。
 >
 > **实施顺序唯一：先 NEW_ONLY 独立生成并验证 → 再 EXISTING_ONLY → 最后 MIXED。** 不得在第一阶段合并三种业务代码，更不得一次性部署后两种模式。TASK004 Person/Visit 动态 CDM 完整入库/重放仍 IN PROGRESS；TASK005 Condition ON HOLD。

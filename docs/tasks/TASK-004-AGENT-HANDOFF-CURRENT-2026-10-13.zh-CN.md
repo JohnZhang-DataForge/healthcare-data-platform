@@ -1,5 +1,8 @@
 # TASK004 Agent 交接与唯一 NEXT — 2026-10-13
 
+> **2026-10-13 最新接力锚点：S3 Discovery 不是待开发——它已经跑进了真实 Airflow！** 详细 [Landing Discovery Airflow Live Closeout](LANDING-BATCH-DISCOVERY-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)：`landing_batch_discovery`（功能命名）部署到 gitSync、每15分钟 Schedule 已 unpause、真实 [Run 38466518057](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38466518057) 的 Airflow DagRun/唯一 KPO Task success；13 unit tests，独立 GHCR `healthcare-landing-discovery@sha256:06a5caaf1d62e62fa7f6227de2422690f1c8e4bf7a893c6c239456affce0bfbd` 真 S3 读取 6 valid + 1 quarantine；无 Generator、Spark、Postgres 数据改动。**下一步不是再次从头设计 S3 Discovery，而是独立 Batch Claim/Ledger（原子领取/跳过/重试），此后才接 Spark 和动态 PG Writer COMMIT。** 此 DAG 只扫描 Inventory，不允许误当作 ETL 闭环完成；此前 NEW_ONLY 优先级与 STEP04F 只读排查 NEXT 均过时。TASK004 IN PROGRESS，TASK005 ON HOLD。
+
+
 > **2026-10-13 最新 Agent 交接：消费端 S3 READY 探测核心已完成真实 K8s 验证。** [Landing Discovery Checkpoint](LANDING-BATCH-DISCOVERY-READONLY-CHECKPOINT-2026-10-13.zh-CN.md) / [Run 38460137577](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38460137577)：源码 `apps/landing_discovery/scan_ready_batches.py`、8 单测、6 valid READY + 1 legacy Manifest quarantine；真实 S3 只读，**没有 Airflow DAG、Writer COMMIT、PG 变更**。用户优先级现调整为**先开发新的功能命名 `landing_batch_discovery` 定时 DAG → 再做自动消费/动态 PostgreSQL 事务与恢复**；之前标题下 NEW_ONLY（Producer）优先顺序属于过时记录，仍保持设计但不在当前 NEXT。新消费 DAG 禁止调用 Generator；现有 `task004_processing_pipeline` 历史冻结，不动。TASK004 IN PROGRESS，TASK005 ON HOLD。
 
 
