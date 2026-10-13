@@ -1,5 +1,6 @@
 # Landing → Spark Consumer：受控 Processing-only 集成（2026-10-13，尚未完成 live 验收）
 
+> **此文档已由最新真实验收取代：请先读 [Landing Spark Processing Live Closeout](LANDING-SPARK-PROCESSING-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。** PR #79 已合并，另 [#80](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/80) / [#81](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/81) 修复生产 Airflow 导入与手工 JSON 参数问题；最后 [Self-Runner Run 38476079452](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38476079452) **真实手工 Processing-only Spark / Reconciliation 8 个 Task PASS**，数据库业务表未变。以下内容是此任务开发阶段的**历史中途检查点**，不能作为当前结论或 NEXT。\n\n
 > **开发状态：CODE PR OPEN / LIVE NOT VERIFIED / DO NOT MERGE INTO SCHEDULED DAG WITHOUT VALIDATION。** 用户授权接入 Spark，本轮已提交实际 Airflow DAG 与辅助逻辑源码至功能分支及 PR #79；因 Self-Runner 自动测试工作流的 GitHub 工具写入被安全检查拦截，无法完成真实 Airflow 3 DagBag 与 SparkApplication live 验证。**PR 未合并**，main 的每15分钟只读 Discovery→Claim Guard DAG 不受影响。不要标记 PASS，不要声称真实 Spark 已运行。
 
 ## 1. 已编写、待验证的功能
