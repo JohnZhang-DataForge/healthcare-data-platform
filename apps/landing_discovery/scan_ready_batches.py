@@ -65,6 +65,7 @@ def discover_ready_batches(
         raise DiscoveryError("invalid max_manifests")
 
     ready = []
+    quarantined = []
     identities: dict[tuple[str, str], str] = {}
     examined = 0
     listed_objects = 0
@@ -86,8 +87,15 @@ def discover_ready_batches(
                     uri = f"s3://{bucket}/{key}"
                     body, manifest = _read_manifest(s3, bucket, key)
                     validate_manifest(manifest, lineage["batch_id"], uri)
-                except (ResolverError, KeyError, TypeError) as exc:
-                    raise DiscoveryError(f"invalid published manifest at {key}") from exc
+                except (ResolverError, KeyError, TypeError, DiscoveryError) as exc:
+                    # Legacy or malformed published manifests are NOT READY.
+                    # Quarantine per batch so an old incompatible file cannot
+                    # starve new, valid batches from being discovered.
+                    quarantined.append({
+                        "manifest_uri": f"s3://{bucket}/{key}",
+                        "reason": "INVALID_MANIFEST_CONTRACT",
+                    })
+                    continue
 
                 sha = hashlib.sha256(body).hexdigest()
                 identity = (lineage["source"], lineage["batch_id"])
@@ -115,12 +123,16 @@ def discover_ready_batches(
 
     ready.sort(key=lambda row: (row["ingest_date"], row["batch_id"]))
     return {
-        "discovery_status": "READ_ONLY_PASS",
+        "discovery_status": (
+            "READ_ONLY_PASS_WITH_QUARANTINE" if quarantined else "READ_ONLY_PASS"
+        ),
         "bucket": bucket,
         "prefix": prefix,
         "objects_seen": listed_objects,
         "manifests_seen": examined,
         "ready_count": len(ready),
+        "quarantined_count": len(quarantined),
+        "quarantined_manifests": quarantined,
         "ready_batches": ready,
         "processing_authorized": False,
         "database_mutation": False,
