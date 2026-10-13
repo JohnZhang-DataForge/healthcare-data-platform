@@ -1,5 +1,8 @@
 # TASK004 Agent 交接与唯一 NEXT — 2026-10-13
 
+> **2026-10-13 READONLY AUDIT 已收尾，此前“唯一 NEXT = 修复 PYTHONPATH”已过时。** 新增[只读 Source ID 审计 Closeout](TASK-004-STEP04F-PERSON-SOURCE-ID-READONLY-RECONCILIATION-CLOSEOUT.md)：[Run 38435544614](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38435544614) **SUCCESS**，23/23 Source ID 在 mapping 中已存在；与目标 Person 完全一致 0、内容不同 23、全新 0、dangling 0；失败批次 ledger/stage/commit 0/0/0；CDM Person/Visit 总数 136/9391；数据库无业务写入。Self-Runner [PR #69](https://github.com/JohnZhang-DataForge/Self-Runner/pull/69) merged SHA `9c2ad3ce33b5c3a877608defbbdcd25118978c15`。**下一轮只讨论并验证 Synthea Seed / Reference Date / Source ID 的批次隔离设计**（同 Seed 导致漂移仅为原因假设）；需另行授权任何新批次、ROLLBACK、Writer COMMIT。**本文件下方第3/5节仍为交接时历史断点，不是当前 NEXT。TASK004 IN PROGRESS；TASK005 ON HOLD。**
+
+
 > **CURRENT / 权威增量交接。新 Agent 从 `docs/README.md` 进入后首先阅读本文件；历史 TASK-STATUS / Plan / Closeout 中的旧 NEXT（例如 STEP04A / STEP04B）均被本文件的当前进度取代。不要从头重新实施 STEP04A–04F。**
 
 ## 1. 用户目标与开发方法
