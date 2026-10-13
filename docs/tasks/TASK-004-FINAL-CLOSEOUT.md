@@ -1,4 +1,8 @@
-# TASK004 — Final Mainline Closeout（正式任务关闭）
+# TASK004 — Final Mainline Closeout（原 Processing MVP 的历史正式验收）
+
+> **CURRENT SCOPE UPDATE / 2026-10-12 EDT（2026-10-13 UTC）**：本文完整保留原 STEP03E Processing-first MVP 的真实成功验收事实及当时 CLOSED 结论；**用户随后明确将 TASK004 整体完成标准扩展为：同一 Airflow batch 的 Person/Visit 必须写入 PostgreSQL OMOP、独立对账，且该批次可幂等重放/失败恢复。** 因此按扩大后的目标，TASK004 **overall 现为 IN PROGRESS**。唯一正式 NEXT：[`TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) 中的 **STEP04A READ ONLY**；TASK005 Condition ON HOLD。本文以下章节为当时限定范围的历史正文，**不能作为新 OMOP DB 终验或当前 NEXT 的权威依据**。
+
+
 
 > **FINAL STATUS: COMPLETE / CLOSED / FROZEN — 2026-10-12 America/New_York**
 > **验收范围：** Synthea Generate → verified immutable S3 Landing → Person / Visit Processing → same-batch Reconciliation，由 Airflow 真实 DAG 端到端编排；含 Self-Runner 的有界测试、只读复核和实际源码一致性验证。

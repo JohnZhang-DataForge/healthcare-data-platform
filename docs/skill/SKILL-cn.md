@@ -18,8 +18,8 @@ description: Healthcare Data Platform 项目中文开发规范。定义一步一
 - **新 STEP**：直接编辑 Git 中的 canonical source，Shell 负责预检、执行、测试、报告。**不强制**新写永久 Shell Generator 来生成每一个源码文件。
 - **历史 STEP**：已冻结且依赖永久 Generator 的代码，修复时仍必须同步 Generator 和生成产物。TASK001–TASK003 为 task-level frozen；TASK004 只冻结已验收阶段，不把整个 TASK004 视为 CLOSED。
 - **Runner 安全**：现阶段已接受开发集群高权限 Runner；不要求先建生产级 RBAC、第二 Runner、自动跨仓库事件或 Required Checks；仍禁止泄漏 Secret、任意命令入口与破坏共享数据。
-- **状态**：TASK004 Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / Airflow STEP02 Processing 与 STEP03E End-to-End = **PASS / accepted baseline**。Self-Runner PR #38 merged；post-merge Read-only Run `38328600074` SUCCESS。原始 live Workflow 曾在 DAG 已成功后于 XCom 后置取证失败；修复后的新 batch Live 回归并未执行，不得夸大。
-- **当前 NEXT**：**TASK004 整体 COMPLETE / CLOSED / FROZEN**（Processing-first Airflow MVP 范围）；正式证明见 `docs/tasks/TASK-004-FINAL-CLOSEOUT.md`。下一任务 **TASK005 Condition STEP00 只读 preflight**，设计与分步范围见 `docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md`；不授权新的 batch、Processing 或 PostgreSQL 写入。以 `docs/tasks/TASK-STATUS.md` 为当前权威索引。
+- **状态**：TASK004 Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / Airflow STEP02 Processing 与 STEP03E End-to-End = **PASS / accepted baseline（原 MVP）**；新增同批次 PostgreSQL CDM 物化及 replay 尚未完成。Self-Runner PR #38 merged；post-merge Read-only Run `38328600074` SUCCESS。原始 live Workflow 曾在 DAG 已成功后于 XCom 后置取证失败；修复后的新 batch Live 回归并未执行，不得夸大。
+- **当前 NEXT**：按用户明确的最终完成标准，**TASK004 overall = IN PROGRESS**，既有 Processing MVP **PASS / FROZEN**。新扩展目标为同一 Airflow batch 的 Person + Visit 真实 OMOP CDM 入库、独立 DB 对账、同一 batch 重放/失败恢复幂等性。**唯一当前开工：TASK004 STEP04A 只读 PG/Source preflight**，详见 `docs/tasks/TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`；后续受控数据写入须另行明确授权。**TASK005 Condition ON HOLD / DESIGN ONLY**。以 `docs/tasks/TASK-STATUS.md` 为当前权威索引。
 - **文档治理**：过时 Pilot、Migration、Handoff 原文归档；当前规范、有效经验与最新状态留在 main。详见归档规范。
 
 ---

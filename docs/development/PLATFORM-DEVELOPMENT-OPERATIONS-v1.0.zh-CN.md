@@ -16,8 +16,8 @@
 4. **当前 `dw-runner-set` 使用开发集群高权限 ServiceAccount 是有意选择。** 不得将只读 Runner、NetworkPolicy、企业级审批、强制 Branch Protection 作为普通开发 STEP 的前置任务；同样不得在日志泄漏凭据或擅自删除共享资源。
 5. **测试结果必须绑定准确源码版本。** PR 的 HEAD SHA 变化，旧 PASS 不能代表新 HEAD；修改后重新验证。
 6. **V8/V9 验证的是固定请求 + 固定 STEP Workflow，不是已经实现的任意 TASK 通用执行器。** 新 TASK 优先复用现有已验证模式；只做必要的轻量适配，不要声称通用自动路由已存在。
-7. **冻结边界按主线真实状态判断。** TASK001–TASK003 为 task-level frozen；**TASK004 既定 Processing-first Airflow MVP 整体 COMPLETE / CLOSED / FROZEN**（Synthea、Landing、Resolver、Control Runtime、Person、Visit、Batch Reconciliation、STEP02 Processing、STEP03E Airflow）。正式关闭证据：Healthcare `docs/tasks/TASK-004-FINAL-CLOSEOUT.md`，2026-10-13 UTC 三轮只读审计确认历史成功业务运行、源码一致性和成功 Run 清理。STEP03E 修复后的 mutating Live 验证脚本尚未用新 batch 完整重跑；PostgreSQL 新批次写入不在 TASK004 验收范围，均不得冒充该项测试已通过。
-8. **Current NEXT 仅由 Healthcare `docs/tasks/TASK-STATUS.md` 定义。** TASK004 已完成最终关闭；下一任务正式设计为 **TASK005 Condition**，当前唯一获准实施步骤是 **STEP00 只读 preflight**。TASK005 实施未开始；不得依据旧 STEP02/NEXT 或 TASK005 设计擅自生成 Synthea batch、写 Processing 或 PostgreSQL。
+7. **冻结边界按主线真实状态判断。** TASK001–TASK003 为 task-level frozen；TASK004 既有 Processing-first Airflow MVP **COMPLETE / CLOSED / FROZEN**（Synthea、Landing、Resolver、Control Runtime、Person、Visit、Batch Reconciliation、STEP02 Processing、STEP03E Airflow），历史只读审计及证据保留在 Healthcare `docs/tasks/TASK-004-FINAL-CLOSEOUT.md`。**按用户明确的整体完成标准，TASK004 overall 已改为 IN PROGRESS**：本次 Airflow batch 的 Person/Visit 需写入 PostgreSQL OMOP，并通过独立数据库对账和同一 batch replay/recovery 验收；计划见 Healthcare `docs/tasks/TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`。现有 STEP03E 没有入库，修复后的 mutating Live 新 batch 回归也未运行，均不得假称 PASS。
+8. **Current NEXT 仅由 Healthcare `docs/tasks/TASK-STATUS.md` 定义。** **TASK004 STEP04A read-only PG + verified batch preflight** 是唯一当前可直接开工步骤。后续 CDM Person/Visit mutation、Airflow mutating E2E 或新的 Synthea batch 必须明确授权、按分步安全 Gate 实施；不能直接运行 TASK002/TASK003 冻结的历史一次性入库脚本。**TASK005 Condition ON HOLD / DESIGN ONLY**，待 TASK004 同 batch DB 闭环及幂等重放验收后解锁。
 
 ## 1. 角色、位置与职责
 
@@ -265,9 +265,13 @@ GENERIC_ARBITRARY_TASK_DISPATCHER=NOT_IMPLEMENTED_NOT_REQUIRED
 BUSINESS_MAINLINE_AUTHORITY=HEALTHCARE_TASK_STATUS_AND_ACCEPTED_CHECKPOINTS
 TASK004_STEP03E_BUSINESS=ACCEPTED
 TASK004_STEP03E_SELF_RUNNER=MAINLINE_ACCEPTED
-TASK004_OVERALL=COMPLETE_CLOSED_FROZEN
+TASK004_PROCESSING_MVP=COMPLETE_CLOSED_FROZEN
 TASK004_FINAL_AUDIT=READ_ONLY_PASS
-CURRENT_NEXT=TASK005_STEP00_READ_ONLY_PREFLIGHT
+TASK004_OMOP_DB_LOOP=NOT_IMPLEMENTED
+TASK004_SAME_BATCH_REPLAY=NOT_VERIFIED
+TASK004_OVERALL=IN_PROGRESS
+CURRENT_NEXT=TASK004_STEP04A_READ_ONLY_PREFLIGHT
+TASK005_CONDITION=ON_HOLD
 ```
 
 **Agent 的执行指令：不要再以完善 CI/CD 为目标重复开展 V10/V11 基建实验。直接使用本手册进行正式平台代码开发；仅在某个真实 TASK 被现有流程阻塞时，做最小必要修复。**
