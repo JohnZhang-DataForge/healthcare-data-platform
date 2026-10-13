@@ -16,8 +16,8 @@
 4. **当前 `dw-runner-set` 使用开发集群高权限 ServiceAccount 是有意选择。** 不得将只读 Runner、NetworkPolicy、企业级审批、强制 Branch Protection 作为普通开发 STEP 的前置任务；同样不得在日志泄漏凭据或擅自删除共享资源。
 5. **测试结果必须绑定准确源码版本。** PR 的 HEAD SHA 变化，旧 PASS 不能代表新 HEAD；修改后重新验证。
 6. **V8/V9 验证的是固定请求 + 固定 STEP Workflow，不是已经实现的任意 TASK 通用执行器。** 新 TASK 优先复用现有已验证模式；只做必要的轻量适配，不要声称通用自动路由已存在。
-7. **冻结边界按主线真实状态判断。** TASK001–TASK003 为 task-level frozen；TASK004 已验收的 Synthea、Landing、Resolver、Control Runtime、Person、Visit、Batch Reconciliation 为 frozen baseline；TASK004 overall 仍为 **IN PROGRESS**。
-8. **Current NEXT 由 Healthcare `docs/tasks/TASK-STATUS.md` 定义。** Batch Reconciliation 已完成正式主线验收；当前 NEXT 是 TASK004 Airflow orchestration 的第一个 bounded STEP。
+7. **冻结边界按主线真实状态判断。** TASK001–TASK003 为 task-level frozen；TASK004 已验收的 Synthea、Landing、Resolver、Control Runtime、Person、Visit、Batch Reconciliation、STEP02 Processing 和 STEP03E Airflow End-to-End 为 frozen/accepted baseline；TASK004 overall 仍为 **IN PROGRESS**。STEP03E 修复后的 mutating Live 验证脚本尚未用新 batch 完整重跑，不能冒充该项测试通过。
+8. **Current NEXT 仅由 Healthcare `docs/tasks/TASK-STATUS.md` 定义。** TASK004 STEP03E 业务链和 Self-Runner 历史只读验收均已通过并合并；下一业务阶段**尚未批准**。V4 Phase E 的 Condition 是候选方向，不能据旧 STEP02/NEXT 自动发起新的业务 mutation。
 
 ## 1. 角色、位置与职责
 
@@ -152,13 +152,15 @@ Self-Runner PR #31 merge     = 8ab26784cd0229cce96989e3691c122049e3c23a
 
 1. 在 Healthcare 建好 PR，读取最新 `head.sha`；核对与分支 HEAD 一致。
 2. 在 Self-Runner 的对应 feature 分支，修改**该 STEP 已存在的固定 Request JSON**；新 STEP 才新增固定配置及必要的受控适配。
-3. 确认 Workflow 的 `on.push.branches` 与 `paths` **确实覆盖本次提交**。V8/V9 由 Self-Runner feature 分支对固定 Request/Workflow 路径的 Push 触发；仅修改 Healthcare PR 不会自动触发。
-4. 先在 GitHub-hosted Policy Job 验证字段、白名单、当前 PR HEAD 或 main HEAD；Policy FAIL 必须使 ARC Job SKIPPED。
+3. 确认 Workflow 的触发条件确实覆盖本次提交。V8/V9 的特定固定 Request/Workflow 可以由 Self-Runner Push 触发；**TASK004 STEP03E 会生成新 batch 的 mutating Live workflow 为 `workflow_dispatch`，不得用普通 Push 替代人工明确触发**。只读历史核验另有非 mutation 的 Push workflow。仅修改 Healthcare PR 不会自动触发 Self-Runner。
+4. 先在 GitHub-hosted Policy Job 验证字段、白名单及与**本次验证目标相符**的 SHA。新业务开发/写入必须验证最新目标 PR HEAD 或当前 main HEAD；**历史只读验收**须锁定当时已接受的 immutable SHA，不得要求它永远等于向前推进的 main。Policy FAIL 必须使 ARC Job SKIPPED。
 5. ARC Job 必须 `checkout` 精确 SHA 并检查 `git rev-parse HEAD`；需要 `kubectl` 时参照 V8/V9 的版本固定 + 官方 SHA256 校验启动方式。
 6. 真实执行固定 Shell；校验 Job exit code、业务 Marker、Kubernetes 终态、数据 readback（适用时），并上传日志/Artifact。
 7. GitHub Run 为 SUCCESS 且所有**适用**业务 Gates 为 PASS，才记录该 HEAD 的 PASS；不能只看 `kubectl apply` 成功或日志出现一个 PASS。
 8. 如果 PR HEAD 改变、输入数据版本改变或执行脚本改变，更新绑定并重新运行；不要复用旧 PASS。
 9. 合并后检查真实 main SHA；重要 STEP 可像 V9 一样再跑 post-merge。若未执行，不得写“post-merge PASS”。
+
+**STEP03E 历史验收特别说明（2026-10-12）：** 只读 Workflow `task004-airflow-step03e-postsuccess.yml` 用当时 Healthcare 验收 SHA `d0731df6ce09953e45e0458cd7bd85f0ce4fb60c` checkout 源码、检查历史 Airflow run `task004-step03e-38324111846`，并不以当前 Healthcare main 的新 SHA 替换历史证据。后者可以因文档或后续功能合并而前进。相反，可能产生 Synthea/Landing/Processing mutation 的 Live Workflow 保留当前 main 精确身份 gate，若确需执行新业务 run 必须显式更新审批范围和 Request。Self-Runner [PR #38](https://github.com/JohnZhang-DataForge/Self-Runner/pull/38) 的 pre-merge / post-merge 只读验收已通过；以后不得把旧 XCom probe 或卡住的旧 Artifact upload 当作当前 CI gate。
 
 **手工检查示例（已安装 `gh` 且有授权时）：**
 
@@ -261,7 +263,9 @@ MANDATORY_PR_STATUS_CHECK=NOT_REQUIRED
 PRODUCTION_GRADE_RBAC=NOT_REQUIRED
 GENERIC_ARBITRARY_TASK_DISPATCHER=NOT_IMPLEMENTED_NOT_REQUIRED
 BUSINESS_MAINLINE_AUTHORITY=HEALTHCARE_TASK_STATUS_AND_ACCEPTED_CHECKPOINTS
-CURRENT_TASK004_NEXT=TASK004_AIRFLOW_ORCHESTRATION
+TASK004_STEP03E_BUSINESS=ACCEPTED
+TASK004_STEP03E_SELF_RUNNER=MAINLINE_ACCEPTED
+CURRENT_TASK004_NEXT=UNDECIDED_PHASE_E_CONDITION_CANDIDATE
 ```
 
 **Agent 的执行指令：不要再以完善 CI/CD 为目标重复开展 V10/V11 基建实验。直接使用本手册进行正式平台代码开发；仅在某个真实 TASK 被现有流程阻塞时，做最小必要修复。**
