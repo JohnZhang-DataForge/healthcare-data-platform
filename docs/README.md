@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 最新开发进度 / 新优先级（当前 NEXT）：S3 READY Batch Discovery 核心逻辑已通过真实 SeaweedFS 只读验证。** [实测 Checkpoint](tasks/LANDING-BATCH-DISCOVERY-READONLY-CHECKPOINT-2026-10-13.zh-CN.md) / [Self-Runner Run 38460137577](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38460137577)：8 单元测试 PASS、6 个 verified READY Batch、1 个旧格式 Manifest 隔离、K8s worker02 Pod 真实读取、**DAG_TRIGGER=NO / DATABASE_MUTATION=NO**。用户正式批准**先完成 Airflow S3 消费侧**：新 NEXT = 以业务语义命名的 `landing_batch_discovery` 定时 Airflow DAG + 独立发现镜像 / Secret / 实际 Airflow 验收；**此 DAG 还没开发/部署**。之后才完成 PostgreSQL 动态 COMMIT + DB Reconciliation。Synthea NEW_ONLY 仍是独立后续工作，非当前唯一 NEXT。历史编号命名保留为冻结源码，**新模块按功能命名**。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 架构决议（最高优先级；覆盖本文历史 Airflow generate_publish NEXT）：Synthea 独立 Producer / Airflow 仅按时读取 S3 verified Manifest，完全解耦。** **不是**由 Airflow 向 Synthea 传随机 Seed/人口/州，也**不是** Airflow 运行/重试时重新生成数据。用户要求三套各自独立的 Kubernetes Job/Pod、业务代码/镜像（NEW_ONLY、EXISTING_ONLY、MIXED），只先开发 **NEW_ONLY**（人数随机 1～100，随机州、Seed、当次日期）；Synthea 在 worker01 / dw-synthea 使用待验证的**专用 LocalPath 磁盘/PVC**保存自身恢复状态，发布后 SeaweedFS verified Manifest 为数据交换接口。**已批准设计，尚未部署新 Pod/PVC/DAG、未生成新批次或写库。** 下一步只执行 [NEW_ONLY 实施 NEXT](tasks/TASK-004-INDEPENDENT-GENERATOR-NEW-ONLY-NEXT-v1.0.zh-CN.md)，完整设计见 [独立 Generator & Airflow S3 Consumer 架构 v1.0](architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)。历史 STEP03E 的四任务 DAG 和旧 CDM 计划原样保留为验收证据，绝不当作新架构已实现；**TASK004 IN PROGRESS、TASK005 ON HOLD**。
 
 
