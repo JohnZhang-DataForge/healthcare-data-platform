@@ -9,6 +9,7 @@ COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_adapters.py /opt/task0
 COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_source.py /opt/task004/
 COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_pg_writer.py /opt/task004/
 COPY --chown=10001:10001 airflow/dags/task004_cdm_postgres_readonly.py /opt/task004/
+COPY --chown=10001:10001 airflow/dags/task004_cdm_postgres_rollback_executor.py /opt/task004/
 COPY --chown=10001:10001 apps/task004/cdm_runtime_cli.py /opt/task004/
 ENV PYTHONDONTWRITEBYTECODE=1
 USER 10001:10001
