@@ -22,15 +22,6 @@ from pathlib import Path
 
 PINNED_VERSION = "v3.3.0"
 PINNED_COMMIT = "995cf2fd33e67918d4e33110d9f68ad248002221"
-STATES = tuple("""
-Alabama Alaska Arizona Arkansas California Colorado Connecticut Delaware Florida Georgia
-Hawaii Idaho Illinois Indiana Iowa Kansas Kentucky Louisiana Maine Maryland
-Massachusetts Michigan Minnesota Mississippi Missouri Montana Nebraska Nevada
-New Hampshire New Jersey New Mexico New York North Carolina North Dakota Ohio
-Oklahoma Oregon Pennsylvania Rhode Island South Carolina South Dakota Tennessee
-Texas Utah Vermont Virginia Washington West Virginia Wisconsin Wyoming
-""".splitlines())
-# Splitlines are not a US state parser. Use a fixed, explicit 50-state tuple below.
 STATES = (
     "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
     "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
@@ -105,6 +96,8 @@ def new_params(request_id: str, now: dt.datetime | None = None) -> dict:
 
 
 def freeze_params(root: Path, request_id: str, now=None) -> dict:
+    if not ID_PATTERN.fullmatch(request_id):
+        raise GateError("invalid generator request id")
     path = root / "new-only" / "requests" / request_id / "params.json"
     if path.is_file():
         result = json.loads(path.read_text())
@@ -214,6 +207,8 @@ def validate_csv(directory: Path, contract: Path, population_limit: int = 100) -
 
 
 def guarded_registry_write(base: Path, request_id: str, hashes: list[str]) -> None:
+    if not ID_PATTERN.fullmatch(request_id):
+        raise GateError("invalid registry request id")
     registry = base / "registry"
     registry.mkdir(parents=True, exist_ok=True)
     ids = set(hashes)
