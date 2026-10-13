@@ -150,14 +150,17 @@ Policy job             = SUCCESS
 ARC verify job         = SUCCESS
 Evidence artifact ID   = 11781352153
 PR #38 squash/main     = 6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87
-Post-merge exact-main  = 38328600074  (请读取最终 GitHub 结论)
+Post-merge exact-main  = 38328600074  SUCCESS
+Post-merge artifact ID = 11781762914
 ```
 
 [Pre-merge Run 38328528372](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38328528372) 的 workflow conclusion 为 SUCCESS，原始 GitHub Run `38324111846` 的 FAILURE 历史保持不变。先前 `38328025745` 的读日志、验证步骤成功，但 artifact upload 卡住；不将这个整次 workflow 冒充 SUCCESS。
 
 Mutating STEP03E Live workflow 已更改为显式 `workflow_dispatch`，不得通过普通 source push 意外创建新的 Landing/Processing 数据。修复后的 Live Shell 虽已在正式 CI 做 Shell 语法检查，但**没有重新执行一个新的业务 batch**；正式验收属于已有的原始成功 Airflow run + 只读日志核验。
 
-**文档收尾：**完成 Self-Runner `main` 的最终 post-merge gate 记录，合并本 Healthcare 文档 PR；然后以此 Closeout 作为当前 Agent 权威资料。不得依据 STEP02 的旧 `Airflow upstream ingestion NEXT` 再重复开发 STEP03E，后续新业务阶段另行确认。
+[Post-merge exact-main Run 38328600074](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38328600074) = **SUCCESS**，Policy / ARC Verify 均成功，并已上传正式证据 Artifact。Self-Runner STEP03E 验证代码现为正式 mainline。
+
+**文档收尾：**合并本 Healthcare 文档 PR；然后以此 Closeout 作为当前 Agent 权威资料。不得依据 STEP02 的旧 `Airflow upstream ingestion NEXT` 再重复开发 STEP03E，后续新业务阶段另行确认。
 
 ## 7. 关键注意事项
 
