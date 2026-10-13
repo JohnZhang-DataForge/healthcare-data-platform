@@ -1,4 +1,4 @@
-# Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12）
+# Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT；2026-10-13 UTC 审计）
 
 > **CURRENT STATUS / MAINLINE AUTHORITY**。本文件描述唯一正式业务主线当前状态。历史 Candidate / Pilot / Closeout 只说明当时事实，不能覆盖本文件。
 
@@ -9,17 +9,18 @@
 | TASK001 | 历史冻结 Landing / batch 基线 | 不重跑、不改冻结文件 |
 | TASK002 | Person V2 历史回归与冻结基线 | 不擅自修改 |
 | TASK003 | **COMPLETE / CLOSED** | 只读参考实现 |
+| **TASK004 — overall** | **COMPLETE / CLOSED / FROZEN** | Processing-first Airflow MVP 已最终验收；见 [Final Closeout](TASK-004-FINAL-CLOSEOUT.md) |
 | TASK004 — Synthea | **PASS** | frozen baseline |
 | TASK004 — Resolver / Control | **PASS** | frozen baseline |
 | TASK004 — Person | **PASS** | frozen baseline |
 | TASK004 — Visit | **PASS** | frozen baseline |
 | TASK004 — Batch Reconciliation | **PASS / MAINLINE ACCEPTED** | frozen baseline；正式证据见 Mainline Closeout |
 | TASK004 — Airflow STEP02 Processing orchestration | **PASS / HISTORICAL MAINLINE ACCEPTED** | frozen baseline |
-| **TASK004 — Airflow STEP03E end-to-end** | **PASS / BUSINESS + SELF-RUNNER MAINLINE ACCEPTED** | frozen STEP03E baseline；新业务阶段待决定 |
+| **TASK004 — Airflow STEP03E end-to-end** | **PASS / BUSINESS + SELF-RUNNER MAINLINE ACCEPTED** | frozen STEP03E baseline，Final Audit PASS；旧 Live 新批次未重跑 |
 | **TASK005 — Condition (Phase E)** | **DESIGN BASELINE / IMPLEMENTATION NOT STARTED** | **NEXT: STEP00 read-only Source/ID/FK/Vocabulary/DB preflight**；不授权业务数据 mutation |
 | Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞已完成的 Airflow MVP |
 
-**TASK004 overall status = IN PROGRESS。**
+**TASK004 overall status = COMPLETE / CLOSED / FROZEN。** 该状态仅覆盖 Synthea → verified Landing → Person/Visit **Processing** → Reconcile 的 Airflow MVP；不宣称新批次 PostgreSQL OMOP 写入。最终只读审计见 [`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md)。
 
 ## 历史 STEP02 Airflow Processing orchestration 正式主线验收
 
@@ -181,6 +182,14 @@ STEP03E 业务验收时固定的 Healthcare 源码 SHA = `d0731df6ce09953e45e045
 
 正式细节、源码身份、证据、限制：`TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`。历史 STEP02 Closeout 仍有效，但它当时写的 `upstream ingestion NEXT` **已经过期**。
 
+## TASK004 Final Audit & Closure（2026-10-13 UTC）
+
+- runner01 分别执行 STEP01、STEP02、Final Storage Check 的只读审计：四节点 Ready、历史 DAG/四 Task success、成功 run Synthea Job 和 Control Pod residual=NO、Airflow 当前 DAG GitSync 源码 SHA256 与 GitHub main 一致。
+- S3 正确 namespace 是 `dw-seaweedfs`，四个 Pod 全部 1/1 Running，S3 EndpointSlice 存在。早期失败运行的历史 Job/Pod 不等同于成功运行的残留，不擅自删除。
+- Self-Runner [PR #39](https://github.com/JohnZhang-DataForge/Self-Runner/pull/39) 已修复历史只读固定 SHA 检查，post-merge [Run 38329852476](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38329852476) SUCCESS；**修复后 Live mutating 新批次回归未执行**。
+- PostgreSQL `omop` 历史状态：Person=113、Visit=5799、Condition=0；STEP03E 的 23/3592 是 Processing，**数据库新批次写入不属于 TASK004 验收范围**。
+- 完整范围、非阻塞项、证据：[`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md)。**TASK004 正式冻结，唯一当前 NEXT 为 TASK005 STEP00 read-only preflight**。
+
 ## TASK005 Condition 设计基线与当前 NEXT（尚未执行）
 
 - 业务实体：Synthea v3.3.0 `conditions.csv` → `condition_occurrence`；七列表头 `START, STOP, PATIENT, ENCOUNTER, SYSTEM, CODE, DESCRIPTION`，**没有 Id**，必须证明可重复且保留重复事件的唯一 occurrence key。
@@ -200,13 +209,14 @@ STEP03E 业务验收时固定的 Healthcare 源码 SHA = `d0731df6ce09953e45e045
 ## 冻结与安全
 
 - TASK001–TASK003：task-level frozen。
-- TASK004 当前 frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / STEP02 Processing；STEP03E 业务端到端验收 PASS，正式 Self-Runner PR #38 + post-merge 验收 PASS。
-- TASK004 整体：**IN PROGRESS**。
+- TASK004 整体 frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / STEP02 Processing / STEP03E；正式 Self-Runner PR #38/#39 与 Final Audit 验收 PASS，其他能力及未执行的 Live 回归按 Final Closeout 的明确边界保留。
+- TASK004 整体：**COMPLETE / CLOSED / FROZEN**；不覆盖 PostgreSQL 新批次物化、Fabric/dbt 等后续阶段。
 - 不把 DAG parse、render-only 或单个 operator 构造成功冒充真实 Airflow orchestration PASS。
 - 历史文档原文归档，不追溯改写。
 
 ## 相关文档
 
+- `TASK-004-FINAL-CLOSEOUT.md` — TASK004 当前最终状态唯一 Closeout
 - `TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md` — 当前 NEXT / 条件实体正式设计基线（实施 NOT STARTED）
 
 - `TASK-004-PHASE9-CLOSEOUT.md`
