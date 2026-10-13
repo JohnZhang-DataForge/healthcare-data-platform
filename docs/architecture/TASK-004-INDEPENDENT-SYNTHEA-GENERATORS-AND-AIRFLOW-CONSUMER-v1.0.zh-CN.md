@@ -1,5 +1,8 @@
 # TASK004 v1.0 — 独立 Synthea 数据生产与 Airflow S3 消费（2026-10-13）
 
+> **2026-10-13 第三层真实 S3→OMOP 状态更新：** 已将真实 23 Person / 3588 Visit Spark Processing Parquet 与预期 Manifest SHA 送入固定 digest Writer Source Adapter 并成功验证 S3，PG Writer 按 23/23 历史 Person ID 漂移 `BLOCKED:EXISTING_TARGET_DRIFT` 正确拒绝、0 持久写入；[完整 Closeout](../tasks/OMOP-WRITER-REAL-S3-PG-ROLLBACK-GATE-2026-10-13.zh-CN.md) / [Run 38479591382](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38479591382)。**只能说安全阻断闭环 PASS，真正独立新批次的 Person/Visit ROLLBACK 成功正例尚无有效输入，PG COMMIT 仍禁用。** 旧动态 Plan ID 强制前缀 `task004-airflow-` 与独立 Generator 语义需明确版本化兼容。此进度不改变 Generator/Airflow 解耦的已批准架构。
+
+
 > **2026-10-13 第三层新实测：OMOP Writer 的只读 pre-COMMIT 输入身份与源 ID 防撞检查已完成（[真实 PG Closeout](../tasks/OMOP-WRITER-PRECOMMIT-SAFETY-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38478501009](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38478501009) PASS），但还没有真正 COMMIT。** Reader 权限限定 SELECT；人工构造的新 ID 测试不能代表真实新 S3 批次完成认证。下一步是实际 S3 Parquet source + scoped writer ROLLBACK、真正新 Batch/活跃 Claim owner 的事务级 fencing、字段/映射/外键 readback + COMMIT/幂等恢复；Generator 仍独立。旧架构说明仅为早期设计，不改变已验证的 Airflow Discovery/手动 Spark Processing 范围。\n\n
 > **2026-10-13 运行进度：真实 `landing_batch_discovery` DAG 已完成经安全历史批次 opt-in 的 S3→Claim Guard→Spark Person/Visit→Processing Reconciliation 闭环，详见 [Spark Live Closeout](../tasks/LANDING-SPARK-PROCESSING-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)，最后 [Run 38476079452](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38476079452) 8 Tasks SUCCESS。** 每 15 分钟默认仍只观察/读取 Ledger，手动指定已处理历史批次才触发 Spark；真正新数据 Claim、Spark 自动消费和 PostgreSQL OMOP COMMIT 尚未完成。下方原始“只读 Discovery 尚无 Spark”说明为旧阶段验收，不是当前运行事实。
 
