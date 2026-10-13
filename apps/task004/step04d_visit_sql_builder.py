@@ -15,7 +15,9 @@ def dt(value):
     require(value is not None,"visit_timestamp_missing")
     try:
         x=datetime.fromisoformat(str(value).replace("Z","+00:00"))
-        require(x.tzinfo is not None,"visit_timezone_missing")
+        # Accepted canonical Parquet has timestamp-NTZ; Synthea source timestamps are UTC.
+        # Treat NTZ as UTC, never as worker-node local timezone.
+        if x.tzinfo is None: x=x.replace(tzinfo=timezone.utc)
         return x.astimezone(timezone.utc).replace(tzinfo=None).isoformat(sep=" ",timespec="microseconds")
     except (ValueError,TypeError):raise RuntimeError("BLOCKED=visit_invalid_datetime") from None
 def prepare(rows):
