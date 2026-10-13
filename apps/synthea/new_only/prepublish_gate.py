@@ -71,7 +71,7 @@ def audit_local(csv_dir,contract_path):
     expected={f["filename"] for f in spec["files"]}
     if not folder.is_dir() or {p.name for p in folder.glob("*.csv") if p.is_file()}!=expected:
         refuse("LOCAL_CSV_INVENTORY")
-    summary={}; headers={}; identities={}
+    summary={}; headers={}; identities={}; encounter_parents=[]
     for item in spec["files"]:
         name=item["filename"]
         path=folder/name
@@ -96,9 +96,9 @@ def audit_local(csv_dir,contract_path):
         elif name=="encounters.csv":
             identities["visit"]=read_ids(data,filename=name,column="Id",expected_header=item["header"])
             parent_index=item["header"].index("PATIENT")
-            for row in rows[1:]:
-                if row[parent_index] not in identities["person"]:
-                    refuse("ENCOUNTER_ORPHAN")
+            encounter_parents=[row[parent_index] for row in rows[1:]]
+    if any(x not in set(identities["person"]) for x in encounter_parents):
+        refuse("ENCOUNTER_ORPHAN")
     if not 1<=len(identities["person"])<=100:
         refuse("PERSON_COUNT_NOT_1_TO_100")
     return {
