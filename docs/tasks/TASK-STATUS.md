@@ -16,7 +16,7 @@
 | TASK004 — Batch Reconciliation | **PASS / MAINLINE ACCEPTED** | frozen baseline；正式证据见 Mainline Closeout |
 | TASK004 — Airflow STEP02 Processing orchestration | **PASS / HISTORICAL MAINLINE ACCEPTED** | frozen baseline |
 | **TASK004 — Airflow STEP03E end-to-end** | **PASS / BUSINESS + SELF-RUNNER MAINLINE ACCEPTED** | frozen STEP03E baseline；新业务阶段待决定 |
-| Phase E — Condition / Clinical Facts | **CANDIDATE / NOT APPROVED** | 须先新建受控 TASK/STEP 范围与验收标准；不能自动开始 |
+| **TASK005 — Condition (Phase E)** | **DESIGN BASELINE / IMPLEMENTATION NOT STARTED** | **NEXT: STEP00 read-only Source/ID/FK/Vocabulary/DB preflight**；不授权业务数据 mutation |
 | Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞已完成的 Airflow MVP |
 
 **TASK004 overall status = IN PROGRESS。**
@@ -181,11 +181,19 @@ STEP03E 业务验收时固定的 Healthcare 源码 SHA = `d0731df6ce09953e45e045
 
 正式细节、源码身份、证据、限制：`TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`。历史 STEP02 Closeout 仍有效，但它当时写的 `upstream ingestion NEXT` **已经过期**。
 
+## TASK005 Condition 设计基线与当前 NEXT（尚未执行）
+
+- 业务实体：Synthea v3.3.0 `conditions.csv` → `condition_occurrence`；七列表头 `START, STOP, PATIENT, ENCOUNTER, SYSTEM, CODE, DESCRIPTION`，**没有 Id**，必须证明可重复且保留重复事件的唯一 occurrence key。
+- 设计文档：`TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md`（STEP00–06）。
+- **当前唯一获授权工作**：STEP00 read-only 前置条件盘点，锁定 verified source batch/manifest/sha，核查行数/重复、Person/Visit 同 batch FK、实际 OMOP/vocabulary 和数据库 ID mapping。输出报告及代码契约设计；**没有任何 Source/Processing/PostgreSQL mutation 授权**。
+- Processing Candidate 与 PostgreSQL `cdm.condition_occurrence` materialization 必须分别验收；OMOP mapping 的源码 code 不得当成 `concept_id`；修复后的 STEP03E Live Workflow 不得未经授权自动重跑。
+- 下一 Agent 必须按 STEP00 的小范围 PR + exact-SHA Self-Runner 验证，失败不得越过关口。Condition 未 VERIFIED，也未开始部署。
+
 ## 下一位 Agent 如何开始
 
-1. 先读 `../README.md`、本文件、最新 STEP03E End-to-End Closeout、Operations、Skill、Lessons。
+1. 先读 `../README.md`、本文件、TASK005 Condition 开发方案、最新 STEP03E End-to-End Closeout、Operations、Skill、TASK003 Blueprint、Lessons。
 2. 核对 Healthcare / Self-Runner 的实际 main SHA（Self-Runner 接受时 main 为 `6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`）及正式 Closeout，避免被老 STEP02 的 NEXT 误导。
-3. STEP03E Business + Self-Runner Validation **已完成主线验收**。下一业务阶段**尚未批准**；V4 Phase E Condition 是候选，需要正式确定 source/OMOP target、Processing 与 PostgreSQL 入库的边界、FK/DQ/证据，再单独开发，不能按旧文档自动开工。
+3. STEP03E Business + Self-Runner Validation **已完成主线验收**。下一实体已确定为 **TASK005 Condition**，正式设计见 `TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md`。**唯一当前 NEXT 是 STEP00 只读 preflight**（source contract/事件 key/Person-Visit FK/Vocabulary/真实 DB DDL），实施代码与实际数据写入尚未开始，绝不跳到 STEP01 或 PostgreSQL mutation。
 4. 不重复部署或重跑已验收的 Person / Visit / Reconcile / Synthea → Landing；除非明确开立下一业务阶段，不进行新数据 mutation。
 5. 后续范围另行决策；严格维持一次一个有边界的 STEP 和固定 SHA 验证。
 
@@ -198,6 +206,8 @@ STEP03E 业务验收时固定的 Healthcare 源码 SHA = `d0731df6ce09953e45e045
 - 历史文档原文归档，不追溯改写。
 
 ## 相关文档
+
+- `TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md` — 当前 NEXT / 条件实体正式设计基线（实施 NOT STARTED）
 
 - `TASK-004-PHASE9-CLOSEOUT.md`
 - `TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md`
