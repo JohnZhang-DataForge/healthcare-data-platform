@@ -34,5 +34,14 @@ class RuntimeCLI(unittest.TestCase):
  def test_container_requires_nonroot(self):
   d=(ROOT/"images/task004-cdm-runtime/Dockerfile").read_text()
   self.assertIn("USER 10001:10001",d)
-  self.assertNotIn("psql",d)
+  self.assertNotIn("apt-get install postgresql",d)
+  for module in ("task004_cdm_dynamic_adapters.py","task004_cdm_dynamic_source.py","task004_cdm_dynamic_pg_writer.py"):
+   self.assertIn(module,d)
+  self.assertIn("pyarrow==",d)
+  self.assertIn("boto3==",d)
+ def test_runtime_only_offers_source_validation(self):
+  cli=(ROOT/"apps/task004/cdm_runtime_cli.py").read_text()
+  self.assertIn("--validate-source",cli)
+  self.assertNotIn("subprocess.run",cli)
+  self.assertNotIn("allow_commit=True",cli)
 if __name__=="__main__":unittest.main()
