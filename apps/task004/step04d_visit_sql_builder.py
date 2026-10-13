@@ -88,8 +88,7 @@ SELECT 'synthea',v.source_key FROM _visits v WHERE NOT EXISTS(
 SELECT 1 FROM etl.visit_occurrence_id_map m WHERE m.source_system='synthea' AND m.source_encounter_id=v.source_key)
 ORDER BY v.source_key;
 CREATE TEMP TABLE _expected ON COMMIT DROP AS
-SELECT m.visit_occurrence_id,pm.person_id,
- (jsonb_populate_record(NULL::cdm.visit_occurrence,v.payload||
+SELECT (jsonb_populate_record(NULL::cdm.visit_occurrence,v.payload||
  jsonb_build_object('visit_occurrence_id',m.visit_occurrence_id,'person_id',pm.person_id))).*
 FROM _visits v
 JOIN etl.visit_occurrence_id_map m ON m.source_system='synthea' AND m.source_encounter_id=v.source_key
