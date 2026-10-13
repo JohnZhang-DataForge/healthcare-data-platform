@@ -109,8 +109,10 @@ class DiscoveryTest(unittest.TestCase):
             with self.subTest(change=change):
                 manifest = ready_manifest("x")
                 change(manifest)
-                with self.assertRaises(DiscoveryError):
-                    discover_ready_batches(FakeS3([[key]], {key: encoded(manifest)}))
+                result = discover_ready_batches(FakeS3([[key]], {key: encoded(manifest)}))
+                self.assertEqual(result["ready_count"], 0)
+                self.assertEqual(result["quarantined_count"], 1)
+                self.assertEqual(result["discovery_status"], "READ_ONLY_PASS_WITH_QUARANTINE")
 
     def test_same_batch_id_different_dates_is_blocked(self):
         a, b = key_for("x"), key_for("x", "2026-10-14")
@@ -123,8 +125,23 @@ class DiscoveryTest(unittest.TestCase):
         key = key_for("x")
         for body in [b"not-json", b"x" * (1024 * 1024 + 1)]:
             with self.subTest(size=len(body)):
-                with self.assertRaises(DiscoveryError):
-                    discover_ready_batches(FakeS3([[key]], {key: body}))
+                result = discover_ready_batches(FakeS3([[key]], {key: body}))
+                self.assertEqual(result["quarantined_count"], 1)
+
+
+    def test_legacy_manifest_does_not_hide_new_ready_batch(self):
+        old_key, new_key = key_for("legacy"), key_for("new")
+        legacy = ready_manifest("legacy")
+        legacy.pop("payload_fingerprint")
+        good = ready_manifest("new")
+        result = discover_ready_batches(
+            FakeS3([[old_key, new_key]],
+                   {old_key: encoded(legacy), new_key: encoded(good)})
+        )
+        self.assertEqual(result["ready_count"], 1)
+        self.assertEqual(result["ready_batches"][0]["batch_id"], "new")
+        self.assertEqual(result["quarantined_count"], 1)
+        self.assertEqual(result["manifests_seen"], 2)
 
     def test_scan_limit_fail_closed(self):
         a, b = key_for("a"), key_for("b")
