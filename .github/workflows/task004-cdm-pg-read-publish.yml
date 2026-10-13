@@ -15,6 +15,7 @@ jobs:
       - name: Test read-only PostgreSQL contract
         run: |
           set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check 'psycopg[binary]==3.2.10'
           python3 -m unittest discover -s tests/task004 -p 'test_step04f_cdm_postgres_readonly.py' -v
           python3 -m unittest discover -s tests/task004 -p 'test_step04f_cdm_runtime_packaging.py' -v
           python3 -m py_compile apps/task004/cdm_runtime_cli.py airflow/dags/task004_cdm_postgres_readonly.py
