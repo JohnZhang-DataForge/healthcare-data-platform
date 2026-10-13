@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 当前最高优先级 NEXT（覆盖下面历次旧 NEXT）：独立 Synthea NEW_ONLY Producer 设计已确定，实施尚未开始。** Airflow 与 Generator **完全解耦**：三个独立的短生命周期 Job/Pod 代码和镜像（NEW_ONLY / EXISTING_ONLY / MIXED），生产侧自行决定随机人数 1～100、州、Seed、生成日期，worker01 `dw-synthea` 上的**专用 LocalPath PVC/磁盘**保存生成恢复状态；SeaweedFS S3 通过 verified immutable Manifest 发布 READY；新 Airflow Consumer DAG（尚未开发）只定期发现/读取已存在的批次，不能调用 Generator。**当前只允许按步骤推进 NEW_ONLY**：先 local-path/18 CSV 契约只读 preflight，再 NEW_ONLY 独立实现+测试、最后单批 S3 实证；**EXISTING_ONLY、MIXED 代码/Pod 暂不实施**。具体 [架构权威 v1.0](../architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md) 和 [NEW_ONLY NEXT](TASK-004-INDEPENDENT-GENERATOR-NEW-ONLY-NEXT-v1.0.zh-CN.md)。**本轮文档 PR 不代表已部署/运行；旧 DAG 仍耦合并被冻结。** 完整 CDM Writer 仍未闭环，TASK004 IN PROGRESS，TASK005 ON HOLD。以下旧 STEP04A / seed/date 排查 NEXT 不再是当前开工点。
+
+
 > **2026-10-13 最新主线结论：STEP04F Synthea Source ID 根因只读排查 PASS，动态 Person Writer 仍 BLOCKED。** [根因验收文档](TASK-004-STEP04F-SYNTHEA-SEED-REFERENCE-DATE-ROOTCAUSE-READONLY-CLOSEOUT.md) / [Run 38447127571](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38447127571)：同一 Seed/Clinician Seed、Reference Date 差一天 → 23 个患者 ID 完全重复，23 条 CSV 的 BIRTHDATE 全部 +1 天，对应 OMOP 23 条的 `birth_datetime` 和 `day_of_birth` 不同；原 PostgreSQL 漂移保护正确生效。**新的唯一 NEXT = 方案设计：为独立批次采用确定性隔离 Seed，并冻结 batch 参考日期，或明确同 ID 后续版本修正契约；本轮没有新批次 / 任何 Writer COMMIT。TASK004 IN PROGRESS；TASK005 ON HOLD。**以下旧 NEXT 均为当时阶段性说明。
 
 
