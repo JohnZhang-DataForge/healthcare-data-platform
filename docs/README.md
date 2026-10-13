@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 NEW_ONLY NEW-A 真实只读预检已通过（并记录阻塞）**：[worker01/Contract Preflight](tasks/SYNTHEA-NEW-ONLY-READONLY-PREFLIGHT-2026-10-13.zh-CN.md) / [Self-Runner Run 38481854395](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38481854395)：worker01 Ready、`dw-synthea` 存在，但专用 PVC=0；默认 `local-path` reclaim=`Delete`、实际独立磁盘与容量未确认；18 CSV V1 全表非空、历史 20/50 限制，新 ID 被 Writer V1 正确拒绝。**NEW-A AUDIT PASS ≠ NEW_ONLY READY/DEPLOYED**；后续先补 host mount/Secret 名称核验与 Retain 卷方案，再做 NEW-B；没有生成、S3 发布或 PostgreSQL COMMIT。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **新 Session 的唯一最新交接（2026-10-13）**：先读 [当前 TASK004 Agent Handoff](tasks/TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md) → [用户已批准的 Producer/Consumer 解耦架构](architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md) → [最新真 S3→Writer 验收](tasks/OMOP-WRITER-REAL-S3-PG-ROLLBACK-GATE-2026-10-13.zh-CN.md)。**旧累积式 Handoff 的多个“CURRENT NEXT”已归档**。当前准确状态：Airflow Discovery/Claim 只读、手动历史 Spark PASS；真正新 Batch Claim 自动消费未启用；PG Writer 真 S3 漂移拦截 PASS、无冲突真实正向 ROLLBACK 和 COMMIT 均未完成；新 Generator NEW_ONLY 仅设计获批、未部署。NEXT：先做 worker01 NEW_ONLY 只读前置审计和 Writer Plan ID 版本兼容预检，再制造真正无撞车 S3 READY Batch，用于第三层正向 ROLLBACK。TASK004 IN PROGRESS、TASK005 ON HOLD。以下旧阶段 banner 请看对应历史 Closeout，**不能作为最新 NEXT**。
 
 
