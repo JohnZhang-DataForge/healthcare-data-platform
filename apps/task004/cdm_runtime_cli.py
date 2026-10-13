@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--plan-file", required=True)
     parser.add_argument("--validate-source", choices=("person", "visit"))
+    parser.add_argument("--validate-postgres", action="store_true")
     args = parser.parse_args()
     supplied = json.loads(Path(args.plan_file).read_text(encoding="utf-8"))
     keys = ("batch_id", "manifest_sha256", "manifest_uri",
@@ -25,6 +26,12 @@ def main():
         raise ValueError("BLOCKED=plan_drift")
     if supplied.get("database_mutation_authorized") is not False:
         raise ValueError("BLOCKED=database_mutation_forbidden")
+    if args.validate_postgres:
+        from task004_cdm_postgres_readonly import validate_readonly
+        result=validate_readonly(supplied)
+        for name in ("person_rows", "visit_rows", "ledger_rows"):
+            print("PG_" + name.upper() + "=" + str(result[name]))
+        print("CDM_POSTGRES_READONLY=PASS")
     if args.validate_source:
         # Defer optional imports until real source validation is requested.
         import io
