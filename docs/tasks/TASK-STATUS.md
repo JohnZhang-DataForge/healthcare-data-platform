@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 最新 NEW_ONLY 真实 Local Generator 验收**：[LIVE Closeout](SYNTHEA-NEW-ONLY-LOCAL-GENERATOR-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38484300008](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38484300008) 全部 Job SUCCESS：`synthea-local` Retain StorageClass + worker01 5Gi PVC Bound / 实际 Person=73 Encounter=12159 18 CSV，重放同一个冻结 request ID 没有重新生成，`S3_READY=NO` / `PG_MUTATION=NO`。**当前 NEXT 改为 NEW_ONLY S3 发布准备：正式 versioned contract（零行辅助表需兼容消费者）、PG/S3 历史 source IDs 全局 read-only 防撞、独立镜像 Digest、Manifest 最后发布与读回。** 不重做前轮存储 PVC、也不在此刻直接开放动态 COMMIT；TASK004 IN PROGRESS，TASK005 ON HOLD。下方历史 NEXT 仅作历史记录。
+
+
 > **2026-10-13 NEW_ONLY NEW-A READ-ONLY PREFLIGHT 最新验收**：[真实 worker01/Contract 检查](SYNTHEA-NEW-ONLY-READONLY-PREFLIGHT-2026-10-13.zh-CN.md) / [Run 38481854395](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38481854395) PASS（审计完成且阻塞明确）。worker01 Ready；`dw-synthea` 存在但新 PVC 0、`local-path` 默认 Delete、专用宿主设备/剩余容量 NOT VERIFIED；18 CSV 全非空对随机 1..100 尚未有真实测试，Writer Legacy ID 拒绝独立 `synthea-new-only-`。**NOW NEXT：补只读 host mount 和 S3 Secret 名称、确定 Retain PV/PVC，再 NEW-B 独立业务源码测试。NEW_ONLY 未部署，Dynamic PG ROLLBACK 正例和 COMMIT 未完成；TASK004 IN PROGRESS / TASK005 ON HOLD。**
 
 

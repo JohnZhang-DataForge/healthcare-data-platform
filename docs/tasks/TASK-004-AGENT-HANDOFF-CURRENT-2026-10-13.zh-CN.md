@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-13 NEW_ONLY LOCAL 阶段已越过本页旧「尚未部署」NEXT-A/NEW-B：** [正式 LIVE Closeout](SYNTHEA-NEW-ONLY-LOCAL-GENERATOR-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)、[Self-Runner Run 38484300008](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38484300008)、Healthcare [PR #87](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/87)。已持久创建 `synthea-local` Retain StorageClass、`dw-synthea/synthea-new-only-state` 5Gi PVC / worker01 PV `/data/synthea/`，真实独立 Synthea NEW_ONLY 生成 Person 73、Encounter 12159、18 CSV，全新 Pod 固定 request replay PASS。**注意：只有本地源 ID Registry，PG 历史全局撞车尚未证明；独立镜像最终 Digest 未发布；S3 READY Manifest 未发布，Writer ROLLBACK 正例/COMMIT 仍没有发生。** 下一步 versioned NEW_ONLY Landing/Consumer contract + 全局 ID audit + 独立镜像 S3 最后发布；**禁止用下文旧 NEXT 重新创建 PVC 或将历史 Writer 错认完成**。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **新 Session 2026-10-13 NEW-A 进展补记（覆盖下方旧 NEXT-A 的“尚未审计”措辞）**：worker01 + Contract **READ-ONLY PREFLIGHT 实测 PASS（有阻塞）**，证据：[正式报告](SYNTHEA-NEW-ONLY-READONLY-PREFLIGHT-2026-10-13.zh-CN.md) / [Self-Runner Run 38481854395](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38481854395)。worker01 Ready / `dw-synthea` 存在；NEW_ONLY PVC 0，默认 local-path Delete，专用 host mount/空间未验证；S3 Secret 准确名称未确认；18 CSV 旧合同对每个文件强制非空；v3.3.0 CLI `-o false` 源码静态确认、未真实生成；Writer V1 正确拒绝 `synthea-new-only-`。**下一步先只读核对 host mount/Secret 名称，选定 Retain 存储，随后 NEW-B；没有新生成/新 S3/动态 PG ROLLBACK 正例/COMMIT。TASK004 IN PROGRESS，TASK005 ON HOLD。**
 
 
