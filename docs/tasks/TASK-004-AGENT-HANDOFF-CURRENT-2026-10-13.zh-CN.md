@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **新 Session 2026-10-13 NEW-A 进展补记（覆盖下方旧 NEXT-A 的“尚未审计”措辞）**：worker01 + Contract **READ-ONLY PREFLIGHT 实测 PASS（有阻塞）**，证据：[正式报告](SYNTHEA-NEW-ONLY-READONLY-PREFLIGHT-2026-10-13.zh-CN.md) / [Self-Runner Run 38481854395](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38481854395)。worker01 Ready / `dw-synthea` 存在；NEW_ONLY PVC 0，默认 local-path Delete，专用 host mount/空间未验证；S3 Secret 准确名称未确认；18 CSV 旧合同对每个文件强制非空；v3.3.0 CLI `-o false` 源码静态确认、未真实生成；Writer V1 正确拒绝 `synthea-new-only-`。**下一步先只读核对 host mount/Secret 名称，选定 Retain 存储，随后 NEW-B；没有新生成/新 S3/动态 PG ROLLBACK 正例/COMMIT。TASK004 IN PROGRESS，TASK005 ON HOLD。**
+
+
 > **CURRENT / 先读本文，禁止使用下面历史文档的旧 NEXT 替代本页。** 截至本轮核实，Healthcare `main=067679104afc5a179fb50215210f290569fce28e`，Self-Runner `main=cdc5958dc30d3b42b18fd96a30272adb90503c2a`（均为本次文档交接**开始时**的基线；合并本 PR 后须重新查询实际 Main SHA）。此文档为**文档交接，不包含业务代码/Kubernetes/数据库更改或新一轮测试**。
 >
 > **项目状态：TASK004 IN PROGRESS；TASK005 Condition ON HOLD。** 历史固定批次的 PostgreSQL Person/Visit COMMIT 与重复验证完成；新的 Generator 与 Airflow 完全解耦的自动流水线 **尚未全程 COMMIT/重放闭环**。
