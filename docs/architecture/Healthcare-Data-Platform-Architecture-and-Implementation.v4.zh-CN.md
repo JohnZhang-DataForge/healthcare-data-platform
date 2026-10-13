@@ -3,7 +3,7 @@
 > **版本：V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **更新日期：2026-10-10**
 > **状态：当前权威总设计（Authoritative Master Design），2026-10-10 的状态段落为历史快照**
-> **最新任务状态与开发入口**：[`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md)；[`../README.md`](../README.md)。TASK004 Visit/Recon 已在 2026-10-12 验收；Airflow 真编排仍 NEXT。本文旧阶段 Roadmap 的 `NEXT` 不代表当前任务进度。
+> **最新任务状态与开发入口**：[`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md)；[`../README.md`](../README.md)。TASK004 Airflow STEP03E 端到端业务链已在 2026-10-12 验收，Self-Runner 正式只读验收也已进入 main。下一业务阶段尚未批准；Phase E Condition 是候选方向。本文 2026-10-10 的状态表和旧阶段 Roadmap 保留为历史设计快照，`NEXT` 不代表当前任务进度。
 > **仓库：** `JohnZhang-DataForge/healthcare-data-platform`
 > **适用环境：** Kubernetes + SeaweedFS(S3) + Airflow + Spark Operator/PySpark + PostgreSQL 17 / OMOP CDM 5.4.3 + GitHub
 > **后续扩展：** Azure Blob/ADLS Gen2、Microsoft Fabric、dbt-fabric、MLflow、Mirth/HL7、FHIR、GitHub Actions、Argo CD
@@ -35,7 +35,7 @@
 
 后续开发以本节为优先原则。
 
-1. **先让平台真正运行起来。** 当前优先级从“继续逐张做 OMOP 表”调整为“先把已完成的 Person + Visit 封装为可由 Airflow 编排的 Kubernetes 工作负载，并用新生成的 Synthea batch 真正跑通”。
+1. **先让平台真正运行起来（V4 当时决策，现已验收）。** 2026-10-10 的优先级从“继续逐张做 OMOP 表”调整为先让 Person + Visit 接入 Airflow、用新生成的 Synthea batch 完整跑通；这一目标已由 STEP03E 验收，详情见 `../tasks/TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`。
 2. **Synthea 也成为平台工作负载。** 使用独立 `synthea-generator` image/Kubernetes Job，根据参数生成一批 synthetic patients 及其关联 encounter/condition/procedure/medication/observation，并发布到 Landing。
 3. **调试阶段以 `population_size=20/50` 为主。** `population_size` 表示 patient 数量，不代表所有 CSV 的行数。先使用固定 seed 保证可重复，再引入随机 population/seed。
 4. **数据产生也是 DAG 的一部分。** Airflow 第一版主线从 `Generate Synthea → Landing → Person → Visit → Reconcile` 开始，而不是从人工准备好的 CSV 开始。
@@ -146,7 +146,9 @@ Fabric    = Managed analytics/ML platform (future)
 
 ---
 
-## 5. 当前已验证状态（2026-10-10）
+## 5. 历史状态快照（2026-10-10；不是当前 TASK-STATUS）
+
+> 表内 `PLANNED / NEXT` 是 2026-10-10 的时间点状态。STEP03E Synthea Generator、项目 Runtime Image 和完整 Airflow Batch DAG 已于 2026-10-12 验收。当前唯一任务进度权威为 `../tasks/TASK-STATUS.md`，不要依据本表重做已完成工作。
 
 | 能力 | 状态 |
 |---|---|
@@ -771,7 +773,7 @@ docs/skill/SKILL.md
 
 ---
 
-## 20. 当前优先 Roadmap
+## 20. V4 原定 Roadmap（Phase A–D 已达到 STEP03E 业务验收；后续未批准）
 
 ### Phase A — Documentation & Git Baseline
 
@@ -803,7 +805,7 @@ docs/skill/SKILL.md
 - final reconcile；
 - 使用**新 batch**真实写入并验收。
 
-### Phase E — Clinical Facts
+### Phase E — Clinical Facts（候选下一阶段，尚未正式启动）
 
 按顺序：
 
