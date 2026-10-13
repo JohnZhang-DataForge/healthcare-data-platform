@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-13 最新用户决定：生产者三个独立命名固定**：`synthea-new-only-`（NEW_ONLY）、`synthea-update-only-`（UPDATE_ONLY，ON HOLD）、`synthea-mix-data-`（MIX_DATA，ON HOLD），[单一版本化命名合同](../../contracts/synthea/producer-batch-identity-v1.json)。旧的 `EXISTING_ONLY`、`MIXED` 仅为历史叫法，今后实施必须使用新名称，不创建旧名字的新入口。Synthea 自身 `synthea-local` Retain 5Gi PVC 已在 worker01 `/data/synthea/` 验证并 Bound，且现有 NEW_ONLY 真实生成和第二 Pod replay PASS，**无需为此再次排查 SeaweedFS PV 或重建卷**；SeaweedFS 仅在 S3 发布时作为服务使用。旧 Writer `task004-airflow-` 限制和 Existing Target Drift Guard 均保留，不能以新前缀跳过。下一步继续固定 73 Person 批次的 v1 Validator → S3 payload readback → 最后 READY Manifest，后两模式与 TASK005 保持暂停。
+
+
 > **2026-10-13 NEW_ONLY 发布前全局身份审计已真实 PASS，覆盖本交接旧 NEXT：** [LIVE 验收](SYNTHEA-NEW-ONLY-PREPUBLISH-SOURCE-IDENTITY-LIVE-2026-10-13.zh-CN.md) / [Run 38486092750](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38486092750)。已持久生成的 `synthea-new-only-gh-38484300008` 73 人/12159 Encounter、18 CSV 全部非空；Source ID S3 14 个历史 CSV 比对及 PG Person 136/Visit 9391 source map 比对均为 0 冲突。新增 `contracts/synthea/new-only/csv-contract-v2.json` 与 streaming `apps/synthea/new_only/prepublish_gate.py`，但**新版本 v2 仅准备、不是当前 v1 Consumer 已支持，也没有 S3 READY**。新的 NEXT：直接选这批全非空 LocalPath 数据跑 v1 Validator → 受控独立 S3 payload immutable 上传/readback → Manifest 最后发布 → v1 Consumer discovery 只读核验；必须在发布前再次做防撞审计，PG Writer Existing Target Drift 不动，动态 PG 正向 ROLLBACK/COMMIT 尚未完成。TASK004 IN PROGRESS、TASK005 ON HOLD。
 
 
