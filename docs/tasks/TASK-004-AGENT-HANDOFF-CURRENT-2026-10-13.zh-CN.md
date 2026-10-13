@@ -1,5 +1,8 @@
 # TASK004 Agent 交接与唯一 NEXT — 2026-10-13
 
+> **2026-10-13 新的权威增量交接（覆盖本文历史 NEXT）：Seed/Reference Date 冲突已定位。** [根因只读验收](TASK-004-STEP04F-SYNTHEA-SEED-REFERENCE-DATE-ROOTCAUSE-READONLY-CLOSEOUT.md)：同 Seed+Clinician Seed `20261012`，唯一不同源生成参数为 `reference_date=20261012` vs `20261013`。两批各有 23 patients，ID 重合 23、原始出生日期 **23/23 正好 +1 天**，对应已存在 OMOP Person 的 `birth_datetime/day_of_birth` 各 23 漂移；没有新 Person ID。Self-Runner [Run 38447127571](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38447127571) SUCCESS，exact feature SHA `9c0d6e538f43364845876e404cdf72fd42fbee92`，Self-Runner [PR #70](https://github.com/JohnZhang-DataForge/Self-Runner/pull/70) merged `f3f1a65fd9e30bd549ce352fb429031627827404`。**最新 NEXT 不是排查，而是后续单独阶段设计跨批次 Seed/Source ID 隔离、同批次 Reference Date 固定及重放策略；没有授权任何新 Synthea、Writer ROLLBACK/COMMIT 或 TASK005。**本文下方旧第3/5节是已完成的历史工作。
+
+
 > **2026-10-13 READONLY AUDIT 已收尾，此前“唯一 NEXT = 修复 PYTHONPATH”已过时。** 新增[只读 Source ID 审计 Closeout](TASK-004-STEP04F-PERSON-SOURCE-ID-READONLY-RECONCILIATION-CLOSEOUT.md)：[Run 38435544614](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38435544614) **SUCCESS**，23/23 Source ID 在 mapping 中已存在；与目标 Person 完全一致 0、内容不同 23、全新 0、dangling 0；失败批次 ledger/stage/commit 0/0/0；CDM Person/Visit 总数 136/9391；数据库无业务写入。Self-Runner [PR #69](https://github.com/JohnZhang-DataForge/Self-Runner/pull/69) merged SHA `9c2ad3ce33b5c3a877608defbbdcd25118978c15`。**下一轮只讨论并验证 Synthea Seed / Reference Date / Source ID 的批次隔离设计**（同 Seed 导致漂移仅为原因假设）；需另行授权任何新批次、ROLLBACK、Writer COMMIT。**本文件下方第3/5节仍为交接时历史断点，不是当前 NEXT。TASK004 IN PROGRESS；TASK005 ON HOLD。**
 
 
