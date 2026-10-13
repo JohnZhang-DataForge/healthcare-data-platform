@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 独立 NEW_ONLY Generator 的 LocalPath 阶段已经真实 PASS**：[完整 LIVE Closeout](tasks/SYNTHEA-NEW-ONLY-LOCAL-GENERATOR-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Self-Runner Run 38484300008](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38484300008) / Healthcare [PR #87](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/87)。worker01 `/data/synthea/` 的 `synthea-local` Retain SC、5Gi Bound PVC 已部署，真实 Synthea v3.3.0 独立 Job 生成 Person **73**、Encounter **12159**、CSV **18/18**，第二 Pod same request 固定重放 PASS；8 单测通过。**这还不是全局 Source ID 无撞车 / 完整 S3 READY Producer**：仅 NEW_ONLY 本地注册表防撞；未验证 PG 历史 source keys、未上传 S3、未发布独立镜像 Digest、未执行 Writer；NEXT 是 versioned 18-CSV Landing 合同与全局源键只读核验 → immutable S3 READY。TASK004 IN PROGRESS；TASK005 ON HOLD。
+
+
 > **2026-10-13 NEW_ONLY NEW-A 真实只读预检已通过（并记录阻塞）**：[worker01/Contract Preflight](tasks/SYNTHEA-NEW-ONLY-READONLY-PREFLIGHT-2026-10-13.zh-CN.md) / [Self-Runner Run 38481854395](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38481854395)：worker01 Ready、`dw-synthea` 存在，但专用 PVC=0；默认 `local-path` reclaim=`Delete`、实际独立磁盘与容量未确认；18 CSV V1 全表非空、历史 20/50 限制，新 ID 被 Writer V1 正确拒绝。**NEW-A AUDIT PASS ≠ NEW_ONLY READY/DEPLOYED**；后续先补 host mount/Secret 名称核验与 Retain 卷方案，再做 NEW-B；没有生成、S3 发布或 PostgreSQL COMMIT。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
