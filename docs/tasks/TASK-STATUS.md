@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 CURRENT NEXT：从已接通的 Landing Discovery→PostgreSQL Claim Guard 进入受控 Spark Consumer。** [权威 Live Closeout](LANDING-DISCOVERY-TO-CLAIM-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Self-Runner Run 38471287896](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38471287896) 成功证明 Airflow `landing_batch_discovery` 的 **`scan_ready_manifests → evaluate_batch_claims` 两 KPO DAG 真正运行/通过**、Claim KPO 读取有独立授权的 PostgreSQL Ledger，并且 Claim Enabled=NO、实际新 Ledger 0、OMOP Person=136/Visit=9391 均未变。另 [Run 38470907298](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38470907298) 证实历史已处理批次正确隔离（最小 legacy SELECT 授权）。**自动真实 Claim 目前尚未打开**，不可称已自动领取/处理 6 个 Batch，也没有后继 Spark/Writer COMMIT。下一步先处理全量/分页 Manifest、Source IDs 新旧安全门槛、受控单批 Spark/Writer 与 Lease 恢复，再允许开启 Claim。TASK004 IN PROGRESS / TASK005 ON HOLD；以下历史 NEXT 已被覆盖。
+
+
 > **2026-10-13 CURRENT NEXT：受控 Landing Consumer Claim 接入。** [Batch Claim / Ledger 真 PG Closeout](LANDING-BATCH-CLAIM-ROLLBACK-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38468961485](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38468961485) PASS：新 `etl.landing_batch_ledger` 已真实持久创建、专用受限 PostgreSQL `landing_claim_worker` + `dw-spark/landing-claim-db` Secret 已创建，核心 `apps/landing_claim/batch_ledger.py` 验证 CLAIMED/BUSY/SKIP/显式 FAILED Retry/过期 Lease BLOCKED/Owner Fencing，12 Tests 与真实 PG 事务 **ROLLBACK**、独立 0 探针行 readback PASS，Person=136/Visit=9391 不变。**仍未**自动从 Airflow 领取任何历史 READY 批次、未调用 Spark/DB Writer。下一步安全接线前必须审计过去已经入库的 Batch/Source ID，不能将 Scanner 当前的 6 个候选直接当成全新未处理数据；之后才 Person/Visit→动态 COMMIT→replay。自然 Cron 证据与双 Pod 并发/Heartbeat 还需补，TASK004 IN PROGRESS / TASK005 ON HOLD。以下旧 NEXT 均过时。
 
 
