@@ -11,3 +11,5 @@
 ## 归档批次
 
 - **2026-10-12 / Healthcare GitOps + Runner Pilot + 过期 TASK Handoff/Checkpoint + 重复 Lessons**：参见 [2026-10-12/README.md](2026-10-12/README.md)。本次仅整理文档，不修改业务代码或运行环境。
+
+- **2026-10-13 / TASK004 Agent Handoff 历史 NEXT 重整（原文快照 + 当前交接更新）**：见 [2026-10-13-agent-handoff-refresh/README.md](2026-10-13-agent-handoff-refresh/README.md)。原交接路径不变，避免旧链接失效；原 14KB 完整快照在该批次归档，新的当期步骤见 `../tasks/TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md`。本次仅 Markdown 文档，不改业务环境。
