@@ -75,28 +75,42 @@ def audit_local(csv_dir,contract_path):
     for item in spec["files"]:
         name=item["filename"]
         path=folder/name
-        data=path.read_bytes()
-        if not data or len(data)>64*1024*1024:
+        size=path.stat().st_size
+        if not size or size>2*1024*1024*1024:
             refuse("LOCAL_CSV_SIZE_" + name)
+        md=hashlib.sha256()
+        with path.open("rb") as binary:
+            for block in iter(lambda:binary.read(1024*1024),b""):
+                md.update(block)
+        count=0
         try:
-            rows=list(csv.reader(io.StringIO(data.decode("utf-8-sig"),newline=""),strict=True))
+            with path.open("r",encoding="utf-8-sig",newline="") as stream:
+                reader=csv.reader(stream,strict=True)
+                header=next(reader,None)
+                if header!=item["header"]:
+                    refuse("LOCAL_HEADER_"+name)
+                for row in reader:
+                    if len(row)!=len(header):
+                        refuse("LOCAL_CSV_ROW_SHAPE_"+name)
+                    count+=1
+                    if name=="patients.csv":
+                        identities.setdefault("person",[]).append(row[header.index("Id")])
+                    elif name=="encounters.csv":
+                        identities.setdefault("visit",[]).append(row[header.index("Id")])
+                        encounter_parents.append(row[header.index("PATIENT")])
         except (UnicodeError,csv.Error) as exc:
             raise PublishGateBlocked("BLOCKED:CSV_DECODE_"+name) from exc
-        if not rows or rows[0]!=item["header"]:
-            refuse("LOCAL_HEADER_"+name)
-        if any(len(row)!=len(item["header"]) for row in rows[1:]):
-            refuse("LOCAL_CSV_ROW_SHAPE_"+name)
-        count=len(rows)-1
         if item["dataset"] in ("patients","encounters") and count<1:
             refuse("EMPTY_REQUIRED_"+name)
         headers[name]=item["header"]
-        summary[name]={"row_count":count,"sha256":hashlib.sha256(data).hexdigest(),"size_bytes":len(data)}
-        if name=="patients.csv":
-            identities["person"]=read_ids(data,filename=name,column="Id",expected_header=item["header"])
-        elif name=="encounters.csv":
-            identities["visit"]=read_ids(data,filename=name,column="Id",expected_header=item["header"])
-            parent_index=item["header"].index("PATIENT")
-            encounter_parents=[row[parent_index] for row in rows[1:]]
+        summary[name]={"row_count":count,"sha256":md.hexdigest(),"size_bytes":size}
+    identities.setdefault("person",[])
+    identities.setdefault("visit",[])
+    if (not all(identities["person"]) or
+        not all(identities["visit"]) or
+        len(set(identities["person"]))!=len(identities["person"]) or
+        len(set(identities["visit"]))!=len(identities["visit"])):
+        refuse("DUPLICATE_OR_EMPTY_LOCAL_SOURCE_ID")
     if any(x not in set(identities["person"]) for x in encounter_parents):
         refuse("ENCOUNTER_ORPHAN")
     if not 1<=len(identities["person"])<=100:
