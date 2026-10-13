@@ -17,7 +17,7 @@
 
 ## 当前主线状态
 
-**TASK004 overall status = IN PROGRESS。**
+**TASK004 overall status = COMPLETE / CLOSED / FROZEN。** 最终人工只读集群审计与证据见 [`TASK-004-FINAL-CLOSEOUT.md`](tasks/TASK-004-FINAL-CLOSEOUT.md)。
 
 ```text
 Synthea generation          PASS
@@ -90,5 +90,5 @@ Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87
 - 开发工作流：当前 Operations。
 - 业务语义与冻结边界：Contract / 已验收主线 Checkpoint。
 - 历史状态：Archive / historical Closeout / GitHub Actions。
-- TASK001–TASK003 整体冻结；TASK004 Synthea / Landing / Resolver / Control Runtime / Person / Visit / Reconciliation / STEP02 Processing 均为冻结基线；STEP03E End-to-End 业务验收 PASS，CI 正式收尾单独记录；TASK004 整体仍 IN PROGRESS。
+- TASK001–TASK003 整体冻结；TASK004 Synthea / Landing / Resolver / Control Runtime / Person / Visit / Reconciliation / STEP02 Processing 均为冻结基线；STEP03E End-to-End 业务验收 PASS，CI 正式收尾单独记录；TASK004 整体在既定 Processing-first Airflow MVP 范围内已 **COMPLETE / CLOSED / FROZEN**（数据库新批次入库不在范围内）。
 - 新 STEP 默认直接维护 Git canonical source；历史 generator-owned 文件修复仍必须同步 Generator。
