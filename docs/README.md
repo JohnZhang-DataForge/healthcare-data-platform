@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 最新技术排查：Synthea Seed / Reference Date Source ID 冲突根因已通过真实 READ-ONLY AUDIT 验证。** 见 [根因验收文档](tasks/TASK-004-STEP04F-SYNTHEA-SEED-REFERENCE-DATE-ROOTCAUSE-READONLY-CLOSEOUT.md) 和 [Self-Runner Run 38447127571](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38447127571)。两批 23 人的 seed/clinician_seed 均为 `20261012`，唯一不同的生成入参是 reference_date（20261012→20261013）；原始 23/23 Patient Id 完全重合，23/23 BIRTHDATE 恰好 +1 天；OMOP 只在 23 人的 `birth_datetime` / `day_of_birth` 存在漂移。**新 NEXT = 明确跨批次 Seed/Source ID 与 batch replay 固定 Reference Date 策略；不是重新调查、不是新批次运行。Person Writer 继续 BLOCKED，不允许 COMMIT；TASK005 ON HOLD。**下文旧 NEXT 段落保留为历史说明。
+
+
 > **2026-10-13 最新进度：STEP04F Person Source-ID READONLY AUDIT = PASS。** [实时证据 Closeout](tasks/TASK-004-STEP04F-PERSON-SOURCE-ID-READONLY-RECONCILIATION-CLOSEOUT.md)：Self-Runner [Run 38435544614](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38435544614) SUCCESS；新批次 23 个 Source ID 全部存在于 mapping、相同 Person=0、不同 Person=23、新 Person=0、dangling=0；失败批次 ledger/stage/commit=0/0/0。Self-Runner [PR #69](https://github.com/JohnZhang-DataForge/Self-Runner/pull/69) 已合并。**目前唯一 NEXT = 下一轮审查 Synthea Seed / Reference Date 与 Source ID 批次隔离策略（仍需单独授权）；禁止 Writer COMMIT、禁止开始 TASK005。**下文旧“修复只读审计”和 STEP04A NEXT 均为历史记录。
 
 > **2026-10-13 当前状态更新：先读 [TASK004 最新 Agent 交接](tasks/TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md)。** 新 Synthea 全流程已 PASS（Person 23/Visit 3588），新批次 Person Writer 因 EXISTING_TARGET_DRIFT 正确拒绝；最新只读审计 Run 38434861465 因 Python 模块路径错误 FAILURE。**唯一 NEXT = 修复只读审计并得出 Source ID overlap 汇总；本文后面旧“STEP04A NEXT”已过时，不是新 Agent 的开工点。**
