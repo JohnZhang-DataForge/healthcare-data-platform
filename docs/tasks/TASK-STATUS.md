@@ -13,6 +13,7 @@
 | TASK004 — Processing MVP（既有验收） | **COMPLETE / CLOSED / FROZEN** | 保持历史业务/Runner PASS，见 [MVP Closeout](TASK-004-FINAL-CLOSEOUT.md) |
 | TASK004 — CDM Person/Visit Materialization | **STEP04C/D DB LOAD + STEP04E JOINT RECONCILIATION PASS** | 固定 batch Person 23、Visit 3592 已分别真实写入 PostgreSQL，Person 136 / Visit 9391，重复加载不新增，Visit FK 缺失 0。证据见 [Person Closeout](TASK-004-STEP04C-PERSON-DB-COMMIT-CLOSEOUT.md)、[Visit Closeout](TASK-004-STEP04D-VISIT-DB-COMMIT-CLOSEOUT.md) 与 [Joint DB Closeout](TASK-004-STEP04E-JOINT-DB-RECONCILIATION-CLOSEOUT.md)；STEP04F Airflow DB 编排为 NEXT |
 | TASK004 — STEP04F Airflow Dynamic CDM Plan | **6-TASK DAG PARSE PASS / DB AUTO LOAD PENDING** | 已在 reconcile→cdm_load_preflight 后接入 cdm_materialization_plan，动态批次 URI/Manifest 指纹、来源漂移检查 PASS；真实 Airflow scheduler DagBag 解析 SUCCESS；无新 DAG Run 或数据库写入。见 [STEP04F Dynamic Plan Closeout](TASK-004-STEP04F-DYNAMIC-BATCH-PLAN-CLOSEOUT.md) |
+| TASK004 — STEP04F Dynamic PostgreSQL Writer | **REAL POSTGRESQL ROLLBACK PASS / COMMIT DISABLED** | 动态批次 Person/Visit 事务 SQL 已在真实 PG 进行联合 ROLLBACK 演练，并独立确认无数据遗留；Airflow 自动写库、镜像和新批次 COMMIT 仍待做。见 [STEP04F Dynamic PG Writer](TASK-004-STEP04F-DYNAMIC-PG-WRITER-ROLLBACK.md) |
 | TASK004 — 同批次 Airflow replay/retry 幂等性 | **PERSON + VISIT DB REPLAY PASS / FULL DAG NOT VERIFIED** | STEP04C/D 同 batch Person 与 Visit 各自数据库重放已实测不增加记录；跨批次并发、未知提交恢复、整条 Airflow DAG 重放仍未验证 |
 | TASK004 — Synthea | **PASS** | frozen baseline |
 | TASK004 — Resolver / Control | **PASS** | frozen baseline |
