@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 命名/存储决策补充（不更改当前 NEXT）**：三套独立 Producer 前缀为 `synthea-new-only-` / `synthea-update-only-` / `synthea-mix-data-`，[合同](../../contracts/synthea/producer-batch-identity-v1.json)。后两种 **DESIGN ONLY / ON HOLD**。`synthea-local` Retain PVC 已在 worker01 `/data/synthea/` 经跨 Pod 持久化真实验收；SeaweedFS PVC 只与自身 S3 服务存储有关，Synthea 不复用该卷，磁盘容量监控属于运营项。旧 Writer Batch ID 正则 `task004-airflow-` 与现有 Existing Target Drift 防护**完全不变**；新模式仍需版本化消费者/Writer 身份兼容测试，不可直接 COMMIT。当前仅推进 NEW_ONLY 固定 73 Person 批次的 S3 READY 发布，TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 CURRENT NEXT：独立 NEW_ONLY S3 Ready 发布（不是重新生成）**。NEW_ONLY v2 local Contract + S3/PG 历史 Source ID READ-ONLY LIVE PASS，[验收](SYNTHEA-NEW-ONLY-PREPUBLISH-SOURCE-IDENTITY-LIVE-2026-10-13.zh-CN.md) / [Run 38486092750](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38486092750)：固定本地批次 Person=73、Encounter=12159、18 CSV 全部非空、历史 S3 14 个源 CSV + 真 PG Person 136/Visit 9391 source keys，**Person/Visit overlap 均为 0**。streaming CSV 修复 64MiB 问题；Source ID 审计不是并发事务锁。下一轮先通过旧 v1 validator 验证当前这批数据，再独立 S3 18 object upload/checksum GET + 最后 Manifest immutable READY，保留 `CLAIM_ENABLE=NO` / Writer Drift Guard；新 v2 Consumer 仍未启用。**S3 READY/PG ROLLBACK 正例/COMMIT 均未完成**。TASK004 IN PROGRESS，TASK005 ON HOLD。
 
 

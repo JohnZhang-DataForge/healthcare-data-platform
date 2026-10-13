@@ -1,5 +1,10 @@
 # TASK004 v1.0 — 独立 Synthea 数据生产与 Airflow S3 消费（2026-10-13）
 
+> **2026-10-13 三 Generator 命名修订（用户确认，当前优先级高于本文旧 EXISTING_ONLY/MIXED 的名称）**：正式 Batch ID / Producer 名分别为 `synthea-new-only-<request_id>`、`synthea-update-only-<request_id>`、`synthea-mix-data-<request_id>`。对应用途 **NEW_ONLY** 纯新 Person、**UPDATE_ONLY** 仅更新已有 Person、**MIX_DATA** 新 Person + 既有 Person 更新；三者独立 Job/Pod、业务代码/镜像，绝不通过单一入口 mode 参数实现。完整声明见 [producer-batch-identity-v1.json](../../contracts/synthea/producer-batch-identity-v1.json)。**UPDATE_ONLY 和 MIX_DATA 仍 ON HOLD：只是名称预留，未实现、未部署、未获得 Writer 更新权限。** 原先出现的 `EXISTING_ONLY`/`MIXED` 属于历史设计旧称，不得创建对应新业务模块。旧 Writer `task004-airflow-` 仍仅接受历史 Batch；新三个前缀须经显式版本化 Consumer/Writer Contract 扩展才能接入，不能凭名称获得 DML 权限。
+
+> **存储依赖更正（基于已完成的实际验证）**：SeaweedFS 卷与 Synthea 本地卷是两个独立 PVC；此前列出 SeaweedFS 仅用于防止 LocalPath 路径重叠，不是 NEW_ONLY Generator 的前置依赖。已实测 `synthea-local` StorageClass `Retain`、`dw-synthea/synthea-new-only-state` RWO PVC `Bound`、worker01 PV 在 `/data/synthea/`、跨 Pod 持久化与重放 PASS；[实际证据](../tasks/SYNTHEA-NEW-ONLY-LOCAL-GENERATOR-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38484300008](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38484300008)。**不再阻塞 Generator 开发，且不重新创建 PVC**。仍可能共享底层宿主文件系统，因此容量/IO 需运维监控；专用物理设备和备份没有单独实证。仅在最终 S3 Publish 时通过 SeaweedFS 的 S3 API 交换数据，绝不挂载 SeaweedFS PVC。下文“StorageClass/PVC 尚未创建”为原始设计阶段历史状态，不是当前运行事实。
+
+
 > **2026-10-13 第三层真实 S3→OMOP 状态更新：** 已将真实 23 Person / 3588 Visit Spark Processing Parquet 与预期 Manifest SHA 送入固定 digest Writer Source Adapter 并成功验证 S3，PG Writer 按 23/23 历史 Person ID 漂移 `BLOCKED:EXISTING_TARGET_DRIFT` 正确拒绝、0 持久写入；[完整 Closeout](../tasks/OMOP-WRITER-REAL-S3-PG-ROLLBACK-GATE-2026-10-13.zh-CN.md) / [Run 38479591382](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38479591382)。**只能说安全阻断闭环 PASS，真正独立新批次的 Person/Visit ROLLBACK 成功正例尚无有效输入，PG COMMIT 仍禁用。** 旧动态 Plan ID 强制前缀 `task004-airflow-` 与独立 Generator 语义需明确版本化兼容。此进度不改变 Generator/Airflow 解耦的已批准架构。
 
 
