@@ -1,0 +1,53 @@
+name: Build Landing Discovery Runtime Image
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feature/landing-batch-discovery-airflow-20261013
+    paths:
+      - .github/workflows/build-landing-discovery-image.yml
+      - apps/landing_discovery/**
+      - images/landing-discovery-runtime/**
+      - apps/task004/resolve_verified_landing_file.py
+      - tests/landing_discovery/**
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test independent discovery and XCom contract
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s tests/landing_discovery -p 'test_*.py' -v
+          python3 -m py_compile apps/landing_discovery/*.py
+          echo LANDING_DISCOVERY_IMAGE_TESTS=PASS
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and publish digest-eligible read-only image
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: images/landing-discovery-runtime/Dockerfile
+          platforms: linux/amd64
+          push: true
+          provenance: true
+          sbom: true
+          tags: ghcr.io/johnzhang-dataforge/healthcare-landing-discovery:git-${{ github.sha }}
+      - name: Record immutable image reference
+        env:
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "LANDING_DISCOVERY_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-landing-discovery@$IMAGE_DIGEST"
+          echo "LANDING_DISCOVERY_IMAGE_PUBLISHED=PASS"
