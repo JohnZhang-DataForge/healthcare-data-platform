@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 最新开发：Landing Batch Claim / Processing Ledger 安全核心已实际验证。** [真实 PostgreSQL ROLLBACK Closeout](tasks/LANDING-BATCH-CLAIM-ROLLBACK-CLOSEOUT-2026-10-13.zh-CN.md) / [Self-Runner Run 38468961485](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38468961485)：在 `omop` 新增独立 `etl.landing_batch_ledger`、`landing_claim_worker` 最小权限身份 + K8s Secret（确有 DB schema/role 持久变更），12 tests PASS，真实 worker02 PG 独立领取/重复 BUSY/身份漂移/FAILED 显式重试/旧 token/过期 lease 等 ROLLBACK 验收；模拟记录没有持久留下，CDM Person=136 Visit=9391 未变。**现有 `landing_batch_discovery` 仍然只做 S3 Inventory，并未自动调用 Claim 或 Spark、PG Writer。新 CURRENT NEXT = 独立 Consumer Claim 接线/历史批次保护，再逐步 Spark / Dynamic PG COMMIT。** 以下旧 NEXT 已过时。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 最新已完成：真正独立的 Landing S3 Discovery 已接入 Airflow 3 并启用每 15 分钟调度。** [权威 Live Closeout](tasks/LANDING-BATCH-DISCOVERY-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Self-Runner 实际 DagRun Run 38466518057](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38466518057)：GHCR 独立 digest 镜像、13 Tests、真实 Scheduler DagBag、main GitSync exact source、`landing_batch_discovery` DAG 可见+无导入错误、`*/15` 调度已解除暂停、一次真实手工 DagRun + KPO Task = **success**，无 Generator/Spark/PG mutation。**新 CURRENT NEXT = Landing Batch Claim / Ledger（并发、SHA、SKIP/RETRY）；不是再做 S3 Discovery，也不是 NEW_ONLY Generator**。此步骤只发现 Inventory，尚未自动处理数据/动态 COMMIT，TASK004 IN PROGRESS、TASK005 ON HOLD。下方旧 NEXT 均是历史快照。
 
 

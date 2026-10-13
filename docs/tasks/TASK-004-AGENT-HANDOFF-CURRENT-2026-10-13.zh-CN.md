@@ -1,5 +1,8 @@
 # TASK004 Agent 交接与唯一 NEXT — 2026-10-13
 
+> **2026-10-13 最新 Agent 交接：Batch Claim 核心已实际完成，下一环是 Consumer 接线。** [Ledger / Claim Real PG ROLLBACK Closeout](LANDING-BATCH-CLAIM-ROLLBACK-CLOSEOUT-2026-10-13.zh-CN.md)；新 `sql/landing_claim/create_landing_batch_ledger.sql` 的 **etl.landing_batch_ledger 已 COMMIT**，专用 PostgreSQL `landing_claim_worker` + `dw-spark/landing-claim-db` Secret 已配置；`apps/landing_claim/batch_ledger.py` 事务状态机在 [Run 38468961485](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38468961485) 真实 worker02/PostgreSQL 模拟批次中通过完全 ROLLBACK 与独立读取；12 Unit Tests PASS，0 探针行、CDM 无数据变更。**Airflow `landing_batch_discovery` 仍每 15 分钟只读扫描，不调用 Claim、Spark、OMOP。** 当前 NEXT 是安全连接 Discovery→Claim（不得误领原先已入库 6 个历史批次），然后批次消费/动态 Writer/独立 DB 对账。不要重复开发 Claim 基础表，不要把 ROLLBACK 测试说成生产真实 Batch COMMIT；自然 Cron 和真实并发验证仍待补。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 最新接力锚点：S3 Discovery 不是待开发——它已经跑进了真实 Airflow！** 详细 [Landing Discovery Airflow Live Closeout](LANDING-BATCH-DISCOVERY-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)：`landing_batch_discovery`（功能命名）部署到 gitSync、每15分钟 Schedule 已 unpause、真实 [Run 38466518057](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38466518057) 的 Airflow DagRun/唯一 KPO Task success；13 unit tests，独立 GHCR `healthcare-landing-discovery@sha256:06a5caaf1d62e62fa7f6227de2422690f1c8e4bf7a893c6c239456affce0bfbd` 真 S3 读取 6 valid + 1 quarantine；无 Generator、Spark、Postgres 数据改动。**下一步不是再次从头设计 S3 Discovery，而是独立 Batch Claim/Ledger（原子领取/跳过/重试），此后才接 Spark 和动态 PG Writer COMMIT。** 此 DAG 只扫描 Inventory，不允许误当作 ETL 闭环完成；此前 NEW_ONLY 优先级与 STEP04F 只读排查 NEXT 均过时。TASK004 IN PROGRESS，TASK005 ON HOLD。
 
 
