@@ -14,8 +14,8 @@ import os
 from pathlib import Path
 import sys
 
-# Keep the existing proven Landing v1 contract as a single validator.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "task004"))
+# Keep the existing proven Landing v1 contract as a single validator.\n# IMPORTANT: Kubernetes ConfigMap volumes use symlinks; .resolve() follows\n# ..data timestamps and breaks sibling-module discovery under mounted volumes.
+sys.path.insert(0, str(Path(__file__).absolute().parents[1] / "task004"))
 from resolve_verified_landing_file import (  # noqa: E402
     ResolverError,
     manifest_lineage_from_key,
