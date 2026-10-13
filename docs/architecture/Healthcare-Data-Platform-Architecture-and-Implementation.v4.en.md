@@ -3,7 +3,7 @@
 > **Version: V4.0 — Consolidated Runtime & Orchestration Baseline**
 > **Updated: 2026-10-10**
 > **Status: Authoritative Master Design; implementation status sections are snapshots as of 2026-10-10.**
-> **Current task progress and agent entry:** [`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md) and [`../README.md`](../README.md). TASK004 standalone Visit and batch reconciliation passed on 2026-10-12; real Airflow orchestration is next. Historical NEXT markers below are not current progress.
+> **Current task progress and agent entry:** [`../tasks/TASK-STATUS.md`](../tasks/TASK-STATUS.md) and [`../README.md`](../README.md). TASK004 STEP03E end-to-end Airflow business orchestration was accepted on 2026-10-12; the Self-Runner read-only acceptance gate has also merged. No new business phase has been approved yet; Phase E Condition remains a candidate. Historical NEXT markers below describe the original 2026-10-10 roadmap, not current progress.
 > **Repository:** `JohnZhang-DataForge/healthcare-data-platform`
 > **Current environment:** Kubernetes + SeaweedFS(S3) + Airflow + Spark Operator/PySpark + PostgreSQL 17 / OMOP CDM 5.4.3 + GitHub
 > **Planned extensions:** Azure Blob/ADLS Gen2, Microsoft Fabric, dbt-fabric, MLflow, Mirth/HL7, FHIR, GitHub Actions, Argo CD
@@ -33,7 +33,7 @@ Historical documents remain in Git for design traceability.
 
 ## 1. V4 Executive Decisions
 
-1. **Make the platform run end to end before adding every OMOP table.** The immediate priority moves from table-by-table expansion to Kubernetes/Airflow orchestration of the already proven Person + Visit pipeline using newly generated data.
+1. **Make the platform run end to end before adding every OMOP table (original V4 decision, now accepted).** On 2026-10-10 the priority shifted from adding tables to orchestrating Person + Visit through Airflow using newly generated Synthea data. STEP03E has since met this business goal; see `../tasks/TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`.
 2. **Synthea becomes a platform workload.** A dedicated `synthea-generator` image/Kubernetes Job generates a configurable synthetic population and publishes an immutable Landing batch.
 3. **Use small reproducible batches for development.** Start with `population_size=20/50` and a fixed seed. Population size means patient count, not total row count across all CSVs.
 4. **Data generation belongs inside the DAG.** The first real DAG starts with `Generate Synthea → Landing → Person → Visit → Reconcile` rather than assuming manually prepared CSV files.
