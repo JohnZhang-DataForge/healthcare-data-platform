@@ -1,4 +1,4 @@
-# Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT；2026-10-13 UTC 审计）
+# Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
 > **CURRENT STATUS / MAINLINE AUTHORITY**。本文件描述唯一正式业务主线当前状态。历史 Candidate / Pilot / Closeout 只说明当时事实，不能覆盖本文件。
 
@@ -9,7 +9,10 @@
 | TASK001 | 历史冻结 Landing / batch 基线 | 不重跑、不改冻结文件 |
 | TASK002 | Person V2 历史回归与冻结基线 | 不擅自修改 |
 | TASK003 | **COMPLETE / CLOSED** | 只读参考实现 |
-| **TASK004 — overall** | **COMPLETE / CLOSED / FROZEN** | Processing-first Airflow MVP 已最终验收；见 [Final Closeout](TASK-004-FINAL-CLOSEOUT.md) |
+| **TASK004 — overall（完整闭环）** | **IN PROGRESS** | **NEXT: STEP04A read-only PostgreSQL / source preflight**；正式开发计划见 [Person/Visit CDM + Idempotency Plan](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) |
+| TASK004 — Processing MVP（既有验收） | **COMPLETE / CLOSED / FROZEN** | 保持历史业务/Runner PASS，见 [MVP Closeout](TASK-004-FINAL-CLOSEOUT.md) |
+| TASK004 — CDM Person/Visit Materialization | **NOT IMPLEMENTED / NOT VERIFIED** | 按 STEP04A–04H 小步进行，实际写库需另行授权 |
+| TASK004 — 同批次 Airflow replay/retry 幂等性 | **NOT VERIFIED** | 必须数据库级 A1–A11 验收及恢复用例通过 |
 | TASK004 — Synthea | **PASS** | frozen baseline |
 | TASK004 — Resolver / Control | **PASS** | frozen baseline |
 | TASK004 — Person | **PASS** | frozen baseline |
@@ -17,10 +20,10 @@
 | TASK004 — Batch Reconciliation | **PASS / MAINLINE ACCEPTED** | frozen baseline；正式证据见 Mainline Closeout |
 | TASK004 — Airflow STEP02 Processing orchestration | **PASS / HISTORICAL MAINLINE ACCEPTED** | frozen baseline |
 | **TASK004 — Airflow STEP03E end-to-end** | **PASS / BUSINESS + SELF-RUNNER MAINLINE ACCEPTED** | frozen STEP03E baseline，Final Audit PASS；旧 Live 新批次未重跑 |
-| **TASK005 — Condition (Phase E)** | **DESIGN BASELINE / IMPLEMENTATION NOT STARTED** | **NEXT: STEP00 read-only Source/ID/FK/Vocabulary/DB preflight**；不授权业务数据 mutation |
+| **TASK005 — Condition (Phase E)** | **ON HOLD / DESIGN BASELINE ONLY** | 等 TASK004 Person + Visit 同 batch CDM 入库和重放验收完成后再解锁 STEP00 |
 | Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞已完成的 Airflow MVP |
 
-**TASK004 overall status = COMPLETE / CLOSED / FROZEN。** 该状态仅覆盖 Synthea → verified Landing → Person/Visit **Processing** → Reconcile 的 Airflow MVP；不宣称新批次 PostgreSQL OMOP 写入。最终只读审计见 [`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md)。
+**TASK004 overall status = IN PROGRESS（按用户明确的完整流程完成标准）。** 既有 Synthea → verified Landing → Person/Visit Processing → Reconcile 的 **MVP COMPLETE / FROZEN**、历史真实验收未被推翻；但 **OMOP Person/Visit 同批次入库 + 数据库级对账 + Airflow 重放幂等** 尚未完成。权威 NEXT = [`TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) 的 **STEP04A READ ONLY**。过去 [`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md) 仅证明原限定 Processing MVP，属历史里程碑。TASK005 暂缓。
 
 ## 历史 STEP02 Airflow Processing orchestration 正式主线验收
 
@@ -182,42 +185,51 @@ STEP03E 业务验收时固定的 Healthcare 源码 SHA = `d0731df6ce09953e45e045
 
 正式细节、源码身份、证据、限制：`TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`。历史 STEP02 Closeout 仍有效，但它当时写的 `upstream ingestion NEXT` **已经过期**。
 
-## TASK004 Final Audit & Closure（2026-10-13 UTC）
+## TASK004 原限定 Processing MVP Final Audit & Closure（历史里程碑，2026-10-13 UTC）
 
 - runner01 分别执行 STEP01、STEP02、Final Storage Check 的只读审计：四节点 Ready、历史 DAG/四 Task success、成功 run Synthea Job 和 Control Pod residual=NO、Airflow 当前 DAG GitSync 源码 SHA256 与 GitHub main 一致。
 - S3 正确 namespace 是 `dw-seaweedfs`，四个 Pod 全部 1/1 Running，S3 EndpointSlice 存在。早期失败运行的历史 Job/Pod 不等同于成功运行的残留，不擅自删除。
 - Self-Runner [PR #39](https://github.com/JohnZhang-DataForge/Self-Runner/pull/39) 已修复历史只读固定 SHA 检查，post-merge [Run 38329852476](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38329852476) SUCCESS；**修复后 Live mutating 新批次回归未执行**。
 - PostgreSQL `omop` 历史状态：Person=113、Visit=5799、Condition=0；STEP03E 的 23/3592 是 Processing，**数据库新批次写入不属于 TASK004 验收范围**。
-- 完整范围、非阻塞项、证据：[`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md)。**TASK004 正式冻结，唯一当前 NEXT 为 TASK005 STEP00 read-only preflight**。
+- 当时限定的 Processing MVP 范围、非阻塞项、证据：[`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md)。**本条是历史关闭证据，当前 TASK004 扩展目标及 NEXT 已由上方状态表与新增 CDM 计划取代**。
 
-## TASK005 Condition 设计基线与当前 NEXT（尚未执行）
+## TASK004 OMOP Person/Visit + Replay 新增完成标准（当前 NEXT）
+
+- 用户最终目标：一个批次从 Airflow 触发 Synthea → verified Landing → Person/Visit Processing → **Person CDM 入库 → Visit CDM 入库 → 独立数据库对账**，同一 batch 重放/部分失败恢复**不产生重复数据或重分配稳定 ID**。
+- **唯一当前授权 STEP：STEP04A 只读数据库与真实输入调查**；STEP04B 为逻辑/契约设计。后续任何 PG/S3/K8s mutation 或新的 Airflow Live Run 均需单独明确授权。
+- 入库顺序与动态业务键：Person Mapping + CDM commit/readback → Visit Mapping + CDM commit/readback → batch-scoped final database reconciliation。**不能原样复用历史追加写入共享 etl.person_stage 和 TASK003 冻结的 5799 行脚本。**
+- 正式执行契约、PR 结构、失败重试/同 batch replay 与 A1–A11 验收矩阵详见 [`TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md)。
+- 当前状态：TASK004 Processing MVP PASS/FROZEN；CDM loop NOT IMPLEMENTED；replay idempotency NOT VERIFIED；**TASK004 overall IN PROGRESS；TASK005 ON HOLD**。
+
+## TASK005 Condition 设计基线与历史 NEXT（当前 ON HOLD）
 
 - 业务实体：Synthea v3.3.0 `conditions.csv` → `condition_occurrence`；七列表头 `START, STOP, PATIENT, ENCOUNTER, SYSTEM, CODE, DESCRIPTION`，**没有 Id**，必须证明可重复且保留重复事件的唯一 occurrence key。
 - 设计文档：`TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md`（STEP00–06）。
-- **当前唯一获授权工作**：STEP00 read-only 前置条件盘点，锁定 verified source batch/manifest/sha，核查行数/重复、Person/Visit 同 batch FK、实际 OMOP/vocabulary 和数据库 ID mapping。输出报告及代码契约设计；**没有任何 Source/Processing/PostgreSQL mutation 授权**。
+- **当前状态：ON HOLD**。原 STEP00 Condition 只读 preflight 属 TASK005 将来解锁后的下一步，**不是此刻可启动的工作**。先完成 TASK004 STEP04A–04H 的完整入库与重放闭环；Condition 设计计划仍保留。
 - Processing Candidate 与 PostgreSQL `cdm.condition_occurrence` materialization 必须分别验收；OMOP mapping 的源码 code 不得当成 `concept_id`；修复后的 STEP03E Live Workflow 不得未经授权自动重跑。
-- 下一 Agent 必须按 STEP00 的小范围 PR + exact-SHA Self-Runner 验证，失败不得越过关口。Condition 未 VERIFIED，也未开始部署。
+- Condition 当前不开发、不部署、不写库；待 TASK004 完成正式 DB 闭环后才按 STEP00 的小范围 PR + exact-SHA Runner 开工。
 
-## 下一位 Agent 如何开始
+## 下一位 Agent 如何开始（唯一当前主线）
 
-1. 先读 `../README.md`、本文件、TASK005 Condition 开发方案、最新 STEP03E End-to-End Closeout、Operations、Skill、TASK003 Blueprint、Lessons。
-2. 核对 Healthcare / Self-Runner 的实际 main SHA（Self-Runner 接受时 main 为 `6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`）及正式 Closeout，避免被老 STEP02 的 NEXT 误导。
-3. STEP03E Business + Self-Runner Validation **已完成主线验收**。下一实体已确定为 **TASK005 Condition**，正式设计见 `TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md`。**唯一当前 NEXT 是 STEP00 只读 preflight**（source contract/事件 key/Person-Visit FK/Vocabulary/真实 DB DDL），实施代码与实际数据写入尚未开始，绝不跳到 STEP01 或 PostgreSQL mutation。
-4. 不重复部署或重跑已验收的 Person / Visit / Reconcile / Synthea → Landing；除非明确开立下一业务阶段，不进行新数据 mutation。
-5. 后续范围另行决策；严格维持一次一个有边界的 STEP 和固定 SHA 验证。
+1. 读取 `../README.md`、本状态表、**TASK004 OMOP CDM Integration & Idempotency Plan**、STEP03E 历史真实 Closeout、TASK003 Final Closeout、Operations、Skill 和 Lessons。
+2. 实时核对 Healthcare / Self-Runner main SHA，确认 TASK004 已验收 Processing MVP 不动；旧 MVP 的 CLOSEOUT 属 **历史限定范围**，不代表本次数据库终验。
+3. 只进入 **TASK004 STEP04A**：固定一个只读 verified batch，盘点真实 Postgres DDL、既有 ID mapping 和 Processing 结构，提交 read-only 预检源码/报告 PR，绑定 exact SHA Self-Runner 验证，写证据。
+4. 不得运行旧的 TASK003 数据库一次性脚本，不得直接读取共享 Person Stage 当作新批次，禁止无批准触发新 Airflow/Synthea、Postgres DML/DDL、S3/集群写入。
+5. STEP04A PASS 或 BLOCKED 后更新状态并再决定 STEP04B；**TASK005 Condition ON HOLD**。
 
 ## 冻结与安全
 
 - TASK001–TASK003：task-level frozen。
-- TASK004 整体 frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / STEP02 Processing / STEP03E；正式 Self-Runner PR #38/#39 与 Final Audit 验收 PASS，其他能力及未执行的 Live 回归按 Final Closeout 的明确边界保留。
-- TASK004 整体：**COMPLETE / CLOSED / FROZEN**；不覆盖 PostgreSQL 新批次物化、Fabric/dbt 等后续阶段。
+- TASK004 既有 Processing MVP frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / STEP02 Processing / STEP03E；Self-Runner PR #38/#39 与 Final Audit 验收 PASS。**新增 OMOP 入库/幂等性扩展是未完成工作**，不得改写旧验收。
+- TASK004 整体（新定义的完整闭环）：**IN PROGRESS**；新批次 PostgreSQL Person + Visit 入库、数据库对账及同 batch replay 未通过前不允许 CLOSED。TASK005 **ON HOLD**。
 - 不把 DAG parse、render-only 或单个 operator 构造成功冒充真实 Airflow orchestration PASS。
 - 历史文档原文归档，不追溯改写。
 
 ## 相关文档
 
-- `TASK-004-FINAL-CLOSEOUT.md` — TASK004 当前最终状态唯一 Closeout
-- `TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md` — 当前 NEXT / 条件实体正式设计基线（实施 NOT STARTED）
+- `TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md` — **当前 TASK004 开发权威计划 / NEXT STEP04A**
+- `TASK-004-FINAL-CLOSEOUT.md` — 原限定 Processing MVP 历史验收（仍然有效，但不能充当 CDM 终验）
+- `TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md` — Condition 已设计，**ON HOLD**（当前不是 NEXT）
 
 - `TASK-004-PHASE9-CLOSEOUT.md`
 - `TASK-004-AIRFLOW-PROCESSING-ORCHESTRATION-MAINLINE-CLOSEOUT.md`
