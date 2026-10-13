@@ -44,7 +44,7 @@ def main() -> None:
             cur.execute("""SELECT has_table_privilege(current_user,'etl.landing_batch_ledger','INSERT'),
                                  has_table_privilege(current_user,'etl.landing_batch_ledger','SELECT'),
                                  has_table_privilege(current_user,'etl.landing_batch_ledger','UPDATE'),
-                                 has_table_privilege(current_user,'cdm.person','INSERT')""")
+                                 has_schema_privilege(current_user,'cdm','USAGE')""")
             privileges=cur.fetchone()
             if privileges!=(True,True,True,False):
                 raise ClaimError("BLOCKED:PRIVILEGE_BOUNDARY")
