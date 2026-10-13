@@ -28,7 +28,7 @@ Standalone Visit            PASS
 Batch Reconciliation        PASS / MAINLINE ACCEPTED
 Airflow Processing           PASS / MAINLINE ACCEPTED
 Airflow upstream ingestion   PASS / STEP03E BUSINESS ACCEPTED
-Self-Runner STEP03E finalization   PENDING FINAL CI/MERGE
+Self-Runner STEP03E validation   PASS / MAINLINE MERGED
 ```
 
 以下是历史 STEP02 Processing 正式主线验收（STEP03E 新结果见上方新增 Closeout）：
@@ -77,7 +77,7 @@ Self-Runner PR #31 merge   = 8ab26784cd0229cce96989e3691c122049e3c23a
 
 Healthcare main：`d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`。
 
-当前只剩 Self-Runner PR #38 的正式代码整理、最终 CI 验证、merge、post-merge checkpoint，以及 STEP03E 文档一致性修复。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一业务阶段未在本次收尾中确定。
+Self-Runner PR #38 已合并到 main（`6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`），post-merge 只读 Run `38328600074` 已 PASS。当前仅完成 STEP03E 文档归档和状态一致性收尾；下一业务阶段尚未决定。**不要重做已经成功的上游业务链，也不要自动重跑会写入新的数据的 Live 验证。** 下一业务阶段未在本次收尾中确定。
 
 ## 冲突优先级
 
