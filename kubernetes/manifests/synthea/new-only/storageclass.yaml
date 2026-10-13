@@ -1,0 +1,14 @@
+# Dedicated class. Uses configured storageClassConfigs.synthea-local.nodePathMap:
+# worker01=/data/synthea; worker02/03 have no storage paths.
+# Not an automatic dedicated-device guarantee; verify actual node filesystem.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: synthea-local
+  labels:
+    app.kubernetes.io/name: synthea-new-only
+    app.kubernetes.io/part-of: healthcare-data-platform
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: false
