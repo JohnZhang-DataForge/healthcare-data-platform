@@ -25,7 +25,12 @@ def main():
     files=[o["Key"] for page in s3.get_paginator("list_objects_v2").paginate(Bucket=bucket,Prefix=prefix) for o in page.get("Contents",[]) if o["Key"].endswith(".parquet")]
     require(len(files)==1,"person_parquet_file_count")
     data=s3.get_object(Bucket=bucket,Key=files[0])["Body"].read()
-    rows=prepare(pq.read_table(io.BytesIO(data)).to_pylist())
+    source_rows=pq.read_table(io.BytesIO(data)).to_pylist()
+    from collections import Counter
+    for field in ('gender_code','race_code','ethnicity_code'):
+        codes=Counter(str(r.get(field)) for r in source_rows)
+        print('DEMOGRAPHIC_'+field.upper()+'='+','.join(k+':'+str(v) for k,v in sorted(codes.items())),flush=True)
+    rows=prepare(source_rows)
     sql=generate(rows,rollback=not opt.commit)
     cmd=["kubectl","exec","-i","-n","dw-postgre","dw-postgre-database-0","--","sh","-c",
          "export PGPASSWORD=\"${POSTGRES_PASSWORD:-${PGPASSWORD:-}}\"; exec psql -X -q -At -v ON_ERROR_STOP=1 -U omop_admin -d omop"]
