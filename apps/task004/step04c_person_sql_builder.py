@@ -6,7 +6,7 @@ SHA="ecc7cf3b75240e530f2cc96635b25e4eaf0794403e1b04d50d2248cd3aaa5cb1"
 PERSON_URI="s3a://health-processing/source=synthea/source_version=v3.3.0/ingest_date=2026-10-12/batch_id="+BATCH+"/entity=patient/run_id=task004-person-20261012T235028Z-8/work/normalized/data/"
 VISIT_URI="s3a://health-processing/source=synthea/source_version=v3.3.0/ingest_date=2026-10-12/batch_id="+BATCH+"/entity=encounter/run_id=task004-encounter-20261012T235028Z-8/work/normalized/data/"
 GENDER={"M":8507,"F":8532}
-RACE={"asian":8515,"black":8516,"hawaiian":8557,"white":8527}
+RACE={"asian":8515,"black":8516,"hawaiian":8557,"white":8527,"other":0} # OMOP CDM 0 means no matching race concept; source value retained
 ETH={"hispanic":38003563,"nonhispanic":38003564}
 COLS=("gender_concept_id year_of_birth month_of_birth day_of_birth birth_datetime race_concept_id ethnicity_concept_id location_id provider_id care_site_id person_source_value gender_source_value gender_source_concept_id race_source_value race_source_concept_id ethnicity_source_value ethnicity_source_concept_id").split()
 def check(ok,code):
