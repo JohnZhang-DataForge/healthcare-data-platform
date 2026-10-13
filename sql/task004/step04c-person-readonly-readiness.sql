@@ -27,7 +27,7 @@ SELECT 'MAP_BUSINESS_KEY_UNIQUE_INDEX=' || EXISTS (
    AND (SELECT array_agg(a.attname ORDER BY a.attname)
         FROM unnest(i.indkey::smallint[]) k(attnum)
         JOIN pg_attribute a ON a.attrelid=t.oid AND a.attnum=k.attnum)
-       = ARRAY['source_person_id','source_system']
+       = ARRAY['source_person_id','source_system']::name[]
 );
 SELECT 'CDM_PERSON_INSERT_PRIVILEGE=' || has_table_privilege('cdm.person','INSERT');
 SELECT 'MAP_INSERT_PRIVILEGE=' || has_table_privilege('etl.person_id_map','INSERT');
