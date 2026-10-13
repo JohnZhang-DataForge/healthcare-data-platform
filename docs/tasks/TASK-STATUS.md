@@ -14,14 +14,15 @@
 | TASK004 — Person | **PASS** | frozen baseline |
 | TASK004 — Visit | **PASS** | frozen baseline |
 | TASK004 — Batch Reconciliation | **PASS / MAINLINE ACCEPTED** | frozen baseline；正式证据见 Mainline Closeout |
-| **TASK004 — Airflow Processing orchestration** | **PASS / PROCESSING MAINLINE ACCEPTED** | **NEXT：将 Generate Synthea → Landing 接到现有 DAG 上游** |
+| TASK004 — Airflow STEP02 Processing orchestration | **PASS / HISTORICAL MAINLINE ACCEPTED** | frozen baseline |
+| **TASK004 — Airflow STEP03E end-to-end** | **PASS / BUSINESS + SELF-RUNNER MAINLINE ACCEPTED** | frozen STEP03E baseline；新业务阶段待决定 |
 | Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞当前 Airflow MVP |
 
 **TASK004 overall status = IN PROGRESS。**
 
-## Airflow Processing orchestration 正式主线验收
+## 历史 STEP02 Airflow Processing orchestration 正式主线验收
 
-当前正式 Processing DAG：
+以下是历史 STEP02 Processing DAG（STEP03E 的最新四 Task DAG 见新增 Closeout）：
 
 ~~~text
 GitHub main
@@ -167,18 +168,30 @@ post-merge:
 - Run `38286850393`：Workflow YAML parse failure，jobs=0。
 - Run `38286943030`：source test assertion failure；Spark execution skipped。
 
+## 最新 STEP03E 全链业务验收（2026-10-12）
+
+正式 Healthcare main = `d0731df6ce09953e45e0458cd7bd85f0ce4fb60c`；DAG = `task004_processing_pipeline`，现已形成 `generate_publish >> [person, visit] >> reconcile`。
+
+- Self-Runner live Run `38324111846`：**GitHub failure**（发生在 DAG 成功后的后置 XCom 取证）。Airflow DagRun 及 generate_publish、person、visit、reconcile 四个 Task 均为 **success**。
+- 新 Landing batch = `task004-airflow-task004-step03e-38324111846`；source_version `v3.3.0`；ingest date `2026-10-12`；18 verified files；manifest SHA256 `ecc7cf3b75240e530f2cc96635b25e4eaf0794403e1b04d50d2248cd3aaa5cb1`。
+- Person `23` canonical rows + Visit `3592` canonical rows，Processing readback 均 PASS；Reconcile 同 batch、同 version / ingest date，PASS。
+- Self-Runner 独立 post-success Run `38326695107` = **SUCCESS**，真实 Airflow 日志 lineage 与 Synthea Job、ConfigMap、Control Pod、SparkApplication 成功后 residual 检查 PASS；无 PostgreSQL 写入。
+- Self-Runner 正式验证代码收尾：[PR #38](https://github.com/JohnZhang-DataForge/Self-Runner/pull/38)。最终固定 PR HEAD `49da2267aed6eca73b2fa735d5145f3ee9427e51`；pre-merge Run `38328528372` = SUCCESS；PR #38 squash/main = `6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`；post-merge exact-main Run `38328600074` = SUCCESS，Artifact `11781762914`。`38328025745` 因上传流程卡住，不作为主线成功证据。
+
+正式细节、源码身份、证据、限制：`TASK-004-AIRFLOW-STEP03E-END-TO-END-CLOSEOUT.md`。历史 STEP02 Closeout 仍有效，但它当时写的 `upstream ingestion NEXT` **已经过期**。
+
 ## 下一位 Agent 如何开始
 
-1. 阅读 `../README.md`、本文件、Reconciliation Mainline Closeout、Operations、Skill、TASK004 Lessons。
-2. 不重新开发 Person / Visit / Reconciliation，也不重新设计已经验收的 Airflow Processing DAG。
-3. 当前唯一主线目标是把 Generate Synthea → Landing publish / validate 接到现有 DAG 上游。
-4. 先检查 04c-run-synthea-generate-publish.sh、dw-synthea RBAC、Landing 输出 contract，以及如何把 manifest URI / SHA 动态交给现有 Person / Visit。
-5. 使用正式流程：Healthcare feature PR → exact PR HEAD → Self-Runner fixed validation → real Airflow/K8s runtime → PASS → merge → 必要的 post-merge exact-main validation → checkpoint。
+1. 先读 `../README.md`、本文件、最新 STEP03E End-to-End Closeout、Operations、Skill、Lessons。
+2. 核对 Healthcare / Self-Runner 的实际 main SHA（Self-Runner 接受时 main 为 `6f72c05ad8eb1a0abeb19f3cff9e89ac698cff87`）及正式 Closeout，避免被老 STEP02 的 NEXT 误导。
+3. STEP03E Business + Self-Runner Validation **已完成主线验收**。下一业务阶段尚未决定，不因聊天里的旧计划自动开工。
+4. 不重复部署或重跑已验收的 Person / Visit / Reconcile / Synthea → Landing；除非明确开立下一业务阶段，不进行新数据 mutation。
+5. 后续范围另行决策；严格维持一次一个有边界的 STEP 和固定 SHA 验证。
 
 ## 冻结与安全
 
 - TASK001–TASK003：task-level frozen。
-- TASK004 当前 frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / Airflow Processing orchestration。
+- TASK004 当前 frozen baseline：Synthea / Landing / Resolver / Control Runtime / Person / Visit / Batch Reconciliation / STEP02 Processing；STEP03E 业务端到端验收 PASS，正式 Self-Runner PR #38 + post-merge 验收 PASS。
 - TASK004 整体：**IN PROGRESS**。
 - 不把 DAG parse、render-only 或单个 operator 构造成功冒充真实 Airflow orchestration PASS。
 - 历史文档原文归档，不追溯改写。
