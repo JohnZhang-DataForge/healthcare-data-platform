@@ -1,5 +1,8 @@
 # TASK004 Agent 交接与唯一 NEXT — 2026-10-13
 
+> **2026-10-13 最新 Agent 交接：消费端 S3 READY 探测核心已完成真实 K8s 验证。** [Landing Discovery Checkpoint](LANDING-BATCH-DISCOVERY-READONLY-CHECKPOINT-2026-10-13.zh-CN.md) / [Run 38460137577](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38460137577)：源码 `apps/landing_discovery/scan_ready_batches.py`、8 单测、6 valid READY + 1 legacy Manifest quarantine；真实 S3 只读，**没有 Airflow DAG、Writer COMMIT、PG 变更**。用户优先级现调整为**先开发新的功能命名 `landing_batch_discovery` 定时 DAG → 再做自动消费/动态 PostgreSQL 事务与恢复**；之前标题下 NEW_ONLY（Producer）优先顺序属于过时记录，仍保持设计但不在当前 NEXT。新消费 DAG 禁止调用 Generator；现有 `task004_processing_pipeline` 历史冻结，不动。TASK004 IN PROGRESS，TASK005 ON HOLD。
+
+
 > **2026-10-13 用户最新决策/新 Agent 先读：** [独立 Producer / S3-Consumer 架构设计](../architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md) → [NEW_ONLY 唯一实施 NEXT](TASK-004-INDEPENDENT-GENERATOR-NEW-ONLY-NEXT-v1.0.zh-CN.md)。**Generator 与 Airflow 完全解耦**：Generator 自主随机并推 S3（verified immutable Manifest 为 READY），Airflow 只定时发现批次并调用 Spark/CDM；禁止 Airflow 传 Seed/州/人口，禁止把重试等同于重新生成。用户坚持 **三套独立 Kubernetes Job/Pod、镜像与业务代码**，不是一个入口用 mode 切换；**先开发 NEW_ONLY**，EXISTING_ONLY/MIXED ON HOLD。NEW_ONLY 实际患者 <=100、目标随机 1～100/随机合法州、固定生成时间；worker01 `dw-synthea` 专用 LocalPath PVC/独立磁盘做任务恢复，S3 仍是已发布数据的权威。**NEXT 先只读审计存储/Contract，再分轮实现 NEW_ONLY。** 本次为文档修改、没有执行新 Synthea Job / PVC / Consumer DAG / Writer COMMIT；原 STEP03E DAG 仍使用 `generate_publish`，只作为历史冻结基线。源 ID 23/23 全重合/出生日期 +1 天的根因已由 [Run 38447127571](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38447127571) PASS；下方老手递 NEXT（修 import 与查 seed）均已完成或过时。TASK004 IN PROGRESS、TASK005 ON HOLD。
 
 
