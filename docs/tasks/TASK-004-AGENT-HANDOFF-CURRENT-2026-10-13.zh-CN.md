@@ -1,5 +1,8 @@
 # TASK004 Agent 交接与唯一 NEXT — 2026-10-13
 
+> **2026-10-13 新 Agent 最优先接力：** 请先读 [真实 Landing Discovery→Claim Live Closeout](LANDING-DISCOVERY-TO-CLAIM-AIRFLOW-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。当前 Main 已包含功能名 `landing_batch_discovery` DAG **两 KPO 串联**：S3 manifest inventory XCom → `evaluate_batch_claims`（查询旧/新 PostgreSQL Ledger 并历史排除）。实际 [Self-Runner Run 38471287896](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38471287896) 两 Task **success**、Main GitSync exact SHA、真实 PG 0 Claim rows、CDM Person=136/Visit=9391 不变；[`38470907298`](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38470907298) 通过真实历史批次排除和受限权限。由于尚无下游 Spark/Writer，`CLAIM_ENABLE=NO` 且 allowlist 为空，不能误称**已 COMMIT 真实 Claim 或完成自动 ETL**。NEXT = 受控队列/全量批次、历史 Source ID 碰撞安全门槛、Spark Person/Visit 消费、动态 DB Writer / Reconciliation、可恢复租约；保持 Generator/Airflow 解耦、功能语义命名、小型闭环及最多3次测试。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 最新 Agent 交接：Batch Claim 核心已实际完成，下一环是 Consumer 接线。** [Ledger / Claim Real PG ROLLBACK Closeout](LANDING-BATCH-CLAIM-ROLLBACK-CLOSEOUT-2026-10-13.zh-CN.md)；新 `sql/landing_claim/create_landing_batch_ledger.sql` 的 **etl.landing_batch_ledger 已 COMMIT**，专用 PostgreSQL `landing_claim_worker` + `dw-spark/landing-claim-db` Secret 已配置；`apps/landing_claim/batch_ledger.py` 事务状态机在 [Run 38468961485](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38468961485) 真实 worker02/PostgreSQL 模拟批次中通过完全 ROLLBACK 与独立读取；12 Unit Tests PASS，0 探针行、CDM 无数据变更。**Airflow `landing_batch_discovery` 仍每 15 分钟只读扫描，不调用 Claim、Spark、OMOP。** 当前 NEXT 是安全连接 Discovery→Claim（不得误领原先已入库 6 个历史批次），然后批次消费/动态 Writer/独立 DB 对账。不要重复开发 Claim 基础表，不要把 ROLLBACK 测试说成生产真实 Batch COMMIT；自然 Cron 和真实并发验证仍待补。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
