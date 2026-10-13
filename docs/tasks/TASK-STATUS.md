@@ -11,8 +11,8 @@
 | TASK003 | **COMPLETE / CLOSED** | 只读参考实现 |
 | **TASK004 — overall（完整闭环）** | **IN PROGRESS** | **STEP04A CLOSED; STEP04B OFFLINE REPLAY CONTRACT BASELINE PASS (15/15), NEXT: controlled mapping/loader implementation subject to separate DB write authorization**；正式开发计划见 [Person/Visit CDM + Idempotency Plan](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) |
 | TASK004 — Processing MVP（既有验收） | **COMPLETE / CLOSED / FROZEN** | 保持历史业务/Runner PASS，见 [MVP Closeout](TASK-004-FINAL-CLOSEOUT.md) |
-| TASK004 — CDM Person/Visit Materialization | **STEP04C PERSON LIVE PASS / STEP04D VISIT PENDING** | 已授权固定 batch Person 23 条真实入库，cdm.person 113→136；同批次 replay 数量保持不变；Visit 仍为 5799 且未写入。证据见 [STEP04C Person DB Closeout](TASK-004-STEP04C-PERSON-DB-COMMIT-CLOSEOUT.md) |
-| TASK004 — 同批次 Airflow replay/retry 幂等性 | **PERSON DB REPLAY PASS / FULL DAG NOT VERIFIED** | STEP04C 同 batch Person DB replay 已实测 NO-OP；Visit、跨批次/并发与整条 Airflow DAG 重放仍未验证 |
+| TASK004 — CDM Person/Visit Materialization | **STEP04C PERSON + STEP04D VISIT LIVE DB PASS** | 固定 batch Person 23、Visit 3592 已分别真实写入 PostgreSQL，Person 136 / Visit 9391，重复加载不新增，Visit FK 缺失 0。证据见 [Person Closeout](TASK-004-STEP04C-PERSON-DB-COMMIT-CLOSEOUT.md) 与 [Visit Closeout](TASK-004-STEP04D-VISIT-DB-COMMIT-CLOSEOUT.md) |
+| TASK004 — 同批次 Airflow replay/retry 幂等性 | **PERSON + VISIT DB REPLAY PASS / FULL DAG NOT VERIFIED** | STEP04C/D 同 batch Person 与 Visit 各自数据库重放已实测不增加记录；跨批次并发、未知提交恢复、整条 Airflow DAG 重放仍未验证 |
 | TASK004 — Synthea | **PASS** | frozen baseline |
 | TASK004 — Resolver / Control | **PASS** | frozen baseline |
 | TASK004 — Person | **PASS** | frozen baseline |
