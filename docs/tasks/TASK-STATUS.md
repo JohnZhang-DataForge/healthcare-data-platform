@@ -1,4 +1,6 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
+> **2026-10-13 当前权威 NEXT / 见 [TASK004 最新交接](TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md)：** 固定批次 STEP04C/D/E 已完成；STEP04F S3/CDM Runtime reader+rollback writer 已构建实测，新 Airflow Synthea Batch `task004-airflow-task004-step03e-38431103586` Processing PASS（Person=23，Visit=3588），但新 Person 入库测试 `BLOCKED:EXISTING_TARGET_DRIFT`，不允许 COMMIT。最新只读 Source ID 审计 Run `38434861465` 为 FAILURE（`ModuleNotFoundError: task004_cdm_materialization_plan`），Self-Runner feature `feature/task004-person-readonly-audit-20261013` 尚未合并。**唯一 NEXT = 修复该测试 Job PYTHONPATH，真实只读查 23 人的 existing/changed/new/dangling 数量与失败批次 DB residual；不重新跑 Synthea、不得绕过漂移保护。**本文件后面遗留 STEP04A/04B NEXT 是过期阶段说明，以最新交接为准。TASK005 仍 ON HOLD。
+
 
 > **CURRENT STATUS / MAINLINE AUTHORITY**。本文件描述唯一正式业务主线当前状态。历史 Candidate / Pilot / Closeout 只说明当时事实，不能覆盖本文件。
 
