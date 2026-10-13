@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys,unittest
-sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"apps/task004"))
-from step04f_dynamic_materialization_contract import plan,same_plan
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"airflow/dags"))
+from task004_cdm_materialization_plan import plan,same_plan
 B="task004-airflow-test-123"
 ROOT="source=synthea/source_version=v3.3.0/ingest_date=2026-10-13/batch_id="+B+"/"
 def good():
@@ -12,6 +12,10 @@ def good():
         visit_processing_uri="s3a://health-processing/"+ROOT+"entity=encounter/run_id=xyz/work/normalized/data/",
         person_rows=23,visit_rows=3592)
 class DynamicBatch(unittest.TestCase):
+    def test_dag_chain_is_preflight_then_plan(self):
+        dag=(Path(__file__).resolve().parents[2]/"airflow/dags/task004_processing_pipeline.py").read_text()
+        self.assertIn("reconcile >> cdm_load_preflight >> cdm_materialization_plan",dag)
+        self.assertIn("python_callable=_prepare_cdm_plan_json",dag)
     def test_valid_is_deterministic_and_never_authorizes_write(self):
         a=plan(good());b=plan(good())
         self.assertEqual(a["plan_sha256"],b["plan_sha256"])
