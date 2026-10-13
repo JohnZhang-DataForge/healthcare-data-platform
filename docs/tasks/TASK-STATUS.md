@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 NEW_ONLY NEW-A READ-ONLY PREFLIGHT 最新验收**：[真实 worker01/Contract 检查](SYNTHEA-NEW-ONLY-READONLY-PREFLIGHT-2026-10-13.zh-CN.md) / [Run 38481854395](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38481854395) PASS（审计完成且阻塞明确）。worker01 Ready；`dw-synthea` 存在但新 PVC 0、`local-path` 默认 Delete、专用宿主设备/剩余容量 NOT VERIFIED；18 CSV 全非空对随机 1..100 尚未有真实测试，Writer Legacy ID 拒绝独立 `synthea-new-only-`。**NOW NEXT：补只读 host mount 和 S3 Secret 名称、确定 Retain PV/PVC，再 NEW-B 独立业务源码测试。NEW_ONLY 未部署，Dynamic PG ROLLBACK 正例和 COMMIT 未完成；TASK004 IN PROGRESS / TASK005 ON HOLD。**
+
+
 > **2026-10-13 最新权威 NEXT（新 Session 交接）**：[TASK004 CURRENT Agent Handoff](TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md)。第三层 Writer 到真实 S3/PG 已验证 **`BLOCKED:EXISTING_TARGET_DRIFT` 安全负例** ([Run 38479591382](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38479591382))，不是新批 COMMIT 或成功 ROLLBACK 正例；源数据 23 Person/3588 Visit，OMOP Person=136/Visit=9391、新 Claim=0 读回不变。第四层 Airflow Discovery→PG Claim Guard→历史批次**手动** Spark Processing PASS ([Run 38476079452](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38476079452))；`CLAIM_ENABLE=NO`，新批**自动处理未开启**。设计已更新为 Generator/Airflow 解耦的三套独立 Job/Pod、只实现 NEW_ONLY；**尚未真实部署 NEW_ONLY**。当前下一有界闭环推荐 **NEW_ONLY worker01 LocalPath/Contract 只读前检 + Writer 版本化 Batch ID 兼容性预审**，取得新无冲突 READY 后才能正向 PG ROLLBACK→COMMIT/DB Reconciliation。原始旧 handoff 快照位于 `docs/archive/2026-10-13-agent-handoff-refresh/`。TASK004 IN PROGRESS / TASK005 ON HOLD。以下历史 NEXT 不再有效。
 
 
