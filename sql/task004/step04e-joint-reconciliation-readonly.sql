@@ -1,0 +1,22 @@
+\set ON_ERROR_STOP on
+BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SET LOCAL statement_timeout='45s';
+SELECT 'BATCH_IDENTITY='||count(*) FROM etl.task004_batch_ledger WHERE batch_id='task004-airflow-task004-step03e-38324111846' AND manifest_sha256='ecc7cf3b75240e530f2cc96635b25e4eaf0794403e1b04d50d2248cd3aaa5cb1' AND status IN ('VISIT_COMMITTED','RECONCILED');
+SELECT 'PERSON_COMMIT='||count(*) FROM etl.task004_batch_commit WHERE batch_id='task004-airflow-task004-step03e-38324111846' AND entity='person' AND commit_state='VERIFIED' AND stage_rows=23 AND mapped_rows=23 AND updated_rows=0;
+SELECT 'VISIT_COMMIT='||count(*) FROM etl.task004_batch_commit WHERE batch_id='task004-airflow-task004-step03e-38324111846' AND entity='visit' AND commit_state='VERIFIED' AND stage_rows=3592 AND mapped_rows=3592 AND updated_rows=0;
+SELECT 'PERSON_TOTAL='||count(*) FROM cdm.person;
+SELECT 'VISIT_TOTAL='||count(*) FROM cdm.visit_occurrence;
+SELECT 'PERSON_MAP_TOTAL='||count(*) FROM etl.person_id_map WHERE source_system='synthea';
+SELECT 'VISIT_MAP_TOTAL='||count(*) FROM etl.visit_occurrence_id_map WHERE source_system='synthea';
+SELECT 'PERSON_STAGE='||count(*) FROM etl.task004_batch_stage WHERE batch_id='task004-airflow-task004-step03e-38324111846' AND entity='person';
+SELECT 'VISIT_STAGE='||count(*) FROM etl.task004_batch_stage WHERE batch_id='task004-airflow-task004-step03e-38324111846' AND entity='visit';
+SELECT 'PERSON_EXACT_CONTENT='||count(*) FROM etl.task004_batch_stage s JOIN etl.person_id_map m ON m.source_system=s.source_system AND m.source_person_id=s.source_key JOIN cdm.person p ON p.person_id=m.person_id WHERE s.batch_id='task004-airflow-task004-step03e-38324111846' AND s.entity='person' AND to_jsonb(p) IS NOT DISTINCT FROM to_jsonb(jsonb_populate_record(NULL::cdm.person,s.canonical_payload||jsonb_build_object('person_id',m.person_id)));
+SELECT 'VISIT_EXACT_CONTENT='||count(*) FROM etl.task004_batch_stage s JOIN etl.visit_occurrence_id_map m ON m.source_system=s.source_system AND m.source_encounter_id=s.source_key JOIN cdm.visit_occurrence v ON v.visit_occurrence_id=m.visit_occurrence_id JOIN etl.person_id_map pm ON pm.source_system='synthea' AND pm.source_person_id=s.source_person_key WHERE s.batch_id='task004-airflow-task004-step03e-38324111846' AND s.entity='visit' AND v.person_id=pm.person_id AND to_jsonb(v) IS NOT DISTINCT FROM to_jsonb(jsonb_populate_record(NULL::cdm.visit_occurrence,s.canonical_payload||jsonb_build_object('visit_occurrence_id',m.visit_occurrence_id,'person_id',pm.person_id)));
+SELECT 'ORPHAN_VISITS='||count(*) FROM cdm.visit_occurrence v LEFT JOIN cdm.person p ON p.person_id=v.person_id WHERE p.person_id IS NULL;
+SELECT 'PERSON_DUPLICATE_KEYS='||count(*) FROM (SELECT source_system,source_person_id FROM etl.person_id_map GROUP BY 1,2 HAVING count(*)>1) x;
+SELECT 'VISIT_DUPLICATE_KEYS='||count(*) FROM (SELECT source_system,source_encounter_id FROM etl.visit_occurrence_id_map GROUP BY 1,2 HAVING count(*)>1) x;
+SELECT 'PERSON_MAP_TARGET_ORPHANS='||count(*) FROM etl.person_id_map m LEFT JOIN cdm.person p ON p.person_id=m.person_id WHERE p.person_id IS NULL;
+SELECT 'VISIT_MAP_TARGET_ORPHANS='||count(*) FROM etl.visit_occurrence_id_map m LEFT JOIN cdm.visit_occurrence v ON v.visit_occurrence_id=m.visit_occurrence_id WHERE v.visit_occurrence_id IS NULL;
+SELECT 'NON_BATCH_PERSON_MAPS='||count(*) FROM etl.person_id_map m WHERE m.source_system='synthea' AND NOT EXISTS(SELECT 1 FROM etl.task004_batch_stage s WHERE s.batch_id='task004-airflow-task004-step03e-38324111846' AND s.entity='person' AND s.source_key=m.source_person_id);
+SELECT 'NON_BATCH_VISIT_MAPS='||count(*) FROM etl.visit_occurrence_id_map m WHERE m.source_system='synthea' AND NOT EXISTS(SELECT 1 FROM etl.task004_batch_stage s WHERE s.batch_id='task004-airflow-task004-step03e-38324111846' AND s.entity='visit' AND s.source_key=m.source_encounter_id);
+COMMIT;
