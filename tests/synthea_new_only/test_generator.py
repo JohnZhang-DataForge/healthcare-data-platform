@@ -49,13 +49,13 @@ class GeneratorTests(unittest.TestCase):
     def test_persisted_registry_rejects_cross_request_collision(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp)
-            guarded_registry_write(p, "req-a", ["abc", "def"])
-            guarded_registry_write(p, "req-a", ["abc", "def"])
+            guarded_registry_write(p, "req-aaaaaaaa", ["abc", "def"])
+            guarded_registry_write(p, "req-aaaaaaaa", ["abc", "def"])
             with self.assertRaises(GateError):
-                guarded_registry_write(p, "req-b", ["def", "ghi"])
+                guarded_registry_write(p, "req-bbbbbbbb", ["def", "ghi"])
             with self.assertRaises(GateError):
-                guarded_registry_write(p, "req-a", ["abc"])
-            guarded_registry_write(p, "req-c", ["ghi"])
+                guarded_registry_write(p, "req-aaaaaaaa", ["abc"])
+            guarded_registry_write(p, "req-cccccccc", ["ghi"])
 
     def test_real_v1_headers_optional_zero_with_new_only_local_gate(self):
         import json
