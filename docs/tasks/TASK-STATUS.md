@@ -9,9 +9,9 @@
 | TASK001 | 历史冻结 Landing / batch 基线 | 不重跑、不改冻结文件 |
 | TASK002 | Person V2 历史回归与冻结基线 | 不擅自修改 |
 | TASK003 | **COMPLETE / CLOSED** | 只读参考实现 |
-| **TASK004 — overall（完整闭环）** | **IN PROGRESS** | **NEXT: STEP04A read-only PostgreSQL / source preflight**；正式开发计划见 [Person/Visit CDM + Idempotency Plan](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) |
+| **TASK004 — overall（完整闭环）** | **IN PROGRESS** | **STEP04A INVESTIGATION COMPLETE (read-only), NEXT: STEP04B design / simulation only**；正式开发计划见 [Person/Visit CDM + Idempotency Plan](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) |
 | TASK004 — Processing MVP（既有验收） | **COMPLETE / CLOSED / FROZEN** | 保持历史业务/Runner PASS，见 [MVP Closeout](TASK-004-FINAL-CLOSEOUT.md) |
-| TASK004 — CDM Person/Visit Materialization | **NOT IMPLEMENTED / NOT VERIFIED** | 按 STEP04A–04H 小步进行，实际写库需另行授权 |
+| TASK004 — CDM Person/Visit Materialization | **NOT IMPLEMENTED / NOT VERIFIED** | STEP04A 已完成调查，STEP04B 仅做安全设计/模拟；实际写库需另行授权 |
 | TASK004 — 同批次 Airflow replay/retry 幂等性 | **NOT VERIFIED** | 必须数据库级 A1–A11 验收及恢复用例通过 |
 | TASK004 — Synthea | **PASS** | frozen baseline |
 | TASK004 — Resolver / Control | **PASS** | frozen baseline |
@@ -23,7 +23,7 @@
 | **TASK005 — Condition (Phase E)** | **ON HOLD / DESIGN BASELINE ONLY** | 等 TASK004 Person + Visit 同 batch CDM 入库和重放验收完成后再解锁 STEP00 |
 | Azure/Fabric/dbt/MLflow 等 | 后续分阶段设计 | 不阻塞已完成的 Airflow MVP |
 
-**TASK004 overall status = IN PROGRESS（按用户明确的完整流程完成标准）。** 既有 Synthea → verified Landing → Person/Visit Processing → Reconcile 的 **MVP COMPLETE / FROZEN**、历史真实验收未被推翻；但 **OMOP Person/Visit 同批次入库 + 数据库级对账 + Airflow 重放幂等** 尚未完成。权威 NEXT = [`TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) 的 **STEP04A READ ONLY**。过去 [`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md) 仅证明原限定 Processing MVP，属历史里程碑。TASK005 暂缓。
+**TASK004 overall status = IN PROGRESS（按用户明确的完整流程完成标准）。** 既有 Synthea → verified Landing → Person/Visit Processing → Reconcile 的 **MVP COMPLETE / FROZEN**、历史真实验收未被推翻；但 **OMOP Person/Visit 同批次入库 + 数据库级对账 + Airflow 重放幂等** 尚未完成。权威 NEXT = [`TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) 的 **STEP04B CODE / TEST ONLY**；STEP04A 实际只读调查已经验收，见 [STEP04A Final Closeout](TASK-004-STEP04A-READONLY-FINAL-CLOSEOUT.md)，但写库前 batch isolation 仍 BLOCKED。过去 [`TASK-004-FINAL-CLOSEOUT.md`](TASK-004-FINAL-CLOSEOUT.md) 仅证明原限定 Processing MVP，属历史里程碑。TASK005 暂缓。
 
 ## 历史 STEP02 Airflow Processing orchestration 正式主线验收
 
