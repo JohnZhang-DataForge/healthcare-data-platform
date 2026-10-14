@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — 新真实 NEW_ONLY Batch 70 Person / 11,487 Visit 已由 Airflow Spark 全量处理并送达 Writer Handoff（LIVE PASS）。** [Run 38563933551](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38563933551) SUCCESS / [权威 Closeout](NEW-ONLY-AIRFLOW-SPARK-FRESH-70-11487-LIVE-HANDOFF-2026-10-14.zh-CN.md)。`synthea-new-only-gh-38489944582` 原有 S3 READY 已被手工明示 `spark_processing=true` 处理成真实 Patient70/Encounter11487 Parquet，两个 SparkApplication XCom readback PASS，Reconcile/Handoff/Scheduler TaskInstances 全 SUCCESS。DAG 测试后 paused；Spark Processing S3 有新数据，但 OMOP Person137/Visit10203、Claim总1、该新批 Claim0/Stage0/Commit0 unchanged；未发生新业务 COMMIT。NEXT 针对文档精确 Processing URI/真实 Plan 做 readonly 源键校验与 Fenced Writer ROLLBACK，成功后受控提交；旧 1/812 已完成批次禁止重写。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — Airflow 新批次 Writer Handoff + 动态原子 SQL 渲染合同 PASS。** [Closeout](NEW-ONLY-AIRFLOW-ATOMIC-DYNAMIC-WRITER-HANDOFF-2026-10-14.zh-CN.md) / [Runner 38562133245](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38562133245) SUCCESS：114 tests、真实 PG 只读完成批次数据 137 Person /10203 Visit / Claim1 COMPLETED 不变。Spark 两实体只读结果通过 versioned Plan SHA/Manifest/URI/行数校验后可调用动态 Writer Renderer；复用已经成功的单事务 Claim+Person/Visit Fencing/整行 Reconciliation/COMPLETED/COMMIT，支持 Visit 动态 1 和812。**本轮仅生成 SQL，不执行真正业务 COMMIT，新 Airflow DAG 的 unclaimed 分支仍 HOLD。** NEXT Spark 新批输入安全接线（先协调另一 Session）+ 新批只读/ROLLBACK/真实 COMMIT，绝不重新写旧 COMPLETED 批次。双 Writer 压测 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
