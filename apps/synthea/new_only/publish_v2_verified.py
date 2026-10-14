@@ -215,6 +215,13 @@ def main():
         if args.phase=="validate":
             print("S3_MUTATION=NO")
             return 0
+        if args.phase=="publish":
+            # Contract flag is an explicit release fence, not an environment
+            # variable. Until the *running* Airflow Consumer is verified to
+            # parse v2, do not expose a new READY Manifest to its scanner.
+            contract_state,_=source_contract(contract)
+            if contract_state.get("consumer_compatibility")!="V2_RUNTIME_CONSUMER_DEPLOYED_READY":
+                block("V2_RUNTIME_CONSUMER_NOT_DEPLOYED")
         result=publish(s3_from_env(),draft,directory,contract,
                        replay=args.phase=="replay",ingest_date=args.ingest_date)
         print("NEW_ONLY_V2_S3_PUBLISH=PASS")
