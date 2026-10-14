@@ -10,7 +10,7 @@ sys.path.insert(0,str(ROOT/"apps"/"omop_writer"))
 from build_s3_rollback_plan import build
 from task004_cdm_dynamic_adapters import digest
 from joint_s3_rollback import (
-    PSQL_PREFIX, ENDING, compose_joint_rollback, verified_plan, strip_transaction
+    PSQL_PREFIX, ENDING, compose_joint_rollback, verified_plan, strip_transaction, for_psycopg
 )
 from precommit_gate import validate_input
 
@@ -55,6 +55,11 @@ class JointRollbackTests(unittest.TestCase):
         self.assertIn("BLOCKED:JOINT_CHECKPOINTS",sql)
         self.assertIn("BLOCKED:JOINT_STAGE_COUNT",sql)
         self.assertIn("BLOCKED:JOINT_LEDGER_DRIFT",sql)
+        driver_sql=for_psycopg(sql)
+        self.assertTrue(driver_sql.startswith("BEGIN;\\n".replace("\\\\n","\\n")))
+        self.assertTrue(driver_sql.endswith("ROLLBACK;\\n".replace("\\\\n","\\n")))
+        self.assertNotIn("set ON_ERROR_STOP",driver_sql)
+        self.assertNotIn("COMMIT;",driver_sql)
     def test_legacy_or_version_drift_rejected(self):
         c=ctx();p,v=rows()
         for key,value in [("writer_identity_version",None),("writer_identity_version","bad"),
