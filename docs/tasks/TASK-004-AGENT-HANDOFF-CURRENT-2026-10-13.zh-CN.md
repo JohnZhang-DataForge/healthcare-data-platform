@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-14 EDT 当前唯一 NEXT（覆盖本页旧 Airflow Runner 失败交接）：** NEW_ONLY Airflow 真实已完成批次跳过终于**全绿**。[验收 Closeout](NEW-ONLY-AIRFLOW-CONSUMER-COMPLETED-SKIP-REAL-LIVE-2026-10-14.zh-CN.md) / [Self-Runner 38560309400](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38560309400) SUCCESS；Runner PR #102 已 merged Main。真实 DagRun success、Branch TaskInstance 正确路由、DAG re-paused PASS，PG 137 Person/10203 Visit/Claim1 COMPLETED 未变。**无 Spark/Claim/Writer 新写。NEXT 唯一主线**：纯代码先完成 `unclaimed_batch_hold` 的安全新批接入设计/入口、Ticket Fencing/Writer 对接；实际新 S3 READY 的 Spark live / Airflow shared 变更需按 Portal Session 协调，千万不要重跑已入库批次。不要再重复修 XCom 或部署既有 Reader。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT 当前 Airflow 接管交接：首次业务 COMMIT 已完成，NEW_ONLY Airflow 只读前半链已真实上线；不要重复 Writer COMMIT。** [最新 handoff](NEW-ONLY-AIRFLOW-CONSUMER-REAL-COMPLETED-SKIP-HANDOFF-2026-10-14.zh-CN.md) / [Runner 38559222216](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38559222216)。Healthcare PR #126 已合并 Main，`new_only_omop_consumer` 实际 DagRun=success，SELECT/Branch 已验证完成批次安全跳过，DB Person137/Visit10203/Claim1 COMPLETED 无变化，Spark NO。**Self-Runner 工作流尚未验收通过/未合并**：其脚本试图从 BranchPythonOperator XCom `return_value` 读分支字符串，但实际 None，导致 job failure；真实 Airflow TaskInstance 状态比较先通过。已达最多三轮修复上限，本轮停止；下一轮先在 Runner 分支 `feature/task004-airflow-new-only-router-20261014` 删除不可靠的 Branch XCom 断言、以各任务实际状态和 PG readback 为准，仅测已完成 Batch 的 READ ONLY DagRun（临时 unpause 后 trap 恢复 paused），收尾合并。之后才开发对未来新 NEW_ONLY READY 的受控 Claim→Spark→Writer；需 Portal Spark 人工协调。TASK004 IN PROGRESS / TASK005 ON HOLD，双 Writer 并发等 FUTURE ENHANCEMENT。
 
 
