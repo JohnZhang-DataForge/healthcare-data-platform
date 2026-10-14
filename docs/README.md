@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 新 SECOND NEW_ONLY READY 的真实 Airflow→Spark Person70/Visit11487→Writer Handoff LIVE PASS。** [最新验收文档](tasks/NEW-ONLY-AIRFLOW-SPARK-FRESH-70-11487-LIVE-HANDOFF-2026-10-14.zh-CN.md) / [Self-Runner 38563933551](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38563933551) SUCCESS / Healthcare PR #130 + Runner PR #104 merged。真正 `synthea-new-only-gh-38489944582` S3 READY 经手工 `spark_processing=true` 选取、Claim READ ONLY ABSENT、worker02 v2 Spark Person/Visit/Reconcile，实际 Processing Parquet readback 70/11487 + immutable Writer Handoff PASS；实际 DagRun success、手工结束重新暂停 DAG，90 regressions PASS。**Processing S3 新增 Parquet，但原 READY/Manifest 没有改，PG Person137/Visit10203/Claim1 COMPLETED/新批 Claim0/Stage0 不变，Business COMMIT=NO。** NEXT 已真实生成新批的 `cdm_reader` S3/PG read-only preflight + 受控 Writer ROLLBACK，然后才授权真实 COMMIT；不得重跑 Spark 或旧已提交批次。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 NEW_ONLY Airflow Spark→Writer 动态批次合同与单事务 SQL Renderer 已通过测试。** [当轮权威 Closeout](tasks/NEW-ONLY-AIRFLOW-ATOMIC-DYNAMIC-WRITER-HANDOFF-2026-10-14.zh-CN.md) / [Self-Runner 38562133245](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38562133245) SUCCESS（Claim26/26、Writer42/42、Landing46/46，共114）。既有一次性成功 Writer 逻辑抽取为批次身份绑定的私有原子 Claim→Fencing→Person/Visit→整行 DB Reconciliation→COMPLETED→COMMIT Renderer，历史已提交 Batch 固定拒绝动态重写；新增纯 Airflow Spark XCom→不可变 Writer Handoff。实际业务 SQL **仅 Render、没有执行**；新 DAG 的 `unclaimed_batch_hold` 暂未连接 Spark/Writer，Airflow 自动 Claim 仍 NO。PG 只读 Person137/Visit10203/Claim1 COMPLETED/Stage813/2 Checkpoints 不变。NEXT 共享 Spark 人工协调后接实际 Spark→Handoff、真实新批 S3/PG preflight→受控 Writer ROLLBACK→COMMIT；不重跑历史已完成批次。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
