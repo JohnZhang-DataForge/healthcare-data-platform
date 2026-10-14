@@ -44,7 +44,7 @@ class DiscoveryAdapter:
         return {"Body":io.BytesIO(data),"ContentLength":len(data)}
 
 
-def verify(client, batch_id, request_id, expected_people=73, expected_visits=12159):
+def verify(client, batch_id, request_id, expected_people, expected_visits):
     result=discover_ready_batches(DiscoveryAdapter(client),bucket="health-landing")
     matches=[x for x in result["ready_batches"] if x["batch_id"]==batch_id]
     if len(matches)!=1:
@@ -93,7 +93,16 @@ def main():
         access_key=os.environ["AWS_ACCESS_KEY_ID"],
         secret_key=os.environ["AWS_SECRET_ACCESS_KEY"])
     reader.head_bucket()
-    result=verify(reader,a.batch_id,a.request_id)
+    # Actual row counts are a property of the immutable producer request, not
+    # the first integration-test batch. Revalidate identity before S3 readback.
+    from publish_v1_verified import frozen_request
+    params,marker,csv_dir=frozen_request(
+        __import__("pathlib").Path(os.environ.get("SYNTHEA_STATE_ROOT","/synthea-state")),
+        a.request_id)
+    if params["batch_id"]!=a.batch_id:
+        raise ReadyVerificationError("FROZEN_BATCH_ID_DRIFT")
+    result=verify(reader,a.batch_id,a.request_id,
+                  marker["actual_persons"],marker["actual_encounters"])
     print("NEW_ONLY_V1_DISCOVERY=PASS")
     print("NEW_ONLY_V1_RESOLVER=PASS")
     print("NEW_ONLY_INDEPENDENT_S3_READBACK=18/18")
