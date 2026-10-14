@@ -1,5 +1,7 @@
 # Platform Portal 文档入口（Current）
 
+> **CURRENT A3 (2026-10-13 EDT / 2026-10-14 UTC)：Airflow OpenLineage → Marquez 真实任务事件已 PASS。** [正式中文 Closeout](./A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [真实 DAG + 3 Jobs Run 38502227961](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502227961) SUCCESS / [真正 2 个 COMPLETED Marquez Task Runs 38502899963](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502899963) SUCCESS。当前唯一 NEXT = **A4 独立 Spark OpenLineage Agent 验证**，不需等待 TASK004；仍禁止宣称真实 OMOP Writer COMMIT 血缘。
+
 > 用户确认从 `docs/demo-plan/` **正式迁移为** `docs/platform-portal/`，代码在 `platform-portal/`。历史方案保存在 `archive/`，不再把静态前端旧版方案当成当前 NEXT。
 
 - [架构](./architecture.md)：Marquez、OpenLineage、PostgreSQL14 与现有业务流
