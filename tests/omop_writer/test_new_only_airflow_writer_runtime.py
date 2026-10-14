@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[2]
-for p in ("apps/omop_writer","airflow/dags"):
+for p in ("apps/omop_writer","airflow/dags","tests/omop_writer"):
     sys.path.insert(0,str(ROOT/p))
 import new_only_airflow_writer as w
 from build_s3_rollback_plan import build
