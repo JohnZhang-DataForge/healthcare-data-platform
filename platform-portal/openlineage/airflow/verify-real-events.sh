@@ -3,7 +3,7 @@ set -Eeuo pipefail
 DAG=platform_portal_openlineage_probe
 RUN_ID="portal-ol-$GITHUB_RUN_ID"
 FILE="$PORTAL_SOURCE/airflow/dags/$DAG.py"
-POD="$(kubectl get pods -n dw-airflow -o json | python3 -c 'import json,sys; a=json.load(sys.stdin)["items"]; b=[p for p in a if "scheduler" in p["metadata"]["name"] and p["status"].get("phase")=="Running"]; print(b[0]["metadata"]["name"] if b else "")')"
+POD="$(kubectl get pods -n dw-airflow -o json | python3 -c 'import json,sys; a=json.load(sys.stdin)["items"]; b=[p for p in a if "scheduler" in p["metadata"]["name"] and not p["metadata"].get("deletionTimestamp") and p["status"].get("phase")=="Running"]; print(b[0]["metadata"]["name"] if b else "")')"
 test -n "$POD"
 FOLDER="$(kubectl exec -n dw-airflow "$POD" -c scheduler -- airflow config get-value core dags_folder | tail -1 | tr -d '\r')"
 EXPECTED="$(sha256sum "$FILE" | awk '{print $1}')"
