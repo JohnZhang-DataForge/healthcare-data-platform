@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — NEW_ONLY v2 真正 1/812 Writer 同事务 Fencing 及 PG ROLLBACK 完成。** [最新真实验收](NEW-ONLY-REAL-S3-OMOP-WRITER-FENCED-ROLLBACK-2026-10-14.zh-CN.md) / [Run 38554330163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38554330163) SUCCESS。受控最小权限 Function 已持久安装（行政 DDL COMMIT，不是业务 COMMIT），cdm_writer 有效角色以单 BEGIN + 合成未提交 Claim 行锁，执行真 S3 Person1/Visit812 SQL，在 COMMIT 前再次核验并整体 ROLLBACK；PG Person136/Visit9391/Claim0 前后不变，真正 READY 未 Claimed。Claim26/26 + Writer33/33 regressions；无 Spark 重跑/Airflow Auto Claim/正式业务 COMMIT。**NEXT：** 真正 READY 单次 Claim→Writer COMMIT→DB Reconciliation→幂等重放、自动 Airflow 主线。真实业务 COMMIT 仍需明确授权。双 Writer 并发竞争与复杂 Recovery 标记为 FUTURE ENHANCEMENT、不再阻塞 Demo TASK004。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — 当前 TASK004 NEW_ONLY Writer 同事务权限隔离 Fencing：真实 PG 合成回滚实验 PASS、尚未部署。** [完整证据](NEW-ONLY-WRITER-SAME-TX-LEAST-PRIVILEGE-FENCE-REAL-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Self-Runner 38551210536](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38551210536) SUCCESS：Claim26/26、Writer30/30 regressions，SECURITY DEFINER + NOLOGIN Owner + 仅 SELECT/单列 UPDATE + cdm_writer EXECUTE，PG 真角色切换与 Owner/Attempt/Manifest/过期/FAILED、同一事务两次检查 PASS，DDL 与合成行全 ROLLBACK；业务 Person136/Visit9391/Claim0 Before/After 保持。**注意：这个 DB 端 Function 和新 Python fenced rollback adapter 并未在运行环境正式部署，真正 1/812 fenced Writer、两会话并发锁竞争、COMMIT/Reconciliation 均未完成。** NEXT 先 DB 最小权限 DDL 审计 + 真并发安全场景设计，然后才是完整真实 fenced Writer ROLLBACK。TASK004 IN PROGRESS / TASK005 ON HOLD；Portal Spark A4 HOLD。
 
 

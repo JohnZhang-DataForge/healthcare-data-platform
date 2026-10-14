@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 NEW_ONLY 真实 Person 1 / Visit 812 同事务 Writer Fencing PostgreSQL ROLLBACK 已 PASS（仍无业务 COMMIT）。** [当前权威 Closeout](tasks/NEW-ONLY-REAL-S3-OMOP-WRITER-FENCED-ROLLBACK-2026-10-14.zh-CN.md) / [Self-Runner 38554330163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38554330163) SUCCESS：最小权限 SECURITY DEFINER Function 已持久部署并隔离 cdm_writer Ledger 权限；原有 S3 Processing Parquet 真正 1 Person + 812 Visit 在同一数据库事务以 cdm_writer 有效角色执行前后两次行锁校验、完整 Writer SQL、最终显式 ROLLBACK。Claim fixture **仅当前事务暂存**、真实 READY 仍未正式 Claimed；PG Person136/Visit9391/Claim0 等 Before/After 不变。未重新运行 Spark/Synthea、未动 S3、未开启 Airflow Auto Claim、未做业务 COMMIT。NEXT 单 Writer 受控正式 Claim→真实 COMMIT→独立 DB Reconciliation→幂等重放（正式 COMMIT 另需授权）；双 Writer 并发与复杂恢复下调 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD，Portal A4 HOLD。
+
+
 > **2026-10-14 EDT — NEW_ONLY Writer SECURITY DEFINER 最小权限同事务 Fencing 候选，真实 PG ROLLBACK PASS（尚未部署）**：[正式验收与限制](tasks/NEW-ONLY-WRITER-SAME-TX-LEAST-PRIVILEGE-FENCE-REAL-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Self-Runner Run 38551210536](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38551210536) SUCCESS：Claim 26/26 + Writer 30/30 测试；真实 cdm_writer 无 Claim 直读，但可通过隔离 NOLOGIN Owner 的 SECURITY DEFINER 在**同事务**锁 Claim 并验证 Owner/Attempt/Manifest/Lease；合成 Claim/角色/Schema/Function **全部 ROLLBACK**，Person136/Visit9391/Claim0 不变。**未持久安装 DB 函数、未真正重跑 Person1/Visit812、未多会话并发或正式业务 COMMIT**。NEXT DB DDL 安全审查/真实并发竞争/受控 fenced Writer ROLLBACK。TASK004 IN PROGRESS、TASK005 ON HOLD、Portal A4 HOLD。
 
 
