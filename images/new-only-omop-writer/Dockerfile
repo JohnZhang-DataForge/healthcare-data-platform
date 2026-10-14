@@ -7,6 +7,10 @@ COPY --chown=10001:10001 airflow/dags/new_only_omop_writer_handoff.py airflow/da
 # Supply the current NEW_ONLY-aware plan validator; inherited CDM runtime
 # carries a legacy-only validator that rejects synthea-new-only-* batch IDs.
 COPY --chown=10001:10001 airflow/dags/task004_cdm_materialization_plan.py /opt/task004/
+# NEW_ONLY reader and adapters must match the materialization-plan contract.
+# The inherited legacy image has an older transform() that drops writer_identity_version.
+COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_adapters.py /opt/task004/
+COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_source.py /opt/task004/
 COPY --chown=10001:10001 airflow/dags/task004_cdm_preflight_contract.py /opt/task004/
 COPY --chown=10001:10001 apps/omop_writer/build_s3_rollback_plan.py /opt/task004/
 COPY --chown=10001:10001 apps/omop_writer/precommit_gate.py /opt/task004/

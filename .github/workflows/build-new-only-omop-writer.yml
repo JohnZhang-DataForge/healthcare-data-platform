@@ -4,6 +4,7 @@ on:
     branches:
       - feature/task004-airflow-writer-final-leg-20261014
       - feature/task004-fix-writer-newonly-image-plan-20261014
+      - feature/task004-fix-newonly-s3-adapter-runtime-20261014
     paths:
       - images/new-only-omop-writer/Dockerfile
       - apps/omop_writer/new_only_airflow_writer.py
@@ -65,6 +66,61 @@ jobs:
           assert p["batch_id"]==batch and p["person_rows"]==1 and p["visit_rows"]==244
           print("TASK004_THIRD_NEW_ONLY_WRITER_IMAGE_PLAN_CONTRACT=PASS")
           '
+      - name: Live-image NEW_ONLY S3 decoding and 1 Person 244 Visit transforms
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          IMAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer:git-${{ github.sha }}"
+          docker run --rm -i --entrypoint python "$IMAGE" - <<'PY'
+          import hashlib
+          from io import BytesIO
+          from build_s3_rollback_plan import build
+          from task004_cdm_dynamic_source import read
+          batch="synthea-new-only-gh-38588671004"
+          part="source=synthea/source_version=v3.3.0/ingest_date=2026-10-14/batch_id="+batch
+          manifest=b"test-fixture-for-new-only-identity"
+          ctx=build(
+              batch_id=batch,
+              manifest_uri="s3://health-landing/"+part+"/manifest.json",
+              manifest_sha256=hashlib.sha256(manifest).hexdigest(),
+              person_processing_uri="s3a://health-processing/"+part+"/entity=patient/run_id=person-smoke/work/normalized/data/",
+              visit_processing_uri="s3a://health-processing/"+part+"/entity=encounter/run_id=encounter-smoke/work/normalized/data/",
+              person_rows=1,
+              visit_rows=244,
+              source_version="v3.3.0",
+              writer_identity_version="synthea-new-only-v1")
+          fields={"source_system":"synthea","source_version":"v3.3.0","source_batch_id":batch,"source_ingest_date":"2026-10-14"}
+          patients=[dict(fields,source_record_id="person-1",gender_code="M",race_code="white",ethnicity_code="nonhispanic",birth_date="1980-01-02")]
+          encounters=[dict(fields,source_encounter_id="encounter-"+str(i),source_person_id="person-1",encounter_class="ambulatory",start_datetime="2026-10-14T12:00:00Z",end_datetime="2026-10-14T13:00:00Z") for i in range(244)]
+          class Body:
+              def __init__(self,b):self.b=b
+              def read(self):return self.b
+          class Page:
+              def paginate(self,*,Bucket,Prefix):
+                  assert Bucket=="health-processing"
+                  yield {"Contents":[{"Key":Prefix+"part-0000.parquet"}]}
+          class S3:
+              def get_object(self,*,Bucket,Key):
+                  if Bucket=="health-landing":
+                      assert Key.endswith("/manifest.json")
+                      return {"Body":Body(manifest)}
+                  assert Bucket=="health-processing"
+                  return {"Body":Body(b"patients" if "/entity=patient/" in Key else b"encounters")}
+              def get_paginator(self,name):
+                  assert name=="list_objects_v2"
+                  return Page()
+          def decode(data):
+              if data==b"patients":return patients
+              if data==b"encounters":return encounters
+              raise ValueError("Unexpected decoded fixture")
+          ps=read(S3(),ctx,"person",decode)
+          vs=read(S3(),ctx,"visit",decode)
+          assert len(ps)==1 and len(vs)==244
+          assert ps[0]["source_key"]=="person-1"
+          assert all(x["source_person_key"]=="person-1" for x in vs)
+          assert len({x["source_key"] for x in vs})==244
+          print("TASK004_NEW_ONLY_REAL_IMAGE_S3_ADAPTER_PERSON_1_VISIT_244=PASS")
+          PY
       - name: Record frozen candidate digest
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
