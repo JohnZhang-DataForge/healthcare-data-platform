@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — Airflow 新批次 70 Person /11487 Visit → PG Reader Precommit 实际通过。** [Closeout](NEW-ONLY-SECOND-BATCH-REAL-S3-PG-READONLY-PRECOMMIT-2026-10-14.zh-CN.md) / [Runner 38565372429](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38565372429) SUCCESS：真正 Airflow 38563933551 Handoff XCom→当前 S3 两实体 Parquet 真实 GET/指纹/parent FK→cdm_reader PG READ ONLY；0 源 ID 碰撞，新 Batch Claim/Stage/Checkpoint 全0，Person137/Visit10203与旧 COMPLETED 不变，Writer47 + Landing48 tests PASS。**NEXT：** 70/11487 同事务 Fencing Joint Writer ROLLBACK + 独立 readback，随后新 Batch 独立授权下 COMMIT；禁重跑已成功 Spark，Auto Claim 仍 NO。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — 新真实 NEW_ONLY Batch 70 Person / 11,487 Visit 已由 Airflow Spark 全量处理并送达 Writer Handoff（LIVE PASS）。** [Run 38563933551](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38563933551) SUCCESS / [权威 Closeout](NEW-ONLY-AIRFLOW-SPARK-FRESH-70-11487-LIVE-HANDOFF-2026-10-14.zh-CN.md)。`synthea-new-only-gh-38489944582` 原有 S3 READY 已被手工明示 `spark_processing=true` 处理成真实 Patient70/Encounter11487 Parquet，两个 SparkApplication XCom readback PASS，Reconcile/Handoff/Scheduler TaskInstances 全 SUCCESS。DAG 测试后 paused；Spark Processing S3 有新数据，但 OMOP Person137/Visit10203、Claim总1、该新批 Claim0/Stage0/Commit0 unchanged；未发生新业务 COMMIT。NEXT 针对文档精确 Processing URI/真实 Plan 做 readonly 源键校验与 Fenced Writer ROLLBACK，成功后受控提交；旧 1/812 已完成批次禁止重写。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
