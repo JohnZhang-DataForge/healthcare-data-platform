@@ -109,23 +109,11 @@ print('MARQUEZ_SCHEMA_TABLE_COUNT='+str(n))
 print('MARQUEZ_SCHEMA_MIGRATION=PASS')
 PY
 
-# Helm sets BOTH upstream services to ClusterIP. Expose ONLY the web selector
-# through a separate K8s NodePort after DB + API + Web are Healthy.
+# Verify chart-produced Web Service labels match the independent NodePort manifest.
+# Do not use .Values.service.type=NodePort (would expose backend API too).
 kubectl get svc marquez-web -n "$NAMESPACE" -o json |
-  python3 -c '
-import sys,json
-s=json.load(sys.stdin)
-selector=s["spec"]["selector"]
-assert selector.get("app.kubernetes.io/component")=="web", "BAD_WEB_SELECTOR"
-assert all("api" not in str(k).lower() for k in selector), "UNEXPECTED_WEB_SELECTOR"
-payload={
-  "apiVersion":"v1","kind":"Service",
-  "metadata":{"name":"marquez-web-lan","namespace":"dw-marquez",
-              "labels":{"app.kubernetes.io/part-of":"marquez"}},
-  "spec":{"type":"NodePort","selector":selector,
-          "ports":[{"name":"http","protocol":"TCP","port":80,"targetPort":"http","nodePort":30999}]}}
-print(json.dumps(payload))
-' | kubectl apply -f -
+  python3 -c 'import sys,json; s=json.load(sys.stdin); e={"app.kubernetes.io/component":"web","app.kubernetes.io/instance":"marquez","app.kubernetes.io/name":"marquez"}; assert s["spec"]["selector"]==e, "MARQUEZ_WEB_SELECTOR_DRIFT"; print("MARQUEZ_WEB_SELECTOR_GATE=PASS")'
+kubectl apply -f platform-portal/marquez/kubernetes/web-nodeport.yaml
 test "$(kubectl get svc marquez-web-lan -n "$NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}')" = 30999
 test "$(kubectl get svc marquez -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
 echo MARQUEZ_WEB_NODEPORT_30999=PASS
