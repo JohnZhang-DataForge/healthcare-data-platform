@@ -24,6 +24,7 @@ COPY --chown=10001:10001 apps/task004/validate_new_only_v2_manifest.py /opt/synt
 COPY --chown=10001:10001 apps/landing_discovery/scan_ready_batches.py /opt/synthea-new-only/scan_ready_batches.py
 COPY --chown=10001:10001 contracts/synthea/v3.3.0/csv-contract.json /opt/synthea-new-only/csv-contract-v1.json
 COPY --chown=10001:10001 contracts/synthea/new-only/csv-contract-v2.json /opt/synthea-new-only/csv-contract-v2.json
+COPY --chown=10001:10001 contracts/synthea/new-only/ready-publication-policy-v1.json /opt/synthea-new-only/ready-publication-policy-v1.json
 COPY --chown=10001:10001 contracts/synthea/producer-batch-identity-v1.json /opt/synthea-new-only/batch-identity.json
 
 ENV SYNTHEA_STATE_ROOT=/synthea-state \
