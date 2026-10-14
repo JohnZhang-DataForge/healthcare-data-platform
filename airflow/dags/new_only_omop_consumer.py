@@ -20,7 +20,8 @@ from airflow.providers.cncf.kubernetes.secret import Secret
 DAG_DIR=str(Path(__file__).resolve().parent)
 if DAG_DIR not in sys.path:
     sys.path.insert(0,DAG_DIR)
-from new_only_omop_routing import select_verified_new_only, route_claim_status
+from new_only_omop_routing import (select_verified_new_only, route_claim_status,
+                                   route_new_only_writer_commit)
 from new_only_omop_writer_handoff import prepare_new_only_writer_handoff
 from landing_spark_processing import make_processing_pod, NEW_ONLY_PROCESSING_IMAGE
 
@@ -95,7 +96,7 @@ NODE={"kubernetes.io/hostname":"worker02"}
 
 with DAG(
     dag_id="new_only_omop_consumer",
-    description="Manual NEW_ONLY real S3+Claim route; COMPLETED skip / new batch hold",
+    description="Manual NEW_ONLY S3->Spark->atomically fenced OMOP Writer; strict 2-gate COMMIT",
     start_date=datetime(2026,10,14),
     schedule=None,
     catchup=False,
@@ -200,8 +201,64 @@ with DAG(
     writer_awaits_live_preflight=EmptyOperator(
         task_id="writer_awaits_live_preflight",
     )
+    # A new batch is NOT authorized to COMMIT merely because Spark produced
+    # an immutable, read-only handoff. Requires manual dag_run.conf with
+    # spark_processing=True and writer_commit=True. The actual Pod separately
+    # requires a Kubernetes commit-enable/admin-credential secret.
+    route_writer_authorization=BranchPythonOperator(
+        task_id="route_writer_authorization",
+        python_callable=route_new_only_writer_commit,
+        op_args=[
+            "{{ ti.xcom_pull(task_ids='select_verified_new_only_batch') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='prepare_writer_handoff') | tojson }}",
+            "{{ dag_run.run_type.value }}",
+        ],
+    )
+    WRITER_IMAGE=(
+        "ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer"
+        "@sha256:bcab1ba064dc66838b3c1ede23bdcb25e8522d03d039d8395fa082733ff79a9c"
+    )
+    execute_new_only_writer=KubernetesPodOperator(
+        task_id="execute_new_only_writer",name="task004-new-only-atomic-writer",
+        namespace="dw-spark",service_account_name="task004-control-runtime",
+        image=WRITER_IMAGE,image_pull_policy="IfNotPresent",
+        in_cluster=True,get_logs=True,do_xcom_push=False,
+        env_vars={
+            "TASK004_WRITER_MODE":"COMMIT",
+            "TASK004_WRITER_AIRFLOW_COMMIT_SELECTION":
+              "{{ 'YES' if ti.xcom_pull(task_ids='select_verified_new_only_batch').get('writer_commit') is sameas true else 'NO' }}",
+            "TASK004_WRITER_HANDOFF_JSON":
+              "{{ ti.xcom_pull(task_ids='prepare_writer_handoff') | tojson }}",
+            "TASK004_WRITER_BATCH_ID":
+              "{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['batch_id'] }}",
+            "TASK004_WRITER_MANIFEST_SHA256":
+              "{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['manifest_sha256'] }}",
+            "PGHOST":"dw-postgre.dw-postgre.svc.cluster.local",
+            "PGPORT":"5432",
+            "TASK004_S3_ENDPOINT_URL":"http://dw-seaweedfs-s3.dw-seaweedfs.svc.cluster.local:8333",
+            "AWS_DEFAULT_REGION":"us-east-1",
+            "AWS_EC2_METADATA_DISABLED":"true",
+        },
+        # Secrets must be separately staged in dw-spark. Their absence means
+        # the Pod cannot run: missing secret == fail closed, never business DML.
+        secrets=S3_SECRETS+[
+            Secret("env","PGUSER","task004-cdm-reader-db","username"),
+            Secret("env","PGPASSWORD","task004-cdm-reader-db","password"),
+            Secret("env","TASK004_WRITER_ADMIN_PASSWORD","task004-new-only-writer-commit","password"),
+            Secret("env","TASK004_WRITER_DEPLOY_ENABLE","task004-new-only-writer-commit","enabled"),
+        ],
+        node_selector=NODE,security_context={"fsGroup":10001},
+        container_security_context=SECURITY,
+        automount_service_account_token=False,
+        on_finish_action="delete_succeeded_pod",on_kill_action="keep_pod",
+        startup_timeout_seconds=180,execution_timeout=timedelta(minutes=15),
+        retries=0,
+    )
+    writer_committed_verified=EmptyOperator(task_id="writer_committed_verified")
 
     route_new_only_status >> [already_completed_no_replay,unclaimed_batch_hold,
                               spark_patient,spark_encounter]
     [spark_patient,spark_encounter] >> spark_reconcile
-    spark_reconcile >> prepare_writer_handoff >> writer_awaits_live_preflight
+    spark_reconcile >> prepare_writer_handoff >> route_writer_authorization
+    route_writer_authorization >> [writer_awaits_live_preflight,execute_new_only_writer]
+    execute_new_only_writer >> writer_committed_verified
