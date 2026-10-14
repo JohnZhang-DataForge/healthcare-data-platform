@@ -26,6 +26,11 @@ from validate_new_only_v2_manifest import (
 )
 
 ROOT_PREFIX="source=synthea/source_version=v3.3.0/"
+RELEASE_POLICY_PATH=Path("/opt/synthea-new-only/ready-publication-policy-v1.json")
+RELEASE_POLICY_VERSION="new-only-v2-ready-release-v1"
+APPROVED_V2_CONSUMER_IMAGE="ghcr.io/johnzhang-dataforge/healthcare-landing-discovery@sha256:059d94e4d1348c194956203fea6b19be23ec39595127eea397419e66fa4e5924"
+APPROVED_DAGRUN="https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38496119114"
+APPROVED_CONTRACT_SHA256="d7118f4bc3306d74911e609b4f0a41b9340ba9a60acaa69174063d5025ad1249"
 
 
 class V2PublishBlocked(ValueError):
@@ -34,6 +39,47 @@ class V2PublishBlocked(ValueError):
 
 def block(code):
     raise V2PublishBlocked("BLOCKED:NEW_ONLY_V2_"+code)
+
+
+def require_live_consumer_release(contract_path:Path,policy_path:Path=RELEASE_POLICY_PATH)->str:
+    """Explicit reviewed release authorization; preserve immutable CSV contract SHA.
+
+    The original v2 contract includes a historical predeployment state; editing
+    it would invalidate the deployed Reader's pinned contract SHA. A separate,
+    versioned policy records successful *actual* Airflow v2 deployment. Neither
+    AWS/S3 audit flags nor a caller-supplied environment variable can replace
+    this pinned code-and-file validation.
+    """
+    schema,actual_sha=source_contract(contract_path)
+    if actual_sha!=APPROVED_CONTRACT_SHA256:
+        block("READER_CONTRACT_SHA_CHANGED")
+    if schema.get("consumer_compatibility")!="NOT_YET_DEPLOYED_DO_NOT_PUBLISH_READY":
+        block("READER_CONTRACT_BYTES_MODIFIED")
+    if not policy_path.is_file():
+        block("VERSIONED_RELEASE_POLICY_MISSING")
+    policy=json.loads(policy_path.read_text(encoding="utf-8"))
+    scope=policy.get("scope") if isinstance(policy,dict) else None
+    consumer=policy.get("consumer") if isinstance(policy,dict) else None
+    pinned=policy.get("immutable_contract") if isinstance(policy,dict) else None
+    if (policy.get("policy_version")!=RELEASE_POLICY_VERSION
+        or policy.get("release_decision")!="V2_RUNTIME_CONSUMER_DEPLOYED_READY"
+        or not isinstance(scope,dict)
+        or scope.get("generation_mode")!="NEW_ONLY"
+        or scope.get("manifest_version")!="2.0"
+        or scope.get("publication")!="S3_LANDING_IMMUTABLE_MANIFEST_LAST"
+        or scope.get("airflow_claim")!="NO"
+        or scope.get("postgresql_mutation")!="NO"
+        or not isinstance(consumer,dict)
+        or consumer.get("image")!=APPROVED_V2_CONSUMER_IMAGE
+        or consumer.get("dag")!="landing_batch_discovery"
+        or consumer.get("evidence_workflow")!=APPROVED_DAGRUN
+        or consumer.get("evidence_result")!="success"
+        or consumer.get("reference_commit")!="a6b87497497fb1b1367c0646e3410a24ed4f7ec3"
+        or not isinstance(pinned,dict)
+        or pinned.get("path")!=CONTRACT_RELATIVE
+        or pinned.get("sha256")!=actual_sha):
+        block("VERSIONED_CONSUMER_RELEASE_POLICY_INVALID")
+    return actual_sha
 
 
 def build_draft(state:Path, request_id:str, contract_path:Path)->tuple[dict,Path]:
@@ -216,12 +262,12 @@ def main():
             print("S3_MUTATION=NO")
             return 0
         if args.phase=="publish":
-            # Contract flag is an explicit release fence, not an environment
-            # variable. Until the *running* Airflow Consumer is verified to
-            # parse v2, do not expose a new READY Manifest to its scanner.
-            contract_state,_=source_contract(contract)
-            if contract_state.get("consumer_compatibility")!="V2_RUNTIME_CONSUMER_DEPLOYED_READY":
-                block("V2_RUNTIME_CONSUMER_NOT_DEPLOYED")
+            # Approved policy is pinned to actual Airflow DagRun + its immutable
+            # Reader image and the exact original contract bytes. S3/PG source
+            # collision audits remain separate mandatory pre-PUT gates.
+            matched_sha=require_live_consumer_release(contract)
+            print("V2_CONSUMER_RELEASE_POLICY=PASS")
+            print("V2_CONSUMER_CONTRACT_SHA256="+matched_sha)
         result=publish(s3_from_env(),draft,directory,contract,
                        replay=args.phase=="replay",ingest_date=args.ingest_date)
         print("NEW_ONLY_V2_S3_PUBLISH=PASS")
