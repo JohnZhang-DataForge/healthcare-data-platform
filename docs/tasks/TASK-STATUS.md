@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 EDT / 2026-10-14 UTC 当前唯一权威 NEW_ONLY NEXT：v2 Publisher 已实现并真实安全验收，实际 v2 S3 READY 仍刻意阻断。** [Closeout](SYNTHEA-NEW-ONLY-V2-PUBLISHER-STAGED-LIVE-2026-10-13.zh-CN.md) / [Self-Runner Run 38492827750](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38492827750)：42 tests PASS；Fake S3 18 CSV Upload + 18 GET checksum + Manifest last + Replay 不变 PASS；真实 worker01 70 Person /11487 Encounter 冻结 CSV v2 Draft PASS，并真实验证 `BLOCKED:NEW_ONLY_V2_V2_RUNTIME_CONSUMER_NOT_DEPLOYED` 的安全拒绝；GHCR digest `sha256:4a456ee4f186bcfdcf5e22c6477ac92ce32941ca4bae9ba685b0b1a2ca3840c5`。**当前 v2 contract=NOT_YET_DEPLOYED_DO_NOT_PUBLISH_READY；下一步先实际部署和验证 Airflow v2 Consumer（Claim NO），再版本化批准真实 v2 S3 发布和原始 Synthea 空辅助表集成。** 此轮 S3/PG mutation=0，原有两个 v1 READY 不变；TASK004 IN PROGRESS/TASK005 ON HOLD。
+
+
 > **2026-10-13 EDT / 2026-10-14 UTC 最新 NEW_ONLY NEXT：v2 Reader 实现 + 回归验证已完成，v2 Publisher 尚未完成。** [Closeout](SYNTHEA-NEW-ONLY-V2-CONSUMER-READER-LIVE-2026-10-13.zh-CN.md) / [Run 38491626783](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38491626783) SUCCESS。新版 `validate_new_only_v2_manifest.py` 只在 `manifest_version=2.0` 和 `synthea-new-only-*` 时接受辅助 header-only 零行 CSV；Person/Encounter 仍必须正数，Manifest 18 个文件/header/Contract SHA/Provenance/Remote Readback 严格核验。33 unit tests PASS，正式 GHCR digest `sha256:d53a706feba8aff30375836f84c9228d22e61aa35578349b01ddcb1b5d532350` 已 push，worker01 新镜像对既有 73 Person 和 70 Person 两个 v1 READY 逐份 18/18 回读 PASS。**没有发布 v2 Manifest、没有升级运行中 Airflow Consumer**；后续必须独立 v2 Publisher + 实际零行 Synthea 生成验证 + 受控 Airflow v2 读取验收，不能跳过恢复/安全门槛。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
