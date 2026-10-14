@@ -8,7 +8,7 @@ sys.path.insert(0, str(root / "airflow" / "dags"))
 sys.path.insert(0, str(root / "apps" / "omop_writer"))
 sys.path.insert(0, str(root / "apps" / "landing_claim"))
 
-from batch_ledger import Candidate
+from batch_ledger import Candidate, ClaimError
 from lease_fence import FenceTicket
 from fenced_joint_rollback import ticket_args, fenced_joint_rollback, FENCE_SQL
 from test_new_only_joint_rollback import ctx, rows
@@ -47,7 +47,7 @@ class SameTXTests(unittest.TestCase):
         with self.assertRaises(ValueError):ticket_args(changed,ticket(c))
         other=ticket(c)
         other=FenceTicket(other.candidate,other.lease_owner,0)
-        with self.assertRaises(ValueError):ticket_args(c,other)
+        with self.assertRaises(ClaimError):ticket_args(c,other)
     def test_single_cursor_rowlock_before_after_both_writes_and_rollback(self):
         c=ctx();p,v=rows();connection=Connection()
         fenced_joint_rollback(connection,c,p,v,ticket(c))
