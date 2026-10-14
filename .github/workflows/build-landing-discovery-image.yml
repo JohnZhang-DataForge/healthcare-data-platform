@@ -5,11 +5,14 @@ on:
     branches:
       - main
       - feature/landing-batch-discovery-airflow-20261013
+      - feature/landing-airflow-v2-reader-runtime-20261013
     paths:
       - .github/workflows/build-landing-discovery-image.yml
       - apps/landing_discovery/**
       - images/landing-discovery-runtime/**
       - apps/task004/resolve_verified_landing_file.py
+      - apps/task004/validate_new_only_v2_manifest.py
+      - contracts/synthea/new-only/csv-contract-v2.json
       - tests/landing_discovery/**
 permissions:
   contents: read

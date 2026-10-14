@@ -12,6 +12,8 @@ WORKDIR /opt/healthcare
 COPY --chown=10001:10001 apps/landing_discovery/scan_ready_batches.py /opt/healthcare/landing_discovery/
 COPY --chown=10001:10001 apps/landing_discovery/run_airflow_scan.py /opt/healthcare/landing_discovery/
 COPY --chown=10001:10001 apps/task004/resolve_verified_landing_file.py /opt/healthcare/task004/
+COPY --chown=10001:10001 apps/task004/validate_new_only_v2_manifest.py /opt/healthcare/task004/
+COPY --chown=10001:10001 contracts/synthea/new-only/csv-contract-v2.json /opt/healthcare/task004/csv-contract-v2.json
 RUN find /opt/healthcare -type d -exec chmod 0755 {} +
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

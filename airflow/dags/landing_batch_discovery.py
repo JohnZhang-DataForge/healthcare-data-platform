@@ -35,9 +35,10 @@ CLAIM_IMAGE = (
     "@sha256:cdc9666b0834d0af88cc60ce4b5da4f5b5161b09c12886e95f80342a1fcd5eea"
 )
 
+# V2-compatible read-only scanner; strict v1 behavior remains unchanged.
 DISCOVERY_IMAGE = (
     "ghcr.io/johnzhang-dataforge/healthcare-landing-discovery"
-    "@sha256:06a5caaf1d62e62fa7f6227de2422690f1c8e4bf7a893c6c239456affce0bfbd"
+    "@sha256:059d94e4d1348c194956203fea6b19be23ec39595127eea397419e66fa4e5924"
 )
 
 S3_ACCESS_KEY = Secret(
