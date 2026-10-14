@@ -48,12 +48,12 @@ jobs:
         run: |
           set -Eeuo pipefail
           IMAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer:git-${{ github.sha }}"
-          docker run --rm --entrypoint python "$IMAGE" -c '
+          docker run --rm -i --entrypoint python "$IMAGE" - <<'PY'
           from build_s3_rollback_plan import build
           from task004_cdm_materialization_plan import _NEW_ONLY_BATCH
           import inspect
           from task004_cdm_dynamic_pg_writer import render as pg_render
-          assert \'writer_identity_version\' in inspect.getsource(pg_render), \'OLD_PG_RENDERER_IN_IMAGE\'
+          assert "writer_identity_version" in inspect.getsource(pg_render), "OLD_PG_RENDERER_IN_IMAGE"
           batch="synthea-new-only-gh-38588671004"
           assert _NEW_ONLY_BATCH.fullmatch(batch)
           source="source=synthea/source_version=v3.3.0/ingest_date=2026-10-14/batch_id="+batch
@@ -69,7 +69,7 @@ jobs:
             writer_identity_version="synthea-new-only-v1")
           assert p["batch_id"]==batch and p["person_rows"]==1 and p["visit_rows"]==244
           print("TASK004_THIRD_NEW_ONLY_WRITER_IMAGE_PLAN_CONTRACT=PASS")
-          '
+          PY
       - name: Live-image NEW_ONLY S3 decoding and 1 Person 244 Visit transforms
         shell: bash
         run: |
