@@ -23,7 +23,7 @@ class V2ReaderPublisherTests(unittest.TestCase):
             argv=entrypoint.command(phase,"gh-38484300008")
             self.assertTrue(any(part.endswith(script) for part in argv))
             self.assertIn("gh-38484300008",argv)
-        self.assertIn("publish_v1_verified.py",entrypoint.command("publish","gh-38484300008"))
+        self.assertTrue(any(x.endswith("/publish_v1_verified.py") for x in entrypoint.command("publish","gh-38484300008")))
 
     def test_independent_v2_reader_matches_frozen_counts(self):
         with tempfile.TemporaryDirectory() as tmp:
