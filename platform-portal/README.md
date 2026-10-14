@@ -1,5 +1,7 @@
 # Platform Portal — 真实数据血缘与数据平台可观测性
 
+> **A4 独立 Spark Smoke 有真实运行证据**：[完整中文 Closeout](../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)；SparkApplication `COMPLETED`，3 行 CSV 聚合成功，Marquez 真实 Spark `COMPLETED` Run 已读回（原首个 Live Workflow 的错误 Job 查询导致整体 FAILURE；三个后续只读 Workflow SUCCESS）。仅 Portal 独立资源，已清理，未改 TASK004。Job/Run 命名、Dataset I/O 血缘仍为后续工作。
+
 > **A4 任务1 静态源码**：[`openlineage/spark/README.md`](./openlineage/spark/README.md)（独立 SparkApplication/ConfigMap 模板、纯只读 CSV 探针、离线渲染、静态测试；未部署，实际 Spark 执行必须经人工协调）。
 
 > **执行前必读**：[多 Session 人工协调规则](../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。另一 Session 仍在开发 TASK004 Spark 时，Portal A4 只做独立静态代码/文档，**不启动 SparkApplication、Runner 实际集群验证或修改共享 Airflow/Spark 配置**。开始任何可能冲突的操作前，先询问用户 TASK004 是否暂停 Spark 的修改/部署/测试；明确获准后再只读检查共享资源是否空闲。

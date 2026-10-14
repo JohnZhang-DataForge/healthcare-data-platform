@@ -1,6 +1,8 @@
 # Portal — 实际验收记录（Live 证据总览）
 
-> **A4 TASK1 仅 Static**：[Spark Agent 静态开发方案](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md)。GitHub-hosted Ubuntu 静态测试验证源码/YAML 结构；**没有 A4 实际 SparkApplication、没有 Marquez Spark Job/Run 证据**，因此 A4 Live 严格为 HOLD，TASK004 COMMIT/Secret 不受影响。
+> **A4 最新真实 Smoke**：[A4 实际 Spark Smoke 与 Marquez Run Closeout](./A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)：Run 38628542127 整体 **FAILURE**，但实际 SparkApplication `COMPLETED` + CSV 聚合 PASS；后续 [38629218047](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629218047)、[38629414644](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629414644)、[38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225) 三次**只读 SUCCESS**：Marquez `healthcare-platform-spark-probe` 真实 Job `portal_a4_a438628542127` + `unknown` 下真实 `COMPLETED` Spark Run 及 `processing_engine` facets。ConfigMap / SparkApplication / Pod 均已清除。**不代表 Spark Job 与 Run 的完美挂接或 Dataset Lineage 已完成**。
+
+> **A4 TASK1 旧轮仅 Static（随后 A4 Smoke 已执行，见上方）**：[Spark Agent 静态开发方案](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md)。GitHub-hosted Ubuntu 静态测试验证源码/YAML 结构；在该 TASK1 静态阶段**没有 A4 实际 SparkApplication、没有 Marquez Spark Job/Run 证据**，因此 A4 Live 严格为 HOLD，TASK004 COMMIT/Secret 不受影响。
 
 > **并行开发期间的 Live Gate**：另一个 TASK004 Session 正在开发 Spark。Portal A4 的实际 SparkApplication、OpenLineage Agent 集群部署/测试 **HOLD**，直到先问用户是否已暂停/释放共享 Spark/Airflow 运行，再只读检查无未结束 Job/Workflow。**本次仅提交 Portal 文档，不占用 Self-Runner、不运行任何集群任务**。详见 [Session 人工协调规则](./SESSION-COORDINATION-POLICY.zh-CN.md)。
 
