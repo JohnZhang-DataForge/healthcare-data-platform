@@ -62,6 +62,7 @@ tar -xzf "$REPORT_DIR/marquez-src.tar.gz" -C "$REPORT_DIR/source" --strip-compon
 CHART_DIR="$REPORT_DIR/source/chart"
 test -f "$CHART_DIR/Chart.yaml"
 grep -q '^version: 0.51.1$' "$CHART_DIR/Chart.yaml"
+helm repo add bitnami https://charts.bitnami.com/bitnami --force-update >/dev/null
 helm dependency build "$CHART_DIR"
 helm show chart "$CHART_DIR" > "$REPORT_DIR/chart.yaml"
 grep -q '^name: marquez$' "$REPORT_DIR/chart.yaml"
