@@ -48,8 +48,8 @@ class NewOnlyWriterIdentity(unittest.TestCase):
         self.assertEqual(c["person_rows"],1)
         self.assertEqual(c["visit_rows"],812)
         self.assertIs(c["database_mutation_authorized"],False)
-        self.assertTrue(same_plan(dict(sample(),state="HANDOFF_VERIFIED_NOT_LOADED",cdm_write_permitted=False),
-                                  dict(sample(),state="HANDOFF_VERIFIED_NOT_LOADED",cdm_write_permitted=False)))
+        self.assertTrue(same_plan(dict(sample(),state="HANDOFF_VERIFIED_NOT_LOADED",cdm_write_permitted=False,source_version="v3.3.0"),
+                                  dict(sample(),state="HANDOFF_VERIFIED_NOT_LOADED",cdm_write_permitted=False,source_version="v3.3.0")))
     def test_legacy_implicit_contract_stays_bitwise_stable(self):
         a=build(**legacy())
         self.assertNotIn("writer_identity_version",a)
