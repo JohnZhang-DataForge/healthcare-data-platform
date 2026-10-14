@@ -366,6 +366,19 @@ def validate_manifest(
             "manifest must be a JSON object"
         )
 
+    # Explicitly version-gated NEW_ONLY contract. V1 path below remains
+    # byte-for-byte intact: the legacy behavior still requires >0 rows in
+    # *every* file and never treats v2 as implicit v1 authorization.
+    if manifest.get("manifest_version") == "2.0":
+        from validate_new_only_v2_manifest import (
+            V2ContractError, validate_v2_manifest,
+        )
+        try:
+            return validate_v2_manifest(
+                manifest, expected_batch_id, manifest_uri)
+        except V2ContractError as exc:
+            raise ResolverError(str(exc)) from exc
+
     required = (
         "manifest_version",
         "status",
