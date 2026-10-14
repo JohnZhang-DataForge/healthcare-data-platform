@@ -23,6 +23,23 @@ PROCESSING_IMAGE = (
     "ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime"
     "@sha256:8d55a150e7fcd8ea9a1ed8e8c2c64d09bf4d19687822c0ec84857fdf429c05a7"
 )
+# New image is an additive layer over the frozen historic image with the
+# deployed v2-only manifest resolver and the exact pinned CSV contract.
+NEW_ONLY_PROCESSING_IMAGE = (
+    "ghcr.io/johnzhang-dataforge/healthcare-landing-processing-v2"
+    "@sha256:9af63252823bae0187b2517a013c147e2df8dfbe9a7c783ac31cd5dd7dbbb937"
+)
+# KubernetesPodOperator.image is templated by Airflow; historic replays keep
+# their exact original digest. Only a manually authorized source probe selects
+# the new digest, never a scheduled scan or automatic Claim.
+PROCESSING_IMAGE_SELECT = (
+    "{{ '"
+    + NEW_ONLY_PROCESSING_IMAGE
+    + "' if ti.xcom_pull(task_ids='authorize_processing_replay').get("
+    + "'new_only_processing_probe') is sameas true else '"
+    + PROCESSING_IMAGE
+    + "' }}"
+)
 
 S3_KEYS = [
     Secret("env", "AWS_ACCESS_KEY_ID", "dw-spark-s3-secret", "AWS_ACCESS_KEY_ID"),
@@ -38,9 +55,10 @@ def select_verified_processing_replay(
 ) -> dict | None:
     """Fail-closed manual-only selection; historical batch is never claimed.
 
-    Only an explicitly matched legacy batch, already in the published READY
-    Discovery inventory AND excluded by PostgreSQL historical ledger, can be
-    reprocessed here. New batches will need real claim+lease downstream later.
+    Existing historical READY batches must still show SKIP_LEGACY_BATCH.
+    Independent NEW_ONLY batches may undergo an EXPLICIT dual-flagged manual
+    processing-only probe only if PostgreSQL reports OBSERVED_ONLY. No Claim
+    is taken and no business database SQL is executed.
     """
     if str(run_type).lower() != "manual":
         return None
@@ -94,10 +112,26 @@ def select_verified_processing_replay(
     if not isinstance(decisions, list):
         raise ValueError("BLOCKED:PROCESSING_CLAIM_DECISIONS")
     matching_decisions = [r for r in decisions if r.get("batch_id") == batch]
-    if len(matching_decisions) != 1 or matching_decisions[0].get("decision") != "SKIP_LEGACY_BATCH":
+    if len(matching_decisions) != 1:
+        raise ValueError("BLOCKED:PROCESSING_CLAIM_DECISION_NOT_UNIQUE")
+    new_only_probe = conf.get("new_only_processing_probe") is True
+    if new_only_probe:
+        # This is a specific manual processing PROBE, not a Claim substitute.
+        # OBSERVED_ONLY, not SKIP_LEGACY_BATCH, proves no historic ledger
+        # overlap. Reject any stray or non-boolean opt-in field.
+        if not (re.fullmatch(r"synthea-new-only-[A-Za-z0-9][A-Za-z0-9._-]{1,127}",batch)
+                and uri.startswith(
+                    "s3://health-landing/source=synthea/source_version=v3.3.0/ingest_date="
+                )
+                and "/batch_id="+batch+"/manifest.json" in uri
+                and uri.endswith("/manifest.json")
+                and matching_decisions[0].get("decision")=="OBSERVED_ONLY"):
+            raise ValueError("BLOCKED:NEW_ONLY_PROBE_NOT_SAFE")
+    elif ("new_only_processing_probe" in conf
+          or matching_decisions[0].get("decision") != "SKIP_LEGACY_BATCH"):
         raise ValueError("BLOCKED:ONLY_HISTORICAL_PROCESSED_BATCH_REPLAY_ALLOWED")
 
-    return {
+    selection = {
         "batch_id": batch,
         "manifest_uri": uri,
         "manifest_sha256": sha,
@@ -108,6 +142,11 @@ def select_verified_processing_replay(
         "omop_business_mutation": False,
         "producer_trigger": False,
     }
+    # Preserve the exact original XCom shape for historical replays.
+    # Never silently convert an old batch into a NEW_ONLY probe.
+    if new_only_probe:
+        selection["new_only_processing_probe"] = True
+    return selection
 
 
 def processing_gate(selection_json: str) -> bool:
@@ -195,7 +234,7 @@ def make_processing_pod(task_id: str, *, process: str,
         name=task_id.replace("_", "-"),
         namespace="dw-spark",
         service_account_name="task004-control-runtime",
-        image=PROCESSING_IMAGE,
+        image=PROCESSING_IMAGE_SELECT,
         image_pull_policy="IfNotPresent",
         in_cluster=True,
         cmds=["/bin/bash", "-lc"],
