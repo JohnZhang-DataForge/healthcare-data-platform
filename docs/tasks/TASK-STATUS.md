@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — NEW_ONLY Airflow 已完成批次安全跳过真实验收 SUCCESS（旧 XCom blocker 解除）**：[Run 38560309400](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38560309400) / [Closeout](NEW-ONLY-AIRFLOW-CONSUMER-COMPLETED-SKIP-REAL-LIVE-2026-10-14.zh-CN.md) / Self-Runner PR #102 merged。真实 DagRun `success`、Branch 路线已完成 `already_completed_no_replay`、unclaimed hold `skipped`、DAG 事后重新暂停 PASS；PostgreSQL Person137/Visit10203/Claim1/Stage813/Verified2 前后完全不变，52 tests PASS、Spark NO、Auto Claim NO。**NEXT：** `unclaimed_batch_hold` 连接真正全新 v2 READY Batch 的安全 Claim ticket→Spark→Fenced Writer→COMPLETED，不得对已完成 `synthea-new-only-gh-38497355290` 重复 COMMIT；双 Writer 并发/复杂恢复 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT TASK004 Airflow NEW_ONLY 新入口首轮实装，真实 DagRun success、Runner acceptance blocked。** [完整证据/交接](NEW-ONLY-AIRFLOW-CONSUMER-REAL-COMPLETED-SKIP-HANDOFF-2026-10-14.zh-CN.md) / [Runner 38559222216](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38559222216)。Healthcare Main PR #126 新 `new_only_omop_consumer` schedule=None/paused 默认，S3 Discovery→PG Claim READONLY→COMPLETED 安全跳过；真实 GitSync 与 DagBag PASS，DagRun state=success，5 主路径 success/unclaimed HOLD skipped，Person137/Visit10203/Claim1/Stage813/2 Checkpoints Before/After 不变。**Self-Runner job 最终 failure：BranchOperator 的 XCom return_value=None，不是业务失败**。执行轮次达到用户约定修复上限，STOP。下一步只修 Runner 该断言并全绿合并，再开展未来新 READY Batch 受控 Claim/Spark/Writer。Airflow 自动 Claim 尚关闭、Spark 未运行，TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
