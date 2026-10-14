@@ -110,6 +110,7 @@ class WriterRuntime(unittest.TestCase):
         docker=(ROOT/"images/new-only-omop-writer/Dockerfile").read_text()
         self.assertIn("task004-cdm-runtime@sha256:",docker)
         self.assertIn("new_only_airflow_writer.py",docker)
+        self.assertIn("COPY --chown=10001:10001 airflow/dags/task004_cdm_materialization_plan.py /opt/task004/",docker)
         self.assertNotIn("POSTGRES_PASSWORD=",docker)
         src=(ROOT/"apps/omop_writer/new_only_airflow_writer.py").read_text()
         self.assertIn("autocommit=True",src)
