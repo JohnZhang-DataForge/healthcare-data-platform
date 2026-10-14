@@ -57,16 +57,13 @@ class NewOnlyRealReaderAuditTests(unittest.TestCase):
             s3.assert_not_called()
 
     def test_readonly_collision_or_claim_refuses(self):
-        base=MagicMock(status="READY_TO_CLAIM",claim_status="ABSENT",
-                       existing_person_keys=0,existing_visit_keys=0,
-                       historic_ledger_rows=0,commit_authorized=False)
         for field,value in [("status","INVALID"),
                             ("claim_status","PROCESSING"),
                             ("existing_person_keys",1),
                             ("existing_visit_keys",1),
                             ("historic_ledger_rows",1),
                             ("commit_authorized",True)]:
-            gate=MagicMock(**{**vars(base),"status":"READY_TO_CLAIM",
+            gate=MagicMock(**{"status":"READY_TO_CLAIM",
                                "claim_status":"ABSENT",
                                "existing_person_keys":0,"existing_visit_keys":0,
                                "historic_ledger_rows":0,"commit_authorized":False})
