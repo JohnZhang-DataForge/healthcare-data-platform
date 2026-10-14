@@ -67,7 +67,7 @@ class DynamicAtomicNewOnlyTests(unittest.TestCase):
         self.assertIn("INSERT INTO cdm.visit_occurrence",sql)
         self.assertIn("entity='visit')<>1",sql)
         self.assertIn("entity='visit' AND stage_rows=1 AND mapped_rows=1",sql)
-        self.assertIn("person_id=pm.person_id))))<>1",sql)
+        self.assertIn("'person_id',pm.person_id))))<>1",sql)
         self.assertNotIn("entity='visit')<>812",sql)
         self.assertIn("status='COMPLETED'",sql)
         self.assertLess(sql.index("DO $reconcile$"),sql.index("DO $complete$"))
