@@ -80,6 +80,15 @@ def new_params(request_id: str, now: dt.datetime | None = None) -> dict:
     utc = now.astimezone(dt.timezone.utc)
     seed = secrets.randbelow(2**63 - 1) + 1
     clinician_seed = secrets.randbelow(2**63 - 1) + 1
+    requested_population=os.environ.get("NEW_ONLY_TARGET_POPULATION")
+    if requested_population is None:
+        population=secrets.randbelow(100)+1
+    else:
+        if not re.fullmatch(r"[1-9][0-9]*",requested_population):
+            raise GateError("invalid independent NEW_ONLY population override")
+        population=int(requested_population)
+        if not 1<=population<=100:
+            raise GateError("NEW_ONLY target population outside 1..100")
     return {
         "generator": "synthea-new-only",
         "contract_version": "new-only-local-v1",
@@ -88,7 +97,7 @@ def new_params(request_id: str, now: dt.datetime | None = None) -> dict:
         "created_utc": utc.isoformat(),
         "reference_date": utc.strftime("%Y%m%d"),
         "state": secrets.choice(STATES),
-        "target_population": secrets.randbelow(100) + 1,
+        "target_population": population,
         "seed": seed, "clinician_seed": clinician_seed,
         "synthea_version": PINNED_VERSION,
         "synthea_commit": PINNED_COMMIT,
@@ -103,6 +112,14 @@ def freeze_params(root: Path, request_id: str, now=None) -> dict:
         result = json.loads(path.read_text())
     else:
         result = atomic_once(path, new_params(request_id, now))
+    # An override can only initialize a NEW request; later replays must
+    # reproduce its frozen parameter rather than silently changing it.
+    requested=os.environ.get("NEW_ONLY_TARGET_POPULATION")
+    if requested is not None:
+        if not re.fullmatch(r"[1-9][0-9]*",requested) or not 1<=int(requested)<=100:
+            raise GateError("invalid population override")
+        if result.get("target_population")!=int(requested):
+            raise GateError("immutable target population does not match request")
     if result.get("generation_request_id") != request_id or result.get("batch_id") != "synthea-new-only-" + request_id:
         raise GateError("immutable request identity mismatch")
     if (not isinstance(result.get("target_population"), int)
