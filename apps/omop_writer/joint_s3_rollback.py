@@ -95,6 +95,21 @@ END $joint_verify$;
     return result
 
 
+def for_psycopg(sql: str) -> str:
+    """The validated renderer emits a psql-only meta-line: never send to PG."""
+    if not sql.startswith(PSQL_PREFIX) or not sql.endswith(ENDING):
+        raise ValueError("BLOCKED=psycopg_sql_transaction_boundary")
+    stripped = "BEGIN;\n" + sql[len(PSQL_PREFIX):]
+    lines = [line.strip().upper() for line in stripped.splitlines()]
+    if lines.count("BEGIN;") != 1 or lines.count("ROLLBACK;") != 1:
+        raise ValueError("BLOCKED=psycopg_sql_transaction_boundary")
+    if lines[-1] != "ROLLBACK;" or "COMMIT;" in stripped.upper():
+        raise ValueError("BLOCKED=psycopg_sql_commit_forbidden")
+    if stripped.startswith("\\set "):
+        raise ValueError("BLOCKED=psql_meta_command_leak")
+    return stripped
+
+
 def s3_rows(context: dict):
     import boto3
     import pyarrow.parquet as parquet
@@ -153,7 +168,7 @@ def run(plan_data: dict, mode: str) -> dict:
             cur.execute("SELECT current_user")
             if cur.fetchone()[0]!="cdm_writer":
                 raise ValueError("BLOCKED=incorrect_writer_user")
-            cur.execute(sql,prepare=False)
+            cur.execute(for_psycopg(sql),prepare=False)
         # psycopg closes/commits its outer context, but SQL explicitly
         # ROLLBACKs the multi-statement transaction before it returns.
     print("NEW_ONLY_JOINT_PERSON_ROWS="+str(len(people)),flush=True)
