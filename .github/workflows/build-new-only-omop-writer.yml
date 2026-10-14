@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feature/task004-airflow-writer-final-leg-20261014
+      - feature/task004-fix-writer-newonly-image-plan-20261014
     paths:
       - images/new-only-omop-writer/Dockerfile
       - apps/omop_writer/new_only_airflow_writer.py
@@ -40,6 +41,30 @@ jobs:
           provenance: true
           sbom: true
           tags: ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer:git-${{ github.sha }}
+      - name: Smoke test built image with real NEW_ONLY batch identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          IMAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer:git-${{ github.sha }}"
+          docker run --rm --entrypoint python "$IMAGE" -c '
+          from build_s3_rollback_plan import build
+          from task004_cdm_materialization_plan import _NEW_ONLY_BATCH
+          batch="synthea-new-only-gh-38588671004"
+          assert _NEW_ONLY_BATCH.fullmatch(batch)
+          source="source=synthea/source_version=v3.3.0/ingest_date=2026-10-14/batch_id="+batch
+          p=build(
+            batch_id=batch,
+            manifest_sha256="22b6c386b5c165e0c9cff3d3ce5fbae2115aee87b4761fc4c11fb43a2c4720b1",
+            manifest_uri="s3://health-landing/"+source+"/manifest.json",
+            person_processing_uri="s3a://health-processing/"+source+"/entity=patient/run_id=task004-person-test/normalized/",
+            visit_processing_uri="s3a://health-processing/"+source+"/entity=encounter/run_id=task004-encounter-test/normalized/",
+            person_rows=1,
+            visit_rows=244,
+            source_version="v3.3.0",
+            writer_identity_version="synthea-new-only-v1")
+          assert p["batch_id"]==batch and p["person_rows"]==1 and p["visit_rows"]==244
+          print("TASK004_THIRD_NEW_ONLY_WRITER_IMAGE_PLAN_CONTRACT=PASS")
+          '
       - name: Record frozen candidate digest
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
