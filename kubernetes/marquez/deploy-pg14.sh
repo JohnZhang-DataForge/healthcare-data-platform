@@ -51,8 +51,8 @@ fi
 test "$(kubectl get secret marquez-db -n "$NAMESPACE" -o jsonpath='{.data.marquez-db-password}' | wc -c)" -gt 0
 echo MARQUEZ_DB_SECRET_PRESENT=PASS
 
-# The upstream Marquez chart is maintained in GitHub, NOT in a chart index.
-# Use the immutable commit underlying the official annotated tag 0.51.1.
+# The official Marquez Chart is source-controlled in the repo (no Helm index).
+# Pin the commit underlying the official annotated tag 0.51.1.
 MARQUEZ_COMMIT=27a4a1357d9078bc4e6738524dfe5ba9d77aa2df
 mkdir -p "$REPORT_DIR/source"
 curl --retry 2 -fsSL --max-time 180 \
@@ -61,7 +61,11 @@ curl --retry 2 -fsSL --max-time 180 \
 tar -xzf "$REPORT_DIR/marquez-src.tar.gz" -C "$REPORT_DIR/source" --strip-components=1
 CHART_DIR="$REPORT_DIR/source/chart"
 test -f "$CHART_DIR/Chart.yaml"
-grep -q '^version: 0.51.1
+grep -q '^version: 0.51.1$' "$CHART_DIR/Chart.yaml"
+helm dependency build "$CHART_DIR"
+helm show chart "$CHART_DIR" > "$REPORT_DIR/chart.yaml"
+grep -q '^name: marquez$' "$REPORT_DIR/chart.yaml"
+echo MARQUEZ_CHART_PIN=27a4a1357d9078bc4e6738524dfe5ba9d77aa2df
 
 # Confirm both chart services are internal before mutating anything.
 helm template "$RELEASE" "$CHART_DIR" \
@@ -82,152 +86,6 @@ PY
 
 helm upgrade --install "$RELEASE" "$CHART_DIR" \
   --namespace "$NAMESPACE" \
-  -f "$VALUES" --wait --timeout 9m \
-  --history-max 5
-echo MARQUEZ_HELM_RELEASE_APPLIED=YES
-kubectl rollout status deployment/marquez -n "$NAMESPACE" --timeout=180s
-kubectl rollout status deployment/marquez-web -n "$NAMESPACE" --timeout=180s
-test "$(kubectl get svc marquez -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
-test "$(kubectl get svc marquez-web -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
-echo MARQUEZ_API_WEB_ROLLOUT=PASS
-
-# Verify first migration actually created schema in the dedicated database.
-kubectl exec -n dw-postgre14 dw-postgre14-database-0 -- sh -c \
-  'psql -X -qAt -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='\''public'\'';"' \
-  > "$REPORT_DIR/table-count.txt"
-python3 - "$REPORT_DIR/table-count.txt" <<'PY'
-from pathlib import Path
-import sys
-n=int(Path(sys.argv[1]).read_text().strip())
-assert n>3,"MARQUEZ_METADATA_SCHEMA_MISSING"
-print('MARQUEZ_SCHEMA_TABLE_COUNT='+str(n))
-print('MARQUEZ_SCHEMA_MIGRATION=PASS')
-PY
-
-# Helm sets BOTH upstream services to ClusterIP. Expose ONLY the web selector
-# through a separate K8s NodePort after DB + API + Web are Healthy.
-kubectl get svc marquez-web -n "$NAMESPACE" -o json |
-  python3 -c '
-import sys,json
-s=json.load(sys.stdin)
-selector=s["spec"]["selector"]
-assert selector.get("app.kubernetes.io/component")=="web", "BAD_WEB_SELECTOR"
-assert all("api" not in str(k).lower() for k in selector), "UNEXPECTED_WEB_SELECTOR"
-payload={
-  "apiVersion":"v1","kind":"Service",
-  "metadata":{"name":"marquez-web-lan","namespace":"dw-marquez",
-              "labels":{"app.kubernetes.io/part-of":"marquez"}},
-  "spec":{"type":"NodePort","selector":selector,
-          "ports":[{"name":"http","protocol":"TCP","port":80,"targetPort":"http","nodePort":30999}]}
-print(json.dumps(payload))
-' | kubectl apply -f -
-test "$(kubectl get svc marquez-web-lan -n "$NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}')" = 30999
-test "$(kubectl get svc marquez -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
-echo MARQUEZ_WEB_NODEPORT_30999=PASS
-
-# Verify the Service endpoints match ready web pods; this does not prove WAN NAT.
-kubectl get endpointslice -n "$NAMESPACE" -l kubernetes.io/service-name=marquez-web-lan -o json |
-  python3 -c 'import json,sys; x=json.load(sys.stdin)["items"]; assert x and any(e.get("conditions",{}).get("ready") is True for s in x for e in s.get("endpoints",[])), "WEB_NODEPORT_NO_READY_ENDPOINTS";print("MARQUEZ_WEB_NODEPORT_ENDPOINTS=PASS")'
-kubectl get pods,svc -n "$NAMESPACE" -o wide | cut -c1-180
-echo MARQUEZ_PG14_API_WEB_DEPLOYMENT=PASS
-echo OMOP_AIRFLOW_SYNTHEA_MUTATION=NO
-echo NODEPORT_EXTERNAL_NAT_STATUS=NOT_VERIFIED
- "$CHART_DIR/Chart.yaml"
-helm dependency build "$CHART_DIR"
-helm show chart "$CHART_DIR" > "$REPORT_DIR/chart.yaml"
-grep -q '^name: marquez
-
-# Confirm both chart services are internal before mutating anything.
-helm template "$RELEASE" marquez/marquez --version "$CHART_VERSION" \
-  --namespace "$NAMESPACE" -f "$VALUES" > "$REPORT_DIR/rendered.yaml"
-python3 - "$REPORT_DIR/rendered.yaml" <<'PY'
-import sys
-from pathlib import Path
-txt=Path(sys.argv[1]).read_text()
-assert 'kind: Deployment' in txt and 'kind: Service' in txt
-assert 'dw-postgre14.dw-postgre14.svc.cluster.local' in txt
-assert 'type: ClusterIP' in txt
-assert 'kind: StatefulSet' not in txt
-assert 'image: postgres:' not in txt
-assert 'nodePort: 30999' not in txt
-assert 'marquez-db' in txt
-print('MARQUEZ_HELM_RENDER_NO_BUNDLED_DB_NO_NODEPORT=PASS')
-PY
-
-helm upgrade --install "$RELEASE" marquez/marquez \
-  --namespace "$NAMESPACE" --version "$CHART_VERSION" \
-  -f "$VALUES" --wait --timeout 9m \
-  --history-max 5
-echo MARQUEZ_HELM_RELEASE_APPLIED=YES
-kubectl rollout status deployment/marquez -n "$NAMESPACE" --timeout=180s
-kubectl rollout status deployment/marquez-web -n "$NAMESPACE" --timeout=180s
-test "$(kubectl get svc marquez -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
-test "$(kubectl get svc marquez-web -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
-echo MARQUEZ_API_WEB_ROLLOUT=PASS
-
-# Verify first migration actually created schema in the dedicated database.
-kubectl exec -n dw-postgre14 dw-postgre14-database-0 -- sh -c \
-  'psql -X -qAt -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='\''public'\'';"' \
-  > "$REPORT_DIR/table-count.txt"
-python3 - "$REPORT_DIR/table-count.txt" <<'PY'
-from pathlib import Path
-import sys
-n=int(Path(sys.argv[1]).read_text().strip())
-assert n>3,"MARQUEZ_METADATA_SCHEMA_MISSING"
-print('MARQUEZ_SCHEMA_TABLE_COUNT='+str(n))
-print('MARQUEZ_SCHEMA_MIGRATION=PASS')
-PY
-
-# Helm sets BOTH upstream services to ClusterIP. Expose ONLY the web selector
-# through a separate K8s NodePort after DB + API + Web are Healthy.
-kubectl get svc marquez-web -n "$NAMESPACE" -o json |
-  python3 -c '
-import sys,json
-s=json.load(sys.stdin)
-selector=s["spec"]["selector"]
-assert selector.get("app.kubernetes.io/component")=="web", "BAD_WEB_SELECTOR"
-assert all("api" not in str(k).lower() for k in selector), "UNEXPECTED_WEB_SELECTOR"
-payload={
-  "apiVersion":"v1","kind":"Service",
-  "metadata":{"name":"marquez-web-lan","namespace":"dw-marquez",
-              "labels":{"app.kubernetes.io/part-of":"marquez"}},
-  "spec":{"type":"NodePort","selector":selector,
-          "ports":[{"name":"http","protocol":"TCP","port":80,"targetPort":"http","nodePort":30999}]}
-print(json.dumps(payload))
-' | kubectl apply -f -
-test "$(kubectl get svc marquez-web-lan -n "$NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}')" = 30999
-test "$(kubectl get svc marquez -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
-echo MARQUEZ_WEB_NODEPORT_30999=PASS
-
-# Verify the Service endpoints match ready web pods; this does not prove WAN NAT.
-kubectl get endpointslice -n "$NAMESPACE" -l kubernetes.io/service-name=marquez-web-lan -o json |
-  python3 -c 'import json,sys; x=json.load(sys.stdin)["items"]; assert x and any(e.get("conditions",{}).get("ready") is True for s in x for e in s.get("endpoints",[])), "WEB_NODEPORT_NO_READY_ENDPOINTS";print("MARQUEZ_WEB_NODEPORT_ENDPOINTS=PASS")'
-kubectl get pods,svc -n "$NAMESPACE" -o wide | cut -c1-180
-echo MARQUEZ_PG14_API_WEB_DEPLOYMENT=PASS
-echo OMOP_AIRFLOW_SYNTHEA_MUTATION=NO
-echo NODEPORT_EXTERNAL_NAT_STATUS=NOT_VERIFIED
- "$REPORT_DIR/chart.yaml"
-echo MARQUEZ_CHART_PIN=27a4a1357d9078bc4e6738524dfe5ba9d77aa2df
-
-# Confirm both chart services are internal before mutating anything.
-helm template "$RELEASE" marquez/marquez --version "$CHART_VERSION" \
-  --namespace "$NAMESPACE" -f "$VALUES" > "$REPORT_DIR/rendered.yaml"
-python3 - "$REPORT_DIR/rendered.yaml" <<'PY'
-import sys
-from pathlib import Path
-txt=Path(sys.argv[1]).read_text()
-assert 'kind: Deployment' in txt and 'kind: Service' in txt
-assert 'dw-postgre14.dw-postgre14.svc.cluster.local' in txt
-assert 'type: ClusterIP' in txt
-assert 'kind: StatefulSet' not in txt
-assert 'image: postgres:' not in txt
-assert 'nodePort: 30999' not in txt
-assert 'marquez-db' in txt
-print('MARQUEZ_HELM_RENDER_NO_BUNDLED_DB_NO_NODEPORT=PASS')
-PY
-
-helm upgrade --install "$RELEASE" marquez/marquez \
-  --namespace "$NAMESPACE" --version "$CHART_VERSION" \
   -f "$VALUES" --wait --timeout 9m \
   --history-max 5
 echo MARQUEZ_HELM_RELEASE_APPLIED=YES
