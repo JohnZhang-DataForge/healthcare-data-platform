@@ -1,0 +1,49 @@
+name: Build NEW_ONLY Airflow Atomic OMOP Writer Image
+on:
+  push:
+    branches:
+      - feature/task004-airflow-writer-final-leg-20261014
+    paths:
+      - images/new-only-omop-writer/Dockerfile
+      - apps/omop_writer/new_only_airflow_writer.py
+      - .github/workflows/build-new-only-omop-writer.yml
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Offline fail-closed runtime regression
+        run: |
+          set -Eeuo pipefail
+          python3 -m compileall -q apps/omop_writer/new_only_airflow_writer.py
+          python3 -m unittest discover -s tests/omop_writer -p 'test_*airflow_writer*.py' -v
+          echo TASK004_NEW_ONLY_WRITER_IMAGE_REGRESSION=PASS
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build immutable candidate
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: images/new-only-omop-writer/Dockerfile
+          platforms: linux/amd64
+          push: true
+          provenance: true
+          sbom: true
+          tags: ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer:git-${{ github.sha }}
+      - name: Record frozen candidate digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "TASK004_NEW_ONLY_WRITER_IMAGE_DIGEST=$DIGEST"
+          echo "TASK004_NEW_ONLY_WRITER_IMAGE_BUILD=PASS"
