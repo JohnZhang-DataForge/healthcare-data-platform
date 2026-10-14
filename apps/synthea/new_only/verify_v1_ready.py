@@ -40,7 +40,8 @@ class DiscoveryAdapter:
     def get_object(self, *, Bucket, Key):
         if Bucket!="health-landing":
             raise ReadyVerificationError("unexpected S3 bucket")
-        return {"Body":io.BytesIO(self.reader.get_object(Key))}
+        data=self.reader.get_object(Key)
+        return {"Body":io.BytesIO(data),"ContentLength":len(data)}
 
 
 def verify(client, batch_id, request_id, expected_people=73, expected_visits=12159):
