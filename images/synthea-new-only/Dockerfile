@@ -18,6 +18,7 @@ COPY --chown=10001:10001 apps/synthea/new_only/verify_v1_ready.py /opt/synthea-n
 COPY --chown=10001:10001 apps/task004/publish_synthea_landing.py /opt/synthea-new-only/publish_synthea_landing.py
 COPY --chown=10001:10001 apps/task004/validate_generated_synthea_batch.py /opt/synthea-new-only/validate_generated_synthea_batch.py
 COPY --chown=10001:10001 apps/task004/resolve_verified_landing_file.py /opt/synthea-new-only/resolve_verified_landing_file.py
+COPY --chown=10001:10001 apps/task004/validate_new_only_v2_manifest.py /opt/synthea-new-only/validate_new_only_v2_manifest.py
 COPY --chown=10001:10001 apps/landing_discovery/scan_ready_batches.py /opt/synthea-new-only/scan_ready_batches.py
 COPY --chown=10001:10001 contracts/synthea/v3.3.0/csv-contract.json /opt/synthea-new-only/csv-contract-v1.json
 COPY --chown=10001:10001 contracts/synthea/new-only/csv-contract-v2.json /opt/synthea-new-only/csv-contract-v2.json
