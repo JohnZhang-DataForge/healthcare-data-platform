@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 Airflow NEW_ONLY 原子 Writer KPO 已接线，镜像已发布并在 worker02 真实验证。** [最新 Closeout](tasks/NEW-ONLY-AIRFLOW-GATED-WRITER-EXECUTOR-2026-10-14.zh-CN.md) / [Self-Runner 38582267163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38582267163) SUCCESS（53 Landing +58 Writer=111 tests）、[Docker Build 38581579633](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/38581579633) SUCCESS。新增人工 `spark_processing:true,writer_commit:true` 双启用 → Spark Handoff 后 `execute_new_only_writer`：真 S3/PG audit、同事务 Claim/Fencing/Person/Visit/完整 Reconcile/COMMIT/独立 PG readback、完成批次 Skip，禁止自动 retry。**当前 commit credential/enable Secret 未部署，没有第三批真实 COMMIT**；PG Person207 Visit21690 Claim2 不变，不重跑前两个 Batch。NEXT Main GitSync+DagBag、第三批真正 NEW_ONLY READY 的安全 Airflow live end-to-end。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 第二个真实 NEW_ONLY Batch 70 Person + 11487 Visit 已正式业务 COMMIT、独立 PG 对账 SUCCESS。** [当前权威 Closeout](tasks/NEW-ONLY-SECOND-BATCH-FIRST-REAL-PG-COMMIT-2026-10-14.zh-CN.md) / [Self-Runner 38575457166](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38575457166)：Person137→**207**、Visit10203→**21690**、两个 Source ID Maps 同步增加、Claim 总数1→**2**，此新批 Claim `COMPLETED`、Stage **11557**、2 VERIFIED Checkpoints，源键与父子键独立 PG readback 全 PASS；103 个回归测试 PASS，重复 Claim 正确 SKIP。上轮 38572127827 仅 Bash 安全断言解析失败、业务无写。**切勿重跑这次一次性 Writer**；原 Airflow DAG Writer KPO 尚未自动接通，Auto Claim 仍关闭。NEXT 新未入库批次的 Airflow Writer 尾端自动化。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
