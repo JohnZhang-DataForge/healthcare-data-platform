@@ -31,10 +31,14 @@ def select_verified_new_only(inventory, dag_conf, run_type: str) -> dict:
     conf = _obj(dag_conf, "CONF")
     expected={"batch_id","manifest_uri","manifest_sha256","consumer_readonly"}
     keys=set(conf)
-    if (keys not in (expected, expected|{"spark_processing"})
+    supported=(expected, expected|{"spark_processing"},
+               expected|{"spark_processing","writer_commit"})
+    if (keys not in supported
         or conf["consumer_readonly"] is not True
-        or ("spark_processing" in conf and conf["spark_processing"] is not True)):
-        raise ValueError("BLOCKED:NEW_ONLY_READONLY_CONF")
+        or ("spark_processing" in conf and conf["spark_processing"] is not True)
+        or ("writer_commit" in conf and (
+            conf["writer_commit"] is not True or conf.get("spark_processing") is not True))):
+        raise ValueError("BLOCKED:NEW_ONLY_MANUAL_COMMIT_CONF")
     batch, uri, sha = (conf.get(x) for x in ("batch_id","manifest_uri","manifest_sha256"))
     if (not isinstance(batch,str) or not BATCH.fullmatch(batch)
         or not isinstance(sha,str) or not SHA.fullmatch(sha)
@@ -61,7 +65,8 @@ def select_verified_new_only(inventory, dag_conf, run_type: str) -> dict:
         raise ValueError("BLOCKED:NEW_ONLY_DISCOVERY_DRIFT")
     return {"source_system":"synthea","batch_id":batch,"manifest_uri":uri,
             "manifest_sha256":sha,"consumer_readonly":True,
-            "spark_processing":conf.get("spark_processing") is True}
+            "spark_processing":conf.get("spark_processing") is True,
+            "writer_commit":conf.get("writer_commit") is True}
 
 
 def classify_new_only_claim(selected, database_result) -> str:
@@ -110,3 +115,35 @@ def route_claim_status(selected, database_result):
             return ["spark_patient","spark_encounter"]
         return "unclaimed_batch_hold"
     raise ValueError("BLOCKED:NEW_ONLY_ROUTING_STATE")
+
+
+def route_new_only_writer_commit(selected, handoff, run_type: str) -> str:
+    """Manual opt-in only; physical Kubernetes secret remains second hard gate.
+
+    Completed batches cannot produce Spark handoff in this DAG; even manual
+    clearing of the branch must not silently authorize a Writer mutation.
+    """
+    selected=_obj(selected,"WRITER_SELECTION")
+    handoff=_obj(handoff,"WRITER_HANDOFF")
+    if str(run_type).lower()!="manual":
+        raise ValueError("BLOCKED:WRITER_ONLY_MANUAL")
+    from new_only_omop_writer_handoff import assert_dynamic_handoff
+    plan=handoff.get("plan")
+    if not isinstance(plan,dict):
+        raise ValueError("BLOCKED:WRITER_MISSING_PLAN")
+    assert_dynamic_handoff(plan,handoff)
+    for field in ("batch_id","manifest_sha256","manifest_uri"):
+        if selected.get(field)!=plan.get(field):
+            raise ValueError("BLOCKED:WRITER_SPARK_SELECTION_DRIFT")
+    if selected.get("consumer_readonly") is not True or selected.get("spark_processing") is not True:
+        raise ValueError("BLOCKED:WRITER_MUST_FOLLOW_VERIFIED_SPARK")
+    if selected.get("writer_commit") is True:
+        if plan["batch_id"] in (
+            "synthea-new-only-gh-38497355290",
+            "synthea-new-only-gh-38489944582",
+        ):
+            raise ValueError("BLOCKED:ALREADY_COMMITTED_BATCH")
+        return "execute_new_only_writer"
+    if selected.get("writer_commit") is False:
+        return "writer_awaits_live_preflight"
+    raise ValueError("BLOCKED:WRITER_FLAG_NOT_BOOLEAN")
