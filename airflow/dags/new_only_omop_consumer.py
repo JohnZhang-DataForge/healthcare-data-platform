@@ -216,7 +216,7 @@ with DAG(
     )
     WRITER_IMAGE=(
         "ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer"
-        "@sha256:bcab1ba064dc66838b3c1ede23bdcb25e8522d03d039d8395fa082733ff79a9c"
+        "@sha256:dd0b0483ec01b05f1d072d65c9ab728b563cb063da0705564f3a03e23160fd6c"
     )
     execute_new_only_writer=KubernetesPodOperator(
         task_id="execute_new_only_writer",name="task004-new-only-atomic-writer",
