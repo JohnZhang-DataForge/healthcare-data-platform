@@ -50,8 +50,26 @@ def reconciliation_digest(ctx:dict,people:list,visits:list) -> str:
 
 
 def generate_commit_sql(context:dict,people:list,visits:list,token:str) -> str:
+    """Permanently frozen one-time real batch guard; still reject all other batches."""
+    return _render_atomic_new_only_sql(
+        context,people,visits,token,
+        expected_identity=(BATCH,SHA,URI,1,812),
+    )
+
+
+def _render_atomic_new_only_sql(
+    context:dict,people:list,visits:list,token:str,
+    *,expected_identity:tuple[str,str,str,int,int],
+) -> str:
+    """Shared proven atomic SQL renderer. Private: caller MUST audit S3/PG first.
+
+    No database access or execution. The one-shot public wrapper above stays
+    frozen, while the new general batch adapter supplies a strict identity.
+    Never expose this private renderer directly as an Airflow operator.
+    """
+    BATCH,SHA,URI,person_count,visit_count=expected_identity
     ctx=verified_plan(context)
-    if (ctx["batch_id"],ctx["manifest_sha256"],ctx["manifest_uri"],len(people),len(visits)) != (BATCH,SHA,URI,1,812):
+    if (ctx["batch_id"],ctx["manifest_sha256"],ctx["manifest_uri"],len(people),len(visits)) != (BATCH,SHA,URI,person_count,visit_count):
         raise ValueError("BLOCKED:NOT_ONE_AUTHORIZED_REAL_READY_BATCH")
     if not isinstance(token,str) or len(token)!=48 or any(ch not in "0123456789abcdef" for ch in token):
         raise ValueError("BLOCKED:INVALID_COMMIT_OWNER")
@@ -111,13 +129,13 @@ END $writer_role$;
 DO $reconcile$
 BEGIN
  IF (SELECT count(*) FROM etl.task004_batch_stage
-     WHERE batch_id={b} AND entity='person')<>1
+     WHERE batch_id={b} AND entity='person')<>{person_count}
  OR (SELECT count(*) FROM etl.task004_batch_stage
-     WHERE batch_id={b} AND entity='visit')<>812
+     WHERE batch_id={b} AND entity='visit')<>{visit_count}
  OR (SELECT count(*) FROM etl.task004_batch_commit
      WHERE batch_id={b} AND commit_state='VERIFIED'
-       AND ((entity='person' AND stage_rows=1 AND mapped_rows=1 AND stage_digest={pd})
-         OR (entity='visit' AND stage_rows=812 AND mapped_rows=812 AND stage_digest={vd})))<>2
+       AND ((entity='person' AND stage_rows={person_count} AND mapped_rows={person_count} AND stage_digest={pd})
+         OR (entity='visit' AND stage_rows={visit_count} AND mapped_rows={visit_count} AND stage_digest={vd})))<>2
  OR NOT EXISTS (SELECT 1 FROM etl.task004_batch_ledger
      WHERE batch_id={b} AND manifest_sha256={sha}
        AND person_processing_uri={quote(ctx["person_processing_uri"])}
@@ -131,7 +149,7 @@ BEGIN
      JOIN cdm.person p ON p.person_id=m.person_id
      WHERE s.batch_id={b} AND s.entity='person'
        AND to_jsonb(p) IS NOT DISTINCT FROM to_jsonb(jsonb_populate_record(
-          NULL::cdm.person,s.canonical_payload || jsonb_build_object('person_id',m.person_id))))<>1
+          NULL::cdm.person,s.canonical_payload || jsonb_build_object('person_id',m.person_id))))<>{person_count}
  THEN RAISE EXCEPTION 'BLOCKED:PERSON_DB_RECONCILIATION'; END IF;
  IF (SELECT count(*) FROM etl.task004_batch_stage s
      JOIN etl.visit_occurrence_id_map m ON m.source_system='synthea'
@@ -142,7 +160,7 @@ BEGIN
      WHERE s.batch_id={b} AND s.entity='visit'
        AND to_jsonb(v) IS NOT DISTINCT FROM to_jsonb(jsonb_populate_record(
           NULL::cdm.visit_occurrence,s.canonical_payload ||
-          jsonb_build_object('visit_occurrence_id',m.visit_occurrence_id,'person_id',pm.person_id))))<>812
+          jsonb_build_object('visit_occurrence_id',m.visit_occurrence_id,'person_id',pm.person_id))))<>{visit_count}
  THEN RAISE EXCEPTION 'BLOCKED:VISIT_DB_RECONCILIATION'; END IF;
 END $reconcile$;
 -- Final fencing runs with the original row lock STILL HELD.

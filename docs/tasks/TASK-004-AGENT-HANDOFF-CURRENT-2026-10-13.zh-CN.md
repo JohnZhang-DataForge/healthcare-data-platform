@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-14 EDT 最新 CURRENT TASK004 NEXT：动态 NEW_ONLY Spark→Writer Handoff 代码/CI 已 PASS，尚未实际 Airflow 自动 COMMIT。** [最新开发 Closeout](NEW-ONLY-AIRFLOW-ATOMIC-DYNAMIC-WRITER-HANDOFF-2026-10-14.zh-CN.md) / [Self-Runner 38562133245](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38562133245) SUCCESS（114 回归）。新 `airflow/dags/new_only_omop_writer_handoff.py` 准备 immutable Plan/XCom 但不会改库，新 `apps/omop_writer/dynamic_new_only_commit.py` 仅 render 动态 Batch 1..100 Person/1..100000 Visit 的原子 Claim+Fenced Writer+Reconcile SQL；`commit_new_only_batch_once.py` 首次真实 batch 安全 guard 未放松。真 PG 最后只读 Person137/Visit10203/Claim1 COMPLETED。**NEXT：** 让现有 `new_only_omop_consumer` 的 `unclaimed_batch_hold` 接上 Spark→Handoff、引入未来真正 fresh READY Batch 的 S3/PG preflight + ROLLBACK →授权后 COMMIT；运行 Spark/Airflow 共用设施前必须问 Portal/另一个 Session 是否正在修改 Spark。当前没有自动 Claim/业务 COMMIT，绝不能把本轮 Renderer CI 当 live 自动入库。双 Writer 并发/复杂 recovery 非 blocker。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT 当前唯一 NEXT（覆盖本页旧 Airflow Runner 失败交接）：** NEW_ONLY Airflow 真实已完成批次跳过终于**全绿**。[验收 Closeout](NEW-ONLY-AIRFLOW-CONSUMER-COMPLETED-SKIP-REAL-LIVE-2026-10-14.zh-CN.md) / [Self-Runner 38560309400](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38560309400) SUCCESS；Runner PR #102 已 merged Main。真实 DagRun success、Branch TaskInstance 正确路由、DAG re-paused PASS，PG 137 Person/10203 Visit/Claim1 COMPLETED 未变。**无 Spark/Claim/Writer 新写。NEXT 唯一主线**：纯代码先完成 `unclaimed_batch_hold` 的安全新批接入设计/入口、Ticket Fencing/Writer 对接；实际新 S3 READY 的 Spark live / Airflow shared 变更需按 Portal Session 协调，千万不要重跑已入库批次。不要再重复修 XCom 或部署既有 Reader。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 

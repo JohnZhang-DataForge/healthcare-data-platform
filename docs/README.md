@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 NEW_ONLY Airflow Spark→Writer 动态批次合同与单事务 SQL Renderer 已通过测试。** [当轮权威 Closeout](tasks/NEW-ONLY-AIRFLOW-ATOMIC-DYNAMIC-WRITER-HANDOFF-2026-10-14.zh-CN.md) / [Self-Runner 38562133245](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38562133245) SUCCESS（Claim26/26、Writer42/42、Landing46/46，共114）。既有一次性成功 Writer 逻辑抽取为批次身份绑定的私有原子 Claim→Fencing→Person/Visit→整行 DB Reconciliation→COMPLETED→COMMIT Renderer，历史已提交 Batch 固定拒绝动态重写；新增纯 Airflow Spark XCom→不可变 Writer Handoff。实际业务 SQL **仅 Render、没有执行**；新 DAG 的 `unclaimed_batch_hold` 暂未连接 Spark/Writer，Airflow 自动 Claim 仍 NO。PG 只读 Person137/Visit10203/Claim1 COMPLETED/Stage813/2 Checkpoints 不变。NEXT 共享 Spark 人工协调后接实际 Spark→Handoff、真实新批 S3/PG preflight→受控 Writer ROLLBACK→COMMIT；不重跑历史已完成批次。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 NEW_ONLY Airflow 已完成批次安全跳过 LIVE 全绿。** [正式 Closeout](tasks/NEW-ONLY-AIRFLOW-CONSUMER-COMPLETED-SKIP-REAL-LIVE-2026-10-14.zh-CN.md) / [Self-Runner 38560309400](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38560309400) **SUCCESS** / Runner [PR #102](https://github.com/JohnZhang-DataForge/Self-Runner/pull/102) merged。真实 Scheduler GitSync 与 DagBag PASS；手工 NewOnly DAG Run `success`，COMPLETED 安全跳过、不触发 unclaimed 路线，DAG 测试后已恢复 paused；PG Person137/Visit10203/Claim1/Stage813 以及 2 VERIFIED checkpoints Before/After 不变。52/52 回归 PASS，无 Spark、无自动 Claim、无业务 COMMIT。**NEXT 受控单批新 READY 的 Claim→Spark→Writer 合同/编排，Portal/Spark live 需 Session 人工协调**。旧 Runner XCom 验收 blocker 已解除。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
