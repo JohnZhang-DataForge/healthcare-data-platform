@@ -4,6 +4,9 @@ FROM ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-cdm-runtime@sh
 USER root
 WORKDIR /opt/task004
 COPY --chown=10001:10001 airflow/dags/new_only_omop_writer_handoff.py airflow/dags/new_only_omop_routing.py /opt/task004/
+# Supply the current NEW_ONLY-aware plan validator; inherited CDM runtime
+# carries a legacy-only validator that rejects synthea-new-only-* batch IDs.
+COPY --chown=10001:10001 airflow/dags/task004_cdm_materialization_plan.py /opt/task004/
 COPY --chown=10001:10001 airflow/dags/task004_cdm_preflight_contract.py /opt/task004/
 COPY --chown=10001:10001 apps/omop_writer/build_s3_rollback_plan.py /opt/task004/
 COPY --chown=10001:10001 apps/omop_writer/precommit_gate.py /opt/task004/
