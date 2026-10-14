@@ -10,7 +10,7 @@ together with CDM rows. It prevents orphan PROCESSING leases when Spark fails.
 """
 from __future__ import annotations
 
-from new_only_omop_routing import route_claim_status
+from new_only_omop_routing import classify_new_only_claim
 from task004_cdm_preflight_contract import validate_handoff
 from task004_cdm_materialization_plan import plan as materialization_plan
 
@@ -21,7 +21,7 @@ STATUS = "NEW_ONLY_WRITER_HANDOFF_VERIFIED_NOT_AUTHORIZED"
 def prepare_new_only_writer_handoff(selected: dict, db_status: dict,
                                     person: dict, visit: dict) -> dict:
     """Called only AFTER both Spark tasks; doesn't authorize real COMMIT."""
-    if route_claim_status(selected, db_status) != "unclaimed_batch_hold":
+    if classify_new_only_claim(selected, db_status) != "ABSENT":
         raise ValueError("BLOCKED:NOT_FRESH_NEW_ONLY")
     if not (isinstance(person,dict) and isinstance(visit,dict)):
         raise ValueError("BLOCKED:MISSING_REAL_SPARK_XCOM")

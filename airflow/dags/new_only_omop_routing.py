@@ -29,7 +29,11 @@ def select_verified_new_only(inventory, dag_conf, run_type: str) -> dict:
     if str(run_type).lower() != "manual":
         raise ValueError("BLOCKED:NEW_ONLY_MANUAL_ONLY")
     conf = _obj(dag_conf, "CONF")
-    if set(conf) != {"batch_id","manifest_uri","manifest_sha256","consumer_readonly"} or conf["consumer_readonly"] is not True:
+    expected={"batch_id","manifest_uri","manifest_sha256","consumer_readonly"}
+    keys=set(conf)
+    if (keys not in (expected, expected|{"spark_processing"})
+        or conf["consumer_readonly"] is not True
+        or ("spark_processing" in conf and conf["spark_processing"] is not True)):
         raise ValueError("BLOCKED:NEW_ONLY_READONLY_CONF")
     batch, uri, sha = (conf.get(x) for x in ("batch_id","manifest_uri","manifest_sha256"))
     if (not isinstance(batch,str) or not BATCH.fullmatch(batch)
@@ -56,11 +60,16 @@ def select_verified_new_only(inventory, dag_conf, run_type: str) -> dict:
         or row.get("status")!="INTAKE_VERIFIED" or row.get("file_count")!=18):
         raise ValueError("BLOCKED:NEW_ONLY_DISCOVERY_DRIFT")
     return {"source_system":"synthea","batch_id":batch,"manifest_uri":uri,
-            "manifest_sha256":sha,"consumer_readonly":True}
+            "manifest_sha256":sha,"consumer_readonly":True,
+            "spark_processing":conf.get("spark_processing") is True}
 
 
-def route_claim_status(selected, database_result) -> str:
-    """Only skip completed; every other legitimate new batch stays ON HOLD."""
+def classify_new_only_claim(selected, database_result) -> str:
+    """Fail-closed actual claim readback; no side effects.
+
+    Decouple classification from manual Spark branching so a downstream
+    Writer handoff can revalidate ABSENT without depending on task IDs.
+    """
     selected = _obj(selected,"SELECTION")
     row=_obj(database_result,"CLAIM_STATUS")
     if selected.get("consumer_readonly") is not True or not BATCH.fullmatch(selected.get("batch_id","")):
@@ -76,11 +85,28 @@ def route_claim_status(selected, database_result) -> str:
     if status=="COMPLETED":
         if row.get("writer_ledger_rows")!=1 or row.get("attempt_count",0)<1:
             raise ValueError("BLOCKED:NEW_ONLY_COMPLETED_WITHOUT_WRITER_LEDGER")
-        return "already_completed_no_replay"
+        return "COMPLETED"
     if status=="ABSENT":
         if row.get("writer_ledger_rows")!=0 or row.get("attempt_count")!=0:
             raise ValueError("BLOCKED:NEW_ONLY_ABSENT_WITH_WRITER_HISTORY")
-        return "unclaimed_batch_hold"
+        return "ABSENT"
     if status in ("PROCESSING","FAILED"):
         raise ValueError("BLOCKED:NEW_ONLY_EXISTING_INCOMPLETE_CLAIM")
     raise ValueError("BLOCKED:NEW_ONLY_UNKNOWN_CLAIM_STATE")
+
+
+def route_claim_status(selected, database_result):
+    """Manual-only opt-in fresh batch --> BOTH Spark tasks; never Claim/Writer.
+
+    Safe legacy behavior remains: completed goes to Skip; ABSENT without
+    the explicit single-run spark flag remains on HOLD.
+    """
+    selected=_obj(selected,"SELECTION")
+    status=classify_new_only_claim(selected,database_result)
+    if status=="COMPLETED":
+        return "already_completed_no_replay"
+    if status=="ABSENT":
+        if selected.get("spark_processing") is True:
+            return ["spark_patient","spark_encounter"]
+        return "unclaimed_batch_hold"
+    raise ValueError("BLOCKED:NEW_ONLY_ROUTING_STATE")

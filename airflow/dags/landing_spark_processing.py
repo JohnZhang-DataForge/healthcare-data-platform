@@ -228,8 +228,9 @@ echo "OMOP_BUSINESS_MUTATION=NO"
 
 
 def make_processing_pod(task_id: str, *, process: str,
-                        env_vars: dict[str, str], with_xcom: bool):
-    return KubernetesPodOperator(
+                        env_vars: dict[str, str], with_xcom: bool,
+                        image_override: str | None = None):
+    pod=KubernetesPodOperator(
         task_id=task_id,
         name=task_id.replace("_", "-"),
         namespace="dw-spark",
@@ -259,3 +260,10 @@ def make_processing_pod(task_id: str, *, process: str,
         startup_timeout_seconds=180,
         execution_timeout=timedelta(minutes=9),
     )
+    if image_override is not None:
+        if image_override != NEW_ONLY_PROCESSING_IMAGE:
+            raise ValueError("BLOCKED:UNTRUSTED_SPARK_IMAGE_OVERRIDE")
+        # Preserve the legacy factory's source/image selection contract;
+        # apply the pinned v2 image ONLY for new consumer explicit opt-in.
+        pod.image=image_override
+    return pod

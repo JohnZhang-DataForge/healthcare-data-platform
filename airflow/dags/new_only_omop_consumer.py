@@ -1,11 +1,12 @@
-"""TASK004 NEW_ONLY manual Airflow consumer router: S3 -> PG -> safe terminal.
+"""TASK004 NEW_ONLY manual Airflow S3->Claim read->Spark Person/Visit.
 
-First-stage real DAG, not yet a batch executor. Unclaimed/new batches are
-explicitly held; COMPLETED batches are skipped without rerunning Spark/Writer.
-Airflow is not permitted to claim until the full consumer has its own
-integration acceptance. Independent Generator/Portal sessions are unaffected.
+Manual spark_processing=True only for a genuinely ABSENT Claim. All default
+runs still hold new batches; COMPLETED always skips. Spark writes Processing
+S3 only; immutable Writer Handoff remains NOT_AUTHORIZED, no CDM COMMIT.
+No automatic Claim or schedule.
 """
 from __future__ import annotations
+import json
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -20,6 +21,21 @@ DAG_DIR=str(Path(__file__).resolve().parent)
 if DAG_DIR not in sys.path:
     sys.path.insert(0,DAG_DIR)
 from new_only_omop_routing import select_verified_new_only, route_claim_status
+from new_only_omop_writer_handoff import prepare_new_only_writer_handoff
+from landing_spark_processing import make_processing_pod, NEW_ONLY_PROCESSING_IMAGE
+
+
+def prepare_spark_handoff_json(selected_json, claim_json, patient_json, encounter_json):
+    """Reject missing/malformed Spark XCom, publish immutable read-only plan."""
+    sources=[]
+    for value in (selected_json,claim_json,patient_json,encounter_json):
+        if isinstance(value,str):
+            value=json.loads(value)
+        if not isinstance(value,dict):
+            raise ValueError("BLOCKED:NEW_ONLY_MISSING_SPARK_XCOM")
+        sources.append(value)
+    return prepare_new_only_writer_handoff(*sources)
+
 
 DISCOVERY_IMAGE=(
     "ghcr.io/johnzhang-dataforge/healthcare-landing-discovery"
@@ -139,4 +155,53 @@ with DAG(
     already_completed_no_replay=EmptyOperator(task_id="already_completed_no_replay")
     unclaimed_batch_hold=EmptyOperator(task_id="unclaimed_batch_hold")
     scan_ready_manifests >> select_verified_new_only_batch >> inspect_claim_readonly >> route_new_only_status
-    route_new_only_status >> [already_completed_no_replay,unclaimed_batch_hold]
+    # Explicit one-off manual spark_processing=True on a fresh, unclaimed
+    # REAL S3 manifest is the only way to reach these Kubernetes controllers.
+    # The frozen v2 image is supplied directly (the historical factory default
+    # references another DAG's authorize_processing_replay task).
+    SPARK_INPUT={
+        "BATCH_ID":"{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['batch_id'] }}",
+        "MANIFEST_URI":"{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['manifest_uri'] }}",
+        "MANIFEST_SHA256":"{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['manifest_sha256'] }}",
+    }
+    spark_patient=make_processing_pod(
+        "spark_patient",process="person",env_vars=SPARK_INPUT,
+        with_xcom=True,image_override=NEW_ONLY_PROCESSING_IMAGE,
+    )
+    spark_encounter=make_processing_pod(
+        "spark_encounter",process="visit",env_vars=SPARK_INPUT,
+        with_xcom=True,image_override=NEW_ONLY_PROCESSING_IMAGE,
+    )
+    spark_reconcile=make_processing_pod(
+        "spark_reconcile",process="reconcile",
+        env_vars={
+            "BATCH_ID":SPARK_INPUT["BATCH_ID"],
+            "PATIENT_PROCESSING_URI":
+                "{{ ti.xcom_pull(task_ids='spark_patient')['processing_data_uri'] }}",
+            "ENCOUNTER_PROCESSING_URI":
+                "{{ ti.xcom_pull(task_ids='spark_encounter')['processing_data_uri'] }}",
+            "EXPECTED_PATIENT_ROWS":
+                "{{ ti.xcom_pull(task_ids='spark_patient')['canonical_rows'] }}",
+            "EXPECTED_ENCOUNTER_ROWS":
+                "{{ ti.xcom_pull(task_ids='spark_encounter')['canonical_rows'] }}",
+        },
+        with_xcom=False,image_override=NEW_ONLY_PROCESSING_IMAGE,
+    )
+    prepare_writer_handoff=PythonOperator(
+        task_id="prepare_writer_handoff",
+        python_callable=prepare_spark_handoff_json,
+        op_args=[
+            "{{ ti.xcom_pull(task_ids='select_verified_new_only_batch') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='inspect_claim_readonly') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='spark_patient') | tojson }}",
+            "{{ ti.xcom_pull(task_ids='spark_encounter') | tojson }}",
+        ],
+    )
+    writer_awaits_live_preflight=EmptyOperator(
+        task_id="writer_awaits_live_preflight",
+    )
+
+    route_new_only_status >> [already_completed_no_replay,unclaimed_batch_hold,
+                              spark_patient,spark_encounter]
+    [spark_patient,spark_encounter] >> spark_reconcile
+    spark_reconcile >> prepare_writer_handoff >> writer_awaits_live_preflight
