@@ -44,8 +44,8 @@ def main():
                 """SELECT current_user,
                           has_table_privilege(current_user,'etl.landing_batch_ledger','SELECT'),
                           has_table_privilege(current_user,'etl.landing_batch_ledger','UPDATE'),
-                          has_table_privilege(current_user,'cdm.person','INSERT'),
-                          has_table_privilege(current_user,'cdm.visit_occurrence','INSERT')"""
+                          has_schema_privilege(current_user,'cdm','USAGE'),
+                          has_table_privilege(current_user,'etl.task004_batch_ledger','INSERT')"""
             )
             if cur.fetchone()!=("landing_claim_worker",True,True,False,False):
                 raise RuntimeError("BLOCKED:CLAIM_ROLE_PRIVILEGES")
