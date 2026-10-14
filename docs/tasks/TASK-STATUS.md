@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT TASK004 Airflow NEW_ONLY 新入口首轮实装，真实 DagRun success、Runner acceptance blocked。** [完整证据/交接](NEW-ONLY-AIRFLOW-CONSUMER-REAL-COMPLETED-SKIP-HANDOFF-2026-10-14.zh-CN.md) / [Runner 38559222216](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38559222216)。Healthcare Main PR #126 新 `new_only_omop_consumer` schedule=None/paused 默认，S3 Discovery→PG Claim READONLY→COMPLETED 安全跳过；真实 GitSync 与 DagBag PASS，DagRun state=success，5 主路径 success/unclaimed HOLD skipped，Person137/Visit10203/Claim1/Stage813/2 Checkpoints Before/After 不变。**Self-Runner job 最终 failure：BranchOperator 的 XCom return_value=None，不是业务失败**。执行轮次达到用户约定修复上限，STOP。下一步只修 Runner 该断言并全绿合并，再开展未来新 READY Batch 受控 Claim/Spark/Writer。Airflow 自动 Claim 尚关闭、Spark 未运行，TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 首个真 S3→OMOP NEW_ONLY v2 业务 COMMIT 正式成功。** [本轮完整验收](NEW-ONLY-V2-FIRST-REAL-PG-COMMIT-RECONCILIATION-2026-10-14.zh-CN.md) / [Run 38555481037](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38555481037) SUCCESS。固定真实 Batch `synthea-new-only-gh-38497355290`，Person **1** / Visit **812** 已持久化、前后 Fencing/合并的 Person→Visit SQL/整行 CDM 对账/Claim COMPLETED 全在单一 PG COMMIT。独立核验 Person136→**137**、Visit9391→**10203**、ID Map 同步 +1/+812、Claim **1 COMPLETED**、Ledger1、Stage813、VERIFIED2。Claim26 + Writer37 回归 PASS，后续重复 Claim `ON CONFLICT DO NOTHING` 确认 COMPLETED 未变化。**下一步：只读验收原 Claim API `SKIP_COMPLETED` 与已入库批次对账，再开发 Airflow 受控单批 Claim/Writer，使用未来未入库新批测试；本批不可二次执行 Writer。** 当前自动 Claim 仍关闭，双 Writer 竞争/复杂恢复为 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
