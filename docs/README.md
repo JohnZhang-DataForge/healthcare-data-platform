@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 第二个真实 NEW_ONLY Batch 70 Person + 11487 Visit 已正式业务 COMMIT、独立 PG 对账 SUCCESS。** [当前权威 Closeout](tasks/NEW-ONLY-SECOND-BATCH-FIRST-REAL-PG-COMMIT-2026-10-14.zh-CN.md) / [Self-Runner 38575457166](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38575457166)：Person137→**207**、Visit10203→**21690**、两个 Source ID Maps 同步增加、Claim 总数1→**2**，此新批 Claim `COMPLETED`、Stage **11557**、2 VERIFIED Checkpoints，源键与父子键独立 PG readback 全 PASS；103 个回归测试 PASS，重复 Claim 正确 SKIP。上轮 38572127827 仅 Bash 安全断言解析失败、业务无写。**切勿重跑这次一次性 Writer**；原 Airflow DAG Writer KPO 尚未自动接通，Auto Claim 仍关闭。NEXT 新未入库批次的 Airflow Writer 尾端自动化。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 第二个 NEW_ONLY Batch 真实 70 Person /11487 Visit 同事务 Fencing + OMOP 联合 ROLLBACK 成功。** [最新 Closeout](tasks/NEW-ONLY-SECOND-BATCH-FENCED-JOINT-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Self-Runner 38566745511](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38566745511) SUCCESS：Airflow 已存在新批 XCom + 真实 S3 Parquet + `cdm_reader` 真 PG preflight，原子事务 3 次 Fencing→Person70/Visit11487→整行 DB Reconciliation→强制 ROLLBACK，SQL 无业务 COMMIT，独立 PG Person137/Visit10203/旧 COMPLETED1/新 Claim0、Stage0、Checkpoint0 Before/After 相同，99 tests PASS。无需重跑 Spark；NEXT **新批次第一次真正业务 COMMIT 需单独明确授权**，随后接 Airflow Writer KPO，实现端到端自动入库。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
