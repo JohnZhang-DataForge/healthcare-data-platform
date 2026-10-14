@@ -1,3 +1,5 @@
+> **历史文档 / SUPERSEDED（2026-10-13）**：用户已改为路线 A——优先内部 Marquez 原生 Web UI + OpenLineage 真实 Airflow/Spark 血缘，受限 LAN/VPN NodePort 30999；**本 v2.0 的“先静态网站”顺序不再生效**。唯一当前实施计划为 [路线 A v3.0](./MARQUEZ-OPENLINEAGE-IMPLEMENTATION-PLAN-v3.0.zh-CN.md)。下文保留为历史决策快照，不代表最新 TASK004 进度。
+
 # Healthcare Data Platform — Public Demo 架构与实施计划 v2.0（中文）
 
 **日期**：2026-10-13 · **状态**：PROPOSED / documentation-only · **归属**：healthcare-data-platform/docs/demo-plan/  
