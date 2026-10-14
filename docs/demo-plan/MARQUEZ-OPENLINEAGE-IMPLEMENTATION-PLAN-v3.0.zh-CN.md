@@ -1,3 +1,5 @@
+> **2026-10-13 A0 实测补充（新优先级）**：[第二轮真实兼容性和网络安全 Gate](./MARQUEZ-A0-COMPATIBILITY-SECURITY-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38491060185](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38491060185) PASS：上游固定源码包含 Flyway 8.5.13（PG17 支持版本不匹配），Web 代理 /api/v1、/api/v2beta，且 Chart Web/API 共享 service.type；30999 未占用但 NAT/防火墙未知。**不得直接套用后文的 A1/A2 实施：CURRENT NEXT = 隔离 PG17/Marquez 兼容 PoC，NodePort 必须单独 Web Service + trusted LAN/VPN Gate。**这不影响七阶段总体目标。
+
 # Healthcare Data Platform — 路线 A：OpenLineage + Marquez 真实血缘实施规划 v3.0
 
 > **决策日期**：2026-10-13（EDT）；**状态**：DESIGN APPROVED / IMPLEMENTATION NOT STARTED；**权威目录**：`docs/demo-plan/`。  
