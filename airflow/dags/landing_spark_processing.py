@@ -228,13 +228,14 @@ echo "OMOP_BUSINESS_MUTATION=NO"
 
 
 def make_processing_pod(task_id: str, *, process: str,
-                        env_vars: dict[str, str], with_xcom: bool):
+                        env_vars: dict[str, str], with_xcom: bool,
+                        image_override: str | None = None):
     return KubernetesPodOperator(
         task_id=task_id,
         name=task_id.replace("_", "-"),
         namespace="dw-spark",
         service_account_name="task004-control-runtime",
-        image=PROCESSING_IMAGE_SELECT,
+        image=image_override if image_override is not None else PROCESSING_IMAGE_SELECT,
         image_pull_policy="IfNotPresent",
         in_cluster=True,
         cmds=["/bin/bash", "-lc"],
