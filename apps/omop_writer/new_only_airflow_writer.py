@@ -210,8 +210,9 @@ def execute(handoff: dict, plan: dict, *, can_commit: bool) -> str:
 
 
 def main() -> None:
-    if os.environ.get("TASK004_WRITER_MODE")!="COMMIT":
-        raise ValueError("BLOCKED:WRITER_MODE_NOT_EXPLICIT")
+    if (os.environ.get("TASK004_WRITER_MODE")!="COMMIT"
+        or os.environ.get("TASK004_WRITER_AIRFLOW_COMMIT_SELECTION")!="YES"):
+        raise ValueError("BLOCKED:WRITER_MODE_OR_AIRFLOW_GATE_NOT_EXPLICIT")
     handoff,plan=load_handoff(os.environ.get("TASK004_WRITER_HANDOFF_JSON",""))
     # The manifest digest and batch are already bound into the XCom and
     # source plan. An extra env binding is checked to prevent wrong Pod args.
