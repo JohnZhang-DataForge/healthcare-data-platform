@@ -1,5 +1,7 @@
 # Portal A4 — Spark OpenLineage Agent 静态开发交付与 Live Gate
 
+> **后续实测已发生（此文件是 TASK1 历史静态方案）**：[A4 实际 Spark Smoke 与 Marquez Run Closeout](./A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。真实 SparkApplication 已跑通，但原 Live Workflow 查询名称不一致而 FAIL；三次只读 GET 回读 Marquez 真实 Spark `COMPLETED` Run，应用 Job→Run 命名关联和 Dataset Lineage 尚未完成。本文件旧“LIVE HOLD/未运行”仅表示**当时静态开发阶段**，不是目前的最新真实状态。每次新的 Spark 运行仍需人工协调。
+
 ## 0. TASK1 静态 CI 真实验证（**SUCCESS / 无共享 Runner**）
 
 - [GitHub-hosted Static Run **38626855999**](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/38626855999)：**SUCCESS**，仅 `ubuntu-latest`，没有访问家中 Kubernetes / Self-Runner。
