@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 EDT / 2026-10-14 UTC 权威最新 NEXT — 已经真实部署 Airflow Landing Consumer v2 Reader，不应再重复开发/部署。** [LIVE Closeout](LANDING-AIRFLOW-V2-READER-REAL-DAGRUN-LIVE-2026-10-13.zh-CN.md) / [Run 38496119114](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38496119114) SUCCESS：Airflow 真实 GitSync Exact SHA、DagBag 正式 `healthcare-landing-discovery@sha256:059d94e4d1348c194956203fea6b19be23ec39595127eea397419e66fa4e5924`、Claim=NO、真实无参数 DagRun success，scan/Claim Guard success，Spark/Recon skipped。原 v1 73/70 Person S3 两个 READY 在新镜像下兼容 PASS，官方 GHCR 自身 Owner Repo 构建通过，实际 ServiceAccount 可无 token 拉取。**下一轮唯一焦点：审核/版本化激活 v2 Publisher 发布门槛，然后生成一个真实存在合法空辅助表的 NEW_ONLY 小人口新 Request，经过独立 S3/PG Source ID 审计后完成真正 v2 S3 Manifest-last/Discovery/Replay 安全闭环；不能把合成测试当真实 v2 READY。** 此轮 PG DML/Claim=NO、TASK004 IN PROGRESS/TASK005 ON HOLD。
+
+
 > **2026-10-13 EDT / 2026-10-14 UTC 当前唯一权威 NEW_ONLY NEXT：v2 Publisher 已实现并真实安全验收，实际 v2 S3 READY 仍刻意阻断。** [Closeout](SYNTHEA-NEW-ONLY-V2-PUBLISHER-STAGED-LIVE-2026-10-13.zh-CN.md) / [Self-Runner Run 38492827750](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38492827750)：42 tests PASS；Fake S3 18 CSV Upload + 18 GET checksum + Manifest last + Replay 不变 PASS；真实 worker01 70 Person /11487 Encounter 冻结 CSV v2 Draft PASS，并真实验证 `BLOCKED:NEW_ONLY_V2_V2_RUNTIME_CONSUMER_NOT_DEPLOYED` 的安全拒绝；GHCR digest `sha256:4a456ee4f186bcfdcf5e22c6477ac92ce32941ca4bae9ba685b0b1a2ca3840c5`。**当前 v2 contract=NOT_YET_DEPLOYED_DO_NOT_PUBLISH_READY；下一步先实际部署和验证 Airflow v2 Consumer（Claim NO），再版本化批准真实 v2 S3 发布和原始 Synthea 空辅助表集成。** 此轮 S3/PG mutation=0，原有两个 v1 READY 不变；TASK004 IN PROGRESS/TASK005 ON HOLD。
 
 
