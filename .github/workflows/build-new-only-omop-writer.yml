@@ -6,6 +6,7 @@ on:
     paths:
       - images/new-only-omop-writer/Dockerfile
       - apps/omop_writer/new_only_airflow_writer.py
+      - tests/omop_writer/test_new_only_airflow_writer_runtime.py
       - .github/workflows/build-new-only-omop-writer.yml
 permissions:
   contents: read
