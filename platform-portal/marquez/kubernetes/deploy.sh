@@ -123,7 +123,7 @@ payload={
   "metadata":{"name":"marquez-web-lan","namespace":"dw-marquez",
               "labels":{"app.kubernetes.io/part-of":"marquez"}},
   "spec":{"type":"NodePort","selector":selector,
-          "ports":[{"name":"http","protocol":"TCP","port":80,"targetPort":"http","nodePort":30999}]}
+          "ports":[{"name":"http","protocol":"TCP","port":80,"targetPort":"http","nodePort":30999}]}}
 print(json.dumps(payload))
 ' | kubectl apply -f -
 test "$(kubectl get svc marquez-web-lan -n "$NAMESPACE" -o jsonpath='{.spec.ports[0].nodePort}')" = 30999
