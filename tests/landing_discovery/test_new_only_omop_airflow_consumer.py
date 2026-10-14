@@ -35,6 +35,36 @@ class NewOnlyAirflowConsumerRouting(unittest.TestCase):
     def test_unclaimed_batches_remain_hold_without_claim_or_spark(self):
         self.assertEqual(route_claim_status(conf()|{"source_system":"synthea"},db_row("ABSENT")),
                          "unclaimed_batch_hold")
+    def test_manual_new_only_spark_selects_both_real_spark_tasks(self):
+        selected=select_verified_new_only(inventory(),conf()|{"spark_processing":True},"manual")
+        self.assertEqual(route_claim_status(selected,db_row("ABSENT")),
+                         ["spark_patient","spark_encounter"])
+        # Even an explicit stale spark flag cannot relaunch an already
+        # COMMITTED batch or skip the Claim reader.
+        self.assertEqual(route_claim_status(selected,db_row("COMPLETED")),
+                         "already_completed_no_replay")
+        self.assertEqual(route_claim_status(
+            select_verified_new_only(inventory(),conf(),"manual"),db_row("ABSENT")),
+            "unclaimed_batch_hold")
+        for invalid in (False,None,"true",0,{}):
+            with self.subTest(value=invalid),self.assertRaises(ValueError):
+                select_verified_new_only(inventory(),conf()|{"spark_processing":invalid},"manual")
+
+    def test_spark_dag_is_processing_only_and_handoff_ends_without_writer(self):
+        dag=(ROOT/"airflow/dags/new_only_omop_consumer.py").read_text()
+        factory=(ROOT/"airflow/dags/landing_spark_processing.py").read_text()
+        self.assertIn('task_id="spark_patient"',dag) if 'task_id="spark_patient"' in dag else self.assertIn('"spark_patient",process="person"',dag)
+        self.assertIn('"spark_encounter",process="visit"',dag)
+        self.assertIn('"spark_reconcile",process="reconcile"',dag)
+        self.assertIn('task_id="prepare_writer_handoff"',dag)
+        self.assertIn('task_id="writer_awaits_live_preflight"',dag)
+        self.assertIn("image_override=NEW_ONLY_PROCESSING_IMAGE",dag)
+        self.assertIn("route_new_only_status >> [already_completed_no_replay,unclaimed_batch_hold,",dag)
+        self.assertIn("image=image_override if image_override is not None else PROCESSING_IMAGE_SELECT",factory)
+        self.assertNotIn("generate_dynamic_commit_sql(",dag)
+        self.assertNotIn("CLAIM_ENABLE",dag)
+        self.assertNotIn("COMMIT;",dag)
+
     def test_invalid_identity_and_schedule_rejected(self):
         for run_type in ("scheduled","backfill"):
             with self.assertRaisesRegex(ValueError,"MANUAL_ONLY"):
