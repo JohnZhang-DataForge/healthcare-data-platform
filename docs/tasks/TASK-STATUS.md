@@ -1,5 +1,7 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT 当前唯一 TASK004 最终验收 NEXT：第三个全新 READY 已正式完成、但尚未 COMMIT。** [第三批完整待验收 Handoff](TASK-004-THIRD-READY-FINAL-ACCEPTANCE-PENDING-2026-10-14.zh-CN.md) / [READY 发布 Run 38588933989](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38588933989) SUCCESS / [Airflow GitSync + 独立 PG READ ONLY Run 38589912611](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38589912611) SUCCESS。Batch `synthea-new-only-gh-38588671004`，Person1、Visit244、Manifest SHA `22b6c386b5c165e0c9cff3d3ce5fbae2115aee87b4761fc4c11fb43a2c4720b1`；新 Claim/Writer Ledger/Stage/Checkpoint0，PG 207/21690/双 Map 同数、旧 COMPLETED2 无变化。仅在临时 Writer credential 安全合规配置后运行新批 Airflow Spark→Writer COMMIT→独立 durable readback→同批重复 SKIP，切勿重跑前两个批次或重新生成第三批。**目前 TASK004 IN PROGRESS；TASK005 ON HOLD。**
+
 > **2026-10-14 EDT — Airflow Writer 自动执行器已接 Main 并完成真实 GitSync + 14 Task DagBag + COMPLETED skip LIVE 验收。** [Closeout](NEW-ONLY-AIRFLOW-WRITER-LIVE-MAIN-GITSYNC-COMPLETED-SKIP-2026-10-14.zh-CN.md) / [Run 38583147075](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38583147075) SUCCESS：第二批第二次手动 DAG 配置 `spark_processing:true,writer_commit:true` 被实际 Claim reader 路由到 SKIP，Spark/Handoff/Writer KPO 均 skipped；DAG 停止后重新 paused；PG Person207 Visit21690 Claim2 完全不变。**不等于 Airflow 新批自动 COMMIT 已成功**；还需真正第三新 batch 的受控 E2E、临时 K8s Secret，当前 Secret 不存在。TASK004 IN PROGRESS / TASK005 ON HOLD，双 Writer /复杂恢复 Future Enhancement。
 
 
