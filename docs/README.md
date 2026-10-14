@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 第二个真实 NEW_ONLY Batch（70 Person / 11487 Visit）Airflow→S3→PG Readonly Precommit 已全绿。** [最新 Closeout](tasks/NEW-ONLY-SECOND-BATCH-REAL-S3-PG-READONLY-PRECOMMIT-2026-10-14.zh-CN.md) / [Self-Runner 38565372429](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38565372429) SUCCESS。复用 PR #130 已成功的 Airflow Spark XCom（Run 38563933551），不再运行 Spark；真实 worker02 Pod 重新 S3 GET Manifest/Patient70/Encounter11487 Processing Parquet，强验证指纹与父子键，再由 `cdm_reader` PG READ ONLY 检查 0 Source ID overlap、Claim ABSENT、Stage/Checkpoint0，独立 PG Person137/Visit10203/旧 Claim COMPLETED 前后不变。95 tests PASS。**下一步只针对该批做联合 Writer 同事务 Fencing ROLLBACK-only，真实 COMMIT 需明确授权**；Auto Claim NO，双 Writer 负载 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 NEW_ONLY Airflow Spark→Writer 动态批次合同与单事务 SQL Renderer 已通过测试。** [当轮权威 Closeout](tasks/NEW-ONLY-AIRFLOW-ATOMIC-DYNAMIC-WRITER-HANDOFF-2026-10-14.zh-CN.md) / [Self-Runner 38562133245](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38562133245) SUCCESS（Claim26/26、Writer42/42、Landing46/46，共114）。既有一次性成功 Writer 逻辑抽取为批次身份绑定的私有原子 Claim→Fencing→Person/Visit→整行 DB Reconciliation→COMPLETED→COMMIT Renderer，历史已提交 Batch 固定拒绝动态重写；新增纯 Airflow Spark XCom→不可变 Writer Handoff。实际业务 SQL **仅 Render、没有执行**；新 DAG 的 `unclaimed_batch_hold` 暂未连接 Spark/Writer，Airflow 自动 Claim 仍 NO。PG 只读 Person137/Visit10203/Claim1 COMPLETED/Stage813/2 Checkpoints 不变。NEXT 共享 Spark 人工协调后接实际 Spark→Handoff、真实新批 S3/PG preflight→受控 Writer ROLLBACK→COMMIT；不重跑历史已完成批次。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
