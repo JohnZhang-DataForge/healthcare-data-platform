@@ -1,5 +1,7 @@
 # Portal — 实际验收记录（Live 证据总览）
 
+> **A4 TASK1 仅 Static**：[Spark Agent 静态开发方案](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md)。GitHub-hosted Ubuntu 静态测试验证源码/YAML 结构；**没有 A4 实际 SparkApplication、没有 Marquez Spark Job/Run 证据**，因此 A4 Live 严格为 HOLD，TASK004 COMMIT/Secret 不受影响。
+
 > **并行开发期间的 Live Gate**：另一个 TASK004 Session 正在开发 Spark。Portal A4 的实际 SparkApplication、OpenLineage Agent 集群部署/测试 **HOLD**，直到先问用户是否已暂停/释放共享 Spark/Airflow 运行，再只读检查无未结束 Job/Workflow。**本次仅提交 Portal 文档，不占用 Self-Runner、不运行任何集群任务**。详见 [Session 人工协调规则](./SESSION-COORDINATION-POLICY.zh-CN.md)。
 
 > **A3 最新 PASS**：两次实际 Portal Airflow DagRun，两种 Task Job 各 2 条 Marquez COMPLETED Run。[A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38502940358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502940358)。没有启用 TASK004 Claim/Writer，OMOP PostgreSQL17 未修改。

@@ -1,5 +1,7 @@
 # Platform Portal 文档入口（Current）
 
+> **A4 TASK1 静态开发阶段（2026-10-14 EDT）**：已新增独立 Spark OpenLineage 探针源码、每轮 ConfigMap + SparkApplication 离线渲染与静态测试（只运行 GitHub-hosted，不使用 Self-Runner）；**实际 Spark Driver/Executor/Marquez Run 尚未执行**。TASK004 正在解决 COMMIT 前的 Secret，A4 TASK2 必须先重新向用户确认共享执行窗口并只读核查，保持 HOLD。详见 [A4 静态开发与人工放行门槛](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md)。
+
 > **当前并行开发协调 / 2026-10-13 EDT**：另一个 Session 正在开发 TASK004 Spark。**Portal A4 允许设计、文档和独立静态代码；SparkApplication/Runner 实际运行、Airflow 触发与共享组件变更全部 HOLD**，先问用户对方是否已经暂停 Spark 部署/测试、是否有未结束的 Workflow / SparkApplication，取得本次明确人工放行后再做实时只读检查。[**Portal 多 Session 人工协调规则（每任 Agent 必读）**](./SESSION-COORDINATION-POLICY.zh-CN.md)。不用另建自动锁服务。
 
 > **A3 最新 REAL LIVE PASS**：真实 Airflow Provider 事件已进入 Marquez，两个独立 DagRun、两种 Task 各 **2 个 COMPLETED Run**。[Run 38502227961](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502227961)、[Run 38502283003](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502283003)、[Readback Run 38502940358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502940358) 均 SUCCESS。[A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。**NEXT = A4 Spark OpenLineage 的设计/静态开发；实际 Spark 运行待用户人工放行**；TASK004 Claim/Writer 不变。
@@ -9,6 +11,7 @@
 - [架构](./architecture.md)：Marquez、OpenLineage、PostgreSQL14 与现有业务流
 - [人工协调规则](./SESSION-COORDINATION-POLICY.zh-CN.md)：跨 Session Spark/Airflow 等共享操作必须先问用户确认再运行（**ACTIVE / 必读**）
 - [实施计划](./implementation-plan.md)：当前路线 A 与分期验收
+- [A4 Spark OpenLineage 静态开发与 Live Gate](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md)：独立探针、版本候选、静态验收与人工放行
 - [部署与恢复](./deployment-guide.md)：固定版本、Secret 处理和 Helm/Runner
 - [真实验收](./validation.md)：Marquez 安装与 A3 Airflow 实际 Job/Run 证据
 - [A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)
