@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-14 EDT CURRENT NEXT：正式 Airflow Writer KPO 现已 Main GitSync + 真实 DagBag + 双 flag 已完成第二批安全 SKIP LIVE PASS。** [最新证据](NEW-ONLY-AIRFLOW-WRITER-LIVE-MAIN-GITSYNC-COMPLETED-SKIP-2026-10-14.zh-CN.md) / [Self-Runner 38583147075](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38583147075) SUCCESS：14 Tasks、新 digest-pinned Writer Container、无调度 `schedule=None`、Spark/Writer completed path skipped、PG Person207 Visit21690 Claim2 保持，DAG 重置 paused。**唯一剩余 TASK004 主线：第三个真正未入库 Synthea NEW_ONLY v2 READY 的人工受控 Airflow 双 opt-in → Spark Person/Visit → Handoff → 独立 Writer KPO 真 COMMIT + durable DB verify，重复 DagRun completed skip，然后才可正式 TASK004 DONE。** 物理 `task004-new-only-writer-commit` Secret 不存在，不能无监督启用 root-like PG 凭据；前两批禁止重新 Writer。TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT LATEST NEXT：Airflow Writer 正式源码/容器/KPO 双闸门已完成，仍需 Main GitSync 和第三批真实入库。** [当前 Closeout](NEW-ONLY-AIRFLOW-GATED-WRITER-EXECUTOR-2026-10-14.zh-CN.md) / [Self-Runner 38582267163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38582267163) SUCCESS（111 Unit/Contract tests + 实际 worker02 digest 容器 + KPO API + PostgreSQL Person207 Visit21690 Claim2 不变）。原 DAG 新 `route_writer_authorization→execute_new_only_writer→writer_committed_verified`；手工 `spark_processing:true,writer_commit:true` 且独立 K8s Secret `task004-new-only-writer-commit` 缺一不可。当前 Secret **没有部署**，保持零自动提交，**绝不重用两批已 COMPLETED 的旧 Batch**。NEXT 首先合并 Main 做真实 Airflow GitSync/DagBag 只读验收，再独立新第三批 READY、人工受控配置 Secret、Airflow Spark→Writer COMMIT→独立 DB readback→重放 SKIP。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
