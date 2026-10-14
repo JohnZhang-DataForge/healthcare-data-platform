@@ -131,7 +131,7 @@ def select_verified_processing_replay(
           or matching_decisions[0].get("decision") != "SKIP_LEGACY_BATCH"):
         raise ValueError("BLOCKED:ONLY_HISTORICAL_PROCESSED_BATCH_REPLAY_ALLOWED")
 
-    return {
+    selection = {
         "batch_id": batch,
         "manifest_uri": uri,
         "manifest_sha256": sha,
@@ -139,10 +139,14 @@ def select_verified_processing_replay(
         "status": "INTAKE_VERIFIED",
         "verified_file_count": 18,
         "processing_only": True,
-        "new_only_processing_probe": new_only_probe,
         "omop_business_mutation": False,
         "producer_trigger": False,
     }
+    # Preserve the exact original XCom shape for historical replays.
+    # Never silently convert an old batch into a NEW_ONLY probe.
+    if new_only_probe:
+        selection["new_only_processing_probe"] = True
+    return selection
 
 
 def processing_gate(selection_json: str) -> bool:
