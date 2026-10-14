@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 第二个 NEW_ONLY Batch 真实 70 Person /11487 Visit 同事务 Fencing + OMOP 联合 ROLLBACK 成功。** [最新 Closeout](tasks/NEW-ONLY-SECOND-BATCH-FENCED-JOINT-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Self-Runner 38566745511](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38566745511) SUCCESS：Airflow 已存在新批 XCom + 真实 S3 Parquet + `cdm_reader` 真 PG preflight，原子事务 3 次 Fencing→Person70/Visit11487→整行 DB Reconciliation→强制 ROLLBACK，SQL 无业务 COMMIT，独立 PG Person137/Visit10203/旧 COMPLETED1/新 Claim0、Stage0、Checkpoint0 Before/After 相同，99 tests PASS。无需重跑 Spark；NEXT **新批次第一次真正业务 COMMIT 需单独明确授权**，随后接 Airflow Writer KPO，实现端到端自动入库。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 第二个真实 NEW_ONLY Batch（70 Person / 11487 Visit）Airflow→S3→PG Readonly Precommit 已全绿。** [最新 Closeout](tasks/NEW-ONLY-SECOND-BATCH-REAL-S3-PG-READONLY-PRECOMMIT-2026-10-14.zh-CN.md) / [Self-Runner 38565372429](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38565372429) SUCCESS。复用 PR #130 已成功的 Airflow Spark XCom（Run 38563933551），不再运行 Spark；真实 worker02 Pod 重新 S3 GET Manifest/Patient70/Encounter11487 Processing Parquet，强验证指纹与父子键，再由 `cdm_reader` PG READ ONLY 检查 0 Source ID overlap、Claim ABSENT、Stage/Checkpoint0，独立 PG Person137/Visit10203/旧 Claim COMPLETED 前后不变。95 tests PASS。**下一步只针对该批做联合 Writer 同事务 Fencing ROLLBACK-only，真实 COMMIT 需明确授权**；Auto Claim NO，双 Writer 负载 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 

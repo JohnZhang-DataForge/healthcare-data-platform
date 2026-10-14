@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-14 EDT CURRENT NEXT — 第二个真实 NEW_ONLY Batch 70 Person / 11487 Visit 完整 Fenced Joint PostgreSQL ROLLBACK 实际 PASS；还没有持久 COMMIT。** [新权威 Closeout](NEW-ONLY-SECOND-BATCH-FENCED-JOINT-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Runner 38566745511](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38566745511) SUCCESS。已复用 Airflow 真 XCom（Run 38563933551），真实 Processing Parquet/Source ID Preflight，动态 Writer 完整 Person→Visit/两类 Checkpoint/3次 Same-TX Fencing + full-row Reconciliation，最终强制 ROLLBACK。实际 PG Person137/Visit10203；新 Batch `synthea-new-only-gh-38489944582` Claim/Stage/Checkpoint 全0，旧首批 Claim COMPLETED1。**NEXT：用户明确授权对第二 Batch 70/11487 首次真实业务 COMMIT，然后独立 DB 对账，最后把安全的 Writer 执行器接 NEW_ONLY Airflow 尾端。** 不重跑 Spark、当前 Auto Claim 关闭；双 Writer 并发/复杂 recovery FUTURE ENHANCEMENT、TASK005 HOLD。
+
+
 > **2026-10-14 EDT 当前 TASK004 唯一 NEXT：新批次 70/11487 已通过真 S3→PG Readonly Audit，直接做 Joint Fenced Writer ROLLBACK。** [最新 Closeout](NEW-ONLY-SECOND-BATCH-REAL-S3-PG-READONLY-PRECOMMIT-2026-10-14.zh-CN.md) / [Self-Runner 38565372429](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38565372429) SUCCESS。PR #130 已在 Main 启用独立新批次手动 Spark（Run 38563933551）：`synthea-new-only-gh-38489944582` Manifest SHA `be6806a520d74f5c57886f39086363003a432170c45e71828addedc39b4e1256`，Parquet Person70/Visit11487。新 `apps/omop_writer/audit_second_new_only_ready.py` 已在 worker02 真实读 S3+cdm_reader PG READ ONLY 抽查无键撞/无历史业务写；Person137 Visit10203 NEW_CLAIM0。**NEXT 不重跑 Spark、不生成 Synthea、不启动 Airflow Auto Claim；使用这份现有两个 Parquet + 真实 Airflow Handoff做同事务 Writer Fencing ROLLBACK-only、readback 验证。成功后可请求授权实际 COMMIT。** 双 Writer 并发等 FUTURE ENHANCEMENT、TASK004 IN PROGRESS/TASK005 ON HOLD。
 
 

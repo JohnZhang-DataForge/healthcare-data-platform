@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — 第二个 NEW_ONLY Batch 真 70/11487 Person+Visit 同事务 Fencing Joint Writer ROLLBACK 已 PASS。** [Closeout](NEW-ONLY-SECOND-BATCH-FENCED-JOINT-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Run 38566745511](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38566745511) SUCCESS：真实 Airflow Handoff → S3 Parquet（70/11487）→完整动态 SQL same-TX Claim+Fencing+Writer+full DB Reconcile→**ROLLBACK**；99 tests，PG Person137 Visit10203、新 Claim/Stage/Checkpoint=0 未持久改变。**NEXT：用户单独授权新 Batch 第一次业务 COMMIT，随后独立 PG 对账并接 Airflow Writer KPO/执行器**；当前 Auto Claim NO、Spark 无重跑、TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — Airflow 新批次 70 Person /11487 Visit → PG Reader Precommit 实际通过。** [Closeout](NEW-ONLY-SECOND-BATCH-REAL-S3-PG-READONLY-PRECOMMIT-2026-10-14.zh-CN.md) / [Runner 38565372429](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38565372429) SUCCESS：真正 Airflow 38563933551 Handoff XCom→当前 S3 两实体 Parquet 真实 GET/指纹/parent FK→cdm_reader PG READ ONLY；0 源 ID 碰撞，新 Batch Claim/Stage/Checkpoint 全0，Person137/Visit10203与旧 COMPLETED 不变，Writer47 + Landing48 tests PASS。**NEXT：** 70/11487 同事务 Fencing Joint Writer ROLLBACK + 独立 readback，随后新 Batch 独立授权下 COMMIT；禁重跑已成功 Spark，Auto Claim 仍 NO。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
