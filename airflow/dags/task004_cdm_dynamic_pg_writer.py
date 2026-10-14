@@ -15,9 +15,15 @@ def render(context,rows,entity,*,allow_commit=False):
     gate(entity in ENTITY,"entity")
     gate(isinstance(context,dict) and context.get("database_mutation_authorized") is False,"authorization_boundary")
     original={k:context[k] for k in ("batch_id","manifest_sha256","manifest_uri","person_processing_uri","visit_processing_uri","person_rows","visit_rows","source_version")}
+    if "writer_identity_version" in context:
+        original["writer_identity_version"]=context["writer_identity_version"]
     original.update(state="HANDOFF_VERIFIED_NOT_LOADED",cdm_write_permitted=False)
     verified=validate_plan(original)
     gate(verified["plan_sha256"]==context.get("plan_sha256"),"plan_changed")
+    # Legacy opt-in SQL interface is unchanged. NEW_ONLY COMMIT requires a
+    # future transaction-scoped claim-token fencing implementation.
+    if context.get("writer_identity_version")=="synthea-new-only-v1":
+        gate(not allow_commit,"new_only_commit_requires_fenced_writer")
     gate(isinstance(rows,list) and len(rows)==context[entity+"_rows"] and len(rows)>0,"count")
     keys=[r.get("source_key") for r in rows]
     gate(all(isinstance(k,str) and k and len(k)<=255 for k in keys) and len(set(keys))==len(keys),"keys")
