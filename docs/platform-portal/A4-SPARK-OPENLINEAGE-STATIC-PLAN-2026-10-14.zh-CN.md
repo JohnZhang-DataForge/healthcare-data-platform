@@ -1,5 +1,12 @@
 # Portal A4 — Spark OpenLineage Agent 静态开发交付与 Live Gate
 
+## 0. TASK1 静态 CI 真实验证（**SUCCESS / 无共享 Runner**）
+
+- [GitHub-hosted Static Run **38626855999**](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/38626855999)：**SUCCESS**，仅 `ubuntu-latest`，没有访问家中 Kubernetes / Self-Runner。
+- Python3.11 `py_compile`：PASS；`unittest` **6/6 PASS**；PyYAML 离线 ConfigMap + SparkApplication 双 YAML Render：PASS。
+- Runner 原始标志：`PORTAL_A4_GITHUB_HOSTED_OFFLINE_YAML_RENDER=PASS`、`PORTAL_A4_STATIC_TEST_SUITE=PASS`、`PORTAL_A4_REAL_SPARKAPPLICATION=NOT_RUN`、`PORTAL_A4_GITHUB_SELF_RUNNER=NOT_USED`、`PORTAL_A4_KUBERNETES_S3_OMOP_MUTATION=NO`。
+- **结论**：TASK1 静态代码准备和结构测试闭环成功；Scala/JAR 与 JVM 的实际兼容、Spark Listener 发出的真正事件、Marquez Job/Run、S3 读写血缘尚未验收。A4 TASK2 LIVE = HOLD。
+
 > **截至 2026-10-14 EDT：A4 TASK1 STAGED / STATIC ONLY；A4 TASK2 LIVE = HOLD。** 用户说 TASK004 Spark 已完成主要处理，但另一个 Session 目前卡在数据库 COMMIT 前的 Secret 创建；**不能根据“Spark 暂时不在运行”的推测直接执行 A4**。遵循 [多 Session 人工协调规则](./SESSION-COORDINATION-POLICY.zh-CN.md)。
 
 ## 1. 已有验证事实
