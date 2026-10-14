@@ -31,8 +31,8 @@ def validate_handoff(generate,person,visit):
     if not isinstance(manifest,str) or not manifest.startswith("s3://health-landing/") or "/batch_id="+batch+"/" not in manifest or not manifest.endswith("/manifest.json"):
         raise ValueError("BLOCKED=untrusted_manifest")
     if new_only and not re.fullmatch(
-        r"s3://health-landing/source=synthea/source_version=v3\\.3\\.0/"
-        r"ingest_date=\\d{4}-\\d{2}-\\d{2}/batch_id="+re.escape(batch)+r"/manifest\\.json",
+        r"s3://health-landing/source=synthea/source_version=v3\.3\.0/"
+        r"ingest_date=\d{4}-\d{2}-\d{2}/batch_id="+re.escape(batch)+r"/manifest\.json",
         manifest):
         raise ValueError("BLOCKED=new_only_manifest_lineage")
     result={"batch_id":batch,"manifest_sha256":digest,"source_version":EXPECTED_SOURCE_VERSION,
@@ -45,8 +45,8 @@ def validate_handoff(generate,person,visit):
         if isinstance(count,bool) or not isinstance(count,int) or count<=0:
             raise ValueError("BLOCKED="+name+"_row_count")
         if new_only and not re.fullmatch(
-            r"s3a://health-processing/source=synthea/source_version=v3\\.3\\.0/"
-            r"ingest_date=\\d{4}-\\d{2}-\\d{2}/batch_id="+re.escape(batch)+
+            r"s3a://health-processing/source=synthea/source_version=v3\.3\.0/"
+            r"ingest_date=\d{4}-\d{2}-\d{2}/batch_id="+re.escape(batch)+
             r"/entity="+entity+r"/run_id=[A-Za-z0-9._-]+/work/normalized/data/",
             uri):
             raise ValueError("BLOCKED=new_only_"+name+"_processing_lineage")
