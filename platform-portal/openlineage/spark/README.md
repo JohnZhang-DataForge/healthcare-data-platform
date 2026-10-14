@@ -1,6 +1,6 @@
-# A4 — Standalone Spark → OpenLineage → Marquez (STAGED / NO DEPLOY)
+# A4 — Standalone Spark → OpenLineage → Marquez (STATIC SOURCE + ONE REAL SMOKE DONE)
 
-**任务 1 静态交付，不是 Live 验收。** 先阅读 [Portal 人工协调规则](../../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)：用户确认另一个 TASK004 Session 仍在处理最后 DB COMMIT/Secret。**在用户明确暂停共享集群工作且实时只读检查通过之前，不得触发 Runner/Kubernetes/SparkApplication**。
+**任务 1 源码起点是静态交付；2026-10-14 后来已进行一次独立真实 Spark Smoke（Spark/CSV 成功，Marquez 真 Run 回读 PASS，App Job↔Run 命名和 Dataset facets 仍未完成）**。详见 [A4 实测 Closeout](../../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。 先阅读 [Portal 人工协调规则](../../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)：用户确认另一个 TASK004 Session 仍在处理最后 DB COMMIT/Secret。**在用户明确暂停共享集群工作且实时只读检查通过之前，不得触发 Runner/Kubernetes/SparkApplication**。
 
 ## 结构与隔离
 
@@ -23,7 +23,7 @@
 
 注意最后一行**只写本地 YAML 文件**，没有创建 Kubernetes 资源；这里**不包含** kubectl apply 或任何触发示例，避免误操作。模板中的包版本、Core/Memory 只是待 Live 验证的固定候选。
 
-## 任务 2：实时验证门槛（当前 HOLD）
+## 任务 2：真实 Smoke 已执行；后续再次运行仍须人工协调
 
 在用户明确确认 TASK004 的共享 Spark/Airflow 修改、部署、测试**已暂停且没有未完成 Job**后，才可：
 1. 用受控的只读查询检查现存 SparkApplication、Driver/Executor、Airflow DagRun/TaskInstance、最新 GitHub Actions，确认 worker02 可用，Operator watch dw-spark；确认镜像 Spark/Scala 版本、Agent Maven JAR 可达、Marquez 服务健康。
