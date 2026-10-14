@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — Airflow NEW_ONLY 原子 Writer KPO 已开发并真实 worker02 镜像验收；尚未用第三批 live COMMIT。** [Closeout](NEW-ONLY-AIRFLOW-GATED-WRITER-EXECUTOR-2026-10-14.zh-CN.md) / [Run 38582267163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38582267163) SUCCESS：111 tests、Airflow KPO Provider 接口通过、digest-pinned Writer 容器成功 import、两批既有 PG Claim COMPLETED，不变 Person207 Visit21690 Claim2。Airflow 双 opt-in 手工 Writer branch、独立部署 Secret、真实 S3+PG readback、同事务 COMMIT 与 fail-closed no-retry 已接线。**当前 Secret 不存在，自动写库关闭。** NEXT Main GitSync/DagBag、第三个全新 S3 READY 的 Airflow 真 COMMIT + skip 重放验证；双 Writer 并发 Future Enhancement。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — NEW_ONLY v2 第二批实际入库完成。** [权威 COMMIT Closeout](NEW-ONLY-SECOND-BATCH-FIRST-REAL-PG-COMMIT-2026-10-14.zh-CN.md) / [Run 38575457166](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38575457166) SUCCESS：真实 Airflow Spark 70 Person/11487 Visit 复用已有 S3 Parquet→独立 `cdm_reader` PG Source ID audit→同事务 Claim/Fencing/Writer/整行对账/COMPLETED/首次业务 COMMIT。Person137→207、Visit10203→21690、Claim1→2、当前新 Batch Stage11557、VERIFIED2、源键映射70/11487 全通过；重复 Claim 跳过，无 Spark rerun，无自动 Claim。**当前两个历史 NEW_ONLY Batch 都 COMPLETED，绝不可重新做首次 COMMIT；未来新 Batch 的 Airflow Writer KPO 仍未接通。** TASK004 IN PROGRESS/TASK005 ON HOLD。
 
 
