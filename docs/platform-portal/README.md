@@ -1,5 +1,7 @@
 # Platform Portal 文档入口（Current）
 
+> **新 Session 优先读**：[Portal 当前 Agent 交接（2026-10-14）](./AGENT-HANDOFF-CURRENT-2026-10-14.zh-CN.md)：已完成 A3 和 A4 基础 Smoke 的实证、Spark Job `unknown` Run 问题、Dataset 血缘缺失、人工协调边界及可直接复制的下一会话提示词。**NEXT 先只读诊断，不立即重复 Spark**。
+
 > **A4 Spark 独立真实 Smoke 最新记录（2026-10-14 EDT）**：Spark 3.5.7 在 worker02 的专属 Portal SparkApplication **COMPLETED**，3 行 CSV 实际聚合 PASS；Marquez 新 Namespace 下出现真实 Spark Job 和 1 条带 `processing_engine`/`spark_properties` facets 的 **COMPLETED Run**，见 [A4 实测 Closeout](./A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。**首次完整 Workflow 因 Job 名称含下划线以及 Completed Run 归在 `unknown` Job 而 FAIL**；后续三次只读诊断 SUCCESS，不能把首次 Workflow 标作 SUCCESS。输入/输出 Dataset 血缘和理想的 App Job→Run 关联仍未通过。该次独立 SparkApplication、ConfigMap 和 Pod 已清理，TASK004 业务代码/Writer/OMOP 未修改。新的 Spark 实验仍需人工协调。
 
 > **A4 TASK1 历史静态开发阶段（已完成，见上方最新 Smoke）**：已新增独立 Spark OpenLineage 探针源码、每轮 ConfigMap + SparkApplication 离线渲染与静态测试（只运行 GitHub-hosted，不使用 Self-Runner）；该 TASK1 当时**实际 Spark Driver/Executor/Marquez Run 尚未执行**；其后已完成独立 Smoke。TASK004 正在解决 COMMIT 前的 Secret，后续若再执行新的 Spark 实验，仍须先向用户确认共享执行窗口并只读核查。详见 [A4 静态开发与人工放行门槛](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md)。
@@ -10,6 +12,7 @@
 
 > 用户确认从 `docs/demo-plan/` **正式迁移为** `docs/platform-portal/`，代码在 `platform-portal/`。历史方案保存在 `archive/`，不再把静态前端旧版方案当成当前 NEXT。
 
+- [当前 Agent 交接](./AGENT-HANDOFF-CURRENT-2026-10-14.zh-CN.md)：新会话入口、A4 未解决问题和安全执行顺序
 - [架构](./architecture.md)：Marquez、OpenLineage、PostgreSQL14 与现有业务流
 - [人工协调规则](./SESSION-COORDINATION-POLICY.zh-CN.md)：跨 Session Spark/Airflow 等共享操作必须先问用户确认再运行（**ACTIVE / 必读**）
 - [实施计划](./implementation-plan.md)：当前路线 A 与分期验收
