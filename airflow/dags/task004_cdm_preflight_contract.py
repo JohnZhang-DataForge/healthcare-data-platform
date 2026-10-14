@@ -35,6 +35,11 @@ def validate_handoff(generate,person,visit):
         r"ingest_date=\d{4}-\d{2}-\d{2}/batch_id="+re.escape(batch)+r"/manifest\.json",
         manifest):
         raise ValueError("BLOCKED=new_only_manifest_lineage")
+    # Processing cannot silently refer to another ingest partition even
+    # when batch_id matches; bind both entities to the immutable manifest day.
+    manifest_ingest_date=(
+        manifest.split("/ingest_date=",1)[1].split("/",1)[0] if new_only else None
+    )
     result={"batch_id":batch,"manifest_sha256":digest,"source_version":EXPECTED_SOURCE_VERSION,
             "manifest_uri":manifest,"person_processing_uri":None,"visit_processing_uri":None}
     for name,obj,entity in (("person",person,"patient"),("visit",visit,"encounter")):
@@ -50,6 +55,8 @@ def validate_handoff(generate,person,visit):
             r"/entity="+entity+r"/run_id=[A-Za-z0-9._-]+/work/normalized/data/",
             uri):
             raise ValueError("BLOCKED=new_only_"+name+"_processing_lineage")
+        if new_only and "/ingest_date="+manifest_ingest_date+"/" not in uri:
+            raise ValueError("BLOCKED=new_only_"+name+"_ingest_date_drift")
         result[name+"_processing_uri"]=uri
         result[name+"_rows"]=count
     result["cdm_write_permitted"]=False
