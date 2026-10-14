@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 Airflow NEW_ONLY Writer 正式接线并在 Main 实际 GitSync + DagBag + 已完成批次安全 SKIP 通过。** [最新 LIVE Closeout](tasks/NEW-ONLY-AIRFLOW-WRITER-LIVE-MAIN-GITSYNC-COMPLETED-SKIP-2026-10-14.zh-CN.md) / [Self-Runner 38583147075](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38583147075) SUCCESS：Airflow 14 Task、新 Writer KPO 摘要已固定、已完成第二批即使双开 `spark_processing:true,writer_commit:true` 仍走 `already_completed_no_replay`，真实 Spark/Writer 均 skipped、DAG re-paused；PG Person207/Visit21690/Claim2 完全不变。**Writer 自动 COMMIT 的源码和编排已就绪，但独立 commit Secret 仍不存在、第三个新 READY 的真正 Airflow COMMIT 还没跑；TASK004 仍 IN PROGRESS。** NEXT 只需第三个新 S3 READY 的 Spark→Writer→PG COMMIT→独立回读→重复 SKIP 最终验收。TASK005 HOLD。
+
+
 > **2026-10-14 EDT — TASK004 Airflow NEW_ONLY 原子 Writer KPO 已接线，镜像已发布并在 worker02 真实验证。** [最新 Closeout](tasks/NEW-ONLY-AIRFLOW-GATED-WRITER-EXECUTOR-2026-10-14.zh-CN.md) / [Self-Runner 38582267163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38582267163) SUCCESS（53 Landing +58 Writer=111 tests）、[Docker Build 38581579633](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/38581579633) SUCCESS。新增人工 `spark_processing:true,writer_commit:true` 双启用 → Spark Handoff 后 `execute_new_only_writer`：真 S3/PG audit、同事务 Claim/Fencing/Person/Visit/完整 Reconcile/COMMIT/独立 PG readback、完成批次 Skip，禁止自动 retry。**当前 commit credential/enable Secret 未部署，没有第三批真实 COMMIT**；PG Person207 Visit21690 Claim2 不变，不重跑前两个 Batch。NEXT Main GitSync+DagBag、第三批真正 NEW_ONLY READY 的安全 Airflow live end-to-end。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
