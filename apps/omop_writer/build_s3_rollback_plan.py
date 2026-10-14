@@ -17,6 +17,7 @@ def build(
     *, batch_id: str, manifest_uri: str, manifest_sha256: str,
     person_processing_uri: str, visit_processing_uri: str,
     person_rows: int, visit_rows: int, source_version: str = "v3.3.0",
+    writer_identity_version: str | None = None,
 ) -> dict:
     if any(isinstance(n, bool) or not isinstance(n, int) for n in (person_rows, visit_rows)):
         raise ValueError("BLOCKED=invalid_processing_row_counts")
@@ -26,6 +27,8 @@ def build(
         person_rows=person_rows, visit_rows=visit_rows, source_version=source_version,
         state="HANDOFF_VERIFIED_NOT_LOADED", cdm_write_permitted=False,
     )
+    if writer_identity_version is not None:
+        payload["writer_identity_version"]=writer_identity_version
     ctx=plan(payload)
     if ctx["database_mutation_authorized"] is not False:
         raise ValueError("BLOCKED=commit_authorization")
@@ -42,6 +45,7 @@ def main() -> None:
     p.add_argument("--visit-processing-uri",required=True)
     p.add_argument("--person-rows",type=int,required=True)
     p.add_argument("--visit-rows",type=int,required=True)
+    p.add_argument("--writer-identity-version",choices=["synthea-new-only-v1"])
     p.add_argument("--output",required=True)
     a=p.parse_args()
     ctx=build(**{
@@ -50,6 +54,7 @@ def main() -> None:
         "person_processing_uri":a.person_processing_uri,
         "visit_processing_uri":a.visit_processing_uri,
         "person_rows":a.person_rows,"visit_rows":a.visit_rows,
+        "writer_identity_version":a.writer_identity_version,
     })
     output=Path(a.output)
     output.write_text(json.dumps(ctx,sort_keys=True)+"\n",encoding="utf8")
