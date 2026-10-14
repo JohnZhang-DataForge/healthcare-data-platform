@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — TASK004 首个真 S3→OMOP NEW_ONLY v2 业务 COMMIT 正式成功。** [本轮完整验收](NEW-ONLY-V2-FIRST-REAL-PG-COMMIT-RECONCILIATION-2026-10-14.zh-CN.md) / [Run 38555481037](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38555481037) SUCCESS。固定真实 Batch `synthea-new-only-gh-38497355290`，Person **1** / Visit **812** 已持久化、前后 Fencing/合并的 Person→Visit SQL/整行 CDM 对账/Claim COMPLETED 全在单一 PG COMMIT。独立核验 Person136→**137**、Visit9391→**10203**、ID Map 同步 +1/+812、Claim **1 COMPLETED**、Ledger1、Stage813、VERIFIED2。Claim26 + Writer37 回归 PASS，后续重复 Claim `ON CONFLICT DO NOTHING` 确认 COMPLETED 未变化。**下一步：只读验收原 Claim API `SKIP_COMPLETED` 与已入库批次对账，再开发 Airflow 受控单批 Claim/Writer，使用未来未入库新批测试；本批不可二次执行 Writer。** 当前自动 Claim 仍关闭，双 Writer 竞争/复杂恢复为 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — NEW_ONLY v2 真正 1/812 Writer 同事务 Fencing 及 PG ROLLBACK 完成。** [最新真实验收](NEW-ONLY-REAL-S3-OMOP-WRITER-FENCED-ROLLBACK-2026-10-14.zh-CN.md) / [Run 38554330163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38554330163) SUCCESS。受控最小权限 Function 已持久安装（行政 DDL COMMIT，不是业务 COMMIT），cdm_writer 有效角色以单 BEGIN + 合成未提交 Claim 行锁，执行真 S3 Person1/Visit812 SQL，在 COMMIT 前再次核验并整体 ROLLBACK；PG Person136/Visit9391/Claim0 前后不变，真正 READY 未 Claimed。Claim26/26 + Writer33/33 regressions；无 Spark 重跑/Airflow Auto Claim/正式业务 COMMIT。**NEXT：** 真正 READY 单次 Claim→Writer COMMIT→DB Reconciliation→幂等重放、自动 Airflow 主线。真实业务 COMMIT 仍需明确授权。双 Writer 并发竞争与复杂 Recovery 标记为 FUTURE ENHANCEMENT、不再阻塞 Demo TASK004。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
