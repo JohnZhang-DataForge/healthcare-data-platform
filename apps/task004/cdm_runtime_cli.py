@@ -22,6 +22,8 @@ def main():
             "person_processing_uri", "visit_processing_uri",
             "person_rows", "visit_rows", "source_version")
     original = {key: supplied[key] for key in keys}
+    if "writer_identity_version" in supplied:
+        original["writer_identity_version"]=supplied["writer_identity_version"]
     original.update(state="HANDOFF_VERIFIED_NOT_LOADED",
                     cdm_write_permitted=False)
     verified = plan(original)
