@@ -1,20 +1,29 @@
 # Platform Portal — 路线 A 实施计划 / Current
 
-> **最新执行状态**：A3 Airflow Provider → Marquez **REAL LIVE PASS**（两次真实 DagRun、两个 Task Job 各 2 条 COMPLETED Run）；详见 [A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。**当前 NEXT = A4 隔离 Spark OpenLineage 验证**。下方历史 A3 待办已完成，不应重新开启 TASK004 或 Writer。
+> **2026-10-13 EDT 人工互斥执行门槛（ACTIVE）**：用户确认另一个 TASK004 Session 正在开发 Spark。因此 **A4 的 SparkApplication / OpenLineage Agent 真实部署与验证为 HOLD**。可并行整理 Portal 设计、文档、独立测试代码及不占用共享环境的静态验收。**任何可能与 TASK004 冲突的 Spark、Airflow、Kubernetes、S3、PostgreSQL 运行或变更，必须先向用户询问另一 Session 是否还在修改、部署、测试 Spark/共享资源，是否有未结束的 Job / Workflow；用户明确确认已暂停和释放后，再实时只读核对资源，才可执行本次具体操作。**见 [Portal 跨 Session 人工协调规则（必读）](./SESSION-COORDINATION-POLICY.zh-CN.md)。不同 Workflow/Namespace 不代表自动隔离，禁止直接抢跑。
 
-> **2026-10-13 EDT / 2026-10-14 UTC 最终活跃状态**：Marquez 0.51.1 API/Web 已部署在 `dw-marquez`，PostgreSQL14 上的 37 张元数据表已迁移，Web-only NodePort 30999 与 Web/API Proxy HTTP 200 实测 PASS。唯一当前 NEXT 是 **A3 现有 Airflow OpenLineage Provider 的真实事件接入**。参见 [最新验收](./validation.md)。下方“活跃下一步”原 1–3 项为执行前计划，已完成，不是最新 NEXT。LAN 浏览器/NAT 与数据库备份仍未验收。
+> **最新执行状态**：A3 Airflow Provider → Marquez **REAL LIVE PASS**（两次真实 DagRun、两个 Task Job 各 2 条 COMPLETED Run）；详见 [A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。**当前 NEXT = A4 的静态设计/源代码准备；A4 Live 等待人工协调释放 Spark**。下方历史 A3 待办已完成，不应重新开启 TASK004 或 Writer。
+
+> **历史阶段信息（已覆盖，不是当前 NEXT）**：Marquez 0.51.1 API/Web 已部署在 `dw-marquez`，PostgreSQL14 上 37 张元数据表已迁移，Web-only NodePort 30999 与 Web/API Proxy HTTP 200 实测 PASS；Airflow A3 后来也已完成真实 Task Run 事件接入。原计划 A3 为 NEXT 的描述属于旧时间点。现阶段 **A4 Live HOLD（等待 TASK004 Spark 开发窗口结束并取得人工确认）**。LAN 浏览器/NAT 与数据库备份仍未验收。
 
 > **2026-10-13 决议**：使用已持久化、实际部署的 `dw-postgre14` PostgreSQL **14.24** 及其独立 `marquez` 数据库，取代过去计划里“尝试复用 PostgreSQL17”的过渡方案。历史 A0 关于 PG17/Flyway 8.5.13 的风险判断仍有效，但**不再阻止连接独立 PG14**。
 >
 > **实施路径**：`platform-portal/marquez`；**文档路径**：`docs/platform-portal`；Marquez Namespace：`dw-marquez`；Web-only NodePort：30999（局域网受控访问）。
 
-## 活跃下一步
+## 原 Marquez A0/A3 执行步骤（历史已完成，不要重跑）
 
 1. 从目前 Draft PR 的 fixed SHA 执行 shell lint + pinned chart Helm render，不运行未完成的旧工作流。
 2. 完成 Marquez API、原生 Web UI、PostgreSQL14 Flyway migrations 和实际 HTTP API/Frontend 请求验证。失败不超过 3 轮。
 3. API/Web Ready、数据库独立性得到证实后才验证 Web-only 30999 Service；网络和浏览器测试不足时如实标记 NOT VERIFIED。
 4. 配置现有 Airflow OpenLineage Provider → Marquez；确认真实 DAG、Task、Run event。
 5. 后续接入真实 Spark Agent、S3 数据集输入输出与 Writer；Writer 未 COMMIT 禁止画成功入库边。
+
+## 当前 A4 计划（受人工协调门槛约束）
+
+1. **现在可执行**：静态评估 OpenLineage Spark Agent 的版本兼容、编写 Portal 专属 SparkApplication/配置/测试方案；只做 Git 分支和文档，不触发共享集群。
+2. **目前不可执行**：任何真实 SparkApplication、Driver/Executor Pod、Spark Operator 重启/升级、Airflow DAG Run、Marquez 联动实测或其他共享运行任务。TASK004 正在开发 Spark，默认保持 HOLD。
+3. **人工释放后**：先问用户 TASK004 的 Spark 开发/修改/部署/测试是否已暂停，核对无未结束 Workflow、SparkApplication 和 Airflow Run。随后才能在明确授权的单次窗口内跑隔离测试，记录真实 GitHub Run/Job/Run State；结束后通知用户资源已释放。
+4. **后续 A5**：只有 TASK004 真正完成相关业务处理后，才能计划联调。Writer 未成功 COMMIT 不得输出虚假的 OMOP 入库血缘。
 
 ## 历史架构规划（参考，不是当前阻塞顺序）
 
