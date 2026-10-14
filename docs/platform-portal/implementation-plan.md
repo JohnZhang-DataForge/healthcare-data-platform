@@ -1,6 +1,8 @@
 # Platform Portal — 路线 A 实施计划 / Current
 
-> **A4 TASK1 最新实现（2026-10-14 EDT）**：[A4 Spark OpenLineage 静态开发方案](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md) 已提供 Spark 3.5.7 独立 Application 模板、固定候选 Agent JAR、ConfigMap CSV 探针、离线 YAML Render、纯静态测试；**不表示 Agent 可运行或已有 Marquez Spark Job/Run**。A4 TASK2 Live 继续 HOLD，必须先问用户 TASK004 是否完成/暂停共享开发并核查无活跃操作。
+> **A4 最新 2026-10-14 EDT**：[A4 实际 Spark Smoke 与 Marquez Run Closeout](./A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)：专属 SparkApplication `COMPLETED`、3 行 CSV 聚合 PASS、Marquez 真实 Spark facets 的 `COMPLETED` Run 只读回读成功。最初 GitHub Live Workflow 因 Spark Job 名称规范化与 `unknown` Run Job 错配整体 FAIL，不能重写为 SUCCESS。**下一步：Job/Run 命名关联和真实 Dataset facets**；此类再次运行需用户人工协调。不启动 TASK004 Writer/Claim。
+
+> **A4 TASK1 历史静态实现（2026-10-14 EDT）**：[A4 Spark OpenLineage 静态开发方案](./A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md) 已提供 Spark 3.5.7 独立 Application 模板、固定候选 Agent JAR、ConfigMap CSV 探针、离线 YAML Render、纯静态测试；**不表示 Agent 可运行或已有 Marquez Spark Job/Run**。A4 TASK2 Live 继续 HOLD，必须先问用户 TASK004 是否完成/暂停共享开发并核查无活跃操作。
 
 > **2026-10-13 EDT 人工互斥执行门槛（ACTIVE）**：用户确认另一个 TASK004 Session 正在开发 Spark。因此 **A4 的 SparkApplication / OpenLineage Agent 真实部署与验证为 HOLD**。可并行整理 Portal 设计、文档、独立测试代码及不占用共享环境的静态验收。**任何可能与 TASK004 冲突的 Spark、Airflow、Kubernetes、S3、PostgreSQL 运行或变更，必须先向用户询问另一 Session 是否还在修改、部署、测试 Spark/共享资源，是否有未结束的 Job / Workflow；用户明确确认已暂停和释放后，再实时只读核对资源，才可执行本次具体操作。**见 [Portal 跨 Session 人工协调规则（必读）](./SESSION-COORDINATION-POLICY.zh-CN.md)。不同 Workflow/Namespace 不代表自动隔离，禁止直接抢跑。
 
