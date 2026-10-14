@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 NEW_ONLY Airflow 已完成批次安全跳过 LIVE 全绿。** [正式 Closeout](tasks/NEW-ONLY-AIRFLOW-CONSUMER-COMPLETED-SKIP-REAL-LIVE-2026-10-14.zh-CN.md) / [Self-Runner 38560309400](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38560309400) **SUCCESS** / Runner [PR #102](https://github.com/JohnZhang-DataForge/Self-Runner/pull/102) merged。真实 Scheduler GitSync 与 DagBag PASS；手工 NewOnly DAG Run `success`，COMPLETED 安全跳过、不触发 unclaimed 路线，DAG 测试后已恢复 paused；PG Person137/Visit10203/Claim1/Stage813 以及 2 VERIFIED checkpoints Before/After 不变。52/52 回归 PASS，无 Spark、无自动 Claim、无业务 COMMIT。**NEXT 受控单批新 READY 的 Claim→Spark→Writer 合同/编排，Portal/Spark live 需 Session 人工协调**。旧 Runner XCom 验收 blocker 已解除。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 Airflow NEW_ONLY consumer 第一阶段已经落地，真实 Airflow DagRun success，但 Self-Runner 全部断言未绿。** [最新真实验收及停止交接](tasks/NEW-ONLY-AIRFLOW-CONSUMER-REAL-COMPLETED-SKIP-HANDOFF-2026-10-14.zh-CN.md) / [Runner 38559222216](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38559222216)：Healthcare PR #126 已合并 Main，新 DAG GitSync 字节匹配、DagBag 正式解析。只读 S3 Discovery→真实 PG Claim 检查，已完成 NEW_ONLY Batch 的真实 DagRun `success`，TaskInstance 证实 `already_completed_no_replay=success`、`unclaimed_batch_hold=skipped`，PG Person137/Visit10203/Claim1 无变更。**Runner job conclusion=failure** 因测试错误要求 BranchPythonOperator 的 XCom return_value 非 None。三轮修复后按约定 STOP；Runner 测试 workflow 未合并，下一轮优先仅修复验收断言。**没有自动 Claim、Spark、业务 COMMIT；新 Batch 仍 HOLD。** TASK004 IN PROGRESS / TASK005 ON HOLD，Portal A4 HOLD。
 
 
