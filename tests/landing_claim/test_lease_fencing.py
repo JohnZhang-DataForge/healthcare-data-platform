@@ -15,10 +15,12 @@ OWNER="a"*48
 def ticket(attempt=1,owner=OWNER):
     return FenceTicket(Candidate("synthea",B,SHA,URI),owner,attempt)
 
+UNSET=object()
+
 class Cursor:
-    def __init__(self, row=None, alive=True, renewed=True):
+    def __init__(self, row=UNSET, alive=True, renewed=True):
         self.calls=[]
-        self.row=row if row is not None else (SHA,URI,"PROCESSING",1,OWNER,"future timestamp")
+        self.row=row if row is not UNSET else (SHA,URI,"PROCESSING",1,OWNER,"future timestamp")
         self.alive=alive
         self.renewed=renewed
     def execute(self,sql,values=None):
