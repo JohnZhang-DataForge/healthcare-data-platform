@@ -1,5 +1,7 @@
 # Marquez 部署与恢复 Runbook
 
+> **真实 LIVE STATE**：Marquez API/Web 1/1 Ready，`dw-postgre14/marquez` 迁移 37 表，`dw-marquez/marquez-web-lan` 30999 Service 已创建；[实际验收](./validation.md)。不用重复运行 Helm 安装来验证 Web NodePort。网络访问控制与备份演练仍是独立运维门槛。
+
 **部署仓库源代码：**
 - `platform-portal/marquez/helm/values.yaml`
 - `platform-portal/marquez/kubernetes/deploy.sh`

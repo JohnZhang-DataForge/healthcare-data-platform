@@ -11,4 +11,4 @@
 
 **已存在的独立数据仓库**：`dw-postgre14` PostgreSQL 14.24 / DB `marquez` / Service `dw-postgre14.dw-postgre14.svc.cluster.local:5432` / Retain PVC `dw-postgre14-data`。不用重装。**任务主线 TASK004 仍独立开发**。
 
-**当前部署阶段**：继承上次安装 Draft PR #106 / Self-Runner PR #90；过去三个 Run 失败的事实不会因为文件搬迁变为 PASS。真正的 API/Web、迁移、NodePort 状态以最新 Live Workflow 验收为准。
+**当前部署阶段（2026-10-13 EDT / 2026-10-14 UTC）**：[Marquez Helm/PG14 Schema 真实 Run 38499534795](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38499534795) 的 API+Web 1/1 Ready、PG14 37 张表 PASS（此 Run 后续 NodePort 代码失误导致 workflow FAIL）；[独立 Web-only 恢复 Run 38499838493](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38499838493) **最终 SUCCESS**，30999 Service 已创建、Web /healthcheck PASS、同源 /api/v1/namespaces HTTP 200。详见 [validation.md](./validation.md)。LAN 浏览器和公网 NAT 尚未实测，真实 OpenLineage 事件下阶段接入。
