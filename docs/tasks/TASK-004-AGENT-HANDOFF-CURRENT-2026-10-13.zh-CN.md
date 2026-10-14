@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-14 EDT LATEST — 第二个真实 NEW_ONLY Batch 首次正式 COMMIT 已成功，覆盖旧文档“等待授权/仍未 COMMIT”陈述。** [当前入库 Closeout](NEW-ONLY-SECOND-BATCH-FIRST-REAL-PG-COMMIT-2026-10-14.zh-CN.md) / [Run 38575457166](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38575457166) SUCCESS。Batch `synthea-new-only-gh-38489944582` 已持久 70 Person +11487 Visit，真 PG Person=**207** Visit=**21690**，Claim Ledger **2**、新 Batch COMPLETED1、Stage11557、VERIFIED2，PG Source ID + parent FK Join 70/11487；103 tests PASS，Duplicate Claim 跳过。首次 run 38572127827 因 shell 语法失败未写库，修复后真正成功且**禁止再次提交本 Batch**。**NEXT：** 实现新的 Airflow Writer KPO/Executor 对**未来第三个未提交 READY Batch** 进行自动 Writer COMMIT；现有 `writer_awaits_live_preflight` HOLD，不能谎称端到端 Airflow Writer 完成。Auto Claim NO、TASK004 IN PROGRESS、TASK005 ON HOLD、双 Writer 压测 Future Enhancement。
+
+
 > **2026-10-14 EDT CURRENT NEXT — 第二个真实 NEW_ONLY Batch 70 Person / 11487 Visit 完整 Fenced Joint PostgreSQL ROLLBACK 实际 PASS；还没有持久 COMMIT。** [新权威 Closeout](NEW-ONLY-SECOND-BATCH-FENCED-JOINT-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Runner 38566745511](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38566745511) SUCCESS。已复用 Airflow 真 XCom（Run 38563933551），真实 Processing Parquet/Source ID Preflight，动态 Writer 完整 Person→Visit/两类 Checkpoint/3次 Same-TX Fencing + full-row Reconciliation，最终强制 ROLLBACK。实际 PG Person137/Visit10203；新 Batch `synthea-new-only-gh-38489944582` Claim/Stage/Checkpoint 全0，旧首批 Claim COMPLETED1。**NEXT：用户明确授权对第二 Batch 70/11487 首次真实业务 COMMIT，然后独立 DB 对账，最后把安全的 Writer 执行器接 NEW_ONLY Airflow 尾端。** 不重跑 Spark、当前 Auto Claim 关闭；双 Writer 并发/复杂 recovery FUTURE ENHANCEMENT、TASK005 HOLD。
 
 
