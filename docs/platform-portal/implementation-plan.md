@@ -1,8 +1,24 @@
-> **2026-10-13 A0 实测补充（新优先级）**：[第二轮真实兼容性和网络安全 Gate](./MARQUEZ-A0-COMPATIBILITY-SECURITY-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38491060185](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38491060185) PASS：上游固定源码包含 Flyway 8.5.13（PG17 支持版本不匹配），Web 代理 /api/v1、/api/v2beta，且 Chart Web/API 共享 service.type；30999 未占用但 NAT/防火墙未知。**不得直接套用后文的 A1/A2 实施：CURRENT NEXT = 隔离 PG17/Marquez 兼容 PoC，NodePort 必须单独 Web Service + trusted LAN/VPN Gate。**这不影响七阶段总体目标。
+# Platform Portal — 路线 A 实施计划 / Current
+
+> **2026-10-13 EDT / 2026-10-14 UTC 最终活跃状态**：Marquez 0.51.1 API/Web 已部署在 `dw-marquez`，PostgreSQL14 上的 37 张元数据表已迁移，Web-only NodePort 30999 与 Web/API Proxy HTTP 200 实测 PASS。唯一当前 NEXT 是 **A3 现有 Airflow OpenLineage Provider 的真实事件接入**。参见 [最新验收](./validation.md)。下方“活跃下一步”原 1–3 项为执行前计划，已完成，不是最新 NEXT。LAN 浏览器/NAT 与数据库备份仍未验收。
+
+> **2026-10-13 决议**：使用已持久化、实际部署的 `dw-postgre14` PostgreSQL **14.24** 及其独立 `marquez` 数据库，取代过去计划里“尝试复用 PostgreSQL17”的过渡方案。历史 A0 关于 PG17/Flyway 8.5.13 的风险判断仍有效，但**不再阻止连接独立 PG14**。
+>
+> **实施路径**：`platform-portal/marquez`；**文档路径**：`docs/platform-portal`；Marquez Namespace：`dw-marquez`；Web-only NodePort：30999（局域网受控访问）。
+
+## 活跃下一步
+
+1. 从目前 Draft PR 的 fixed SHA 执行 shell lint + pinned chart Helm render，不运行未完成的旧工作流。
+2. 完成 Marquez API、原生 Web UI、PostgreSQL14 Flyway migrations 和实际 HTTP API/Frontend 请求验证。失败不超过 3 轮。
+3. API/Web Ready、数据库独立性得到证实后才验证 Web-only 30999 Service；网络和浏览器测试不足时如实标记 NOT VERIFIED。
+4. 配置现有 Airflow OpenLineage Provider → Marquez；确认真实 DAG、Task、Run event。
+5. 后续接入真实 Spark Agent、S3 数据集输入输出与 Writer；Writer 未 COMMIT 禁止画成功入库边。
+
+## 历史架构规划（参考，不是当前阻塞顺序）
 
 # Healthcare Data Platform — 路线 A：OpenLineage + Marquez 真实血缘实施规划 v3.0
 
-> **决策日期**：2026-10-13（EDT）；**状态**：DESIGN APPROVED / IMPLEMENTATION NOT STARTED；**权威目录**：`docs/demo-plan/`。  
+> **决策日期**：2026-10-13（EDT）；**状态**：DESIGN APPROVED / IMPLEMENTATION NOT STARTED；**权威目录**：`docs/platform-portal/`。  
 > **明确决策**：**先部署 Marquez 和接通 Airflow/Spark 的真实数据血缘**；**不制作任何独立前端展示网站**，不部署 Superset、OpenMetadata、Kafka/Kinesis；第一阶段仅从受控网络经 Kubernetes **NodePort TCP 30999** 访问 **Marquez 原生 Web UI**。  
 > **本规划的提交仅涉及文档**：未创建 Namespace、Secret、数据库、NodePort、Pod 或任何模拟 Lineage 事件；上线需后续各阶段分别通过 GitHub PR + exact-SHA Self-Runner 验收。
 
@@ -178,3 +194,4 @@ worker01 / dw-synthea                  worker01 / SeaweedFS
 - [Airflow OpenLineage Provider 官方配置](https://airflow.apache.org/docs/apache-airflow-providers-openlineage/stable/configurations-ref.html)。
 - [OpenLineage Spark Listener](https://openlineage.io/docs/guides/spark/)（官方标注指南曾用于较早版本，实际必须锁定兼容版本）。
 - [Kubernetes NodePort 默认范围](https://kubernetes.io/docs/reference/networking/ports-and-protocols/)。
+
