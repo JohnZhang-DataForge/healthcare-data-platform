@@ -133,7 +133,7 @@ echo MARQUEZ_PG14_API_WEB_DEPLOYMENT=PASS
 echo OMOP_AIRFLOW_SYNTHEA_MUTATION=NO
 echo NODEPORT_EXTERNAL_NAT_STATUS=NOT_VERIFIED
  "$CHART_DIR/Chart.yaml"
-helm dependency build "$CHART_DIR" --skip-refresh
+helm dependency build "$CHART_DIR"
 helm show chart "$CHART_DIR" > "$REPORT_DIR/chart.yaml"
 grep -q '^name: marquez
 
