@@ -1,5 +1,7 @@
 # Portal — 实际验收记录（Live 证据总览）
 
+> **并行开发期间的 Live Gate**：另一个 TASK004 Session 正在开发 Spark。Portal A4 的实际 SparkApplication、OpenLineage Agent 集群部署/测试 **HOLD**，直到先问用户是否已暂停/释放共享 Spark/Airflow 运行，再只读检查无未结束 Job/Workflow。**本次仅提交 Portal 文档，不占用 Self-Runner、不运行任何集群任务**。详见 [Session 人工协调规则](./SESSION-COORDINATION-POLICY.zh-CN.md)。
+
 > **A3 最新 PASS**：两次实际 Portal Airflow DagRun，两种 Task Job 各 2 条 Marquez COMPLETED Run。[A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38502940358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502940358)。没有启用 TASK004 Claim/Writer，OMOP PostgreSQL17 未修改。
 
 ## 2026-10-13 EDT / 2026-10-14 UTC — Marquez 原生 API/Web + Web 30999 LIVE PASS
@@ -12,9 +14,9 @@
 
 **真实状态**：Marquez 0.51.1 API + Web（Deployment 1/1），数据库 `dw-postgre14/marquez` 上 37 张元数据表，Web-only Service 30999 已创建，Web HTTP / API Proxy Gate PASS。原有 PG14 Retain PV/PVC 原样保存，未重装数据库。
 
-**不应误报**：Runner 的端口转发与 Kubernetes Endpoints PASS 不等于个人电脑浏览器、局域网路由器/NAT/防火墙配置已测试，`INTERNET_NAT_REACHABILITY=NOT_VERIFIED`。没有发送 Synthea / Airflow / Spark / Writer 的真实 OpenLineage 事件，也没有测试重启后的 PG14 持久化回读或备份恢复。任何 Source-to-OMOP 成功 lineage 仍不能显示为业务 COMMIT。
+**不应误报**：Runner 的端口转发与 Kubernetes Endpoints PASS 不等于个人电脑浏览器、局域网路由器/NAT/防火墙配置已测试，`INTERNET_NAT_REACHABILITY=NOT_VERIFIED`。**该 Marquez 部署验收轮次当时**尚未发送 Synthea / Airflow / Spark / Writer 真实事件；随后 **A3 Airflow Provider 已独立验收 PASS**，但 Spark / Writer 未接入；仍未测试 PG14 重启持久化或备份恢复。任何 Source-to-OMOP 成功 lineage 仍不能显示为业务 COMMIT。
 
-下一轮：现有 Airflow Provider 2.17.0 → Marquez 的真实 DAG/Task 发事件与读回；再 Spark Agent 和 Writer真实证据。LAN/VPN 外部入口访问控制必须单独核实。
+旧阶段原下一轮 A3 已经完成。**现阶段 A4 仅允许静态开发；实际 Spark Agent Live 等人工协调后运行**，再考虑 Writer 真正成功的业务证据。LAN/VPN 外部入口访问控制仍须单独核实。
 
 ---
 
