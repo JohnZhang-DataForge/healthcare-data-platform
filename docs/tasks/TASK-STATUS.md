@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-13 EDT / 2026-10-14 UTC 现时权威 NEXT（覆盖本页历史所有「NEW_ONLY S3 尚未发布」NEXT）**：[首个 NEW_ONLY 真正 S3 READY 与重放闭环](SYNTHEA-NEW-ONLY-FIRST-REAL-S3-READY-2026-10-13.zh-CN.md) / [Run 38488453236](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38488453236) SUCCESS。已固定 NEW_ONLY `synthea-new-only-gh-38484300008`，Person 73、Encounter 12159、18/18 非空、119147940 bytes；PG/S3 只读源键碰撞 0；旧 v1 Validator + S3 18 payload SHA readback + **最后 immutable Manifest INTAKE_VERIFIED** + 独立原有 v1 Discovery/Resolver + 同 SHA replay `REUSE_EXISTING` 全部 PASS，manifest sha256 `66b6e79cee03b1c4acdc6b7dc9ca07288fef658d7cf6b4f978e04dde2102baa9`。**NEXT 才是构建正式 NEW_ONLY 独立 digest image 和参数化/自动生成-发布 Job、处理未来辅助零行 v2 Consumer，随后按安全门槛推进 Consumer Spark→PG ROLLBACK 正例→COMMIT；不重发本批，不绕过 Writer Batch ID 与 Drift Guard。** `CLAIM_ENABLE=NO` / DB 0 Mutation；TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 命名/存储决策补充（不更改当前 NEXT）**：三套独立 Producer 前缀为 `synthea-new-only-` / `synthea-update-only-` / `synthea-mix-data-`，[合同](../../contracts/synthea/producer-batch-identity-v1.json)。后两种 **DESIGN ONLY / ON HOLD**。`synthea-local` Retain PVC 已在 worker01 `/data/synthea/` 经跨 Pod 持久化真实验收；SeaweedFS PVC 只与自身 S3 服务存储有关，Synthea 不复用该卷，磁盘容量监控属于运营项。旧 Writer Batch ID 正则 `task004-airflow-` 与现有 Existing Target Drift 防护**完全不变**；新模式仍需版本化消费者/Writer 身份兼容测试，不可直接 COMMIT。当前仅推进 NEW_ONLY 固定 73 Person 批次的 S3 READY 发布，TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 

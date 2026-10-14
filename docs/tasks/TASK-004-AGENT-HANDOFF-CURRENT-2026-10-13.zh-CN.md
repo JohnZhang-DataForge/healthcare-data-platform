@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-13 EDT / 2026-10-14 UTC 最新交接（覆盖下文旧 NEXT）**：独立 NEW_ONLY 的第一个真实 S3 READY 完整通过：[Closeout](SYNTHEA-NEW-ONLY-FIRST-REAL-S3-READY-2026-10-13.zh-CN.md) / [Self-Runner Run 38488453236](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38488453236)、Healthcare PR #93、Self-Runner PR #83。固定 PVC 请求 `gh-38484300008` → S3 Batch `synthea-new-only-gh-38484300008`，真实 Person=73/Encounter=12159/18 CSV=119147940 bytes；旧 v1 严格 Validator、S3 immutable Manifest 最后发布，v1 Discovery + 18 SHA reread，重放 REUSE_EXISTING SHA 完全相同。**Manifest = `s3://health-landing/source=synthea/source_version=v3.3.0/ingest_date=2026-10-14/batch_id=synthea-new-only-gh-38484300008/manifest.json`；SHA = `66b6e79cee03b1c4acdc6b7dc9ca07288fef658d7cf6b4f978e04dde2102baa9`**。无需再重新生成/发布该批；NEXT = NEW_ONLY 专用 digest image + 任意新 request 的独立自动生产-发布，零行辅助表独立 v2 Consumer；Airflow 原有 v1 Core 只读 Scanner 能识别，但实际 Airflow 对本批的计划消费/自动处理尚未核验；Writer Plan 新 Batch ID 前缀版本化、真实 Spark→PG ROLLBACK 正例、事务内 Drift/Claim/Reconciliation 完成前 **PG COMMIT 禁用**。
+
+
 > **2026-10-13 最新用户决定：生产者三个独立命名固定**：`synthea-new-only-`（NEW_ONLY）、`synthea-update-only-`（UPDATE_ONLY，ON HOLD）、`synthea-mix-data-`（MIX_DATA，ON HOLD），[单一版本化命名合同](../../contracts/synthea/producer-batch-identity-v1.json)。旧的 `EXISTING_ONLY`、`MIXED` 仅为历史叫法，今后实施必须使用新名称，不创建旧名字的新入口。Synthea 自身 `synthea-local` Retain 5Gi PVC 已在 worker01 `/data/synthea/` 验证并 Bound，且现有 NEW_ONLY 真实生成和第二 Pod replay PASS，**无需为此再次排查 SeaweedFS PV 或重建卷**；SeaweedFS 仅在 S3 发布时作为服务使用。旧 Writer `task004-airflow-` 限制和 Existing Target Drift Guard 均保留，不能以新前缀跳过。下一步继续固定 73 Person 批次的 v1 Validator → S3 payload readback → 最后 READY Manifest，后两模式与 TASK005 保持暂停。
 
 
