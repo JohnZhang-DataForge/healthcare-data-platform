@@ -10,7 +10,9 @@ from datetime import date
 from urllib.parse import urlsplit
 
 _SHA=re.compile(r"^[0-9a-f]{64}$")
-_BATCH=re.compile(r"^task004-airflow-[A-Za-z0-9._-]+$")
+_BATCH=re.compile(r"^task004-airflow-[A-Za-z0-9._-]+$")  # Legacy default stays frozen.
+_NEW_ONLY_BATCH=re.compile(r"^synthea-new-only-[A-Za-z0-9][A-Za-z0-9._-]{1,127}$")
+_NEW_ONLY_WRITER_VERSION="synthea-new-only-v1"
 _ALLOWED_BUCKETS={"manifest_uri":"health-landing",
                   "person_processing_uri":"health-processing",
                   "visit_processing_uri":"health-processing"}
@@ -34,8 +36,18 @@ def plan(handoff):
         fail("handoff_not_verified")
     batch=handoff.get("batch_id")
     sha=handoff.get("manifest_sha256")
-    if not isinstance(batch,str) or not _BATCH.fullmatch(batch):
+    identity_version=handoff.get("writer_identity_version")
+    if not isinstance(batch,str):
         fail("batch_id")
+    if identity_version is None:
+        # Absence of a version selects *only* the original legacy identity.
+        if not _BATCH.fullmatch(batch):
+            fail("batch_id")
+    elif identity_version==_NEW_ONLY_WRITER_VERSION:
+        if not _NEW_ONLY_BATCH.fullmatch(batch):
+            fail("new_only_batch_id")
+    else:
+        fail("writer_identity_version")
     if not isinstance(sha,str) or not _SHA.fullmatch(sha):
         fail("manifest_sha256")
     if handoff.get("source_version")!="v3.3.0":
@@ -45,6 +57,10 @@ def plan(handoff):
         path=parse_location(uri,"s3" if part=="manifest_uri" else "s3a",bucket,part)
         if "/batch_id="+batch+"/" not in path:
             fail("mixed_batch_"+part)
+        if identity_version==_NEW_ONLY_WRITER_VERSION and not path.startswith(
+            "/source=synthea/source_version=v3.3.0/ingest_date="
+        ):
+            fail("new_only_source_path")
         if part=="manifest_uri" and not path.endswith("/manifest.json"):
             fail("manifest_name")
         if part!="manifest_uri" and not path.endswith("/"):
@@ -57,6 +73,10 @@ def plan(handoff):
         count=handoff.get(kind+"_rows")
         if isinstance(count,bool) or not isinstance(count,int) or count<=0 or count>1000000:
             fail(kind+"_count")
+        if identity_version==_NEW_ONLY_WRITER_VERSION and (
+            (kind=="person" and count>100) or (kind=="visit" and count>100000)
+        ):
+            fail("new_only_"+kind+"_count")
     marker="/ingest_date="
     dates=set()
     for k in _ALLOWED_BUCKETS:
@@ -71,6 +91,10 @@ def plan(handoff):
         fail("inconsistent_ingest_date")
     immutable={k:handoff[k] for k in ("batch_id","manifest_sha256","manifest_uri","person_processing_uri","visit_processing_uri","person_rows","visit_rows","source_version")}
     immutable["ingest_date"]=dates.pop()
+    if identity_version is not None:
+        # Explicit v2 compatibility is bound into the immutable plan digest.
+        # Legacy plans have the exact same fields and digest as before.
+        immutable["writer_identity_version"]=identity_version
     canonical=json.dumps(immutable,sort_keys=True,separators=(",",":"),ensure_ascii=True)
     immutable["plan_sha256"]=hashlib.sha256(canonical.encode("utf-8")).hexdigest()
     immutable["load_order"]=["person","visit","db_reconcile"]
