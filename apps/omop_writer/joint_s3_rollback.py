@@ -40,12 +40,14 @@ def verified_plan(input_data: dict) -> dict:
 
 
 def strip_transaction(sql: str) -> str:
-    if (not isinstance(sql, str)
-        or not sql.startswith(PSQL_PREFIX)
-        or not sql.endswith(ENDING)
-        or "COMMIT;" in sql
-        or sql.count("\nBEGIN;\n") != 1
-        or sql.count(ENDING) != 1):
+    if not isinstance(sql,str) or not sql.startswith(PSQL_PREFIX) or not sql.endswith(ENDING):
+        raise ValueError("BLOCKED=unrecognized_or_commit_sql")
+    # Count COMPLETE SQL control lines, not overlapping substrings. A
+    # consecutive second BEGIN used to escape a str.count("\\nBEGIN;\\n") gate.
+    boundary=[line.strip().upper() for line in sql.splitlines()]
+    if (boundary.count("BEGIN;")!=1
+        or boundary.count("ROLLBACK;")!=1
+        or "COMMIT;" in sql.upper()):
         raise ValueError("BLOCKED=unrecognized_or_commit_sql")
     return sql[len(PSQL_PREFIX):-len(ENDING)]
 
