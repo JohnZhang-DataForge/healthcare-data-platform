@@ -11,6 +11,9 @@ COPY --chown=10001:10001 airflow/dags/task004_cdm_materialization_plan.py /opt/t
 # The inherited legacy image has an older transform() that drops writer_identity_version.
 COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_adapters.py /opt/task004/
 COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_source.py /opt/task004/
+# The inherited PG render() omits writer_identity_version and falsely blocks
+# synthea-new-only-* batches. Use the matched NEW_ONLY-aware renderer.
+COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_pg_writer.py /opt/task004/
 COPY --chown=10001:10001 airflow/dags/task004_cdm_preflight_contract.py /opt/task004/
 COPY --chown=10001:10001 apps/omop_writer/build_s3_rollback_plan.py /opt/task004/
 COPY --chown=10001:10001 apps/omop_writer/precommit_gate.py /opt/task004/

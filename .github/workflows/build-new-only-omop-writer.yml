@@ -1,5 +1,6 @@
 name: Build NEW_ONLY Airflow Atomic OMOP Writer Image
 on:
+  workflow_dispatch:
   push:
     branches:
       - feature/task004-airflow-writer-final-leg-20261014
@@ -50,6 +51,9 @@ jobs:
           docker run --rm --entrypoint python "$IMAGE" -c '
           from build_s3_rollback_plan import build
           from task004_cdm_materialization_plan import _NEW_ONLY_BATCH
+          import inspect
+          from task004_cdm_dynamic_pg_writer import render as pg_render
+          assert \'writer_identity_version\' in inspect.getsource(pg_render), \'OLD_PG_RENDERER_IN_IMAGE\'
           batch="synthea-new-only-gh-38588671004"
           assert _NEW_ONLY_BATCH.fullmatch(batch)
           source="source=synthea/source_version=v3.3.0/ingest_date=2026-10-14/batch_id="+batch
