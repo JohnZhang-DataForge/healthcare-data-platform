@@ -1,6 +1,6 @@
 # Portal — 实际验收记录（Live 证据总览）
 
-> **CURRENT A3 REAL PASS**：[Airflow Provider → Marquez A3 真实验收 Closeout](./A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。[Run 38502227961](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502227961) 的真实 Portal Airflow DagRun success，两个 PythonOperator Task success，Marquez 3 Jobs；[Run 38502899963](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502899963) 真正从 Marquez API 读回两个 COMPLETED Task Runs。TASK004 业务边尚未验收。
+> **A3 最新 PASS**：两次实际 Portal Airflow DagRun，两种 Task Job 各 2 条 Marquez COMPLETED Run。[A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [Run 38502940358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502940358)。没有启用 TASK004 Claim/Writer，OMOP PostgreSQL17 未修改。
 
 ## 2026-10-13 EDT / 2026-10-14 UTC — Marquez 原生 API/Web + Web 30999 LIVE PASS
 
@@ -26,8 +26,8 @@
 - [Run 38497309444](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38497309444) 失败：错误的 Chart index URL 404。
 - [Run 38497455412](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38497455412) 失败：Bash 文本生成破损，安装没有开始。
 
-## 早期遗留验收清单（现已由上方 LIVE Closeout 替代）
+## 后续仍未验收
 
-当时尚未执行 Marquez Chart、API/Web、PG14 Schema Migration、NodePort 和 OpenLineage 接入；这些现均已有正式 Run 证据，详见顶部当前 A3 和前文 Marquez 部署段。本文件不得写虚假的 PASS，后续 Live Closeout 必须含完整 SHA/Run/PR 和真实 API、数据库证据。
+Marquez API/Web、PostgreSQL14 schema、Web-only 30999 和 A3 Airflow Provider 的**真实 Job/Run**已有独立成功证据。**A4 Spark Agent、S3/Parquet 真实 Dataset Lineage、Writer 真 COMMIT 证据、Airflow Helm 配置持久化、外部 LAN/NAT 访问和 PG14 备份恢复**仍未完成；不得把本阶段无业务数据 DAG 的 Run 冒充 Synthea→OMOP 完整血缘。
 
 历史证据：见 [历史归档](./archive/2026-10-13/README.md)。
