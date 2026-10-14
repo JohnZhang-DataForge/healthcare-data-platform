@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dw-postgre14-service
+  namespace: dw-postgre14
+spec:
+  clusterIP: None
+  selector:
+    app: dw-postgre14-database
+  ports:
+    - name: postgres14
+      port: 5432
+      targetPort: 5432

@@ -6,7 +6,7 @@ set -Eeuo pipefail
 umask 077
 NAMESPACE=dw-marquez
 RELEASE=marquez
-VALUES=kubernetes/marquez/values-pg14.yaml
+VALUES=platform-portal/marquez/helm/values.yaml
 CHART_VERSION=0.51.1
 REPORT_DIR="$RUNNER_TEMP/marquez-install"
 mkdir -p "$REPORT_DIR"
