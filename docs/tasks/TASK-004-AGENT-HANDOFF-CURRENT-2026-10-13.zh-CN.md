@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent 交接 / 当前唯一执行基线（2026-10-13）
 
+> **2026-10-14 EDT LATEST NEXT：Airflow Writer 正式源码/容器/KPO 双闸门已完成，仍需 Main GitSync 和第三批真实入库。** [当前 Closeout](NEW-ONLY-AIRFLOW-GATED-WRITER-EXECUTOR-2026-10-14.zh-CN.md) / [Self-Runner 38582267163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38582267163) SUCCESS（111 Unit/Contract tests + 实际 worker02 digest 容器 + KPO API + PostgreSQL Person207 Visit21690 Claim2 不变）。原 DAG 新 `route_writer_authorization→execute_new_only_writer→writer_committed_verified`；手工 `spark_processing:true,writer_commit:true` 且独立 K8s Secret `task004-new-only-writer-commit` 缺一不可。当前 Secret **没有部署**，保持零自动提交，**绝不重用两批已 COMPLETED 的旧 Batch**。NEXT 首先合并 Main 做真实 Airflow GitSync/DagBag 只读验收，再独立新第三批 READY、人工受控配置 Secret、Airflow Spark→Writer COMMIT→独立 DB readback→重放 SKIP。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT LATEST — 第二个真实 NEW_ONLY Batch 首次正式 COMMIT 已成功，覆盖旧文档“等待授权/仍未 COMMIT”陈述。** [当前入库 Closeout](NEW-ONLY-SECOND-BATCH-FIRST-REAL-PG-COMMIT-2026-10-14.zh-CN.md) / [Run 38575457166](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38575457166) SUCCESS。Batch `synthea-new-only-gh-38489944582` 已持久 70 Person +11487 Visit，真 PG Person=**207** Visit=**21690**，Claim Ledger **2**、新 Batch COMPLETED1、Stage11557、VERIFIED2，PG Source ID + parent FK Join 70/11487；103 tests PASS，Duplicate Claim 跳过。首次 run 38572127827 因 shell 语法失败未写库，修复后真正成功且**禁止再次提交本 Batch**。**NEXT：** 实现新的 Airflow Writer KPO/Executor 对**未来第三个未提交 READY Batch** 进行自动 Writer COMMIT；现有 `writer_awaits_live_preflight` HOLD，不能谎称端到端 Airflow Writer 完成。Auto Claim NO、TASK004 IN PROGRESS、TASK005 ON HOLD、双 Writer 压测 Future Enhancement。
 
 
