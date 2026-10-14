@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — Airflow Writer 自动执行器已接 Main 并完成真实 GitSync + 14 Task DagBag + COMPLETED skip LIVE 验收。** [Closeout](NEW-ONLY-AIRFLOW-WRITER-LIVE-MAIN-GITSYNC-COMPLETED-SKIP-2026-10-14.zh-CN.md) / [Run 38583147075](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38583147075) SUCCESS：第二批第二次手动 DAG 配置 `spark_processing:true,writer_commit:true` 被实际 Claim reader 路由到 SKIP，Spark/Handoff/Writer KPO 均 skipped；DAG 停止后重新 paused；PG Person207 Visit21690 Claim2 完全不变。**不等于 Airflow 新批自动 COMMIT 已成功**；还需真正第三新 batch 的受控 E2E、临时 K8s Secret，当前 Secret 不存在。TASK004 IN PROGRESS / TASK005 ON HOLD，双 Writer /复杂恢复 Future Enhancement。
+
+
 > **2026-10-14 EDT — Airflow NEW_ONLY 原子 Writer KPO 已开发并真实 worker02 镜像验收；尚未用第三批 live COMMIT。** [Closeout](NEW-ONLY-AIRFLOW-GATED-WRITER-EXECUTOR-2026-10-14.zh-CN.md) / [Run 38582267163](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38582267163) SUCCESS：111 tests、Airflow KPO Provider 接口通过、digest-pinned Writer 容器成功 import、两批既有 PG Claim COMPLETED，不变 Person207 Visit21690 Claim2。Airflow 双 opt-in 手工 Writer branch、独立部署 Secret、真实 S3+PG readback、同事务 COMMIT 与 fail-closed no-retry 已接线。**当前 Secret 不存在，自动写库关闭。** NEXT Main GitSync/DagBag、第三个全新 S3 READY 的 Airflow 真 COMMIT + skip 重放验证；双 Writer 并发 Future Enhancement。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
