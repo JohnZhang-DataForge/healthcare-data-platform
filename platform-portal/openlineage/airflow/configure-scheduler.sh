@@ -36,7 +36,7 @@ kubectl set env -n "$NAMESPACE" deployment/"$DEPLOY" --containers="$CONTAINER" \
   "AIRFLOW__OPENLINEAGE__DISABLE_SOURCE_CODE=True" \
   "AIRFLOW__OPENLINEAGE__EXECUTION_TIMEOUT=5"
 kubectl rollout status -n "$NAMESPACE" deployment/"$DEPLOY" --timeout=240s
-POD="$(kubectl get pods -n "$NAMESPACE" -o json | python3 -c 'import json,sys; a=json.load(sys.stdin)["items"]; b=[p for p in a if p["metadata"]["name"].startswith("dw-airflow-scheduler-") and p.get("status",{}).get("phase")=="Running" and any(c.get("name")=="scheduler" and c.get("ready") for c in p.get("status",{}).get("containerStatuses",[]))]; print(b[0]["metadata"]["name"] if b else "")')"
+POD="$(kubectl get pods -n "$NAMESPACE" -o json | python3 -c 'import json,sys; a=json.load(sys.stdin)["items"]; b=[p for p in a if p["metadata"]["name"].startswith("dw-airflow-scheduler-") and not p.get("metadata",{}).get("deletionTimestamp") and p.get("status",{}).get("phase")=="Running" and any(c.get("name")=="scheduler" and c.get("ready") for c in p.get("status",{}).get("containerStatuses",[]))]; print(b[0]["metadata"]["name"] if b else "")')"
 test -n "$POD"
 kubectl exec -n "$NAMESPACE" "$POD" -c scheduler -- python -c '
 import json
