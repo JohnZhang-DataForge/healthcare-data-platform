@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — Airflow 新批次 70 Person /11487 Visit → PG Reader Precommit 实际通过。** [Closeout](NEW-ONLY-SECOND-BATCH-REAL-S3-PG-READONLY-PRECOMMIT-2026-10-14.zh-CN.md) / [Runner 38565372429](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38565372429) SUCCESS：真正 Airflow 38563933551 Handoff XCom→当前 S3 两实体 Parquet 真实 GET/指纹/parent FK→cdm_reader PG READ ONLY；0 源 ID 碰撞，新 Batch Claim/Stage/Checkpoint 全0，Person137/Visit10203与旧 COMPLETED 不变，Writer47 + Landing48 tests PASS。**NEXT：** 70/11487 同事务 Fencing Joint Writer ROLLBACK + 独立 readback，随后新 Batch 独立授权下 COMMIT；禁重跑已成功 Spark，Auto Claim 仍 NO。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — Airflow 新批次 Writer Handoff + 动态原子 SQL 渲染合同 PASS。** [Closeout](NEW-ONLY-AIRFLOW-ATOMIC-DYNAMIC-WRITER-HANDOFF-2026-10-14.zh-CN.md) / [Runner 38562133245](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38562133245) SUCCESS：114 tests、真实 PG 只读完成批次数据 137 Person /10203 Visit / Claim1 COMPLETED 不变。Spark 两实体只读结果通过 versioned Plan SHA/Manifest/URI/行数校验后可调用动态 Writer Renderer；复用已经成功的单事务 Claim+Person/Visit Fencing/整行 Reconciliation/COMPLETED/COMMIT，支持 Visit 动态 1 和812。**本轮仅生成 SQL，不执行真正业务 COMMIT，新 Airflow DAG 的 unclaimed 分支仍 HOLD。** NEXT Spark 新批输入安全接线（先协调另一 Session）+ 新批只读/ROLLBACK/真实 COMMIT，绝不重新写旧 COMPLETED 批次。双 Writer 压测 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
