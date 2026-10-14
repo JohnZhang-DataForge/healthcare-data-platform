@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -215,7 +216,7 @@ def publish(state: Path, request: str, validator: Path, contract: Path, scratch:
     if not replay and os.environ.get("NEW_ONLY_PG_SOURCE_AUDIT")!="PASS":
         block("PG_SOURCE_ID_AUDIT_NOT_CONFIRMED")
     result=publish_batch(client,draft,csv_dir,batch,
-                        os.environ.get("LANDING_INGEST_DATE"),"health-landing")
+                        os.environ.get("LANDING_INGEST_DATE",datetime.now(timezone.utc).strftime("%Y-%m-%d")),"health-landing")
     if result.get("status")!="INTAKE_VERIFIED" or result.get("verified_file_count")!=18:
         block("REMOTE_MANIFEST_NOT_VERIFIED")
     remote=client.get_object(result["manifest_uri"].split("health-landing/",1)[1])
