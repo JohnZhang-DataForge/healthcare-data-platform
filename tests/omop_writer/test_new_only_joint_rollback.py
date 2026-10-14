@@ -56,8 +56,8 @@ class JointRollbackTests(unittest.TestCase):
         self.assertIn("BLOCKED:JOINT_STAGE_COUNT",sql)
         self.assertIn("BLOCKED:JOINT_LEDGER_DRIFT",sql)
         driver_sql=for_psycopg(sql)
-        self.assertTrue(driver_sql.startswith("BEGIN;\\n".replace("\\\\n","\\n")))
-        self.assertTrue(driver_sql.endswith("ROLLBACK;\\n".replace("\\\\n","\\n")))
+        self.assertEqual(driver_sql.splitlines()[0], 'BEGIN;')
+        self.assertEqual(driver_sql.splitlines()[-1], 'ROLLBACK;')
         self.assertNotIn("set ON_ERROR_STOP",driver_sql)
         self.assertNotIn("COMMIT;",driver_sql)
     def test_legacy_or_version_drift_rejected(self):
