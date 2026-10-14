@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — NEW_ONLY v2 第二批实际入库完成。** [权威 COMMIT Closeout](NEW-ONLY-SECOND-BATCH-FIRST-REAL-PG-COMMIT-2026-10-14.zh-CN.md) / [Run 38575457166](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38575457166) SUCCESS：真实 Airflow Spark 70 Person/11487 Visit 复用已有 S3 Parquet→独立 `cdm_reader` PG Source ID audit→同事务 Claim/Fencing/Writer/整行对账/COMPLETED/首次业务 COMMIT。Person137→207、Visit10203→21690、Claim1→2、当前新 Batch Stage11557、VERIFIED2、源键映射70/11487 全通过；重复 Claim 跳过，无 Spark rerun，无自动 Claim。**当前两个历史 NEW_ONLY Batch 都 COMPLETED，绝不可重新做首次 COMMIT；未来新 Batch 的 Airflow Writer KPO 仍未接通。** TASK004 IN PROGRESS/TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — 第二个 NEW_ONLY Batch 真 70/11487 Person+Visit 同事务 Fencing Joint Writer ROLLBACK 已 PASS。** [Closeout](NEW-ONLY-SECOND-BATCH-FENCED-JOINT-PG-ROLLBACK-2026-10-14.zh-CN.md) / [Run 38566745511](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38566745511) SUCCESS：真实 Airflow Handoff → S3 Parquet（70/11487）→完整动态 SQL same-TX Claim+Fencing+Writer+full DB Reconcile→**ROLLBACK**；99 tests，PG Person137 Visit10203、新 Claim/Stage/Checkpoint=0 未持久改变。**NEXT：用户单独授权新 Batch 第一次业务 COMMIT，随后独立 PG 对账并接 Airflow Writer KPO/执行器**；当前 Auto Claim NO、Spark 无重跑、TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
