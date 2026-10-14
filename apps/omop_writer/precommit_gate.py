@@ -43,6 +43,8 @@ def validate_input(context: dict, people: list, visits: list) -> None:
             "batch_id","manifest_sha256","manifest_uri",
             "person_processing_uri","visit_processing_uri","person_rows",
             "visit_rows","source_version")}
+        if "writer_identity_version" in context:
+            core["writer_identity_version"]=context["writer_identity_version"]
         core.update(state="HANDOFF_VERIFIED_NOT_LOADED",cdm_write_permitted=False)
         expected=validate_plan(core)
     except (KeyError, ValueError, TypeError) as exc:
@@ -53,6 +55,10 @@ def validate_input(context: dict, people: list, visits: list) -> None:
         refuse("SOURCE_ROW_COUNT_DRIFT")
     if not (1<=len(people)<=100 and 1<=len(visits)<=100_000):
         refuse("NEW_ONLY_ROW_BOUNDS")
+    # This is explicitly a NEW_ONLY gate; legacy contract tests remain valid,
+    # but a foreign versioned producer must never pass through this path.
+    if context.get("writer_identity_version") not in (None,"synthea-new-only-v1"):
+        refuse("UNSUPPORTED_WRITER_IDENTITY")
     for entity,rows in (("person",people),("visit",visits)):
         seen=set()
         for row in rows:
