@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-14 EDT — TASK004 第二个真实 NEW_ONLY Batch（70 Person / 11487 Visit）Airflow→S3→PG Readonly Precommit 已全绿。** [最新 Closeout](tasks/NEW-ONLY-SECOND-BATCH-REAL-S3-PG-READONLY-PRECOMMIT-2026-10-14.zh-CN.md) / [Self-Runner 38565372429](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38565372429) SUCCESS。复用 PR #130 已成功的 Airflow Spark XCom（Run 38563933551），不再运行 Spark；真实 worker02 Pod 重新 S3 GET Manifest/Patient70/Encounter11487 Processing Parquet，强验证指纹与父子键，再由 `cdm_reader` PG READ ONLY 检查 0 Source ID overlap、Claim ABSENT、Stage/Checkpoint0，独立 PG Person137/Visit10203/旧 Claim COMPLETED 前后不变。95 tests PASS。**下一步只针对该批做联合 Writer 同事务 Fencing ROLLBACK-only，真实 COMMIT 需明确授权**；Auto Claim NO，双 Writer 负载 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — TASK004 新 SECOND NEW_ONLY READY 的真实 Airflow→Spark Person70/Visit11487→Writer Handoff LIVE PASS。** [最新验收文档](tasks/NEW-ONLY-AIRFLOW-SPARK-FRESH-70-11487-LIVE-HANDOFF-2026-10-14.zh-CN.md) / [Self-Runner 38563933551](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38563933551) SUCCESS / Healthcare PR #130 + Runner PR #104 merged。真正 `synthea-new-only-gh-38489944582` S3 READY 经手工 `spark_processing=true` 选取、Claim READ ONLY ABSENT、worker02 v2 Spark Person/Visit/Reconcile，实际 Processing Parquet readback 70/11487 + immutable Writer Handoff PASS；实际 DagRun success、手工结束重新暂停 DAG，90 regressions PASS。**Processing S3 新增 Parquet，但原 READY/Manifest 没有改，PG Person137/Visit10203/Claim1 COMPLETED/新批 Claim0/Stage0 不变，Business COMMIT=NO。** NEXT 已真实生成新批的 `cdm_reader` S3/PG read-only preflight + 受控 Writer ROLLBACK，然后才授权真实 COMMIT；不得重跑 Spark 或旧已提交批次。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
