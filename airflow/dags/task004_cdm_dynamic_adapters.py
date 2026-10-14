@@ -45,6 +45,8 @@ def transform(rows,context,entity):
     gate(isinstance(context,dict) and context.get("database_mutation_authorized") is False,"authorization_boundary")
     # Revalidate the immutable part against the same constraints as the DAG plan.
     raw={k:context[k] for k in ("batch_id","manifest_sha256","manifest_uri","person_processing_uri","visit_processing_uri","person_rows","visit_rows","source_version")}
+    if "writer_identity_version" in context:
+        raw["writer_identity_version"]=context["writer_identity_version"]
     raw.update(state="HANDOFF_VERIFIED_NOT_LOADED",cdm_write_permitted=False)
     verified=validate_plan(raw)
     gate(context.get("plan_sha256")==verified["plan_sha256"],"plan_drift")
