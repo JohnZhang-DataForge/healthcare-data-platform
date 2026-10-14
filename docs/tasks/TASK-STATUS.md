@@ -1,5 +1,8 @@
 # Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
 
+> **2026-10-14 EDT — Airflow 新批次 Writer Handoff + 动态原子 SQL 渲染合同 PASS。** [Closeout](NEW-ONLY-AIRFLOW-ATOMIC-DYNAMIC-WRITER-HANDOFF-2026-10-14.zh-CN.md) / [Runner 38562133245](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38562133245) SUCCESS：114 tests、真实 PG 只读完成批次数据 137 Person /10203 Visit / Claim1 COMPLETED 不变。Spark 两实体只读结果通过 versioned Plan SHA/Manifest/URI/行数校验后可调用动态 Writer Renderer；复用已经成功的单事务 Claim+Person/Visit Fencing/整行 Reconciliation/COMPLETED/COMMIT，支持 Visit 动态 1 和812。**本轮仅生成 SQL，不执行真正业务 COMMIT，新 Airflow DAG 的 unclaimed 分支仍 HOLD。** NEXT Spark 新批输入安全接线（先协调另一 Session）+ 新批只读/ROLLBACK/真实 COMMIT，绝不重新写旧 COMPLETED 批次。双 Writer 压测 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-14 EDT — NEW_ONLY Airflow 已完成批次安全跳过真实验收 SUCCESS（旧 XCom blocker 解除）**：[Run 38560309400](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38560309400) / [Closeout](NEW-ONLY-AIRFLOW-CONSUMER-COMPLETED-SKIP-REAL-LIVE-2026-10-14.zh-CN.md) / Self-Runner PR #102 merged。真实 DagRun `success`、Branch 路线已完成 `already_completed_no_replay`、unclaimed hold `skipped`、DAG 事后重新暂停 PASS；PostgreSQL Person137/Visit10203/Claim1/Stage813/Verified2 前后完全不变，52 tests PASS、Spark NO、Auto Claim NO。**NEXT：** `unclaimed_batch_hold` 连接真正全新 v2 READY Batch 的安全 Claim ticket→Spark→Fenced Writer→COMPLETED，不得对已完成 `synthea-new-only-gh-38497355290` 重复 COMMIT；双 Writer 并发/复杂恢复 FUTURE ENHANCEMENT。TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
