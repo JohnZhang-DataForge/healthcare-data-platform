@@ -1,5 +1,7 @@
 # Platform Portal — 路线 A 实施计划 / Current
 
+> **最新执行状态**：A3 Airflow Provider → Marquez **REAL LIVE PASS**（两次真实 DagRun、两个 Task Job 各 2 条 COMPLETED Run）；详见 [A3 实际 Airflow→Marquez Closeout](./PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。**当前 NEXT = A4 隔离 Spark OpenLineage 验证**。下方历史 A3 待办已完成，不应重新开启 TASK004 或 Writer。
+
 > **2026-10-13 EDT / 2026-10-14 UTC 最终活跃状态**：Marquez 0.51.1 API/Web 已部署在 `dw-marquez`，PostgreSQL14 上的 37 张元数据表已迁移，Web-only NodePort 30999 与 Web/API Proxy HTTP 200 实测 PASS。唯一当前 NEXT 是 **A3 现有 Airflow OpenLineage Provider 的真实事件接入**。参见 [最新验收](./validation.md)。下方“活跃下一步”原 1–3 项为执行前计划，已完成，不是最新 NEXT。LAN 浏览器/NAT 与数据库备份仍未验收。
 
 > **2026-10-13 决议**：使用已持久化、实际部署的 `dw-postgre14` PostgreSQL **14.24** 及其独立 `marquez` 数据库，取代过去计划里“尝试复用 PostgreSQL17”的过渡方案。历史 A0 关于 PG17/Flyway 8.5.13 的风险判断仍有效，但**不再阻止连接独立 PG14**。
