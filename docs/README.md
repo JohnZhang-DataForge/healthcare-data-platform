@@ -1,5 +1,8 @@
 # Healthcare Data Platform — Agent START HERE（当前有效文档）
 
+> **2026-10-13 EDT / 2026-10-14 UTC — 首个 Synthea NEW_ONLY 不可变 S3 READY 已真实 PASS。** [完整 Closeout](tasks/SYNTHEA-NEW-ONLY-FIRST-REAL-S3-READY-2026-10-13.zh-CN.md) / [Self-Runner Run 38488453236](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38488453236)：固定 PVC Batch `synthea-new-only-gh-38484300008`，Person=73、Encounter=12159、总 CSV bytes=119147940，旧严格 v1 Contract **18/18 全非空 PASS**，SeaweedFS S3 **首次 PUBLISHED_NEW → 逐文件 GET SHA256 18/18 → 最后 Manifest `INTAKE_VERIFIED`**，独立既有 v1 Discovery/Resolver 再读 PASS，重放 `REUSE_EXISTING` 同 SHA `66b6e79cee03b1c4acdc6b7dc9ca07288fef658d7cf6b4f978e04dde2102baa9`。没有重新生成 Person；没有 Postgres DML、没有 Airflow 自动 Claim。**NEXT：独立 NEW_ONLY image digest/任意新 request 的自动生成-发布闭环 + 小人口 v2 Consumer；然后 Airflow 新批 claim/Spark/DB Writer ROLLBACK/COMMIT 的单独门槛。** 下文关于 NEW_ONLY「尚未上传 S3」为旧时点事实。TASK004 IN PROGRESS / TASK005 ON HOLD。
+
+
 > **2026-10-13 三独立 Generator 命名冻结**：`synthea-new-only-`（现有本地生成已验证）、`synthea-update-only-`（既有人更新，ON HOLD）、`synthea-mix-data-`（新旧混合，ON HOLD），[版本化 Batch ID 合同](../contracts/synthea/producer-batch-identity-v1.json)及[架构命名修订](architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)。SeaweedFS PV 不是 Synthea 的存储前置依赖：`synthea-local` Retain / worker01 `/data/synthea/` 已持久验收，剩余容量监控不是 NEW_ONLY S3 发布前的无条件阻塞。**未开放新前缀 Writer 权限，旧 `task004-airflow-` 仍按原样安全拒绝**。当前 NEXT 仍是固定 73 Person 批次的严格 v1 CSV 验证和受控独立 S3 发布；TASK004 IN PROGRESS / TASK005 ON HOLD。
 
 
