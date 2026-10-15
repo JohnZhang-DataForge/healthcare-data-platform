@@ -1,27 +1,40 @@
-# Resource-based Terraform Architecture
+# Healthcare Azure Terraform Resource/IAM Architecture v2
 
-Status: IaC scaffolding only. **NO APPLY**.
+Status: **code only; PLAN-ONLY workflow**; no Apply or Destroy authorized.
 
 ```text
-Healthcare Repo azure/infra-terraform/
-   components/<selector>/ -> modules.tf -> modules/<selector>/main.tf
-         |                                      |
-         |                              iam.tf (optional authorization)
-         +---- non-secret environments/dev.tfvars
-         +---- independent dev/<selector>.tfstate in johnzhang/tfstate
-                     ^
-               GitHub OIDC
-                     |
-Self-Runner/.github/workflows/azure-infra.yaml  (Azure-Infra-TF)
+Self-Runner Actions → Azure-Infra-TF (select component / dev)
+      |
+      v
+healthcare-data-platform/azure/infra-terraform/components/<component>/
+      |   versions.tf, providers.tf, variables.tf, modules.tf, outputs.tf
+      |   environments/dev.tfvars   (resource settings + concrete WHO/ROLE)
+      |
+      v
+azure/infra-terraform/modules/<component>/
+      main.tf    — resource/data lookup definitions
+      iam.tf     — provider-supported permission binding HOW (optional)
+      outputs.tf — resource IDs and new assignment IDs
+      |
+      v
+tfstate: johnzhang/tfstate/dev/<component>.tfstate (independent key per root)
 ```
 
-## Stages and ownership
-1. Existing Azure: `OMOP`, `johnzhang`, `landing`, `tfstate` are manually bootstrapped. `storage` reads them; `iam` has empty default RBAC changes. No Terraform apply required to inspect.
-2. Fabric Workspace: use existing Fabric Trial workspace GUID via env or explicitly reconcile/import previously created Workspace. Do not create a second one by mistake.
-3. OneLake is Fabric-managed; a Lakehouse is optional and not required by the direct Blob → Notebook → Warehouse path. The `onelake` root is available on-demand.
-4. Fabric Data Factory Pipeline, Notebook, Warehouse items are declared as empty shells only. Actual ETL/notebook definition and SQL promotion are separate, later code delivery.
-5. Azure Blob Exporter: not Terraform; Python Azure SDK via Self-Runner's OIDC and existing landing Blob Contributor.
-6. Capacity not managed in v1 (Trial unsupported by Fabric Terraform provider). Monitor charges and keep Fabric permissions separate.
+## IAM ownership rules
 
-## Deploy gate to add later only with separate approval
-Future CI apply would require a reviewed SHA, approval/environment protection, allowlist, serialized state lock, cost/delete gates and explicit management authorization. The current workflow intentionally does not contain an apply path. No secrets in tfvars, code, plan artifacts, or state logs.
+1. **Component-owned IAM**. Storage container-level grants live in `modules/storage/iam.tf`; their principal OBJECT IDs and role names come from `components/storage/environments/dev.tfvars`. Workspace-level Fabric grants live in `modules/workspace/iam.tf`. OneLake data path roles live in `modules/onelake/iam.tf` using provider **preview** (empty default). All access changes are considered with the corresponding root's resources in the same Terraform plan/state.
+2. **Foundation IAM is NOT a catch-all**. `foundation-iam` exclusively manages optionally NEW shared Azure Resource Group-level roles; it does not touch existing Portal-created github-terraform Bootstrap grants. Resource-specific role bindings must not be repeated here.
+3. **Do not fabricate incompatible IAM**. Fabric item permissions and Azure RBAC are different APIs. The Data Pipeline/Notebook/Warehouse module IAM files record the supported boundary; Warehouse SQL object grants are handled by a separate SQL delivery process, not falsely declared with `azurerm_role_assignment`.
+4. **No privilege escalation / duplicate grants**. Bootstrap credentials and `tfstate` access remain operator-owned. Adding assignments requires Microsoft.Authorization/roleAssignments/write beyond plain Contributor; existing grants must be imported/adopted only after separate approval.
+5. **Ownership lifecycle**. Only a root component should own a grant. Keep per-environment keys separate. Avoid cyclic workspace/item/module references; the Workspace GUID is explicitly passed for non-workspace items. Separate root states mean plans are independent and no root automatically applies another root.
+
+## OneLake IAM preview
+
+The Microsoft Fabric provider supports `fabric_onelake_data_access_security` but marks it preview. The `onelake` component explicitly opts in with `preview = true`. Roles are conditional on `data_access_roles`; default `{}` creates nothing. Reviewing paths, members, access levels, Fabric tenant/Service Principal permissions and existing role import is mandatory before a future Apply.
+
+## Acceptance scope
+
+- Previous storage-only plan: Run 38761100632, PASS, `apply=no`.
+- New IAM ownership refactor: storage + foundation-iam plan regressions required.
+- Fabric roots: scaffold only until Fabric permission/workspace setup and provider-specific validation succeed.
+- Workflows remain manual **PLAN ONLY**, no Terraform Apply/Destroy steps, no migrations of old backend state and no modifications to the existing Blob test file.
