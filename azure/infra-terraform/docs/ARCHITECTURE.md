@@ -38,3 +38,12 @@ The Microsoft Fabric provider supports `fabric_onelake_data_access_security` but
 - New IAM ownership refactor: storage + foundation-iam plan regressions required.
 - Fabric roots: scaffold only until Fabric permission/workspace setup and provider-specific validation succeed.
 - Workflows remain manual **PLAN ONLY**, no Terraform Apply/Destroy steps, no migrations of old backend state and no modifications to the existing Blob test file.
+
+## Regression proof (2026-10-15)
+
+The component IAM refactor passed live OIDC remote-state plans:
+- Foundation IAM: [Run 38767227655, attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38767227655), PASS; no new grant assignments.
+- Storage IAM: [Run 38761100632, rerun](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632), PASS; existing OMOP/johnzhang lookup.
+- Both: recursive Terraform formatting, remote state, validation/plan; no Apply/Destroy.
+
+Other Fabric components cannot be called verified merely from recursive formatting and require separate Fabric provider validation against real Fabric tenant permissions. OneLake access security is preview and does not auto-create any roles while `data_access_roles = {}`.
