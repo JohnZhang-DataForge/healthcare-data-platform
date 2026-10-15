@@ -27,3 +27,10 @@ Each selected component uses a separate Azure Blob backend state key `dev/<compo
 To run: Self-Runner → Actions → **Azure-Infra-TF** → Run workflow → `component` → `dev`. The Workflow executes `terraform fmt -check`, `init`, `validate`, and `plan` ONLY. For Fabric components without a configured workspace ID, the workflow will fail safely before planning; that is an external permission/config gate, not success. No Azure account keys, client secrets or live patient data are stored here.
 
 Provider docs: https://registry.terraform.io/providers/microsoft/fabric/latest/docs
+
+## Verified plan-only acceptance — 2026-10-15
+
+- **Self-Runner [Azure-Infra-TF Run 38761100632](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632): SUCCESS**, component `storage`, environment `dev`.
+- Strict `terraform fmt -check`, `init` (GitHub OIDC → Azure Blob remote Backend), `validate`, `plan` all passed. Read existing `OMOP` Resource Group and `johnzhang` Storage Account. Plan reported **only output additions**, no Azure resource additions/replacements/deletions.
+- `APPLY_EXECUTED=NO`, `DESTROY_EXECUTED=NO`. `Azure-Infra-TF` now uses **manual workflow_dispatch only**.
+- **NOT VERIFIED YET**: Fabric components' real plans (need Fabric service principal API rights and `FABRIC_WORKSPACE_ID`), Fabric Trial runtime/capacity, code definitions for Notebook/Data Pipeline/Warehouse, the optional Lakehouse, and privileged role assignment changes.
