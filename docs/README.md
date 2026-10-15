@@ -2,7 +2,24 @@
 
 > **LATEST / 2026-10-14 EDT（2026-10-15 UTC）— TASK004 = COMPLETED，TASK005 = READY FOR STEP00 READ-ONLY。** [TASK004 最新权威 FINAL CLOSEOUT](tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)：第三个真实 NEW_ONLY Batch `synthea-new-only-gh-38588671004` Airflow v4 的 Spark Person/Visit → Reconcile → 原子 Writer → PostgreSQL **首次 COMMIT SUCCESS**，[独立只读证据 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822)。PG `cdm.person=208`、`cdm.visit_occurrence=21934`、Claim=3、第三批 Stage=245、Verified Checkpoint=2。**同批次真实重复 DagRun 自动 completed SKIP、Spark/Writer 均 skipped，PostgreSQL Before/After 无变化，DAG 已暂停**，[最终幂等性 Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) SUCCESS。TASK005 可进入 Condition STEP00 只读检查，尚**不授权** Condition 写入。以下旧的 TASK004 “第三批未提交/任务 ON HOLD”片段均为历史时点快照，不是当前 NEXT。跨 Portal Session 的共享 Spark/Airflow 人工协调规则仍有效。
 
-> **Portal Agent 换 Session 入口（2026-10-14）**：[当前交接文档](platform-portal/AGENT-HANDOFF-CURRENT-2026-10-14.zh-CN.md)。准确记录 A4 Spark `unknown` Job 下的 COMPLETED Run、应用 Job 未挂接 Run、Dataset Lineage 缺失以及共享 Airflow/Spark 的人工协调规则。新会话**先只读诊断，不重新启动 Spark**；TASK004 仍另 Session 开发。
+## Documentation directory map / 文档目录导航
+
+本文件是 **Agent 的任务交接入口**；面向初次阅读项目的人，请先看 [仓库根目录 README](../README.md)，了解已验收的本地 Kubernetes/OMOP 链路与尚处规划的 Microsoft Fabric / HL7 / ML 功能。**最新状态以本页顶部 LATEST 和 [TASK-STATUS](tasks/TASK-STATUS.md) 为准**；下方带日期的旧任务摘要只是历史快照。
+
+| 子目录 | 主要内容 |
+| --- | --- |
+| [`architecture/`](architecture/) | 集群/ETL V4 当前架构与 Azure/Fabric/ML 的目标设计（必须区分设计与已部署） |
+| [`tasks/`](tasks/) | 当前任务状态、完成验收、Condition STEP00 计划和历次里程碑 |
+| [`development/`](development/) | GitHub canonical source、PR/Runner 流程、文档生命周期规范 |
+| [`runbooks/`](runbooks/) | 实操手册和开发排障经验 |
+| [`skill/`](skill/) | Agent 行为和开发规范 |
+| [`platform-portal/`](platform-portal/) | OpenLineage/Marquez 的架构、实测、未完成项与协作规则 |
+| [`archive/`](archive/) | 被替代的旧资料及其追溯入口 |
+| [`BASELINE.md`](BASELINE.md) | 不应覆盖的历史 `/data/spark/phase3c` 开发基线 |
+
+**当前业务交付：** [TASK004 NEW_ONLY E2E Final Acceptance](tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 已验证 Person/Visit 原子 OMOP 入库及同批次 Airflow SKIP；[TASK005 Condition Plan](tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 可从 STEP00 只读研究开始，尚未实现 Condition 入库。
+
+> **Portal Agent 换 Session 入口（2026-10-14）**：[当前交接文档](platform-portal/AGENT-HANDOFF-CURRENT-2026-10-14.zh-CN.md)。准确记录 A4 Spark `unknown` Job 下的 COMPLETED Run、应用 Job 未挂接 Run、Dataset Lineage 缺失以及共享 Airflow/Spark 的人工协调规则。新会话**先只读诊断，不重新启动 Spark**；该段是当时的 Portal 交接快照，当前 TASK004 已验收完成，但共享 Airflow/Spark 的人工协调规则仍有效。
 
 > **Portal A4 独立 Spark OpenLineage Smoke（2026-10-14 EDT）**：[A4 实测 Closeout](platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。专属 `dw-spark` SparkApplication `COMPLETED`、3 行 CSV 聚合 PASS；Marquez 中有 `healthcare-platform-spark-probe` 的真实 Spark facets 和 `COMPLETED` Run。首次完整 Workflow 因错误名称查询 **FAIL**，三次只读回读 **SUCCESS**；Job 关联/数据集 I/O 血缘仍未完成。Portal 临时 Pod/ConfigMap/SparkApplication 全清理。没有修改 TASK004 的 Spark 代码、Writer、OMOP 或业务 S3。未来 Spark 联调仍需执行 Portal 人工跨 Session 协调规则。
 
