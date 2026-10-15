@@ -1,5 +1,7 @@
 # TASK004 第三个 NEW_ONLY READY — 最终 Airflow Writer 验收待完成（2026-10-14 EDT）
 
+> **HISTORICAL SNAPSHOT / 2026-10-14 EDT。本文描述的是第三批 COMMIT **之前**的真实 READY/只读基线，不再代表当前状态。** 第三批后续经 Airflow v4 正式 COMMIT、独立 PostgreSQL 读回与同批真实 SKIP 全部 PASS，**TASK004 已正式 COMPLETED**。请从 [权威 Final Closeout](TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 接手，避免依照本文“未 COMMIT / NEXT”误触发新 Writer。
+
 > **CURRENT / 权威进度：第三个全新 READY 已正式发布并独立验证；真实 Airflow Writer KPO COMMIT 尚未执行。TASK004 = IN PROGRESS；TASK005 = ON HOLD。** 不得因发布 READY 而宣布最终验收完成。此文档不是 Final Closeout 或业务 COMMIT 证据。
 
 ## 第三个真正独立批次（切勿复用历史 COMMIT）
