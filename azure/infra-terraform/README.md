@@ -1,6 +1,6 @@
 # Azure Infrastructure Terraform — Component-owned IAM (v2, 2026-10-15)
 
-**PLAN ONLY** — code refactor, no `apply` or `destroy` authorized.
+**Development mode (2026-10-15):** `Azure-Infra-TF` supports an explicit `operation` choice: `plan` (default) or `apply`. No automatic apply or destroy.
 
 Source of truth: `healthcare-data-platform/azure/infra-terraform`.
 Executor: `Self-Runner/.github/workflows/azure-infra.yaml` (**Azure-Infra-TF**).
@@ -46,7 +46,19 @@ Each `components/<selector>` is a **Terraform root module** (`versions.tf`, `pro
 
 ## Terraform root / state isolation
 
-The `Azure-Infra-TF` workflow exposes **storage / workspace / onelake / data-factory / notebook / warehouse / foundation-iam**. It runs only `fmt -check`, `init`, `validate`, `plan` on a selected component, using existing `johnzhang/tfstate` OIDC backend and **independent** `dev/<component>.tfstate` keys. Old `components/iam` and `modules/iam` were replaced with `foundation-iam`; the old `dev/iam.tfstate` has not been migrated or deleted. No old IAM state has been applied in this project; if state ever appears there, inspect and reconcile before adopting. No `-target` is required.
+The `Azure-Infra-TF` workflow exposes **storage / workspace / onelake / data-factory / notebook / warehouse / foundation-iam**. It runs `fmt -check`, `init`, `validate`, `plan`, followed by `apply` of the exact saved plan **only when operation=apply**, using existing `johnzhang/tfstate` OIDC backend and **independent** `dev/<component>.tfstate` keys. Old `components/iam` and `modules/iam` were replaced with `foundation-iam`; the old `dev/iam.tfstate` has not been migrated or deleted. No old IAM state has been applied in this project; if state ever appears there, inspect and reconcile before adopting. No `-target` is required.
+
+## Development plan / apply workflow (2026-10-15)
+
+- Workflow: [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/actions/workflows/azure-infra.yaml), manually triggered on `main`.
+- Inputs: `component`, `environment=dev`, `operation=plan|apply`. Default operation `plan`; no other environments or `destroy` option.
+- Both operations run recursive `terraform fmt -check`, `init` with existing OIDC Azure Blob Backend, `validate`, then `plan -out` into the ephemeral Runner directory. Only selected `apply` reuses that **exact saved plan**. Apply is intentionally easy for a temporary dev lab and does not require a separate approval stage. A plan that would delete or replace an existing tracked resource is blocked.
+- Existing `healthcare-omop` Fabric Workspace was created manually. The `workspace` component refuses `apply` until it has been imported into that component's remote Terraform State. This prevents a second Workspace being created accidentally.
+- IAM defaults to empty mappings; Bootstrap `OMOP` / `johnzhang` / `tfstate` remain outside lifecycle. Azure data operations may incur ordinary Azure charges even during Fabric Trial.
+
+### Actual Fabric onelake regression
+
+[Azure-Infra-TF Run 38797932758, attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38797932758): SUCCESS after correcting missing `required_providers { fabric = { source = "microsoft/fabric" } }` in **all Fabric child modules**. Provider installed `microsoft/fabric v1.13.0`, `terraform validate` passed, and Plan showed `+ fabric_lakehouse.current`, name `lh_omop_analytics` in Workspace `56dca14e-5d3c-42de-ae57-d76a916ecbca`. **Plan: 1 add / 0 change / 0 destroy**; no Apply executed. Actual Fabric API Create/permissions remain to be tested by an explicit `onelake + dev + apply` run.
 
 ## Fabric planning restrictions
 
