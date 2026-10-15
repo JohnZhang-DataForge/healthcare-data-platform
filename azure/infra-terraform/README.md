@@ -58,3 +58,10 @@ Fabric Provider Service Principal OIDC does NOT automatically gain Fabric tenant
 - This IAM refactor requires a **new regression** of storage and foundation-iam `fmt/validate/plan`. Do not claim all Fabric plans passed before real Fabric permissions/workspace are configured.
 
 Docs: [IAM ownership design](docs/ARCHITECTURE.md), [Azure RBAC](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment), [Fabric workspace RBAC](https://microsoft.github.io/terraform-provider-fabric/resources/workspace_role_assignment/), [OneLake security preview](https://microsoft.github.io/terraform-provider-fabric/resources/onelake_data_access_security/).
+
+## Component-owned IAM refactor acceptance — 2026-10-15
+
+- **Foundation shared RBAC root** — [Azure-Infra-TF Run 38767227655, attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38767227655) **SUCCESS**: recursive `terraform fmt -check`, remote OIDC Backend `init`, `validate`, and `plan` passed; `shared_role_bindings = {}` caused no grant changes.
+- **Storage component with its own IAM module** — [Azure-Infra-TF Run 38761100632 (re-run)](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632) **SUCCESS**: storage `init/validate/plan` read `OMOP` + `johnzhang`, `blob_role_assignments = {}`; no new RBAC.
+- Both tests checked out Healthcare SHA `bdbfe21b2230926adbee82cbfb72b952bf6b5837`, and both logged `APPLY_EXECUTED=NO`, `DESTROY_EXECUTED=NO`.
+- Workflow reverted to **manual workflow_dispatch** only; selector `iam` removed and replaced with `foundation-iam`. Fabric-specific `onelake` preview IAM is declared but its real provider validate/plan and permissions remain **NOT VERIFIED**.
