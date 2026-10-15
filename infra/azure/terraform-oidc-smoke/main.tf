@@ -17,10 +17,10 @@ resource "azurerm_resource_group_template_deployment" "probe" {
   deployment_mode     = "Incremental"
 
   template_content = jsonencode({
-    "$schema"       = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
-    contentVersion  = "1.0.0.0"
-    resources       = []
-    outputs = {
+    "$schema"      = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+    contentVersion = "1.0.0.0"
+    resources      = []
+    outputs        = {
       connectivity = {
         type  = "string"
         value = "azure-terraform-oidc-ok"
