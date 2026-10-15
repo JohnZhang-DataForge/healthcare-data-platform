@@ -13,3 +13,7 @@
 **下一步：AZ-00 READ ONLY** — 只读确认 Azure Subscription / Fabric 资格、已有 Self-Runner Workflow、Runtime 和角色；实际创建 Azure 资源须另行授权。
 
 > 云端方案以节省成本、最小可运行 Demo、证据真实、与本地现有平台零破坏为原则。
+
+## Terraform implementation status (2026-10-15)
+
+Terraform resource-selectable **PLAN-ONLY** project is now implemented at [`azure/infra-terraform/`](../../azure/infra-terraform/README.md). Execution lives in Self-Runner `.github/workflows/azure-infra.yaml`, workflow name **Azure-Infra-TF**. Actual `storage` component `fmt/init/validate/plan` through OIDC/Blob remote state passed in [Run 38761100632](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632). **No Apply or Destroy was run.** Fabric resources are declared as future Terraform resource modules only; actual Fabric provisioning / item plans have not yet been verified. This does not change the earlier business pipeline design from PLANNED.
