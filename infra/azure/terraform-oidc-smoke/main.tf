@@ -1,5 +1,4 @@
-# Executed from JohnZhang-DataForge/Self-Runner main via GitHub OIDC.
-# Do not manage the existing OMOP resource group or backend storage as resources.
+# Executed via Self-Runner/main with GitHub OIDC. NO new RG or paid resources.
 provider "azurerm" {
   features {}
   resource_provider_registrations = "none"
@@ -9,19 +8,31 @@ data "azurerm_resource_group" "omop" {
   name = "OMOP"
 }
 
-# Azure Managed Identities have no additional direct charge.
-# Temporary smoke-only resource: the workflow always attempts to destroy it.
-resource "azurerm_user_assigned_identity" "probe" {
-  name                = "id-hdp-tf-oidc-probe"
+# An empty INCREMENTAL ARM deployment proves actual Azure management-plane
+# write access without requiring a new resource provider registration or paid
+# resources. Never use Complete mode on the existing OMOP Resource Group.
+resource "azurerm_resource_group_template_deployment" "probe" {
+  name                = "hdp-tf-oidc-probe"
   resource_group_name = data.azurerm_resource_group.omop.name
-  location            = data.azurerm_resource_group.omop.location
+  deployment_mode     = "Incremental"
 
-  tags = {
-    project = "healthcare-data-platform"
-    purpose = "terraform-oidc-temporary-smoke"
-  }
+  template_content = jsonencode({
+    "$schema"       = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+    contentVersion  = "1.0.0.0"
+    resources       = []
+    outputs = {
+      connectivity = {
+        type  = "string"
+        value = "azure-terraform-oidc-ok"
+      }
+    }
+  })
 }
 
 output "probe_resource_id" {
-  value = azurerm_user_assigned_identity.probe.id
+  value = azurerm_resource_group_template_deployment.probe.id
+}
+
+output "probe_result" {
+  value = jsondecode(azurerm_resource_group_template_deployment.probe.output_content).connectivity.value
 }
