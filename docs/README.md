@@ -14,6 +14,7 @@
 | [`runbooks/`](runbooks/) | 实操手册和开发排障经验 |
 | [`skill/`](skill/) | Agent 行为和开发规范 |
 | [`platform-portal/`](platform-portal/) | OpenLineage/Marquez 的架构、实测、未完成项与协作规则 |
+| [`azure-fabric/`](azure-fabric/) | Azure/Fabric 最小云端分析方案、Terraform/Remote State/Self-Runner、身份/费用和独立验收阶段（**PLANNED**） |
 | [`archive/`](archive/) | 被替代的旧资料及其追溯入口 |
 | [`BASELINE.md`](BASELINE.md) | 不应覆盖的历史 `/data/spark/phase3c` 开发基线 |
 
