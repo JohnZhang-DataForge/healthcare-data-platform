@@ -1,5 +1,7 @@
 # TASK004 — Final Mainline Closeout（原 Processing MVP 的历史正式验收）
 
+> **NEW AUTHORITATIVE TASK004 CLOSEOUT / 2026-10-14 EDT：** 本文是**原 Processing-first MVP** 历史范围的关闭记录，后续扩展的 PostgreSQL Person/Visit 真实同事务 COMMIT + Airflow 重放幂等性已经全部验收完成。当前 **TASK004 COMPLETED / CLOSED** 的最终依据是 [NEW_ONLY E2E Final Acceptance](TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)，而不是本文所述 2026-10-12 的 `IN PROGRESS` 扩展门槛。历史数据和当时验收结论保持不变。
+
 > **CURRENT SCOPE UPDATE / 2026-10-12 EDT（2026-10-13 UTC）**：本文完整保留原 STEP03E Processing-first MVP 的真实成功验收事实及当时 CLOSED 结论；**用户随后明确将 TASK004 整体完成标准扩展为：同一 Airflow batch 的 Person/Visit 必须写入 PostgreSQL OMOP、独立对账，且该批次可幂等重放/失败恢复。** 因此按扩大后的目标，TASK004 **overall 现为 IN PROGRESS**。唯一正式 NEXT：[`TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) 中的 **STEP04A READ ONLY**；TASK005 Condition ON HOLD。本文以下章节为当时限定范围的历史正文，**不能作为新 OMOP DB 终验或当前 NEXT 的权威依据**。
 
 
