@@ -59,6 +59,8 @@ The long-term design expands the lab into a **Kubernetes + Microsoft Fabric** ar
 | GitOps | Argo CD-managed environment promotion and deployment verification | **Roadmap**; GitHub Actions and Airflow GitSync are already exercised |
 | More OMOP domains | Condition first; later Procedure, Drug, Measurement and Observation with vocabulary mapping and FK validation | **Condition STEP00 read-only ready**; not yet committed as business data |
 
+**Minimal Azure/Fabric implementation plan (PLANNED, not deployed):** [Azure/Fabric docs and staged acceptance](docs/azure-fabric/README.md). Focus: PostgreSQL OMOP snapshot → Azure Blob/ADLS Gen2 → Fabric Data Factory / PySpark Notebook → Fabric Warehouse, provisioned using Terraform on the existing Self-Runner.
+
 Architecture references: [Kubernetes/Spark/OMOP V4](docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md) · [Hybrid Azure/Fabric/ML target design (Chinese)](docs/architecture/Healthcare-ETL-Hybrid-Fabric-ML-Design.zh-CN.v2.1.md).
 
 ## Engineering practices
