@@ -1,5 +1,7 @@
 # TASK005 — Condition Pipeline 开发与验收计划 v1.0
 
+> **LATEST GATE UPDATE / 2026-10-14 EDT（2026-10-15 UTC）：TASK004 完整最终验收已通过，原“TASK005 ON HOLD”门槛正式解除。TASK005 = READY FOR STEP00 READ-ONLY / IMPLEMENTATION NOT STARTED。** [最终 TASK004 E2E/幂等性 Closeout](TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；[Airflow Writer COMMIT + PostgreSQL readback 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822)，[真实第三批重复 SKIP 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069)。现在可从以下 STEP00 Source Contract / Person-Visit FK / Source Key / Vocabulary / CDM Schema **只读预检**开始；并不允许直接进行 Condition/PG mutation。下方 2026-10-12 “CURRENT GATE = ON HOLD” 是历史时点，不能作为现行开工拦截。
+
 > **CURRENT GATE / 2026-10-12 EDT（2026-10-13 UTC）**：**TASK005 = ON HOLD / DESIGN ONLY**。原下方文档是已保存的 Condition 设计，不再代表当前唯一 NEXT。用户要求先完整实现 **TASK004 Person + Visit 的同批次 PostgreSQL OMOP 入库、数据库对账和 Airflow 幂等 replay**；直到 TASK004 STEP04A–04H 终验通过前，不开始 TASK005 STEP00 及任何 Condition 数据写入。当前权威 NEXT：[`TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md`](TASK-004-OMOP-CDM-INTEGRATION-AND-IDEMPOTENCY-PLAN-v1.0.zh-CN.md) 的 STEP04A READ ONLY。下方的“下一任务/当前 NEXT”均是**设计制定时的历史原文**，不覆盖此门槛。
 
 
