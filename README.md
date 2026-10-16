@@ -73,7 +73,7 @@ The long-term design expands the lab into a **Kubernetes + Microsoft Fabric** ar
 
 ## Repository map
 
-Each top-level directory contains its own README explaining scope, entry points and what is current versus historical.
+The component README describes responsibilities; the component CODE.md links directly to source, Contracts, templates and tests. Physical code directories do not necessarily have README files.
 
 | Directory | Contents |
 | --- | --- |
@@ -88,7 +88,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 | [`kubernetes/`](kubernetes/README.md) | Kubernetes manifests, service accounts and runtime templates |
 | [`platform-portal/`](platform-portal/README.md) | Marquez / OpenLineage integration and observability experiments |
 | [`scripts/`](scripts/README.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
-| [`spark/`](spark/README.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
+| [`spark/`](spark/) · [CODE](documents/components/spark/CODE.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
 | [`sql/`](sql/README.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
 | [`tests/`](tests/) | Unit, contract and regression tests |
 
