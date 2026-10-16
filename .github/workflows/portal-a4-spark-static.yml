@@ -4,7 +4,6 @@ on:
     branches: [feature/portal-a4-spark-agent-static-20261014]
     paths:
       - platform-portal/openlineage/spark/**
-      - docs/platform-portal/A4-SPARK-OPENLINEAGE-STATIC-PLAN-2026-10-14.zh-CN.md
       - .github/workflows/portal-a4-spark-static.yml
   pull_request:
     paths:

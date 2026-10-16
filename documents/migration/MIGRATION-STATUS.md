@@ -12,6 +12,12 @@
 - 现有 `docs/` 剩余文档仅作迁移输入；不在本项目重建旧 Archive 目录。
 - 文档重建不会自动触发数据生成、Airflow、Spark、OMOP Writer、K8s 变更、Terraform Apply，也不自动获得运行授权。
 
+## 最终旧目录清理（STEP08 后）
+
+- 原有 `docs/` **111 个文件**曾作为终审历史材料；此后从 Main 删除，但所有历史记录仍保存在删除前的 [固定 Commit `49936b51d4beadc69383e931efc3e72d2f0db47e`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/49936b51d4beadc69383e931efc3e72d2f0db47e/docs)。
+- [Legacy Docs Snapshot](LEGACY-DOCS-SNAPSHOT.md) 记录访问入口及永久链接规则。文档中的旧 `docs/...` 路径是**历史树路径**，不是现行 Main 工作目录；应通过固定快照链接读取。
+- 清理仅涉及文档/README 链接和一个已无效的 Portal 静态 CI 路径触发器；`documents/`、业务代码、Contract、Workflow 执行逻辑均不应受删除影响。
+
 ## 1. 分阶段计划
 
 | 顺序 | 交付物 | 迁移状态 | 完成标准 |

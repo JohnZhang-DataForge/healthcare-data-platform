@@ -9,6 +9,8 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 > **STEP08 终审完成后的准备清单，不是 OpenSpec 初始化记录。** 正式采用 OpenSpec 管后续变更与 Agent 接力的方向已确认，但已核验的 Main 仍**没有 `openspec/`**；没有运行 OpenSpec CLI/npm，也没有为此触发业务或云端 Workflow。[最终文档权威终审](FINAL-DOCUMENTATION-AUDIT.md)。
 
+**目录调整提示**：旧 `docs/` 已进入 [Legacy Snapshot](LEGACY-DOCS-SNAPSHOT.md)，不在当前 Main。旧 PR #164 对 `docs/README.md`、`docs/tasks/TASK-STATUS.md` 的引用在目录删除后更不可能作为有效 OpenSpec `config.yaml` 上下文；正式采用前必须替换为现行 `documents/`。
+
 ## 1. 最小职责分配
 
 | 系统 | 负责 | 不负责 |

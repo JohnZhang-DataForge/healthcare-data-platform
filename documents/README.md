@@ -48,16 +48,21 @@
 
 **最小读取策略**：先读本页和必要规则，再按任务读取有关代码、Contract、测试、部署配置及证据；避免一次性加载旧 `docs/` 全量 Markdown。
 
-## 两套目录的过渡边界
+## 历史文档已退出 Main
+
+- **原 `docs/` 的 111 个文件已从 Main 清理**（删除 PR 合并后生效），不等于销毁验收材料：见 [Legacy Docs 固定历史快照](migration/LEGACY-DOCS-SNAPSHOT.md)。
+- 本页以及组件文档中需要的历史验收、Portal Smoke、Azure Plan 记录，全部引用 **删除前 Commit `49936b51d4beadc69383e931efc3e72d2f0db47e`** 的不可变 GitHub 链接。新的 Agent 不得在 Main 中寻找旧 `docs/`，也不得把历史 NEXT 当作当前业务状态。
+
+## 当前目录与历史来源的边界
 
 | 位置 | 当前职责 |
 | --- | --- |
 | `documents/` | 新治理规范及**已完成审核并在迁移表标记为 ACTIVE 的**架构、模块和运维知识 |
-| [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | Legacy：旧架构、状态、Runbook、Task 计划、已验收证据的迁移来源；未迁移领域仍须按需查阅 |
+| [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | **仅 Git 历史快照**：旧架构、Task、Runbook、已验收证据，不存在于最新 Main；如需查阅可点开冻结链接 |
 | [`contracts/`](../contracts/README.md) | 具体行为合同和数据 Schema 等以当前 Git 源码与有效 Contract 为准，不因文档搬迁而改写 |
 | `openspec/`（未来） | **当前 Main 尚未初始化**；未来用 Specs / Changes 管可验证行为与开发接力，不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
 
-旧 `docs/` 存在互相矛盾的日期快照；不得仅按文件名中的 CURRENT 或文件创建日期认定事实。对代码/运行状态的陈述必须标明 **Source SHA 与对应验收证据**。有不一致时先记录，停止未经核实的权威切换。
+历史 `docs/` 快照存在互相矛盾的日期记录；不得仅按文件名中的 CURRENT 或文件创建日期认定事实。对代码/运行状态的陈述必须标明 **Source SHA 与对应验收证据**。有不一致时先记录，停止未经核实的权威切换。
 
 ## 已知项目基线（迁移上下文，不是新一轮实时探针）
 
