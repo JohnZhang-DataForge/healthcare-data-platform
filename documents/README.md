@@ -4,41 +4,49 @@
 >
 > 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与未来 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
+## 新文档目录（渐进切换中）
+
+- [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
+- [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 与 Platform Portal 仍在开发，暂保留旧文档目录。
+- [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
+
+**迁移边界**：本轮开始将此入口的链接指向已复制的新目录。旧目录仍保留；CODE.md 静态检查、其它文档及 Agent 规则尚未全部切换，不能仅凭本页判断旧文档已失效。等全仓引用与 CI 均切换并验证后，才删除确认无用的旧副本。
+
 ## Agent 必读入口
 
-1. [AI/Agent 开发与安全规则](development/AGENT-RULES.md) — 当前通用 AI 操作约束。
-2. [开发工作流](development/DEVELOPMENT-WORKFLOW.md) — 当前 Healthcare / Self-Runner、STEP/PR/SHA/执行/交接流程；[Developer CODE](development/CODE.md) 定位 CI 工具和本地配置样例。
-3. **[组件与代码命名规范](development/CODE-ORGANIZATION-AND-NAMING.md)** — 新代码不能用 Task/Step 命名；Legacy 按功能逐步迁移。
-4. [测试与验收](development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
-5. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
-6. [多 Session 协调规则](development/SESSION-COORDINATION.md) — 并行 PR、共享资源、人为授权、接力验证；不另建 Handoff 日志。
-7. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+1. [AI/Agent 开发与安全规则](engineering/development/AGENT-RULES.md) — 当前通用 AI 操作约束。
+2. [开发工作流](engineering/development/DEVELOPMENT-WORKFLOW.md) — 当前 Healthcare / Self-Runner、STEP/PR/SHA/执行/交接流程；[Developer CODE](engineering/development/CODE.md) 定位 CI 工具和本地配置样例。
+3. **[组件与代码命名规范](engineering/development/CODE-ORGANIZATION-AND-NAMING.md)** — 新代码不能用 Task/Step 命名；Legacy 按功能逐步迁移。
+4. [测试与验收](engineering/development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
+5. [文档治理与渐进迁移规则](engineering/development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
+6. [多 Session 协调规则](engineering/development/SESSION-COORDINATION.md) — 并行 PR、共享资源、人为授权、接力验证；不另建 Handoff 日志。
+7. [迁移进度与顺序](engineering/migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
 
 ## 最终文档终审与 OpenSpec 下一步（STEP08）
 
-- **[Final Authority Audit](migration/FINAL-DOCUMENTATION-AUDIT.md)** — 全部 25 份新文档链接审计、旧入口权威纠偏、文档范围和后续边界。
-- [OpenSpec Readiness](migration/OPENSPEC-READINESS.md) — STEP09 开工所需的配置修订、CLI 验证与首批 Baseline 范围。**当前 Main 尚无 `openspec/`**。
+- **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — 全部 25 份新文档链接审计、旧入口权威纠偏、文档范围和后续边界。
+- [OpenSpec Readiness](engineering/migration/OPENSPEC-READINESS.md) — STEP09 开工所需的配置修订、CLI 验证与首批 Baseline 范围。**当前 Main 尚无 `openspec/`**。
 
 ## 长期运维与架构决策（STEP07 已审核）
 
-- [Operations Index](operations/README.md) — 有效运维知识入口和仍需按需查阅的旧技术经验。
-- [Safe Operations](operations/SAFE-OPERATIONS.md) — 共享 K8s/Spark/Airflow/PG/S3/Azure 操作的安全门槛。
+- [Operations Index](engineering/operations/README.md) — 有效运维知识入口和仍需按需查阅的旧技术经验。
+- [Safe Operations](engineering/operations/SAFE-OPERATIONS.md) — 共享 K8s/Spark/Airflow/PG/S3/Azure 操作的安全门槛。
 - [Architecture Decisions](architecture/decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
-- [OpenSpec 迁移准备与 STEP08/09 Gate](migration/OPENSPEC-READINESS.md) — 只准备，不初始化；旧未合并 PR #164 需先纠正权威来源。
+- [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 只准备，不初始化；旧未合并 PR #164 需先纠正权威来源。
 
-## Portal 与 Azure/Fabric 专项组件（STEP06 已审核）
+## Azure/Fabric 与 Platform Portal（继续使用旧文档路径）
 
 - [Platform Portal：Marquez / OpenLineage](components/platform-portal/README.md) — 部署与 A3/A4 历史验收、Spark Job↔Run/Dataset 未完成和待讨论接入方案。
 - [Azure/Fabric：OMOP → Azure Blob → Fabric Pipeline/Notebook → OneLake](components/azure-fabric/README.md) — OneLake-first 方案、Terraform Plan-only 证据、未完成的导出/业务装载边界。
 
-## Local Pipeline 组件（STEP05 已审核）
+## Systems — Data Platform（STEP05 已审核，导航切换中）
 
-- [组件目录与职责](components/README.md) — Synthea、Landing、Airflow、Spark、OMOP 五个可长期维护的业务模块。
-- [Legacy Task-named 代码重构计划](components/LEGACY-CODE-REFACTOR-PLAN.md) — 旧 `task004` 依赖、兼容门槛、逐阶段源码迁移计划（尚未实际 Rename）。
+- [Data Platform 组件目录与职责](systems/data-platform/README.md) — Synthea、Landing、Airflow、Spark、OMOP 五个可长期维护的业务模块。
+- [Legacy Task-named 代码重构计划](engineering/development/LEGACY-CODE-REFACTOR-PLAN.md) — 旧 `task004` 依赖、兼容门槛、逐阶段源码迁移计划（尚未实际 Rename）。
 
 ## 当前项目状态（STEP04 已审核）
 
-- **[PROJECT-STATUS.md](status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 只读预检、Portal Spark 方案讨论中、Azure OneLake-first 的 Terraform PLAN-ONLY 与未落地范围。
+- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 只读预检、Portal Spark 方案讨论中、Azure OneLake-first 的 Terraform PLAN-ONLY 与未落地范围。
 
 ## 当前整体架构（STEP03 已审核）
 
@@ -50,16 +58,16 @@
 
 ## 历史文档已退出 Main
 
-- **原 `docs/` 的 111 个文件已从 Main 清理**（删除 PR 合并后生效），不等于销毁验收材料：见 [Legacy Docs 固定历史快照](migration/LEGACY-DOCS-SNAPSHOT.md)。
+- **原 `docs/` 的 111 个文件已从 Main 清理**（删除 PR 合并后生效），不等于销毁验收材料：见 [Legacy Docs 固定历史快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md)。
 - 本页以及组件文档中需要的历史验收、Portal Smoke、Azure Plan 记录，全部引用 **删除前 Commit `49936b51d4beadc69383e931efc3e72d2f0db47e`** 的不可变 GitHub 链接。新的 Agent 不得在 Main 中寻找旧 `docs/`，也不得把历史 NEXT 当作当前业务状态。
 
 ## 当前目录与历史来源的边界
 
 | 位置 | 当前职责 |
 | --- | --- |
-| `documents/` | 新治理规范及**已完成审核并在迁移表标记为 ACTIVE 的**架构、模块和运维知识 |
+| `documents/` | Architecture 管全局与决策；Systems 管子系统组件及源码导航；Engineering 管开发、运维、迁移与项目状态。新旧文档并存期间按迁移门槛逐步切换。 |
 | [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | **仅 Git 历史快照**：旧架构、Task、Runbook、已验收证据，不存在于最新 Main；如需查阅可点开冻结链接 |
-| [`contracts/`](../contracts/) · [Synthea CODE](components/synthea/CODE.md) · [OMOP CODE](components/omop/CODE.md) | 具体行为合同和数据 Schema 等以当前 Git 源码与有效 Contract 为准，不因文档搬迁而改写 |
+| [`contracts/`](../contracts/) · [Synthea CODE](systems/data-platform/synthea/CODE.md) · [OMOP CODE](systems/data-platform/omop/CODE.md) | 具体行为合同和数据 Schema 等以当前 Git 源码与有效 Contract 为准，不因文档搬迁而改写 |
 | `openspec/`（未来） | **当前 Main 尚未初始化**；未来用 Specs / Changes 管可验证行为与开发接力，不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
 
 历史 `docs/` 快照存在互相矛盾的日期记录；不得仅按文件名中的 CURRENT 或文件创建日期认定事实。对代码/运行状态的陈述必须标明 **Source SHA 与对应验收证据**。有不一致时先记录，停止未经核实的权威切换。
