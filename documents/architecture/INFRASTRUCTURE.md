@@ -23,10 +23,10 @@ source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
 
 ### 仓库中可导航的 Kubernetes / Image 源码边界
 
-- [Synthea CODE](../components/synthea/CODE.md)：独立 NEW_ONLY + 历史生成 Job、PVC/StorageClass 模板和 Synthea 容器镜像。
-- [Landing CODE](../components/landing/CODE.md)：只读 Discovery、Claim 与 Processing Bridge 镜像；并非整套 SeaweedFS Service/PV 配置。
-- [Airflow CODE](../components/airflow/CODE.md)：历史 Task004 控制面镜像和跨 Namespace RBAC。实际 Airflow Helm/GitSync 当前运行配置并未由这些 YAML 全面表达。
-- [OMOP CODE](../components/omop/CODE.md)：历史 CDM Runtime 基镜像和 NEW_ONLY Writer 镜像；不包含 PostgreSQL 17 的完整 StatefulSet/Secret 配置。
+- [Synthea CODE](../systems/data-platform/synthea/CODE.md)：独立 NEW_ONLY + 历史生成 Job、PVC/StorageClass 模板和 Synthea 容器镜像。
+- [Landing CODE](../systems/data-platform/landing/CODE.md)：只读 Discovery、Claim 与 Processing Bridge 镜像；并非整套 SeaweedFS Service/PV 配置。
+- [Airflow CODE](../systems/data-platform/airflow/CODE.md)：历史 Task004 控制面镜像和跨 Namespace RBAC。实际 Airflow Helm/GitSync 当前运行配置并未由这些 YAML 全面表达。
+- [OMOP CODE](../systems/data-platform/omop/CODE.md)：历史 CDM Runtime 基镜像和 NEW_ONLY Writer 镜像；不包含 PostgreSQL 17 的完整 StatefulSet/Secret 配置。
 
 **范围限制**：`kubernetes/` 当前只是部分工作负载的 Job/StorageClass/RBAC 定义，**不是** SeaweedFS、Local-path、Airflow、PostgreSQL 或 Portal 集群状态的完整导出。Github 源码不等于已部署资源，修改这些文件也不等于自动 Apply。
 

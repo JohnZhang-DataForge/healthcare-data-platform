@@ -104,4 +104,4 @@ Plan 使用现有 OIDC Azure Blob 远程 State（各 root 独立 `dev/<component
 - 本地 **PostgreSQL 是权威库**；Azure Blob 是云端导出 Landing；OneLake 是分析副本。不要混同 S3 源数据 Landing、PG 数据仓库、Fabric Lakehouse 三种不同职责。
 - 云端不依赖重建 Synthea Producer、再造 Airflow/Spark/OMOP Writer，也不要求同时上线 FHIR/HL7/dbt/ML。
 - Portal 的 OpenLineage/Marquez 首先覆盖本地链路。未来若希望把 Azure/Fabric Pipeline 和 Notebook 纳入相同血缘视图，必须另行设计和验证采集，不把这部分视作已完成。
-- 每一阶段只能在实际 Run、输入/输出和独立数据读回都一致后声明业务 E2E 完成。见 [测试与证据标准](../development/TESTING-AND-EVIDENCE.md)。
+- 每一阶段只能在实际 Run、输入/输出和独立数据读回都一致后声明业务 E2E 完成。见 [测试与证据标准](../engineering/development/TESTING-AND-EVIDENCE.md)。
