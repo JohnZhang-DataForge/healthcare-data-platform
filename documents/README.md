@@ -12,6 +12,12 @@
 4. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
 5. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
 
+## 当前整体架构（STEP03 已审核）
+
+- [总体系统架构](architecture/SYSTEM-OVERVIEW.md) — 本地 Synthea/OMOP、Portal OpenLineage/Marquez、Azure OneLake-first 目标和验收边界。
+- [数据流架构](architecture/DATA-FLOW.md) — 本地真实 E2E、Portal 观测事件、PG → Azure Blob → Fabric Pipeline → Notebook → OneLake 的目标流。
+- [基础设施架构](architecture/INFRASTRUCTURE.md) — K8s Nodes/Namespaces/PG14 与 PG17、Marquez、Fabric Terraform 模块及已验证 Plan。
+
 **最小读取策略**：先读本页和必要规则，再按任务读取有关代码、Contract、测试、部署配置及证据；避免一次性加载旧 `docs/` 全量 Markdown。
 
 ## 两套目录的过渡边界
@@ -30,7 +36,7 @@
 - [仓库根 README](../README.md) 描述已验收的本地 Synthea → S3 Landing → Airflow → Spark Person/Visit → PostgreSQL OMOP 路径。
 - TASK004 NEW_ONLY Person/Visit 实际 E2E 和同批次 SKIP 有[最终验收证据](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；该结论不代表其他数据域或所有并发/恢复场景已验收。
 - [Condition TASK005](../docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 处于可做 STEP00 只读预检、尚未完成业务入库的状态；开发前再次核对最新 Main 和授权。
-- Azure/Fabric、Portal 各自有独立实施与证据状态，不得以“有 Terraform Plan”“有 Spark Smoke”推断全部功能已部署或所有血缘已完成。
+- Portal 已使用原生 Marquez Web + OpenLineage，**Airflow 事件已证实**、Spark 独立 Smoke 部分成功，但 Dataset 全链路尚未验收；Azure/Fabric 则采用 **PG → Azure Blob → Fabric Pipeline → Notebook → OneLake Lakehouse** 的简化目标，目前仅三组件 Terraform Plan 验证成功，不得误报部署与业务 E2E。
 
 ## 为什么不直接重写全部文档？
 
