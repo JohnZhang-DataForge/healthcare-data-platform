@@ -17,3 +17,7 @@
 ## Terraform implementation status (2026-10-15)
 
 Terraform resource-selectable **PLAN-ONLY** project is now implemented at [`azure/infra-terraform/`](../../azure/infra-terraform/README.md). Execution lives in Self-Runner `.github/workflows/azure-infra.yaml`, workflow name **Azure-Infra-TF**. Actual `storage` component `fmt/init/validate/plan` through OIDC/Blob remote state passed in [Run 38761100632](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632). **No Apply or Destroy was run.** Fabric resources are declared as future Terraform resource modules only; actual Fabric provisioning / item plans have not yet been verified. This does not change the earlier business pipeline design from PLANNED.
+
+## 2026-10-15 update: OneLake-first infra (source/PLAN only)
+
+See [OneLake-first Terraform handoff](AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md). Current target is Blob landing → Fabric Data Factory → PySpark Notebook → OneLake Lakehouse, **not** mandatory Warehouse. The older Warehouse-first document is retained for historical context. No Apply authorized.
