@@ -27,7 +27,7 @@
 - **开发进度可以称 TASK/STEP，但新代码必须按组件/功能命名。** Python、DAG ID、Spark、SQL、镜像、K8s、正式 Shell、Workflow、Tests 的新增路径与公开标识符不允许 `taskNNN/stepNNN`。具体以 [Code Organization & Naming](CODE-ORGANIZATION-AND-NAMING.md) 为准。
 - 现有 Task-named 代码及数据库/Contract/镜像持久标识**不批量重命名**；先有依赖清单、兼容回归与必要 Runtime 授权，再逐模块切换。
 - CI 自动检查新建代码路径；代码内部的新标识符与职责归属由 Agent/Reviewer 复核。Task ID 只属于 PR/开发计划/历史验收。
-- **源码地图强制同步**：凡组件源码文件新增、删除、移动或改名，必须在同一 PR 更新其 `documents/components/<component>/CODE.md`；重要入口、职责、依赖变化也要审查并同步。已落地 [Airflow CODE](../components/airflow/CODE.md)，并将混合 `apps/` 源码按唯一功能归属映射到 [Synthea CODE](../components/synthea/CODE.md)、[Landing CODE](../components/landing/CODE.md)、[OMOP CODE](../components/omop/CODE.md) 及 Airflow CODE；CI 检查新增/删除/改名、唯一所有者及同 PR 维护；[Spark CODE](../components/spark/CODE.md) 现也覆盖 Spark 源码、Contract 和模板，`contracts/`、`sql/`、`images/` 与 `kubernetes/` 也已按 Synthea/Landing/OMOP/Airflow 组件归属纳入 CODE.md 与 CI；不允许因为删除原导航 README 就把 Runtime 模板当作直接可 Apply 的资源。其它目录逐步接入。
+- **源码地图强制同步**：凡组件源码文件新增、删除、移动或改名，必须在同一 PR 更新其 `documents/components/<component>/CODE.md`；重要入口、职责、依赖变化也要审查并同步。已落地 [Airflow CODE](../components/airflow/CODE.md)，并将混合 `apps/` 源码按唯一功能归属映射到 [Synthea CODE](../components/synthea/CODE.md)、[Landing CODE](../components/landing/CODE.md)、[OMOP CODE](../components/omop/CODE.md) 及 Airflow CODE；CI 检查新增/删除/改名、唯一所有者及同 PR 维护；[Spark CODE](../components/spark/CODE.md) 现也覆盖 Spark 源码、Contract 和模板，`contracts/`、`sql/`、`images/` 与 `kubernetes/` 也已按 Synthea/Landing/OMOP/Airflow 组件归属纳入 CODE.md 与 CI；不允许因为删除原导航 README 就把 Runtime 模板当作直接可 Apply 的资源。`scripts/` 和 `config/` 现已按业务所有者与 [Developer CODE](CODE.md) 维护；旧 Shell 可产生仓库源码、Pod、Job、S3、PG 写入或 Secret 变更，浏览 CODE.md 不构成运行授权。其它目录逐步接入。
 
 ## 4. Git / GitHub / Self-Runner
 

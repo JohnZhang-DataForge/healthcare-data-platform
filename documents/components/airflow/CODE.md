@@ -2,7 +2,7 @@
 status: active
 scope: airflow-source-code-map
 last_verified: 2026-10-16
-source_sha: badd7b400212ca7302f9ccd216c074359720d5a9
+source_sha: d019429332e794e412426cf9c5053bafa043c05e
 ---
 
 # Airflow — CODE / 源码导航
@@ -70,9 +70,20 @@ source_sha: badd7b400212ca7302f9ccd216c074359720d5a9
 
 **RBAC 安全**：这些 Role/Binding 是旧控制面真实权限声明，包括 Pod 执行、SparkApplication/ConfigMap 变更和跨 `dw-synthea` Secret 读取。不能作为新 Agent 的默认运行授权，也不能仅凭文件存在断言当前集群已部署。修改 RBAC 或重放历史 Job 必须单独审查权限、现网 Namespace、会话冲突与部署窗口。
 
+## 历史 Shell / 脚本导航（由 airflow 组件负责）
+
+> 本清单是历史 Step Shell 的**代码索引，不是按顺序执行的 Runbook**。这些文件可能使用固定 Git SHA/Batch ID、操作 S3/PG/K8s、修改仓库源码或生成本地报告；任何执行须先读脚本全文并核对 [Safe Operations](../../operations/SAFE-OPERATIONS.md)。新脚本必须按组件/能力命名，不能新增 `taskNNN` 路径。
+
+## 历史 task004（2 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`05b-prepare-person-visit-runtime-interface.sh`](../../../scripts/task004/05b-prepare-person-visit-runtime-interface.sh) | [PREPARE / may write] 历史 TASK004 prepare person visit runtime interface 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06a-prepare-unified-runtime-image.sh`](../../../scripts/task004/06a-prepare-unified-runtime-image.sh) | [PREPARE / may write] 历史 TASK004 prepare unified runtime image 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+
 ## CODE.md 同步规则（本组件）
 
-**新增、删除、移动或重命名本组件负责的 `airflow/`、`apps/`、`images/`、`kubernetes/` 下的源文件，必须在同一个 PR 同步修改本 CODE.md**，并检查现有相对链接、测试入口和真实依赖。调整现有文件的职责、入口或重要依赖时也要同步更新；普通内部实现变更可核对后确认地图无需修改。
+**新增、删除、移动或重命名本组件负责的 `airflow/`、`apps/`、`images/`、`kubernetes/`、`scripts/` 下的源文件，必须在同一个 PR 同步修改本 CODE.md**，并检查现有相对链接、测试入口和真实依赖。调整现有文件的职责、入口或重要依赖时也要同步更新；普通内部实现变更可核对后确认地图无需修改。
 
 CI 的 [Component Code Naming](../../../.github/workflows/code-component-naming-check.yml) 使用 [Code Map Sync Guard](../../../scripts/quality/check_component_code_map.py) 对 Airflow 文件增删/改名执行最小检查，且校验这里列出的 `airflow/dags/*.py` 文件清单与实际源码一致。现在 `apps/` 的源代码由 Airflow、Synthea、Landing、OMOP 四份 CODE.md 分别拥有，并通过同一个 CI 自动检查；其它尚未建立 CODE.md 的目录不宣称覆盖。
 

@@ -190,5 +190,44 @@ class CodeMapSyncTests(unittest.TestCase):
         )
         self.assertEqual(policy.required_image_k8s_updates(set(), before, after), set())
 
+
+    def test_scripts_config_sources(self):
+        self.assertTrue(policy.is_script_config_source("scripts/quality/check_component_code_map.py"))
+        self.assertTrue(policy.is_script_config_source("scripts/omop/verify.sh"))
+        self.assertTrue(policy.is_script_config_source("config/local.env.example"))
+        self.assertFalse(policy.is_script_config_source("scripts/README.md"))
+        self.assertFalse(policy.is_script_config_source("kubernetes/manifests/job.yaml.tpl"))
+
+    def test_scripts_config_ownership_missing_stale_duplicate(self):
+        syn, landing, spark, omop, airflow, dev = policy.SCRIPT_CONFIG_MAP_PATHS
+        docs = {
+            syn: "| [a](../../../scripts/task004/a.sh) | historic |",
+            landing: "| [again](../../../scripts/task004/a.sh) | duplicate |",
+            spark: "", omop: "", airflow: "",
+            dev: ("[incidental](../../scripts/task004/a.sh)\n"
+                  "| [example](../../config/local.env.example) | config |"
+                  "\n| [stale](../../scripts/quality/removed.py) | old |"),
+        }
+        missing, stale, duplicate = policy.validate_script_config_maps(
+            docs,
+            {"scripts/task004/a.sh", "config/local.env.example",
+             "scripts/task002/new.sh"},
+        )
+        self.assertEqual(missing, ["scripts/task002/new.sh"])
+        self.assertEqual(stale, ["scripts/quality/removed.py"])
+        self.assertEqual(duplicate, ["scripts/task004/a.sh"])
+
+    def test_scripts_config_cross_owner_move_requires_both_maps(self):
+        syn, landing, spark, omop, airflow, dev = policy.SCRIPT_CONFIG_MAP_PATHS
+        old = {p: "" for p in policy.SCRIPT_CONFIG_MAP_PATHS}
+        new = dict(old)
+        old[syn] = "| [old](../../../scripts/synthea/old.sh) | old |"
+        new[landing] = "| [new](../../../scripts/landing/new.sh) | new |"
+        needed = policy.required_script_config_updates(
+            {"scripts/synthea/old.sh", "scripts/landing/new.sh"}, old, new
+        )
+        self.assertEqual(needed, {syn, landing})
+        self.assertEqual(policy.required_script_config_updates(set(), old, new), set())
+
 if __name__ == "__main__":
     unittest.main()

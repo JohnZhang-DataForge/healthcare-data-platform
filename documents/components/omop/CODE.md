@@ -2,7 +2,7 @@
 status: active
 scope: omop-apps-source-map
 last_verified: 2026-10-16
-source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
+source_sha: d019429332e794e412426cf9c5053bafa043c05e
 ---
 
 # OMOP Writer / Visit CDM — CODE / 源码导航
@@ -89,7 +89,56 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 **关键风险**：已验收的 Writer 镜像使用固定的历史 CDM Base Digest，同时显式 COPY 与 NEW_ONLY Batch 身份匹配的 `task004_cdm_materialization_plan.py`、`task004_cdm_dynamic_source.py`、`task004_cdm_dynamic_adapters.py`、`task004_cdm_dynamic_pg_writer.py` 等模块。之前继承基镜像中的过期逻辑会导致 `BLOCKED=batch_id`；修改任何镜像 COPY/BuildContext/Entrypoint、Python 模块或 Base Digest 前须做契约测试、镜像 Smoke、不可变 Digest 发布、Consumer Pin 和实际运行后置证据。镜像 Build PASS 不等于 PostgreSQL COMMIT。
 
+## 历史 Shell / 脚本导航（由 omop 组件负责）
+
+> 本清单是历史 Step Shell 的**代码索引，不是按顺序执行的 Runbook**。这些文件可能使用固定 Git SHA/Batch ID、操作 S3/PG/K8s、修改仓库源码或生成本地报告；任何执行须先读脚本全文并核对 [Safe Operations](../../operations/SAFE-OPERATIONS.md)。新脚本必须按组件/能力命名，不能新增 `taskNNN` 路径。
+
+## 历史 task002（3 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`06-capture-person-cdm-baseline.sh`](../../../scripts/task002/06-capture-person-cdm-baseline.sh) | [PREPARE / may write] 历史 TASK002 capture person CDM baseline 脚本 |
+| [`06b-load-person-stage.sh`](../../../scripts/task002/06b-load-person-stage.sh) | [EXECUTE / review] 历史 TASK002 load person stage 脚本 |
+| [`07-upsert-person-cdm-idempotency.sh`](../../../scripts/task002/07-upsert-person-cdm-idempotency.sh) | [HIGH / review] 历史 TASK002 upsert person CDM idempotency 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
+
+## 历史 task003（32 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`01-discover-visit-occurrence.sh`](../../../scripts/task003/01-discover-visit-occurrence.sh) | [CHECK / verify effects] 历史 TASK003 discover visit occurrence 脚本 |
+| [`02-discover-visit-mapping-foundation.sh`](../../../scripts/task003/02-discover-visit-mapping-foundation.sh) | [CHECK / verify effects] 历史 TASK003 discover visit mapping foundation 脚本 |
+| [`05-prepare-visit-omop.sh`](../../../scripts/task003/05-prepare-visit-omop.sh) | [PREPARE / may write] 历史 TASK003 prepare visit OMOP 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05a-verify-visit-omop-input.sh`](../../../scripts/task003/05a-verify-visit-omop-input.sh) | [CHECK / verify effects] 历史 TASK003 verify visit OMOP input 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05b-inspect-visit-database.sh`](../../../scripts/task003/05b-inspect-visit-database.sh) | [CHECK / verify effects] 历史 TASK003 inspect visit database 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05b-prepare-visit-db-baseline.sh`](../../../scripts/task003/05b-prepare-visit-db-baseline.sh) | [PREPARE / may write] 历史 TASK003 prepare visit db baseline 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05c-create-visit-id-map.sh`](../../../scripts/task003/05c-create-visit-id-map.sh) | [PREPARE / may write] 历史 TASK003 create visit id map 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05c-prepare-visit-id-map.sh`](../../../scripts/task003/05c-prepare-visit-id-map.sh) | [PREPARE / may write] 历史 TASK003 prepare visit id map 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06a1-visit-id-allocation-baseline-discovery.sh`](../../../scripts/task003/06a1-visit-id-allocation-baseline-discovery.sh) | [LEGACY / review] 历史 TASK003 visit id allocation baseline discovery 脚本 |
+| [`06a2-plan-visit-id-allocation.sh`](../../../scripts/task003/06a2-plan-visit-id-allocation.sh) | [CHECK / verify effects] 历史 TASK003 plan visit id allocation 脚本 |
+| [`06a3-reconcile-visit-business-keys.sh`](../../../scripts/task003/06a3-reconcile-visit-business-keys.sh) | [CHECK / verify effects] 历史 TASK003 reconcile visit business keys 脚本 |
+| [`06a4-prepare-visit-id-readonly-preflight-freeze.sh`](../../../scripts/task003/06a4-prepare-visit-id-readonly-preflight-freeze.sh) | [PREPARE / may write] 历史 TASK003 prepare visit id readonly preflight freeze 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06a4-verify-visit-id-readonly-preflight.sh`](../../../scripts/task003/06a4-verify-visit-id-readonly-preflight.sh) | [CHECK / verify effects] 历史 TASK003 verify visit id readonly preflight 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`06a5-prepare-readonly-runner-snapshots.sh`](../../../scripts/task003/06a5-prepare-readonly-runner-snapshots.sh) | [PREPARE / may write] 历史 TASK003 prepare readonly runner snapshots 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06b1-build-visit-id-mutation-contract.sh`](../../../scripts/task003/06b1-build-visit-id-mutation-contract.sh) | [PREPARE / may write] 历史 TASK003 build visit id mutation contract 脚本 |
+| [`06b2-freeze-visit-business-key-snapshot.sh`](../../../scripts/task003/06b2-freeze-visit-business-key-snapshot.sh) | [PREPARE / may write] 历史 TASK003 freeze visit business key snapshot 脚本 |
+| [`06b3-prepare-visit-id-pre-mutation-gate.sh`](../../../scripts/task003/06b3-prepare-visit-id-pre-mutation-gate.sh) | [PREPARE / may write] 历史 TASK003 prepare visit id pre mutation gate 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06b3-verify-visit-id-pre-mutation-gate.sh`](../../../scripts/task003/06b3-verify-visit-id-pre-mutation-gate.sh) | [CHECK / verify effects] 历史 TASK003 verify visit id pre mutation gate 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`06b4a-prepare-visit-id-allocation-rehearsal.sh`](../../../scripts/task003/06b4a-prepare-visit-id-allocation-rehearsal.sh) | [PREPARE / may write] 历史 TASK003 prepare visit id allocation rehearsal 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
+| [`06b4a-rehearse-visit-id-allocation.sh`](../../../scripts/task003/06b4a-rehearse-visit-id-allocation.sh) | [EXECUTE / review] 历史 TASK003 rehearse visit id allocation 脚本 |
+| [`06b4a-verify-visit-id-allocation-rehearsal.sh`](../../../scripts/task003/06b4a-verify-visit-id-allocation-rehearsal.sh) | [CHECK / verify effects] 历史 TASK003 verify visit id allocation rehearsal 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
+| [`06b4b-r1-prepare-visit-id-allocation-recovery.sh`](../../../scripts/task003/06b4b-r1-prepare-visit-id-allocation-recovery.sh) | [PREPARE / may write] 历史 TASK003 r1 prepare visit id allocation recovery 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06b4b-r1-reconcile-failed-visit-id-allocation.sh`](../../../scripts/task003/06b4b-r1-reconcile-failed-visit-id-allocation.sh) | [CHECK / verify effects] 历史 TASK003 r1 reconcile failed visit id allocation 脚本 |
+| [`06b4b-r1-verify-visit-id-allocation-recovery.sh`](../../../scripts/task003/06b4b-r1-verify-visit-id-allocation-recovery.sh) | [CHECK / verify effects] 历史 TASK003 r1 verify visit id allocation recovery 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`06b4b-r2-corrected-visit-id-allocation.sh`](../../../scripts/task003/06b4b-r2-corrected-visit-id-allocation.sh) | [HIGH / review] 历史 TASK003 r2 corrected visit id allocation 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
+| [`06b4c-prepare-committed-visit-id-mapping.sh`](../../../scripts/task003/06b4c-prepare-committed-visit-id-mapping.sh) | [PREPARE / may write] 历史 TASK003 prepare committed visit id mapping 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06b4c-verify-committed-visit-id-mapping.sh`](../../../scripts/task003/06b4c-verify-committed-visit-id-mapping.sh) | [CHECK / verify effects] 历史 TASK003 verify committed visit id mapping 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`06c2-candidate-to-cdm-column-preflight.sh`](../../../scripts/task003/06c2-candidate-to-cdm-column-preflight.sh) | [CHECK / verify effects] 历史 TASK003 candidate to CDM column preflight 脚本 |
+| [`06c3-prepare-cdm-materialization-preflight.sh`](../../../scripts/task003/06c3-prepare-cdm-materialization-preflight.sh) | [PREPARE / may write] 历史 TASK003 prepare CDM materialization preflight 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06c3-verify-cdm-materialization-preflight.sh`](../../../scripts/task003/06c3-verify-cdm-materialization-preflight.sh) | [CHECK / verify effects] 历史 TASK003 verify CDM materialization preflight 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`06c4e-prepare-committed-cdm-visit-materialization.sh`](../../../scripts/task003/06c4e-prepare-committed-cdm-visit-materialization.sh) | [PREPARE / may write] 历史 TASK003 prepare committed CDM visit materialization 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06c4e-verify-committed-cdm-visit-materialization.sh`](../../../scripts/task003/06c4e-verify-committed-cdm-visit-materialization.sh) | [CHECK / verify effects] 历史 TASK003 verify committed CDM visit materialization 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/` 或 `kubernetes/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/`、`kubernetes/` 或 `scripts/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 

@@ -2,7 +2,7 @@
 status: active
 scope: synthea-apps-source-map
 last_verified: 2026-10-16
-source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
+source_sha: d019429332e794e412426cf9c5053bafa043c05e
 ---
 
 # Synthea Producer — CODE / 源码导航
@@ -70,7 +70,29 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 **部署约束**：这些文件不是一键集群重建清单；Job `*.yaml.tpl` 必须按受控 Request、Batch、Digest、Namespace 和 PVC 渲染后审查。`synthea-local` 的 `Retain` 不代表实际硬盘隔离或备份；`dw-synthea` Secret、PVC/StorageClass 和历史 Job 的使用须先核实真实集群。当前独立 Generator 与 Legacy Task 模板并存不代表可以重新执行已完成批次。
 
+## 历史 Shell / 脚本导航（由 synthea 组件负责）
+
+> 本清单是历史 Step Shell 的**代码索引，不是按顺序执行的 Runbook**。这些文件可能使用固定 Git SHA/Batch ID、操作 S3/PG/K8s、修改仓库源码或生成本地报告；任何执行须先读脚本全文并核对 [Safe Operations](../../operations/SAFE-OPERATIONS.md)。新脚本必须按组件/能力命名，不能新增 `taskNNN` 路径。
+
+## 历史 task001（1 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`01-validate-build-draft.sh`](../../../scripts/task001/01-validate-build-draft.sh) | [PREPARE / may write] 历史 TASK001 validate build draft 脚本 |
+
+## 历史 task004（7 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`01-prepare-synthea-generator-image-source.sh`](../../../scripts/task004/01-prepare-synthea-generator-image-source.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generator image source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`02-prepare-synthea-ghcr-workflow.sh`](../../../scripts/task004/02-prepare-synthea-ghcr-workflow.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea ghcr workflow 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`03a-prepare-synthea-generate-only-runtime.sh`](../../../scripts/task004/03a-prepare-synthea-generate-only-runtime.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generate only runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`03b-run-synthea-generate-only.sh`](../../../scripts/task004/03b-run-synthea-generate-only.sh) | [PREPARE / may write] 历史 TASK004 run synthea generate only 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`04a-prepare-synthea-landing-publisher.sh`](../../../scripts/task004/04a-prepare-synthea-landing-publisher.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea landing publisher 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`04b-sync-s3-secret-to-synthea.sh`](../../../scripts/task004/04b-sync-s3-secret-to-synthea.sh) | [HIGH / review] 历史 TASK004 sync S3 secret to synthea 脚本；涉及跨 Namespace Secret，须独立授权 |
+| [`04c-run-synthea-generate-publish.sh`](../../../scripts/task004/04c-run-synthea-generate-publish.sh) | [PREPARE / may write] 历史 TASK004 run synthea generate publish 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/` 或 `kubernetes/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/`、`kubernetes/` 或 `scripts/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 

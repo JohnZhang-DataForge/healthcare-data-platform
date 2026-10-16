@@ -38,7 +38,8 @@
 - **必须同步**：新增、删除、改名或移动组件源码文件时，**同一个 PR 必须修改对应 CODE.md**，核对导航链接、测试入口和依赖；现有文件的入口/职责/关键依赖改变也必须检查并更新 CODE.md。普通代码内部修改不要求无意义改动，但 Reviewer 需要确认导航未过期。
 - **Contract / SQL**：机器可读 Contract、DDL、DML 和只读 SQL 仍是原目录的事实来源，CODE.md 只提供组件所有权导航。SQL 源码地图必须区分只读核验、Rollback 演练、DDL 和 DML；任何导航条目均不代表执行许可。
 - **镜像 / Kubernetes**：`images/` 的 Dockerfile/Entrypoint 和 `kubernetes/` 的 YAML / 模板按**工作负载功能所有权**归入组件 CODE.md；RBAC、Secret 引用、持久化资源与镜像 Digest 是实际依赖，不能在文档清理中改动。源目录不能代替 Live Cluster 状态，通用节点/Namespace/存储说明仍由 [Infrastructure](../architecture/INFRASTRUCTURE.md) 负责。
-- **校验**：先对已建立 CODE.md 的组件启用对应静态 CI Gate（已启用 Airflow、apps/、Spark、contracts/、sql/、images/ 与 kubernetes/ 的组件 CODE.md 检查），检查增删/移动时 CODE.md 与 PR 同步，并核对已登记文件存在；各组件逐步启用，不因其它组件暂未迁移而阻止其正常开发。
+- **开发脚本和配置**：`scripts/` 的历史 Task-named Shell 按实际业务功能归到已有组件 CODE.md；质量 CI、开发辅助和本地配置示例收口到 [Developer CODE](CODE.md)，不伪造一个新的业务组件。`prepare` 可生成/覆写源码，`reset`/`publish`/`upsert` 等可能改写集群或持久数据；源码导航不是执行授权。新正式 Shell 仍须使用组件名/能力名，不新增 Task/Step 目录。
+- **校验**：先对已建立 CODE.md 的组件启用对应静态 CI Gate（已启用 Airflow、apps/、Spark、contracts/、sql/、images/、kubernetes/、scripts/ 与 config/ 的 CODE.md 检查），检查增删/移动时 CODE.md 与 PR 同步，并核对已登记文件存在；各组件逐步启用，不因其它组件暂未迁移而阻止其正常开发。
 
 
 ## 3. 每份新文档的最小元数据

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require component CODE map sync for Airflow, apps, Spark, SQL, images and Kubernetes.
+"""Require CODE.md source map sync for Airflow, apps, Spark, SQL, images, Kubernetes, scripts and config.
 
 Uses only Git tree/diff and local CODE.md text; no network or runtime access.
 """
@@ -197,6 +197,59 @@ def required_image_k8s_updates(
     }
 
 
+
+SCRIPT_CONFIG_MAP_PATHS = (
+    "documents/components/synthea/CODE.md",
+    "documents/components/landing/CODE.md",
+    "documents/components/spark/CODE.md",
+    "documents/components/omop/CODE.md",
+    "documents/components/airflow/CODE.md",
+    "documents/development/CODE.md",
+)
+# Inventory table rows alone declare ownership. Developer CODE.md is one directory
+# shallower than components: accept exactly ../../ or ../../../ source links.
+SCRIPT_CONFIG_ROW_RE = re.compile(
+    r"^\|\s*\[[^\]]+\]\((?:\.\./){2,3}((?:scripts|config)/[^)\s#?]+)\)\s*\|",
+    re.MULTILINE,
+)
+
+
+def is_script_config_source(path: str) -> bool:
+    return path.startswith(("scripts/", "config/")) and not path.endswith(
+        (".md", ".mdx", ".rst", ".txt")
+    )
+
+
+def script_config_owned_links(contents: str) -> set[str]:
+    return {p for p in SCRIPT_CONFIG_ROW_RE.findall(contents) if is_script_config_source(p)}
+
+
+def validate_script_config_maps(
+    documents: dict[str, str], actual: set[str]
+) -> tuple[list[str], list[str], list[str]]:
+    owners: dict[str, list[str]] = {}
+    for doc, contents in documents.items():
+        for path in script_config_owned_links(contents):
+            owners.setdefault(path, []).append(doc)
+    return (
+        sorted(actual - owners.keys()),
+        sorted(owners.keys() - actual),
+        sorted(p for p, refs in owners.items() if len(refs) > 1),
+    )
+
+
+def required_script_config_updates(
+    changed_paths: set[str], before: dict[str, str], after: dict[str, str]
+) -> set[str]:
+    return {
+        doc for doc in SCRIPT_CONFIG_MAP_PATHS
+        if changed_paths & (
+            script_config_owned_links(before.get(doc, ""))
+            | script_config_owned_links(after.get(doc, ""))
+        )
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True)
@@ -360,11 +413,50 @@ def main() -> int:
         print("CODE_MAP_GATE=FAIL; update owning CODE.md in same PR as image/k8s source")
         return 1
 
+    script_config_sources = {
+        p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
+                             "--", "scripts/", "config/")
+        if is_script_config_source(p)
+    }
+    script_config_after = {
+        p: Path(p).read_text(encoding="utf-8") for p in SCRIPT_CONFIG_MAP_PATHS
+    }
+    script_config_before = {
+        p: git_file(args.base, p) for p in SCRIPT_CONFIG_MAP_PATHS
+    }
+    sc_missing, sc_stale, sc_duplicates = validate_script_config_maps(
+        script_config_after, script_config_sources
+    )
+    for p in sc_missing:
+        print("CODE_MAP_SCRIPT_CONFIG_MISSING_LINK=" + p)
+    for p in sc_stale:
+        print("CODE_MAP_SCRIPT_CONFIG_STALE_LINK=" + p)
+    for p in sc_duplicates:
+        print("CODE_MAP_SCRIPT_CONFIG_DUPLICATE_OWNER=" + p)
+    if sc_missing or sc_stale or sc_duplicates:
+        print("CODE_MAP_GATE=FAIL; each scripts/config source requires one CODE.md owner")
+        return 1
+
+    script_config_changed = {
+        p for p in git_lines("diff", "--no-renames", "--name-only",
+                             "--diff-filter=AD", "--no-ext-diff", args.base, args.head)
+        if is_script_config_source(p)
+    }
+    script_config_required = required_script_config_updates(
+        script_config_changed, script_config_before, script_config_after
+    )
+    for doc in sorted(script_config_required - changed):
+        print("CODE_MAP_SCRIPT_CONFIG_REQUIRED_UPDATE_MISSING=" + doc)
+    if script_config_required - changed:
+        print("CODE_MAP_GATE=FAIL; scripts/config source add/delete/move requires CODE.md")
+        return 1
+
     print("CODE_MAP_GATE=PASS; mapped_dag_files=" + str(len(current)) +
           "; mapped_app_files=" + str(len(app_sources)) +
           "; mapped_spark_files=" + str(len(spark_sources)) +
           "; mapped_contract_sql_files=" + str(len(cs_sources)) +
-          "; mapped_image_k8s_files=" + str(len(image_k8s_sources)))
+          "; mapped_image_k8s_files=" + str(len(image_k8s_sources)) +
+          "; mapped_script_config_files=" + str(len(script_config_sources)))
     return 0
 
 
