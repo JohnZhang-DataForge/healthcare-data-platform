@@ -1,4 +1,7 @@
-# Platform Portal 文档入口（Current）
+# Platform Portal — 历史方案与实测资料索引
+
+> **STEP08 权威切换（2026-10-16）：LEGACY Portal 记录，不是下一 Session 的 CURRENT/NEXT。** 请以 [Portal 现行组件说明](../../documents/components/platform-portal/README.md)、[项目状态](../../documents/status/PROJECT-STATUS.md)、[Session Coordination](../../documents/development/SESSION-COORDINATION.md) 为准。以下 2026-10-13/14 的 A3/A4 历史记录和冲突窗口原样保留；A4 已完成独立真实 Smoke，但完整 Job/Run/Dataset 血缘仍未完成，下一步业务 Spark 接入方案仍未批准。
+
 
 > **新 Session 优先读**：[Portal 当前 Agent 交接（2026-10-14）](./AGENT-HANDOFF-CURRENT-2026-10-14.zh-CN.md)：已完成 A3 和 A4 基础 Smoke 的实证、Spark Job `unknown` Run 问题、Dataset 血缘缺失、人工协调边界及可直接复制的下一会话提示词。**NEXT 先只读诊断，不立即重复 Spark**。
 

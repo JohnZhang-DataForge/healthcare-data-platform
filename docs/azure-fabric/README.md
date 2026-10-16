@@ -1,4 +1,7 @@
-# Azure + Microsoft Fabric / 文档入口
+# Azure + Microsoft Fabric — 历史方案与 Plan 记录
+
+> **STEP08 权威切换（2026-10-16）：LEGACY Azure 方案入口。** 当前批准的 OneLake-first MVP 见 [Azure/Fabric 组件](../../documents/components/azure-fabric/README.md) 和 [数据流](../../documents/architecture/DATA-FLOW.md)：Local PostgreSQL OMOP → Existing Azure Blob → **Fabric Data Pipeline 调用 PySpark Notebook** → OneLake Lakehouse。旧 Warehouse-first 段落仅作历史追溯。三项 Fabric Terraform **Plan PASS / NO APPLY**，没有云端 ETL E2E。
+
 
 > **当前状态：PLANNED — NOT DEPLOYED / NOT VERIFIED（2026-10-14）**。本目录针对本地已验收 OMOP CDM 向 Azure/Fabric 的最小云端分析扩展，**不**表示 Azure/Fabric 已经部署。
 
