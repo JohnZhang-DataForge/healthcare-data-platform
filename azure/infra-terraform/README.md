@@ -77,3 +77,7 @@ Docs: [IAM ownership design](docs/ARCHITECTURE.md), [Azure RBAC](https://registr
 - **Storage component with its own IAM module** — [Azure-Infra-TF Run 38761100632 (re-run)](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632) **SUCCESS**: storage `init/validate/plan` read `OMOP` + `johnzhang`, `blob_role_assignments = {}`; no new RBAC.
 - Both tests checked out Healthcare SHA `bdbfe21b2230926adbee82cbfb72b952bf6b5837`, and both logged `APPLY_EXECUTED=NO`, `DESTROY_EXECUTED=NO`.
 - Workflow reverted to **manual workflow_dispatch** only; selector `iam` removed and replaced with `foundation-iam`. Fabric-specific `onelake` preview IAM is declared but its real provider validate/plan and permissions remain **NOT VERIFIED**.
+
+## 2026-10-15 OneLake-first resource definitions (PLAN ONLY)
+
+See [Azure/Fabric OneLake infrastructure handoff](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md). Storage and manually-created Workspace are intentionally untouched. The `onelake` root creates a schema-enabled Lakehouse; `notebook` carries a source-controlled fail-closed PySpark bootstrap; `data-factory` carries a fail-closed Pipeline definition and optionally links a **real** Notebook GUID supplied later. Warehouse is no longer required in the first infrastructure deployment. **No Apply or Destroy has been authorized or executed for this change.**
