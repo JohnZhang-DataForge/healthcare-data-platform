@@ -5,7 +5,7 @@ A hands-on healthcare data engineering platform that ingests **synthetic clinica
 
 The broader architecture is designed to extend into **Microsoft Fabric / OneLake, Azure storage, FHIR and HL7 ingestion, dbt, and ML feature engineering**. Those extensions are part of the roadmap—not claims about components already deployed or production-tested in this repository.
 
-**项目导航（中文）**：[Agent 文档入口](docs/README.md) · [当前任务状态](docs/tasks/TASK-STATUS.md) · [已完成的 Airflow → OMOP 真实验收](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [下一阶段 Condition 开发计划](docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)
+**项目导航（中文）**：[新文档入口](documents/README.md) · [AI/Agent 协作规则](documents/development/AGENT-RULES.md) · [Agent 文档入口](docs/README.md) · [当前任务状态](docs/tasks/TASK-STATUS.md) · [已完成的 Airflow → OMOP 真实验收](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [下一阶段 Condition 开发计划](docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)
 
 ## What is running and verified
 
@@ -82,7 +82,8 @@ Each top-level directory contains its own README explaining scope, entry points 
 | [`apps/`](apps/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
 | [`config/`](config/README.md) | Local configuration examples; no live secrets |
 | [`contracts/`](contracts/README.md) | Source and writer identity / schema contracts |
-| [`docs/`](docs/README.md) | Agent entry point, architecture, task status, runbooks, current and historic evidence |
+| [`documents/`](documents/README.md) | New, incrementally verified project documentation; authoritative migration and AI rules | 
+| [`docs/`](docs/README.md) | Legacy materials and existing evidence; still used for domains not yet migrated |
 | [`images/`](images/README.md) | Docker image sources for individual workloads |
 | [`kubernetes/`](kubernetes/README.md) | Kubernetes manifests, service accounts and runtime templates |
 | [`platform-portal/`](platform-portal/README.md) | Marquez / OpenLineage integration and observability experiments |
@@ -95,7 +96,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 
 **Readers / reviewers:** begin with the [architecture baseline](docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md), then the [TASK004 final E2E acceptance](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For the Fabric or FHIR/HL7 story, read the **roadmap** rather than assuming those components are running.
 
-**Contributors / agents:** read [docs/README.md](docs/README.md) → [TASK-STATUS.md](docs/tasks/TASK-STATUS.md) → [development operations](docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md) → [project skills](docs/skill/SKILL-cn.md) before editing code. As of the last verified closeout, **TASK004 is completed**; the next scoped work is **TASK005 Condition STEP00 (read-only preflight)**.
+**Contributors / agents:** start with [AGENTS.md](AGENTS.md) → [documents/README.md](documents/README.md) → [Agent rules](documents/development/AGENT-RULES.md) and [documentation governance](documents/development/DOCUMENTATION-GOVERNANCE.md). For an **unmigrated** domain, consult the current source/contract and [legacy TASK-STATUS](docs/tasks/TASK-STATUS.md), [operations](docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md), and [skills](docs/skill/SKILL-cn.md), resolving conflicts against current verified evidence rather than historical NEXT instructions. As of the last verified closeout, **TASK004 is completed**; the next scoped work is **TASK005 Condition STEP00 (read-only preflight)**.
 
 **Environment:** the lab has configuration examples in [config/local.env.example](config/local.env.example). This repository is **not a one-command production installer**; cluster components, namespace-specific secrets and historical deployments must be audited before reproducing the runtime. The prior `/data/spark/phase3c` baseline is historical and intentionally protected; it is not the active source tree.
 
