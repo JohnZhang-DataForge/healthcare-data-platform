@@ -8,9 +8,15 @@
 
 1. [AI/Agent 开发与安全规则](development/AGENT-RULES.md) — 当前通用 AI 操作约束。
 2. [开发工作流](development/DEVELOPMENT-WORKFLOW.md) — 当前 Healthcare / Self-Runner、STEP/PR/SHA/执行/交接流程。
-3. [测试与验收](development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
-4. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
-5. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+3. **[组件与代码命名规范](development/CODE-ORGANIZATION-AND-NAMING.md)** — 新代码不能用 Task/Step 命名；Legacy 按功能逐步迁移。
+4. [测试与验收](development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
+5. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
+6. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+
+## Local Pipeline 组件（STEP05 已审核）
+
+- [组件目录与职责](components/README.md) — Synthea、Landing、Airflow、Spark、OMOP 五个可长期维护的业务模块。
+- [Legacy Task-named 代码重构计划](components/LEGACY-CODE-REFACTOR-PLAN.md) — 旧 `task004` 依赖、兼容门槛、逐阶段源码迁移计划（尚未实际 Rename）。
 
 ## 当前项目状态（STEP04 已审核）
 

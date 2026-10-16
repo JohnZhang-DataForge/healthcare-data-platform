@@ -2,7 +2,7 @@
 
 [← Repository overview](../README.md) · [Development operations](../docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
 
-Scripts are organized by **historical task/milestone number**. Many are reference, smoke, source preparation or one-time verification utilities; **not all scripts are part of the current runtime ETL path**, and some can mutate S3/Kubernetes/PostgreSQL.
+**Legacy scripts** are organized by historical task/milestone number. **New maintained scripts must be organized by component/function** (for example `scripts/omop/verify_condition_fk.sh`) under the [mandatory naming standard](../documents/development/CODE-ORGANIZATION-AND-NAMING.md). Many are reference, smoke, source preparation or one-time verification utilities; **not all scripts are part of the current runtime ETL path**, and some can mutate S3/Kubernetes/PostgreSQL.
 
 | Directory | Scope |
 | --- | --- |
@@ -20,4 +20,4 @@ Scripts are organized by **historical task/milestone number**. Many are referenc
 
 Historical scripts under `task004` remain for repeatable evidence and compatibility and should **not** be mass-renamed. The primary accepted new-batch path is now the Airflow DAG [`new_only_omop_consumer`](../airflow/dags/new_only_omop_consumer.py), not a sequence of manual Shell commands.
 
-In lab sessions the convention is one reviewable step at a time, scripts committed under their task folder, and temporary developer experiments kept outside the canonical repo under `/data/spark/temp_shell` when applicable.
+In lab sessions the convention is one reviewable step at a time, new scripts committed under their component/function folder (Task/Step names remain in Issue/PR/Run evidence, not new source paths), and temporary developer experiments kept outside the canonical repo under `/data/spark/temp_shell` when applicable.
