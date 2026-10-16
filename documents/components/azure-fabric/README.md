@@ -39,6 +39,8 @@ Local PostgreSQL OMOP CDM (authoritative，已验收 Person/Visit)
 
 **代码布局**：[Terraform Root/Module 总入口](../../../azure/infra-terraform/README.md)：`components/<component>/` 是独立 root，`modules/<component>/` 定义资源，`components/<component>/environments/dev.tfvars` 定义环境；State 使用既有 `dev/<component>.tfstate`。Root 有 `storage`、`workspace`、`onelake`、`notebook`、`data-factory`、`warehouse`、`foundation-iam`，不意味着当前 MVP 要全部 Apply。已存在的 Storage 与 Workspace 不需要重建。
 
+**遗留试验模块归位（源码整理）**：早期两个 Azure Terraform OIDC / Blob smoke 测试已统一放在 [`azure/infra-terraform/smoke/`](../../../azure/infra-terraform/smoke/README.md)，与正式 `components/` 隔离。它们保留原有独立 State Key，不是 OneLake MVP 的资源，也不代表本轮执行了 Azure Apply。
+
 ## 3. 三个真实 Plan 已完成，但尚未 Apply
 
 Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 已实现 `workflow_dispatch`，可选组件、`environment=dev`、`operation=plan|apply`。默认 Plan；Terraform CLI、OIDC backend、remote state、fmt/validate/plan 均有验证记录。**工作流具备 Apply 入口不等于这次获得授权。**
