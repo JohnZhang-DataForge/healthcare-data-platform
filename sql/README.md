@@ -1,6 +1,6 @@
 # SQL — PostgreSQL, OMOP schema and integrity checks
 
-[← Repository overview](../README.md) · [OMOP writer](../apps/README.md) · [Database acceptance](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
+[← Repository overview](../README.md) · [OMOP writer](../apps/README.md) · [Database acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
 
 This directory contains the versioned SQL used for **landing batch claim/fencing**, the historical Person/Visit materialization foundation, batch ledger schemas, and independent read-only checks.
 
@@ -19,4 +19,4 @@ This directory contains the versioned SQL used for **landing batch claim/fencing
 
 Existing database objects include `cdm.person`, `cdm.visit_occurrence`, `etl.task004_batch_ledger`, `etl.task004_batch_stage`, `etl.task004_batch_commit`, the Claim ledger and `task004_writer_fence`. **Those historical identifiers are live compatibility contracts**; do not rename tables, lock keys, functions or contract versions as a cosmetic cleanup.
 
-Read-only verification should be done in an explicitly read-only PostgreSQL transaction, with no credentials embedded in scripts, and with independent state checks before any attempted recovery. See [final acceptance](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) for actual persisted counts and successful idempotent replay.
+Read-only verification should be done in an explicitly read-only PostgreSQL transaction, with no credentials embedded in scripts, and with independent state checks before any attempted recovery. See [final acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) for actual persisted counts and successful idempotent replay.

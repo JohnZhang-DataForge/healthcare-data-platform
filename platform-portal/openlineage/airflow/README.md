@@ -1,6 +1,6 @@
 # Platform Portal A3 — Airflow OpenLineage Provider
 
-> **CURRENT RESULT = REAL PASS**：Airflow [Run 38502227961](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502227961) 真实独立 opt-in DAG success、2 TaskInstances success、Marquez 3 Job 名称；Marquez [Run 38502899963](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502899963) 真正读回两条 COMPLETED Task Run。新 DAG 默认 Paused，已由 [Run 38502759492](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502759492) 仅为 Portal DAG 解除暂停。详见 [正式 A3 Closeout](../../../docs/platform-portal/A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。下一步 A4 Spark Agent，独立于 TASK004。
+> **CURRENT RESULT = REAL PASS**：Airflow [Run 38502227961](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502227961) 真实独立 opt-in DAG success、2 TaskInstances success、Marquez 3 Job 名称；Marquez [Run 38502899963](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502899963) 真正读回两条 COMPLETED Task Run。新 DAG 默认 Paused，已由 [Run 38502759492](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502759492) 仅为 Portal DAG 解除暂停。详见 [正式 A3 Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。下一步 A4 Spark Agent，独立于 TASK004。
 
 ## 实施范围
 

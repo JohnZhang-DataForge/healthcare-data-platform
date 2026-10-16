@@ -1,6 +1,6 @@
 # Tests — contracts, transformations and runtime regression
 
-[← Repository overview](../README.md) · [CI workflows](../.github/README.md) · [Current task status](../docs/tasks/TASK-STATUS.md)
+[← Repository overview](../README.md) · [CI workflows](../.github/README.md) · [Current task status](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md)
 
 This directory contains Python unit tests, static source-contract checks and regression assertions grouped by **business capability** and historical implementation milestones.
 
@@ -37,4 +37,4 @@ These are examples, **not proof** that all tests will pass without the appropria
 4. Confirm durable PostgreSQL Claim/Stage/Checkpoint and OMOP row state independently.
 5. For a committed batch, prove re-consumption takes the SKIP path with no Spark/Writer and unchanged durable counts.
 
-The actual third-batch end-to-end and replay evidence is linked from [TASK004 Final Acceptance](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). Tests in this directory protect a bounded contract and cannot substitute for live execution.
+The actual third-batch end-to-end and replay evidence is linked from [TASK004 Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). Tests in this directory protect a bounded contract and cannot substitute for live execution.
