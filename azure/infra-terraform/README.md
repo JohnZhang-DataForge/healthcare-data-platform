@@ -73,7 +73,7 @@ The `Azure-Infra-TF` workflow exposes **storage / workspace / onelake / data-fac
 
 ## Fabric planning restrictions
 
-Fabric Provider Service Principal OIDC does NOT automatically gain Fabric tenant permissions or Trial capacity access by virtue of Azure RG Contributor. Existing workspaces must be reconciled/imported before Apply; `FABRIC_WORKSPACE_ID` is required by non-workspace Fabric components. Data Pipeline, Notebook and Warehouse modules are *item shells*, not functional ETL code, SQL or schedules. OneLake Lakehouse is optional to the direct Azure Blob → Notebook → Warehouse MVP. Trial Capacity is not deployed through this Terraform project.
+Fabric Provider Service Principal OIDC does NOT automatically gain Fabric tenant permissions or Trial capacity access by virtue of Azure RG Contributor. Existing workspaces must be reconciled/imported before Apply; `FABRIC_WORKSPACE_ID` is required by non-workspace Fabric components. Data Pipeline, Notebook and Warehouse modules are *item shells*, not functional ETL code, SQL or schedules. **Current OneLake-first MVP** is local PostgreSQL OMOP → existing Azure Blob → Fabric Data Factory Data Pipeline → Fabric PySpark Notebook → OneLake Lakehouse/Delta. Warehouse is optional future scope, not the active MVP. Trial Capacity is not deployed through this Terraform project.
 
 ## Tested evidence
 
