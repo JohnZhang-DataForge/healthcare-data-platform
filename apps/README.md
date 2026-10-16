@@ -32,4 +32,4 @@ The key production-style entry in this lab is [`omop_writer/new_only_airflow_wri
 
 `task001`, `task003`, and `task004` are traceable historical implementation labels. Some of their Python modules are still imported at runtime; do not globally rename or delete them without updating Docker COPY, imports, contract checks and tests. Approved Person/Visit load does **not** imply that Condition, Drug or Procedure ingestion is implemented.
 
-Relevant tests: [`tests/omop_writer/`](../tests/omop_writer/), [`tests/landing_claim/`](../tests/landing_claim/), [`tests/synthea_new_only/`](../tests/synthea_new_only/). See [final accepted data evidence](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md).
+Relevant tests: [`tests/omop_writer/`](../tests/omop_writer/), [`tests/landing_claim/`](../tests/landing_claim/), [`tests/synthea_new_only/`](../tests/synthea_new_only/). See [final accepted data evidence](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md).

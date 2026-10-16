@@ -20,4 +20,4 @@ The accepted run binds **`batch_id` + `manifest_uri` + `manifest_sha256`** to an
 
 **Scope:** Person and Visit have a verified end-to-end OMOP path. The presence of `conditions.csv` in the 18-file intake contract does **not** mean Condition has already been transformed and committed.
 
-See [TASK004 final acceptance](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) and [TASK005 Condition STEP00](../docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md).
+See [TASK004 final acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) and [TASK005 Condition STEP00](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md).

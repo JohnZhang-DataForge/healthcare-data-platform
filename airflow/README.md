@@ -1,6 +1,6 @@
 # Airflow — batch orchestration
 
-[← Repository overview](../README.md) · [Current acceptance](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
+[← Repository overview](../README.md) · [Current acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
 
 `dags/` is the Git-synchronized source of Airflow DAGs and the Python helpers they import. It coordinates Kubernetes workloads; heavy Spark transformations run in Spark driver/executor Pods, not inside Airflow workers.
 
@@ -25,4 +25,4 @@
 - An already `COMPLETED` batch is routed to SKIP even if those flags were supplied.
 - The Writer image is pinned by digest. Avoid clearing/retrying a failed Writer until PostgreSQL Claim/Stage/Checkpoint state has been independently inspected.
 
-This folder contains **source**, not a command to safely re-run an accepted batch. See [runtime acceptance](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) and [current Agent instructions](../docs/README.md) before cluster work.
+This folder contains **source**, not a command to safely re-run an accepted batch. See [runtime acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) and [current Agent instructions](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) before cluster work.
