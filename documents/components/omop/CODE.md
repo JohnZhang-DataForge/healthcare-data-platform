@@ -57,7 +57,30 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 `commit_new_only_batch_once.py`、`step04c_person_runner.py`、`step04d_visit_runner.py` 包含历史受控 COMMIT 路径，绝不能当成通用执行器。SQL 渲染、只读预检与真实 Commit 不是同一权限；当前 Person/Visit 的完成不代表 Condition 已入库。
 
+## OMOP Writer Batch Identity Contract
+
+| 源文件 | 角色 / 安全边界 |
+| --- | --- |
+| [`writer-batch-identity-v1.json`](../../../contracts/omop-writer/writer-batch-identity-v1.json) | Legacy 与 NEW_ONLY Writer 身份版本/Batch/Manifest 兼容协议；不授权 Commit |
+
+## Person / Visit SQL 与历史只读核验
+
+| 源文件 | 角色 / 安全边界 |
+| --- | --- |
+| [`person-upsert.sql`](../../../sql/task002/person-upsert.sql) | 业务 DML，需要授权：历史 Person Stage → CDM Person UPSERT |
+| [`visit-id-map-foundation.sql`](../../../sql/task003/visit-id-map-foundation.sql) | 历史 Visit ID Map Foundation/结构校验；运行前确认 DDL/DML 实际影响 |
+| [`visit-mapping-baseline.sql`](../../../sql/task003/visit-mapping-baseline.sql) | 只读：Visit ID Map、Person/Visit 基线摘要 |
+| [`step04a-readonly-map-inventory.sql`](../../../sql/task004/step04a-readonly-map-inventory.sql) | 只读：CDM / ID Map 聚合清单 |
+| [`step04a-readonly-schema-inventory.sql`](../../../sql/task004/step04a-readonly-schema-inventory.sql) | 只读：CDM/ETL Schema、表、索引检查 |
+| [`step04c-batch-schema-v1-authorized.sql`](../../../sql/task004/step04c-batch-schema-v1-authorized.sql) | DDL，需要授权：历史固定基线 Batch Ledger/Stage/Commit 结构迁移 |
+| [`step04c-batch-schema-v1-readback.sql`](../../../sql/task004/step04c-batch-schema-v1-readback.sql) | 只读：历史 Batch 结构迁移结果检查 |
+| [`step04c-person-readonly-readiness.sql`](../../../sql/task004/step04c-person-readonly-readiness.sql) | 只读：历史 Person Commit 预检 |
+| [`step04d-visit-readiness-readonly.sql`](../../../sql/task004/step04d-visit-readiness-readonly.sql) | 只读：历史 Visit Commit 预检 |
+| [`step04e-joint-reconciliation-readonly.sql`](../../../sql/task004/step04e-joint-reconciliation-readonly.sql) | 只读：历史 Person/Visit 同批联合对账 |
+
+**执行区别**：`person-upsert.sql` 是真实 DML，`step04c-batch-schema-v1-authorized.sql` 是有历史固定环境前提的 DDL，不允许不审查就重放。其它 SQL 也应核对角色与事务边界。现在受控 NEW_ONLY Writer 的核心事务 SQL 还由 Python 动态生成；这个静态 SQL 清单不能代表完整 Writer 行为。
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/` 源文件时，必须在同一个 PR 更新此 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require Airflow, apps and Spark CODE map synchronization, ownership and links.
+"""Require Airflow, apps, Spark, Contract and SQL source-map synchronization.
 
 Uses only Git tree/diff and local CODE.md text; no network or runtime access.
 """
@@ -98,6 +98,55 @@ def validate_spark_code_map(contents: str, actual: set[str]) -> tuple[list[str],
     return sorted(actual - linked), sorted(linked - actual), duplicate
 
 
+
+CONTRACT_SQL_MAP_PATHS = (
+    "documents/components/synthea/CODE.md",
+    "documents/components/landing/CODE.md",
+    "documents/components/omop/CODE.md",
+)
+# Inventory table rows declare ownership; cross-component prose links do not.
+CONTRACT_SQL_ROW_RE = re.compile(
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./((?:contracts|sql)/[^)\s#?]+)\)\s*\|",
+    re.MULTILINE,
+)
+
+
+def is_contract_sql_source(path: str) -> bool:
+    return path.startswith(("contracts/", "sql/")) and not path.endswith(
+        (".md", ".mdx", ".rst", ".txt")
+    )
+
+
+def contract_sql_owned_links(contents: str) -> set[str]:
+    return {p for p in CONTRACT_SQL_ROW_RE.findall(contents) if is_contract_sql_source(p)}
+
+
+def validate_contract_sql_maps(
+    documents: dict[str, str], actual: set[str]
+) -> tuple[list[str], list[str], list[str]]:
+    owned: dict[str, list[str]] = {}
+    for doc, contents in documents.items():
+        for path in contract_sql_owned_links(contents):
+            owned.setdefault(path, []).append(doc)
+    return (
+        sorted(actual - owned.keys()),
+        sorted(owned.keys() - actual),
+        sorted(p for p, refs in owned.items() if len(refs) > 1),
+    )
+
+
+def required_contract_sql_updates(
+    changed_paths: set[str], before: dict[str, str], after: dict[str, str]
+) -> set[str]:
+    return {
+        doc for doc in CONTRACT_SQL_MAP_PATHS
+        if changed_paths & (
+            contract_sql_owned_links(before.get(doc, ""))
+            | contract_sql_owned_links(after.get(doc, ""))
+        )
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True)
@@ -193,9 +242,40 @@ def main() -> int:
         print(f"CODE_MAP_GATE=FAIL; update {SPARK_MAP} with Spark source changes")
         return 1
 
+    cs_sources = {
+        p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
+                             "--", "contracts/", "sql/")
+        if is_contract_sql_source(p)
+    }
+    cs_after = {p: Path(p).read_text(encoding="utf-8") for p in CONTRACT_SQL_MAP_PATHS}
+    cs_before = {p: git_file(args.base, p) for p in CONTRACT_SQL_MAP_PATHS}
+    cs_missing, cs_stale, cs_duplicates = validate_contract_sql_maps(cs_after, cs_sources)
+    for p in cs_missing:
+        print("CODE_MAP_CONTRACT_SQL_MISSING_LINK=" + p)
+    for p in cs_stale:
+        print("CODE_MAP_CONTRACT_SQL_STALE_LINK=" + p)
+    for p in cs_duplicates:
+        print("CODE_MAP_CONTRACT_SQL_DUPLICATE_OWNER=" + p)
+    if cs_missing or cs_stale or cs_duplicates:
+        print("CODE_MAP_GATE=FAIL; every Contract/SQL source must have one CODE.md owner")
+        return 1
+
+    cs_changed = {
+        p for p in git_lines("diff", "--no-renames", "--name-only",
+                             "--diff-filter=AD", "--no-ext-diff", args.base, args.head)
+        if is_contract_sql_source(p)
+    }
+    cs_required = required_contract_sql_updates(cs_changed, cs_before, cs_after)
+    for path in sorted(cs_required - changed):
+        print("CODE_MAP_CONTRACT_SQL_REQUIRED_UPDATE_MISSING=" + path)
+    if cs_required - changed:
+        print("CODE_MAP_GATE=FAIL; Contract/SQL change requires same PR CODE.md")
+        return 1
+
     print("CODE_MAP_GATE=PASS; mapped_dag_files=" + str(len(current)) +
           "; mapped_app_files=" + str(len(app_sources)) +
-          "; mapped_spark_files=" + str(len(spark_sources)))
+          "; mapped_spark_files=" + str(len(spark_sources)) +
+          "; mapped_contract_sql_files=" + str(len(cs_sources)))
     return 0
 
 
