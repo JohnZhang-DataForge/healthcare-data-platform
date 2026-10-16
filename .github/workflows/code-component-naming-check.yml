@@ -1,0 +1,36 @@
+name: Component Code Naming
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'spark/**'
+      - 'airflow/**'
+      - 'sql/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'images/**'
+      - 'kubernetes/**'
+      - 'contracts/**'
+      - 'azure/**'
+      - 'platform-portal/**'
+      - 'config/**'
+      - '.github/workflows/**'
+permissions:
+  contents: read
+jobs:
+  check-added-code-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Unit tests for code naming guard
+        run: python3 -m unittest discover -s tests/quality -p 'test_*.py' -v
+      - name: Reject new Task/Step-named code
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/quality/check_new_code_names.py --base "$BASE_SHA" --head "$HEAD_SHA"

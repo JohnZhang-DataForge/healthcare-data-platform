@@ -22,6 +22,8 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 
 `docs/` 是过渡期 Legacy 资料；现行事实来自实际源码、有效 Contract、可信版本化证据和已迁移 ACTIVE 文档。旧 Skill/Operations 中与安全相关的更具体门槛，在正式替换前继续生效；旧 `CURRENT/NEXT` 不能压过较新真实验收。
 
+**新代码命名为强制工程规范**：Task/Step 用于 PR/计划/证据，不用于新增源码、测试、正式 Shell、DAG ID 或镜像名；见 [Code Organization & Naming](CODE-ORGANIZATION-AND-NAMING.md)。现有 `task004` Import、SQL 表和冻结镜像必须按单独迁移计划保留兼容。
+
 ## 2. 日常开发闭环（一次一个有界 STEP）
 
 ```text
@@ -41,7 +43,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 原则：
 - 一个 STEP 要有输入、受影响文件、断言、允许副作用、退出/恢复方式和可验证的完成条件；不要以无限细分步骤替代业务目标。
 - 在 Healthcare 源码中直接改模块文件，Shell 负责可重放的预检、执行、验证和报告；**新的源码不要求每次用 Shell 重新生成**。已经冻结、依赖历史 Generator 的链路必须维持兼容性。
-- 正式 Shell 存放 `scripts/taskXXX/` 或当前模块约定的位置。若要求给用户命令，只提供一段完整可粘贴 Bash；区分 `#### ... OUTPUT BEGIN/END ####`。临时实验可使用宿主机 `/data/spark/temp_shell`，但 Runner Pod 不保证有此路径。
+- **今后新增正式 Shell** 存放组件功能目录（如 `scripts/omop/`），不创建新的 `scripts/taskXXX/`；历史任务脚本仍保留兼容。若要求给用户命令，只提供一段完整可粘贴 Bash；区分 `#### ... OUTPUT BEGIN/END ####`。临时实验可使用宿主机 `/data/spark/temp_shell`，但 Runner Pod 不保证有此路径。
 - 普通代码变更优先就近单测/契约测试；无需每次全量重跑旧项目或建设企业级复杂治理系统。
 - 冻结的 TASK001–TASK003、TASK004 已最终验收的 Person/Visit 路径不能仅因新任务而重新入库；TASK005 仅在对应权限/范围批准后逐步进入 Condition 实现。
 

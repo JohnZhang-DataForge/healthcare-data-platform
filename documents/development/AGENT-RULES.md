@@ -18,11 +18,17 @@
 
 - 一次交付一个边界明确的 STEP；代码是 canonical source，Shell 是运行/验证入口，不为所有新源文件强制生成 Shell。
 - 开发/改动逻辑必须同步覆盖有意义的正常、失败、重复运行或幂等性测试；优先使用现有公共组件，避免各模块复制相同能力。
-- 正式脚本在对应代码仓库 `scripts/taskXXX/` 或模块自有路径；用户需要单步 Shell 时给出**单个完整 Bash**，执行输出清晰使用 `#### ... OUTPUT BEGIN/END ####` 标识；临时脚本可用 `/data/spark/temp_shell`，不把它当作跨环境必然存在的路径。
+- **新的正式脚本只放组件功能目录**（例如 `scripts/omop/verify_condition_fk.sh`），禁止新增 `scripts/taskXXX/`；历史 `scripts/task001–004/` 按原样保留以支持已验证运行与证据；用户需要单步 Shell 时给出**单个完整 Bash**，执行输出清晰使用 `#### ... OUTPUT BEGIN/END ####` 标识；临时脚本可用 `/data/spark/temp_shell`，不把它当作跨环境必然存在的路径。
 - 不跳过失败步骤、不把 Mock/Static PASS 解释成 Live 验证；不为普通功能额外建设与需求无关的大型 CI、锁服务或平台。
 - 当前已验收 Person/Visit、TASK001–TASK003 冻结范围及旧系统持久化数据不得因开发新功能而擅自重新生成、回放或写入。
 
-## 3. Git / GitHub / Self-Runner
+## 3. 新代码目录和命名强制规则
+
+- **开发进度可以称 TASK/STEP，但新代码必须按组件/功能命名。** Python、DAG ID、Spark、SQL、镜像、K8s、正式 Shell、Workflow、Tests 的新增路径与公开标识符不允许 `taskNNN/stepNNN`。具体以 [Code Organization & Naming](CODE-ORGANIZATION-AND-NAMING.md) 为准。
+- 现有 Task-named 代码及数据库/Contract/镜像持久标识**不批量重命名**；先有依赖清单、兼容回归与必要 Runtime 授权，再逐模块切换。
+- CI 自动检查新建代码路径；代码内部的新标识符与职责归属由 Agent/Reviewer 复核。Task ID 只属于 PR/开发计划/历史验收。
+
+## 4. Git / GitHub / Self-Runner
 
 - Healthcare Repo 保存业务 Python、Airflow、Spark、SQL、Contracts、部署定义、Tests 与正式脚本；Self-Runner Repo 保存跨仓库执行 Workflow/受控 Request/Run 证据。
 - 从最新 `main` 建功能分支，以 PR Review/Merge 进入主线；不得将 PR 已创建、CI 绿灯或分支代码当作 Main 生效。
@@ -31,21 +37,21 @@
 - 实际 Runtime 验证应当绑定运行环境、验证范围和独立 Readback；Run SUCCESS 只证明该 Workflow 实际执行和断言覆盖到的范围。
 - `git add` 只提交预期文件；严禁提交 Token、Kubeconfig、.env Secret、生产数据或临时 artifacts。
 
-## 4. 明确的安全边界
+## 5. 明确的安全边界
 
 - **没有用户授权不执行** Terraform `apply`/`destroy`、持久化数据库业务写入、S3 删除/覆盖、集群资源破坏或绕过安全门槛的生产式任务；`fmt/validate/plan` 不代表准许 Apply。
 - 涉及共享 Kubernetes、Spark、Airflow、PostgreSQL 时先核对并行 Agent/Workflow/Pod/Job/DAG 及可能产生的副作用，按照当前协作政策确认操作窗口；不得把“只读检查”扩展成新的真实 SparkApplication、COMMIT 或重放。
 - 不自动重跑历史一次性 Synthea Producer、冻结 Batch 的 Writer、已完成 Claim；失败恢复必须先独立检查真实状态。
 - Never echo、存储或提交敏感凭据。即使开发 Runner 已授予较高集群权限，也不等于允许 Agent 使用全部能力。
 
-## 5. 证据、状态与交接
+## 6. 证据、状态与交接
 
 - 以已实现代码 + 对应版本的测试/部署/真实验收为依据；设计批准不等于完成，Terraform Plan 不等于资源创建，Airflow DAG success 不等于 PG COMMIT。
 - 标明版本（完整 SHA）、测试类型、真实 Run URL/ID、业务批次或环境；缺证据的结论标为 **UNVERIFIED / NEEDS REVIEW**，不要猜测或夸大。
 - 一个 STEP 结束要说明：已完成内容、验证结果、未完成项、下一个最小步骤、需要额外授权的动作。复杂项目需要有文件化交接，不依赖旧聊天对话。
 - 代码/功能修改若改变事实或接口，随 PR 更新已迁移的文档；旧证据保持原貌。文档迁移优先读 [治理规则](DOCUMENTATION-GOVERNANCE.md)。
 
-## 6. 规则冲突如何处理
+## 7. 规则冲突如何处理
 
 按照任务领域判断权威，而非“后写的文件必胜”：**当前真实代码和有效合同**负责“系统能做什么”；**实际运行读回与验收证据**负责“确实运行并通过什么”；**已审核的 documents ACTIVE 页面**负责对应模块的“当前解释”；**现有仍生效的操作安全约束**必须保留直到被明确取代。计划、样例、旧 `docs/` 时间快照不得覆盖真实验收。
 
