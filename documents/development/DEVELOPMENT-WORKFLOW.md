@@ -91,7 +91,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 - 文档编辑、静态验证和 PR Review 不许可额外的 Runtime 动作。每次真正运行 Self-Runner 前先检查脚本是否在集群/数据库/S3/Azure 产生实际副作用。
 - 未授权不做 Terraform `apply`/`destroy`、数据库业务 DML/COMMIT、S3 删除或覆盖、K8s 破坏性操作、历史已完成批次重放；不能绕过 Writer Fencing、批次 Claim 或任何 Secret Gate。
 - **Terraform Plan 非无副作用的纯本地命令**：可能访问云端、读取并锁定远程 State；需确认本轮允许的云端读取范围。Apply/Destroy 必须单独授权。
-- 共享 Airflow/Spark/Kubernetes 真实执行须检查并行 Session/Run/Job/资源，并遵守当前 [跨 Session 协调规则](../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。CLI 权限或 GitHub dispatch 可用不代表业务授权。
+- 共享 Airflow/Spark/Kubernetes 真实执行须检查并行 Session/Run/Job/资源，并遵守当前 [跨 Session 协调规则](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。CLI 权限或 GitHub dispatch 可用不代表业务授权。
 - Worker 路径与 Runner Pod 文件系统不同，不能把本地 `/data` 直接当作临时 Runner 容器路径；不得打印 Secrets 或将 Azure/PG 凭据写进 Git。
 
 ## 7. 合并、失败、交接与后续变更

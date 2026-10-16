@@ -54,7 +54,7 @@ NEXT_ACTION=<bounded next step>
 
 ## 4. E2E 结果如何成为权威
 
-E2E 最终验收必须说明具体运行范围：版本/Manifest/Batch、实际 Airflow Task 结果、Spark 数据范围、数据库最终状态、独立只读读回和重复批次处理。已完成的三个 NEW_ONLY Person/Visit 批次结论见 [TASK004 Final Acceptance](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；该证据**不代表** Condition、复杂并发恢复或整个 Azure 业务管道已完成。
+E2E 最终验收必须说明具体运行范围：版本/Manifest/Batch、实际 Airflow Task 结果、Spark 数据范围、数据库最终状态、独立只读读回和重复批次处理。已完成的三个 NEW_ONLY Person/Visit 批次结论见 [TASK004 Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；该证据**不代表** Condition、复杂并发恢复或整个 Azure 业务管道已完成。
 
 业务流程与验证可能在不同提交、不同会话完成；Final Acceptance 应分开列出历史已完成事实与最新版本需要重新证明的范围，避免把历史测试错误套在当前 HEAD。任何共享 Runtime 的再验证都需要符合审批和执行协调规则。
 
