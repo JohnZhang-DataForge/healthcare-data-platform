@@ -9,7 +9,7 @@
 - **本轮规则构建的原始 Main 基线**：`30f717f2302a2a2fc1a4aff5c8ef0a482ca33816`（创建新规则前读取）。
 - **先前 OpenSpec 迁移前备份 Merge Commit**：`2ae11607aa44df3bc4524dead2a9792dd64cbb9a`。这份 Git 历史基线仍可追溯；目前 Main 的 `docs/archive/` 已被移走/删除，**不将 Git 历史混同于当前目录内容**。
 - 旧历史 Archive 位置：[Healthcare-Specs/archive](https://github.com/JohnZhang-DataForge/Healthcare-Specs/tree/main/archive)（Private，引用自旧文档；如需读取必须先确认权限和实际内容）。
-- 现有 `docs/` 剩余文档仅作迁移输入；不在本项目重建旧 Archive 目录。
+- 原 `docs/` 已从当前 Main 全部清理；其固定 Git 历史快照仅作迁移输入和验收证据，不在本项目重建旧 Archive 目录。
 - 文档重建不会自动触发数据生成、Airflow、Spark、OMOP Writer、K8s 变更、Terraform Apply，也不自动获得运行授权。
 
 ## 最终旧目录清理（STEP08 后）
@@ -21,7 +21,7 @@
 ## 2026-10-16 文档层级重组（后续阶段）
 
 - 新层级：`documents/architecture/`、`documents/systems/data-platform/` 和 `documents/engineering/`。Architecture Decisions 通过 PR #187 迁入 Architecture。
-- PR #188：先复制本地五组件与 Engineering 文档，旧目录不删；PR #189：更新 documents 根入口；PR #190：更新 Architecture 引用；PR #191：更新 CODE Map CI/Agent 规则；PR #192：修复 Azure/Portal 原 README 指向 Engineering 的四个依赖链接；PR #193：新增 Markdown 链接 CI。旧副本的实际删除由单独的最终清理 PR 验收。
+- PR #188：先复制本地五组件与 Engineering 文档，旧目录不删；PR #189：更新 documents 根入口；PR #190：更新 Architecture 引用；PR #191：更新 CODE Map CI/Agent 规则；PR #192：修复 Azure/Portal 原 README 指向 Engineering 的四个依赖链接；PR #193：新增 Markdown 链接 CI。旧的 Data Platform/Engineering 文档副本随后已从 Main 清理，历史版本仍可追溯。
 - **历史范围说明**：下表 STEP02–STEP07 中出现的 `documents/development/`、`documents/components/` 等，是当时相关 PR 的**历史位置**，不是当前 Main 的权威目录；当前导航请使用 [Systems](../../systems/README.md) 和 [Engineering](../README.md)。Azure/Fabric 和 Portal 仍保留在旧 `documents/components/` 下，不属于本轮物理迁移。
 
 ## 1. 分阶段计划
@@ -38,7 +38,7 @@
 | **STEP08** | 切换项目入口、检查引用、验收文档体系 | **COMPLETE（PR #174 合并后）** | [终审报告](FINAL-DOCUMENTATION-AUDIT.md)：历史入口降级、单一状态权威、25 篇新文档链接核验 |
 | **STEP09** | 下一阶段：正式初始化同仓库 OpenSpec | **READY TO START / NOT INITIALIZED** | 重新核对旧 PR #164，运行真实 CLI Init/Validate，Spec 从已核实行为建立；不得宣称已安装 |
 
-**当前整理范围：STEP08（PR #174 合并后完成）。** 文档权威终审完成；后续新增功能按已生效的组件命名、安全协作规则开展，OpenSpec STEP09 是尚未开始的单独实施事项。
+**当前整理状态（2026-10-16 Main）**：STEP01–08 的权威终审已完成；后续 PR #187–193 推进了 `architecture/decisions/`、`systems/data-platform/` 和 `engineering/` 层级切换，并已清理原 `docs/` 和旧本地组件/工程文档副本。Azure/Fabric、Platform Portal 文档仍在 `documents/components/`，尚待单独迁移；OpenSpec STEP09 尚未开始。以上 STEP01–08 表格保留原阶段的交付路径和验收结论。
 
 ## 2. 候选来源（未迁移、不自动成为新权威）
 
@@ -101,7 +101,7 @@
 ## 9. STEP08 — 文档终审与入口权威切换
 
 - **只读核验 SHA**：Healthcare Main `f5ee37697bed08fc35e288d84420bafd4b2d8e22`。截至核验，该树有 **671 个 tracked blob、157 个 Markdown、25 份 `documents/` Markdown**。
-- **完整新文档链接审计**：25 篇新文档的 **249 条相对 Markdown 链接**目标存在；无缺失。此为基线审计数字，最终 PR 变更后还需做增量及 Main 回读检查。
+- **完整新文档链接审计**：25 篇新文档的 **249 条相对 Markdown 链接**目标存在；无缺失。此为 STEP08 当时的基线审计数字，不代表当前 Main 的文档和链接总数。
 - **7 个旧 Agent/状态/技术入口纠偏**：`docs/README.md`、`docs/tasks/TASK-STATUS.md`、`docs/runbooks/README.md`、`docs/skill/SKILL-cn.md`、旧 Developer Ops、Portal、Azure README；保留各自的原始历史证据及时间快照，不再将其作为新的 CURRENT/NEXT。
 - **唯一项目 CURRENT/NEXT**：[PROJECT-STATUS](../status/PROJECT-STATUS.md)。长期决策、安全与组件知识保留在 `documents/`，业务代码/Contract 和 GitHub Run 仍各自有权威。
 - **未解决且正确阻断的非文档事项**：OpenSpec CLI 未验证、旧 PR #164 未合并需修订；Portal Spark 正式集成方案未定；Azure Plan-only 没有 Apply。详见 [终审报告](FINAL-DOCUMENTATION-AUDIT.md)。
