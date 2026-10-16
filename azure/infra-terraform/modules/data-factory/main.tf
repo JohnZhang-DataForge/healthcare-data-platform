@@ -22,7 +22,9 @@ resource "fabric_data_pipeline" "current" {
   definition = {
     "pipeline-content.json" = {
       source = var.notebook_id == "" ? "${path.module}/definitions/pipeline-disabled.json" : "${path.module}/definitions/pipeline-notebook.json"
-      tokens = var.notebook_id == "" ? {} : {
+      # Stable map type on both branches avoids Terraform conditional-type mismatch.
+      # The fail-closed definition has no tokens to replace.
+      tokens = {
         WorkspaceId = var.workspace_id
         NotebookId  = var.notebook_id
       }
