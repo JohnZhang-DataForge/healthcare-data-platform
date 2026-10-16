@@ -1,4 +1,7 @@
-# Azure Terraform OIDC smoke test
+# Azure Terraform OIDC smoke test (legacy, isolated root)
+
+> **Source relocation (2026-10-16):** this independent historical smoke root now lives under `azure/infra-terraform/smoke/terraform-oidc-smoke/`. It is **NOT** part of the normal `Azure-Infra-TF` component selector. The Terraform backend state key remains `smoke/oidc-connectivity.tfstate`. No Terraform plan/apply/destroy was run to relocate it. The previous Self-Runner smoke workflow still uses a **historical pinned Healthcare commit** containing the old `infra/azure/` path; do not change only its directory without updating both the pinned source ref and relative Git SHA verification logic. [Smoke safety/index](../README.md).
+
 
 **Disposable test only.** The official Terraform source is stored in the Healthcare repository. The execution and federated GitHub OIDC identity belong to `JohnZhang-DataForge/Self-Runner`, branch `main`.
 

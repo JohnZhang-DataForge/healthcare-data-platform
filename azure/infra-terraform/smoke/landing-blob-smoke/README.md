@@ -1,4 +1,7 @@
-# Terraform OIDC data-plane write smoke — landing
+# Terraform OIDC data-plane write smoke — landing (legacy, isolated root)
+
+> **Source relocation (2026-10-16):** now at `azure/infra-terraform/smoke/landing-blob-smoke/` with the **same** remote State Key `smoke/landing-blob-write.tfstate`. Not part of normal Fabric deployment; **do not apply this fixed-name Blob test without new explicit permission**. The original Self-Runner Workflow is pinned to a historical Healthcare SHA with the former `infra/azure/` path, so it still refers to the original immutable source snapshot. Do not repoint its `working-directory` alone. [Smoke safety/index](../README.md).
+
 
 One-time test: write an informational `.txt` Blob into an **existing** container with Terraform's AzureAD Blob Data Plane authentication.
 

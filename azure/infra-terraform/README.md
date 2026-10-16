@@ -29,6 +29,17 @@ modules/
 
 Each `components/<selector>` is a **Terraform root module** (`versions.tf`, `providers.tf`, `modules.tf`, `variables.tf`, `outputs.tf`, `iam.tf`, `environments/dev.tfvars`). It selects the child module, passes environment-specific IAM/configuration values, and has its own remote state. Actual resource and supported IAM implementation lives in its `modules/<selector>`. Thus: **Modules define HOW; components define WHAT and WHO; tfvars define environment values.**
 
+## Archived, independent Azure smoke roots
+
+Earlier, before `azure/infra-terraform/components/` became the canonical Azure/Fabric IaC project, two **one-off, independent** Terraform smoke roots were created at the top-level `infra/azure/`. They have now been **relocated without changing resource definitions or remote Terraform state keys**:
+
+- [`smoke/terraform-oidc-smoke/`](smoke/terraform-oidc-smoke/README.md): ARM control-plane OIDC/backend/create/read/destroy probe.
+- [`smoke/landing-blob-smoke/`](smoke/landing-blob-smoke/README.md): AzureAD data-plane write check targeting an existing landing Blob container.
+
+These are **NOT** deployable Fabric components; do not select them as `Azure-Infra-TF` `component`, and do not merge their remote state into `dev/<component>.tfstate`. Their separate `smoke/*.tfstate` backend keys are intentionally unchanged. Both contain actual Azure **apply-capable** code; the presence of these files authorizes **no execution**. Refer to [smoke safety and workflow compatibility](smoke/README.md) before any future run.
+
+**Canonical Azure IaC root remains** `azure/infra-terraform/components/`; all new Azure experiments should stay under this `azure/` tree, never a second top-level `infra/`.
+
 ## IAM ownership and permission boundaries
 
 | Component | Module IAM definition | dev.tfvars | Notes |
@@ -62,7 +73,7 @@ The `Azure-Infra-TF` workflow exposes **storage / workspace / onelake / data-fac
 
 ## Fabric planning restrictions
 
-Fabric Provider Service Principal OIDC does NOT automatically gain Fabric tenant permissions or Trial capacity access by virtue of Azure RG Contributor. Existing workspaces must be reconciled/imported before Apply; `FABRIC_WORKSPACE_ID` is required by non-workspace Fabric components. Data Pipeline, Notebook and Warehouse modules are *item shells*, not functional ETL code, SQL or schedules. OneLake Lakehouse is optional to the direct Azure Blob → Notebook → Warehouse MVP. Trial Capacity is not deployed through this Terraform project.
+Fabric Provider Service Principal OIDC does NOT automatically gain Fabric tenant permissions or Trial capacity access by virtue of Azure RG Contributor. Existing workspaces must be reconciled/imported before Apply; `FABRIC_WORKSPACE_ID` is required by non-workspace Fabric components. Data Pipeline, Notebook and Warehouse modules are *item shells*, not functional ETL code, SQL or schedules. **Current OneLake-first MVP** is local PostgreSQL OMOP → existing Azure Blob → Fabric Data Factory Data Pipeline → Fabric PySpark Notebook → OneLake Lakehouse/Delta. Warehouse is optional future scope, not the active MVP. Trial Capacity is not deployed through this Terraform project.
 
 ## Tested evidence
 
