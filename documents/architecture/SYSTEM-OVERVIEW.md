@@ -88,7 +88,7 @@ flowchart TB
 
 ## 5. 下一步与不应混淆的范围
 
-- 当前 TASK004 的 Person/Visit NEW_ONLY 验收范围为 **COMPLETED**；[最终 E2E Closeout](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)、[PG 独立读回](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822)、[同批次 SKIP](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069)。
+- 当前 TASK004 的 Person/Visit NEW_ONLY 验收范围为 **COMPLETED**；[最终 E2E Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)、[PG 独立读回](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822)、[同批次 SKIP](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069)。
 - Condition TASK005 仍是 STEP00 只读预检阶段，不得推断已实现 Condition CDM 加载。
 - Portal 的 A3/A4 是分项验收，不能据此声明 `Synthea → OMOP` 业务 Dataset 血缘完整。
 - Azure 最小三组件 Plan PASS **不代表** Data Factory Notebook 真实运行、OneLake 已存在、Fabric Workspace/Capacity 由 Terraform 创建或云端数据已入库。
@@ -96,6 +96,6 @@ flowchart TB
 
 ## 6. 依据与来源
 
-- 历史 [V4 总设计](../../docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md)（仅用于旧方案演进追溯）、[独立 Synthea 提案](../../docs/architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)。
-- [Portal A3 实测](../../docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)、[Portal A4 独立 Spark 实测](../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
-- [Azure OneLake-first 和三个真实 Plan](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、[Azure Terraform 架构](../../azure/infra-terraform/docs/ARCHITECTURE.md)。
+- 历史 [V4 总设计](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md)（仅用于旧方案演进追溯）、[独立 Synthea 提案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)。
+- [Portal A3 实测](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)、[Portal A4 独立 Spark 实测](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
+- [Azure OneLake-first 和三个真实 Plan](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、[Azure Terraform 架构](../../azure/infra-terraform/docs/ARCHITECTURE.md)。

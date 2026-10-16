@@ -53,7 +53,7 @@
 | 位置 | 当前职责 |
 | --- | --- |
 | `documents/` | 新治理规范及**已完成审核并在迁移表标记为 ACTIVE 的**架构、模块和运维知识 |
-| [`docs/`](../docs/README.md) | Legacy：旧架构、状态、Runbook、Task 计划、已验收证据的迁移来源；未迁移领域仍须按需查阅 |
+| [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | Legacy：旧架构、状态、Runbook、Task 计划、已验收证据的迁移来源；未迁移领域仍须按需查阅 |
 | [`contracts/`](../contracts/README.md) | 具体行为合同和数据 Schema 等以当前 Git 源码与有效 Contract 为准，不因文档搬迁而改写 |
 | `openspec/`（未来） | **当前 Main 尚未初始化**；未来用 Specs / Changes 管可验证行为与开发接力，不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
 
@@ -62,8 +62,8 @@
 ## 已知项目基线（迁移上下文，不是新一轮实时探针）
 
 - [仓库根 README](../README.md) 描述已验收的本地 Synthea → S3 Landing → Airflow → Spark Person/Visit → PostgreSQL OMOP 路径。
-- TASK004 NEW_ONLY Person/Visit 实际 E2E 和同批次 SKIP 有[最终验收证据](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；该结论不代表其他数据域或所有并发/恢复场景已验收。
-- [Condition TASK005](../docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 处于可做 STEP00 只读预检、尚未完成业务入库的状态；开发前再次核对最新 Main 和授权。
+- TASK004 NEW_ONLY Person/Visit 实际 E2E 和同批次 SKIP 有[最终验收证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；该结论不代表其他数据域或所有并发/恢复场景已验收。
+- [Condition TASK005](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 处于可做 STEP00 只读预检、尚未完成业务入库的状态；开发前再次核对最新 Main 和授权。
 - Portal 已使用原生 Marquez Web + OpenLineage，**Airflow 事件已证实**、Spark 独立 Smoke 部分成功，但 Dataset 全链路尚未验收；Azure/Fabric 则采用 **PG → Azure Blob → Fabric Pipeline → Notebook → OneLake Lakehouse** 的简化目标，目前仅三组件 Terraform Plan 验证成功，不得误报部署与业务 E2E。
 
 ## 为什么不直接重写全部文档？

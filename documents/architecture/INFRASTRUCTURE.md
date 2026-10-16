@@ -41,11 +41,11 @@ source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
 ## 3. Portal 真实基础设施状态
 
 - `platform-portal/marquez/helm/values.yaml` 使用外部 PostgreSQL14：`postgresql.enabled=false`，不会通过 Marquez Chart 额外创建业务数据库。
-- [Marquez API/Web 与 PG14 Schema 真实部署证据](../../docs/platform-portal/validation.md)：Helm 0.51.1、独立 PG14 metadata schema（37 表），[NodePort Recovery Run 38499838493](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38499838493) SUCCESS，Web `30999` / Healthcheck / API Proxy PASS；不代表可从个人浏览器公网直连。
-- Airflow A3 使用 `apache-airflow-providers-openlineage=2.17.0` 的受控 opt-in Probe，已在 Marquez 看到对应 Job/Run：[A3 Closeout](../../docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。
-- Spark A4 在 worker02 执行过隔离 Spark 3.5.7 / OpenLineage 1.47.1 Smoke，应用 Job `portal_a4_a438628542127` 的 Run 关联仍不完整，完成 Run 位于 `unknown` Job，Dataset I/O 未验收；原工作流 FAIL + 随后三次只读 PASS：[A4 Closeout](../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
+- [Marquez API/Web 与 PG14 Schema 真实部署证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md)：Helm 0.51.1、独立 PG14 metadata schema（37 表），[NodePort Recovery Run 38499838493](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38499838493) SUCCESS，Web `30999` / Healthcheck / API Proxy PASS；不代表可从个人浏览器公网直连。
+- Airflow A3 使用 `apache-airflow-providers-openlineage=2.17.0` 的受控 opt-in Probe，已在 Marquez 看到对应 Job/Run：[A3 Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)。
+- Spark A4 在 worker02 执行过隔离 Spark 3.5.7 / OpenLineage 1.47.1 Smoke，应用 Job `portal_a4_a438628542127` 的 Run 关联仍不完整，完成 Run 位于 `unknown` Job，Dataset I/O 未验收；原工作流 FAIL + 随后三次只读 PASS：[A4 Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
 - 这是**数据血缘实验与基础设施子系统**；目前只有 Marquez 原生 Web，没有自建 React/其他 Portal UI，也不宣称全局 Operator/业务 DAG 已统一接入。
-- 共享 Airflow/Spark/K8s 更改需检查并行 Session 的运行，人工串行协调：[Session Policy](../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。历史文档中“TASK004 仍在开发”不再作为今天的事实。
+- 共享 Airflow/Spark/K8s 更改需检查并行 Session 的运行，人工串行协调：[Session Policy](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。历史文档中“TASK004 仍在开发”不再作为今天的事实。
 
 ## 4. Azure/Fabric 的简化基础设施
 
