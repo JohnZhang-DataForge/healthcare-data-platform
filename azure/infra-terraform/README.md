@@ -29,16 +29,13 @@ modules/
 
 Each `components/<selector>` is a **Terraform root module** (`versions.tf`, `providers.tf`, `modules.tf`, `variables.tf`, `outputs.tf`, `iam.tf`, `environments/dev.tfvars`). It selects the child module, passes environment-specific IAM/configuration values, and has its own remote state. Actual resource and supported IAM implementation lives in its `modules/<selector>`. Thus: **Modules define HOW; components define WHAT and WHO; tfvars define environment values.**
 
-## Archived, independent Azure smoke roots
+## Legacy smoke cleanup
 
-Earlier, before `azure/infra-terraform/components/` became the canonical Azure/Fabric IaC project, two **one-off, independent** Terraform smoke roots were created at the top-level `infra/azure/`. They have now been **relocated without changing resource definitions or remote Terraform state keys**:
+The former one-off Azure Terraform OIDC and landing-Blob smoke roots were removed from Main on 2026-10-16 to keep the deployable IaC layout focused. Their historical source and test records remain accessible through Git history. No Azure resource, remote Terraform State, or existing deployment was changed by removing these source files.
 
-- [`smoke/terraform-oidc-smoke/`](smoke/terraform-oidc-smoke/README.md): ARM control-plane OIDC/backend/create/read/destroy probe.
-- [`smoke/landing-blob-smoke/`](smoke/landing-blob-smoke/README.md): AzureAD data-plane write check targeting an existing landing Blob container.
+The standard **Azure-Infra-TF** workflow uses only `azure/infra-terraform/components/<component>/` with `dev/<component>.tfstate`; `azure/infra-terraform/modules/` holds implementation. Do not recreate a separate top-level `infra/` or add historical smoke roots to the main component selector.
 
-These are **NOT** deployable Fabric components; do not select them as `Azure-Infra-TF` `component`, and do not merge their remote state into `dev/<component>.tfstate`. Their separate `smoke/*.tfstate` backend keys are intentionally unchanged. Both contain actual Azure **apply-capable** code; the presence of these files authorizes **no execution**. Refer to [smoke safety and workflow compatibility](smoke/README.md) before any future run.
-
-**Canonical Azure IaC root remains** `azure/infra-terraform/components/`; all new Azure experiments should stay under this `azure/` tree, never a second top-level `infra/`.
+Two obsolete *manual* Self-Runner smoke workflows are pinned to historical Healthcare commits; they were **not changed** by this Healthcare-only cleanup. They are not part of the normal Azure-Infrastructure workflow and must not be dispatched as a substitute for current component verification.
 
 ## IAM ownership and permission boundaries
 
