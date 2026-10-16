@@ -1,14 +1,9 @@
 # Configuration examples
 
-[← Repository overview](../README.md) · [Kubernetes runtime manifests](../kubernetes/README.md)
+This folder holds **example local configuration**, currently [`local.env.example`](local.env.example).
 
-This directory currently contains the example [`local.env.example`](local.env.example), illustrating historical runner-local paths and the Synthea/SeaweedFS settings for the development lab.
+The example documents names for development paths, source identity, batch settings, and storage configuration. Some values reflect an earlier lab layout and should not be read as current deployment settings.
 
-## How to read the example
+Actual credentials and environment-specific runtime configuration are managed outside this example file. See [Kubernetes manifests](../kubernetes/README.md) and [infrastructure documentation](../documents/architecture/INFRASTRUCTURE.md).
 
-- `PROJECT_ROOT` and `RUNTIME_ROOT` describe local development directories on a particular lab host; they are not portable defaults.
-- `LEGACY_PHASE3C`, `SYNTHEA_SOURCE_DIR` and related paths point to the **protected historical baseline**.
-- `SOURCE_SYSTEM`, `SOURCE_VERSION`, `BATCH_ID` and the S3 bucket settings are examples, **not the identity of the most recent committed batch**.
-- Actual runtime S3 and PostgreSQL credentials are supplied through namespace-specific Kubernetes Secrets, **not** through committed environment files.
-
-Do **not** paste secrets into `local.env.example`, push an active `.env`, or assume the example values automatically reflect the latest Airflow or Cluster configuration. See [development baseline](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/BASELINE.md), [operation rules](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md), and [latest TASK status](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md).
+[Back to project overview](../README.md).

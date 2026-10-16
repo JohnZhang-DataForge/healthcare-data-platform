@@ -13,4 +13,6 @@ Applies to all work in this repository, regardless of AI assistant/tool. **Read 
 9. **Before any shared-runtime operation**, read [Safe Operations](documents/operations/SAFE-OPERATIONS.md) and [Session Coordination](documents/development/SESSION-COORDINATION.md). Never assume another Session's absence means its Spark/PG/K8s job is idle; unknown/conflicting operation = HOLD. Current progress belongs in PR/Run (and future OpenSpec Changes), not an ever-growing Handoff Markdown.
 10. Documentation governance is active. The retired `docs/` is accessible only through Git history; OpenSpec has not been initialized. Do not initialize `openspec/` or convert historical files unless requested.
 
+**README audience:** README files are short, human-facing directory introductions: purpose, contents, and a few navigation links. Do not place Agent instructions, per-session handoffs, live status snapshots, or lengthy implementation logs in READMEs. Put development rules in AGENTS.md/`documents/development/`, detailed engineering references in named documents, and future change tasks in OpenSpec. Do not automatically create a README in every new folder.
+
 These instructions supplement user instructions and current contracts; they do not confer runtime permissions. See the linked detailed rules for precedence and workflow.
