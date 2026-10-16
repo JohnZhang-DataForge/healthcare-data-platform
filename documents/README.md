@@ -11,7 +11,15 @@
 3. **[组件与代码命名规范](development/CODE-ORGANIZATION-AND-NAMING.md)** — 新代码不能用 Task/Step 命名；Legacy 按功能逐步迁移。
 4. [测试与验收](development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
 5. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
-6. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+6. [多 Session 协调规则](development/SESSION-COORDINATION.md) — 并行 PR、共享资源、人为授权、接力验证；不另建 Handoff 日志。
+7. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+
+## 长期运维与架构决策（STEP07 已审核）
+
+- [Operations Index](operations/README.md) — 有效运维知识入口和仍需按需查阅的旧技术经验。
+- [Safe Operations](operations/SAFE-OPERATIONS.md) — 共享 K8s/Spark/Airflow/PG/S3/Azure 操作的安全门槛。
+- [Architecture Decisions](decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
+- [OpenSpec 迁移准备与 STEP08/09 Gate](migration/OPENSPEC-READINESS.md) — 只准备，不初始化；旧未合并 PR #164 需先纠正权威来源。
 
 ## Portal 与 Azure/Fabric 专项组件（STEP06 已审核）
 
@@ -42,7 +50,7 @@
 | `documents/` | 新治理规范及**已完成审核并在迁移表标记为 ACTIVE 的**架构、模块和运维知识 |
 | [`docs/`](../docs/README.md) | Legacy：旧架构、状态、Runbook、Task 计划、已验收证据的迁移来源；未迁移领域仍须按需查阅 |
 | [`contracts/`](../contracts/README.md) | 具体行为合同和数据 Schema 等以当前 Git 源码与有效 Contract 为准，不因文档搬迁而改写 |
-| `openspec/`（未来） | **尚未初始化**；下一阶段管理需求 Specs / Changes，不取代 `documents/` 的实现与运维知识 |
+| `openspec/`（未来） | **当前 Main 尚未初始化**；未来用 Specs / Changes 管可验证行为与开发接力，不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
 
 旧 `docs/` 存在互相矛盾的日期快照；不得仅按文件名中的 CURRENT 或文件创建日期认定事实。对代码/运行状态的陈述必须标明 **Source SHA 与对应验收证据**。有不一致时先记录，停止未经核实的权威切换。
 

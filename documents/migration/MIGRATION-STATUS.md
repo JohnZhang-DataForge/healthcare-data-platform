@@ -21,12 +21,12 @@
 | **STEP03** | `documents/architecture/` 当前总体架构 | **COMPLETE（PR #169）** | 区分本地 NEW_ONLY 验收、Portal A3/A4 局限和 Azure OneLake-first 目标/PLAN-only 边界 |
 | **STEP04** | `documents/status/` 当前唯一项目状态 | **COMPLETE（PR #170）** | [唯一项目状态入口](../status/PROJECT-STATUS.md) 区分 TASK004/Condition、Portal 已验收与待商定 Spark、Azure 方案已定与 Plan-only |
 | **STEP05** | `documents/components/` Local Pipeline | **COMPLETE（PR #171：文档/命名治理）** | 五组件文档、Legacy 依赖清单、禁止新增 Task/Step 代码命名的 Agent 规则和 PR Gate；旧源码物理迁移尚未进行 |
-| **STEP06** | Portal / Azure-Fabric 专项模块 | **COMPLETE（本次专项 PR 合并后）** | [Portal](../components/platform-portal/README.md)、[Azure/Fabric](../components/azure-fabric/README.md)：明确已验收、已批准设计和待实现/待定范围 |
-| **STEP07** | `documents/operations/` 与决策索引 | **PENDING** | 有效运维知识可用，操作限制不丢失 |
+| **STEP06** | Portal / Azure-Fabric 专项模块 | **COMPLETE（PR #172）** | [Portal](../components/platform-portal/README.md)、[Azure/Fabric](../components/azure-fabric/README.md)：明确已验收、已批准设计和待实现/待定范围 |
+| **STEP07** | `documents/operations/`、`decisions/`、精简 Session 协调与 OpenSpec Readiness | **COMPLETE（本次 PR 合并后）** | 安全/排障长期入口、已确定决策；不新建重复 Handoff 体系；准备 STEP08/09 |
 | **STEP08** | 切换项目入口、检查引用、验收文档体系 | **PENDING** | 入口唯一、冲突消除、迁移记录完整 |
 | **STEP09** | 独立后续工作：初始化同仓库 OpenSpec | **NOT STARTED** | 用户确认开始，Spec 从已核实的业务知识建立 |
 
-**当前整理范围：STEP06（本次专项 PR 合并后完成）。** Portal 与 Azure 的组件文档进入新 `documents/` 权威入口；Portal 下一步业务 Spark 接入仍在讨论、Azure 具体 Exporter/Notebook/Pipeline 细节仍待批准。本轮不执行集群/云端运行。接下来 STEP07 整理真正有效的运维与决策记录。
+**当前整理范围：STEP07（本次 PR 合并后完成）。** 仅建立紧凑的 Operations、安全运行、架构决策、多 Agent 协调与 OpenSpec 迁移准备。下一步 STEP08 检查并完成文档入口权威切换；此后 STEP09 才正式初始化 OpenSpec。
 
 ## 2. 候选来源（未迁移、不自动成为新权威）
 
@@ -36,9 +36,9 @@
 | 系统总体架构 | [V4 中文](../../docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md)、[独立 Generator 设计](../../docs/architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)、[Portal 证据](../../docs/platform-portal/validation.md)、[OneLake-first 方案](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) | [System Overview](../architecture/SYSTEM-OVERVIEW.md)、[Data Flow](../architecture/DATA-FLOW.md)、[Infrastructure](../architecture/INFRASTRUCTURE.md) | **ACTIVE（PR #169）**：仅总体架构切换；详细组件与当前状态分别待 STEP04–06 |
 | 主线状态与证据 | [旧 TASK 状态](../../docs/tasks/TASK-STATUS.md)、[最终 TASK004 证据](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 及 Portal/Azure 分项证据 | [PROJECT-STATUS](../status/PROJECT-STATUS.md) | **ACTIVE（PR #170）**：已切换全项目 CURRENT / NEXT；旧 TASK 文档继续作为历史证据 |
 | 本地数据模块 | `apps/`、`airflow/`、`spark/`、`sql/`、`contracts/`、历史 TASK 文档 | [组件目录](../components/README.md)、[重构计划](../components/LEGACY-CODE-REFACTOR-PLAN.md) | **ACTIVE（PR #171）**：组件知识已迁移；现有 Task 命名 Runtime 兼容迁移另行开发 |
-| Azure Fabric | [旧 Azure 入口](../../docs/azure-fabric/README.md)、[OneLake-first 方案](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、`azure/` | [Azure/Fabric 组件](../components/azure-fabric/README.md) | **ACTIVE（本次专项 PR 合并后）**：OneLake-first + IaC/Plan-only 事实；尚未定稿的 ETL 实现不提前批准 |
+| Azure Fabric | [旧 Azure 入口](../../docs/azure-fabric/README.md)、[OneLake-first 方案](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、`azure/` | [Azure/Fabric 组件](../components/azure-fabric/README.md) | **ACTIVE（PR #172）**：OneLake-first + IaC/Plan-only 事实；尚未定稿的 ETL 实现不提前批准 |
 | Platform Portal | [旧 Portal 入口](../../docs/platform-portal/README.md)、`platform-portal/` | [Platform Portal 组件](../components/platform-portal/README.md) | **ACTIVE（本次专项 PR 合并后）**：Marquez/A3/A4 证据与局限，后续实际 Spark 方案仍未批准 |
-| 运维和经验 | `docs/runbooks/`、`kubernetes/`、实际已验收部署配置 | `documents/operations/` | **LEGACY / TO REVIEW** |
+| 运维和经验 | `docs/runbooks/`、`kubernetes/`、旧 Portal/Azure Operations、真实代码/验收 | [Operations](../operations/README.md)、[Safe Operations](../operations/SAFE-OPERATIONS.md)、[Session Coordination](../development/SESSION-COORDINATION.md)、[Decisions](../decisions/README.md) | **ACTIVE（本次 PR 合并后）**：通用操作/决策规则已迁移；旧技术细节仍按实际源码/历史证据查阅 |
 
 ## 3. STEP02 事实核验摘要（静态）
 
@@ -78,7 +78,15 @@
 - **Azure 冲突处理**：2026-10-14 Warehouse-first 被 2026-10-15 OneLake-first 目标取代；Data Factory 为 Fabric Data Pipeline，三个新 Item Plan PASS / APPLY NO；Exporter、Notebook ETL、Pipeline 绑定和实际云端数据链路仍未落地。
 - **权限范围**：只更新新组件权威文档和导航/迁移表，不编辑 Legacy、业务代码、Workflow 或实际云端/集群资源。
 
-## 8. 每一步完成时登记
+## 8. STEP07 — 简化 Operations 与 OpenSpec 准备
+
+- **静态核验基线**：Healthcare `d1962f79e1c7337c372de1aebfaaec87dfc7d1c8`、Self-Runner `8f8cb877887540cbed697260c3e8154e218a49c7`。只读查 K8s/Portal/PG/Azure 技术资料、旧 Runbook、当前组件规范及未合并 OpenSpec PR #164。
+- **新权威**：[Operations](../operations/README.md)、[Safe Operations](../operations/SAFE-OPERATIONS.md)、[Decision Index](../decisions/README.md)、[Session Coordination](../development/SESSION-COORDINATION.md)。不创建独立 `AGENT-HANDOFF.md`，OpenSpec Change/Tasks（未来）+ PR/Run（当前）承接接力状态。
+- **过时冲突**：旧 Runbook 把 TASK004 Airflow 写成 NEXT，旧 Portal Policy 把 A4 写成未执行，旧 OpenSpec PR #164 配置还指向 `docs/tasks/TASK-STATUS.md`；必须以本轮新权威为准，历史正文保留。
+- **只做准备**：[OPENSPEC-READINESS](OPENSPEC-READINESS.md) 说明 STEP08/09 Gate，当前不合并 PR #164、不执行 CLI、不写 `openspec/`。
+- **运行安全**：不更改任何业务、Terraform、Self-Runner、Kubernetes、PG/S3 或 Azure；无 Live 验收。
+
+## 9. 每一步完成时登记
 
 下一 STEP 的 PR 在本文件追加或更新：**领域、旧文件/代码来源、Source SHA、核实的证据及运行时间、冲突决议、新文件路径、ACTIVE/未完成范围、PR 号、合并 SHA**。不要提前猜测 PR 和合并 SHA。
 

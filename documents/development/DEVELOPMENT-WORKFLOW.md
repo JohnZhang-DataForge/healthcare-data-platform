@@ -102,7 +102,11 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 - 任务状态只更新对应当前权威位置；新 `documents/` 模块 **仅在迁移表已经 ACTIVE 时**承接当前事实。旧 `docs/` 的历史 NEXT 不需要每轮修补。
 - 将来使用 OpenSpec 时：Proposal/Design/Tasks/Delta Specs 管需求演进，本文件继续管代码执行、Self-Runner、测试、安全与交接；不为此阶段提前创建 `openspec/`。
 
-## 8. 新 Agent 最短开工清单
+## 8. 多 Session 协作与接力（简化）
+
+统一使用 [Session Coordination](SESSION-COORDINATION.md)：OpenSpec 引入前由 PR/Issue 的 Done/Next/SHA/Run 交接；OpenSpec 引入后由 Change/Tasks 负责变更进度。**不要新建每次 Session 的 Handoff 文件**，共享 K8s/PG/Cloud 操作前还必须核对实际资源与独立授权；详细门槛见 [Safe Operations](../operations/SAFE-OPERATIONS.md)。
+
+## 9. 新 Agent 最短开工清单
 
 1. **读** `AGENTS.md` → `documents/README.md` → Agent Rules → 本工作流 → 相关迁移状态。
 2. **核对** 当前两个仓库最新 SHA、源码和验收证据、是否存在并行 PR/Run。

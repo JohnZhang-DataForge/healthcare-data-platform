@@ -110,12 +110,14 @@ Local PostgreSQL OMOP (authoritative)
 | STEP03 — Overall architecture（本地 + Portal + OneLake-first） | **COMPLETE** — [PR #169](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/169) |
 | **STEP04 — 当前项目统一状态** | **COMPLETE** — [PR #170](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/170) |
 | STEP05 — 本地组件文档与新代码命名约束 | **COMPLETE** — [PR #171](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/171)，旧代码未物理 Rename |
-| **STEP06 — Portal / Azure 专项文档** | **COMPLETE after current component-documentation PR is merged** |
-| STEP06 — Portal / Azure 专项模块文档 | **NOT STARTED** |
-| STEP07 / STEP08 — 运维与最后权威切换 | **NOT STARTED** |
+| STEP06 — Portal / Azure 专项文档 | **COMPLETE** — [PR #172](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/172) |
+| **STEP07 — Operations/Decisions/Session + OpenSpec Readiness** | **COMPLETE after current PR merges** |
+| STEP08 — 最终文档入口和权威校验 | **NOT STARTED** |
 | STEP09 — 引入同仓 OpenSpec | **NOT ON MAIN / NOT ADOPTED** |
 
 截至本次核对，`openspec/` **未出现在 Main**。GitHub 上另有尚未合并的 OpenSpec bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164)，它不能当成已采用的规范，也不在此次文档 PR 范围。继续按用户决定的顺序：先整理 `documents/`，随后才正式引入 OpenSpec。
+
+**OpenSpec 迁移准备**：[Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../decisions/README.md) · [Readiness Checklist](../migration/OPENSPEC-READINESS.md)。本轮没有初始化 OpenSpec。
 
 ## 6. 这份状态文档如何更新
 
