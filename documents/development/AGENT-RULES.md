@@ -27,6 +27,7 @@
 - **开发进度可以称 TASK/STEP，但新代码必须按组件/功能命名。** Python、DAG ID、Spark、SQL、镜像、K8s、正式 Shell、Workflow、Tests 的新增路径与公开标识符不允许 `taskNNN/stepNNN`。具体以 [Code Organization & Naming](CODE-ORGANIZATION-AND-NAMING.md) 为准。
 - 现有 Task-named 代码及数据库/Contract/镜像持久标识**不批量重命名**；先有依赖清单、兼容回归与必要 Runtime 授权，再逐模块切换。
 - CI 自动检查新建代码路径；代码内部的新标识符与职责归属由 Agent/Reviewer 复核。Task ID 只属于 PR/开发计划/历史验收。
+- **源码地图强制同步**：凡组件源码文件新增、删除、移动或改名，必须在同一 PR 更新其 `documents/components/<component>/CODE.md`；重要入口、职责、依赖变化也要审查并同步。首个落地样板是 [Airflow CODE](../components/airflow/CODE.md)，CI 自动校验 Airflow 增删文件；其他组件在建立 CODE.md 时逐步接入相同 Gate。
 
 ## 4. Git / GitHub / Self-Runner
 

@@ -29,6 +29,11 @@ jobs:
           persist-credentials: false
       - name: Unit tests for code naming guard
         run: python3 -m unittest discover -s tests/quality -p 'test_*.py' -v
+      - name: Require Airflow CODE.md synchronization and complete source links
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 scripts/quality/check_component_code_map.py --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Reject new Task/Step-named code
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
