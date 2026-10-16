@@ -30,5 +30,36 @@ class CodeMapSyncTests(unittest.TestCase):
         self.assertEqual(policy.validate_dag_file_map(content, paths), ([], []))
 
 
+
+    def test_apps_source_filter(self):
+        self.assertTrue(policy.is_app_source("apps/synthea/new_only/added.py"))
+        self.assertTrue(policy.is_app_source("apps/landing_discovery/file.yml"))
+        self.assertFalse(policy.is_app_source("apps/README.md"))
+        self.assertFalse(policy.is_app_source("airflow/dags/file.py"))
+
+    def test_app_catalog_missing_stale_and_duplicate(self):
+        docs = {
+            policy.APP_MAP_PATHS[0]: "[a](../../../apps/synthea/a.py)",
+            policy.APP_MAP_PATHS[1]: "[b](../../../apps/landing_claim/b.py)\n[dup](../../../apps/synthea/a.py)",
+            policy.APP_MAP_PATHS[2]: "[stale](../../../apps/omop_writer/old.py)",
+            policy.APP_MAP_PATHS[3]: "",
+        }
+        missing, stale, duplicated = policy.validate_app_code_maps(
+            docs, {"apps/synthea/a.py", "apps/landing_claim/b.py", "apps/new.py"}
+        )
+        self.assertEqual(missing, ["apps/new.py"])
+        self.assertEqual(stale, ["apps/omop_writer/old.py"])
+        self.assertEqual(duplicated, ["apps/synthea/a.py"])
+
+    def test_apps_same_pr_owner_updates_for_add_delete(self):
+        s, l, o, a = policy.APP_MAP_PATHS
+        old = {s: "[old](../../../apps/synthea/old.py)", l: "", o: "", a: ""}
+        new = {s: "", l: "", o: "[new](../../../apps/omop_writer/new.py)", a: ""}
+        required = policy.required_app_updates(
+            {"apps/synthea/old.py", "apps/omop_writer/new.py"}, old, new
+        )
+        self.assertEqual(required, {s, o})
+        self.assertEqual(policy.required_app_updates(set(), old, new), set())
+
 if __name__ == "__main__":
     unittest.main()

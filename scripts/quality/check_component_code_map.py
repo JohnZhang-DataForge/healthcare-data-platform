@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Require Airflow source-map updates for added/removed source; audit all mapped DAG files.
+"""Require Airflow and apps source-map synchronization, ownership and valid links.
 
-This first component rollout is deliberately narrow. No network or runtime access.
+Uses only Git tree/diff and local CODE.md text; no network or runtime access.
 """
 from __future__ import annotations
 
@@ -40,6 +40,48 @@ def validate_dag_file_map(contents: str, current_dags: set[str]) -> tuple[list[s
     return sorted(current_dags - linked), sorted(linked - current_dags)
 
 
+
+APP_MAP_PATHS = (
+    "documents/components/synthea/CODE.md",
+    "documents/components/landing/CODE.md",
+    "documents/components/omop/CODE.md",
+    "documents/components/airflow/CODE.md",
+)
+APP_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./(apps/[^\s)#?]+)\)")
+
+
+def is_app_source(path: str) -> bool:
+    return path.startswith("apps/") and not path.endswith((".md", ".mdx", ".rst", ".txt"))
+
+
+def app_links(text: str) -> set[str]:
+    return {p for p in APP_LINK_RE.findall(text) if is_app_source(p)}
+
+
+def validate_app_code_maps(mapping: dict[str, str], current: set[str]) -> tuple[list[str], list[str], list[str]]:
+    owned: dict[str, list[str]] = {}
+    for doc, content in mapping.items():
+        for path in app_links(content):
+            owned.setdefault(path, []).append(doc)
+    return (
+        sorted(current - owned.keys()),
+        sorted(owned.keys() - current),
+        sorted(path for path, owners in owned.items() if len(owners) > 1),
+    )
+
+
+def git_file(ref: str, path: str) -> str:
+    result = subprocess.run(["git", "show", f"{ref}:{path}"], text=True, capture_output=True)
+    return result.stdout if result.returncode == 0 else ""
+
+
+def required_app_updates(changed_sources: set[str], before: dict[str, str], after: dict[str, str]) -> set[str]:
+    return {
+        doc for doc in APP_MAP_PATHS
+        if changed_sources.intersection(app_links(before.get(doc, "")) | app_links(after.get(doc, "")))
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True)
@@ -74,7 +116,37 @@ def main() -> int:
         print("CODE_MAP_GATE=FAIL; CODE.md source list does not match git tree")
         return 1
 
-    print("CODE_MAP_GATE=PASS; mapped_dag_files=" + str(len(current)))
+    app_sources = {
+        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "apps/")
+        if is_app_source(path)
+    }
+    after = {doc: Path(doc).read_text(encoding="utf-8") for doc in APP_MAP_PATHS}
+    before = {doc: git_file(args.base, doc) for doc in APP_MAP_PATHS}
+    missing, stale, duplicates = validate_app_code_maps(after, app_sources)
+    for path in missing:
+        print("CODE_MAP_APPS_MISSING_LINK=" + path)
+    for path in stale:
+        print("CODE_MAP_APPS_STALE_LINK=" + path)
+    for path in duplicates:
+        print("CODE_MAP_APPS_DUPLICATE_OWNER=" + path)
+    if missing or stale or duplicates:
+        print("CODE_MAP_GATE=FAIL; every apps source needs exactly one owning CODE.md")
+        return 1
+
+    changed_app_sources = {
+        path for path in git_lines("diff", "--no-renames", "--name-only",
+                                   "--diff-filter=AD", "--no-ext-diff", args.base, args.head)
+        if is_app_source(path)
+    }
+    required = required_app_updates(changed_app_sources, before, after)
+    for doc in sorted(required - changed):
+        print("CODE_MAP_APPS_REQUIRED_UPDATE_MISSING=" + doc)
+    if required - changed:
+        print("CODE_MAP_GATE=FAIL; edit owning CODE.md in same PR as apps source add/delete/move")
+        return 1
+
+    print("CODE_MAP_GATE=PASS; mapped_dag_files=" + str(len(current)) +
+          "; mapped_app_files=" + str(len(app_sources)))
     return 0
 
 

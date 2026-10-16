@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'apps/**'
+      - 'documents/components/**/CODE.md'
       - 'spark/**'
       - 'airflow/**'
       - 'sql/**'
@@ -29,7 +30,7 @@ jobs:
           persist-credentials: false
       - name: Unit tests for code naming guard
         run: python3 -m unittest discover -s tests/quality -p 'test_*.py' -v
-      - name: Require Airflow CODE.md synchronization and complete source links
+      - name: Require Airflow and apps CODE.md synchronization and source links
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}

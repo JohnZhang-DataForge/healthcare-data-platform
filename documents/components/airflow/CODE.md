@@ -32,6 +32,13 @@ source_sha: badd7b400212ca7302f9ccd216c074359720d5a9
 | [`task004_cdm_postgres_rollback_executor.py`](../../../airflow/dags/task004_cdm_postgres_rollback_executor.py) | 受控 PostgreSQL Rollback-only 验证执行器 |
 | [`task004_processing_pipeline.py`](../../../airflow/dags/task004_processing_pipeline.py) | 历史 Processing-first DAG；保留其证据与依赖兼容 |
 
+## 历史 TASK004 Airflow 只读核验（源码位于 apps）
+
+| 实际源码文件 | 作用及使用边界 |
+| --- | --- |
+| [`step04a_inspect_airflow_log_lineage.py`](../../../apps/task004/step04a_inspect_airflow_log_lineage.py) | 历史 Airflow DagRun 日志血缘只读检查 |
+| [`step04a_xcom_uri_readonly.py`](../../../apps/task004/step04a_xcom_uri_readonly.py) | 历史 Airflow XCom Processing URI 只读核验 |
+
 ## 平台探针
 
 | 源文件（直接链接） | 作用 / 使用范围 |
@@ -50,6 +57,6 @@ source_sha: badd7b400212ca7302f9ccd216c074359720d5a9
 
 **新增、删除或移动 `airflow/` 下的源文件，必须在同一个 PR 同步修改本 CODE.md**，并检查现有相对链接、测试入口和真实依赖。调整现有文件的职责、入口或重要依赖时也要同步更新；普通内部实现变更可核对后确认地图无需修改。
 
-CI 的 [Component Code Naming](../../../.github/workflows/code-component-naming-check.yml) 使用 [Code Map Sync Guard](../../../scripts/quality/check_component_code_map.py) 对 Airflow 文件增删/改名执行最小检查，且校验这里列出的 `airflow/dags/*.py` 文件清单与实际源码一致。其他组件会逐步按同一规范迁移；未创建 CODE.md 的组件不应被提前声称覆盖了自动校验。
+CI 的 [Component Code Naming](../../../.github/workflows/code-component-naming-check.yml) 使用 [Code Map Sync Guard](../../../scripts/quality/check_component_code_map.py) 对 Airflow 文件增删/改名执行最小检查，且校验这里列出的 `airflow/dags/*.py` 文件清单与实际源码一致。现在 `apps/` 的源代码由 Airflow、Synthea、Landing、OMOP 四份 CODE.md 分别拥有，并通过同一个 CI 自动检查；其它尚未建立 CODE.md 的目录不宣称覆盖。
 
 **运行限制**：DAG/Smoke 代码存在不等于允许运行。已完成 Batch 不能随意重放；Writer UNKNOWN 需先只读核实 Claim/Stage/Checkpoint。参见 [组件说明](README.md) 和 [最终 E2E 历史验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。

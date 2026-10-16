@@ -78,8 +78,8 @@ Each top-level directory contains its own README explaining scope, entry points 
 | Directory | Contents |
 | --- | --- |
 | [`.github/`](.github/workflows/) | GitHub Actions workflows and image publishing |
-| [`airflow/`](airflow/README.md) | DAGs, batch routing and Spark/Writer orchestration |
-| [`apps/`](apps/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
+| [`airflow/`](airflow/) · [CODE](documents/components/airflow/CODE.md) | DAGs, batch routing and Spark/Writer orchestration |
+| [`apps/`](apps/) · [Component CODE maps](documents/components/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
 | [`config/`](config/README.md) | Local configuration examples; no live secrets |
 | [`contracts/`](contracts/README.md) | Source and writer identity / schema contracts |
 | [`documents/`](documents/README.md) | New, incrementally verified project documentation; authoritative migration and AI rules | 
