@@ -21,7 +21,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 | **TASK005 — Condition** | **READY FOR STEP00 READ-ONLY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 从源合同、外键、Vocabulary、OMOP Schema 的只读预检开始；任何业务 COMMIT 须单独批准 |
 | **Platform Portal — Marquez / OpenLineage** | **前期实施/验收完成；下一阶段 Spark 接入方案讨论中** | 独立 PG14、Marquez Web/API、A3 Airflow 事件已真实验证；A4 隔离 Spark Smoke 有实际运行和部分读回证据 | **下一步如何接入真实 Spark 业务链路尚未确定**；Job↔Run 名称挂接和 Dataset I/O 完整血缘待处理，不直接启动新 Spark/共享资源 |
 | **Azure/Fabric — OMOP → OneLake** | **目标方案已敲定；IaC/Runner 工程及三个目标资源 Plan 完成；NO APPLY** | 已有 Azure Blob Landing / Workspace；Terraform 各组件资源定义、IAM 边界和 `Azure-Infra-TF` Workflow 在 Git；Lakehouse、Notebook、Pipeline 三个独立 Plan PASS | Exporter、真实 Notebook ETL、Pipeline 与 Notebook 绑定、Fabric 资源部署和数据 E2E 尚未讨论完成/实现；下一阶段先明确细节与验收门槛 |
-| **文档重建 / OpenSpec** | **STEP01–03 已合并；当前执行文档 STEP04** | 新 `documents/` 治理、开发流程及整体架构已经在 Main | STEP04 建统一状态；之后 STEP05/06 组件文档；OpenSpec 正式进入 Main 仍未进行 |
+| **文档重建 / OpenSpec** | **STEP01–05 已合并；本次进行 STEP06** | `documents/` 治理、开发规范、当前架构/项目状态及五个本地组件已在 Main | STEP06 补齐 Portal / Azure 组件；再进行 STEP07 运维和决策整理；OpenSpec 尚未进入 Main |
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
@@ -40,6 +40,8 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 ## 3. Portal：已实施到 A3 / A4 Smoke；后续 Spark 集成方式仍在讨论
 
+**现行组件知识入口**：[Platform Portal 组件说明](../components/platform-portal/README.md)。
+
 **已经落地/证实（历史验收）**
 
 - Marquez 0.51.1 API + 官方原生 Web，独立 `dw-postgre14` PostgreSQL14 元数据数据库；Web-only NodePort 30999 的内网服务/HTTP 已验收，不等于公网/个人电脑浏览器可访问。
@@ -56,6 +58,8 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 **证据**：[Portal Source](../../platform-portal/README.md) · [Marquez 部署验收](../../docs/platform-portal/validation.md) · [A3 Airflow Closeout](../../docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) · [A4 Spark Closeout](../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) · [多 Session 协调](../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。
 
 ## 4. Azure/Fabric：目标架构已确定；Terraform 资源定义与 Plan 完成，实际 ETL 未开始
+
+**现行组件知识入口**：[Azure/Fabric 组件说明](../components/azure-fabric/README.md)。
 
 ### 4.1 已确认的目标（设计定稿）
 
@@ -104,8 +108,9 @@ Local PostgreSQL OMOP (authoritative)
 | STEP01 — Agent 规则、文档治理、迁移入口 | **COMPLETE** — [PR #167](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/167) |
 | STEP02 — Healthcare / Self-Runner 开发流程与测试证据 | **COMPLETE** — [PR #168](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/168) |
 | STEP03 — Overall architecture（本地 + Portal + OneLake-first） | **COMPLETE** — [PR #169](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/169) |
-| **STEP04 — 当前项目统一状态** | **COMPLETE after this document PR merges to Main** |
-| STEP05 — 本地组件文档与新代码命名约束 | **COMPLETE once documentation/CI PR is merged; old code not yet renamed** |
+| **STEP04 — 当前项目统一状态** | **COMPLETE** — [PR #170](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/170) |
+| STEP05 — 本地组件文档与新代码命名约束 | **COMPLETE** — [PR #171](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/171)，旧代码未物理 Rename |
+| **STEP06 — Portal / Azure 专项文档** | **COMPLETE after current component-documentation PR is merged** |
 | STEP06 — Portal / Azure 专项模块文档 | **NOT STARTED** |
 | STEP07 / STEP08 — 运维与最后权威切换 | **NOT STARTED** |
 | STEP09 — 引入同仓 OpenSpec | **NOT ON MAIN / NOT ADOPTED** |
