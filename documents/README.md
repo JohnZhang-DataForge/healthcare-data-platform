@@ -12,6 +12,10 @@
 4. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
 5. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
 
+## 当前项目状态（STEP04 已审核）
+
+- **[PROJECT-STATUS.md](status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 只读预检、Portal Spark 方案讨论中、Azure OneLake-first 的 Terraform PLAN-ONLY 与未落地范围。
+
 ## 当前整体架构（STEP03 已审核）
 
 - [总体系统架构](architecture/SYSTEM-OVERVIEW.md) — 本地 Synthea/OMOP、Portal OpenLineage/Marquez、Azure OneLake-first 目标和验收边界。
