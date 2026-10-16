@@ -65,6 +65,8 @@ flowchart TB
 
 ## 3. 核心架构决策与被取代方案
 
+长期已确认的六项架构决策及实施边界统一维护在 [Architecture Decisions](decisions/README.md)；下面仅是跨子系统摘要，不另起一套决策权威。
+
 | 领域 | 现在采用的方向 | 已取代或推迟 |
 | --- | --- | --- |
 | Synthea → Airflow | 独立 Producer 发布 READY，Airflow 从 S3 消费并受控提交 | V4 中「Airflow DAG 负责生成 Synthea」属于已被取代的历史 Processing-first 模式 |

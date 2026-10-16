@@ -24,7 +24,7 @@
 | Development | `documents/development/` | Agent、PR/Self-Runner、测试、文档规则 |
 | Operations | `documents/operations/` | 部署、恢复、故障排查、安全操作 |
 | Status | `documents/status/` | 少量经证据核对的当前项目与组件状态 |
-| Decisions | `documents/decisions/` | 重大已批准设计决定、理由、影响和旧方案关系 |
+| Architecture Decisions | `documents/architecture/decisions/` | 重大已批准设计决定、理由、影响和旧方案关系 |
 | Evidence | 原 Closeout / GitHub Actions / 已核验的证据索引 | 真实历史验收，不盲目复制日志 |
 | OpenSpec（以后） | `openspec/specs/`、`openspec/changes/` | 可测试行为规范和未来 Change 的 Proposal/Design/Tasks |
 

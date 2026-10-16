@@ -37,7 +37,7 @@ source_sha: f5ee37697bed08fc35e288d84420bafd4b2d8e22
 | 架构/数据流 | [System Overview](../architecture/SYSTEM-OVERVIEW.md)、[Data Flow](../architecture/DATA-FLOW.md) | 旧 V4 和 Warehouse-first 为历史设计 |
 | 本地/Portal/Azure 组件 | [Components](../components/README.md) | 旧 `docs/platform-portal/`、`docs/azure-fabric/` 继续作为具体实测和历史 |
 | 安全操作与并行 Session | [Operations](../operations/README.md)、[Session Coordination](../development/SESSION-COORDINATION.md) | 旧 Runbook/协调规则仅历史技术参考，不能从 2026-10-13 HOLD 推断今天的运行状态 |
-| 重要技术决策 | [Architecture Decisions](../decisions/README.md) | 不建立按 Session 膨胀的 ADR/Handoff |
+| 重要技术决策 | [Architecture Decisions](../architecture/decisions/README.md) | 不建立按 Session 膨胀的 ADR/Handoff |
 | 需求变更和接力（即将采用） | [OpenSpec Readiness](OPENSPEC-READINESS.md)；正式初始化后才有 `openspec/` | 旧未合并 [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) 不是当前规范 |
 
 ## 开发可恢复性确认

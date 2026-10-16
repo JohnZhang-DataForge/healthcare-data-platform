@@ -23,7 +23,7 @@
 
 - [Operations Index](operations/README.md) — 有效运维知识入口和仍需按需查阅的旧技术经验。
 - [Safe Operations](operations/SAFE-OPERATIONS.md) — 共享 K8s/Spark/Airflow/PG/S3/Azure 操作的安全门槛。
-- [Architecture Decisions](decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
+- [Architecture Decisions](architecture/decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
 - [OpenSpec 迁移准备与 STEP08/09 Gate](migration/OPENSPEC-READINESS.md) — 只准备，不初始化；旧未合并 PR #164 需先纠正权威来源。
 
 ## Portal 与 Azure/Fabric 专项组件（STEP06 已审核）
