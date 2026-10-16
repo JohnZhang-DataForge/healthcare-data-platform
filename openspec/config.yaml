@@ -1,0 +1,32 @@
+# Healthcare Data Platform — OpenSpec project configuration
+# OpenSpec artifacts live beside application code; no external Store is configured.
+schema: spec-driven
+
+context: |
+  Project: Healthcare Data Platform (Spark, Airflow, Synthea, OMOP PostgreSQL,
+  Kubernetes, GitHub Actions/Self-Runner, Terraform/Azure).
+  Planning language: Simplified Chinese; keep technical identifiers and
+  requirement keywords in English when appropriate.
+  Current evidence and task state: consult docs/README.md and
+  docs/tasks/TASK-STATUS.md, prioritizing their latest authoritative headers.
+  Development workflow: docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md
+  and docs/skill/SKILL-cn.md. These operational safety constraints remain in force.
+  Existing docs/ are NOT automatically replaced, migrated, or treated as verified specs.
+  Specs describe desired, validated behavior; design.md describes implementation.
+  Self-Runner holds test evidence. A checked task does not prove a deploy or test PASS.
+  Work on feature branches/PRs; never auto-merge or mutate infrastructure/data
+  without the required explicit authorization.
+
+rules:
+  proposal:
+    - Explain motivation, current behavior, affected areas, risks and alternatives.
+    - Separate verified current implementation from proposed future behavior.
+  specs:
+    - Specify observable requirements and testable scenarios.
+    - Preserve idempotency, batch isolation and safety contracts where applicable.
+  design:
+    - Identify affected code paths, interfaces, related docs and migration/rollback risks.
+    - Record why the chosen approach supersedes earlier design decisions.
+  tasks:
+    - Use small independently verifiable steps with evidence and completion criteria.
+    - Only mark a step complete after checking corresponding code SHA and real test evidence.
