@@ -117,7 +117,7 @@ Local PostgreSQL OMOP (authoritative)
 
 截至 STEP08 终审源代码核对，`openspec/` **未出现在 Main**。GitHub 上另有尚未合并的 OpenSpec bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164)，它不能当成已采用的规范，也不在此次文档 PR 范围。当前 STEP01–08 的文档整理已完成（PR #174 合并后）；下一阶段才正式引入 OpenSpec，必须通过 CLI/配置真实验证。
 
-**OpenSpec 迁移准备**：[Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../decisions/README.md) · [Readiness Checklist](../migration/OPENSPEC-READINESS.md)。本轮没有初始化 OpenSpec。
+**OpenSpec 迁移准备**：[Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../architecture/decisions/README.md) · [Readiness Checklist](../migration/OPENSPEC-READINESS.md)。本轮没有初始化 OpenSpec。
 
 ## 6. 这份状态文档如何更新
 
