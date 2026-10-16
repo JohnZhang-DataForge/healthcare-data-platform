@@ -18,22 +18,24 @@
 
 | 类型 | 目标位置 | 权威内容 |
 | --- | --- | --- |
-| 入口、迁移表 | `documents/README.md`、`documents/migration/` | 模块导航、迁移状态 |
+| 入口、迁移表 | `documents/README.md`、`documents/engineering/migration/` | 模块导航、迁移状态 |
 | Architecture | `documents/architecture/` | 当前系统结构、数据流、设计与部署差异 |
-| Components | `documents/components/<component>/` | 代码路径、依赖、集成方式、实现范围 |
-| Development | `documents/development/` | Agent、PR/Self-Runner、测试、文档规则 |
-| Operations | `documents/operations/` | 部署、恢复、故障排查、安全操作 |
-| Status | `documents/status/` | 少量经证据核对的当前项目与组件状态 |
+| Systems / Data Platform | `documents/systems/data-platform/<component>/` | 代码路径、依赖、集成方式、实现范围 |
+| Engineering / Development | `documents/engineering/development/` | Agent、PR/Self-Runner、测试、文档规则 |
+| Engineering / Operations | `documents/engineering/operations/` | 部署、恢复、故障排查、安全操作 |
+| Engineering / Status | `documents/engineering/status/` | 少量经证据核对的当前项目与组件状态 |
 | Architecture Decisions | `documents/architecture/decisions/` | 重大已批准设计决定、理由、影响和旧方案关系 |
 | Evidence | 原 Closeout / GitHub Actions / 已核验的证据索引 | 真实历史验收，不盲目复制日志 |
 | OpenSpec（以后） | `openspec/specs/`、`openspec/changes/` | 可测试行为规范和未来 Change 的 Proposal/Design/Tasks |
+
+Azure/Fabric 与 Platform Portal 仍在开发中，当前权威说明保留在 `documents/components/azure-fabric/`、`documents/components/platform-portal/`，待后续小 PR 单独切换。旧 Data Platform、Development、Operations、Migration、Status 副本在最终链接/CI 审计前保留，不能提前删除。
 
 现有源码中的 `contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
 
 ### Component README / CODE 双入口约定
 
-- `documents/components/<component>/README.md`：组件职责、主要数据流、架构边界、当前能力范围和其它权威文档导航；避免在这里重复完整的源码表。
-- `documents/components/<component>/CODE.md`：**唯一组件级源码导航入口**，直接链接实际源文件/目录、主要测试、Contract 和构建/部署入口；不复制 CURRENT/NEXT、架构全文或 Runbook。跨组件源码按功能所有权分别登记，不机械复制每个代码目录的 README。
+- `documents/systems/data-platform/<component>/README.md`：组件职责、主要数据流、架构边界、当前能力范围和其它权威文档导航；避免在这里重复完整的源码表。
+- `documents/systems/data-platform/<component>/CODE.md`：**唯一组件级源码导航入口**，直接链接实际源文件/目录、主要测试、Contract 和构建/部署入口；不复制 CURRENT/NEXT、架构全文或 Runbook。跨组件源码按功能所有权分别登记，不机械复制每个代码目录的 README。
 - 原代码目录 README 若只有导航或已有信息，在核对后迁移独有知识、修复所有反向链接、通过路径检查即可逐步删除；不改源码、Runtime、冻结契约或历史证据。
 - **必须同步**：新增、删除、改名或移动组件源码文件时，**同一个 PR 必须修改对应 CODE.md**，核对导航链接、测试入口和依赖；现有文件的入口/职责/关键依赖改变也必须检查并更新 CODE.md。普通代码内部修改不要求无意义改动，但 Reviewer 需要确认导航未过期。
 - **Contract / SQL**：机器可读 Contract、DDL、DML 和只读 SQL 仍是原目录的事实来源，CODE.md 只提供组件所有权导航。SQL 源码地图必须区分只读核验、Rollback 演练、DDL 和 DML；任何导航条目均不代表执行许可。
@@ -91,7 +93,7 @@ evidence: []
 - 不随意移动/删除 `docs/tasks/` 原始 Closeout、冻结 Contract、Runbook。需要清退前先确认替代当前内容和可追溯位置。
 - 历史文件的正文原则上保持原貌；新解释放在 ACTIVE 文档或迁移说明，修复过期链接时按文件用途审查。
 - 本次 Document Rebuild PR 默认 **docs-only、无 K8s/PG/S3/Azure/GitHub Workflow 的运行副作用**。需要 Runtime 验证单独提出并授权。
-- 后续加入 OpenSpec 时，不复制 `documents/components/` 中所有实现说明到 Spec：**Specs 只放可验证行为要求，Docs 放架构/部署/运维知识**。
+- 后续加入 OpenSpec 时，不复制 `documents/systems/data-platform/` 中所有实现说明到 Spec：**Specs 只放可验证行为要求，Docs 放架构/部署/运维知识**。
 
 ## 7. PR 最小验收
 

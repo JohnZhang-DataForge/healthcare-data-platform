@@ -18,7 +18,7 @@ class CodeMapSyncTests(unittest.TestCase):
         self.assertFalse(policy.is_guarded_source("spark/apps/condition/code.py"))
 
     def test_all_dags_must_be_linked(self):
-        text = "[one](../../../airflow/dags/one.py)\n[two](../../../airflow/dags/two.py)\n"
+        text = "[one](../../../../airflow/dags/one.py)\n[two](../../../../airflow/dags/two.py)\n"
         missing, obsolete = policy.validate_dag_file_map(
             text, {"airflow/dags/one.py", "airflow/dags/three.py"})
         self.assertEqual(missing, ["airflow/dags/three.py"])
@@ -26,7 +26,7 @@ class CodeMapSyncTests(unittest.TestCase):
 
     def test_exact_complete_links_pass(self):
         paths = {"airflow/dags/one.py", "airflow/dags/two.py"}
-        content = "\n".join(f"[source](../../../{p})" for p in sorted(paths))
+        content = "\n".join(f"[source](../../../../{p})" for p in sorted(paths))
         self.assertEqual(policy.validate_dag_file_map(content, paths), ([], []))
 
 
@@ -39,9 +39,9 @@ class CodeMapSyncTests(unittest.TestCase):
 
     def test_app_catalog_missing_stale_and_duplicate(self):
         docs = {
-            policy.APP_MAP_PATHS[0]: "[a](../../../apps/synthea/a.py)",
-            policy.APP_MAP_PATHS[1]: "[b](../../../apps/landing_claim/b.py)\n[dup](../../../apps/synthea/a.py)",
-            policy.APP_MAP_PATHS[2]: "[stale](../../../apps/omop_writer/old.py)",
+            policy.APP_MAP_PATHS[0]: "[a](../../../../apps/synthea/a.py)",
+            policy.APP_MAP_PATHS[1]: "[b](../../../../apps/landing_claim/b.py)\n[dup](../../../../apps/synthea/a.py)",
+            policy.APP_MAP_PATHS[2]: "[stale](../../../../apps/omop_writer/old.py)",
             policy.APP_MAP_PATHS[3]: "",
         }
         missing, stale, duplicated = policy.validate_app_code_maps(
@@ -53,8 +53,8 @@ class CodeMapSyncTests(unittest.TestCase):
 
     def test_apps_same_pr_owner_updates_for_add_delete(self):
         s, l, o, a = policy.APP_MAP_PATHS
-        old = {s: "[old](../../../apps/synthea/old.py)", l: "", o: "", a: ""}
-        new = {s: "", l: "", o: "[new](../../../apps/omop_writer/new.py)", a: ""}
+        old = {s: "[old](../../../../apps/synthea/old.py)", l: "", o: "", a: ""}
+        new = {s: "", l: "", o: "[new](../../../../apps/omop_writer/new.py)", a: ""}
         required = policy.required_app_updates(
             {"apps/synthea/old.py", "apps/omop_writer/new.py"}, old, new
         )
@@ -71,9 +71,9 @@ class CodeMapSyncTests(unittest.TestCase):
 
     def test_spark_map_missing_stale_and_duplicate(self):
         content = "\n".join([
-            "[one](../../../spark/apps/visit/a.py)",
-            "[again](../../../spark/apps/visit/a.py)",
-            "[old](../../../spark/contracts/canonical/old.json)",
+            "[one](../../../../spark/apps/visit/a.py)",
+            "[again](../../../../spark/apps/visit/a.py)",
+            "[old](../../../../spark/contracts/canonical/old.json)",
         ])
         missing, stale, dup = policy.validate_spark_code_map(
             content, {"spark/apps/visit/a.py", "spark/manifests/common/new.yaml.tpl"}
@@ -85,7 +85,7 @@ class CodeMapSyncTests(unittest.TestCase):
     def test_spark_map_complete_sources(self):
         paths = {"spark/apps/visit/main.py", "spark/contracts/omop/visit.json",
                  "spark/manifests/common/job.yaml.tpl"}
-        text = "\n".join(f"[source](../../../{p})" for p in sorted(paths))
+        text = "\n".join(f"[source](../../../../{p})" for p in sorted(paths))
         self.assertEqual(policy.validate_spark_code_map(text, paths), ([], [], []))
 
 
@@ -98,11 +98,11 @@ class CodeMapSyncTests(unittest.TestCase):
     def test_contract_sql_ownership_missing_stale_duplicates(self):
         syn, landing, omop = policy.CONTRACT_SQL_MAP_PATHS
         data = {
-            syn: "| [a](../../../contracts/synthea/a.json) | version |",
-            landing: ("| [dup](../../../contracts/synthea/a.json) | dup |"
-                      "\n| [old](../../../sql/landing_claim/old.sql) | old |"),
-            omop: ("[cross](../../../contracts/synthea/a.json)\n"
-                   "| [writer](../../../sql/task002/person.sql) | owner |"),
+            syn: "| [a](../../../../contracts/synthea/a.json) | version |",
+            landing: ("| [dup](../../../../contracts/synthea/a.json) | dup |"
+                      "\n| [old](../../../../sql/landing_claim/old.sql) | old |"),
+            omop: ("[cross](../../../../contracts/synthea/a.json)\n"
+                   "| [writer](../../../../sql/task002/person.sql) | owner |"),
         }
         missing, stale, duplicate = policy.validate_contract_sql_maps(
             data, {"contracts/synthea/a.json", "sql/task002/person.sql",
@@ -114,8 +114,8 @@ class CodeMapSyncTests(unittest.TestCase):
 
     def test_contract_sql_ownership_ignores_narrative_crossrefs(self):
         contents = (
-            "[cross](../../../contracts/synthea/a.json)\n"
-            "| [owned](../../../contracts/synthea/a.json) | source |"
+            "[cross](../../../../contracts/synthea/a.json)\n"
+            "| [owned](../../../../contracts/synthea/a.json) | source |"
         )
         self.assertEqual(
             policy.contract_sql_owned_links(contents), {"contracts/synthea/a.json"}
@@ -123,10 +123,10 @@ class CodeMapSyncTests(unittest.TestCase):
 
     def test_contract_sql_move_requires_old_and_new_owner_updates(self):
         syn, landing, omop = policy.CONTRACT_SQL_MAP_PATHS
-        old = {syn: "| [old](../../../contracts/synthea/old.json) | owner |",
+        old = {syn: "| [old](../../../../contracts/synthea/old.json) | owner |",
                landing: "", omop: ""}
         new = {syn: "", landing: "",
-               omop: "| [new](../../../contracts/omop-writer/new.json) | owner |"}
+               omop: "| [new](../../../../contracts/omop-writer/new.json) | owner |"}
         self.assertEqual(
             policy.required_contract_sql_updates(
                 {"contracts/synthea/old.json", "contracts/omop-writer/new.json"},
@@ -148,10 +148,10 @@ class CodeMapSyncTests(unittest.TestCase):
     def test_image_k8s_missing_stale_duplicate_owners(self):
         syn, landing, omop, airflow = policy.IMAGE_K8S_MAP_PATHS
         docs = {
-            syn: "| [gen](../../../images/synthea/Dockerfile) | generator |",
-            landing: "| [dup](../../../images/synthea/Dockerfile) | overlapping |",
-            omop: "| [old](../../../images/omop/old.sh) | historical |",
-            airflow: "[ref](../../../images/synthea/Dockerfile)",
+            syn: "| [gen](../../../../images/synthea/Dockerfile) | generator |",
+            landing: "| [dup](../../../../images/synthea/Dockerfile) | overlapping |",
+            omop: "| [old](../../../../images/omop/old.sh) | historical |",
+            airflow: "[ref](../../../../images/synthea/Dockerfile)",
         }
         missing, stale, duplicate = policy.validate_image_k8s_maps(
             docs,
@@ -163,8 +163,8 @@ class CodeMapSyncTests(unittest.TestCase):
 
     def test_image_k8s_prose_reference_is_not_a_second_owner(self):
         text = (
-            "[cross](../../../images/synthea/Dockerfile)\n"
-            "| [owned](../../../images/synthea/Dockerfile) | build recipe |"
+            "[cross](../../../../images/synthea/Dockerfile)\n"
+            "| [owned](../../../../images/synthea/Dockerfile) | build recipe |"
         )
         self.assertEqual(
             policy.image_k8s_owned_links(text), {"images/synthea/Dockerfile"}
@@ -173,12 +173,12 @@ class CodeMapSyncTests(unittest.TestCase):
     def test_image_k8s_moves_require_both_owner_maps(self):
         syn, landing, omop, airflow = policy.IMAGE_K8S_MAP_PATHS
         before = {
-            syn: "| [old](../../../images/synthea/old.Dockerfile) | old |",
+            syn: "| [old](../../../../images/synthea/old.Dockerfile) | old |",
             landing: "", omop: "", airflow: "",
         }
         after = {
             syn: "", landing: "",
-            omop: "| [new](../../../images/new-only-omop-writer/Dockerfile) | new |",
+            omop: "| [new](../../../../images/new-only-omop-writer/Dockerfile) | new |",
             airflow: "",
         }
         changed = {
@@ -201,12 +201,12 @@ class CodeMapSyncTests(unittest.TestCase):
     def test_scripts_config_ownership_missing_stale_duplicate(self):
         syn, landing, spark, omop, airflow, dev = policy.SCRIPT_CONFIG_MAP_PATHS
         docs = {
-            syn: "| [a](../../../scripts/task004/a.sh) | historic |",
-            landing: "| [again](../../../scripts/task004/a.sh) | duplicate |",
+            syn: "| [a](../../../../scripts/task004/a.sh) | historic |",
+            landing: "| [again](../../../../scripts/task004/a.sh) | duplicate |",
             spark: "", omop: "", airflow: "",
-            dev: ("[incidental](../../scripts/task004/a.sh)\n"
-                  "| [example](../../config/local.env.example) | config |"
-                  "\n| [stale](../../scripts/quality/removed.py) | old |"),
+            dev: ("[incidental](../../../scripts/task004/a.sh)\n"
+                  "| [example](../../../config/local.env.example) | config |"
+                  "\n| [stale](../../../scripts/quality/removed.py) | old |"),
         }
         missing, stale, duplicate = policy.validate_script_config_maps(
             docs,
@@ -221,8 +221,8 @@ class CodeMapSyncTests(unittest.TestCase):
         syn, landing, spark, omop, airflow, dev = policy.SCRIPT_CONFIG_MAP_PATHS
         old = {p: "" for p in policy.SCRIPT_CONFIG_MAP_PATHS}
         new = dict(old)
-        old[syn] = "| [old](../../../scripts/synthea/old.sh) | old |"
-        new[landing] = "| [new](../../../scripts/landing/new.sh) | new |"
+        old[syn] = "| [old](../../../../scripts/synthea/old.sh) | old |"
+        new[landing] = "| [new](../../../../scripts/landing/new.sh) | new |"
         needed = policy.required_script_config_updates(
             {"scripts/synthea/old.sh", "scripts/landing/new.sh"}, old, new
         )

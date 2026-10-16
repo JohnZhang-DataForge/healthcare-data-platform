@@ -1,6 +1,6 @@
 # Systems — Subsystem documentation
 
-> **Migration stage: PREPARATION.** The new paths are staged copies while the repository navigational entry points, governance and CODE-map CI still refer to the original documentation locations. Until those references have been migrated and validated, the original documents remain authoritative. No application source or runtime deployment is moved by this step.
+> **Migration stage: NEW SOURCE MAPS.** Data Platform component docs and source maps are the destination for navigation and CODE-map CI. Old documentation copies remain temporarily for cleanup and rollback. Azure/Fabric and Platform Portal continue to use their existing paths until separately migrated; no runtime deployment is implied.
 
 ## Data Platform
 

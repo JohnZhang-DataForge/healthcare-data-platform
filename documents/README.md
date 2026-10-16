@@ -10,7 +10,7 @@
 - [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 与 Platform Portal 仍在开发，暂保留旧文档目录。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
-**迁移边界**：本轮开始将此入口的链接指向已复制的新目录。旧目录仍保留；CODE.md 静态检查、其它文档及 Agent 规则尚未全部切换，不能仅凭本页判断旧文档已失效。等全仓引用与 CI 均切换并验证后，才删除确认无用的旧副本。
+**迁移边界**：本轮开始将此入口的链接指向已复制的新目录。旧目录仍保留；CODE.md 静态检查与 Agent 规则由独立 CI 切换 PR 同步管理；其它文档可能尚未全部切换，不能仅凭本页判断旧文档已失效。等全仓引用与 CI 均切换并验证后，才删除确认无用的旧副本。
 
 ## Agent 必读入口
 
