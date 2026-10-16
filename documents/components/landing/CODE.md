@@ -66,7 +66,17 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 **执行区别**：Ledger/Fence Deploy 是能改变数据库 Schema 或权限的 DDL，绝不视为只读检查。Rollback-proof 虽在事务内回滚，也需要确认执行主体、对象状态和完整的审查与授权。Synthea READY 发布 Contract 属于 [Synthea CODE](../synthea/CODE.md)，Landing 只引用不复制权威协议。
 
+## Landing 容器镜像与构建边界
+
+| 源文件（直接链接） | 用途与运行边界 |
+| --- | --- |
+| [`Dockerfile`](../../../images/landing-claim-runtime/Dockerfile) | Landing Claim/Lease/Fencing 容器：复制 Claim Python，使用 psycopg/boto3；含 Claim 权限边界 |
+| [`Dockerfile`](../../../images/landing-discovery-runtime/Dockerfile) | 只读 S3 READY Inventory 扫描容器：复制 Discovery、Resolver 和 v2 合同 |
+| [`Dockerfile`](../../../images/landing-processing-runtime/Dockerfile) | 在历史 TASK004 控制镜像 Digest 上叠加 NEW_ONLY v2 Resolver/Contract；不授予 Claim/COMMIT |
+
+**镜像兼容性**：`landing-processing-runtime` 继承固定 TASK004 控制面 Digest，只叠加新的 v2 Landing Resolver 与 JSON Contract；切勿因为 Builder 成功而假定运行中消费者已经升级，或把 `claim=disabled` 镜像等同于获得 Claim/Writer 权限。
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/` 或 `kubernetes/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 

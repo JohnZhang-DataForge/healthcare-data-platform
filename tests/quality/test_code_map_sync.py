@@ -1,4 +1,4 @@
-"""Offline tests for component CODE.md source synchronization and ownership."""
+"""Offline tests for source map ownership across workload build, deployment and data code."""
 import importlib.util
 from pathlib import Path
 import unittest
@@ -135,6 +135,60 @@ class CodeMapSyncTests(unittest.TestCase):
             {syn, omop},
         )
         self.assertEqual(policy.required_contract_sql_updates(set(), old, new), set())
+
+
+    def test_image_k8s_source_filter(self):
+        self.assertTrue(policy.is_image_k8s_source("images/landing-claim/Dockerfile"))
+        self.assertTrue(policy.is_image_k8s_source("images/synthea/entrypoint.sh"))
+        self.assertTrue(policy.is_image_k8s_source("kubernetes/manifests/claim/job.yaml.tpl"))
+        self.assertTrue(policy.is_image_k8s_source("kubernetes/manifests/synthea/pvc.yaml"))
+        self.assertFalse(policy.is_image_k8s_source("images/README.md"))
+        self.assertFalse(policy.is_image_k8s_source("spark/manifests/visit/job.yaml.tpl"))
+
+    def test_image_k8s_missing_stale_duplicate_owners(self):
+        syn, landing, omop, airflow = policy.IMAGE_K8S_MAP_PATHS
+        docs = {
+            syn: "| [gen](../../../images/synthea/Dockerfile) | generator |",
+            landing: "| [dup](../../../images/synthea/Dockerfile) | overlapping |",
+            omop: "| [old](../../../images/omop/old.sh) | historical |",
+            airflow: "[ref](../../../images/synthea/Dockerfile)",
+        }
+        missing, stale, duplicate = policy.validate_image_k8s_maps(
+            docs,
+            {"images/synthea/Dockerfile", "kubernetes/manifests/task004/rbac.yaml"},
+        )
+        self.assertEqual(missing, ["kubernetes/manifests/task004/rbac.yaml"])
+        self.assertEqual(stale, ["images/omop/old.sh"])
+        self.assertEqual(duplicate, ["images/synthea/Dockerfile"])
+
+    def test_image_k8s_prose_reference_is_not_a_second_owner(self):
+        text = (
+            "[cross](../../../images/synthea/Dockerfile)\n"
+            "| [owned](../../../images/synthea/Dockerfile) | build recipe |"
+        )
+        self.assertEqual(
+            policy.image_k8s_owned_links(text), {"images/synthea/Dockerfile"}
+        )
+
+    def test_image_k8s_moves_require_both_owner_maps(self):
+        syn, landing, omop, airflow = policy.IMAGE_K8S_MAP_PATHS
+        before = {
+            syn: "| [old](../../../images/synthea/old.Dockerfile) | old |",
+            landing: "", omop: "", airflow: "",
+        }
+        after = {
+            syn: "", landing: "",
+            omop: "| [new](../../../images/new-only-omop-writer/Dockerfile) | new |",
+            airflow: "",
+        }
+        changed = {
+            "images/synthea/old.Dockerfile",
+            "images/new-only-omop-writer/Dockerfile",
+        }
+        self.assertEqual(
+            policy.required_image_k8s_updates(changed, before, after), {syn, omop}
+        )
+        self.assertEqual(policy.required_image_k8s_updates(set(), before, after), set())
 
 if __name__ == "__main__":
     unittest.main()

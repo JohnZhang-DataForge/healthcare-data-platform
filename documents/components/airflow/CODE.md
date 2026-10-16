@@ -53,9 +53,26 @@ source_sha: badd7b400212ca7302f9ccd216c074359720d5a9
 - **契约**：[NEW_ONLY Batch identity](../../../contracts/synthea/producer-batch-identity-v1.json)、[Writer identity](../../../contracts/omop-writer/writer-batch-identity-v1.json)。
 - **镜像依赖**：[Writer Dockerfile](../../../images/new-only-omop-writer/Dockerfile)、[Legacy 重构约束](../LEGACY-CODE-REFACTOR-PLAN.md)。历史 `task004_cdm_*.py` 的 Docker COPY、Import、镜像 Digest/数据库标识均需要迁移评审；README 整理不改变它们。
 
+## 历史控制面镜像（Airflow 调度及旧 TASK004）
+
+| 源文件（直接链接） | 用途与运行边界 |
+| --- | --- |
+| [`Dockerfile`](../../../images/task004-runtime/Dockerfile) | 历史 Airflow/Spark 控制面容器：kubectl、生成/处理脚本与跨 namespace 编排，不是 Spark 执行器 |
+| [`entrypoint.sh`](../../../images/task004-runtime/entrypoint.sh) | 历史控制面 CLI：resolve / generate-publish / person / visit / reconcile；调用固定旧脚本 |
+
+## 历史控制面与跨 Namespace RBAC
+
+| 源文件（直接链接） | 用途与运行边界 |
+| --- | --- |
+| [`airflow-task004-control-runtime-rbac.yaml`](../../../kubernetes/manifests/task004/airflow-task004-control-runtime-rbac.yaml) | 历史 dw-spark Airflow Pod Launcher Role/Binding：跨 namespace Scheduler Pod 权限 |
+| [`control-runtime-rbac.yaml`](../../../kubernetes/manifests/task004/control-runtime-rbac.yaml) | 历史 dw-spark 控制面 ServiceAccount/Role/Binding：SparkApplication、ConfigMap、Pods 权限 |
+| [`control-runtime-synthea-rbac.yaml`](../../../kubernetes/manifests/task004/control-runtime-synthea-rbac.yaml) | 历史控制面跨 dw-synthea 的 Job/ConfigMap/Secret RBAC；不等于当前授权 |
+
+**RBAC 安全**：这些 Role/Binding 是旧控制面真实权限声明，包括 Pod 执行、SparkApplication/ConfigMap 变更和跨 `dw-synthea` Secret 读取。不能作为新 Agent 的默认运行授权，也不能仅凭文件存在断言当前集群已部署。修改 RBAC 或重放历史 Job 必须单独审查权限、现网 Namespace、会话冲突与部署窗口。
+
 ## CODE.md 同步规则（本组件）
 
-**新增、删除或移动 `airflow/` 下的源文件，必须在同一个 PR 同步修改本 CODE.md**，并检查现有相对链接、测试入口和真实依赖。调整现有文件的职责、入口或重要依赖时也要同步更新；普通内部实现变更可核对后确认地图无需修改。
+**新增、删除、移动或重命名本组件负责的 `airflow/`、`apps/`、`images/`、`kubernetes/` 下的源文件，必须在同一个 PR 同步修改本 CODE.md**，并检查现有相对链接、测试入口和真实依赖。调整现有文件的职责、入口或重要依赖时也要同步更新；普通内部实现变更可核对后确认地图无需修改。
 
 CI 的 [Component Code Naming](../../../.github/workflows/code-component-naming-check.yml) 使用 [Code Map Sync Guard](../../../scripts/quality/check_component_code_map.py) 对 Airflow 文件增删/改名执行最小检查，且校验这里列出的 `airflow/dags/*.py` 文件清单与实际源码一致。现在 `apps/` 的源代码由 Airflow、Synthea、Landing、OMOP 四份 CODE.md 分别拥有，并通过同一个 CI 自动检查；其它尚未建立 CODE.md 的目录不宣称覆盖。
 
