@@ -1,6 +1,6 @@
 # Engineering — Development, operations and governance
 
-> **Migration stage: PREPARATION.** The pages linked below are staged copies. During the gradual cutover, the existing `documents/development/`, `documents/operations/`, `documents/migration/` and `documents/status/` are preserved as the current entry points until links, CODE-map checks and governance are switched and verified. No business code or deployed resources are changed.
+> **Migration stage: NEW DOCUMENTATION PATHS.** Engineering governance, operations, status and development-tool CODE map now have new canonical locations. Older copies remain temporarily for reference and rollback while links are audited. This is not a deployment or runtime change.
 
 - [Development](development/DEVELOPMENT-WORKFLOW.md) — agent rules, workflow, testing, naming, documentation governance and source maps for shared tooling.
 - [Legacy code refactor plan](development/LEGACY-CODE-REFACTOR-PLAN.md) — gradual code modernization, separate from the documentation migration.

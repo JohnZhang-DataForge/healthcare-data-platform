@@ -11,7 +11,7 @@ import re
 import subprocess
 
 AIRFLOW_PREFIX = "airflow/"
-CODE_MAP = "documents/components/airflow/CODE.md"
+CODE_MAP = "documents/systems/data-platform/airflow/CODE.md"
 DAG_PREFIX = "airflow/dags/"
 SOURCE_SUFFIXES = {".py", ".sh", ".yaml", ".yml", ".json", ".toml"}
 
@@ -35,19 +35,19 @@ def added_removed_sources(base: str, head: str) -> list[str]:
 def validate_dag_file_map(contents: str, current_dags: set[str]) -> tuple[list[str], list[str]]:
     """All tracked Airflow DAG Python files must be linked directly and none be stale."""
     linked = set(re.findall(
-        r"\]\(\.\./\.\./\.\./(airflow/dags/[^\s)#?]+\.py)\)", contents
+        r"\]\(\.\./\.\./\.\./\.\./(airflow/dags/[^\s)#?]+\.py)\)", contents
     ))
     return sorted(current_dags - linked), sorted(linked - current_dags)
 
 
 
 APP_MAP_PATHS = (
-    "documents/components/synthea/CODE.md",
-    "documents/components/landing/CODE.md",
-    "documents/components/omop/CODE.md",
-    "documents/components/airflow/CODE.md",
+    "documents/systems/data-platform/synthea/CODE.md",
+    "documents/systems/data-platform/landing/CODE.md",
+    "documents/systems/data-platform/omop/CODE.md",
+    "documents/systems/data-platform/airflow/CODE.md",
 )
-APP_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./(apps/[^\s)#?]+)\)")
+APP_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./(apps/[^\s)#?]+)\)")
 
 
 def is_app_source(path: str) -> bool:
@@ -83,8 +83,8 @@ def required_app_updates(changed_sources: set[str], before: dict[str, str], afte
 
 
 
-SPARK_MAP = "documents/components/spark/CODE.md"
-SPARK_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./(spark/[^\s)#?]+)\)")
+SPARK_MAP = "documents/systems/data-platform/spark/CODE.md"
+SPARK_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./(spark/[^\s)#?]+)\)")
 
 
 def is_spark_source(path: str) -> bool:
@@ -100,13 +100,13 @@ def validate_spark_code_map(contents: str, actual: set[str]) -> tuple[list[str],
 
 
 CONTRACT_SQL_MAP_PATHS = (
-    "documents/components/synthea/CODE.md",
-    "documents/components/landing/CODE.md",
-    "documents/components/omop/CODE.md",
+    "documents/systems/data-platform/synthea/CODE.md",
+    "documents/systems/data-platform/landing/CODE.md",
+    "documents/systems/data-platform/omop/CODE.md",
 )
 # Inventory table rows declare ownership; cross-component prose links do not.
 CONTRACT_SQL_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./((?:contracts|sql)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:contracts|sql)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
@@ -149,14 +149,14 @@ def required_contract_sql_updates(
 
 
 IMAGE_K8S_MAP_PATHS = (
-    "documents/components/synthea/CODE.md",
-    "documents/components/landing/CODE.md",
-    "documents/components/omop/CODE.md",
-    "documents/components/airflow/CODE.md",
+    "documents/systems/data-platform/synthea/CODE.md",
+    "documents/systems/data-platform/landing/CODE.md",
+    "documents/systems/data-platform/omop/CODE.md",
+    "documents/systems/data-platform/airflow/CODE.md",
 )
 # Only source inventory table rows declare an owner, not incidental prose links.
 IMAGE_K8S_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./((?:images|kubernetes)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:images|kubernetes)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
@@ -199,17 +199,17 @@ def required_image_k8s_updates(
 
 
 SCRIPT_CONFIG_MAP_PATHS = (
-    "documents/components/synthea/CODE.md",
-    "documents/components/landing/CODE.md",
-    "documents/components/spark/CODE.md",
-    "documents/components/omop/CODE.md",
-    "documents/components/airflow/CODE.md",
-    "documents/development/CODE.md",
+    "documents/systems/data-platform/synthea/CODE.md",
+    "documents/systems/data-platform/landing/CODE.md",
+    "documents/systems/data-platform/spark/CODE.md",
+    "documents/systems/data-platform/omop/CODE.md",
+    "documents/systems/data-platform/airflow/CODE.md",
+    "documents/engineering/development/CODE.md",
 )
 # Inventory table rows alone declare ownership. Developer CODE.md is one directory
 # shallower than components: accept exactly ../../ or ../../../ source links.
 SCRIPT_CONFIG_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\((?:\.\./){2,3}((?:scripts|config)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}((?:scripts|config)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 

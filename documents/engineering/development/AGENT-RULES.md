@@ -6,7 +6,7 @@
 
 ## 1. 开工前必须确认
 
-1. 读取 `documents/README.md`、本规则、`documents/migration/MIGRATION-STATUS.md`，确定模块文档是否已迁移。
+1. 读取 `documents/README.md`、本规则、`documents/engineering/migration/MIGRATION-STATUS.md`，确定模块文档是否已迁移。
 2. 查询当前 `main` **准确完整 40 位 SHA**，确认本轮工作范围、已有 PR/未合并代码、相关模块及冻结 Contract。
 3. 只读查看实际代码/配置、已合并 PR、测试和最终验收；旧 Handoff 的 CURRENT/NEXT 只能代表其记录时点。
 4. 明确改动类别：**仅文档 / 代码 / Workflow / Terraform plan / 运行环境操作**；逐项列明副作用和是否需要授权。
@@ -27,7 +27,7 @@
 - **开发进度可以称 TASK/STEP，但新代码必须按组件/功能命名。** Python、DAG ID、Spark、SQL、镜像、K8s、正式 Shell、Workflow、Tests 的新增路径与公开标识符不允许 `taskNNN/stepNNN`。具体以 [Code Organization & Naming](CODE-ORGANIZATION-AND-NAMING.md) 为准。
 - 现有 Task-named 代码及数据库/Contract/镜像持久标识**不批量重命名**；先有依赖清单、兼容回归与必要 Runtime 授权，再逐模块切换。
 - CI 自动检查新建代码路径；代码内部的新标识符与职责归属由 Agent/Reviewer 复核。Task ID 只属于 PR/开发计划/历史验收。
-- **源码地图强制同步**：凡组件源码文件新增、删除、移动或改名，必须在同一 PR 更新其 `documents/components/<component>/CODE.md`；重要入口、职责、依赖变化也要审查并同步。已落地 [Airflow CODE](../../systems/data-platform/airflow/CODE.md)，并将混合 `apps/` 源码按唯一功能归属映射到 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md) 及 Airflow CODE；CI 检查新增/删除/改名、唯一所有者及同 PR 维护；[Spark CODE](../../systems/data-platform/spark/CODE.md) 现也覆盖 Spark 源码、Contract 和模板，`contracts/`、`sql/`、`images/` 与 `kubernetes/` 也已按 Synthea/Landing/OMOP/Airflow 组件归属纳入 CODE.md 与 CI；不允许因为删除原导航 README 就把 Runtime 模板当作直接可 Apply 的资源。`scripts/` 和 `config/` 现已按业务所有者与 [Developer CODE](CODE.md) 维护；旧 Shell 可产生仓库源码、Pod、Job、S3、PG 写入或 Secret 变更，浏览 CODE.md 不构成运行授权。其它目录逐步接入。
+- **源码地图强制同步**：凡组件源码文件新增、删除、移动或改名，必须在同一 PR 更新其 `documents/systems/data-platform/<component>/CODE.md`；重要入口、职责、依赖变化也要审查并同步。已落地 [Airflow CODE](../../systems/data-platform/airflow/CODE.md)，并将混合 `apps/` 源码按唯一功能归属映射到 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md) 及 Airflow CODE；CI 检查新增/删除/改名、唯一所有者及同 PR 维护；[Spark CODE](../../systems/data-platform/spark/CODE.md) 现也覆盖 Spark 源码、Contract 和模板，`contracts/`、`sql/`、`images/` 与 `kubernetes/` 也已按 Synthea/Landing/OMOP/Airflow 组件归属纳入 CODE.md 与 CI；不允许因为删除原导航 README 就把 Runtime 模板当作直接可 Apply 的资源。`scripts/` 和 `config/` 现已按业务所有者与 [Developer CODE](CODE.md) 维护；旧 Shell 可产生仓库源码、Pod、Job、S3、PG 写入或 Secret 变更，浏览 CODE.md 不构成运行授权。其它目录逐步接入。
 
 ## 4. Git / GitHub / Self-Runner
 

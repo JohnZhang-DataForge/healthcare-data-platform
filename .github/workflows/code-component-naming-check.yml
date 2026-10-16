@@ -3,8 +3,8 @@ on:
   pull_request:
     paths:
       - 'apps/**'
-      - 'documents/components/**/CODE.md'
-      - 'documents/development/CODE.md'
+      - 'documents/systems/data-platform/**/CODE.md'
+      - 'documents/engineering/development/CODE.md'
       - 'spark/**'
       - 'airflow/**'
       - 'sql/**'
