@@ -11,7 +11,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 | ID | 已确认决定 | 理由和证据 / 尚未覆盖 |
 | --- | --- | --- |
-| **D-01** | **Synthea 独立 Producer，Airflow 只消费 SeaweedFS READY Batch** | 避免生成与重试耦合；NEW_ONLY Person/Visit [真实验收](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。旧 Processing-first 为历史版本；UPDATE_ONLY / MIX_DATA 未实现 |
+| **D-01** | **Synthea 独立 Producer，Airflow 只消费 SeaweedFS READY Batch** | 避免生成与重试耦合；NEW_ONLY Person/Visit [真实验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。旧 Processing-first 为历史版本；UPDATE_ONLY / MIX_DATA 未实现 |
 | **D-02** | **PostgreSQL OMOP 仍为本地权威，Writer 有事务/Claim/Fencing/幂等保护** | Spark 完成不等于 DB COMMIT；[OMOP Writer](../components/omop/README.md) 和数据库独立读回为验收 |
 | **D-03** | **Portal 用 OpenLineage + Marquez 原生 Web + 独立 PostgreSQL14** | 避免自建可视化与修改 OMOP PG17；[Portal](../components/platform-portal/README.md) Marquez/A3/A4 分项有证据，但**真正业务 Spark 接入方式仍未选定** |
 | **D-04** | **Azure 走 OneLake-first MVP：PG → Azure Blob → Fabric Data Pipeline → PySpark Notebook → Lakehouse** | 缩减旧 Warehouse-first/多层 ETL；[Azure](../components/azure-fabric/README.md) 三组件仅 Plan PASS、**无 Apply/业务 E2E** |

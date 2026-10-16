@@ -11,7 +11,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 **当前代码**：[OMOP Writer Apps](../../../apps/omop_writer/) · [NEW_ONLY Writer 入口](../../../apps/omop_writer/new_only_airflow_writer.py) · [Writer Dockerfile](../../../images/new-only-omop-writer/Dockerfile) · [SQL](../../../sql/README.md)。
 
-**真实验收**：NEW_ONLY Person/Visit 通过 Airflow 原子 COMMIT 与独立 PostgreSQL 只读读回；已提交批次重复提交路径被 SKIP。证据：[Final Acceptance](../../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
+**真实验收**：NEW_ONLY Person/Visit 通过 Airflow 原子 COMMIT 与独立 PostgreSQL 只读读回；已提交批次重复提交路径被 SKIP。证据：[Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 
 **最重要的兼容边界**：现有镜像仍 COPY `task004_cdm_*.py` 到 `/opt/task004`，Python/PG 使用 `etl.task004_*` 和 Fence 函数。它们是运行依赖与持久化契约，**绝不全局 Rename**；镜像重构时必须验证基镜像 Digest/Overlay 全部版本及 Writer 安全闸门。详见 [Legacy Refactor Plan](../LEGACY-CODE-REFACTOR-PLAN.md)。
 

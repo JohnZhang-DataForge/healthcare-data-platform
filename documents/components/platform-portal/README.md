@@ -38,7 +38,7 @@ Spark OpenLineage Listener（A4 独立 Smoke 部分 PASS）
 
 **A4 的关键未完成问题**：应用 Job `portal_a4_a438628542127` 的 `latestRun` 为空，真实完成 Run 在 `unknown` Job；`inputDatasetVersions=0`、`outputDatasetVersions=0`。既不能判定 root cause 已查清，也不能把孤立事件视为 Synthea→Spark→OMOP 完整血缘。首轮 Workflow 真实失败需要与后续局部成功**并列保留**。
 
-**实证链接**：[部署和 30999 验证](../../../docs/platform-portal/validation.md) / [恢复成功 Run 38499838493](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38499838493)；[A3 Airflow 验收](../../../docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [只读 Run 38502940358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502940358)；[A4 Spark 验收与限制](../../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) / [原失败 Run 38628542127](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38628542127) / [后续只读 Run 38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225)。
+**实证链接**：[部署和 30999 验证](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md) / [恢复成功 Run 38499838493](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38499838493)；[A3 Airflow 验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) / [只读 Run 38502940358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38502940358)；[A4 Spark 验收与限制](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) / [原失败 Run 38628542127](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38628542127) / [后续只读 Run 38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225)。
 
 ## 3. 下一阶段仍是设计讨论（NOT APPROVED）
 
@@ -53,6 +53,6 @@ Spark OpenLineage Listener（A4 独立 Smoke 部分 PASS）
 
 ## 4. 维护、安全与迁移说明
 
-任何 Self-Runner Live、ConfigMap/SparkApplication、共享 Airflow/Spark 修改必须先核对其他 Session/Job，按 [人工协作规则](../../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md) 取得明确的本次授权。Airflow Provider 初始为 opt-in，Scheduler 的独立配置更改与未来 Helm values 持久化还需单独评估。
+任何 Self-Runner Live、ConfigMap/SparkApplication、共享 Airflow/Spark 修改必须先核对其他 Session/Job，按 [人工协作规则](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md) 取得明确的本次授权。Airflow Provider 初始为 opt-in，Scheduler 的独立配置更改与未来 Helm values 持久化还需单独评估。
 
-[旧部署指南](../../../docs/platform-portal/deployment-guide.md) 和 [旧运维说明](../../../docs/platform-portal/operations.md) 在 STEP07 Runbook 迁移之前仍保留技术参考地位；其中旧“TASK004 尚未完成”的 CURRENT 已由 [最终验收](../../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 取代。
+[旧部署指南](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/deployment-guide.md) 和 [旧运维说明](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/operations.md) 在 STEP07 Runbook 迁移之前仍保留技术参考地位；其中旧“TASK004 尚未完成”的 CURRENT 已由 [最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 取代。
