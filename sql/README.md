@@ -1,6 +1,6 @@
 # SQL — PostgreSQL, OMOP schema and integrity checks
 
-[← Repository overview](../README.md) · [OMOP writer](../apps/README.md) · [Database acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
+[← Repository overview](../README.md) · [OMOP CODE](../documents/components/omop/CODE.md) · [Database acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
 
 This directory contains the versioned SQL used for **landing batch claim/fencing**, the historical Person/Visit materialization foundation, batch ledger schemas, and independent read-only checks.
 

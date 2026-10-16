@@ -9,7 +9,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 **职责**：验证 S3 READY Manifest / Payload / SHA、发现候选、查询或合法领取 Batch，保护下游不重复消费。来源 Producer 只发布数据和完成标志，Landing 层不写 OMOP CDM。
 
-**代码入口**：[Landing Discovery](../../../apps/landing_discovery/) · [Claim / Fencing](../../../apps/landing_claim/) · [Discovery DAG](../../../airflow/dags/landing_batch_discovery.py) · [Contracts](../../../contracts/README.md)。
+**源码导航**：[CODE.md](CODE.md) 覆盖 Discovery、Claim/Fencing、历史 Intake/Visit S3 发布及测试/Contract；Airflow DAG 的具体导航交给 [Airflow CODE](../airflow/CODE.md)。
 
 **已验收的行为**：`landing_batch_discovery` 每 15 分钟可发现源数据，但默认只读 Claim Guard，不能理解成自动执行写库。业务 `new_only_omop_consumer` 另由授权的人工 Batch 触发；COMPLETED 会 SKIP 下游。
 
