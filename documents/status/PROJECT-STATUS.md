@@ -34,9 +34,9 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 - 业务 DAG 的 `schedule=None`，接受已授权的手工 Batch；定时 `landing_batch_discovery` 的默认读取/发现不等于自动业务 COMMIT。
 - UPDATE_ONLY、MIX_DATA、Condition Writer、复杂的双 Writer 并发与灾难恢复属于独立后续范围；本次关闭不证明这些已完成。
 
-**证据**：[TASK004 Final Acceptance](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [实际 Airflow + PG 只读验收 Run 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822) · [相同 Batch SKIP Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) · [Airflow 源码](../../airflow/dags/new_only_omop_consumer.py)。
+**证据**：[TASK004 Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [实际 Airflow + PG 只读验收 Run 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822) · [相同 Batch SKIP Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) · [Airflow 源码](../../airflow/dags/new_only_omop_consumer.py)。
 
-**下一业务域**：TASK005 [Condition 计划](../../docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 的 STEP00 READ-ONLY；不自动授权数据库写入、批次处理或资源部署。开发优先级仍由用户每轮确认。
+**下一业务域**：TASK005 [Condition 计划](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 的 STEP00 READ-ONLY；不自动授权数据库写入、批次处理或资源部署。开发优先级仍由用户每轮确认。
 
 ## 3. Portal：已实施到 A3 / A4 Smoke；后续 Spark 集成方式仍在讨论
 
@@ -55,7 +55,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 - 任何新的 SparkApplication、修改 Airflow Scheduler/Operator、共享资源部署或运行 Self-Runner Live，都需要用户针对具体操作协调和授权；不可因为前期 Smoke 完成而自动执行。
 - Portal **目前不是自建 Web UI**；实际提供的是 Marquez 原生 Web。
 
-**证据**：[Portal Source](../../platform-portal/README.md) · [Marquez 部署验收](../../docs/platform-portal/validation.md) · [A3 Airflow Closeout](../../docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) · [A4 Spark Closeout](../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) · [多 Session 协调](../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。
+**证据**：[Portal Source](../../platform-portal/README.md) · [Marquez 部署验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md) · [A3 Airflow Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) · [A4 Spark Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) · [多 Session 协调](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。
 
 ## 4. Azure/Fabric：目标架构已确定；Terraform 资源定义与 Plan 完成，实际 ETL 未开始
 
@@ -99,7 +99,7 @@ Local PostgreSQL OMOP (authoritative)
 
 **当前 NEXT**：继续讨论、冻结最小可实施范围与数据合同；按用户单独批准的步骤再实施。**没有自动触发 Apply 或创建云端资源的许可**。
 
-**依据**：[OneLake-first 方案与真实 Plan 证据](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) · [Terraform 组件](../../azure/infra-terraform/README.md) · [IaC 架构/IAM](../../azure/infra-terraform/docs/ARCHITECTURE.md) · [Notebook bootstrap](../../azure/infra-terraform/modules/notebook/definitions/notebook-content.py) · [Pipeline fail-closed definition](../../azure/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)。
+**依据**：[OneLake-first 方案与真实 Plan 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) · [Terraform 组件](../../azure/infra-terraform/README.md) · [IaC 架构/IAM](../../azure/infra-terraform/docs/ARCHITECTURE.md) · [Notebook bootstrap](../../azure/infra-terraform/modules/notebook/definitions/notebook-content.py) · [Pipeline fail-closed definition](../../azure/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)。
 
 ## 5. 文档重建与 OpenSpec
 
