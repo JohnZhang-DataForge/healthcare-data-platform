@@ -1,14 +1,12 @@
-# Decision Register — Preserved Detailed Notes
-
-This file holds the more detailed reference material previously included in this directory's README. For an overview, see [README.md](README.md).
-
----
 ---
 status: active
 scope: architecture-decision-index
 last_verified: 2026-10-16
 source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 ---
+
+> 这里保存该目录原 README 的详细技术内容与历史核验依据。简明目录介绍请见 [README.md](README.md)。
+
 
 # Architecture Decisions — 长期架构决策索引
 

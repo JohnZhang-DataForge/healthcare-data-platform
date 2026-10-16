@@ -1,14 +1,12 @@
-# Platform Portal — Detailed Design and Validation Reference
-
-This file preserves the component's detailed engineering notes, recorded plans, and evidence boundaries. For the human-readable introduction, see [README.md](README.md).
-
----
 ---
 status: active
 scope: platform-portal-component
 last_verified: 2026-10-16
 source_sha: 241944d0a6e0c222f2e862d4b79c4279bf7fd35b
 ---
+
+> 这里保存该目录原 README 的详细技术内容与历史核验依据。简明目录介绍请见 [README.md](README.md)。
+
 
 # Platform Portal — OpenLineage + Marquez
 
