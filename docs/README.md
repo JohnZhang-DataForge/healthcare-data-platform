@@ -1,10 +1,13 @@
-# Healthcare Data Platform — Agent START HERE（当前有效文档）
+# Healthcare Data Platform — 历史 Agent 文档与验收索引
+
+> **STEP08 权威切换（2026-10-16）：LEGACY / HISTORICAL — 本文件保留历史记录，不再是 Agent 当前入口或项目 CURRENT/NEXT 权威。** 请先读 [根 AGENTS.md](../AGENTS.md)、[新文档入口](../documents/README.md) 和 [PROJECT-STATUS](../documents/status/PROJECT-STATUS.md)。下文出现的 LATEST/CURRENT/NEXT、IN PROGRESS、ON HOLD 等仅代表其**记录当时**的状态；必须以已合并代码、真实验收和现行安全规则重新核对。原始 Closeout、Run 和失败证据保留不变。
+
 
 > **LATEST / 2026-10-14 EDT（2026-10-15 UTC）— TASK004 = COMPLETED，TASK005 = READY FOR STEP00 READ-ONLY。** [TASK004 最新权威 FINAL CLOSEOUT](tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)：第三个真实 NEW_ONLY Batch `synthea-new-only-gh-38588671004` Airflow v4 的 Spark Person/Visit → Reconcile → 原子 Writer → PostgreSQL **首次 COMMIT SUCCESS**，[独立只读证据 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822)。PG `cdm.person=208`、`cdm.visit_occurrence=21934`、Claim=3、第三批 Stage=245、Verified Checkpoint=2。**同批次真实重复 DagRun 自动 completed SKIP、Spark/Writer 均 skipped，PostgreSQL Before/After 无变化，DAG 已暂停**，[最终幂等性 Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) SUCCESS。TASK005 可进入 Condition STEP00 只读检查，尚**不授权** Condition 写入。以下旧的 TASK004 “第三批未提交/任务 ON HOLD”片段均为历史时点快照，不是当前 NEXT。跨 Portal Session 的共享 Spark/Airflow 人工协调规则仍有效。
 
 ## Documentation directory map / 文档目录导航
 
-本文件是 **Agent 的任务交接入口**；面向初次阅读项目的人，请先看 [仓库根目录 README](../README.md)，了解已验收的本地 Kubernetes/OMOP 链路与尚处规划的 Microsoft Fabric / HL7 / ML 功能。**最新状态以本页顶部 LATEST 和 [TASK-STATUS](tasks/TASK-STATUS.md) 为准**；下方带日期的旧任务摘要只是历史快照。
+本文件是 **历史 Agent 文档与验收索引，不再作为新 Session 的任务交接入口**；面向初次阅读项目的人，请先看 [仓库根目录 README](../README.md)，了解已验收的本地 Kubernetes/OMOP 链路与尚处规划的 Microsoft Fabric / HL7 / ML 功能。**最新状态仅以 [PROJECT-STATUS](../documents/status/PROJECT-STATUS.md) 为准**；本页顶部 LATEST 和 [旧 TASK-STATUS](tasks/TASK-STATUS.md) 是当时快照；下方带日期的旧任务摘要只是历史快照。
 
 | 子目录 | 主要内容 |
 | --- | --- |
