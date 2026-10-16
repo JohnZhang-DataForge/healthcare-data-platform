@@ -5,7 +5,7 @@ A hands-on healthcare data engineering platform that ingests **synthetic clinica
 
 The broader architecture is designed to extend into **Microsoft Fabric / OneLake, Azure storage, FHIR and HL7 ingestion, dbt, and ML feature engineering**. Those extensions are part of the roadmap—not claims about components already deployed or production-tested in this repository.
 
-**项目导航（中文）**：[新文档入口](documents/README.md) · [AI/Agent 协作规则](documents/development/AGENT-RULES.md) · [Agent 文档入口](docs/README.md) · [当前任务状态](docs/tasks/TASK-STATUS.md) · [已完成的 Airflow → OMOP 真实验收](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [下一阶段 Condition 开发计划](docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)
+**项目导航（中文）**：[新文档入口](documents/README.md) · [当前总体架构](documents/architecture/SYSTEM-OVERVIEW.md) · [AI/Agent 协作规则](documents/development/AGENT-RULES.md) · [Agent 文档入口](docs/README.md) · [当前任务状态](docs/tasks/TASK-STATUS.md) · [已完成的 Airflow → OMOP 真实验收](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [下一阶段 Condition 开发计划](docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)
 
 ## What is running and verified
 
@@ -52,16 +52,16 @@ The long-term design expands the lab into a **Kubernetes + Microsoft Fabric** ar
 | Planned capability | Intended approach | Evidence status |
 | --- | --- | --- |
 | FHIR, HL7 and multi-format ingestion | Synthetic FHIR and CSV through Python adapters; HL7 through Mirth Connect; optional Azure Blob / ADLS Gen2 landing | **Roadmap**; current verified source path is Synthea CSV |
-| Dual landing targets | Keep verified SeaweedFS S3 objects alongside an independently validated Azure landing zone | **Roadmap** |
-| Microsoft Fabric analytics | Move selected PostgreSQL OMOP tables to OneLake Delta / Fabric Lakehouse while retaining PostgreSQL as the relational CDM authority | **Roadmap**; incremental replication not yet proven |
-| ELT and research marts | Fabric notebooks and `dbt-fabric` Gold models for visit facts, patient summaries, research cohorts and time-based features; SQL serving through Fabric Warehouse | **Roadmap** |
+| Separate landing stages | SeaweedFS S3 handles Synthea source batches; existing Azure Blob is the target OMOP snapshot landing after local PostgreSQL export | **Local S3 verified; PG→Azure Blob export NOT BUILT** |
+| Microsoft Fabric analytics | Export a consistent PostgreSQL OMOP snapshot to existing Azure Blob, orchestrate Fabric PySpark Notebook through a Fabric Data Factory Data Pipeline, load OneLake Lakehouse Delta; PostgreSQL remains authoritative | **Three Terraform Fabric item plans PASS; zero new items applied; exporter and data flow NOT BUILT** |
+| ELT and research marts | Start with a minimal Fabric Notebook → OneLake Lakehouse analytical copy; optional downstream dbt/Gold models and Fabric Warehouse only after first E2E | **Optional later roadmap** |
 | ML lifecycle | Governed feature datasets, MLflow experiments, model versions and scheduled batch predictions | **Roadmap** |
 | GitOps | Argo CD-managed environment promotion and deployment verification | **Roadmap**; GitHub Actions and Airflow GitSync are already exercised |
 | More OMOP domains | Condition first; later Procedure, Drug, Measurement and Observation with vocabulary mapping and FK validation | **Condition STEP00 read-only ready**; not yet committed as business data |
 
-**Minimal Azure/Fabric implementation plan (PLANNED, not deployed):** [Azure/Fabric docs and staged acceptance](docs/azure-fabric/README.md). Focus: PostgreSQL OMOP snapshot → Azure Blob/ADLS Gen2 → Fabric Data Factory / PySpark Notebook → Fabric Warehouse, provisioned using Terraform on the existing Self-Runner.
+**Current Azure/Fabric target (OneLake-first, NOT deployed):** local PostgreSQL OMOP → consistent read-only export (not built) → **existing Azure Blob landing** → **Fabric Data Factory Data Pipeline** orchestration → PySpark Notebook → **OneLake Lakehouse**. Three independent Fabric Terraform Plans passed, but **no Apply and no cloud ETL**. Warehouse is optional, not the MVP destination. See [current architecture](documents/architecture/DATA-FLOW.md), [infrastructure](documents/architecture/INFRASTRUCTURE.md), and [Azure OneLake-first plan evidence](docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md).
 
-Architecture references: [Kubernetes/Spark/OMOP V4](docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md) · [Hybrid Azure/Fabric/ML target design (Chinese)](docs/architecture/Healthcare-ETL-Hybrid-Fabric-ML-Design.zh-CN.v2.1.md).
+**Current architecture:** [System Overview](documents/architecture/SYSTEM-OVERVIEW.md) · [Data Flow](documents/architecture/DATA-FLOW.md) · [Infrastructure](documents/architecture/INFRASTRUCTURE.md). Historical reference only: [V4 Architecture](docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md) · [old hybrid target](docs/architecture/Healthcare-ETL-Hybrid-Fabric-ML-Design.zh-CN.v2.1.md).
 
 ## Engineering practices
 
@@ -94,7 +94,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 
 ## Start here
 
-**Readers / reviewers:** begin with the [architecture baseline](docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md), then the [TASK004 final E2E acceptance](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For the Fabric or FHIR/HL7 story, read the **roadmap** rather than assuming those components are running.
+**Readers / reviewers:** begin with the [current system architecture](documents/architecture/SYSTEM-OVERVIEW.md), then the [TASK004 final E2E acceptance](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For the Fabric or FHIR/HL7 story, read the **roadmap** rather than assuming those components are running.
 
 **Contributors / agents:** start with [AGENTS.md](AGENTS.md) → [documents/README.md](documents/README.md) → [Agent rules](documents/development/AGENT-RULES.md) and [documentation governance](documents/development/DOCUMENTATION-GOVERNANCE.md). For an **unmigrated** domain, consult the current source/contract and [legacy TASK-STATUS](docs/tasks/TASK-STATUS.md), [operations](docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md), and [skills](docs/skill/SKILL-cn.md), resolving conflicts against current verified evidence rather than historical NEXT instructions. As of the last verified closeout, **TASK004 is completed**; the next scoped work is **TASK005 Condition STEP00 (read-only preflight)**.
 
