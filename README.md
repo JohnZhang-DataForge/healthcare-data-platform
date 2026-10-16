@@ -84,8 +84,8 @@ The component README describes responsibilities; the component CODE.md links dir
 | [`contracts/`](contracts/) · [Synthea CODE](documents/components/synthea/CODE.md) · [OMOP CODE](documents/components/omop/CODE.md) | Source and writer identity / schema contracts |
 | [`documents/`](documents/README.md) | New, incrementally verified project documentation; authoritative migration and AI rules | 
 | [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | Historical documentation snapshot (removed from Main); evidence remains pinned to the pre-removal commit |
-| [`images/`](images/README.md) | Docker image sources for individual workloads |
-| [`kubernetes/`](kubernetes/README.md) | Kubernetes manifests, service accounts and runtime templates |
+| [`images/`](images/) · [组件 CODE 导航](documents/components/README.md) | Docker image sources for individual workloads |
+| [`kubernetes/`](kubernetes/) · [Synthea CODE](documents/components/synthea/CODE.md) · [Airflow CODE](documents/components/airflow/CODE.md) | Kubernetes manifests, service accounts and runtime templates |
 | [`platform-portal/`](platform-portal/README.md) | Marquez / OpenLineage integration and observability experiments |
 | [`scripts/`](scripts/README.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
 | [`spark/`](spark/) · [CODE](documents/components/spark/CODE.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |

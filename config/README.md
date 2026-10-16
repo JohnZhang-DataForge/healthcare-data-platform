@@ -1,6 +1,6 @@
 # Configuration examples
 
-[← Repository overview](../README.md) · [Kubernetes runtime manifests](../kubernetes/README.md)
+[← Repository overview](../README.md) · [Synthea K8s CODE](../documents/components/synthea/CODE.md) · [Infrastructure](../documents/architecture/INFRASTRUCTURE.md)
 
 This directory currently contains the example [`local.env.example`](local.env.example), illustrating historical runner-local paths and the Synthea/SeaweedFS settings for the development lab.
 

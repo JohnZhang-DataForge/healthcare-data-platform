@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require Airflow, apps, Spark, Contract and SQL source-map synchronization.
+"""Require component CODE map sync for Airflow, apps, Spark, SQL, images and Kubernetes.
 
 Uses only Git tree/diff and local CODE.md text; no network or runtime access.
 """
@@ -147,6 +147,56 @@ def required_contract_sql_updates(
     }
 
 
+
+IMAGE_K8S_MAP_PATHS = (
+    "documents/components/synthea/CODE.md",
+    "documents/components/landing/CODE.md",
+    "documents/components/omop/CODE.md",
+    "documents/components/airflow/CODE.md",
+)
+# Only source inventory table rows declare an owner, not incidental prose links.
+IMAGE_K8S_ROW_RE = re.compile(
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./((?:images|kubernetes)/[^)\s#?]+)\)\s*\|",
+    re.MULTILINE,
+)
+
+
+def is_image_k8s_source(path: str) -> bool:
+    return path.startswith(("images/", "kubernetes/")) and not path.endswith(
+        (".md", ".mdx", ".rst", ".txt")
+    )
+
+
+def image_k8s_owned_links(contents: str) -> set[str]:
+    return {p for p in IMAGE_K8S_ROW_RE.findall(contents) if is_image_k8s_source(p)}
+
+
+def validate_image_k8s_maps(
+    documents: dict[str, str], actual: set[str]
+) -> tuple[list[str], list[str], list[str]]:
+    owners: dict[str, list[str]] = {}
+    for doc, content in documents.items():
+        for path in image_k8s_owned_links(content):
+            owners.setdefault(path, []).append(doc)
+    return (
+        sorted(actual - owners.keys()),
+        sorted(owners.keys() - actual),
+        sorted(path for path, refs in owners.items() if len(refs) > 1),
+    )
+
+
+def required_image_k8s_updates(
+    changed_paths: set[str], before: dict[str, str], after: dict[str, str]
+) -> set[str]:
+    return {
+        doc for doc in IMAGE_K8S_MAP_PATHS
+        if changed_paths & (
+            image_k8s_owned_links(before.get(doc, ""))
+            | image_k8s_owned_links(after.get(doc, ""))
+        )
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True)
@@ -272,10 +322,49 @@ def main() -> int:
         print("CODE_MAP_GATE=FAIL; Contract/SQL change requires same PR CODE.md")
         return 1
 
+    image_k8s_sources = {
+        p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
+                             "--", "images/", "kubernetes/")
+        if is_image_k8s_source(p)
+    }
+    image_k8s_after = {
+        p: Path(p).read_text(encoding="utf-8") for p in IMAGE_K8S_MAP_PATHS
+    }
+    image_k8s_before = {
+        p: git_file(args.base, p) for p in IMAGE_K8S_MAP_PATHS
+    }
+    ik_missing, ik_stale, ik_duplicate = validate_image_k8s_maps(
+        image_k8s_after, image_k8s_sources
+    )
+    for p in ik_missing:
+        print("CODE_MAP_IMAGE_K8S_MISSING_LINK=" + p)
+    for p in ik_stale:
+        print("CODE_MAP_IMAGE_K8S_STALE_LINK=" + p)
+    for p in ik_duplicate:
+        print("CODE_MAP_IMAGE_K8S_DUPLICATE_OWNER=" + p)
+    if ik_missing or ik_stale or ik_duplicate:
+        print("CODE_MAP_GATE=FAIL; image/k8s sources require exactly one CODE.md owner")
+        return 1
+
+    image_k8s_changed = {
+        p for p in git_lines("diff", "--no-renames", "--name-only",
+                             "--diff-filter=AD", "--no-ext-diff", args.base, args.head)
+        if is_image_k8s_source(p)
+    }
+    image_k8s_required = required_image_k8s_updates(
+        image_k8s_changed, image_k8s_before, image_k8s_after
+    )
+    for doc in sorted(image_k8s_required - changed):
+        print("CODE_MAP_IMAGE_K8S_REQUIRED_UPDATE_MISSING=" + doc)
+    if image_k8s_required - changed:
+        print("CODE_MAP_GATE=FAIL; update owning CODE.md in same PR as image/k8s source")
+        return 1
+
     print("CODE_MAP_GATE=PASS; mapped_dag_files=" + str(len(current)) +
           "; mapped_app_files=" + str(len(app_sources)) +
           "; mapped_spark_files=" + str(len(spark_sources)) +
-          "; mapped_contract_sql_files=" + str(len(cs_sources)))
+          "; mapped_contract_sql_files=" + str(len(cs_sources)) +
+          "; mapped_image_k8s_files=" + str(len(image_k8s_sources)))
     return 0
 
 

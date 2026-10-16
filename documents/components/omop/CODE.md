@@ -80,7 +80,16 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 **执行区别**：`person-upsert.sql` 是真实 DML，`step04c-batch-schema-v1-authorized.sql` 是有历史固定环境前提的 DDL，不允许不审查就重放。其它 SQL 也应核对角色与事务边界。现在受控 NEW_ONLY Writer 的核心事务 SQL 还由 Python 动态生成；这个静态 SQL 清单不能代表完整 Writer 行为。
 
+## OMOP / CDM Writer 容器镜像
+
+| 源文件（直接链接） | 用途与运行边界 |
+| --- | --- |
+| [`Dockerfile`](../../../images/new-only-omop-writer/Dockerfile) | 已验收 NEW_ONLY Person/Visit 原子 Writer：固定基镜像 Digest + 对齐的 Airflow Legacy CDM 模块 |
+| [`Dockerfile`](../../../images/task004-cdm-runtime/Dockerfile) | 历史 CDM Plan / S3 数据读取和 PG SQL 渲染基础镜像；默认只读 CLI，不等于原子业务 Commit |
+
+**关键风险**：已验收的 Writer 镜像使用固定的历史 CDM Base Digest，同时显式 COPY 与 NEW_ONLY Batch 身份匹配的 `task004_cdm_materialization_plan.py`、`task004_cdm_dynamic_source.py`、`task004_cdm_dynamic_adapters.py`、`task004_cdm_dynamic_pg_writer.py` 等模块。之前继承基镜像中的过期逻辑会导致 `BLOCKED=batch_id`；修改任何镜像 COPY/BuildContext/Entrypoint、Python 模块或 Base Digest 前须做契约测试、镜像 Smoke、不可变 Digest 发布、Consumer Pin 和实际运行后置证据。镜像 Build PASS 不等于 PostgreSQL COMMIT。
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/` 或 `kubernetes/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 

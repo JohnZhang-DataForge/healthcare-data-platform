@@ -47,7 +47,30 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 **Contract 治理**：这些机器可读协议不能为了文档整理而改写。冻结版本中如有旧的 `state`、`consumer_compatibility` 记录，代表该版本写入时的判断；现在的 Runtime 是否验收应以真实 Commit/Run/Readback 证据为准。修改身份、Headers 或 CSV 策略必须先做生产者和消费者兼容性评估，必要时创建新版本。
 
+## 镜像构建 / Entrypoint（Synthea）
+
+| 源文件（直接链接） | 用途与运行边界 |
+| --- | --- |
+| [`Dockerfile`](../../../images/synthea-new-only/Dockerfile) | 独立 NEW_ONLY Generator/Publisher 镜像：固定历史 Synthea 基镜像 Digest、v1/v2 合同和 Readback |
+| [`Dockerfile`](../../../images/synthea/Dockerfile) | 历史 Synthea v3.3.0 多阶段构建：固定上游 Commit + 本地 CSV Validator |
+| [`entrypoint.sh`](../../../images/synthea/entrypoint.sh) | 历史 Synthea Generator 入口：Seed、日期和 18 CSV 校验，只生成本地 Manifest |
+
+## 独立 NEW_ONLY / 历史 Task Job、PVC 和 StorageClass
+
+| 源文件（直接链接） | 用途与运行边界 |
+| --- | --- |
+| [`job.yaml.tpl`](../../../kubernetes/manifests/synthea/new-only/job.yaml.tpl) | 早期 NEW_ONLY 生成 Job 模板：worker01、只读 ConfigMap、持久化 PVC；需完整参数渲染 |
+| [`publish-v1-job.yaml.tpl`](../../../kubernetes/manifests/synthea/new-only/publish-v1-job.yaml.tpl) | 历史固定 v1 S3 发布模板；使用 Digest Pin / Secret / 显式只读来源 Gate |
+| [`pvc.yaml`](../../../kubernetes/manifests/synthea/new-only/pvc.yaml) | Synthea 生成请求持久化 PVC：dw-synthea、synthea-local、5Gi；不是 SeaweedFS PVC |
+| [`runtime-generate-job.yaml.tpl`](../../../kubernetes/manifests/synthea/new-only/runtime-generate-job.yaml.tpl) | 独立 NEW_ONLY generate 阶段 Job：固定请求 ID、Digest、worker01 和 Synthea State PVC |
+| [`runtime-landing-job.yaml.tpl`](../../../kubernetes/manifests/synthea/new-only/runtime-landing-job.yaml.tpl) | 独立 NEW_ONLY 发布/校验 Job：S3 Secret 引用、SOURCE/PG 审计 Gate；不授权业务写库 |
+| [`storageclass.yaml`](../../../kubernetes/manifests/synthea/new-only/storageclass.yaml) | synthea-local StorageClass：Retain、WaitForFirstConsumer；实际 nodePathMap 与文件系统需 Live 核实 |
+| [`synthea-generate-only-job.yaml.tpl`](../../../kubernetes/manifests/task004/synthea-generate-only-job.yaml.tpl) | 旧 TASK004 单独生成 Job：固定批次参数、worker01、历史验收兼容模板 |
+| [`synthea-generate-publish-job.yaml.tpl`](../../../kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl) | 旧 TASK004 生成并 S3 发布 Job：旧入口和 Secret、不可当 NEW_ONLY 独立模式 |
+
+**部署约束**：这些文件不是一键集群重建清单；Job `*.yaml.tpl` 必须按受控 Request、Batch、Digest、Namespace 和 PVC 渲染后审查。`synthea-local` 的 `Retain` 不代表实际硬盘隔离或备份；`dw-synthea` Secret、PVC/StorageClass 和历史 Job 的使用须先核实真实集群。当前独立 Generator 与 Legacy Task 模板并存不代表可以重新执行已完成批次。
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/` 或 `kubernetes/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 
