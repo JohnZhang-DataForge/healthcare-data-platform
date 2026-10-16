@@ -7,7 +7,7 @@ source_sha: 241944d0a6e0c222f2e862d4b79c4279bf7fd35b
 
 # Azure / Microsoft Fabric — OMOP → OneLake 分析副本
 
-> **ACTIVE 是指这里对设计与源码的说明已核对，而不是云端资源已 Apply 或业务 ETL 已完成。** Healthcare Main `241944d0a6e0c222f2e862d4b79c4279bf7fd35b`，Self-Runner Main `8f8cb877887540cbed697260c3e8154e218a49c7`，已保存的 2026-10-15 Terraform Plan。此次只读整理，没有云端查询、Plan、Apply 或数据传输。全局 CURRENT/NEXT：[PROJECT-STATUS](../../status/PROJECT-STATUS.md)。
+> **ACTIVE 是指这里对设计与源码的说明已核对，而不是云端资源已 Apply 或业务 ETL 已完成。** Healthcare Main `241944d0a6e0c222f2e862d4b79c4279bf7fd35b`，Self-Runner Main `8f8cb877887540cbed697260c3e8154e218a49c7`，已保存的 2026-10-15 Terraform Plan。此次只读整理，没有云端查询、Plan、Apply 或数据传输。全局 CURRENT/NEXT：[PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md)。
 
 ## 1. 已确定的最小目标架构：OneLake-first
 
@@ -69,6 +69,6 @@ Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/
 
 ## 5. 代码规范与运行安全
 
-今后代码按 [组件命名标准](../../development/CODE-ORGANIZATION-AND-NAMING.md) 组织，例如 `apps/omop_export/` 等功能路径；不创建 `taskNNN/stepNNN` 正式源码。Azure 现有 `data-factory`、`notebook` 等是**组件名**，可以保留。
+今后代码按 [组件命名标准](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md) 组织，例如 `apps/omop_export/` 等功能路径；不创建 `taskNNN/stepNNN` 正式源码。Azure 现有 `data-factory`、`notebook` 等是**组件名**，可以保留。
 
 **本轮纯文档**；不运行 Terraform Plan/Apply、Fabric Pipeline、Notebook、数据库导出或数据上传。不因“Plan 成功”创建云端资源，也不因“数据最少”跳过权限/幂等/一致性 Gate。运维规范迁移前参考 [Terraform 技术架构](../../../azure/infra-terraform/docs/ARCHITECTURE.md) 与 [Plan Evidence](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)。

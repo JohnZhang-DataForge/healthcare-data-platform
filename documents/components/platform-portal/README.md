@@ -7,7 +7,7 @@ source_sha: 241944d0a6e0c222f2e862d4b79c4279bf7fd35b
 
 # Platform Portal — OpenLineage + Marquez
 
-> **ACTIVE 是指该组件的知识整理通过核对，并非完整业务血缘已上线。** 基线 Healthcare `241944d0a6e0c222f2e862d4b79c4279bf7fd35b`、Self-Runner `8f8cb877887540cbed697260c3e8154e218a49c7`；2026-10-13/14 的验收证据。本次未重新执行集群/Marquez 的 Live 探针。全局 CURRENT/NEXT 在 [PROJECT-STATUS](../../status/PROJECT-STATUS.md)。
+> **ACTIVE 是指该组件的知识整理通过核对，并非完整业务血缘已上线。** 基线 Healthcare `241944d0a6e0c222f2e862d4b79c4279bf7fd35b`、Self-Runner `8f8cb877887540cbed697260c3e8154e218a49c7`；2026-10-13/14 的验收证据。本次未重新执行集群/Marquez 的 Live 探针。全局 CURRENT/NEXT 在 [PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md)。
 
 ## 1. 职责与结构
 
@@ -26,7 +26,7 @@ Spark OpenLineage Listener（A4 独立 Smoke 部分 PASS）
 - Marquez 0.51.1 复用 `dw-postgre14` PostgreSQL 14 元数据库，不触碰 `dw-postgre` PostgreSQL 17 OMOP 业务数据。Helm `postgresql.enabled=false`，API/Web ClusterIP。
 - 独立 `marquez-web-lan` Web-only NodePort **30999**；Web 本身能代理 API，因此不是匿名只读 Portal。LAN/VPN/NAT/公网访问和备份恢复没有被当前证据证明。
 - 当前是**Marquez 原生 Web**，不是自行编写的前端。Superset、OpenMetadata、Kafka 和自定义 UI 不属于已交付范围。
-- 新源码仍以 `platform-portal/marquez/`、`openlineage/spark/` 等**组件+能力**命名，遵循 [强制命名规范](../../development/CODE-ORGANIZATION-AND-NAMING.md)；不创建 `taskNNN/stepNNN` 正式代码。
+- 新源码仍以 `platform-portal/marquez/`、`openlineage/spark/` 等**组件+能力**命名，遵循 [强制命名规范](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md)；不创建 `taskNNN/stepNNN` 正式代码。
 
 ## 2. 可证实的阶段状态
 
