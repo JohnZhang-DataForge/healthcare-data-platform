@@ -1,6 +1,6 @@
 # Spark — PySpark transformations, quality gates and job templates
 
-[← Repository overview](../README.md) · [Airflow orchestration](../airflow/README.md) · [Source contracts](../contracts/README.md)
+[← Repository overview](../README.md) · [Airflow CODE](../documents/components/airflow/CODE.md) · [Source contracts](../contracts/README.md)
 
 This directory contains the PySpark business transformation layer and the manifests used to submit workloads through **Spark Operator**. The accepted current batch path processes **Synthea patients and encounters** into Person/Visit-ready data; additional OMOP domains require their own implementation and acceptance.
 

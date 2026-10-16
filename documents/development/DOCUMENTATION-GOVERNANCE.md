@@ -30,6 +30,15 @@
 
 现有源码中的 `contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
 
+### Component README / CODE 双入口约定
+
+- `documents/components/<component>/README.md`：组件职责、主要数据流、架构边界、当前能力范围和其它权威文档导航；避免在这里重复完整的源码表。
+- `documents/components/<component>/CODE.md`：**唯一组件级源码导航入口**，直接链接实际源文件/目录、主要测试、Contract 和构建/部署入口；不复制 CURRENT/NEXT、架构全文或 Runbook。跨组件源码按功能所有权分别登记，不机械复制每个代码目录的 README。
+- 原代码目录 README 若只有导航或已有信息，在核对后迁移独有知识、修复所有反向链接、通过路径检查即可逐步删除；不改源码、Runtime、冻结契约或历史证据。
+- **必须同步**：新增、删除、改名或移动组件源码文件时，**同一个 PR 必须修改对应 CODE.md**，核对导航链接、测试入口和依赖；现有文件的入口/职责/关键依赖改变也必须检查并更新 CODE.md。普通代码内部修改不要求无意义改动，但 Reviewer 需要确认导航未过期。
+- **校验**：先对已建立 CODE.md 的组件启用对应静态 CI Gate（首个为 Airflow），检查增删/移动时 CODE.md 与 PR 同步，并核对已登记文件存在；各组件逐步启用，不因其它组件暂未迁移而阻止其正常开发。
+
+
 ## 3. 每份新文档的最小元数据
 
 建议使用简短 Markdown Header（无需立即处理所有 Legacy 文件）：

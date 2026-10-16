@@ -1,6 +1,6 @@
 # Container images — reproducible workload packaging
 
-[← Repository overview](../README.md) · [Image build workflows](../.github/workflows/) · [Airflow](../airflow/README.md)
+[← Repository overview](../README.md) · [Image build workflows](../.github/workflows/) · [Airflow CODE](../documents/components/airflow/CODE.md)
 
 Each child directory is a Docker build context specification (typically a `Dockerfile`) for a distinct workload. **Dockerfiles are source recipes, not proof an image is currently deployed.**
 
