@@ -1,6 +1,6 @@
 # 当前有效开发经验 / Runbooks
 
-> **新 Agent**：先读 [通用开发经验](development-lessons-cn.md)，再按当前 TASK 阅读必要的专项经验。历史 Pilot/过时迁移方案见 [归档索引](../archive/README.md)。
+> **新 Agent**：先读 [通用开发经验](development-lessons-cn.md)，再按当前 TASK 阅读必要的专项经验。历史 Pilot/过时迁移方案见 [归档索引](https://github.com/JohnZhang-DataForge/Healthcare-Specs/tree/main/archive)。
 
 | 文档 | 何时阅读 |
 |---|---|

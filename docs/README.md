@@ -15,7 +15,7 @@
 | [`skill/`](skill/) | Agent 行为和开发规范 |
 | [`platform-portal/`](platform-portal/) | OpenLineage/Marquez 的架构、实测、未完成项与协作规则 |
 | [`azure-fabric/`](azure-fabric/) | Azure/Fabric 最小云端分析方案、Terraform/Remote State/Self-Runner、身份/费用和独立验收阶段（**PLANNED**） |
-| [`archive/`](archive/) | 被替代的旧资料及其追溯入口 |
+| [历史归档（独立仓库）](https://github.com/JohnZhang-DataForge/Healthcare-Specs/tree/main/archive) | 已移至 Healthcare-Specs（Private，需授权访问） |
 | [`BASELINE.md`](BASELINE.md) | 不应覆盖的历史 `/data/spark/phase3c` 开发基线 |
 
 **当前业务交付：** [TASK004 NEW_ONLY E2E Final Acceptance](tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 已验证 Person/Visit 原子 OMOP 入库及同批次 Airflow SKIP；[TASK005 Condition Plan](tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 可从 STEP00 只读研究开始，尚未实现 Condition 入库。
@@ -133,7 +133,7 @@
 > **2026-10-13 当前状态更新：先读 [TASK004 最新 Agent 交接](tasks/TASK-004-AGENT-HANDOFF-CURRENT-2026-10-13.zh-CN.md)。** 新 Synthea 全流程已 PASS（Person 23/Visit 3588），新批次 Person Writer 因 EXISTING_TARGET_DRIFT 正确拒绝；最新只读审计 Run 38434861465 因 Python 模块路径错误 FAILURE。**唯一 NEXT = 修复只读审计并得出 Source ID overlap 汇总；本文后面旧“STEP04A NEXT”已过时，不是新 Agent 的开工点。**
 
 
-> **CURRENT / 2026-10-12 EDT（2026-10-13 UTC 审计）**。本目录是新 Agent 的唯一文档入口。历史资料移入 `docs/archive/YYYY-MM-DD[-topic]/`，**不要将 Archive 的 NEXT / Candidate / Pilot 状态当成当前状态**。
+> **CURRENT / 2026-10-12 EDT（2026-10-13 UTC 审计）**。本目录是新 Agent 的唯一文档入口。历史资料存放于 `Healthcare-Specs/archive/YYYY-MM-DD[-topic]/`，**不要将 Archive 的 NEXT / Candidate / Pilot 状态当成当前状态**。
 
 ## 按顺序阅读
 
@@ -148,7 +148,7 @@
 9. [Agent 开发 Skill](skill/SKILL-cn.md)：一步一验、canonical source、数据安全、Git 与文档治理。
 10. [通用开发经验](runbooks/development-lessons-cn.md) 与 [TASK004 专项经验](runbooks/development-lessons-task004-cn.md)。
 11. [当前总架构（中文）](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md) / [English](architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md)。
-12. [文档生命周期规范](development/DOCUMENT-LIFECYCLE-AND-ARCHIVE-v1.0.zh-CN.md) / [历史归档](archive/README.md)。
+12. [文档生命周期规范](development/DOCUMENT-LIFECYCLE-AND-ARCHIVE-v1.0.zh-CN.md) / [历史归档](https://github.com/JohnZhang-DataForge/Healthcare-Specs/tree/main/archive)。
 
 ## 当前主线状态
 

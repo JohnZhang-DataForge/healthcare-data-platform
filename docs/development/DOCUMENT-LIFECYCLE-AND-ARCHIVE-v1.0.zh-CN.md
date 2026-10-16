@@ -1,5 +1,7 @@
 # Documentation Lifecycle & Archive Standard v1.0 / 文档生命周期与归档规范
 
+> **2026-10-16 location override / 归档位置调整：** 历史文档已经完整复制到独立的 Private 仓库 [Healthcare-Specs/archive](https://github.com/JohnZhang-DataForge/Healthcare-Specs/tree/main/archive)，并经文件路径、Blob SHA 和大小逐项核对。原 `docs/archive/` 将从此仓库移除。本文旧的 `docs/archive/` 路径与“同仓库归档”操作步骤已不再适用；在完成跨仓库归档政策正式修订前，新增迁移应独立审核，禁止据旧命令向源仓库重建归档目录。
+
 > **状态：CURRENT / 正式生效**  
 > 生效日期：2026-10-12  
 > 适用仓库：`JohnZhang-DataForge/Self-Runner`、`JohnZhang-DataForge/healthcare-data-platform`  
