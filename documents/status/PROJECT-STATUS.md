@@ -105,7 +105,8 @@ Local PostgreSQL OMOP (authoritative)
 | STEP02 — Healthcare / Self-Runner 开发流程与测试证据 | **COMPLETE** — [PR #168](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/168) |
 | STEP03 — Overall architecture（本地 + Portal + OneLake-first） | **COMPLETE** — [PR #169](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/169) |
 | **STEP04 — 当前项目统一状态** | **COMPLETE after this document PR merges to Main** |
-| STEP05 / STEP06 — 模块细节文档重建 | **NOT STARTED** |
+| STEP05 — 本地组件文档与新代码命名约束 | **COMPLETE once documentation/CI PR is merged; old code not yet renamed** |
+| STEP06 — Portal / Azure 专项模块文档 | **NOT STARTED** |
 | STEP07 / STEP08 — 运维与最后权威切换 | **NOT STARTED** |
 | STEP09 — 引入同仓 OpenSpec | **NOT ON MAIN / NOT ADOPTED** |
 
