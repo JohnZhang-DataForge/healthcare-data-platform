@@ -25,4 +25,4 @@ The tested Writer image explicitly overlays matching versions of:
 
 Earlier image versions inherited stale versions of these modules and failed `BLOCKED=batch_id` in different phases. **Do not remove these COPY lines or assume updating a Python source file automatically updates the base image.**
 
-The accepted image digest and build-run evidence are recorded in the [final TASK004 Closeout](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For new releases: run source tests → build/image smoke → publish immutable digest → update consumer pin → validate actual cluster and durable state. Build success by itself is not a new batch COMMIT.
+The accepted image digest and build-run evidence are recorded in the [final TASK004 Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For new releases: run source tests → build/image smoke → publish immutable digest → update consumer pin → validate actual cluster and durable state. Build success by itself is not a new batch COMMIT.

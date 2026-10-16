@@ -1,6 +1,6 @@
 # GitHub Actions — CI, image builds and release evidence
 
-[← Repository overview](../README.md) · [Development rules](../docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
+[← Repository overview](../README.md) · [Development rules](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
 
 This folder holds GitHub Actions workflow definitions, primarily for **building workload images**, validating source contracts and publishing immutable GHCR artifacts. It is not the source of business data or a complete automated deployment system.
 
@@ -25,6 +25,6 @@ The other `task004-*.yml` files preserve earlier milestone-specific build and so
 
 Some workflows are manually dispatched; some only trigger on explicitly listed feature branches. **Read each `on:` block before assuming a Main push will launch it.**
 
-Cluster-running acceptance workflows and generic ARC/self-hosted runners live in the companion [Self-Runner repository](https://github.com/JohnZhang-DataForge/Self-Runner). A build SUCCESS is not a PostgreSQL COMMIT acceptance. The verified Person/Visit closeout is [here](../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md).
+Cluster-running acceptance workflows and generic ARC/self-hosted runners live in the companion [Self-Runner repository](https://github.com/JohnZhang-DataForge/Self-Runner). A build SUCCESS is not a PostgreSQL COMMIT acceptance. The verified Person/Visit closeout is [here](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md).
 
 **Safety:** never commit passwords, tokens, kubeconfig or live patient data to workflow YAML or logs; do not replay historical COMMIT workflows.

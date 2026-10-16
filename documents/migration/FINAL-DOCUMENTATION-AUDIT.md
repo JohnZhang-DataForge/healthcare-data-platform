@@ -9,6 +9,8 @@ source_sha: f5ee37697bed08fc35e288d84420bafd4b2d8e22
 
 > **终审对象**：Healthcare Main `f5ee37697bed08fc35e288d84420bafd4b2d8e22`，与 STEP08 PR [#174](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/174) 的导航/历史入口最小变更。范围仅是**文件和历史证据静态审查**；不是实时 Kubernetes/PG/S3/Azure 或 OpenSpec CLI 健康验证。此报告在 PR #174 合并后成为完成记录。
 
+**终审后整理**：按用户指示，原 `docs/` 将在独立 PR 中从 Main 彻底清理；历史源固定在 [Git Commit `49936b51d4beadc69383e931efc3e72d2f0db47e`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/49936b51d4beadc69383e931efc3e72d2f0db47e/docs)，原有验收/失败记录可追溯。详见 [快照清单](LEGACY-DOCS-SNAPSHOT.md)。这属于 STEP08 的后续 housekeeping，不改变终审时的证据结论。
+
 ## 核验范围与检查结果
 
 | 审查项 | 结果（含边界） |
@@ -40,7 +42,7 @@ source_sha: f5ee37697bed08fc35e288d84420bafd4b2d8e22
 
 ## 开发可恢复性确认
 
-- **已验收**：TASK004 NEW_ONLY Person/Visit + Writer + PG 独立读回 + 完成 Batch SKIP，以 [最终 E2E Closeout](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 为事实依据。
+- **已验收**：TASK004 NEW_ONLY Person/Visit + Writer + PG 独立读回 + 完成 Batch SKIP，以 [最终 E2E Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 为事实依据。
 - **下一业务任务**：Condition STEP00 只读预检已具备启动条件；业务实现/数据库写入尚未授权。
 - **Portal**：Marquez/Airflow A3 已有验收，A4 隔离 Spark Smoke 部分通过；真实业务 Spark Job/Run/Dataset 接入方案仍在讨论。
 - **Azure**：PG→Azure Blob→Fabric Pipeline/Notebook→OneLake 方案已经确定，Terraform/Runner 与三个 Item Plan PASS，但尚未 Apply，也没有真实数据 E2E。

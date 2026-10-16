@@ -29,4 +29,4 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 采用 OpenSpec 前，暂在 PR 描述/Issue 记录 **Done / Not Done / SHA / Run / Blocker / Next**；之后依赖 Change Tasks/PR/Actions 承接。单个 Session 的时间、窗口、Agent 名称不写入这份长期规则。无人持有的活跃 Job 也不能因「Session 离线」被自动接管。
 
-[原 Portal 协调政策](../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md) 的人工共享资源 Gate 在技术上仍适用；其中「TASK004 尚未完成 / A4 Live 尚未执行」等历史 CURRENT 已失效，以新状态为准。
+[原 Portal 协调政策](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md) 的人工共享资源 Gate 在技术上仍适用；其中「TASK004 尚未完成 / A4 Live 尚未执行」等历史 CURRENT 已失效，以新状态为准。

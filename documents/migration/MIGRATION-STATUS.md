@@ -12,6 +12,12 @@
 - 现有 `docs/` 剩余文档仅作迁移输入；不在本项目重建旧 Archive 目录。
 - 文档重建不会自动触发数据生成、Airflow、Spark、OMOP Writer、K8s 变更、Terraform Apply，也不自动获得运行授权。
 
+## 最终旧目录清理（STEP08 后）
+
+- 原有 `docs/` **111 个文件**曾作为终审历史材料；此后从 Main 删除，但所有历史记录仍保存在删除前的 [固定 Commit `49936b51d4beadc69383e931efc3e72d2f0db47e`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/49936b51d4beadc69383e931efc3e72d2f0db47e/docs)。
+- [Legacy Docs Snapshot](LEGACY-DOCS-SNAPSHOT.md) 记录访问入口及永久链接规则。文档中的旧 `docs/...` 路径是**历史树路径**，不是现行 Main 工作目录；应通过固定快照链接读取。
+- 清理仅涉及文档/README 链接和一个已无效的 Portal 静态 CI 路径触发器；`documents/`、业务代码、Contract、Workflow 执行逻辑均不应受删除影响。
+
 ## 1. 分阶段计划
 
 | 顺序 | 交付物 | 迁移状态 | 完成标准 |
@@ -32,12 +38,12 @@
 
 | 领域 | 当前有用的 Legacy 来源 | 目标目录 | 领域权威状态 |
 | --- | --- | --- | --- |
-| Agent / 开发流程 | [旧 Operations](../../docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)、[旧 Skill](../../docs/skill/SKILL-cn.md)、[经验](../../docs/runbooks/development-lessons-cn.md)；Self-Runner Main `8f8cb877887540cbed697260c3e8154e218a49c7` 下的执行 Workflow | [开发工作流](../development/DEVELOPMENT-WORKFLOW.md)、[测试规范](../development/TESTING-AND-EVIDENCE.md) | **ACTIVE（PR #168）**：已切换开发流程领域；旧 Skill 中未迁移的技术安全细节继续有效 |
-| 系统总体架构 | [V4 中文](../../docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md)、[独立 Generator 设计](../../docs/architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)、[Portal 证据](../../docs/platform-portal/validation.md)、[OneLake-first 方案](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) | [System Overview](../architecture/SYSTEM-OVERVIEW.md)、[Data Flow](../architecture/DATA-FLOW.md)、[Infrastructure](../architecture/INFRASTRUCTURE.md) | **ACTIVE（PR #169）**：仅总体架构切换；详细组件与当前状态分别待 STEP04–06 |
-| 主线状态与证据 | [旧 TASK 状态](../../docs/tasks/TASK-STATUS.md)、[最终 TASK004 证据](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 及 Portal/Azure 分项证据 | [PROJECT-STATUS](../status/PROJECT-STATUS.md) | **ACTIVE（PR #170）**：已切换全项目 CURRENT / NEXT；旧 TASK 文档继续作为历史证据 |
+| Agent / 开发流程 | [旧 Operations](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)、[旧 Skill](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/skill/SKILL-cn.md)、[经验](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/runbooks/development-lessons-cn.md)；Self-Runner Main `8f8cb877887540cbed697260c3e8154e218a49c7` 下的执行 Workflow | [开发工作流](../development/DEVELOPMENT-WORKFLOW.md)、[测试规范](../development/TESTING-AND-EVIDENCE.md) | **ACTIVE（PR #168）**：已切换开发流程领域；旧 Skill 中未迁移的技术安全细节继续有效 |
+| 系统总体架构 | [V4 中文](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md)、[独立 Generator 设计](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)、[Portal 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md)、[OneLake-first 方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) | [System Overview](../architecture/SYSTEM-OVERVIEW.md)、[Data Flow](../architecture/DATA-FLOW.md)、[Infrastructure](../architecture/INFRASTRUCTURE.md) | **ACTIVE（PR #169）**：仅总体架构切换；详细组件与当前状态分别待 STEP04–06 |
+| 主线状态与证据 | [旧 TASK 状态](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md)、[最终 TASK004 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 及 Portal/Azure 分项证据 | [PROJECT-STATUS](../status/PROJECT-STATUS.md) | **ACTIVE（PR #170）**：已切换全项目 CURRENT / NEXT；旧 TASK 文档继续作为历史证据 |
 | 本地数据模块 | `apps/`、`airflow/`、`spark/`、`sql/`、`contracts/`、历史 TASK 文档 | [组件目录](../components/README.md)、[重构计划](../components/LEGACY-CODE-REFACTOR-PLAN.md) | **ACTIVE（PR #171）**：组件知识已迁移；现有 Task 命名 Runtime 兼容迁移另行开发 |
-| Azure Fabric | [旧 Azure 入口](../../docs/azure-fabric/README.md)、[OneLake-first 方案](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、`azure/` | [Azure/Fabric 组件](../components/azure-fabric/README.md) | **ACTIVE（PR #172）**：OneLake-first + IaC/Plan-only 事实；尚未定稿的 ETL 实现不提前批准 |
-| Platform Portal | [旧 Portal 入口](../../docs/platform-portal/README.md)、`platform-portal/` | [Platform Portal 组件](../components/platform-portal/README.md) | **ACTIVE（PR #172）**：Marquez/A3/A4 证据与局限，后续实际 Spark 方案仍未批准 |
+| Azure Fabric | [旧 Azure 入口](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/README.md)、[OneLake-first 方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、`azure/` | [Azure/Fabric 组件](../components/azure-fabric/README.md) | **ACTIVE（PR #172）**：OneLake-first + IaC/Plan-only 事实；尚未定稿的 ETL 实现不提前批准 |
+| Platform Portal | [旧 Portal 入口](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/README.md)、`platform-portal/` | [Platform Portal 组件](../components/platform-portal/README.md) | **ACTIVE（PR #172）**：Marquez/A3/A4 证据与局限，后续实际 Spark 方案仍未批准 |
 | 运维和经验 | `docs/runbooks/`、`kubernetes/`、旧 Portal/Azure Operations、真实代码/验收 | [Operations](../operations/README.md)、[Safe Operations](../operations/SAFE-OPERATIONS.md)、[Session Coordination](../development/SESSION-COORDINATION.md)、[Decisions](../decisions/README.md) | **ACTIVE（PR #173）**：通用操作/决策规则已迁移；旧技术细节仍按实际源码/历史证据查阅 |
 
 ## 3. STEP02 事实核验摘要（静态）

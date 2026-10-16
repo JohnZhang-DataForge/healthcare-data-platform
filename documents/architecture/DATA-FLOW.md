@@ -34,7 +34,7 @@ source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
 - **发现 DAG 与入库 DAG 不是一个能力**：`landing_batch_discovery` 每 15 分钟扫描的默认路径是 Discovery/只读 Claim Guard（不代表自动 Writer）；真正 NEW_ONLY Writer DAG `new_only_omop_consumer` 为 `schedule=None`、`max_active_runs=1`、需显式授权。
 - **成功验证的范围**：三条真实 NEW_ONLY Batch 的最终 Claim 均为 COMPLETED。第三批 `synthea-new-only-gh-38588671004` 的 1 Person / 244 Visit 写入后独立读取 `cdm.person=208`、`cdm.visit_occurrence=21934`、Claim=3，并验证同一个 Batch 再消费时跳过 Spark/Writer、PG 不变；这些是 **2026-10-14 验收读数**，不是当前实时数据库统计。
 - **尚未完成**：UPDATE_ONLY、MIX_DATA、Condition/Procedure/Drug/Observation 其他域的业务 Writer、自动批次 Claim 及所有复杂恢复/并发路径。不能将历史 ROLLBACK/PASS 泛化为未来任意 Commit 安全。
-- [当前 DAG 源码](../../airflow/dags/new_only_omop_consumer.py)、[Discovery DAG](../../airflow/dags/landing_batch_discovery.py)、[TASK004 最终验收](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
+- [当前 DAG 源码](../../airflow/dags/new_only_omop_consumer.py)、[Discovery DAG](../../airflow/dags/landing_batch_discovery.py)、[TASK004 最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 
 ## B. 已部分验收：OpenLineage → Marquez（元数据流，不是业务数据流）
 
@@ -47,8 +47,8 @@ Spark Listener  -> independent test events -----^
 - 已证实：A3 Airflow 独立 Probe DAG 的任务事件；A4 SparkApplication 计算真实完成、Run facets 经后续只读证明写入 Marquez。
 - 尚未证实：完整业务 `Airflow → Spark → Person/Visit S3/Parquet → PostgreSQL OMOP` 的一一对应 Job/Run/DataSet 图。A4 的 Spark Run 在 `unknown` Job 下，应用 Job 没有正确挂接；input/output Dataset lineage 尚未通过。
 - Marquez Web 是**官方原生 Web**，不是自主开发的门户应用。它读取独立 `dw-postgre14`，而不是在 OMOP PostgreSQL17 中建立观测业务表。
-- Portal 不能通过伪造测试事件、手工插入血缘边来伪装业务写入或云端实现。下一轮若改共享 Airflow/Spark/Provider，按 [人工协调规则](../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md) 独立授权。
-- [A3 验收](../../docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)、[A4 验收与限制](../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
+- Portal 不能通过伪造测试事件、手工插入血缘边来伪装业务写入或云端实现。下一轮若改共享 Airflow/Spark/Provider，按 [人工协调规则](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md) 独立授权。
+- [A3 验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)、[A4 验收与限制](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
 
 ## C. 新目标：PostgreSQL OMOP → Azure Blob → Fabric Data Factory → Notebook → OneLake
 

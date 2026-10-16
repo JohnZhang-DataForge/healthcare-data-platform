@@ -1,6 +1,6 @@
 # Kubernetes manifests — runtime deployment and workload templates
 
-[← Repository overview](../README.md) · [Workload images](../images/README.md) · [Deployment guide](../docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
+[← Repository overview](../README.md) · [Workload images](../images/README.md) · [Deployment guide](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
 
 This directory keeps **YAML resources and parameterized templates** for selected application workloads; it is not a complete exported cluster configuration or a one-command installation package.
 
@@ -24,6 +24,6 @@ This directory keeps **YAML resources and parameterized templates** for selected
 
 These are verified lab conventions, not necessarily the right placements for other clusters.
 
-**Safety:** templates such as `*.yaml.tpl` require reviewed parameter rendering; blindly applying them will not create a complete valid deployment. Existing PV/PVCs, namespace secrets, service accounts and RBAC can affect durable data. Never delete a volume, rerun an already completed writer, or apply an old namespace-scoped secret based solely on an example manifest. Check the live cluster and [current task guidance](../docs/README.md) first.
+**Safety:** templates such as `*.yaml.tpl` require reviewed parameter rendering; blindly applying them will not create a complete valid deployment. Existing PV/PVCs, namespace secrets, service accounts and RBAC can affect durable data. Never delete a volume, rerun an already completed writer, or apply an old namespace-scoped secret based solely on an example manifest. Check the live cluster and [current task guidance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) first.
 
 For Portal deployment resources, see [`platform-portal/`](../platform-portal/README.md).

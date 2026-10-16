@@ -1,6 +1,6 @@
 # Development and operational scripts
 
-[← Repository overview](../README.md) · [Development operations](../docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
+[← Repository overview](../README.md) · [Development operations](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md)
 
 **Legacy scripts** are organized by historical task/milestone number. **New maintained scripts must be organized by component/function** (for example `scripts/omop/verify_condition_fk.sh`) under the [mandatory naming standard](../documents/development/CODE-ORGANIZATION-AND-NAMING.md). Many are reference, smoke, source preparation or one-time verification utilities; **not all scripts are part of the current runtime ETL path**, and some can mutate S3/Kubernetes/PostgreSQL.
 
@@ -13,7 +13,7 @@
 
 ## Which scripts should an Agent run?
 
-1. **Start with** [`docs/README.md`](../docs/README.md) and [`TASK-STATUS.md`](../docs/tasks/TASK-STATUS.md); identify the currently approved step and its current canonical source.
+1. **Start with** [`docs/README.md`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) and [`TASK-STATUS.md`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md); identify the currently approved step and its current canonical source.
 2. Check whether a script is **READ ONLY**, a generator, a publication helper, a deployment or a business-commit command.
 3. Prefer an existing bounded GitHub/self-hosted Runner workflow where one exists; verify the version, branch and exact inputs.
 4. Use fixed batch/manifest identities and read-only durable inspection before any recovery attempt.

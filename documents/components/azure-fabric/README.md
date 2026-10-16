@@ -23,7 +23,7 @@ Local PostgreSQL OMOP CDM (authoritative，已验收 Person/Visit)
 - **本地 PG 继续是标准化 OMOP 的事实来源**；云端仅建立分析副本，不重做 Synthea/FHIR/HL7 到 OMOP 的 ETL，不反写本地 PG。
 - **Fabric Data Factory 是 Data Pipeline item**，负责触发和监控 Notebook，并非新建 `azurerm_data_factory`。Notebook 负责业务处理，OneLake Lakehouse 是最终 MVP 数据落点。
 - **既有 Azure Blob 是从 PostgreSQL 导出后的 landing**；本地 SeaweedFS S3 是 Synthea 原始数据 Landing，含义不同。
-- 当前不以 Warehouse、dbt、ML 或额外 Azure 服务为首轮前置。Warehouse-first 的 [2026-10-14 旧方案](../../../docs/azure-fabric/AZURE-FABRIC-MINIMAL-IMPLEMENTATION-PLAN-v1.0.zh-CN.md)、旧 Terraform [README 中 Warehouse 可选的段落](../../../azure/infra-terraform/README.md) 与最新 OneLake-first 目标冲突时，以 [10 月 15 日现行方案](../../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) 和本页为准；历史文档正文不伪造一致性。
+- 当前不以 Warehouse、dbt、ML 或额外 Azure 服务为首轮前置。Warehouse-first 的 [2026-10-14 旧方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-FABRIC-MINIMAL-IMPLEMENTATION-PLAN-v1.0.zh-CN.md)、旧 Terraform [README 中 Warehouse 可选的段落](../../../azure/infra-terraform/README.md) 与最新 OneLake-first 目标冲突时，以 [10 月 15 日现行方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) 和本页为准；历史文档正文不伪造一致性。
 
 ## 2. 代码与基础设施资源实际状态
 
@@ -69,4 +69,4 @@ Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/
 
 今后代码按 [组件命名标准](../../development/CODE-ORGANIZATION-AND-NAMING.md) 组织，例如 `apps/omop_export/` 等功能路径；不创建 `taskNNN/stepNNN` 正式源码。Azure 现有 `data-factory`、`notebook` 等是**组件名**，可以保留。
 
-**本轮纯文档**；不运行 Terraform Plan/Apply、Fabric Pipeline、Notebook、数据库导出或数据上传。不因“Plan 成功”创建云端资源，也不因“数据最少”跳过权限/幂等/一致性 Gate。运维规范迁移前参考 [Terraform 技术架构](../../../azure/infra-terraform/docs/ARCHITECTURE.md) 与 [Plan Evidence](../../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)。
+**本轮纯文档**；不运行 Terraform Plan/Apply、Fabric Pipeline、Notebook、数据库导出或数据上传。不因“Plan 成功”创建云端资源，也不因“数据最少”跳过权限/幂等/一致性 Gate。运维规范迁移前参考 [Terraform 技术架构](../../../azure/infra-terraform/docs/ARCHITECTURE.md) 与 [Plan Evidence](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)。

@@ -29,7 +29,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 - [`airflow/dags/new_only_omop_consumer.py`](../../airflow/dags/new_only_omop_consumer.py) 是当前真实验收 DAG；不可为了简洁改其 ID 后直接部署。
 - [`images/new-only-omop-writer/Dockerfile`](../../images/new-only-omop-writer/Dockerfile) 的基础镜像为固定 `task004-cdm-runtime` digest，显式 COPY 多份 `task004_cdm_*.py` 到 **`/opt/task004/`**；`PYTHONPATH` 和 `ENTRYPOINT` 也使用该路径。
 - 当前 Writer Python 和 PG 仍引用 `etl.task004_batch_ledger`、`etl.task004_batch_stage`、`etl.task004_batch_commit`、`task004_writer_fence.assert_active_claim()` 等持久化接口。它们并非只需替换显示名称的文档字符串。
-- 早期版本因覆盖基础镜像中部分旧 `task004_cdm` 模块而遭遇 `BLOCKED=batch_id`，最终通过协调版本 COPY 修复；见 [最终验收](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
+- 早期版本因覆盖基础镜像中部分旧 `task004_cdm` 模块而遭遇 `BLOCKED=batch_id`，最终通过协调版本 COPY 修复；见 [最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 - Batch ID/Manifest URI/Contract Version/Claim/Checkpoint/镜像 Digest 等是不可变身份/持久化协议；**绝不批量替换 task 字符串**。
 
 ## 3. 未来真正重构代码的阶段

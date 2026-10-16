@@ -5,7 +5,7 @@ A hands-on healthcare data engineering platform that ingests **synthetic clinica
 
 The broader architecture is designed to extend into **Microsoft Fabric / OneLake, Azure storage, FHIR and HL7 ingestion, dbt, and ML feature engineering**. Those extensions are part of the roadmap—not claims about components already deployed or production-tested in this repository.
 
-**项目导航（中文）**：[新文档入口](documents/README.md) · **[当前项目状态](documents/status/PROJECT-STATUS.md)** · [当前总体架构](documents/architecture/SYSTEM-OVERVIEW.md) · [AI/Agent 协作规则](documents/development/AGENT-RULES.md) · [运维与决策](documents/operations/README.md) · [历史 Agent 文档](docs/README.md) · [历史任务状态（非当前）](docs/tasks/TASK-STATUS.md) · [已完成的 Airflow → OMOP 真实验收](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [下一阶段 Condition 开发计划](docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)
+**项目导航（中文）**：[新文档入口](documents/README.md) · **[当前项目状态](documents/status/PROJECT-STATUS.md)** · [当前总体架构](documents/architecture/SYSTEM-OVERVIEW.md) · [AI/Agent 协作规则](documents/development/AGENT-RULES.md) · [运维与决策](documents/operations/README.md) · [历史 Agent 文档](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) · [历史任务状态（非当前）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md) · [已完成的 Airflow → OMOP 真实验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [下一阶段 Condition 开发计划](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)
 
 ## What is running and verified
 
@@ -24,7 +24,7 @@ The broader architecture is designed to extend into **Microsoft Fabric / OneLake
 
 - [Real Airflow DAG and independent PostgreSQL acceptance](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822)
 - [Same-batch idempotent replay acceptance](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069)
-- [Detailed final closeout](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
+- [Detailed final closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)
 
 ## Architecture — verified local path
 
@@ -59,9 +59,9 @@ The long-term design expands the lab into a **Kubernetes + Microsoft Fabric** ar
 | GitOps | Argo CD-managed environment promotion and deployment verification | **Roadmap**; GitHub Actions and Airflow GitSync are already exercised |
 | More OMOP domains | Condition first; later Procedure, Drug, Measurement and Observation with vocabulary mapping and FK validation | **Condition STEP00 read-only ready**; not yet committed as business data |
 
-**Current Azure/Fabric target (OneLake-first, NOT deployed):** local PostgreSQL OMOP → consistent read-only export (not built) → **existing Azure Blob landing** → **Fabric Data Factory Data Pipeline** orchestration → PySpark Notebook → **OneLake Lakehouse**. Three independent Fabric Terraform Plans passed, but **no Apply and no cloud ETL**. Warehouse is optional, not the MVP destination. See [current architecture](documents/architecture/DATA-FLOW.md), [infrastructure](documents/architecture/INFRASTRUCTURE.md), and [Azure OneLake-first plan evidence](docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md).
+**Current Azure/Fabric target (OneLake-first, NOT deployed):** local PostgreSQL OMOP → consistent read-only export (not built) → **existing Azure Blob landing** → **Fabric Data Factory Data Pipeline** orchestration → PySpark Notebook → **OneLake Lakehouse**. Three independent Fabric Terraform Plans passed, but **no Apply and no cloud ETL**. Warehouse is optional, not the MVP destination. See [current architecture](documents/architecture/DATA-FLOW.md), [infrastructure](documents/architecture/INFRASTRUCTURE.md), and [Azure OneLake-first plan evidence](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md).
 
-**Current architecture:** [System Overview](documents/architecture/SYSTEM-OVERVIEW.md) · [Data Flow](documents/architecture/DATA-FLOW.md) · [Infrastructure](documents/architecture/INFRASTRUCTURE.md). Historical reference only: [V4 Architecture](docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md) · [old hybrid target](docs/architecture/Healthcare-ETL-Hybrid-Fabric-ML-Design.zh-CN.v2.1.md).
+**Current architecture:** [System Overview](documents/architecture/SYSTEM-OVERVIEW.md) · [Data Flow](documents/architecture/DATA-FLOW.md) · [Infrastructure](documents/architecture/INFRASTRUCTURE.md). Historical reference only: [V4 Architecture](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.en.md) · [old hybrid target](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/Healthcare-ETL-Hybrid-Fabric-ML-Design.zh-CN.v2.1.md).
 
 ## Engineering practices
 
@@ -83,7 +83,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 | [`config/`](config/README.md) | Local configuration examples; no live secrets |
 | [`contracts/`](contracts/README.md) | Source and writer identity / schema contracts |
 | [`documents/`](documents/README.md) | New, incrementally verified project documentation; authoritative migration and AI rules | 
-| [`docs/`](docs/README.md) | Legacy materials and existing evidence; still used for domains not yet migrated |
+| [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | Historical documentation snapshot (removed from Main); evidence remains pinned to the pre-removal commit |
 | [`images/`](images/README.md) | Docker image sources for individual workloads |
 | [`kubernetes/`](kubernetes/README.md) | Kubernetes manifests, service accounts and runtime templates |
 | [`platform-portal/`](platform-portal/README.md) | Marquez / OpenLineage integration and observability experiments |
@@ -94,9 +94,9 @@ Each top-level directory contains its own README explaining scope, entry points 
 
 ## Start here
 
-**Readers / reviewers:** begin with the [current system architecture](documents/architecture/SYSTEM-OVERVIEW.md), then the [TASK004 final E2E acceptance](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For the Fabric or FHIR/HL7 story, read the **roadmap** rather than assuming those components are running.
+**Readers / reviewers:** begin with the [current system architecture](documents/architecture/SYSTEM-OVERVIEW.md), then the [TASK004 final E2E acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For the Fabric or FHIR/HL7 story, read the **roadmap** rather than assuming those components are running.
 
-**Contributors / agents:** start with [AGENTS.md](AGENTS.md) → [documents/README.md](documents/README.md) → **[current PROJECT-STATUS](documents/status/PROJECT-STATUS.md)** → [Agent rules](documents/development/AGENT-RULES.md) and [safe operations](documents/operations/SAFE-OPERATIONS.md). For detailed historical troubleshooting or evidence only, consult the [legacy documentation index](docs/README.md) and dated [TASK history](docs/tasks/TASK-STATUS.md); neither controls current NEXT. New source paths use [component-first naming](documents/development/CODE-ORGANIZATION-AND-NAMING.md). As of the last verified closeout, **TASK004 is completed**; the next scoped work is **TASK005 Condition STEP00 (read-only preflight)**.
+**Contributors / agents:** start with [AGENTS.md](AGENTS.md) → [documents/README.md](documents/README.md) → **[current PROJECT-STATUS](documents/status/PROJECT-STATUS.md)** → [Agent rules](documents/development/AGENT-RULES.md) and [safe operations](documents/operations/SAFE-OPERATIONS.md). For detailed historical troubleshooting or evidence only, consult the **read-only historical snapshot** at the [legacy documentation index](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) and dated [TASK history](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md); neither controls current NEXT. New source paths use [component-first naming](documents/development/CODE-ORGANIZATION-AND-NAMING.md). As of the last verified closeout, **TASK004 is completed**; the next scoped work is **TASK005 Condition STEP00 (read-only preflight)**.
 
 **Environment:** the lab has configuration examples in [config/local.env.example](config/local.env.example). This repository is **not a one-command production installer**; cluster components, namespace-specific secrets and historical deployments must be audited before reproducing the runtime. The prior `/data/spark/phase3c` baseline is historical and intentionally protected; it is not the active source tree.
 

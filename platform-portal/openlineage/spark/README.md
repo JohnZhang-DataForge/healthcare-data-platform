@@ -1,6 +1,6 @@
 # A4 — Standalone Spark → OpenLineage → Marquez (STATIC SOURCE + ONE REAL SMOKE DONE)
 
-**任务 1 源码起点是静态交付；2026-10-14 后来已进行一次独立真实 Spark Smoke（Spark/CSV 成功，Marquez 真 Run 回读 PASS，App Job↔Run 命名和 Dataset facets 仍未完成）**。详见 [A4 实测 Closeout](../../../docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。 先阅读 [Portal 人工协调规则](../../../docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)：用户确认另一个 TASK004 Session 仍在处理最后 DB COMMIT/Secret。**在用户明确暂停共享集群工作且实时只读检查通过之前，不得触发 Runner/Kubernetes/SparkApplication**。
+**任务 1 源码起点是静态交付；2026-10-14 后来已进行一次独立真实 Spark Smoke（Spark/CSV 成功，Marquez 真 Run 回读 PASS，App Job↔Run 命名和 Dataset facets 仍未完成）**。详见 [A4 实测 Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。 先阅读 [Portal 人工协调规则](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)：用户确认另一个 TASK004 Session 仍在处理最后 DB COMMIT/Secret。**在用户明确暂停共享集群工作且实时只读检查通过之前，不得触发 Runner/Kubernetes/SparkApplication**。
 
 ## 结构与隔离
 
@@ -37,7 +37,7 @@
 - OpenLineage Spark Listener per-job 配置： https://openlineage.io/docs/integrations/spark/configuration/usage/
 - OpenLineage Spark Maven 坐标/安装： https://openlineage.io/docs/integrations/spark/installation/
 - HTTP Transport endpoint： https://openlineage.io/docs/integrations/spark/configuration/transport/
-- 现有 TASK004 成功 Spark Handoff： [2026-10-14 真实验收](../../../docs/tasks/NEW-ONLY-AIRFLOW-SPARK-FRESH-70-11487-LIVE-HANDOFF-2026-10-14.zh-CN.md)。
+- 现有 TASK004 成功 Spark Handoff： [2026-10-14 真实验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/NEW-ONLY-AIRFLOW-SPARK-FRESH-70-11487-LIVE-HANDOFF-2026-10-14.zh-CN.md)。
 
 ## 成功判断
 

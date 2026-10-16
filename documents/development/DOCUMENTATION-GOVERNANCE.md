@@ -1,5 +1,7 @@
 # 文档重建与生命周期治理规则 v1
 
+> **历史目录清理**：原 `docs/` 已从 Main 退休；旧验收/Runbook 通过 [固定 Git 快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 读取，不允许新文件写回 `docs/`。所有新增权威项目说明写入 `documents/`，未来 Specs/Changes 则归 OpenSpec。
+
 > **状态：ACTIVE · 2026-10-16** · **目标：为未来 OpenSpec 建立准确、可演进、不重复的事实基础。**
 
 ## 1. 基本原则
