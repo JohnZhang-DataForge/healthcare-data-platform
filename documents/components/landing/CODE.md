@@ -2,7 +2,7 @@
 status: active
 scope: landing-apps-source-map
 last_verified: 2026-10-16
-source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
+source_sha: d019429332e794e412426cf9c5053bafa043c05e
 ---
 
 # Landing / Discovery / Claim — CODE / 源码导航
@@ -76,7 +76,81 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 **镜像兼容性**：`landing-processing-runtime` 继承固定 TASK004 控制面 Digest，只叠加新的 v2 Landing Resolver 与 JSON Contract；切勿因为 Builder 成功而假定运行中消费者已经升级，或把 `claim=disabled` 镜像等同于获得 Claim/Writer 权限。
 
+## 历史 Shell / 脚本导航（由 landing 组件负责）
+
+> 本清单是历史 Step Shell 的**代码索引，不是按顺序执行的 Runbook**。这些文件可能使用固定 Git SHA/Batch ID、操作 S3/PG/K8s、修改仓库源码或生成本地报告；任何执行须先读脚本全文并核对 [Safe Operations](../../operations/SAFE-OPERATIONS.md)。新脚本必须按组件/能力命名，不能新增 `taskNNN` 路径。
+
+## 历史 task001（5 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`00-reset-task001.sh`](../../../scripts/task001/00-reset-task001.sh) | [HIGH / review] 历史 TASK001 reset 历史 Task 脚本；可能清理本地文件/临时资源，禁止无审查重放 |
+| [`02-s3-readonly-preflight.sh`](../../../scripts/task001/02-s3-readonly-preflight.sh) | [CHECK / verify effects] 历史 TASK001 S3 readonly preflight 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`03-publish-landing-payload.sh`](../../../scripts/task001/03-publish-landing-payload.sh) | [EXECUTE / review] 历史 TASK001 publish landing payload 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`04-publish-intake-manifest.sh`](../../../scripts/task001/04-publish-intake-manifest.sh) | [EXECUTE / review] 历史 TASK001 publish intake manifest 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05-validate-task001.sh`](../../../scripts/task001/05-validate-task001.sh) | [CHECK / verify effects] 历史 TASK001 validate 历史 Task 脚本 |
+
+## 历史 task003（48 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`05-write-ae-freeze-doc.sh`](../../../scripts/task003/05-write-ae-freeze-doc.sh) | [PREPARE / may write] 历史 TASK003 write ae freeze doc 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05d-prepare-visit-remote-metadata.sh`](../../../scripts/task003/05d-prepare-visit-remote-metadata.sh) | [PREPARE / may write] 历史 TASK003 prepare visit remote metadata 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05d-verify-visit-remote-metadata.sh`](../../../scripts/task003/05d-verify-visit-remote-metadata.sh) | [CHECK / verify effects] 历史 TASK003 verify visit remote metadata 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05e-prepare-visit-raw.sh`](../../../scripts/task003/05e-prepare-visit-raw.sh) | [PREPARE / may write] 历史 TASK003 prepare visit raw 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05e-validate-visit-raw.sh`](../../../scripts/task003/05e-validate-visit-raw.sh) | [CHECK / verify effects] 历史 TASK003 validate visit raw 脚本 |
+| [`05g1-plan-visit-processed.sh`](../../../scripts/task003/05g1-plan-visit-processed.sh) | [CHECK / verify effects] 历史 TASK003 plan visit processed 脚本 |
+| [`05g1-prepare-visit-processed-plan-validation.sh`](../../../scripts/task003/05g1-prepare-visit-processed-plan-validation.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed plan validation 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g1-prepare-visit-processed-plan.sh`](../../../scripts/task003/05g1-prepare-visit-processed-plan.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed plan 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g1-verify-visit-processed-plan.sh`](../../../scripts/task003/05g1-verify-visit-processed-plan.sh) | [CHECK / verify effects] 历史 TASK003 verify visit processed plan 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05g2a-inspect-visit-processed-prefix.sh`](../../../scripts/task003/05g2a-inspect-visit-processed-prefix.sh) | [CHECK / verify effects] 历史 TASK003 inspect visit processed prefix 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05g2a-prepare-visit-processed-prefix-guard.sh`](../../../scripts/task003/05g2a-prepare-visit-processed-prefix-guard.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed prefix guard 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2b-inspect-visit-processed-remote.sh`](../../../scripts/task003/05g2b-inspect-visit-processed-remote.sh) | [CHECK / verify effects] 历史 TASK003 inspect visit processed remote 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05g2b-prepare-visit-processed-remote.sh`](../../../scripts/task003/05g2b-prepare-visit-processed-remote.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed remote 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c1-prepare-visit-processed-write-intent.sh`](../../../scripts/task003/05g2c1-prepare-visit-processed-write-intent.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed write intent 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c1-verify-visit-processed-write-intent.sh`](../../../scripts/task003/05g2c1-verify-visit-processed-write-intent.sh) | [CHECK / verify effects] 历史 TASK003 verify visit processed write intent 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05g2c2a-prepare-writer-reservation-source.sh`](../../../scripts/task003/05g2c2a-prepare-writer-reservation-source.sh) | [PREPARE / may write] 历史 TASK003 prepare writer reservation source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2a-prepare-writer-reservation.sh`](../../../scripts/task003/05g2c2a-prepare-writer-reservation.sh) | [PREPARE / may write] 历史 TASK003 prepare writer reservation 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c2a-check-runtime-readonly.sh`](../../../scripts/task003/05g2c2c2a-check-runtime-readonly.sh) | [CHECK / verify effects] 历史 TASK003 check runtime readonly 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`05g2c2c2a-prepare-runtime-readonly.sh`](../../../scripts/task003/05g2c2c2a-prepare-runtime-readonly.sh) | [PREPARE / may write] 历史 TASK003 prepare runtime readonly 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c2a-repair-rbac-command.sh`](../../../scripts/task003/05g2c2c2a-repair-rbac-command.sh) | [HIGH / review] 历史 TASK003 repair rbac command 脚本；会修改历史脚本源码，不能作为只读检查 |
+| [`05g2c2c2b1-prepare-bundle-inventory-source.sh`](../../../scripts/task003/05g2c2c2b1-prepare-bundle-inventory-source.sh) | [PREPARE / may write] 历史 TASK003 prepare bundle inventory source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c2b1-prepare-bundle-inventory.sh`](../../../scripts/task003/05g2c2c2b1-prepare-bundle-inventory.sh) | [PREPARE / may write] 历史 TASK003 prepare bundle inventory 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c2b2-prepare-runtime-bundle-source.sh`](../../../scripts/task003/05g2c2c2b2-prepare-runtime-bundle-source.sh) | [PREPARE / may write] 历史 TASK003 prepare runtime bundle source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c2b2-prepare-runtime-bundle.sh`](../../../scripts/task003/05g2c2c2b2-prepare-runtime-bundle.sh) | [PREPARE / may write] 历史 TASK003 prepare runtime bundle 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3a-acquire-writer-reservation.sh`](../../../scripts/task003/05g2c2c3a-acquire-writer-reservation.sh) | [EXECUTE / review] 历史 TASK003 acquire writer reservation 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05g2c2c3a-prepare-writer-reservation-acquire.sh`](../../../scripts/task003/05g2c2c3a-prepare-writer-reservation-acquire.sh) | [PREPARE / may write] 历史 TASK003 prepare writer reservation acquire 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3b-capture-postlock-preflight.sh`](../../../scripts/task003/05g2c2c3b-capture-postlock-preflight.sh) | [PREPARE / may write] 历史 TASK003 capture postlock preflight 脚本 |
+| [`05g2c2c3b-prepare-postlock-preflight.sh`](../../../scripts/task003/05g2c2c3b-prepare-postlock-preflight.sh) | [PREPARE / may write] 历史 TASK003 prepare postlock preflight 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3c-issue-write-permit.sh`](../../../scripts/task003/05g2c2c3c-issue-write-permit.sh) | [EXECUTE / review] 历史 TASK003 issue write permit 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05g2c2c3c1-prepare-write-permit-source.sh`](../../../scripts/task003/05g2c2c3c1-prepare-write-permit-source.sh) | [PREPARE / may write] 历史 TASK003 prepare write permit source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3c2-launch-visit-processed-writer.sh`](../../../scripts/task003/05g2c2c3c2-launch-visit-processed-writer.sh) | [EXECUTE / review] 历史 TASK003 launch visit processed writer 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05g2c2c3c2-prepare-atomic-writer-launcher.sh`](../../../scripts/task003/05g2c2c3c2-prepare-atomic-writer-launcher.sh) | [PREPARE / may write] 历史 TASK003 prepare atomic writer launcher 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3d1-observe-visit-processed-writer.sh`](../../../scripts/task003/05g2c2c3d1-observe-visit-processed-writer.sh) | [CHECK / verify effects] 历史 TASK003 observe visit processed writer 脚本 |
+| [`05g2c2c3d1-prepare-writer-observer.sh`](../../../scripts/task003/05g2c2c3d1-prepare-writer-observer.sh) | [PREPARE / may write] 历史 TASK003 prepare writer observer 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3d2b2-prepare-independent-readback.sh`](../../../scripts/task003/05g2c2c3d2b2-prepare-independent-readback.sh) | [PREPARE / may write] 历史 TASK003 prepare independent readback 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3d2b2-run-independent-readback.sh`](../../../scripts/task003/05g2c2c3d2b2-run-independent-readback.sh) | [EXECUTE / review] 历史 TASK003 run independent readback 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05g3a-build-processed-dq.sh`](../../../scripts/task003/05g3a-build-processed-dq.sh) | [PREPARE / may write] 历史 TASK003 build processed dq 脚本 |
+| [`05g3a-prepare-processed-dq-builder.sh`](../../../scripts/task003/05g3a-prepare-processed-dq-builder.sh) | [PREPARE / may write] 历史 TASK003 prepare processed dq builder 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g3b1-prepare-processed-dq-publisher-source.sh`](../../../scripts/task003/05g3b1-prepare-processed-dq-publisher-source.sh) | [PREPARE / may write] 历史 TASK003 prepare processed dq publisher source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g3b2-prepare-processed-dq-publication.sh`](../../../scripts/task003/05g3b2-prepare-processed-dq-publication.sh) | [PREPARE / may write] 历史 TASK003 prepare processed dq publication 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g3b2-publish-processed-dq.sh`](../../../scripts/task003/05g3b2-publish-processed-dq.sh) | [EXECUTE / review] 历史 TASK003 publish processed dq 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05g4a-build-processed-manifest.sh`](../../../scripts/task003/05g4a-build-processed-manifest.sh) | [PREPARE / may write] 历史 TASK003 build processed manifest 脚本 |
+| [`05g4a-prepare-processed-manifest-builder.sh`](../../../scripts/task003/05g4a-prepare-processed-manifest-builder.sh) | [PREPARE / may write] 历史 TASK003 prepare processed manifest builder 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g4c1-prepare-processed-manifest-publisher-source.sh`](../../../scripts/task003/05g4c1-prepare-processed-manifest-publisher-source.sh) | [PREPARE / may write] 历史 TASK003 prepare processed manifest publisher source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g4c2-prepare-processed-manifest-publication.sh`](../../../scripts/task003/05g4c2-prepare-processed-manifest-publication.sh) | [PREPARE / may write] 历史 TASK003 prepare processed manifest publication 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g4c2-publish-processed-manifest.sh`](../../../scripts/task003/05g4c2-publish-processed-manifest.sh) | [EXECUTE / review] 历史 TASK003 publish processed manifest 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05g5a-prepare-processed-publication-reservation-release.sh`](../../../scripts/task003/05g5a-prepare-processed-publication-reservation-release.sh) | [PREPARE / may write] 历史 TASK003 prepare processed publication reservation release 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g5a-release-processed-publication-reservation.sh`](../../../scripts/task003/05g5a-release-processed-publication-reservation.sh) | [HIGH / review] 历史 TASK003 release processed publication reservation 脚本 |
+
+## 历史 task004（2 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`05a-prepare-generic-landing-resolver.sh`](../../../scripts/task004/05a-prepare-generic-landing-resolver.sh) | [PREPARE / may write] 历史 TASK004 prepare generic landing resolver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05c-resolve-runtime-lineage.sh`](../../../scripts/task004/05c-resolve-runtime-lineage.sh) | [LEGACY / review] 历史 TASK004 resolve runtime lineage 脚本 |
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/` 或 `kubernetes/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/`、`kubernetes/` 或 `scripts/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 

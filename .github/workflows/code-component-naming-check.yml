@@ -4,6 +4,7 @@ on:
     paths:
       - 'apps/**'
       - 'documents/components/**/CODE.md'
+      - 'documents/development/CODE.md'
       - 'spark/**'
       - 'airflow/**'
       - 'sql/**'
@@ -30,7 +31,7 @@ jobs:
           persist-credentials: false
       - name: Unit tests for code naming guard
         run: python3 -m unittest discover -s tests/quality -p 'test_*.py' -v
-      - name: Require Airflow, apps, Spark, Contract, SQL, Image and K8s CODE.md synchronization
+      - name: Require component CODE.md sync: Airflow, apps, Spark, SQL, image, K8s, scripts and config
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}

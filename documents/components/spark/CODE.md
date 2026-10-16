@@ -2,7 +2,7 @@
 status: active
 scope: spark-source-code-map
 last_verified: 2026-10-16
-source_sha: f16e652ce0018fed5bb5d485f6eebe21c96d6603
+source_sha: d019429332e794e412426cf9c5053bafa043c05e
 ---
 
 # Spark — CODE / 源码导航
@@ -92,9 +92,48 @@ source_sha: f16e652ce0018fed5bb5d485f6eebe21c96d6603
 - **观测**：[Portal / Marquez](../platform-portal/README.md) 的独立 Spark OpenLineage Smoke 不等于 Person/Visit 真实业务血缘已闭环。
 - **历史已验收事实**：[TASK004 Final E2E](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 
+## 历史 Shell / 脚本导航（由 spark 组件负责）
+
+> 本清单是历史 Step Shell 的**代码索引，不是按顺序执行的 Runbook**。这些文件可能使用固定 Git SHA/Batch ID、操作 S3/PG/K8s、修改仓库源码或生成本地报告；任何执行须先读脚本全文并核对 [Safe Operations](../../operations/SAFE-OPERATIONS.md)。新脚本必须按组件/能力命名，不能新增 `taskNNN` 路径。
+
+## 历史 task002（6 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`00-reset-task002.sh`](../../../scripts/task002/00-reset-task002.sh) | [HIGH / review] 历史 TASK002 reset 历史 Task 脚本；可能清理本地文件/临时资源，禁止无审查重放 |
+| [`01-inspect-person-baseline.sh`](../../../scripts/task002/01-inspect-person-baseline.sh) | [CHECK / verify effects] 历史 TASK002 inspect person baseline 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+| [`02-capture-legacy-person-blueprint.sh`](../../../scripts/task002/02-capture-legacy-person-blueprint.sh) | [PREPARE / may write] 历史 TASK002 capture legacy person blueprint 脚本 |
+| [`03-run-person-canonical-adapter.sh`](../../../scripts/task002/03-run-person-canonical-adapter.sh) | [EXECUTE / review] 历史 TASK002 run person canonical adapter 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`04-publish-canonical-patient.sh`](../../../scripts/task002/04-publish-canonical-patient.sh) | [EXECUTE / review] 历史 TASK002 publish canonical patient 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05-map-person-omop.sh`](../../../scripts/task002/05-map-person-omop.sh) | [EXECUTE / review] 历史 TASK002 map person OMOP 脚本 |
+
+## 历史 task003（11 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`03-run-encounter-canonical-adapter.sh`](../../../scripts/task003/03-run-encounter-canonical-adapter.sh) | [EXECUTE / review] 历史 TASK003 run encounter canonical adapter 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`04-prepare-canonical-encounter-publish.sh`](../../../scripts/task003/04-prepare-canonical-encounter-publish.sh) | [PREPARE / may write] 历史 TASK003 prepare canonical encounter publish 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`04-publish-canonical-encounter.sh`](../../../scripts/task003/04-publish-canonical-encounter.sh) | [EXECUTE / review] 历史 TASK003 publish canonical encounter 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`04-resume-canonical-encounter-publish.sh`](../../../scripts/task003/04-resume-canonical-encounter-publish.sh) | [LEGACY / review] 历史 TASK003 resume canonical encounter publish 脚本 |
+| [`05f-prepare-visit-candidate-mapping.sh`](../../../scripts/task003/05f-prepare-visit-candidate-mapping.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate mapping 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05f2a-prepare-visit-candidate-driver.sh`](../../../scripts/task003/05f2a-prepare-visit-candidate-driver.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate driver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05f2b-prepare-visit-candidate-runtime.sh`](../../../scripts/task003/05f2b-prepare-visit-candidate-runtime.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05f2c-validate-visit-candidate.sh`](../../../scripts/task003/05f2c-validate-visit-candidate.sh) | [CHECK / verify effects] 历史 TASK003 validate visit candidate 脚本 |
+| [`05g2c2b-prepare-visit-processed-writer-core.sh`](../../../scripts/task003/05g2c2b-prepare-visit-processed-writer-core.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed writer core 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c1-prepare-visit-processed-spark-driver.sh`](../../../scripts/task003/05g2c2c1-prepare-visit-processed-spark-driver.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed spark driver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05g2c2c3d2b1-prepare-persisted-validator-source.sh`](../../../scripts/task003/05g2c2c3d2b1-prepare-persisted-validator-source.sh) | [PREPARE / may write] 历史 TASK003 prepare persisted validator source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+
+## 历史 task004（3 个入口）
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`05d-run-person-canonical.sh`](../../../scripts/task004/05d-run-person-canonical.sh) | [EXECUTE / review] 历史 TASK004 run person canonical 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05e-run-visit-canonical.sh`](../../../scripts/task004/05e-run-visit-canonical.sh) | [EXECUTE / review] 历史 TASK004 run visit canonical 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`05f-reconcile-person-visit.sh`](../../../scripts/task004/05f-reconcile-person-visit.sh) | [CHECK / verify effects] 历史 TASK004 reconcile person visit 脚本 |
+
 ## 8. 源码与文档维护规则
 
-**在 `spark/` 下新增、删除、移动或重命名任意源码、JSON Contract 或 YAML 模板，必须在同一个 PR 修改本 `CODE.md`。** 入口、职责、关键接口或依赖变化也必须审查导航内容。普通内部重构未影响导航时不要求无意义地更改文件。
+**在 `spark/` 下新增、删除、移动或重命名任意源码、JSON Contract、YAML 模板，或变更本组件负责的 `scripts/` Shell 时，必须在同一个 PR 修改本 `CODE.md`。** 入口、职责、关键接口或依赖变化也必须审查导航内容。普通内部重构未影响导航时不要求无意义地更改文件。
 
 [CODE Map CI](../../../scripts/quality/check_component_code_map.py) 除 Airflow / Apps 外，对 Spark 的源码清单完整性、缺失/失效/重复链接及同 PR 同步作静态校验。当前收录 **44 个文件：18 Python、14 JSON、12 YAML 模板**；以后以 Git Tree 为准，不把这个统计当永久常量。
 

@@ -47,6 +47,8 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 - 普通代码变更优先就近单测/契约测试；无需每次全量重跑旧项目或建设企业级复杂治理系统。
 - 冻结的 TASK001–TASK003、TASK004 已最终验收的 Person/Visit 路径不能仅因新任务而重新入库；TASK005 仅在对应权限/范围批准后逐步进入 Condition 实现。
 
+**历史 Shell 源码导航**：按功能读取 [Synthea CODE](../components/synthea/CODE.md)、[Landing CODE](../components/landing/CODE.md)、[Spark CODE](../components/spark/CODE.md)、[OMOP CODE](../components/omop/CODE.md)、[Airflow CODE](../components/airflow/CODE.md)。通用静态工具、文档生成辅助和 [`config/local.env.example`](../../config/local.env.example) 由 [Developer CODE](CODE.md) 维护。清单只提供源码入口，不代表可以重放已完成阶段。
+
 ## 3. 如何正确选择 Workflow（先核对再复用）
 
 **每轮不要凭 Workflow 名字决定行为**。到 Self-Runner `.github/workflows/` 读取该文件的 `on`、branches、paths、`workflow_dispatch.inputs`、`runs-on`、checkout `repository/ref`、参数校验、脚本、资源操作与清理策略。Workflow 在 Git 上“存在”不等于对当前代码或目标环境已验证。
