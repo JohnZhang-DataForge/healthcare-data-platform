@@ -13,6 +13,11 @@
 5. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
 6. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
 
+## Portal 与 Azure/Fabric 专项组件（STEP06 已审核）
+
+- [Platform Portal：Marquez / OpenLineage](components/platform-portal/README.md) — 部署与 A3/A4 历史验收、Spark Job↔Run/Dataset 未完成和待讨论接入方案。
+- [Azure/Fabric：OMOP → Azure Blob → Fabric Pipeline/Notebook → OneLake](components/azure-fabric/README.md) — OneLake-first 方案、Terraform Plan-only 证据、未完成的导出/业务装载边界。
+
 ## Local Pipeline 组件（STEP05 已审核）
 
 - [组件目录与职责](components/README.md) — Synthea、Landing、Airflow、Spark、OMOP 五个可长期维护的业务模块。

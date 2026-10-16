@@ -17,7 +17,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 | Spark Canonical / DQ | [Spark](spark/README.md) | `spark/apps/person/`、`spark/apps/visit/`、`spark/common/` |
 | OMOP Writer / PostgreSQL | [OMOP](omop/README.md) | `apps/omop_writer/`、`sql/`，原子事务、Mapping、Reconciliation |
 
-**横切边界**：Portal/Marquez 可观测性与 Azure PG→Blob→Fabric→OneLake 不属于这些模块的实际数据处理逻辑；详细组件说明在 STEP06，当前总设计见 [System Overview](../architecture/SYSTEM-OVERVIEW.md)。
+**横切边界（已于 STEP06 完成专项说明）**：[Portal / Marquez](platform-portal/README.md) 是观测子系统，[Azure/Fabric](azure-fabric/README.md) 是本地 PG 的云端分析副本，不属于这五个模块的事务 Writer。总体图见 [System Overview](../architecture/SYSTEM-OVERVIEW.md)。
 
 ## 组件职责与依赖方向
 
