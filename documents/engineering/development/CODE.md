@@ -14,6 +14,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
 | [`check_component_code_map.py`](../../../scripts/quality/check_component_code_map.py) | [STATIC CI] Git diff/tree 组件 CODE.md 全量导航和新增/删除同步 CI Gate（本 PR 扩展） |
+| [`check_documentation_links.py`](../../../scripts/quality/check_documentation_links.py) | [STATIC CI] 所有 tracked Markdown 相对文件/目录链接完整性检测（离线、仅路径） |
 | [`check_new_code_names.py`](../../../scripts/quality/check_new_code_names.py) | [STATIC CI] 阻止新增正式源码采用 Task/Step 命名；历史文件豁免 |
 
 ## 开发环境示例配置

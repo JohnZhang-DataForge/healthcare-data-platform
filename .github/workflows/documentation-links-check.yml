@@ -1,0 +1,26 @@
+name: Documentation Relative Links
+on:
+  pull_request:
+    paths:
+      - '**/*.md'
+      - '**/*.mdx'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'scripts/quality/check_documentation_links.py'
+      - 'tests/quality/test_documentation_links.py'
+      - '.github/workflows/documentation-links-check.yml'
+permissions:
+  contents: read
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Unit tests for documentation links
+        run: python3 -m unittest discover -s tests/quality -p 'test_documentation_links.py' -v
+      - name: Check all tracked Markdown relative links
+        run: python3 scripts/quality/check_documentation_links.py
