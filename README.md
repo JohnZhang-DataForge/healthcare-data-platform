@@ -87,7 +87,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 | [`images/`](images/README.md) | Docker image sources for individual workloads |
 | [`kubernetes/`](kubernetes/README.md) | Kubernetes manifests, service accounts and runtime templates |
 | [`platform-portal/`](platform-portal/README.md) | Marquez / OpenLineage integration and observability experiments |
-| [`scripts/`](scripts/README.md) | Task-scoped development and verification scripts |
+| [`scripts/`](scripts/README.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
 | [`spark/`](spark/README.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
 | [`sql/`](sql/README.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
 | [`tests/`](tests/README.md) | Unit, contract and regression tests |
@@ -96,7 +96,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 
 **Readers / reviewers:** begin with the [current system architecture](documents/architecture/SYSTEM-OVERVIEW.md), then the [TASK004 final E2E acceptance](docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md). For the Fabric or FHIR/HL7 story, read the **roadmap** rather than assuming those components are running.
 
-**Contributors / agents:** start with [AGENTS.md](AGENTS.md) → [documents/README.md](documents/README.md) → [Agent rules](documents/development/AGENT-RULES.md) and [documentation governance](documents/development/DOCUMENTATION-GOVERNANCE.md). For an **unmigrated** domain, consult the current source/contract and [legacy TASK-STATUS](docs/tasks/TASK-STATUS.md), [operations](docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md), and [skills](docs/skill/SKILL-cn.md), resolving conflicts against current verified evidence rather than historical NEXT instructions. As of the last verified closeout, **TASK004 is completed**; the next scoped work is **TASK005 Condition STEP00 (read-only preflight)**.
+**Contributors / agents:** start with [AGENTS.md](AGENTS.md) → [documents/README.md](documents/README.md) → **[current PROJECT-STATUS](documents/status/PROJECT-STATUS.md)** → [Agent rules](documents/development/AGENT-RULES.md) and [safe operations](documents/operations/SAFE-OPERATIONS.md). For detailed historical troubleshooting or evidence only, consult the [legacy documentation index](docs/README.md) and dated [TASK history](docs/tasks/TASK-STATUS.md); neither controls current NEXT. New source paths use [component-first naming](documents/development/CODE-ORGANIZATION-AND-NAMING.md). As of the last verified closeout, **TASK004 is completed**; the next scoped work is **TASK005 Condition STEP00 (read-only preflight)**.
 
 **Environment:** the lab has configuration examples in [config/local.env.example](config/local.env.example). This repository is **not a one-command production installer**; cluster components, namespace-specific secrets and historical deployments must be audited before reproducing the runtime. The prior `/data/spark/phase3c` baseline is historical and intentionally protected; it is not the active source tree.
 

@@ -7,7 +7,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 # OpenSpec 迁移准备 — STEP08/STEP09 Gate
 
-> **准备清单，不是初始化记录**。采用 OpenSpec 作为今后变更管理和 Agent 接力的方向已确认，但当前 Main **没有 `openspec/`**；STEP07 不执行 OpenSpec CLI/npm、不创建 Spec 目录、不触发任何业务/云端 Workflow。
+> **STEP08 终审完成后的准备清单，不是 OpenSpec 初始化记录。** 正式采用 OpenSpec 管后续变更与 Agent 接力的方向已确认，但已核验的 Main 仍**没有 `openspec/`**；没有运行 OpenSpec CLI/npm，也没有为此触发业务或云端 Workflow。[最终文档权威终审](FINAL-DOCUMENTATION-AUDIT.md)。
 
 ## 1. 最小职责分配
 
@@ -34,7 +34,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 - `platform-lineage-observability`：Marquez + Airflow A3 真实事件 + Spark A4 独立 Smoke 的**分项现状**；真实 Spark Dataset 业务血缘作为未来 Change。
 - `azure-omop-analytics`：Azure/Fabric 目标架构、现有 IaC/Plan 的**当前事实**；Exporter/Notebook/OneLake 业务加载应是未来 Change，不得写成现行已验收 Behavior。
 
-## 4. STEP08 最终文档审核 Gate
+## 4. STEP08 最终文档审核 Gate（PR #174 合并后 COMPLETE）
 
 1. 检查根 `README.md`、`AGENTS.md`、新 `documents/` 及仍被引用的旧 `docs/`：入口是否把旧 `TASK-STATUS` 误标为 Current；修正权威导航，**不批量改写历史验收**。
 2. 校验全部当前 Markdown 相对链接、当前项目状态是否唯一、COMPLETE 与真实证据一致；保留版本/SHA/适用范围。
@@ -49,4 +49,4 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 4. 选择一个小型**获批** Change 测试新 Session 接力与 Verify/Archive；Task 勾选不能代替 PR 合并与独立业务读回。
 5. OpenSpec 与 Self-Runner 是不同层：OpenSpec 不自动抢占任务或管理共享 Runtime；任何实际运行仍按安全规则单独授权。
 
-**STEP07 只交付此清单，STEP09 初始化需要未来明确启动。**
+**STEP08 只完成文档审查与权威切换，STEP09 仍未初始化。** 下一阶段从最新 Main 更新或替代旧 PR #164，并记录真实 CLI Init/Validate、配置 Schema 与版本证据，再开展第一个受控 Change。

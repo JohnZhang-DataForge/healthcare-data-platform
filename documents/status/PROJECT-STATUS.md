@@ -21,7 +21,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 | **TASK005 — Condition** | **READY FOR STEP00 READ-ONLY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 从源合同、外键、Vocabulary、OMOP Schema 的只读预检开始；任何业务 COMMIT 须单独批准 |
 | **Platform Portal — Marquez / OpenLineage** | **前期实施/验收完成；下一阶段 Spark 接入方案讨论中** | 独立 PG14、Marquez Web/API、A3 Airflow 事件已真实验证；A4 隔离 Spark Smoke 有实际运行和部分读回证据 | **下一步如何接入真实 Spark 业务链路尚未确定**；Job↔Run 名称挂接和 Dataset I/O 完整血缘待处理，不直接启动新 Spark/共享资源 |
 | **Azure/Fabric — OMOP → OneLake** | **目标方案已敲定；IaC/Runner 工程及三个目标资源 Plan 完成；NO APPLY** | 已有 Azure Blob Landing / Workspace；Terraform 各组件资源定义、IAM 边界和 `Azure-Infra-TF` Workflow 在 Git；Lakehouse、Notebook、Pipeline 三个独立 Plan PASS | Exporter、真实 Notebook ETL、Pipeline 与 Notebook 绑定、Fabric 资源部署和数据 E2E 尚未讨论完成/实现；下一阶段先明确细节与验收门槛 |
-| **文档重建 / OpenSpec** | **STEP01–05 已合并；本次进行 STEP06** | `documents/` 治理、开发规范、当前架构/项目状态及五个本地组件已在 Main | STEP06 补齐 Portal / Azure 组件；再进行 STEP07 运维和决策整理；OpenSpec 尚未进入 Main |
+| **文档重建 / OpenSpec** | **STEP01–08 文档重建 COMPLETE（PR #174 合并后）；STEP09 未开始** | 治理、状态、架构、本地/Portal/Azure 组件、运维决策、协作规则和导航审核均已纳入 Main | 下一阶段按 [Readiness](../migration/OPENSPEC-READINESS.md) 正式初始化/验证 OpenSpec；业务开发不能把未实现能力写成已验收 |
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
@@ -111,11 +111,11 @@ Local PostgreSQL OMOP (authoritative)
 | **STEP04 — 当前项目统一状态** | **COMPLETE** — [PR #170](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/170) |
 | STEP05 — 本地组件文档与新代码命名约束 | **COMPLETE** — [PR #171](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/171)，旧代码未物理 Rename |
 | STEP06 — Portal / Azure 专项文档 | **COMPLETE** — [PR #172](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/172) |
-| **STEP07 — Operations/Decisions/Session + OpenSpec Readiness** | **COMPLETE after current PR merges** |
-| STEP08 — 最终文档入口和权威校验 | **NOT STARTED** |
+| STEP07 — Operations/Decisions/Session + OpenSpec Readiness | **COMPLETE** — [PR #173](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/173) |
+| **STEP08 — 最终文档入口和权威校验** | **COMPLETE** — [PR #174](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/174)、[Final Audit](../migration/FINAL-DOCUMENTATION-AUDIT.md)（合并后正式生效） |
 | STEP09 — 引入同仓 OpenSpec | **NOT ON MAIN / NOT ADOPTED** |
 
-截至本次核对，`openspec/` **未出现在 Main**。GitHub 上另有尚未合并的 OpenSpec bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164)，它不能当成已采用的规范，也不在此次文档 PR 范围。继续按用户决定的顺序：先整理 `documents/`，随后才正式引入 OpenSpec。
+截至 STEP08 终审源代码核对，`openspec/` **未出现在 Main**。GitHub 上另有尚未合并的 OpenSpec bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164)，它不能当成已采用的规范，也不在此次文档 PR 范围。当前 STEP01–08 的文档整理已完成（PR #174 合并后）；下一阶段才正式引入 OpenSpec，必须通过 CLI/配置真实验证。
 
 **OpenSpec 迁移准备**：[Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../decisions/README.md) · [Readiness Checklist](../migration/OPENSPEC-READINESS.md)。本轮没有初始化 OpenSpec。
 

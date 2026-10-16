@@ -1,4 +1,7 @@
-# Healthcare Data Platform — Agent 开发与跨仓库执行操作手册 v1.0（最终版）
+# Healthcare Data Platform — 历史 Agent 开发与跨仓库执行手册 v1.0
+
+> **STEP08 权威切换（2026-10-16）：本手册是 2026-10-12 历史开发流程，不再是当前 Agent 工作规范。** 现在以 [AGENTS.md](../../AGENTS.md)、[Development Workflow](../../documents/development/DEVELOPMENT-WORKFLOW.md)、[Code Naming](../../documents/development/CODE-ORGANIZATION-AND-NAMING.md)、[Safe Operations](../../documents/operations/SAFE-OPERATIONS.md) 为准；旧 `TASK004 IN PROGRESS`、`TASK005 ON HOLD` 和新增 `scripts/taskNNN/` 的说法已经失效。真正运行前必须核实当前代码和安全 Gate。
+
 
 > **状态：正式生效 / DEVELOPMENT WORKFLOW VALIDATED**  
 > 日期：2026-10-12  

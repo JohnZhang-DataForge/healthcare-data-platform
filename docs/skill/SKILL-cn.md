@@ -3,9 +3,12 @@ name: healthcare-platform-stepwise-development-cn
 description: Healthcare Data Platform 项目中文开发规范。定义一步一验、临时 Shell、canonical source、运行证据、Mutation 安全、Git checkpoint、文档治理、TASK/STEP lessons 维护以及 Pod/Image/Airflow 平台化开发方式。
 ---
 
-# Healthcare Data Platform 开发 Skill（中文）
+# Healthcare Data Platform 开发 Skill（历史技术经验）
 
-> **CURRENT AGENT SKILL**｜先读 `docs/README.md`、`docs/tasks/TASK-STATUS.md` 和 `docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md`。
+> **STEP08 权威切换（2026-10-16）：LEGACY Skill，仅作历史技术经验来源，不是最新 Agent 规则入口。** 当前从 [AGENTS.md](../../AGENTS.md) → [documents/README.md](../../documents/README.md) → [Agent Rules](../../documents/development/AGENT-RULES.md) → [Code Naming](../../documents/development/CODE-ORGANIZATION-AND-NAMING.md) 开始。旧 `taskNNN/stepNNN` 仅限历史路径/PR 开发追踪，不得成为新增正式代码路径。
+
+
+> **2026-10-12 的旧 Agent Skill 指令（历史快照）**｜曾要求先读 `docs/README.md`、`docs/tasks/TASK-STATUS.md` 和 `docs/development/PLATFORM-DEVELOPMENT-OPERATIONS-v1.0.zh-CN.md`；当前优先使用上方新的 `documents/` 权威入口。
 > 本 Skill 负责具体技术行为和数据安全，不替代正式跨仓库 PR/SHA/Runner 操作手册。旧 TASK Generator 的规则只在其原有生成链中生效。
 
 ---

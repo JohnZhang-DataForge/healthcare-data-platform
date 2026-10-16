@@ -1,8 +1,8 @@
 # Healthcare Data Platform — 文档新入口
 
-> **状态：ACTIVE（新文档治理入口）** · 2026-10-16 · **阶段：Pre-OpenSpec Documentation Rebuild**
+> **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 尚未开始。
 >
-> 本目录逐步建立经代码、Contract、真实验收核实的项目知识。**目前并非所有模块都已迁入**，不能把这里暂缺的文档理解为功能不存在或已经通过验收。
+> 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与未来 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
 ## Agent 必读入口
 
@@ -13,6 +13,11 @@
 5. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
 6. [多 Session 协调规则](development/SESSION-COORDINATION.md) — 并行 PR、共享资源、人为授权、接力验证；不另建 Handoff 日志。
 7. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+
+## 最终文档终审与 OpenSpec 下一步（STEP08）
+
+- **[Final Authority Audit](migration/FINAL-DOCUMENTATION-AUDIT.md)** — 全部 25 份新文档链接审计、旧入口权威纠偏、文档范围和后续边界。
+- [OpenSpec Readiness](migration/OPENSPEC-READINESS.md) — STEP09 开工所需的配置修订、CLI 验证与首批 Baseline 范围。**当前 Main 尚无 `openspec/`**。
 
 ## 长期运维与架构决策（STEP07 已审核）
 

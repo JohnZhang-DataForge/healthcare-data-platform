@@ -1,4 +1,7 @@
-# Healthcare Data Platform — 当前 TASK 状态与下一步（2026-10-12 EDT，更新 TASK004 OMOP 完整闭环验收范围）
+# Healthcare Data Platform — 历史 TASK 状态与阶段性记录（截至 2026-10-14）
+
+> **STEP08 权威切换（2026-10-16）：历史 TASK 状态日志，已被 [唯一项目状态](../../documents/status/PROJECT-STATUS.md) 取代。** 此处不再维护 CURRENT/NEXT；下方多条“当前”“下一步”按写入日期保留为历史快照。有关已关闭 TASK004 的真实范围参见 [最终验收](TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；未授权的 Condition Writer/PG COMMIT 不应因旧计划而启动。
+
 
 > **当前唯一权威状态 / 2026-10-14 EDT（2026-10-15 UTC）：TASK004 = COMPLETED / CLOSED；TASK005 = READY FOR STEP00 READ-ONLY（Condition 实现 NOT STARTED）。** [TASK004 真正最终验收 Closeout](TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。已完整证明同一个第三批 `synthea-new-only-gh-38588671004`：Airflow `task004-third-real-20261014-v4` 完整 Spark→Writer→PostgreSQL COMMIT，真实 PG Person **208** / Visit **21,934** / Claim **3** / 第三批 Stage **245** / Verified **2**，[只读验收 Run 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822) SUCCESS；随后重新提交相同 Batch/Manifest 的 `task004-third-completed-skip-38657630069` 自动进入 `already_completed_no_replay`，Spark/Writer skipped，PostgreSQL 前后严格一致，DAG re-paused，[幂等性 Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) SUCCESS。**NEXT：** 新 Agent 阅读 [TASK005 Condition 计划](TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)，从 STEP00 做真实契约/Source ID/FK/Vocabulary/CDM Schema 只读盘点；Condition 写入/部署需后续单独审批。下方所有 “TASK004 IN PROGRESS / TASK005 ON HOLD / 第三批尚未 COMMIT” 均是当时历史记录，现已被这条最终验收取代。
 

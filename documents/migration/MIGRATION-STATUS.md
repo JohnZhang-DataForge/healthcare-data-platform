@@ -22,11 +22,11 @@
 | **STEP04** | `documents/status/` 当前唯一项目状态 | **COMPLETE（PR #170）** | [唯一项目状态入口](../status/PROJECT-STATUS.md) 区分 TASK004/Condition、Portal 已验收与待商定 Spark、Azure 方案已定与 Plan-only |
 | **STEP05** | `documents/components/` Local Pipeline | **COMPLETE（PR #171：文档/命名治理）** | 五组件文档、Legacy 依赖清单、禁止新增 Task/Step 代码命名的 Agent 规则和 PR Gate；旧源码物理迁移尚未进行 |
 | **STEP06** | Portal / Azure-Fabric 专项模块 | **COMPLETE（PR #172）** | [Portal](../components/platform-portal/README.md)、[Azure/Fabric](../components/azure-fabric/README.md)：明确已验收、已批准设计和待实现/待定范围 |
-| **STEP07** | `documents/operations/`、`decisions/`、精简 Session 协调与 OpenSpec Readiness | **COMPLETE（本次 PR 合并后）** | 安全/排障长期入口、已确定决策；不新建重复 Handoff 体系；准备 STEP08/09 |
-| **STEP08** | 切换项目入口、检查引用、验收文档体系 | **PENDING** | 入口唯一、冲突消除、迁移记录完整 |
-| **STEP09** | 独立后续工作：初始化同仓库 OpenSpec | **NOT STARTED** | 用户确认开始，Spec 从已核实的业务知识建立 |
+| **STEP07** | `documents/operations/`、`decisions/`、精简 Session 协调与 OpenSpec Readiness | **COMPLETE（PR #173）** | 安全/排障长期入口、已确定决策；不新建重复 Handoff 体系；准备 STEP08/09 |
+| **STEP08** | 切换项目入口、检查引用、验收文档体系 | **COMPLETE（PR #174 合并后）** | [终审报告](FINAL-DOCUMENTATION-AUDIT.md)：历史入口降级、单一状态权威、25 篇新文档链接核验 |
+| **STEP09** | 下一阶段：正式初始化同仓库 OpenSpec | **READY TO START / NOT INITIALIZED** | 重新核对旧 PR #164，运行真实 CLI Init/Validate，Spec 从已核实行为建立；不得宣称已安装 |
 
-**当前整理范围：STEP07（本次 PR 合并后完成）。** 仅建立紧凑的 Operations、安全运行、架构决策、多 Agent 协调与 OpenSpec 迁移准备。下一步 STEP08 检查并完成文档入口权威切换；此后 STEP09 才正式初始化 OpenSpec。
+**当前整理范围：STEP08（PR #174 合并后完成）。** 文档权威终审完成；后续新增功能按已生效的组件命名、安全协作规则开展，OpenSpec STEP09 是尚未开始的单独实施事项。
 
 ## 2. 候选来源（未迁移、不自动成为新权威）
 
@@ -37,8 +37,8 @@
 | 主线状态与证据 | [旧 TASK 状态](../../docs/tasks/TASK-STATUS.md)、[最终 TASK004 证据](../../docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 及 Portal/Azure 分项证据 | [PROJECT-STATUS](../status/PROJECT-STATUS.md) | **ACTIVE（PR #170）**：已切换全项目 CURRENT / NEXT；旧 TASK 文档继续作为历史证据 |
 | 本地数据模块 | `apps/`、`airflow/`、`spark/`、`sql/`、`contracts/`、历史 TASK 文档 | [组件目录](../components/README.md)、[重构计划](../components/LEGACY-CODE-REFACTOR-PLAN.md) | **ACTIVE（PR #171）**：组件知识已迁移；现有 Task 命名 Runtime 兼容迁移另行开发 |
 | Azure Fabric | [旧 Azure 入口](../../docs/azure-fabric/README.md)、[OneLake-first 方案](../../docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、`azure/` | [Azure/Fabric 组件](../components/azure-fabric/README.md) | **ACTIVE（PR #172）**：OneLake-first + IaC/Plan-only 事实；尚未定稿的 ETL 实现不提前批准 |
-| Platform Portal | [旧 Portal 入口](../../docs/platform-portal/README.md)、`platform-portal/` | [Platform Portal 组件](../components/platform-portal/README.md) | **ACTIVE（本次专项 PR 合并后）**：Marquez/A3/A4 证据与局限，后续实际 Spark 方案仍未批准 |
-| 运维和经验 | `docs/runbooks/`、`kubernetes/`、旧 Portal/Azure Operations、真实代码/验收 | [Operations](../operations/README.md)、[Safe Operations](../operations/SAFE-OPERATIONS.md)、[Session Coordination](../development/SESSION-COORDINATION.md)、[Decisions](../decisions/README.md) | **ACTIVE（本次 PR 合并后）**：通用操作/决策规则已迁移；旧技术细节仍按实际源码/历史证据查阅 |
+| Platform Portal | [旧 Portal 入口](../../docs/platform-portal/README.md)、`platform-portal/` | [Platform Portal 组件](../components/platform-portal/README.md) | **ACTIVE（PR #172）**：Marquez/A3/A4 证据与局限，后续实际 Spark 方案仍未批准 |
+| 运维和经验 | `docs/runbooks/`、`kubernetes/`、旧 Portal/Azure Operations、真实代码/验收 | [Operations](../operations/README.md)、[Safe Operations](../operations/SAFE-OPERATIONS.md)、[Session Coordination](../development/SESSION-COORDINATION.md)、[Decisions](../decisions/README.md) | **ACTIVE（PR #173）**：通用操作/决策规则已迁移；旧技术细节仍按实际源码/历史证据查阅 |
 
 ## 3. STEP02 事实核验摘要（静态）
 
@@ -86,7 +86,16 @@
 - **只做准备**：[OPENSPEC-READINESS](OPENSPEC-READINESS.md) 说明 STEP08/09 Gate，当前不合并 PR #164、不执行 CLI、不写 `openspec/`。
 - **运行安全**：不更改任何业务、Terraform、Self-Runner、Kubernetes、PG/S3 或 Azure；无 Live 验收。
 
-## 9. 每一步完成时登记
+## 9. STEP08 — 文档终审与入口权威切换
+
+- **只读核验 SHA**：Healthcare Main `f5ee37697bed08fc35e288d84420bafd4b2d8e22`。截至核验，该树有 **671 个 tracked blob、157 个 Markdown、25 份 `documents/` Markdown**。
+- **完整新文档链接审计**：25 篇新文档的 **249 条相对 Markdown 链接**目标存在；无缺失。此为基线审计数字，最终 PR 变更后还需做增量及 Main 回读检查。
+- **7 个旧 Agent/状态/技术入口纠偏**：`docs/README.md`、`docs/tasks/TASK-STATUS.md`、`docs/runbooks/README.md`、`docs/skill/SKILL-cn.md`、旧 Developer Ops、Portal、Azure README；保留各自的原始历史证据及时间快照，不再将其作为新的 CURRENT/NEXT。
+- **唯一项目 CURRENT/NEXT**：[PROJECT-STATUS](../status/PROJECT-STATUS.md)。长期决策、安全与组件知识保留在 `documents/`，业务代码/Contract 和 GitHub Run 仍各自有权威。
+- **未解决且正确阻断的非文档事项**：OpenSpec CLI 未验证、旧 PR #164 未合并需修订；Portal Spark 正式集成方案未定；Azure Plan-only 没有 Apply。详见 [终审报告](FINAL-DOCUMENTATION-AUDIT.md)。
+- **无 Runtime 变更**：本轮不修改 Airflow/Spark/SQL/Images/K8s/Workflow/Terraform，未运行 Self-Runner、PG/S3/Azure、没有重放冻结批次。
+
+## 10. 每一步完成时登记
 
 下一 STEP 的 PR 在本文件追加或更新：**领域、旧文件/代码来源、Source SHA、核实的证据及运行时间、冲突决议、新文件路径、ACTIVE/未完成范围、PR 号、合并 SHA**。不要提前猜测 PR 和合并 SHA。
 
