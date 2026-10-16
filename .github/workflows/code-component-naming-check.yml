@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
       - name: Unit tests for code naming guard
         run: python3 -m unittest discover -s tests/quality -p 'test_*.py' -v
-      - name: Require Airflow, apps and Spark CODE.md synchronization and source links
+      - name: Require Airflow, apps, Spark, Contract and SQL CODE.md synchronization
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}

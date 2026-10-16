@@ -81,7 +81,7 @@ The component README describes responsibilities; the component CODE.md links dir
 | [`airflow/`](airflow/) · [CODE](documents/components/airflow/CODE.md) | DAGs, batch routing and Spark/Writer orchestration |
 | [`apps/`](apps/) · [Component CODE maps](documents/components/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
 | [`config/`](config/README.md) | Local configuration examples; no live secrets |
-| [`contracts/`](contracts/README.md) | Source and writer identity / schema contracts |
+| [`contracts/`](contracts/) · [Synthea CODE](documents/components/synthea/CODE.md) · [OMOP CODE](documents/components/omop/CODE.md) | Source and writer identity / schema contracts |
 | [`documents/`](documents/README.md) | New, incrementally verified project documentation; authoritative migration and AI rules | 
 | [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | Historical documentation snapshot (removed from Main); evidence remains pinned to the pre-removal commit |
 | [`images/`](images/README.md) | Docker image sources for individual workloads |
@@ -89,7 +89,7 @@ The component README describes responsibilities; the component CODE.md links dir
 | [`platform-portal/`](platform-portal/README.md) | Marquez / OpenLineage integration and observability experiments |
 | [`scripts/`](scripts/README.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
 | [`spark/`](spark/) · [CODE](documents/components/spark/CODE.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
-| [`sql/`](sql/README.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
+| [`sql/`](sql/) · [Landing CODE](documents/components/landing/CODE.md) · [OMOP CODE](documents/components/omop/CODE.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
 | [`tests/`](tests/) | Unit, contract and regression tests |
 
 ## Start here

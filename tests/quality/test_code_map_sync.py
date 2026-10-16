@@ -1,4 +1,4 @@
-"""Offline tests for the first component CODE.md source sync gate (Airflow)."""
+"""Offline tests for component CODE.md source synchronization and ownership."""
 import importlib.util
 from pathlib import Path
 import unittest
@@ -87,6 +87,54 @@ class CodeMapSyncTests(unittest.TestCase):
                  "spark/manifests/common/job.yaml.tpl"}
         text = "\n".join(f"[source](../../../{p})" for p in sorted(paths))
         self.assertEqual(policy.validate_spark_code_map(text, paths), ([], [], []))
+
+
+    def test_contract_sql_source_filter(self):
+        self.assertTrue(policy.is_contract_sql_source("contracts/synthea/identity.json"))
+        self.assertTrue(policy.is_contract_sql_source("sql/landing_claim/new.sql"))
+        self.assertFalse(policy.is_contract_sql_source("sql/README.md"))
+        self.assertFalse(policy.is_contract_sql_source("spark/contracts/patient.json"))
+
+    def test_contract_sql_ownership_missing_stale_duplicates(self):
+        syn, landing, omop = policy.CONTRACT_SQL_MAP_PATHS
+        data = {
+            syn: "| [a](../../../contracts/synthea/a.json) | version |",
+            landing: ("| [dup](../../../contracts/synthea/a.json) | dup |"
+                      "\n| [old](../../../sql/landing_claim/old.sql) | old |"),
+            omop: ("[cross](../../../contracts/synthea/a.json)\n"
+                   "| [writer](../../../sql/task002/person.sql) | owner |"),
+        }
+        missing, stale, duplicate = policy.validate_contract_sql_maps(
+            data, {"contracts/synthea/a.json", "sql/task002/person.sql",
+                   "sql/landing_claim/new.sql"}
+        )
+        self.assertEqual(missing, ["sql/landing_claim/new.sql"])
+        self.assertEqual(stale, ["sql/landing_claim/old.sql"])
+        self.assertEqual(duplicate, ["contracts/synthea/a.json"])
+
+    def test_contract_sql_ownership_ignores_narrative_crossrefs(self):
+        contents = (
+            "[cross](../../../contracts/synthea/a.json)\n"
+            "| [owned](../../../contracts/synthea/a.json) | source |"
+        )
+        self.assertEqual(
+            policy.contract_sql_owned_links(contents), {"contracts/synthea/a.json"}
+        )
+
+    def test_contract_sql_move_requires_old_and_new_owner_updates(self):
+        syn, landing, omop = policy.CONTRACT_SQL_MAP_PATHS
+        old = {syn: "| [old](../../../contracts/synthea/old.json) | owner |",
+               landing: "", omop: ""}
+        new = {syn: "", landing: "",
+               omop: "| [new](../../../contracts/omop-writer/new.json) | owner |"}
+        self.assertEqual(
+            policy.required_contract_sql_updates(
+                {"contracts/synthea/old.json", "contracts/omop-writer/new.json"},
+                old, new,
+            ),
+            {syn, omop},
+        )
+        self.assertEqual(policy.required_contract_sql_updates(set(), old, new), set())
 
 if __name__ == "__main__":
     unittest.main()

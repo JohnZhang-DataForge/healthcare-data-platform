@@ -9,7 +9,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 **职责**：校验 Batch / Handoff / Claim / 权限 / 写入身份，以受控事务维护 `cdm.*`、`etl.*`、ID Maps、Ledger、Stage、Checkpoint，并允许独立只读对账。
 
-**源码导航**：[CODE.md](CODE.md) 汇集当前 Writer、历史 Visit CDM/ID Map、安全诊断和固定批次 Loader，并直接指向对应测试与 Contract；SQL 目录仍通过 [SQL README](../../../sql/README.md) 导航（待后续独立整理）。
+**源码导航**：[CODE.md](CODE.md) 汇集当前 Writer、历史 Visit CDM/ID Map、安全诊断和固定批次 Loader，并直接指向对应测试与 Contract；SQL 和 Writer Contract 的实际源码在本组件 [CODE.md](CODE.md)，Claim/Fence SQL 由 [Landing CODE](../landing/CODE.md) 管理。
 
 **真实验收**：NEW_ONLY Person/Visit 通过 Airflow 原子 COMMIT 与独立 PostgreSQL 只读读回；已提交批次重复提交路径被 SKIP。证据：[Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 

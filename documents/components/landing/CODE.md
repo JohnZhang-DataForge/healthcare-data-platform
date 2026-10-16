@@ -56,7 +56,17 @@ source_sha: e26d8032deaab8ae4cfdbc1d446eceb5d9dc8ac9
 
 这里的历史 `task003` 文件负责 S3 Raw/Processed 发布安全、Intent、Reservation 与 DQ 证据，而不是已经独立实现的新增业务 ETL。Discover 不等于自动 Claim 或 COMMIT。
 
+## Landing Claim / Writer Fence SQL
+
+| 源文件 | 角色 / 安全边界 |
+| --- | --- |
+| [`create_landing_batch_ledger.sql`](../../../sql/landing_claim/create_landing_batch_ledger.sql) | DDL，需要授权：新建独立的 Landing Claim/Lease Ledger |
+| [`writer_fence_v1_deploy.sql`](../../../sql/landing_claim/writer_fence_v1_deploy.sql) | DDL，需要授权：Writer 同一事务 Fence 函数及权限部署 |
+| [`writer_fence_v1_rollback_proof.sql`](../../../sql/landing_claim/writer_fence_v1_rollback_proof.sql) | ROLLBACK-only 演练：验证 Fence/角色/事务协议；仍要审查执行环境 |
+
+**执行区别**：Ledger/Fence Deploy 是能改变数据库 Schema 或权限的 DDL，绝不视为只读检查。Rollback-proof 虽在事务内回滚，也需要确认执行主体、对象状态和完整的审查与授权。Synthea READY 发布 Contract 属于 [Synthea CODE](../synthea/CODE.md)，Landing 只引用不复制权威协议。
+
 ## 源码维护约定
 
-**新增、删除、重命名或移动本组件负责的 `apps/` 源文件时，必须在同一个 PR 更新此 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
+**新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../LEGACY-CODE-REFACTOR-PLAN.md)。
 
