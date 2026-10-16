@@ -77,7 +77,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 
 | Directory | Contents |
 | --- | --- |
-| [`.github/`](.github/README.md) | GitHub Actions workflows and image publishing |
+| [`.github/`](.github/workflows/) | GitHub Actions workflows and image publishing |
 | [`airflow/`](airflow/README.md) | DAGs, batch routing and Spark/Writer orchestration |
 | [`apps/`](apps/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
 | [`config/`](config/README.md) | Local configuration examples; no live secrets |
@@ -90,7 +90,7 @@ Each top-level directory contains its own README explaining scope, entry points 
 | [`scripts/`](scripts/README.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
 | [`spark/`](spark/README.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
 | [`sql/`](sql/README.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
-| [`tests/`](tests/README.md) | Unit, contract and regression tests |
+| [`tests/`](tests/) | Unit, contract and regression tests |
 
 ## Start here
 

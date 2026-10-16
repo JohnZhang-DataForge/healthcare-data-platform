@@ -58,7 +58,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 | [M2 Generic Healthcare PR Readonly V4](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/cross-repo-generic-pr-v4.yml) | 固定 `migration-readonly.json` 的 feature push；策略验证、checkout Healthcare **指定 SHA**、核查远程 HEAD；无任意业务执行 | 是跨仓 PR 绑定的只读历史验证范例，并非当前所有 TASK 的动态执行入口 |
 | [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) | Main 手工触发；component/environment/operation 白名单；`plan` 默认但确实也提供 `apply`；checkout Healthcare `main` 后在日志记录实际 SHA；不提供 destroy 入口 | `plan` 也需核对状态文件和云认证；**已有 apply 选项不等于获得本次 Apply 授权** |
 | [Synthea NEW_ONLY Independent Request](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/synthea-new-only-run-new-request.yml) | 手动触发，但源码采用固定历史 Healthcare SHA 和固定镜像 digest，并进行实际生成/读写流程 | 是具体里程碑 Workflow；未经审查和授权禁止当普通 smoke 重跑 |
-| [Healthcare build workflows](../../.github/README.md) | 有镜像构建、Contract 检查、GHCR 发布等；许多 `task004-*` 属于历史里程碑 | Build PASS 不是 Spark/数据库 Runtime PASS |
+| [Healthcare build workflows](../../.github/workflows/) | 有镜像构建、Contract 检查、GHCR 发布等；许多 `task004-*` 属于历史里程碑 | Build PASS 不是 Spark/数据库 Runtime PASS |
 
 **重用优先级**：当前现有、适合本轮副作用/版本/输入的 Workflow → 轻量调整受控 Request / 复用固定入口 → 确实缺能力再申请最小新 Workflow。禁止因为容易创建 YAML 就每次建一个临时业务执行器。跨仓变更必须分别处理两仓源码、Review、SHA 与 PR；不要把 Self-Runner 的一个成功 Run 当成两个仓库都已更新。
 
