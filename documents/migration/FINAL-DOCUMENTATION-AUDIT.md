@@ -22,6 +22,8 @@ source_sha: f5ee37697bed08fc35e288d84420bafd4b2d8e22
 | OpenSpec / Archive | 本轮基线 Main 无 `openspec/`、无 `docs/archive/`；旧独立 Private Healthcare-Specs/archive 不被迁回 |
 | Runtime | 未修改应用代码、业务 DAG/Writer、Azure Terraform、Self-Runner Workflow、K8s/PG/S3/Blob；没有重新执行 E2E 或 Apply |
 
+**终审分支增量复核**：更新后的 `documents/` 已有 **26 份 Markdown、277 条仓库内相对链接，0 个断链，0 个未闭合代码 Fence**；根 `README.md` 加上七个明确降级的 Legacy 门户文件共 **8 个入口、229 条相对链接、0 个断链，0 个未闭合 Fence**。两组检查合计 **506 条相对链接**。全部为 STEP08 PR [#174](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/174) 的 Git Tree 静态核对；最终 Main 需在合并后再确认。
+
 **审计注意**：249 条是新 `documents/` 内的**仓库相对链接路径存在性检查**，不是外部网址访问验证、Markdown 标题 Fragment 校验、网站链接可用性测试或全部 111 份 Legacy 文档的完整链接修复。Legacy 历史原样保留，个别旧链接可能随历史演进失效，使用前按当前树与源代码核实。
 
 ## 唯一权威表（新 Agent 必须遵循）
