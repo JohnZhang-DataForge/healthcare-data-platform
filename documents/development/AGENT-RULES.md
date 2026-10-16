@@ -12,6 +12,8 @@
 4. 明确改动类别：**仅文档 / 代码 / Workflow / Terraform plan / 运行环境操作**；逐项列明副作用和是否需要授权。
 5. 源代码、业务契约、实际运行状态、设计意图必须分开：`PLANNED`、`IMPLEMENTED`、`STATIC_PASS`、`RUNTIME_VERIFIED`、`DEPLOYED`、`E2E_ACCEPTED` 不可混用。
 
+工作步骤及流程细节以 [Development Workflow](DEVELOPMENT-WORKFLOW.md) 为准，测试结论等级以 [Testing & Evidence](TESTING-AND-EVIDENCE.md) 为准。两文档解释本规则而不放宽安全边界。
+
 ## 2. 开发方式：小步、可重放、可验证
 
 - 一次交付一个边界明确的 STEP；代码是 canonical source，Shell 是运行/验证入口，不为所有新源文件强制生成 Shell。

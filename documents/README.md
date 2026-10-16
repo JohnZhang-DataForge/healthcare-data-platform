@@ -7,8 +7,10 @@
 ## Agent 必读入口
 
 1. [AI/Agent 开发与安全规则](development/AGENT-RULES.md) — 当前通用 AI 操作约束。
-2. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
-3. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+2. [开发工作流](development/DEVELOPMENT-WORKFLOW.md) — 当前 Healthcare / Self-Runner、STEP/PR/SHA/执行/交接流程。
+3. [测试与验收](development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
+4. [文档治理与渐进迁移规则](development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
+5. [迁移进度与顺序](migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
 
 **最小读取策略**：先读本页和必要规则，再按任务读取有关代码、Contract、测试、部署配置及证据；避免一次性加载旧 `docs/` 全量 Markdown。
 
