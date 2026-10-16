@@ -1,6 +1,6 @@
 # Data contracts — source identity and writer boundaries
 
-[← Repository overview](../README.md) · [Component CODE maps](../documents/components/README.md) · [Spark contracts](../spark/README.md)
+[← Repository overview](../README.md) · [Component CODE maps](../documents/components/README.md) · [Spark Contracts CODE](../documents/components/spark/CODE.md)
 
 This directory stores **versioned machine-readable agreements** for source batches and Writer identity. Contracts specify what an upstream producer must publish and what downstream consumers may accept; they are not the data itself.
 

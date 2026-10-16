@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require Airflow and apps source-map synchronization, ownership and valid links.
+"""Require Airflow, apps and Spark CODE map synchronization, ownership and links.
 
 Uses only Git tree/diff and local CODE.md text; no network or runtime access.
 """
@@ -82,6 +82,22 @@ def required_app_updates(changed_sources: set[str], before: dict[str, str], afte
     }
 
 
+
+SPARK_MAP = "documents/components/spark/CODE.md"
+SPARK_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./(spark/[^\s)#?]+)\)")
+
+
+def is_spark_source(path: str) -> bool:
+    return path.startswith("spark/") and not path.endswith((".md", ".mdx", ".rst", ".txt"))
+
+
+def validate_spark_code_map(contents: str, actual: set[str]) -> tuple[list[str], list[str], list[str]]:
+    matched = [p for p in SPARK_LINK_RE.findall(contents) if is_spark_source(p)]
+    linked = set(matched)
+    duplicate = sorted(p for p in linked if matched.count(p) > 1)
+    return sorted(actual - linked), sorted(linked - actual), duplicate
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True)
@@ -145,8 +161,41 @@ def main() -> int:
         print("CODE_MAP_GATE=FAIL; edit owning CODE.md in same PR as apps source add/delete/move")
         return 1
 
+    spark_sources = {
+        p for p in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "spark/")
+        if is_spark_source(p)
+    }
+    spark_doc = Path(SPARK_MAP)
+    if not spark_doc.is_file():
+        print(f"CODE_MAP_GATE=FAIL; missing {SPARK_MAP}")
+        return 1
+    spark_missing, spark_stale, spark_duplicate = validate_spark_code_map(
+        spark_doc.read_text(encoding="utf-8"), spark_sources
+    )
+    for p in spark_missing:
+        print("CODE_MAP_SPARK_MISSING_LINK=" + p)
+    for p in spark_stale:
+        print("CODE_MAP_SPARK_STALE_LINK=" + p)
+    for p in spark_duplicate:
+        print("CODE_MAP_SPARK_DUPLICATE_LINK=" + p)
+    if spark_missing or spark_stale or spark_duplicate:
+        print("CODE_MAP_GATE=FAIL; Spark CODE.md must map each tracked source once")
+        return 1
+
+    changed_spark = {
+        p for p in git_lines("diff", "--no-renames", "--name-only",
+                             "--diff-filter=AD", "--no-ext-diff", args.base, args.head)
+        if is_spark_source(p)
+    }
+    if changed_spark and SPARK_MAP not in changed:
+        for p in sorted(changed_spark):
+            print("CODE_MAP_SPARK_CHANGED_SOURCE=" + p)
+        print(f"CODE_MAP_GATE=FAIL; update {SPARK_MAP} with Spark source changes")
+        return 1
+
     print("CODE_MAP_GATE=PASS; mapped_dag_files=" + str(len(current)) +
-          "; mapped_app_files=" + str(len(app_sources)))
+          "; mapped_app_files=" + str(len(app_sources)) +
+          "; mapped_spark_files=" + str(len(spark_sources)))
     return 0
 
 

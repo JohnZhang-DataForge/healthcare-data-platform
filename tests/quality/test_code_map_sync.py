@@ -61,5 +61,32 @@ class CodeMapSyncTests(unittest.TestCase):
         self.assertEqual(required, {s, o})
         self.assertEqual(policy.required_app_updates(set(), old, new), set())
 
+
+    def test_spark_source_filter(self):
+        self.assertTrue(policy.is_spark_source("spark/apps/condition/main.py"))
+        self.assertTrue(policy.is_spark_source("spark/contracts/canonical/patient.json"))
+        self.assertTrue(policy.is_spark_source("spark/manifests/condition/job.yaml.tpl"))
+        self.assertFalse(policy.is_spark_source("spark/README.md"))
+        self.assertFalse(policy.is_spark_source("apps/omop_writer/main.py"))
+
+    def test_spark_map_missing_stale_and_duplicate(self):
+        content = "\n".join([
+            "[one](../../../spark/apps/visit/a.py)",
+            "[again](../../../spark/apps/visit/a.py)",
+            "[old](../../../spark/contracts/canonical/old.json)",
+        ])
+        missing, stale, dup = policy.validate_spark_code_map(
+            content, {"spark/apps/visit/a.py", "spark/manifests/common/new.yaml.tpl"}
+        )
+        self.assertEqual(missing, ["spark/manifests/common/new.yaml.tpl"])
+        self.assertEqual(stale, ["spark/contracts/canonical/old.json"])
+        self.assertEqual(dup, ["spark/apps/visit/a.py"])
+
+    def test_spark_map_complete_sources(self):
+        paths = {"spark/apps/visit/main.py", "spark/contracts/omop/visit.json",
+                 "spark/manifests/common/job.yaml.tpl"}
+        text = "\n".join(f"[source](../../../{p})" for p in sorted(paths))
+        self.assertEqual(policy.validate_spark_code_map(text, paths), ([], [], []))
+
 if __name__ == "__main__":
     unittest.main()
