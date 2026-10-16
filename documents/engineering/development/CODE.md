@@ -38,3 +38,5 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 - 许多 `prepare` / `repair` Shell 会写源文件或报告；`reset`、`upsert`、`publish` 等可能改写本地、K8s、S3 或数据库状态。静态列入导航不代表已经验证它们现在可重跑。
 - 需要精确执行哪个脚本时，应核对完整源码、依赖、目标路径、固定 SHA/Batch、权限和幂等/回滚边界，不能只看本页的风险摘要。
 - [CODE Map Sync Guard](../../../scripts/quality/check_component_code_map.py) 通过 Git Tree/Diff 校验唯一所有者、路径完整性和增删时同 PR 同步；其作用是静态质量保护，非 Runtime/业务验收。
+
+**Canonical location (documentation hierarchy cutover):** this Developer CODE map is maintained at `documents/engineering/development/CODE.md` and checked by `Component Code Naming` CI. The previous `documents/development/CODE.md` is a retired historical copy, not a second owner.

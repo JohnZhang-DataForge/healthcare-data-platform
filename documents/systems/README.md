@@ -1,6 +1,6 @@
 # Systems — Subsystem documentation
 
-> **Migration stage: NEW SOURCE MAPS.** Data Platform component docs and source maps are the destination for navigation and CODE-map CI. Old documentation copies remain temporarily for cleanup and rollback. Azure/Fabric and Platform Portal continue to use their existing paths until separately migrated; no runtime deployment is implied.
+> **Status: ACTIVE (Data Platform).** The five local component documents and CODE maps are now served from `systems/data-platform/`, with CI checking this path. Superseded originals are retained in Git history rather than the current Main tree. Azure/Fabric and Platform Portal continue at their current documentation paths until separate migration; this does not imply deployed or E2E-complete functionality.
 
 ## Data Platform
 
