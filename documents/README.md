@@ -4,13 +4,13 @@
 >
 > 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与未来 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
-## 新文档目录（渐进切换中）
+## 当前文档目录（Data Platform / Engineering 已切换）
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
 - [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 与 Platform Portal 仍在开发，暂保留旧文档目录。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
-**迁移边界**：本轮开始将此入口的链接指向已复制的新目录。旧目录仍保留；CODE.md 静态检查与 Agent 规则由独立 CI 切换 PR 同步管理；其它文档可能尚未全部切换，不能仅凭本页判断旧文档已失效。等全仓引用与 CI 均切换并验证后，才删除确认无用的旧副本。
+**迁移结果**：本地 Data Platform 与 Engineering 已采用新的 `systems/`、`engineering/` 目录，CODE.md 源码地图和 Markdown 链接均有独立 CI。旧的本地组件及工程文档副本已按可追溯 Git 历史方式清理；**Azure/Fabric 与 Platform Portal 仍在开发，暂留 `components/` 原位置，后续单独迁移**。
 
 ## Agent 必读入口
 
@@ -39,7 +39,7 @@
 - [Platform Portal：Marquez / OpenLineage](components/platform-portal/README.md) — 部署与 A3/A4 历史验收、Spark Job↔Run/Dataset 未完成和待讨论接入方案。
 - [Azure/Fabric：OMOP → Azure Blob → Fabric Pipeline/Notebook → OneLake](components/azure-fabric/README.md) — OneLake-first 方案、Terraform Plan-only 证据、未完成的导出/业务装载边界。
 
-## Systems — Data Platform（STEP05 已审核，导航切换中）
+## Systems — Data Platform（STEP05 已审核，目录已切换）
 
 - [Data Platform 组件目录与职责](systems/data-platform/README.md) — Synthea、Landing、Airflow、Spark、OMOP 五个可长期维护的业务模块。
 - [Legacy Task-named 代码重构计划](engineering/development/LEGACY-CODE-REFACTOR-PLAN.md) — 旧 `task004` 依赖、兼容门槛、逐阶段源码迁移计划（尚未实际 Rename）。

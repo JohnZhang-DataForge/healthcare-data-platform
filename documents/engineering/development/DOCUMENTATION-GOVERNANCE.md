@@ -28,7 +28,7 @@
 | Evidence | 原 Closeout / GitHub Actions / 已核验的证据索引 | 真实历史验收，不盲目复制日志 |
 | OpenSpec（以后） | `openspec/specs/`、`openspec/changes/` | 可测试行为规范和未来 Change 的 Proposal/Design/Tasks |
 
-Azure/Fabric 与 Platform Portal 仍在开发中，当前权威说明保留在 `documents/components/azure-fabric/`、`documents/components/platform-portal/`，待后续小 PR 单独切换。旧 Data Platform、Development、Operations、Migration、Status 副本在最终链接/CI 审计前保留，不能提前删除。
+Azure/Fabric 与 Platform Portal 仍在开发中，当前权威说明保留在 `documents/components/azure-fabric/`、`documents/components/platform-portal/`，待后续小 PR 单独切换。旧 Data Platform、Development、Operations、Migration、Status 的重复副本已从 Main 清理，历史版本仍可通过对应 Git Commit 追溯；任何后续变更只更新新目录。
 
 现有源码中的 `contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
 

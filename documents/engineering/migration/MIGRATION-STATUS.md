@@ -18,6 +18,12 @@
 - [Legacy Docs Snapshot](LEGACY-DOCS-SNAPSHOT.md) 记录访问入口及永久链接规则。文档中的旧 `docs/...` 路径是**历史树路径**，不是现行 Main 工作目录；应通过固定快照链接读取。
 - 清理仅涉及文档/README 链接和一个已无效的 Portal 静态 CI 路径触发器；`documents/`、业务代码、Contract、Workflow 执行逻辑均不应受删除影响。
 
+## 2026-10-16 文档层级重组（后续阶段）
+
+- 新层级：`documents/architecture/`、`documents/systems/data-platform/` 和 `documents/engineering/`。Architecture Decisions 通过 PR #187 迁入 Architecture。
+- PR #188：先复制本地五组件与 Engineering 文档，旧目录不删；PR #189：更新 documents 根入口；PR #190：更新 Architecture 引用；PR #191：更新 CODE Map CI/Agent 规则；PR #192：修复 Azure/Portal 原 README 指向 Engineering 的四个依赖链接；PR #193：新增 Markdown 链接 CI。旧副本的实际删除由单独的最终清理 PR 验收。
+- **历史范围说明**：下表 STEP02–STEP07 中出现的 `documents/development/`、`documents/components/` 等，是当时相关 PR 的**历史位置**，不是当前 Main 的权威目录；当前导航请使用 [Systems](../../systems/README.md) 和 [Engineering](../README.md)。Azure/Fabric 和 Portal 仍保留在旧 `documents/components/` 下，不属于本轮物理迁移。
+
 ## 1. 分阶段计划
 
 | 顺序 | 交付物 | 迁移状态 | 完成标准 |
