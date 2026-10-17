@@ -1,41 +1,41 @@
 ---
-status: staging
+status: active
 scope: azure-fabric-system-overview
 last_verified: 2026-10-16
-source_sha: 93b397026a07a16baed4460c6c03e39d72d2bb12
+source_sha: 1f393e954f4c0a1e4727774881f036a97dee7770
 ---
 
 # Azure / Microsoft Fabric — OMOP analytical replica
 
-This page is the **human-readable system overview**. See [CODE.md](CODE.md) for actual source files and [System Overview](../../architecture/SYSTEM-OVERVIEW.md) for the cross-platform architecture.
-
-## OneLake-first target flow
-
-```text
-Local PostgreSQL OMOP (authoritative Person/Visit)
-  → Read-only snapshot Exporter (not built)
-  → Existing Azure Blob snapshot landing
-  → Fabric Data Factory Data Pipeline (orchestration)
-  → Fabric PySpark Notebook (validation and Delta load; not built)
-  → OneLake Lakehouse (analytics copy; not deployed by these plans)
-```
-
-The existing Blob account and manually provisioned Fabric Workspace are **not** new resources created by this migration. Historical Terraform Plans for the Lakehouse, Notebook and Data Pipeline passed on 2026-10-15, each proposing one item; **a passed Plan is not an Apply or data E2E acceptance**. The Notebook bootstrap deliberately raises an error, and the Pipeline defaults to a Fail activity if no Notebook ID is configured. Warehouse is optional and outside the MVP's required data path.
+The Azure/Fabric analytical replica is a **sibling system** of the local data platform. The existing PostgreSQL OMOP database is authoritative; a future read-only exporter will produce an immutable snapshot for the existing Azure Blob landing. A Fabric Data Pipeline then orchestrates a PySpark Notebook into a OneLake Lakehouse. This is a **target design**, not a verified cloud data E2E.
 
 ## Source organization
 
-| Area | Source location and purpose | Implementation |
+The [Azure/Fabric code root](../../../azure-fabric/README.md) contains exactly two source areas:
+
+| Source area | System component | Implementation status |
 | --- | --- | --- |
-| Infrastructure | [Active Terraform source](../../../azure-fabric/infra-terraform/README.md) — seven roots and matching modules | Full source copy, old `azure/` preserved |
-| Exporter | `azure-fabric/exporter/` — consistent PG export, Parquet / manifest and Blob publication | Reserved directory; **not built** |
-| Fabric notebooks | `azure-fabric/workspace/healthcare-omop/notebooks/ingestion/` — Fabric-native Notebook items | Reserved directory; **not built** |
-| Fabric pipelines | `azure-fabric/workspace/healthcare-omop/pipelines/` — Fabric-native Data Pipeline items | Reserved directory; **not built** |
-| Tests | `azure-fabric/tests/` — local tests and, later, independent reconciliation | Reserved directory; **not built** |
+| [`infra-terraform/`](../../../azure-fabric/infra-terraform/README.md) | Seven Terraform roots, shared IaC and remote State | Existing source, seven new-path Plan-only jobs passed; no Apply inferred |
+| [`workspaces/healthcare-omop/notebooks/`](../../../azure-fabric/workspaces/healthcare-omop/notebooks/) | [Notebooks](notebooks/README.md) · [CODE](notebooks/CODE.md) — read snapshots, verify schema/DQ/PK/FK, load Lakehouse Delta | Placeholder only; no native `*.Notebook/` item or business ETL |
+| [`workspaces/healthcare-omop/pipelines/`](../../../azure-fabric/workspaces/healthcare-omop/pipelines/) | [Pipelines](pipelines/README.md) · [CODE](pipelines/CODE.md) — run parameters, orchestration, failure gates | Placeholder only; no native `*.DataPipeline/` item or active orchestration |
 
-The `azure-fabric/workspace/healthcare-omop/` directory mirrors a **planned Git integration folder**, not a new Fabric Workspace resource. The existing `healthcare-omop` Workspace must be connected explicitly; temporary `.gitkeep` markers do not represent Notebook/Pipeline items and will be retired when real Fabric items are added. Reusable non-Fabric Python code can be kept outside this folder later to avoid contaminating native item definitions.
+`healthcare-omop` is the existing **Fabric Workspace name**, not a proposed second Workspace. The `workspaces/` Git tree is a *planned source location*, not an established Fabric Git connection. Fabric native item folders and provider-created Terraform item definitions cannot be treated as interchangeable without an item identity and deployment ownership decision.
 
-`azure-fabric/infra-terraform/` now contains the copied Terraform roots and modules; resource configuration and remote State keys are unchanged. The original `azure/infra-terraform/` is still intact. Self-Runner must be switched to the new directory before Plan validation; copying IaC alone does not deploy resources.
+### Data-flow and implementation boundaries
 
-**Source of truth:** [CODE map](CODE.md) for tracked files, [Project Status](../../engineering/status/PROJECT-STATUS.md) for accepted work and outstanding tasks, [Data Flow](../../architecture/DATA-FLOW.md) for system boundaries. The [previous Azure component brief](../../components/azure-fabric/README.md) remains available during the documentation cutover, including historical Plan run links.
+```text
+Local PostgreSQL OMOP (source of truth)
+  → Read-only exporter + immutable manifest [future local development]
+  → Existing Azure Blob snapshot landing
+  → Fabric Data Pipeline [future business source in workspaces/.../pipelines]
+  → Fabric PySpark Notebook [future business source in workspaces/.../notebooks]
+  → OneLake Lakehouse / Delta [planned cloud analytics replica]
+```
 
-No Terraform Plan/Apply, pipeline run, export, or cloud deployment was performed by this directory preparation.
+Terraform's [Notebook bootstrap](../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) raises an exception intentionally; the [Pipeline fail definition](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json) intentionally fails until an actual Notebook GUID is supplied. Do not copy them into empty workspace source directories or claim Fabric Git Integration / business E2E.
+
+A local exporter and independent cross-platform reconciliation remain **required future capabilities**, but are not Fabric-native workspace items; former empty `azure-fabric/exporter/` and `azure-fabric/tests/` placeholders were removed as part of the two-source-area layout. No exporter logic or tests existed there.
+
+The original `azure/infra-terraform/` remains for transition purposes. Self-Runner now selects `azure-fabric/infra-terraform/` and seven components have successful historical **Plan-only** regressions ([technical evidence](../../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md#verified-plan-evidence)); no cloud resource creation or data load follows from this source-only work.
+
+**Navigation:** [System CODE map](CODE.md) · [Notebooks](notebooks/README.md) · [Pipelines](pipelines/README.md) · [Data Flow](../../architecture/DATA-FLOW.md) · [Project Status](../../engineering/status/PROJECT-STATUS.md) · [Safe Operations](../../engineering/operations/SAFE-OPERATIONS.md).

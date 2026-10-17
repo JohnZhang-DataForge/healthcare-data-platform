@@ -52,7 +52,7 @@ All seven roots passed fresh **Plan-only** regression on October 16, 2026 agains
 
 The [Notebook Terraform module](modules/notebook/main.tf) currently reads [`definitions/notebook-content.py`](modules/notebook/definitions/notebook-content.py), which intentionally raises an error. The [Data Pipeline module](modules/data-factory/main.tf) uses [`pipeline-disabled.json`](modules/data-factory/definitions/pipeline-disabled.json) until an actual Notebook GUID is known. The alternate [Notebook activity JSON](modules/data-factory/definitions/pipeline-notebook.json) is **not** proof of a connected or working pipeline.
 
-Business code added later under `azure-fabric/workspace/healthcare-omop/` must use real Fabric-native Git item metadata and a deliberate, single source-of-truth delivery model. Do not move these historical Terraform Bootstrap files there by renaming alone.
+Business code added later under `azure-fabric/workspaces/healthcare-omop/` must use real Fabric-native Git item metadata and a deliberate, single source-of-truth delivery model. Do not move these historical Terraform Bootstrap files there by renaming alone.
 
 ## Developer checklist
 
