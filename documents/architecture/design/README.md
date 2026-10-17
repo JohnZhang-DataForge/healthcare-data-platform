@@ -5,10 +5,10 @@ last_verified: 2026-10-17
 source_sha: 664dfed06a206ff20822a118c8f04771a307452b
 ---
 
-# Architecture Design Proposals
+# 架构设计讨论稿
 
-This directory contains **proposed** designs and migration plans. These are not deployed implementations, approved architecture decisions, or a separate source of project status.
+本目录存放**待审核的架构设计和迁移方案**。它们不代表已经部署的功能，也不取代已批准的架构决策或项目唯一当前状态。
 
-- [Data Platform V2 — Repository Migration and Modular Rebuild Design](DATA-PLATFORM-V2-MIGRATION-DESIGN.md): proposed four-directory layout, component-first rebuild, Task004 naming compatibility, reusable module boundaries, validation and rollback gates.
+- [Data Platform V2：仓库迁移与模块化重构设计（中文）](DATA-PLATFORM-V2-MIGRATION-DESIGN.zh-CN.md)：四个顶层模块、本地组件划分、Task004 兼容重命名、公共能力提取、实施阶段、测试和回滚。
 
-For established guidance, use the [current system overview](../SYSTEM-OVERVIEW.md), [approved architecture decisions](../decisions/README.md), [local platform component map](../../systems/data-platform/README.md), and [development rules](../../engineering/development/AGENT-RULES.md).
+其他权威入口：[当前总体架构](../SYSTEM-OVERVIEW.md)、[已批准的架构决策](../decisions/README.md)、[Data Platform 组件文档](../../systems/data-platform/README.md)、[Agent 开发规则](../../engineering/development/AGENT-RULES.md)。
