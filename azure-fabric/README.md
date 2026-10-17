@@ -1,55 +1,46 @@
 # Azure / Microsoft Fabric — source code
 
-This folder contains the **Azure/Fabric analytical-replica subsystem** of Healthcare Data Platform. The local PostgreSQL OMOP database remains authoritative: a future read-only exporter will publish consistent, verifiable snapshots to an **existing Azure Blob landing**; a **Fabric Data Pipeline** will orchestrate a PySpark Notebook that validates and loads a OneLake Lakehouse.
+The Azure/Fabric subsystem owns the **cloud analytical replica**, separate from the local OMOP ingestion platform. Its immediate target is a read-only PostgreSQL OMOP snapshot → existing Azure Blob landing → Fabric Data Pipeline → Fabric PySpark Notebook → OneLake Lakehouse. Neither the exporter nor the Fabric business ETL has been implemented.
 
-**Scope and status (October 2026):** the Terraform infrastructure source is present and all seven roots have passed the post-copy **Plan-only** regression. The exporter, Blob publishing process, Fabric-native Notebook/Pipeline business implementations, and independent end-to-end reconciliation are **not implemented**. A successful Plan is not a Fabric Apply, active Notebook/Pipeline, or data E2E acceptance. Warehouse is optional, outside the initial OneLake-first MVP.
-
-## Code ownership and directory layout
+## Two source areas
 
 ```text
 azure-fabric/
 ├── README.md
-├── infra-terraform/                  # Existing Terraform infrastructure code
-│   ├── README.md                     # Terraform developer entry
-│   ├── components/                   # Seven independent Terraform root modules
+├── infra-terraform/                   # IaC, independent Terraform roots and modules
+│   ├── components/                   # Seven root components
 │   ├── modules/                      # Seven matching implementation modules
-│   └── docs/ARCHITECTURE.md          # Technical IAM / State / deployment boundaries
-├── exporter/                         # Future: local PG snapshot + immutable Blob publication
-│   └── .gitkeep
-├── workspace/
-│   └── healthcare-omop/              # Intended Git scope for existing Fabric Workspace
-│       ├── notebooks/
-│       │   └── ingestion/            # Future: native *.Notebook/ items
-│       │       └── .gitkeep
-│       └── pipelines/                # Future: native *.DataPipeline/ items
-│           └── .gitkeep
-└── tests/                             # Future: exporter, contract, Fabric and readback tests
-    └── .gitkeep
+│   ├── docs/ARCHITECTURE.md
+│   └── README.md
+└── workspaces/
+    └── healthcare-omop/              # Existing Fabric Workspace name (not a new resource)
+        ├── notebooks/
+        │   └── ingestion/            # Reserved grouping for native *.Notebook items
+        └── pipelines/                # Reserved for native *.DataPipeline items
 ```
 
-| Area | Responsibility | Where to begin |
+| Source area | Purpose and ownership | Read first |
 | --- | --- | --- |
-| [`infra-terraform/`](infra-terraform/README.md) | Provisioning, Azure/Fabric identities and resource ownership, independently keyed remote State | [Terraform README](infra-terraform/README.md) and [IAM/State design](infra-terraform/docs/ARCHITECTURE.md) |
-| `exporter/` | Future **local** read-only OMOP consistent snapshot, Parquet, checksum, READY manifest, Blob publication | Placeholder only; do not recreate or mutate the completed local OMOP batches |
-| `workspace/healthcare-omop/notebooks/ingestion/` | Future Fabric-native ingestion and Delta-loading **Notebook items** | Placeholder only; no `*.Notebook` or Git integration has been established by the directory |
-| `workspace/healthcare-omop/pipelines/` | Future Fabric-native **Data Pipeline items** to pass `export_id` and `manifest_uri` and enforce failure gates | Placeholder only; no `*.DataPipeline` item |
-| `tests/` | Future unit, snapshot-contract, idempotency, integration and independent PG ↔ Lakehouse reconciliation | Placeholder only |
+| [`infra-terraform/`](infra-terraform/README.md) | Terraform-managed resource definitions, Workspace/OneLake identities, RBAC and remote State; **not** production ETL source | [Terraform developer guide](infra-terraform/README.md), [technical architecture](infra-terraform/docs/ARCHITECTURE.md) |
+| [`workspaces/healthcare-omop/notebooks/`](workspaces/healthcare-omop/notebooks/) | Actual Fabric-native Notebook item sources for validation and Delta loading (future) | [Notebooks component](../documents/systems/azure-fabric/notebooks/README.md), [CODE](../documents/systems/azure-fabric/notebooks/CODE.md) |
+| [`workspaces/healthcare-omop/pipelines/`](workspaces/healthcare-omop/pipelines/) | Actual Fabric-native Data Pipeline item sources for orchestration (future) | [Pipelines component](../documents/systems/azure-fabric/pipelines/README.md), [CODE](../documents/systems/azure-fabric/pipelines/CODE.md) |
 
-### Fabric Git items vs Terraform resources
+The `notebooks/ingestion/` and `pipelines/` directories currently contain **only `.gitkeep` placeholders**. Neither a Fabric `*.Notebook/` item nor a `*.DataPipeline/` item exists in this source tree, and this repository layout does not connect the existing Fabric Workspace to Git.
 
-This repository uses **two different source formats**, and they must not silently become independent deployment owners:
+When creating native Fabric items, retain Fabric's actual generated `.platform` metadata and item content files. Do not create arbitrary item IDs or treat repository folder names as Fabric resource IDs. If Notebook business processing is split into reusable Python modules, decide its packaging and source ownership explicitly rather than putting arbitrary helper code into the Git-synchronized item folder.
 
-- The current [Terraform Notebook definition](infra-terraform/modules/notebook/main.tf) provisions a **fail-closed bootstrap** from [`modules/notebook/definitions/notebook-content.py`](infra-terraform/modules/notebook/definitions/notebook-content.py). The Notebook explicitly raises `RuntimeError`; it is **not** business ETL.
-- The current [Terraform Data Pipeline definition](infra-terraform/modules/data-factory/main.tf) selects a [Fail activity](infra-terraform/modules/data-factory/definitions/pipeline-disabled.json) until a real Notebook GUID is supplied. The alternate [Notebook activity](infra-terraform/modules/data-factory/definitions/pipeline-notebook.json) is only an unexecuted definition.
-- **Later**, actual Fabric Git-integrated Notebook sources should live in `<item>.Notebook/` folders containing `notebook-content.py` and Fabric-generated `.platform` metadata; Pipelines use `<item>.DataPipeline/` with `pipeline-content.json` and corresponding metadata. Do **not** hand-invent `.platform` logical IDs or mislabel the current Terraform bootstrap files as synchronized Fabric items.
-- Before Git integration is enabled, choose and document **one** deployment owner for each Notebook/Pipeline item (Terraform item definition or the Fabric Git delivery path); manage the transition deliberately, preserving item identity. Do not make both mechanisms overwrite the same item.
+## Avoid dual Notebook / Pipeline deployment ownership
 
-References: [Microsoft Fabric Notebook source control](https://learn.microsoft.com/en-us/fabric/data-engineering/notebook-source-control-deployment) and [Fabric Git source format](https://learn.microsoft.com/en-us/fabric/cicd/git-integration/source-code-format).
+The Terraform Notebook module still uses [a fail-closed bootstrap Python definition](infra-terraform/modules/notebook/definitions/notebook-content.py) that deliberately raises `RuntimeError`. The Terraform Data Pipeline uses [a Fail activity](infra-terraform/modules/data-factory/definitions/pipeline-disabled.json) until a real Notebook ID is available; its [Notebook activity JSON](infra-terraform/modules/data-factory/definitions/pipeline-notebook.json) is not a live pipeline. These definitions **remain under Terraform**; they are not copied into the empty native Git item folders.
 
-### Infrastructure copy and execution
+Before adopting Fabric Git Integration, settle one authoritative delivery mechanism and existing item identity for each Notebook/Pipeline, so Terraform and Fabric Git do not overwrite the same object. [Notebook source control](https://learn.microsoft.com/en-us/fabric/data-engineering/notebook-source-control-deployment) · [Fabric Git item formats](https://learn.microsoft.com/en-us/fabric/cicd/git-integration/source-code-format).
 
-The original [`azure/infra-terraform/`](../azure/infra-terraform/README.md) has **not** been removed. The new copy under `azure-fabric/infra-terraform/` is now the workflow-selected path; the [Self-Runner Azure-Infra-TF workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) uses `healthcare/azure-fabric/infra-terraform/components/$COMPONENT`. A seven-component **Plan-only** run from that path passed on October 16, 2026; see [verification evidence](infra-terraform/docs/ARCHITECTURE.md#verified-plan-evidence).
+## Local exporter and tests — not Fabric Workspace items
 
-All seven component roots retain their existing remote Azure Blob backend keys: `dev/<component>.tfstate`. **Never Apply through both directory copies.** The workflow exposes an explicit `apply` option, but **none is authorized by a documentation/code-layout cleanup**. Terraform State, Fabric workspace import, IAM changes, actual resource creation and data operations require their own review.
+The older `exporter/` and `tests/` folders here contained **only empty `.gitkeep` markers**; they were retired so that `azure-fabric/` has exactly the two agreed source areas. The future read-only PostgreSQL exporter still belongs to the project design, but it runs on the **local** side and its eventual implementation/test location will be selected alongside its API and deployment workflow. Do **not** treat removing the placeholders as cancelling the exporter, tests or independent reconciliation requirement.
 
-**Documentation boundaries:** this README explains physical code organization. Cross-platform design is owned by [Architecture](../documents/architecture/SYSTEM-OVERVIEW.md), current Azure/Fabric system explanation by [Systems / Azure-Fabric](../documents/systems/azure-fabric/README.md), and project status by [Project Status](../documents/engineering/status/PROJECT-STATUS.md). These are separate from infrastructure execution instructions.
+## Existing infrastructure and safety
+
+Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) now targets `healthcare/azure-fabric/infra-terraform/components/$COMPONENT`. All seven component roots previously passed new-path **Plan-only** checks; [run evidence and scope](infra-terraform/docs/ARCHITECTURE.md#verified-plan-evidence). The original [`azure/infra-terraform/`](../azure/infra-terraform/README.md) still exists as a transition copy. Never Apply from both copies or assume identical Terraform code implies an imported pre-existing resource.
+
+All State keys remain `dev/<component>.tfstate` in the existing remote Azure Blob backend. **No Apply, Fabric Git connection, business Notebook/Pipeline deployment or data E2E is authorized by a source-tree refactor.** Read the [system overview](../documents/systems/azure-fabric/README.md) and the [project status](../documents/engineering/status/PROJECT-STATUS.md) for architecture and current acceptance boundaries.

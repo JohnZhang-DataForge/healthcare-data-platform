@@ -4,6 +4,7 @@ on:
     paths:
       - 'apps/**'
       - 'documents/systems/data-platform/**/CODE.md'
+      - 'documents/systems/azure-fabric/**/CODE.md'
       - 'documents/engineering/development/CODE.md'
       - 'spark/**'
       - 'airflow/**'
@@ -32,7 +33,7 @@ jobs:
           persist-credentials: false
       - name: Unit tests for code naming guard
         run: python3 -m unittest discover -s tests/quality -p 'test_*.py' -v
-      - name: Require component CODE.md synchronization for Airflow, apps, Spark, SQL, images, Kubernetes, scripts and config
+      - name: Require CODE.md synchronization for platform components and Fabric native items
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}

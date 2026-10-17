@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require CODE.md source map sync for Airflow, apps, Spark, SQL, images, Kubernetes, scripts and config.
+"""Require CODE.md source map sync for Airflow, apps, Spark, SQL, images, Kubernetes, scripts, config and Fabric native items.
 
 Uses only Git tree/diff and local CODE.md text; no network or runtime access.
 """
@@ -250,6 +250,64 @@ def required_script_config_updates(
     }
 
 
+FABRIC_NATIVE_ROOT = "azure-fabric/workspaces/healthcare-omop/"
+FABRIC_NATIVE_MAP_PATHS = (
+    "documents/systems/azure-fabric/notebooks/CODE.md",
+    "documents/systems/azure-fabric/pipelines/CODE.md",
+)
+FABRIC_NATIVE_ROW_RE = re.compile(
+    r"^\|\s*\[[^\]]+\]\((?:\.\./){4}(azure-fabric/workspaces/healthcare-omop/(?:notebooks|pipelines)/[^)\s#?]+)\)\s*\|",
+    re.MULTILINE,
+)
+
+
+def is_fabric_native_source(path: str) -> bool:
+    """Track actual Fabric Git item files, not placeholder or reader docs."""
+    return (
+        path.startswith((
+            FABRIC_NATIVE_ROOT + "notebooks/",
+            FABRIC_NATIVE_ROOT + "pipelines/",
+        ))
+        and not path.endswith(("/.gitkeep", ".md", ".mdx", ".rst", ".txt"))
+    )
+
+
+def fabric_native_owned_links(contents: str) -> set[str]:
+    return {p for p in FABRIC_NATIVE_ROW_RE.findall(contents) if is_fabric_native_source(p)}
+
+
+def fabric_native_expected_owner(path: str) -> str:
+    segment = "notebooks" if path.startswith(FABRIC_NATIVE_ROOT + "notebooks/") else "pipelines"
+    return "documents/systems/azure-fabric/" + segment + "/CODE.md"
+
+
+def validate_fabric_native_maps(
+    documents: dict[str, str], actual: set[str]
+) -> tuple[list[str], list[str], list[str], list[str]]:
+    owners: dict[str, list[str]] = {}
+    for doc, content in documents.items():
+        for path in fabric_native_owned_links(content):
+            owners.setdefault(path, []).append(doc)
+    return (
+        sorted(actual - owners.keys()),
+        sorted(owners.keys() - actual),
+        sorted(p for p, refs in owners.items() if len(refs) > 1),
+        sorted(p for p, refs in owners.items() if any(doc != fabric_native_expected_owner(p) for doc in refs)),
+    )
+
+
+def required_fabric_native_updates(
+    changed_paths: set[str], before: dict[str, str], after: dict[str, str]
+) -> set[str]:
+    return {
+        doc for doc in FABRIC_NATIVE_MAP_PATHS
+        if changed_paths & (
+            fabric_native_owned_links(before.get(doc, ""))
+            | fabric_native_owned_links(after.get(doc, ""))
+        )
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base", required=True)
@@ -451,12 +509,53 @@ def main() -> int:
         print("CODE_MAP_GATE=FAIL; scripts/config source add/delete/move requires CODE.md")
         return 1
 
+    fabric_native_sources = {
+        p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
+                             "--", FABRIC_NATIVE_ROOT)
+        if is_fabric_native_source(p)
+    }
+    fabric_native_after = {
+        p: Path(p).read_text(encoding="utf-8") for p in FABRIC_NATIVE_MAP_PATHS
+    }
+    fabric_native_before = {
+        p: git_file(args.base, p) for p in FABRIC_NATIVE_MAP_PATHS
+    }
+    fn_missing, fn_stale, fn_duplicates, fn_wrong = validate_fabric_native_maps(
+        fabric_native_after, fabric_native_sources
+    )
+    for path in fn_missing:
+        print("CODE_MAP_FABRIC_NATIVE_MISSING_LINK=" + path)
+    for path in fn_stale:
+        print("CODE_MAP_FABRIC_NATIVE_STALE_LINK=" + path)
+    for path in fn_duplicates:
+        print("CODE_MAP_FABRIC_NATIVE_DUPLICATE_OWNER=" + path)
+    for path in fn_wrong:
+        print("CODE_MAP_FABRIC_NATIVE_WRONG_OWNER=" + path)
+    if fn_missing or fn_stale or fn_duplicates or fn_wrong:
+        print("CODE_MAP_GATE=FAIL; Fabric native Notebook/Pipeline source requires one matching CODE.md")
+        return 1
+
+    fabric_native_changed = {
+        p for p in git_lines("diff", "--no-renames", "--name-only",
+                             "--diff-filter=AD", "--no-ext-diff", args.base, args.head)
+        if is_fabric_native_source(p)
+    }
+    fabric_native_required = required_fabric_native_updates(
+        fabric_native_changed, fabric_native_before, fabric_native_after
+    )
+    for doc in sorted(fabric_native_required - changed):
+        print("CODE_MAP_FABRIC_NATIVE_REQUIRED_UPDATE_MISSING=" + doc)
+    if fabric_native_required - changed:
+        print("CODE_MAP_GATE=FAIL; native Fabric file change requires owning CODE.md in same PR")
+        return 1
+
     print("CODE_MAP_GATE=PASS; mapped_dag_files=" + str(len(current)) +
           "; mapped_app_files=" + str(len(app_sources)) +
           "; mapped_spark_files=" + str(len(spark_sources)) +
           "; mapped_contract_sql_files=" + str(len(cs_sources)) +
           "; mapped_image_k8s_files=" + str(len(image_k8s_sources)) +
-          "; mapped_script_config_files=" + str(len(script_config_sources)))
+          "; mapped_script_config_files=" + str(len(script_config_sources)) +
+          "; mapped_fabric_native_files=" + str(len(fabric_native_sources)))
     return 0
 
 
