@@ -24,7 +24,7 @@
 
 ## 最终文档终审与 OpenSpec 下一步（STEP08）
 
-- **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — 全部 25 份新文档链接审计、旧入口权威纠偏、文档范围和后续边界。
+- **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — STEP08 当时的 25 份文档链接审计（历史统计，并非现行 `documents/` 文档总数）、旧入口权威纠偏及后续边界。
 - [OpenSpec Readiness](engineering/migration/OPENSPEC-READINESS.md) — STEP09 开工所需的配置修订、CLI 验证与首批 Baseline 范围。**当前 Main 尚无 `openspec/`**。
 
 ## 长期运维与架构决策（STEP07 已审核）

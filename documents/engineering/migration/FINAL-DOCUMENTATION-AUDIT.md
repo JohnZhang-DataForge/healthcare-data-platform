@@ -9,7 +9,7 @@ source_sha: f5ee37697bed08fc35e288d84420bafd4b2d8e22
 
 > **终审对象**：Healthcare Main `f5ee37697bed08fc35e288d84420bafd4b2d8e22`，与 STEP08 PR [#174](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/174) 的导航/历史入口最小变更。范围仅是**文件和历史证据静态审查**；不是实时 Kubernetes/PG/S3/Azure 或 OpenSpec CLI 健康验证。此报告在 PR #174 合并后成为完成记录。
 
-**终审后整理**：按用户指示，原 `docs/` 将在独立 PR 中从 Main 彻底清理；历史源固定在 [Git Commit `49936b51d4beadc69383e931efc3e72d2f0db47e`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/49936b51d4beadc69383e931efc3e72d2f0db47e/docs)，原有验收/失败记录可追溯。详见 [快照清单](LEGACY-DOCS-SNAPSHOT.md)。这属于 STEP08 的后续 housekeeping，不改变终审时的证据结论。
+**终审后整理（已完成）**：按用户指示，原 `docs/` 已在后续独立 PR 中从 Main 清理；历史源固定在 [Git Commit `49936b51d4beadc69383e931efc3e72d2f0db47e`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/49936b51d4beadc69383e931efc3e72d2f0db47e/docs)，原有验收/失败记录可追溯。详见 [快照清单](LEGACY-DOCS-SNAPSHOT.md)。这属于 STEP08 的后续 housekeeping，不改变终审时的证据结论。
 
 ## 核验范围与检查结果
 
@@ -24,7 +24,7 @@ source_sha: f5ee37697bed08fc35e288d84420bafd4b2d8e22
 | OpenSpec / Archive | 本轮基线 Main 无 `openspec/`、无 `docs/archive/`；旧独立 Private Healthcare-Specs/archive 不被迁回 |
 | Runtime | 未修改应用代码、业务 DAG/Writer、Azure Terraform、Self-Runner Workflow、K8s/PG/S3/Blob；没有重新执行 E2E 或 Apply |
 
-**终审分支增量复核**：更新后的 `documents/` 已有 **26 份 Markdown、277 条仓库内相对链接，0 个断链，0 个未闭合代码 Fence**；根 `README.md` 加上七个明确降级的 Legacy 门户文件共 **8 个入口、229 条相对链接、0 个断链，0 个未闭合 Fence**。两组检查合计 **506 条相对链接**。全部为 STEP08 PR [#174](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/174) 的 Git Tree 静态核对；最终 Main 需在合并后再确认。
+**终审分支增量复核**：更新后的 `documents/` 已有 **26 份 Markdown、277 条仓库内相对链接，0 个断链，0 个未闭合代码 Fence**；根 `README.md` 加上七个明确降级的 Legacy 门户文件共 **8 个入口、229 条相对链接、0 个断链，0 个未闭合 Fence**。两组检查合计 **506 条相对链接**。全部为 STEP08 PR [#174](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/174) 当时的 Git Tree 静态核对，不代表当前 Main 的文档和链接总数。
 
 **审计注意**：249 条是新 `documents/` 内的**仓库相对链接路径存在性检查**，不是外部网址访问验证、Markdown 标题 Fragment 校验、网站链接可用性测试或全部 111 份 Legacy 文档的完整链接修复。Legacy 历史原样保留，个别旧链接可能随历史演进失效，使用前按当前树与源代码核实。
 

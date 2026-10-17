@@ -124,4 +124,4 @@ Local PostgreSQL OMOP (authoritative)
 - **本页唯一维护**项目总览、跨工作线 NEXT、批准/讨论中/未批准的边界；模块详情、新的真实证据只在所属组件文档或 Run/Closeout 存一份，再从本页链接。
 - 修改任务完成状态需要 **真实源码/PR、明确验收范围与相应执行/读回证据**；改变目标方案需有用户确认，不把 Agent 候选建议写成 APPROVED。
 - 重要检查附 **来源 SHA + Run/日期/环境**，避免过时数字被当作实时健康指标；Live 验证必须另行获得授权。
-- 旧 `docs/tasks/TASK-STATUS.md`、Portal 老 Agent Handoff 和旧 Azure Warehouse-first 文件不删除，但不再作为全项目 CURRENT/NEXT；迁移计划见 [MIGRATION-STATUS](../migration/MIGRATION-STATUS.md)。
+- 原 `docs/tasks/TASK-STATUS.md`、Portal 老 Agent Handoff 和旧 Azure Warehouse-first 文件已从 Main 清理；历史内容经 [Legacy Docs 固定快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 可追溯，但不再作为全项目 CURRENT/NEXT。迁移计划见 [MIGRATION-STATUS](../migration/MIGRATION-STATUS.md)。

@@ -10,7 +10,7 @@
 2. **单一权威**：每个领域只有一份 ACTIVE 当前解释。跨模块入口只链接不复制 CURRENT/NEXT；不能在多个文件分别保有冲突的状态表。
 3. **状态与历史分离**：Current 页面可以覆盖更新；历史 Closeout、GitHub Run、决策、失败事实保持可追溯，不重写成成功。
 4. **设计与实现分离**：Target Architecture 与已部署/已验收实现明确标注适用范围和证据，部分上线时允许并存。
-5. **渐进式切换**：`docs/` 作为 Legacy 参考保留；某领域经核对及 PR 合并后，才在迁移表标记 `MIGRATED/ACTIVE`。未迁移领域现有有效合同、技术知识和安全规则继续使用。
+5. **渐进式切换**：原 `docs/` 通过固定 Git 历史快照作为 Legacy 参考；某领域经核对及 PR 合并后，才在迁移表标记 `MIGRATED/ACTIVE`。未迁移领域现有有效合同、技术知识和安全规则继续使用。
 6. **避免文档膨胀**：同一个 STEP 的小型结果尽量链接 GitHub Run/Artifacts；仅重大变更、独立验收、架构决策保留必要的独立文档。
 7. **最小上下文**：新的 Agent 先读 `documents/README.md` 和迁移表，再只读与任务相关的有效文件。
 
@@ -71,7 +71,7 @@ evidence: []
 3. **Reconcile**：制作冲突决议及事实边界；不采用未经验证的旧 `CURRENT/NEXT`；记录仍有效的安全约束。
 4. **Write**：在 `documents/` 模块目录重新组织**简洁且可长期维护**的说明，引用证据，而不是粘贴旧全文。
 5. **Review**：进行事实检查、路径/链接检查、PR diff 和受影响 Contract/安全边界审查。
-6. **Activate**：合并 PR 后更新迁移表中的领域状态和唯一新权威路径；旧 `docs/` 可继续作为历史参考，但不再维护该领域另一套 CURRENT 状态。
+6. **Activate**：合并 PR 后更新迁移表中的领域状态和唯一新权威路径；原 `docs/` 的固定 Git 历史快照可继续作为参考，但不在 Main 维护该领域另一套 CURRENT 状态。
 7. **Maintain**：后续相关代码/行为变化触发新文档更新；实施过程与真实结果继续关联版本证据。
 
 若信息不完整或某关键合同冲突未解决，该领域保持 `IN_REVIEW` 而非提前 ACTIVE。拆小 PR 完全允许。
@@ -90,7 +90,7 @@ evidence: []
 ## 6. Legacy 与历史归档
 
 - 当前 Healthcare `docs/archive/` 已移除；旧归档已被现有文档指向独立 [Healthcare-Specs/archive](https://github.com/JohnZhang-DataForge/Healthcare-Specs/tree/main/archive)（Private，访问按 GitHub 权限），因此**不要根据旧 Lifecycle 文件中的示例重建 `docs/archive/`**。
-- 不随意移动/删除 `docs/tasks/` 原始 Closeout、冻结 Contract、Runbook。需要清退前先确认替代当前内容和可追溯位置。
+- 原 `docs/tasks/` 已从 Main 清理；其中 Closeout、冻结 Contract、Runbook 等历史证据仍可通过 [Legacy Docs 固定快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 访问。后续整理不得将这些历史路径描述为当前目录；需要更新证据索引时应先核对来源与可追溯位置。
 - 历史文件的正文原则上保持原貌；新解释放在 ACTIVE 文档或迁移说明，修复过期链接时按文件用途审查。
 - 本次 Document Rebuild PR 默认 **docs-only、无 K8s/PG/S3/Azure/GitHub Workflow 的运行副作用**。需要 Runtime 验证单独提出并授权。
 - 后续加入 OpenSpec 时，不复制 `documents/systems/data-platform/` 中所有实现说明到 Spec：**Specs 只放可验证行为要求，Docs 放架构/部署/运维知识**。
