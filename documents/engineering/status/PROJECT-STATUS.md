@@ -78,7 +78,7 @@ Local PostgreSQL OMOP (authoritative)
 
 ### 4.2 已完成的基础设施工程（源码与 Plan）
 
-- Healthcare `azure/infra-terraform/` 已有 **components + modules** 结构以及目标 Lakehouse/Notebook/Data Pipeline 的 Terraform **资源定义**，包括分组件 IAM 占位与边界；并不是云端可运行业务 ETL 全部实现。
+- Healthcare `azure-fabric/infra-terraform/` 已复制旧 `azure/infra-terraform/` 的 **components + modules** 结构以及目标 Lakehouse/Notebook/Data Pipeline 的 Terraform **资源定义**，包括分组件 IAM 占位与边界；原 `azure/` 未修改，Backend/State Key 未变。源码复制不代表云端部署，也不是可运行业务 ETL 的完整实现。
 - Self-Runner 上独立的 [`Azure-Infra-TF` Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 已完成开发并跑过真实 Terraform Plan；支持 component/env/operation 选项，默认 `plan`，虽提供 `apply`，**本阶段尚未获得执行授权**。
 - 已有的 Azure Storage / Blob Landing、Terraform Remote State 和 Fabric Workspace 继续复用；不以本次三个 Plan 声称新建了这些既有资源。
 
@@ -99,7 +99,7 @@ Local PostgreSQL OMOP (authoritative)
 
 **当前 NEXT**：继续讨论、冻结最小可实施范围与数据合同；按用户单独批准的步骤再实施。**没有自动触发 Apply 或创建云端资源的许可**。
 
-**依据**：[OneLake-first 方案与真实 Plan 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) · [Terraform 组件](../../../azure/infra-terraform/README.md) · [IaC 架构/IAM](../../../azure/infra-terraform/docs/ARCHITECTURE.md) · [Notebook bootstrap](../../../azure/infra-terraform/modules/notebook/definitions/notebook-content.py) · [Pipeline fail-closed definition](../../../azure/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)。
+**依据**：[OneLake-first 方案与真实 Plan 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) · [Terraform 组件](../../../azure-fabric/infra-terraform/README.md) · [IaC 架构/IAM](../../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md) · [Notebook bootstrap](../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) · [Pipeline fail-closed definition](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)。
 
 ## 5. 文档重建与 OpenSpec
 
