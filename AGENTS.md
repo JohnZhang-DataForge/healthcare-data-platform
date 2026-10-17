@@ -19,7 +19,7 @@ The current model is **source-first, workflow-driven**: maintain canonical appli
 
 | Task type | Additional reading before the relevant work |
 | --- | --- |
-| Code, Shell helper, generator, Git checkpoint or refactor | [Development Workflow](documents/engineering/development/DEVELOPMENT-WORKFLOW.md), [Component-first Naming](documents/engineering/development/CODE-ORGANIZATION-AND-NAMING.md) and the owning component's `CODE.md`; inspect actual source and contracts |
+| Code, tooling, Shell maintenance or refactor | [Development Workflow](documents/engineering/development/DEVELOPMENT-WORKFLOW.md), [Component-first Naming](documents/engineering/development/CODE-ORGANIZATION-AND-NAMING.md) and the owning component's `CODE.md`; inspect actual source and contracts |
 | Unit, contract, replay, reconciliation or acceptance test | [Testing & Evidence](documents/engineering/development/TESTING-AND-EVIDENCE.md) and affected contracts; if the test touches a shared environment, also apply the runtime row |
 | Shared K8s/Airflow/Spark/PostgreSQL/S3/Azure operation, deployment, Terraform plan, retry, reset, publish or recovery | [Safe Operations](documents/engineering/operations/SAFE-OPERATIONS.md) and [Session Coordination](documents/engineering/development/SESSION-COORDINATION.md); inspect the actual command/Workflow and get required authorization |
 | Documentation change, navigation repair or docs migration | [Documentation Governance](documents/engineering/development/DOCUMENTATION-GOVERNANCE.md) and [Migration Status](documents/engineering/migration/MIGRATION-STATUS.md); review affected links and authority boundaries |
