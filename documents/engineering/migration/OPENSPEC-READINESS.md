@@ -9,6 +9,8 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 > **STEP08 终审完成后的准备清单，不是 OpenSpec 初始化记录。** 正式采用 OpenSpec 管后续变更与 Agent 接力的方向已确认，但已核验的 Main 仍**没有 `openspec/`**；没有运行 OpenSpec CLI/npm，也没有为此触发业务或云端 Workflow。[最终文档权威终审](FINAL-DOCUMENTATION-AUDIT.md)。
 
+**2026-10-17 状态补充**：旧 Bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) 已 **CLOSED / NOT MERGED**；替代方案请审阅 [OpenSpec 接入与开发治理设计讨论稿](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md)。该动作只关闭过时 PR，**不表示 G2 CLI 初始化或 STEP09 已完成**。
+
 **目录调整提示**：旧 `docs/` 已进入 [Legacy Snapshot](LEGACY-DOCS-SNAPSHOT.md)，不在当前 Main。旧 PR #164 对 `docs/README.md`、`docs/tasks/TASK-STATUS.md` 的引用在目录删除后更不可能作为有效 OpenSpec `config.yaml` 上下文；正式采用前必须替换为现行 `documents/`。
 
 ## 1. 最小职责分配
@@ -23,7 +25,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 ## 2. 旧 OpenSpec Bootstrap PR 的冲突
 
-检查时 [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) **仍 OPEN、未合并**，HEAD `b694de91c575a62868c7c04367d25774d5f09d73`。它已有 `openspec/config.yaml` 的早期候选和旧 `docs/development/OPENSPEC-ADOPTION-PLAN.md`，但：
+2026-10-16 检查时 [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) **仍 OPEN、未合并**，HEAD `b694de91c575a62868c7c04367d25774d5f09d73`。它已有 `openspec/config.yaml` 的早期候选和旧 `docs/development/OPENSPEC-ADOPTION-PLAN.md`，但：
 - 早期配置将 `docs/README.md`、`docs/tasks/TASK-STATUS.md` 和旧 `PLATFORM-DEVELOPMENT-OPERATIONS` 视作当前入口，**和 STEP01–07 的新 `documents/` 权威冲突**。
 - 原 PR 自述尚未执行 OpenSpec CLI 安装、初始化/校验的成功验证，**不能直接当已验证配置合并**。
 - PR 基于旧 Main，不能不审 Diff 就复用。STEP09 前先决定更新旧 PR 或关闭/以新 PR 替换，**STEP07 不擅自处理 PR #164**。
@@ -45,10 +47,10 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 ## 5. STEP09 正式采用时的 Gate
 
-1. 从**当时最新 Main** 审核旧 PR #164 的变更，更新/取代其过时的 config 上下文；不直接合并旧参考入口。
+1. **G0 已完成**：旧 PR #164 已于 2026-10-17 关闭且未合并；正式初始化仍必须从**实施时最新 Main** 开始，以[新设计稿](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md)为讨论基准，不能直接合并旧 config。
 2. 在适合的受控静态执行环境中查核**当时官方支持的 OpenSpec CLI 版本和命令**，运行 Init/Validate 并记录 Tool Version、Source SHA、输出；不能因为文件存在就说「CLI PASS」。
 3. 仅添加必需 `openspec/`、配置和最小可验证 Baseline；不复制全部 `documents/`，不重放 TASK004 或修改 K8s/Azure。
 4. 选择一个小型**获批** Change 测试新 Session 接力与 Verify/Archive；Task 勾选不能代替 PR 合并与独立业务读回。
 5. OpenSpec 与 Self-Runner 是不同层：OpenSpec 不自动抢占任务或管理共享 Runtime；任何实际运行仍按安全规则单独授权。
 
-**STEP08 只完成文档审查与权威切换，STEP09 仍未初始化。** 下一阶段从最新 Main 更新或替代旧 PR #164，并记录真实 CLI Init/Validate、配置 Schema 与版本证据，再开展第一个受控 Change。
+**STEP08 只完成文档审查与权威切换，STEP09 仍未初始化。** 下一阶段从最新 Main 按新设计稿初始化（旧 PR #164 已关闭），并记录真实 CLI Init/Validate、配置 Schema 与版本证据，再开展第一个受控 Change。
