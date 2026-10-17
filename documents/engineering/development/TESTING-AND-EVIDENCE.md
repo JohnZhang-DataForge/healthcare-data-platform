@@ -50,7 +50,7 @@ FINAL_STATUS=<PASS|FAIL|BLOCKED|NOT_RUN>
 NEXT_ACTION=<bounded next step>
 ```
 
-**不能填写假运行号、猜测 SHA 或隐瞒 `NOT_RUN`**。Source SHA 可用完整字符串；为审计方便用户输出尽量标注 `#### ... OUTPUT BEGIN/END ####`，但普通文档审查无需强制用 Shell。
+**不能填写假运行号、猜测 SHA 或隐瞒 `NOT_RUN`**。报告用实际 Source SHA、Workflow Run/Artifact 和断言结果；不要求为普通开发或文档审查单独创建 Shell 输出格式。
 
 **数据身份与执行身份分开记录**：`batch_id` 表示输入数据批次，`pipeline_run_id` 表示一次运行；同一 Batch 可被多次安全检查或消费。最终结果以 Contract、持久状态和对应 Run/Artifact 为证，不仅依据 Workflow 成功状态。
 
