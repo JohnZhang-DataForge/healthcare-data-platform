@@ -23,7 +23,7 @@ Local PostgreSQL OMOP CDM (authoritative，已验收 Person/Visit)
 - **本地 PG 继续是标准化 OMOP 的事实来源**；云端仅建立分析副本，不重做 Synthea/FHIR/HL7 到 OMOP 的 ETL，不反写本地 PG。
 - **Fabric Data Factory 是 Data Pipeline item**，负责触发和监控 Notebook，并非新建 `azurerm_data_factory`。Notebook 负责业务处理，OneLake Lakehouse 是最终 MVP 数据落点。
 - **既有 Azure Blob 是从 PostgreSQL 导出后的 landing**；本地 SeaweedFS S3 是 Synthea 原始数据 Landing，含义不同。
-- 当前不以 Warehouse、dbt、ML 或额外 Azure 服务为首轮前置。Warehouse-first 的 [2026-10-14 旧方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-FABRIC-MINIMAL-IMPLEMENTATION-PLAN-v1.0.zh-CN.md)、旧 Terraform [README 中 Warehouse 可选的段落](../../../azure/infra-terraform/README.md) 与最新 OneLake-first 目标冲突时，以 [10 月 15 日现行方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) 和本页为准；历史文档正文不伪造一致性。
+- 当前不以 Warehouse、dbt、ML 或额外 Azure 服务为首轮前置。Warehouse-first 的 [2026-10-14 旧方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-FABRIC-MINIMAL-IMPLEMENTATION-PLAN-v1.0.zh-CN.md)、旧 Terraform [README 中 Warehouse 可选的段落](../../../azure-fabric/infra-terraform/README.md) 与最新 OneLake-first 目标冲突时，以 [10 月 15 日现行方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) 和本页为准；历史文档正文不伪造一致性。
 
 ## 2. 代码与基础设施资源实际状态
 
@@ -32,14 +32,16 @@ Local PostgreSQL OMOP CDM (authoritative，已验收 Person/Visit)
 | PG Exporter | 从 `cdm.*` 做只读一致快照、输出可检验文件与最终 READY manifest | **未实现**；表范围、格式、隔离级别、export_id、重试机制还需设计 |
 | Azure Blob Landing / State | 已有 Storage Account 和业务容器；Terraform State 用现有 OIDC Azure Blob backend | **既有基础设施**，不是本次三项 Fabric 资源 Plan 新建结果 |
 | Fabric Workspace | 已有手工创建的 `healthcare-omop` Workspace | **不能重复创建**；若用 Terraform 管理须先 Import 及核对 Capacity/权限 |
-| Lakehouse | [`fabric_lakehouse`](../../../azure/infra-terraform/modules/onelake/main.tf)，名称 `lh_omop_analytics`，`enable_schemas=true` | 已有 IaC + Plan；**未 Apply、无 Delta 数据验收** |
-| Notebook | [`nb_omop_snapshot_load` 源码](../../../azure/infra-terraform/modules/notebook/definitions/notebook-content.py) 有 `export_id`、`manifest_uri` 参数 | 只有故意 `raise RuntimeError` 的 **fail-closed bootstrap**；无 Blob DQ 或 Delta 装载 |
-| Data Pipeline | [`fabric_data_pipeline`](../../../azure/infra-terraform/modules/data-factory/main.tf)，名 `pl_omop_snapshot_to_onelake` | `notebook_id=""` 时使用 [Fail Activity](../../../azure/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)；[Notebook Activity](../../../azure/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json) 需要未来真实 Notebook GUID；未绑定或执行 |
-| IAM | [Terraform IAM boundary](../../../azure/infra-terraform/docs/ARCHITECTURE.md)，组件自身拥有权限配置 | `data_access_roles={}` 不创建 OneLake 权限；Fabric Workspace 权限与 Azure Blob RBAC 不等价，实际授权待核对 |
+| Lakehouse | [`fabric_lakehouse`](../../../azure-fabric/infra-terraform/modules/onelake/main.tf)，名称 `lh_omop_analytics`，`enable_schemas=true` | 已有 IaC + Plan；**未 Apply、无 Delta 数据验收** |
+| Notebook | [`nb_omop_snapshot_load` 源码](../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) 有 `export_id`、`manifest_uri` 参数 | 只有故意 `raise RuntimeError` 的 **fail-closed bootstrap**；无 Blob DQ 或 Delta 装载 |
+| Data Pipeline | [`fabric_data_pipeline`](../../../azure-fabric/infra-terraform/modules/data-factory/main.tf)，名 `pl_omop_snapshot_to_onelake` | `notebook_id=""` 时使用 [Fail Activity](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)；[Notebook Activity](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json) 需要未来真实 Notebook GUID；未绑定或执行 |
+| IAM | [Terraform IAM boundary](../../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md)，组件自身拥有权限配置 | `data_access_roles={}` 不创建 OneLake 权限；Fabric Workspace 权限与 Azure Blob RBAC 不等价，实际授权待核对 |
 
-**代码布局**：[Terraform Root/Module 总入口](../../../azure/infra-terraform/README.md)：`components/<component>/` 是独立 root，`modules/<component>/` 定义资源，`components/<component>/environments/dev.tfvars` 定义环境；State 使用既有 `dev/<component>.tfstate`。Root 有 `storage`、`workspace`、`onelake`、`notebook`、`data-factory`、`warehouse`、`foundation-iam`，不意味着当前 MVP 要全部 Apply。已存在的 Storage 与 Workspace 不需要重建。
+**源码迁移**：Terraform 已完整复制到 `azure-fabric/infra-terraform/`；旧 `azure/infra-terraform/` 保持原样。Backend 和 State Key 不变；目录迁移不代表 Azure Apply。
 
-**目录清理（2026-10-16）**：早期 OIDC / Blob Terraform Smoke 源码已从 Main 删除；正式 Azure IaC 只使用 [`azure/infra-terraform/components/`](../../../azure/infra-terraform/README.md) 和 `modules/`。历史 Smoke 证据保留在 Git 历史中，不属于 OneLake MVP；本次没有执行云端操作。
+**代码布局**：[Terraform Root/Module 总入口](../../../azure-fabric/infra-terraform/README.md)：`components/<component>/` 是独立 root，`modules/<component>/` 定义资源，`components/<component>/environments/dev.tfvars` 定义环境；State 使用既有 `dev/<component>.tfstate`。Root 有 `storage`、`workspace`、`onelake`、`notebook`、`data-factory`、`warehouse`、`foundation-iam`，不意味着当前 MVP 要全部 Apply。已存在的 Storage 与 Workspace 不需要重建。
+
+**目录清理（2026-10-16）**：早期 OIDC / Blob Terraform Smoke 源码已从 Main 删除；正式 Azure IaC 只使用 [`azure/infra-terraform/components/`](../../../azure-fabric/infra-terraform/README.md) 和 `modules/`。历史 Smoke 证据保留在 Git 历史中，不属于 OneLake MVP；本次没有执行云端操作。
 
 ## 3. 三个真实 Plan 已完成，但尚未 Apply
 
@@ -71,4 +73,4 @@ Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/
 
 今后代码按 [组件命名标准](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md) 组织，例如 `apps/omop_export/` 等功能路径；不创建 `taskNNN/stepNNN` 正式源码。Azure 现有 `data-factory`、`notebook` 等是**组件名**，可以保留。
 
-**本轮纯文档**；不运行 Terraform Plan/Apply、Fabric Pipeline、Notebook、数据库导出或数据上传。不因“Plan 成功”创建云端资源，也不因“数据最少”跳过权限/幂等/一致性 Gate。运维规范迁移前参考 [Terraform 技术架构](../../../azure/infra-terraform/docs/ARCHITECTURE.md) 与 [Plan Evidence](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)。
+**本轮纯文档**；不运行 Terraform Plan/Apply、Fabric Pipeline、Notebook、数据库导出或数据上传。不因“Plan 成功”创建云端资源，也不因“数据最少”跳过权限/幂等/一致性 Gate。运维规范迁移前参考 [Terraform 技术架构](../../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md) 与 [Plan Evidence](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)。

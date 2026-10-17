@@ -2,7 +2,7 @@
 status: staging
 scope: azure-fabric-system-overview
 last_verified: 2026-10-16
-source_sha: 1eafd82b9cd254f36d693e44df63111f18244570
+source_sha: 93b397026a07a16baed4460c6c03e39d72d2bb12
 ---
 
 # Azure / Microsoft Fabric — OMOP analytical replica
@@ -26,7 +26,7 @@ The existing Blob account and manually provisioned Fabric Workspace are **not** 
 
 | Area | Source location and purpose | Implementation |
 | --- | --- | --- |
-| Infrastructure | [Current Terraform source](../../../azure/infra-terraform/README.md) — seven roots and matching modules | Existing code; source directory rename not yet performed |
+| Infrastructure | [Active Terraform source](../../../azure-fabric/infra-terraform/README.md) — seven roots and matching modules | Full source copy, old `azure/` preserved |
 | Exporter | `azure-fabric/exporter/` — consistent PG export, Parquet / manifest and Blob publication | Reserved directory; **not built** |
 | Fabric notebooks | `azure-fabric/workspace/healthcare-omop/notebooks/ingestion/` — Fabric-native Notebook items | Reserved directory; **not built** |
 | Fabric pipelines | `azure-fabric/workspace/healthcare-omop/pipelines/` — Fabric-native Data Pipeline items | Reserved directory; **not built** |
@@ -34,7 +34,7 @@ The existing Blob account and manually provisioned Fabric Workspace are **not** 
 
 The `azure-fabric/workspace/healthcare-omop/` directory mirrors a **planned Git integration folder**, not a new Fabric Workspace resource. The existing `healthcare-omop` Workspace must be connected explicitly; temporary `.gitkeep` markers do not represent Notebook/Pipeline items and will be retired when real Fabric items are added. Reusable non-Fabric Python code can be kept outside this folder later to avoid contaminating native item definitions.
 
-The `azure-fabric/infra-terraform/` directory is a **non-executable placeholder**. The original Terraform roots remain at `azure/infra-terraform/` so the existing Self-Runner workflow is not broken during cross-repository migration.
+`azure-fabric/infra-terraform/` now contains the copied Terraform roots and modules; resource configuration and remote State keys are unchanged. The original `azure/infra-terraform/` is still intact. Self-Runner must be switched to the new directory before Plan validation; copying IaC alone does not deploy resources.
 
 **Source of truth:** [CODE map](CODE.md) for tracked files, [Project Status](../../engineering/status/PROJECT-STATUS.md) for accepted work and outstanding tasks, [Data Flow](../../architecture/DATA-FLOW.md) for system boundaries. The [previous Azure component brief](../../components/azure-fabric/README.md) remains available during the documentation cutover, including historical Plan run links.
 
