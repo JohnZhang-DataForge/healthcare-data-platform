@@ -64,3 +64,17 @@ E2E 最终验收必须说明具体运行范围：版本/Manifest/Batch、实际 
 - 未满足则 `BLOCKED` / `PARTIAL`，明确阻塞点、已核实数据、下一步；不因准备了计划而宣布 COMPLETE。
 - 失败后先区分测试代码缺陷、资源状态不符、环境中断、权限/凭据、真正业务处理错误。非幂等 COMMIT 或未知状态**先只读审计再决策是否恢复**。
 - 不要求每个小型 STEP 都新建 Closeout：普通结果存 GitHub Run/Artifact 并在 PR 索引；重大里程碑及独立验收用简洁证据文档。
+
+## 6. 重试、发布与里程碑 Closeout 的具体验收断言
+
+旧 Skill 中仍有效的**测试语义**需要按真实业务 Contract 选择相应断言，而不是为了验证去触碰已冻结 Batch：
+
+- **相同输入、相同 `batch_id`**：观察定义明确的结果复用或安全跳过。重点验证 Manifest/Hash 一致、业务键和稳定 OMOP ID 不变、Claim/Ledger 合法、CDM 行数无异常膨胀、外键仍正确。
+- **相同 Batch 身份、不同哈希**：应进入明确的冲突或失败路径；使用模拟/隔离负向测试，不在真实已经批准的 Batch 上制造冲突。
+- **处理成功 ≠ 正式发布**：Spark 完成、文件存在、DQ 通过、数据库 COMMIT、READY/APPROVED、独立读回是不同里程碑；只有必要门槛通过后才产生最终发布标记。
+- **结果未知先读回**：Shell/Wrapper 报错时不能仅凭客户端退出码判断持久化是否提交；PostgreSQL Sequence 间隙本身不属于失败，重点检查唯一、稳定、不复用。
+- **区分 Batch 与 Run**：`batch_id` 是数据身份，`pipeline_run_id` 是执行身份，一个 Batch 可有多个 Run；以批次/Manifest、运行事件和实际提交结果分别对账。
+- **宣布 CLOSED 前**：必须满足所声明的核心断言、所需 Canonical Verifier/Contract 检查、独立持久化读回、代码 Commit/PR 与证据可追溯。普通 STEP 可直接在 PR/Run 中记录，不需要强制创建大型 Closeout；证据不足时如实写 PARTIAL/BLOCKED。
+
+这些要求**不构成执行权限**；新 Runtime 验证必须符合 [Safe Operations](../operations/SAFE-OPERATIONS.md)。
+

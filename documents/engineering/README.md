@@ -6,6 +6,7 @@
 - [Legacy code refactor plan](development/LEGACY-CODE-REFACTOR-PLAN.md) — gradual code modernization, separate from the documentation migration.
 - [Operations](operations/README.md) — safe operations, recovery and runtime guardrails.
 - [Migration](migration/MIGRATION-STATUS.md) — documentation history, provenance and change status.
+- [旧 Skill 35 章覆盖审计](migration/LEGACY-SKILL-COVERAGE-AUDIT.md) — 逐项判断已吸收、需要补充和已淘汰的开发规范。
 - [Project Status](status/PROJECT-STATUS.md) — cross-system status and accepted evidence boundaries.
 
 The new hierarchy is a documentation organization only. Historical Git snapshots, runtime contracts and source file locations remain unchanged.
