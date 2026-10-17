@@ -15,7 +15,7 @@ Applies to all work in this repository, regardless of AI assistant/tool. **Read 
 
 ## Task-aware reading — do not load every guide by default
 
-The numbered rules above always apply. At task start, read the core entry points in rules 1 and 3, classify the work, then **open only the relevant detailed guides before performing the affected work**. Combine rows for mixed tasks; a documentation-only change needs no live-runtime check. If the operation can affect shared resources, the safety gate in rule 9 is mandatory regardless of task label.
+The current model is **source-first, workflow-driven**: maintain canonical application code, configuration and tests directly in Git; use reviewed Workflows for checks, packaging and authorized execution. Shell is a supporting tool, not the default way to generate application source. Read the baseline in rules 1 and 3, then only the relevant detailed guides. Combine rows for mixed tasks; shared-runtime work always requires rule 9.
 
 | Task type | Additional reading before the relevant work |
 | --- | --- |
@@ -25,6 +25,6 @@ The numbered rules above always apply. At task start, read the core entry points
 | Documentation change, navigation repair or docs migration | [Documentation Governance](documents/engineering/development/DOCUMENTATION-GOVERNANCE.md) and [Migration Status](documents/engineering/migration/MIGRATION-STATUS.md); review affected links and authority boundaries |
 | Architecture or component behavior design | [System Overview](documents/architecture/SYSTEM-OVERVIEW.md), relevant component `README.md`/`CODE.md` and contracts; use OpenSpec only if separately requested and initialized |
 
-The [legacy Skill coverage audit](documents/engineering/migration/LEGACY-SKILL-COVERAGE-AUDIT.md) is a **historical crosswalk**, not a default read, live instruction or second rules authority. Never promote an archived NEXT, fixed host path or superseded architecture into current guidance.
+Retired Skill and task-specific troubleshooting notes are historical references, not another active instruction set. Do not restore old generator-first workflows, hardcoded host paths or dated NEXT items as current rules.
 
 These instructions supplement user instructions and current contracts; they do not confer runtime permissions. See the linked detailed rules for precedence and workflow.
