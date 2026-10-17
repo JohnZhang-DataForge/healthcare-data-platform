@@ -13,4 +13,18 @@ Applies to all work in this repository, regardless of AI assistant/tool. **Read 
 9. **Before any shared-runtime operation**, read [Safe Operations](documents/engineering/operations/SAFE-OPERATIONS.md) and [Session Coordination](documents/engineering/development/SESSION-COORDINATION.md). Never assume another Session's absence means its Spark/PG/K8s job is idle; unknown/conflicting operation = HOLD. Current progress belongs in PR/Run (and future OpenSpec Changes), not an ever-growing Handoff Markdown.
 10. Documentation governance is active. The retired `docs/` is accessible only through Git history; OpenSpec has not been initialized. Do not initialize `openspec/` or convert historical files unless requested.
 
+## Task-aware reading — do not load every guide by default
+
+The current model is **source-first, workflow-driven**: maintain canonical application code, configuration and tests directly in Git; use reviewed Workflows for checks, packaging and authorized execution. Shell is a supporting tool, not the default way to generate application source. Read the baseline in rules 1 and 3, then only the relevant detailed guides. Combine rows for mixed tasks; shared-runtime work always requires rule 9.
+
+| Task type | Additional reading before the relevant work |
+| --- | --- |
+| Code, tooling, Shell maintenance or refactor | [Development Workflow](documents/engineering/development/DEVELOPMENT-WORKFLOW.md), [Component-first Naming](documents/engineering/development/CODE-ORGANIZATION-AND-NAMING.md) and the owning component's `CODE.md`; inspect actual source and contracts |
+| Unit, contract, replay, reconciliation or acceptance test | [Testing & Evidence](documents/engineering/development/TESTING-AND-EVIDENCE.md) and affected contracts; if the test touches a shared environment, also apply the runtime row |
+| Shared K8s/Airflow/Spark/PostgreSQL/S3/Azure operation, deployment, Terraform plan, retry, reset, publish or recovery | [Safe Operations](documents/engineering/operations/SAFE-OPERATIONS.md) and [Session Coordination](documents/engineering/development/SESSION-COORDINATION.md); inspect the actual command/Workflow and get required authorization |
+| Documentation change, navigation repair or docs migration | [Documentation Governance](documents/engineering/development/DOCUMENTATION-GOVERNANCE.md) and [Migration Status](documents/engineering/migration/MIGRATION-STATUS.md); review affected links and authority boundaries |
+| Architecture or component behavior design | [System Overview](documents/architecture/SYSTEM-OVERVIEW.md), relevant component `README.md`/`CODE.md` and contracts; use OpenSpec only if separately requested and initialized |
+
+Retired Skill and task-specific troubleshooting notes are historical references, not another active instruction set. Do not restore old generator-first workflows, hardcoded host paths or dated NEXT items as current rules.
+
 These instructions supplement user instructions and current contracts; they do not confer runtime permissions. See the linked detailed rules for precedence and workflow.

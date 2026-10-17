@@ -13,6 +13,8 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 
 ## 1. 责任与真正的开发主线
 
+**当前工程模式：Source-first + Workflow-driven。** Agent 直接维护 Git 中的正式业务源码、测试和配置；GitHub Actions / Self-Runner 负责受控检查、构建、必要时部署或执行，并保存 Run/Artifact 证据。Airflow 仍负责编排实际数据处理。Shell 只用于确有需要的 Workflow 步骤、现有运维脚本或人工诊断，不再默认承担业务源码生成。
+
 | 系统 | 保存什么 | 不负责什么 |
 | --- | --- | --- |
 | [Healthcare Repo](https://github.com/JohnZhang-DataForge/healthcare-data-platform) | Airflow DAG、PySpark、Python Apps、SQL、Contracts、K8s 定义、Terraform 源码、Tests、正式 Shell、`documents/` | 不把业务实现永久放在 Runner 控制仓库 |
@@ -20,7 +22,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 | ARC `dw-runner-set` | 按选定 Workflow 运行临时 Job，签发执行结果、连接受控 K8s / 云资源 | 不是长期运行的业务 ETL Worker，也不自动继承宿主机 `/data` |
 | Airflow/Spark/PostgreSQL/S3/Azure | 有明确部署与授权的实际业务运行/存储 | 不因 PR 或计划存在就自动部署 |
 
-`docs/` 是过渡期 Legacy 资料；现行事实来自实际源码、有效 Contract、可信版本化证据和已迁移 ACTIVE 文档。旧 Skill/Operations 中与安全相关的更具体门槛，在正式替换前继续生效；旧 `CURRENT/NEXT` 不能压过较新真实验收。
+旧 `docs/` 已从 Main 退休。现行规范以 `documents/`、有效 Contract 和真实代码/验收证据为准；历史 Skill、固定宿主机路径和旧 `CURRENT/NEXT` 不能成为新开发指令。
 
 **新代码命名为强制工程规范**：Task/Step 用于 PR/计划/证据，不用于新增源码、测试、正式 Shell、DAG ID 或镜像名；见 [Code Organization & Naming](CODE-ORGANIZATION-AND-NAMING.md)。现有 `task004` Import、SQL 表和冻结镜像必须按单独迁移计划保留兼容。
 
@@ -42,12 +44,12 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 
 原则：
 - 一个 STEP 要有输入、受影响文件、断言、允许副作用、退出/恢复方式和可验证的完成条件；不要以无限细分步骤替代业务目标。
-- 在 Healthcare 源码中直接改模块文件，Shell 负责可重放的预检、执行、验证和报告；**新的源码不要求每次用 Shell 重新生成**。已经冻结、依赖历史 Generator 的链路必须维持兼容性。
-- **今后新增正式 Shell** 存放组件功能目录（如 `scripts/omop/`），不创建新的 `scripts/taskXXX/`；历史任务脚本仍保留兼容。若要求给用户命令，只提供一段完整可粘贴 Bash；区分 `#### ... OUTPUT BEGIN/END ####`。临时实验可使用宿主机 `/data/spark/temp_shell`，但 Runner Pod 不保证有此路径。
+- 在 Healthcare 仓库中直接修改模块源码、测试及配置，由适用的 Workflow 执行检查和受控验证。历史 Generator 若仍被现有代码依赖，仅维护兼容，不把这种生成模式复制到新组件。
+- 确需新增 Shell 时按组件/功能命名（如 `scripts/omop/`），不创建新的 `scripts/taskXXX/`；维护旧脚本先检查其实际副作用。人工要求命令时提供单段可执行 Bash 和清晰结果，不额外生成永久 Shell 来包裹每个代码变更。
 - 普通代码变更优先就近单测/契约测试；无需每次全量重跑旧项目或建设企业级复杂治理系统。
-- 冻结的 TASK001–TASK003、TASK004 已最终验收的 Person/Visit 路径不能仅因新任务而重新入库；TASK005 仅在对应权限/范围批准后逐步进入 Condition 实现。
+- 不因新任务擅自重放或覆盖已验收 Batch 与持久化数据；具体 CURRENT/NEXT 始终以 [Project Status](../status/PROJECT-STATUS.md) 为准。
 
-**历史 Shell 源码导航**：按功能读取 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[Spark CODE](../../systems/data-platform/spark/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md)、[Airflow CODE](../../systems/data-platform/airflow/CODE.md)。通用静态工具、文档生成辅助和 [`config/local.env.example`](../../../config/local.env.example) 由 [Developer CODE](CODE.md) 维护。清单只提供源码入口，不代表可以重放已完成阶段。
+**组件源码导航**：按功能读取 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[Spark CODE](../../systems/data-platform/spark/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md)、[Airflow CODE](../../systems/data-platform/airflow/CODE.md)。通用静态工具、文档生成辅助和 [`config/local.env.example`](../../../config/local.env.example) 由 [Developer CODE](CODE.md) 维护。清单只提供源码入口，不代表可以重放已完成阶段。
 
 ## 3. 如何正确选择 Workflow（先核对再复用）
 
@@ -100,6 +102,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 
 - PR 至少写清：本轮 STEP、代码/文档改动、前置条件、是否触碰冻结范围、Workflow/测试链接、失败风险、是否有资源写入。只有完成所声明的验收才可写 PASS。
 - 失败时查明是编译、策略 Gate、Runner、环境、业务逻辑还是后置读回；修同一个 STEP 后运行必要的复验。未知 Writer 状态一律独立只读审计，不盲目重试。
+- **同一问题最多连续调试 3 轮**：每轮指针对同一故障的一次有依据的“分析 → 修改 → 验证”；验证失败后计入一轮。若第 3 轮仍未解决，或更早已明显没有新证据，Agent 必须停止自动修改和重复触发 Workflow，不得通过改名、拆分步骤或重开 Session 规避上限。停止后应**优先在当前开发 PR 的 Conversation 评论区**简要记录三轮修改和结果、失败原因或尚未证实的假设、当前 Branch/HEAD SHA、Workflow Run/Artifact 链接及下一步建议；尚无 PR 时记录在对应 GitHub Issue。详细执行日志保留在 Workflow/Artifact 中，不新建重复 Handoff 文档。交由用户决定是否继续或另开 Session；**新 Session 必须先查看既有 PR/Issue 调试记录并沿用同一问题的失败轮数，不得从零重试**。不同的独立问题分别计数；成功后正常完成验收，不强制停工。
 - 复杂的 STEP 需要**可恢复的短交接**：Repo+PR+完整 HEAD SHA、任务目标、已通过/未通过的具体 Run、当前真实资源/Batch、未完成任务、下一最小动作、明确禁止/需批准的操作。能在现有状态/PR/证据里表达的，不重复新建巨大 Handoff Markdown。
 - 任务状态只更新对应当前权威位置；新 `documents/` 模块 **仅在迁移表已经 ACTIVE 时**承接当前事实。旧 `docs/` 的历史 NEXT 不需要每轮修补。
 - 将来使用 OpenSpec 时：Proposal/Design/Tasks/Delta Specs 管需求演进，本文件继续管代码执行、Self-Runner、测试、安全与交接；不为此阶段提前创建 `openspec/`。
@@ -107,32 +110,3 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 ## 8. 多 Session 协作与接力（简化）
 
 统一使用 [Session Coordination](SESSION-COORDINATION.md)：OpenSpec 引入前由 PR/Issue 的 Done/Next/SHA/Run 交接；OpenSpec 引入后由 Change/Tasks 负责变更进度。**不要新建每次 Session 的 Handoff 文件**，共享 K8s/PG/Cloud 操作前还必须核对实际资源与独立授权；详细门槛见 [Safe Operations](../operations/SAFE-OPERATIONS.md)。
-
-## 9. 新 Agent 最短开工清单
-
-1. **读** `AGENTS.md` → `documents/README.md` → Agent Rules → 本工作流 → 相关迁移状态。
-2. **核对** 当前两个仓库最新 SHA、源码和验收证据、是否存在并行 PR/Run。
-3. **定边界** 单步目标、可验证结果、风险与需要的授权。
-4. **开发** Healthcare canonical source/Tests（或纯文档），必要时选择和检查现有 Self-Runner Workflow。
-5. **验收** 对准确 SHA/Batch/环境获得对应级别证据；合并 PR；必要时 Main 复验。
-6. **交接** 记录完成/未完成与下一步；不依赖聊天上下文复述。
-
-## 10. Shell 执行安全、输出与解析（旧 Skill 有效经验）
-
-以下规则适用于需要交付或执行 Shell 的 STEP；**不要求**纯文档或直接维护的 Python/YAML/SQL 源码都另生成永久 Shell。
-
-- **可执行 Helper 不等于可 `source` 的库**：会修改环境或执行业务操作的 Helper 应有直接执行检查（例如比对 `BASH_SOURCE[0]` 与 `$0`），被误 `source` 时提示并退出，防止改变交互 Shell；本来就是可 `source` 的环境/函数库不采用这条防护。
-- **严格模式放在子脚本**：在可执行脚本中使用 `set -Eeuo pipefail`，不要作为单独命令交给用户在长期使用的交互式 root Shell 中运行，以免影响之后的手工排障。
-- **输出有始有终**：执行步骤输出 `#### <COMPONENT> <STEP> OUTPUT BEGIN ####`、真实断言、`RESULT=PASS/FAIL`、`EXIT_CODE=<actual>` 和匹配的 `#### ... OUTPUT END ####`。必要时用 `EXIT` trap 在失败路径打印原始退出码；不能让收尾日志掩盖原来的错误码。此格式不代表业务完成，不代替独立持久化读回。
-- **关键解析必须检查生产者失败**：`readarray < <(producer)` 等 process substitution 可能掩盖 producer 的 exit code；`python3 -` 读取标准输入里的脚本后，不应再假定该 stdin 可用来承载另一份 payload；`grep -F` 是字面量匹配，不解释 `^` 等正则锚点；注意 Bash 只读/特殊变量。应明确断言上游退出码、字段、类型和行数，用单测覆盖失败路径。
-- **Log 不是结构化数据通道**：重要 Payload 使用规范文件、Manifest、JSON 或 S3 Artifact；不能仅从 Spark Driver/Wrapper 日志截取少量字段并当成持久数据合同。
-
-## 11. Canonical source、Generator 与 Git Checkpoint（旧 Skill 有效经验）
-
-- **Git 中正式源码优先**：一次性 Installer/Repair Helper 不是长期运行的隐藏前置；新代码直接维护正式文件，Shell 负责预检、测试和部署。对确实依赖**永久 Generator** 的冻结历史实现，必须同步修 Generator、重新生成产物并检查输出差异与测试；只修生成文件，下次生成会回退修复。不为验证 Generator 随意重放历史 Batch。
-- **精确 Git 暂存**：先核对 `git status` 与 diff，只暂存明确的目标文件，检查 staged 清单、`git diff --cached --check`、运行产物与敏感信息，再 commit/push，核对 remote HEAD 与目标完整 SHA。未完全审查 worktree 不用 `git add .`；分支 PASS、Main Merge、部署后验证是不同证据。
-- **正式文本文件卫生**：不要保留行尾空白、额外 EOF 空白行；结尾保留标准换行。遵守现有格式检查器，不为了样式改动无关历史代码。
-- **旧路径不是跨环境合同**：`/data/spark/healthcare-data-platform`、`/data/spark/temp_shell`、旧 `phase3c` 路径来自特定宿主机；Runner Pod 不自动继承这些挂载。新的正式脚本按组件/功能组织，不恢复 `scripts/taskNNN/` 规则。
-
-更多数据发布与恢复边界参见 [Safe Operations](../operations/SAFE-OPERATIONS.md)。以上均不是共享系统的运行授权。
-

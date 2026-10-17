@@ -13,15 +13,11 @@
 
 **迁移结果**：本地 Data Platform 与 Engineering 已采用新的 `systems/`、`engineering/` 目录，CODE.md 源码地图和 Markdown 链接均有独立 CI。旧的本地组件及工程文档副本已按可追溯 Git 历史方式清理；**Azure/Fabric 与 Platform Portal 仍在开发，暂留 `components/` 原位置，后续单独迁移**。
 
-## Agent 必读入口
+## Agent 开工入口
 
-1. [AI/Agent 开发与安全规则](engineering/development/AGENT-RULES.md) — 当前通用 AI 操作约束。
-2. [开发工作流](engineering/development/DEVELOPMENT-WORKFLOW.md) — 当前 Healthcare / Self-Runner、STEP/PR/SHA/执行/交接流程；[Developer CODE](engineering/development/CODE.md) 定位 CI 工具和本地配置样例。
-3. **[组件与代码命名规范](engineering/development/CODE-ORGANIZATION-AND-NAMING.md)** — 新代码不能用 Task/Step 命名；Legacy 按功能逐步迁移。
-4. [测试与验收](engineering/development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
-5. [文档治理与渐进迁移规则](engineering/development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
-6. [多 Session 协调规则](engineering/development/SESSION-COORDINATION.md) — 并行 PR、共享资源、人为授权、接力验证；不另建 Handoff 日志。
-7. [迁移进度与顺序](engineering/migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+**先读 [AGENTS.md](../AGENTS.md)、[Agent 规则](engineering/development/AGENT-RULES.md) 和 [当前项目状态](engineering/status/PROJECT-STATUS.md)。** 根目录 `AGENTS.md` 是唯一按任务分流入口：它会根据代码开发、测试、文档或共享环境操作指向必要的详细规范。不要每次通读全部工程文档，也不在本目录维护第二套任务分类表。
+
+当前采用 **直接维护 Git 正式源码 + Self-Runner / GitHub Actions 受控验证** 的开发模式。具体实施参见 [Development Workflow](engineering/development/DEVELOPMENT-WORKFLOW.md)；需要真实 Runtime 操作时必须遵守 [Safe Operations](engineering/operations/SAFE-OPERATIONS.md)。旧 Skill 和零散排障经验只保留在 [历史 Git 快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md)，不作为现行开发流程。
 
 ## 最终文档终审与 OpenSpec 下一步（STEP08）
 

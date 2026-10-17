@@ -2,7 +2,7 @@
 
 > **状态：ACTIVE · 版本：v1 · 生效范围：Healthcare 主仓库 · 2026-10-16**
 >
-> **定位**：用于根目录 `AGENTS.md` 引导的统一规则；不因 AI 工具、会话或模型不同而改变。历史 Skill/Operations 中仍有效且更具体的安全约束，在相应领域迁移和审核之前继续适用。
+> **定位**：用于根目录 `AGENTS.md` 引导的统一规则；不因 AI 工具、会话或模型不同而改变。历史 Skill 只供查证，现行安全门槛以本规则与 [Safe Operations](../operations/SAFE-OPERATIONS.md) 为准。
 
 ## 1. 开工前必须确认
 
@@ -16,9 +16,9 @@
 
 ## 2. 开发方式：小步、可重放、可验证
 
-- 一次交付一个边界明确的 STEP；代码是 canonical source，Shell 是运行/验证入口，不为所有新源文件强制生成 Shell。
+- 一次交付一个边界明确的 STEP；代码和测试以 Git 正式文件为准，执行与验证优先复用受控 Workflow。仅在确需人工操作时使用 Shell，不通过 Shell 默认生成新源码。
 - 开发/改动逻辑必须同步覆盖有意义的正常、失败、重复运行或幂等性测试；优先使用现有公共组件，避免各模块复制相同能力。
-- **新的正式脚本只放组件功能目录**（例如 `scripts/omop/verify_condition_fk.sh`），禁止新增 `scripts/taskXXX/`；历史 `scripts/task001–004/` 按原样保留以支持已验证运行与证据；用户需要单步 Shell 时给出**单个完整 Bash**，执行输出清晰使用 `#### ... OUTPUT BEGIN/END ####` 标识；临时脚本可用 `/data/spark/temp_shell`，不把它当作跨环境必然存在的路径。
+- **新的正式脚本只放组件功能目录**（例如 `scripts/omop/verify_condition_fk.sh`），禁止新增 `scripts/taskXXX/`；历史 `scripts/task001–004/` 按原样保留以支持已验证运行与证据；用户需要单步 Shell 时给出**单个完整 Bash**，执行输出清晰使用 `#### ... OUTPUT BEGIN/END ####` 标识；不得假定旧宿主机目录会出现在 Runner 中。
 - 不跳过失败步骤、不把 Mock/Static PASS 解释成 Live 验证；不为普通功能额外建设与需求无关的大型 CI、锁服务或平台。
 - 当前已验收 Person/Visit、TASK001–TASK003 冻结范围及旧系统持久化数据不得因开发新功能而擅自重新生成、回放或写入。
 
