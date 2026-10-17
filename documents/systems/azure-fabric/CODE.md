@@ -2,7 +2,7 @@
 status: staging
 scope: azure-fabric-source-map
 last_verified: 2026-10-16
-source_sha: 48d24b1467efc6db28d9864ff20905cd193f5d96
+source_sha: 1eafd82b9cd254f36d693e44df63111f18244570
 ---
 
 # Azure / Microsoft Fabric — CODE / Source Map
@@ -35,7 +35,7 @@ Each `components/<component>/` is an **independent Terraform root**; `modules/<c
 | [`modules/data-factory/main.tf`](../../../azure/infra-terraform/modules/data-factory/main.tf) | Chooses disabled or Notebook definition according to `notebook_id`; do not bypass the failure gate |
 | [`modules/notebook/main.tf`](../../../azure/infra-terraform/modules/notebook/main.tf) | Provisions Fabric Notebook item from checked-in definition; does not provision missing exporter/DQ code |
 
-**Future source ownership:** `azure-fabric/spark-notebooks/` owns the real Notebook entry and reusable Python modules; `azure-fabric/data-factory/` owns the real business Pipeline; Terraform will reference/package their **single** authoritative definitions when those features are implemented. Do not maintain two divergent copies of Notebook or Pipeline logic. The transition requires an independent packaging/integration review.
+**Future source ownership:** `azure-fabric/workspace/healthcare-omop/notebooks/` and `pipelines/` are reserved for Fabric Git-integrated **native item definitions** within the `healthcare-omop` Workspace; initial Notebook work is grouped under `notebooks/ingestion/`. Reusable standalone Python libraries, if needed, belong outside the Git-synced item tree and will be placed when implemented. Terraform definitions still live only in `azure/infra-terraform/` until a separately reviewed migration; deployment/IaC must reference a **single authoritative** Notebook/Pipeline definition, not generate a divergent copy. Git connection, bootstrap migration and packaging require separate review.
 
 ## Planned modules — no business source files yet
 
@@ -43,10 +43,11 @@ Each `components/<component>/` is an **independent Terraform root**; `modules/<c
 | --- | --- | --- |
 | `azure-fabric/infra-terraform/` | Target of the controlled Git move from `azure/infra-terraform/` | **Placeholder, not runnable** |
 | `azure-fabric/exporter/` | Consistent read-only PG snapshot, Parquet, SHA-256 manifest and immutable Azure Blob publication | Not implemented |
-| `azure-fabric/spark-notebooks/notebooks/` | Fabric Notebook entry point, pipeline parameters and orchestration | Not implemented |
-| `azure-fabric/spark-notebooks/src/` | Reusable Blob reader, schema/PK/FK/DQ validators and idempotent Delta writer | Not implemented |
-| `azure-fabric/data-factory/` | Future operational pipeline JSON with parameter propagation and error handling | Not implemented |
+| `azure-fabric/workspace/healthcare-omop/notebooks/ingestion/` | Future native Fabric Notebook items for OMOP ingestion / Delta load | Placeholder only; no `.Notebook` item yet |
+| `azure-fabric/workspace/healthcare-omop/pipelines/` | Future native Fabric Data Pipeline items for orchestration and parameters | Placeholder only; no `.DataPipeline` item yet |
 | `azure-fabric/tests/` | Unit/contract/integration tests, with independent PG/manifest ↔ OneLake reconciliation later | Not implemented |
+
+**Git Integration:** connect the existing `healthcare-omop` Workspace to the repository folder `azure-fabric/workspace/healthcare-omop/` only when native Fabric item definitions are ready. `.gitkeep` files are temporary repository placeholders, **not** deployable Fabric items; Fabric does not synchronize empty workspace folders. The directory name does not create or rename a workspace.
 
 No separate `reconciliation/` directory is required for the initial MVP. Internal validation belongs in the Spark library. **Independent** post-load reconciliation should live in tests or become its own component only when a distinct runnable workflow exists.
 

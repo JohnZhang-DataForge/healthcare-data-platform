@@ -2,7 +2,7 @@
 status: staging
 scope: azure-fabric-system-overview
 last_verified: 2026-10-16
-source_sha: 48d24b1467efc6db28d9864ff20905cd193f5d96
+source_sha: 1eafd82b9cd254f36d693e44df63111f18244570
 ---
 
 # Azure / Microsoft Fabric — OMOP analytical replica
@@ -28,9 +28,11 @@ The existing Blob account and manually provisioned Fabric Workspace are **not** 
 | --- | --- | --- |
 | Infrastructure | [Current Terraform source](../../../azure/infra-terraform/README.md) — seven roots and matching modules | Existing code; source directory rename not yet performed |
 | Exporter | `azure-fabric/exporter/` — consistent PG export, Parquet / manifest and Blob publication | Reserved directory; **not built** |
-| Spark | `azure-fabric/spark-notebooks/{notebooks,src}/` — Notebook entry plus reusable read/validation/Delta logic | Reserved directories; **not built** |
-| Data Factory | `azure-fabric/data-factory/` — business Pipeline definitions | Reserved directory; **not built** |
+| Fabric notebooks | `azure-fabric/workspace/healthcare-omop/notebooks/ingestion/` — Fabric-native Notebook items | Reserved directory; **not built** |
+| Fabric pipelines | `azure-fabric/workspace/healthcare-omop/pipelines/` — Fabric-native Data Pipeline items | Reserved directory; **not built** |
 | Tests | `azure-fabric/tests/` — local tests and, later, independent reconciliation | Reserved directory; **not built** |
+
+The `azure-fabric/workspace/healthcare-omop/` directory mirrors a **planned Git integration folder**, not a new Fabric Workspace resource. The existing `healthcare-omop` Workspace must be connected explicitly; temporary `.gitkeep` markers do not represent Notebook/Pipeline items and will be retired when real Fabric items are added. Reusable non-Fabric Python code can be kept outside this folder later to avoid contaminating native item definitions.
 
 The `azure-fabric/infra-terraform/` directory is a **non-executable placeholder**. The original Terraform roots remain at `azure/infra-terraform/` so the existing Self-Runner workflow is not broken during cross-repository migration.
 
