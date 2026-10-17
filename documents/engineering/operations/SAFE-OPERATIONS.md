@@ -37,8 +37,6 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 - **只读也有资源风险**：大查询、S3 全量扫描、某些 readonly 工作流可能消耗资源或启动 Job；按真实脚本判断。
 - 验收记录必须包含实际 PR/Main SHA、Run ID、被测数据/环境、原始 PASS/FAIL、必要的独立读回。参见 [测试与证据](../development/TESTING-AND-EVIDENCE.md)。
 
-不要为了文档变更补跑已成功 TASK004 的 Writer。新版部署/恢复详细命令在相应组件的**单独工作**审查，不在 STEP07 生成一套未经实测的万能恢复脚本。
-
 ## 持久化数据的关键边界
 
 - **Reset 只清理已核实属于本轮的临时资源**；不要默认清理 S3/Blob 已发布对象、CDM、Stable ID Map、Secrets 或 PV/PVC。持久化数据的删除/覆盖需要单独审批和恢复方案。
