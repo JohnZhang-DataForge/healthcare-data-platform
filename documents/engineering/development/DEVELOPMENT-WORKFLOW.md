@@ -116,3 +116,23 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 4. **开发** Healthcare canonical source/Tests（或纯文档），必要时选择和检查现有 Self-Runner Workflow。
 5. **验收** 对准确 SHA/Batch/环境获得对应级别证据；合并 PR；必要时 Main 复验。
 6. **交接** 记录完成/未完成与下一步；不依赖聊天上下文复述。
+
+## 10. Shell 执行安全、输出与解析（旧 Skill 有效经验）
+
+以下规则适用于需要交付或执行 Shell 的 STEP；**不要求**纯文档或直接维护的 Python/YAML/SQL 源码都另生成永久 Shell。
+
+- **可执行 Helper 不等于可 \`source\` 的库**：会修改环境或执行业务操作的 Helper 应有直接执行检查（例如比对 \`BASH_SOURCE[0]\` 与 \`$0\`），被误 \`source\` 时提示并退出，防止改变交互 Shell；本来就是可 \`source\` 的环境/函数库不采用这条防护。
+- **严格模式放在子脚本**：在可执行脚本中使用 \`set -Eeuo pipefail\`，不要作为单独命令交给用户在长期使用的交互式 root Shell 中运行，以免影响之后的手工排障。
+- **输出有始有终**：执行步骤输出 \`#### <COMPONENT> <STEP> OUTPUT BEGIN ####\`、真实断言、\`RESULT=PASS/FAIL\`、\`EXIT_CODE=<actual>\` 和匹配的 \`#### ... OUTPUT END ####\`。必要时用 \`EXIT\` trap 在失败路径打印原始退出码；不能让收尾日志掩盖原来的错误码。此格式不代表业务完成，不代替独立持久化读回。
+- **关键解析必须检查生产者失败**：\`readarray < <(producer)\` 等 process substitution 可能掩盖 producer 的 exit code；\`python3 -\` 读取标准输入里的脚本后，不应再假定该 stdin 可用来承载另一份 payload；\`grep -F\` 是字面量匹配，不解释 \`^\` 等正则锚点；注意 Bash 只读/特殊变量。应明确断言上游退出码、字段、类型和行数，用单测覆盖失败路径。
+- **Log 不是结构化数据通道**：重要 Payload 使用规范文件、Manifest、JSON 或 S3 Artifact；不能仅从 Spark Driver/Wrapper 日志截取少量字段并当成持久数据合同。
+
+## 11. Canonical source、Generator 与 Git Checkpoint（旧 Skill 有效经验）
+
+- **Git 中正式源码优先**：一次性 Installer/Repair Helper 不是长期运行的隐藏前置；新代码直接维护正式文件，Shell 负责预检、测试和部署。对确实依赖**永久 Generator** 的冻结历史实现，必须同步修 Generator、重新生成产物并检查输出差异与测试；只修生成文件，下次生成会回退修复。不为验证 Generator 随意重放历史 Batch。
+- **精确 Git 暂存**：先核对 \`git status\` 与 diff，只暂存明确的目标文件，检查 staged 清单、\`git diff --cached --check\`、运行产物与敏感信息，再 commit/push，核对 remote HEAD 与目标完整 SHA。未完全审查 worktree 不用 \`git add .\`；分支 PASS、Main Merge、部署后验证是不同证据。
+- **正式文本文件卫生**：不要保留行尾空白、额外 EOF 空白行；结尾保留标准换行。遵守现有格式检查器，不为了样式改动无关历史代码。
+- **旧路径不是跨环境合同**：\`/data/spark/healthcare-data-platform\`、\`/data/spark/temp_shell\`、旧 \`phase3c\` 路径来自特定宿主机；Runner Pod 不自动继承这些挂载。新的正式脚本按组件/功能组织，不恢复 \`scripts/taskNNN/\` 规则。
+
+更多数据发布与恢复边界参见 [Safe Operations](../operations/SAFE-OPERATIONS.md)。以上均不是共享系统的运行授权。
+
