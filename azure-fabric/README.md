@@ -1,18 +1,20 @@
 # Azure / Microsoft Fabric subsystem
 
-This directory is the **planned source home** for the Azure/Fabric OMOP analytical replica. The local PostgreSQL OMOP database remains authoritative; the target flow is a read-only export to existing Azure Blob Storage, then a Fabric Data Pipeline orchestrating a PySpark Notebook that loads a OneLake Lakehouse.
+This directory is the **planned source home** for the Azure/Fabric OMOP analytical replica. The authoritative local PostgreSQL OMOP database will be exported read-only to the existing Azure Blob landing. A Fabric Data Pipeline will then orchestrate a PySpark Notebook loading a OneLake Lakehouse.
 
 ## Directory responsibilities
 
-| Directory | Responsibility | Status |
+| Directory | Responsibility | Current status |
 | --- | --- | --- |
-| `infra-terraform/` | Azure/Fabric resources, IAM and remote Terraform State | **Placeholder only in this path**; current runnable source remains at [`azure/infra-terraform/`](../azure/infra-terraform/README.md) |
-| `exporter/` | PostgreSQL snapshot export and immutable Blob publication | Planned; no implementation |
-| `spark-notebooks/notebooks/` | Fabric Notebook entry points | Planned; current Terraform bootstrap is intentionally fail-closed |
-| `spark-notebooks/src/` | Reusable Spark readers, validation and Delta writer | Planned; no implementation |
-| `data-factory/` | Business Pipeline definitions and orchestration | Planned; current Terraform Pipeline definition is a fail-closed/bootstrap shell |
-| `tests/` | Unit, contract, integration and independent readback/reconciliation tests | Planned; no implementation |
+| `infra-terraform/` | Reserved destination for Azure/Fabric infrastructure as code | **Placeholder only**; live Terraform source remains at [`azure/infra-terraform/`](../azure/infra-terraform/README.md) |
+| `exporter/` | Local PostgreSQL snapshot export and immutable Blob publication | Placeholder; no implementation |
+| `workspace/healthcare-omop/` | Planned Git integration root for the existing Fabric Workspace `healthcare-omop` | Directory layout only; not connected or deployed by this change |
+| `workspace/healthcare-omop/notebooks/ingestion/` | Fabric-native Notebook item definitions for ingestion / Delta loading | Placeholder; no `.Notebook` item yet |
+| `workspace/healthcare-omop/pipelines/` | Fabric-native Data Pipeline item definitions for orchestration | Placeholder; no `.DataPipeline` item yet |
+| `tests/` | Future unit, contract, integration and independent reconciliation tests | Placeholder; no implementation |
 
-**Important:** This folder does **not** contain a second runnable Terraform stack. Do not initialize, plan or apply Terraform from `azure-fabric/infra-terraform/` until the existing source is migrated together with the [Self-Runner workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml). The current workflow still selects `healthcare/azure/infra-terraform/components/$COMPONENT`. Its `operation` input supports `plan` (default) or explicitly selected `apply`; this directory preparation does not authorize either.
+The `workspace/` tree is organized **by Fabric Workspace, then by item type, then by function**. Each real Notebook or Pipeline added later should use Fabric's native Git item-directory format. The current `.gitkeep` markers exist solely to make the empty directories visible in Git; they are not Fabric resources. Fabric Git integration does **not** synchronize empty workspace folders. Remove the placeholders as real items are introduced.
 
-For the real source-file inventory see the [Azure/Fabric CODE map](../documents/systems/azure-fabric/CODE.md). For system context see the [Azure/Fabric overview](../documents/systems/azure-fabric/README.md). Warehouse is an optional future component, not the OneLake-first MVP target.
+**Important:** This is only a repository layout change. It does not create a Workspace, Notebook, Pipeline or Lakehouse, configure Git Integration, or authorize a Terraform Plan/Apply. There is **no second executable Terraform stack** under this directory. The current [Self-Runner Azure-Infra-TF workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) still points to `healthcare/azure/infra-terraform/components/$COMPONENT`. Moving that code would require a coordinated workflow migration, which is **not** part of this change.
+
+For tracked code and existing Terraform bootstrap details, see the [Azure/Fabric CODE map](../documents/systems/azure-fabric/CODE.md). For the system overview, see [Azure/Fabric overview](../documents/systems/azure-fabric/README.md). Warehouse remains optional, outside the OneLake-first MVP target.
