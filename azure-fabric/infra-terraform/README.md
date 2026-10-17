@@ -1,93 +1,64 @@
-# Azure Infrastructure Terraform — Component-owned IAM (v2, 2026-10-15)
+# Azure / Fabric Terraform — developer entry
 
-**Development mode (2026-10-15):** `Azure-Infra-TF` supports an explicit `operation` choice: `plan` (default) or `apply`. No automatic apply or destroy.
+**Canonical runnable source:** `azure-fabric/infra-terraform/`, selected by [Self-Runner / Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml). This directory manages **infrastructure resources and their permissions**, not the PostgreSQL snapshot exporter or complete Fabric Spark/Data Pipeline business logic. See the [Azure/Fabric code-root guide](../README.md) for the rest of the subsystem and [technical Terraform design](docs/ARCHITECTURE.md) for IAM, state, adoption and historical regression evidence.
 
-Source of truth: `healthcare-data-platform/azure-fabric/infra-terraform`.
+The old [`azure/infra-terraform/`](../../azure/infra-terraform/README.md) remains untouched as a transition/rollback copy. Do not apply independently from both copies to the same remote State. No Terraform Apply/Destroy or data processing was performed by this code-organization work.
 
-**Copy-first cutover:** all Terraform components and modules were copied from `azure/infra-terraform/` with identical resource configuration. The original `azure/` tree is intentionally preserved. After Self-Runner switches paths, only the new copy should be selected for normal runs; **never execute two independent applies against the same remote State**. Backend and `dev/<component>.tfstate` keys are unchanged. No Apply is authorized by this copy.
-Executor: `Self-Runner/.github/workflows/azure-infra.yaml` (**Azure-Infra-TF**).
-The GitHub OIDC federated credential belongs to **Self-Runner/main**, not this source repo.
-
-## Directory organization
+## Where Terraform code lives
 
 ```text
-components/
-  storage/          # Existing johnzhang / landing + optional NEW landing RBAC
-  workspace/        # Fabric Workspace + workspace membership
-  onelake/          # Fabric Lakehouse + OPTIONAL OneLake data roles (preview)
-  data-factory/     # Fabric Data Pipeline item; workspace permissions
-  notebook/         # Fabric Notebook item; workspace permissions
-  warehouse/        # Fabric Warehouse item; SQL GRANT remains separate
-  foundation-iam/   # SHARED RG-level identities/grants ONLY
-modules/
-  storage/{main.tf,iam.tf,outputs.tf}
-  workspace/{main.tf,iam.tf,outputs.tf}
-  onelake/{main.tf,iam.tf,outputs.tf}
-  data-factory/{main.tf,iam.tf,outputs.tf}
-  notebook/{main.tf,iam.tf,outputs.tf}
-  warehouse/{main.tf,iam.tf,outputs.tf}
-  foundation-iam/{main.tf,iam.tf,outputs.tf}
+infra-terraform/
+├── .gitignore
+├── README.md
+├── components/
+│   ├── storage/
+│   ├── workspace/
+│   ├── onelake/
+│   ├── data-factory/
+│   ├── notebook/
+│   ├── warehouse/
+│   └── foundation-iam/
+├── modules/
+│   └── <matching-seven-modules>/
+└── docs/ARCHITECTURE.md
 ```
 
-Each `components/<selector>` is a **Terraform root module** (`versions.tf`, `providers.tf`, `modules.tf`, `variables.tf`, `outputs.tf`, `iam.tf`, `environments/dev.tfvars`). It selects the child module, passes environment-specific IAM/configuration values, and has its own remote state. Actual resource and supported IAM implementation lives in its `modules/<selector>`. Thus: **Modules define HOW; components define WHAT and WHO; tfvars define environment values.**
+Each `components/<name>/` is a separate **Terraform root** and independent remote State. Each root contains `versions.tf`, `providers.tf`, `modules.tf`, `variables.tf`, `outputs.tf`, `iam.tf` and `environments/dev.tfvars`. The matching `modules/<name>/` defines the actual resources, data lookups, outputs and supported component-owned IAM. **Modules define HOW; root components select WHAT and WHO; tfvars define environment settings.**
 
-## Legacy smoke cleanup
+| Root | Resource and responsibilities | Safety / lifecycle |
+| --- | --- | --- |
+| `storage` | Look up existing Azure Storage/Blob landing; optional container RBAC | Existing storage is **not** provisioned anew by these data lookups |
+| `workspace` | Fabric Workspace and workspace memberships | Existing manually created `healthcare-omop` requires verification/import before any adoption or Apply |
+| `onelake` | Fabric Lakehouse plus optional preview data-access security | `data_access_roles = {}` by default: no new grants |
+| `notebook` | Fabric Notebook item | Source-controlled **fail-closed bootstrap only**, not working ETL |
+| `data-factory` | Fabric **Data Pipeline item**, not an Azure Data Factory resource | Fail Activity until a real Notebook ID is configured |
+| `warehouse` | Optional Fabric Warehouse item | Future scope, not required for OneLake-first MVP |
+| `foundation-iam` | Optional shared Azure Resource Group-level role bindings | Not the owner of per-component Blob/OneLake/Workspace grants |
 
-The former one-off Azure Terraform OIDC and landing-Blob smoke roots were removed from Main on 2026-10-16 to keep the deployable IaC layout focused. Their historical source and test records remain accessible through Git history. No Azure resource, remote Terraform State, or existing deployment was changed by removing these source files.
+**IAM is component-owned:** module `iam.tf` files contain resource-specific definitions or explicit no-op/boundary comments. Entra **object IDs** (not client/application IDs) are required for principal bindings. Existing bootstrap/OIDC credentials and Portal-created permissions remain outside Terraform's ownership unless separately reviewed and imported. See [IAM ownership and OneLake preview details](docs/ARCHITECTURE.md#iam-and-existing-resource-boundaries).
 
-The standard **Azure-Infra-TF** workflow uses only `azure-fabric/infra-terraform/components/<component>/` with `dev/<component>.tfstate`; `azure-fabric/infra-terraform/modules/` holds implementation. Do not recreate a separate top-level `infra/` or add historical smoke roots to the main component selector.
+## Execution and remote State
 
-Two obsolete *manual* Self-Runner smoke workflows are pinned to historical Healthcare commits; they were **not changed** by this Healthcare-only cleanup. They are not part of the normal Azure-Infrastructure workflow and must not be dispatched as a substitute for current component verification.
+- Runner: **Self-Runner**, manual workflow dispatch on its `main` branch; `component` must be one of the seven roots and `environment=dev`.
+- Workflow: `operation=plan|apply` with **plan as default**; it does **not** expose `destroy`. The selected operation performs `fmt -check`, Azure OIDC Blob backend `init`, `validate` and a saved `plan`; selected `apply` executes that saved plan only after built-in guards. Workflow capability does **not** authorize Apply.
+- Backend: existing Azure Blob Storage Account `johnzhang`, container `tfstate`, independent State keys `dev/<component>.tfstate` with OIDC/Azure AD authentication. Do **not** move State to Kubernetes `local-path`, a local runner directory or Git.
+- GitHub OIDC federation is tied to the **Self-Runner identity and ref**, not the Healthcare source repository. Fabric tenant permissions, workspace membership, Azure management-plane RBAC and Blob data-plane RBAC are separate checks.
+- Each workflow run checks out Healthcare `main` and prints the actual source SHA; use the logged SHA as verification evidence. An existing manually created Workspace must **not** be duplicated. The workflow blocks a Workspace Apply when the matching Terraform State lacks the existing resource.
+- Even a Plan accesses the cloud and remote State and may acquire a lock. This file is a reference, **not** permission to dispatch a run or change any resources.
 
-## IAM ownership and permission boundaries
+All seven roots passed fresh **Plan-only** regression on October 16, 2026 against the new `azure-fabric/` path. Historical counts, run IDs and boundaries are retained in [ARCHITECTURE.md](docs/ARCHITECTURE.md#verified-plan-evidence); Plan success is not proof of resource creation, Item runtime execution, Fabric Git synchronization, dataset write or business E2E acceptance.
 
-| Component | Module IAM definition | dev.tfvars | Notes |
-|---|---|---|---|
-| storage | `modules/storage/iam.tf` — Azure Blob container RBAC | `blob_role_assignments = {}` | Existing Portal Bootstrap grant stays unmanaged; import before adoption |
-| workspace | `modules/workspace/iam.tf` — Fabric workspace role assignment | `role_assignments = {}` | Supported Fabric roles: Admin / Member / Contributor / Viewer |
-| onelake | `modules/onelake/iam.tf` — OneLake data-access role, **PREVIEW** | `data_access_roles = {}` | Supports Lakehouse table/folder path and member rules; no grants by default |
-| data-factory / notebook | Module `iam.tf` records ownership/boundary | No fabricated grants | Workspace membership / independently reviewed Fabric item permissions |
-| warehouse | Module `iam.tf` records ownership/boundary | No fabricated grants | Workspace IAM plus SQL GRANT/REVOKE managed in SQL deployment |
-| foundation-iam | `modules/foundation-iam/iam.tf` — shared Resource Group RBAC only | `shared_role_bindings = {}` | NOT component-level Blob/OneLake IAM; no bootstrap self-management |
+## Bootstrap is deliberately non-operational
 
-**Important: RBAC does NOT define new Azure roles** in this code. It binds existing role names to Entra **object IDs** (not Application/client IDs). Existing `OMOP`, `johnzhang`, `landing`, `tfstate` are not managed resources. Bootstrap SP's RG Contributor / Blob Data Contributor were Portal-created and must not be recreated or destroyed. Assigning NEW Azure roles requires `Microsoft.Authorization/roleAssignments/write`, which normal RG Contributor lacks.
+The [Notebook Terraform module](modules/notebook/main.tf) currently reads [`definitions/notebook-content.py`](modules/notebook/definitions/notebook-content.py), which intentionally raises an error. The [Data Pipeline module](modules/data-factory/main.tf) uses [`pipeline-disabled.json`](modules/data-factory/definitions/pipeline-disabled.json) until an actual Notebook GUID is known. The alternate [Notebook activity JSON](modules/data-factory/definitions/pipeline-notebook.json) is **not** proof of a connected or working pipeline.
 
-**OneLake security is not Azure RBAC.** The Fabric `fabric_onelake_data_access_security` provider resource is preview and requires `provider.fabric.preview = true`, explicitly enabled in `components/onelake/providers.tf`; `data_access_roles = {}` means zero role resources. Fabric workspace access and permissions are separate from Azure RG rights. Avoid confusing Fabric Lakehouse/OneLake with a new Azure Storage Account.
+Business code added later under `azure-fabric/workspace/healthcare-omop/` must use real Fabric-native Git item metadata and a deliberate, single source-of-truth delivery model. Do not move these historical Terraform Bootstrap files there by renaming alone.
 
-## Terraform root / state isolation
+## Developer checklist
 
-The `Azure-Infra-TF` workflow exposes **storage / workspace / onelake / data-factory / notebook / warehouse / foundation-iam**. It runs `fmt -check`, `init`, `validate`, `plan`, followed by `apply` of the exact saved plan **only when operation=apply**, using existing `johnzhang/tfstate` OIDC backend and **independent** `dev/<component>.tfstate` keys. Old `components/iam` and `modules/iam` were replaced with `foundation-iam`; the old `dev/iam.tfstate` has not been migrated or deleted. No old IAM state has been applied in this project; if state ever appears there, inspect and reconcile before adopting. No `-target` is required.
+1. Choose **one** Terraform root and inspect its `environments/dev.tfvars`, provider requirements, module implementation, IAM and existing State ownership.
+2. Distinguish **data lookup vs managed resource**, especially existing `storage` and `workspace`, and preview OneLake IAM.
+3. For documentation-only refactors, verify repository links and source paths without any remote command. Runtime Plan/Apply or credentials checks are **separate work**.
+4. For authorized infrastructure changes, follow [Safe Operations](../../documents/engineering/operations/SAFE-OPERATIONS.md), verify the source SHA, capture Plan and State evidence and obtain independent authorization before any Apply.
 
-## Development plan / apply workflow (2026-10-15)
-
-- Workflow: [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/actions/workflows/azure-infra.yaml), manually triggered on `main`.
-- Inputs: `component`, `environment=dev`, `operation=plan|apply`. Default operation `plan`; no other environments or `destroy` option.
-- Both operations run recursive `terraform fmt -check`, `init` with existing OIDC Azure Blob Backend, `validate`, then `plan -out` into the ephemeral Runner directory. Only selected `apply` reuses that **exact saved plan**. Apply is intentionally easy for a temporary dev lab and does not require a separate approval stage. A plan that would delete or replace an existing tracked resource is blocked.
-- Existing `healthcare-omop` Fabric Workspace was created manually. The `workspace` component refuses `apply` until it has been imported into that component's remote Terraform State. This prevents a second Workspace being created accidentally.
-- IAM defaults to empty mappings; Bootstrap `OMOP` / `johnzhang` / `tfstate` remain outside lifecycle. Azure data operations may incur ordinary Azure charges even during Fabric Trial.
-
-### Actual Fabric onelake regression
-
-[Azure-Infra-TF Run 38797932758, attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38797932758): SUCCESS after correcting missing `required_providers { fabric = { source = "microsoft/fabric" } }` in **all Fabric child modules**. Provider installed `microsoft/fabric v1.13.0`, `terraform validate` passed, and Plan showed `+ fabric_lakehouse.current`, name `lh_omop_analytics` in Workspace `56dca14e-5d3c-42de-ae57-d76a916ecbca`. **Plan: 1 add / 0 change / 0 destroy**; no Apply executed. Actual Fabric API Create/permissions remain to be tested by an explicit `onelake + dev + apply` run.
-
-## Fabric planning restrictions
-
-Fabric Provider Service Principal OIDC does NOT automatically gain Fabric tenant permissions or Trial capacity access by virtue of Azure RG Contributor. Existing workspaces must be reconciled/imported before Apply; `FABRIC_WORKSPACE_ID` is required by non-workspace Fabric components. Data Pipeline, Notebook and Warehouse modules are *item shells*, not functional ETL code, SQL or schedules. **Current OneLake-first MVP** is local PostgreSQL OMOP → existing Azure Blob → Fabric Data Factory Data Pipeline → Fabric PySpark Notebook → OneLake Lakehouse/Delta. Warehouse is optional future scope, not the active MVP. Trial Capacity is not deployed through this Terraform project.
-
-## Tested evidence
-
-- Prior **storage** Plan-only success: [Self-Runner Run 38761100632](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632): GitHub OIDC, azurerm Backend, plan of existing OMOP/johnzhang; `APPLY_EXECUTED=NO`.
-- This IAM refactor requires a **new regression** of storage and foundation-iam `fmt/validate/plan`. Do not claim all Fabric plans passed before real Fabric permissions/workspace are configured.
-
-Docs: [IAM ownership design](docs/ARCHITECTURE.md), [Azure RBAC](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment), [Fabric workspace RBAC](https://microsoft.github.io/terraform-provider-fabric/resources/workspace_role_assignment/), [OneLake security preview](https://microsoft.github.io/terraform-provider-fabric/resources/onelake_data_access_security/).
-
-## Component-owned IAM refactor acceptance — 2026-10-15
-
-- **Foundation shared RBAC root** — [Azure-Infra-TF Run 38767227655, attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38767227655) **SUCCESS**: recursive `terraform fmt -check`, remote OIDC Backend `init`, `validate`, and `plan` passed; `shared_role_bindings = {}` caused no grant changes.
-- **Storage component with its own IAM module** — [Azure-Infra-TF Run 38761100632 (re-run)](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38761100632) **SUCCESS**: storage `init/validate/plan` read `OMOP` + `johnzhang`, `blob_role_assignments = {}`; no new RBAC.
-- Both tests checked out Healthcare SHA `bdbfe21b2230926adbee82cbfb72b952bf6b5837`, and both logged `APPLY_EXECUTED=NO`, `DESTROY_EXECUTED=NO`.
-- Workflow reverted to **manual workflow_dispatch** only; selector `iam` removed and replaced with `foundation-iam`. Fabric-specific `onelake` preview IAM is declared but its real provider validate/plan and permissions remain **NOT VERIFIED**.
-
-## 2026-10-15 OneLake-first resource definitions (PLAN ONLY)
-
-See [Azure/Fabric OneLake infrastructure handoff](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md). Storage and manually-created Workspace are intentionally untouched. The `onelake` root creates a schema-enabled Lakehouse; `notebook` carries a source-controlled fail-closed PySpark bootstrap; `data-factory` carries a fail-closed Pipeline definition and optionally links a **real** Notebook GUID supplied later. Warehouse is no longer required in the first infrastructure deployment. **No Apply or Destroy has been authorized or executed for this change.**
+The [complete technical design and validation history](docs/ARCHITECTURE.md) is the maintained source for detailed lifecycle cautions; the [system overview](../../documents/systems/azure-fabric/README.md) is the human-readable business architecture.
