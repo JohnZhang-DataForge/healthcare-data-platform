@@ -16,7 +16,7 @@
 
 ## 2. 开发方式：小步、可重放、可验证
 
-- 一次交付一个边界明确的 STEP；代码是 canonical source，Shell 是运行/验证入口，不为所有新源文件强制生成 Shell。
+- 一次交付一个边界明确的 STEP；代码和测试以 Git 正式文件为准，执行与验证优先复用受控 Workflow。仅在确需人工操作时使用 Shell，不通过 Shell 默认生成新源码。
 - 开发/改动逻辑必须同步覆盖有意义的正常、失败、重复运行或幂等性测试；优先使用现有公共组件，避免各模块复制相同能力。
 - **新的正式脚本只放组件功能目录**（例如 `scripts/omop/verify_condition_fk.sh`），禁止新增 `scripts/taskXXX/`；历史 `scripts/task001–004/` 按原样保留以支持已验证运行与证据；用户需要单步 Shell 时给出**单个完整 Bash**，执行输出清晰使用 `#### ... OUTPUT BEGIN/END ####` 标识；不得假定旧宿主机目录会出现在 Runner 中。
 - 不跳过失败步骤、不把 Mock/Static PASS 解释成 Live 验证；不为普通功能额外建设与需求无关的大型 CI、锁服务或平台。
