@@ -1,15 +1,24 @@
-# Fabric Notebooks — CODE / Native Item Source Map
+---
+status: active
+scope: azure-fabric-notebooks-source-map
+last_verified: 2026-10-16
+source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
+---
 
-**Owning source root:** [`azure-fabric/workspaces/healthcare-omop/notebooks/`](../../../../azure-fabric/workspaces/healthcare-omop/notebooks/). The current `ingestion/` directory contains a `.gitkeep` **placeholder only**. There are **zero executable Notebook item files** here.
+# Fabric Notebooks — CODE 源码地图
 
-## Owned Fabric item files
+**归属源码根目录：**[`azure-fabric/workspaces/healthcare-omop/notebooks/`](../../../../azure-fabric/workspaces/healthcare-omop/notebooks/)。
 
-| Native source file | Function |
+当前 `ingestion/` 只有 `.gitkeep` 占位文件，**尚无真实 Notebook Item 源码**；此处的“未实现”不包括基础设施下现存的 Bootstrap。
+
+## 实际拥有的 Fabric 原生源码文件
+
+| 原生源码文件 | 功能 |
 | --- | --- |
-| *(none yet; add real `*.Notebook/` item files when Fabric Git Integration has an identity and an agreed deployment owner)* | Not implemented |
+| （暂无；待确定 Item 身份、Git Integration 与唯一部署责任方后，再登记真实 `*.Notebook/` 文件） | 尚未实现 |
 
-**Later additions:** list each real `.Notebook/` item file (`.platform`, notebook source, metadata/settings if present) as an exact relative Markdown link in this table. The static CODE-map guard checks source-file completeness and requires this CODE.md to be updated in the same PR for additions, moves or deletions.
+**以后如何更新：**每增加一个真实 Notebook Item，应在上表使用**指向实际文件的相对 Markdown 链接**登记其真实 `.platform`、`notebook-content.py` 及其他生成文件。静态 CODE-map CI 会检查源码完整性、链接归属，并要求新增、删除或迁移文件时在同一个 PR 更新本 `CODE.md`。
 
-The existing [Terraform Notebook bootstrap](../../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) is intentionally *not* owned here; it is an infrastructure definition listed in the [Azure-Fabric overall CODE](../CODE.md). It cannot be renamed into this directory and represented as live Git-synced Notebook code without a deliberate migration.
+现有 [Terraform Notebook Bootstrap](../../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) 故意抛出异常，由 [Azure/Fabric 总 CODE.md](../CODE.md) 导航。不能把它直接改名放入 Workspace 并声称是 Fabric Git 已同步的 Notebook。
 
-[Notebook responsibilities](README.md) · [Pipelines CODE](../pipelines/CODE.md) · [Azure-Fabric overview](../README.md).
+**继续阅读：**[Notebooks 职责](README.md) · [Pipelines CODE.md](../pipelines/CODE.md) · [Azure/Fabric 概览](../README.md)。
