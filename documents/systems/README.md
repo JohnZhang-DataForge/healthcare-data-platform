@@ -1,14 +1,17 @@
 # Systems — Subsystem documentation
 
-> **Status: ACTIVE (Data Platform).** The five local component documents and CODE maps are now served from `systems/data-platform/`, with CI checking this path. Superseded originals are retained in Git history rather than the current Main tree. Azure/Fabric and Platform Portal continue at their current documentation paths until separate migration; this does not imply deployed or E2E-complete functionality.
+> **Status: ACTIVE (Data Platform).** The five local component documents and CODE maps are now served from `systems/data-platform/`, with CI checking this path. Superseded originals are retained in Git history rather than the current Main tree. Azure/Fabric's new overview and source map are staged here, but its runnable Terraform still lives in `azure/infra-terraform/`. Platform Portal remains at the old documentation path; staging does not imply deployment or end-to-end acceptance.
 
 ## Data Platform
 
 - [Local Data Platform](data-platform/README.md) — Synthea generation, landing/discovery, Airflow, Spark, OMOP writer, PostgreSQL, and component-level source maps.
 
+## Azure / Fabric — documentation staged
+
+- [Azure / Microsoft Fabric](azure-fabric/README.md) · [CODE / source map](azure-fabric/CODE.md) — OneLake-first analytical replica, active Terraform source inventory and reserved future business modules. Old component brief remains during transition.
+
 ## Subsystems to migrate later
 
-- [Azure / Microsoft Fabric (current location)](../components/azure-fabric/README.md) — developing OMOP analytics replica. Documentation relocation and source-map completion are deferred.
 - [Platform Portal (current location)](../components/platform-portal/README.md) — developing OpenLineage / Marquez observability. Documentation relocation and source-map completion are deferred.
 
-The intended final structure is `systems/data-platform/`, `systems/azure-fabric/` and `systems/platform-portal/` as peers. Azure and Portal folders will be created when their documentation migration is approved; no placeholder is treated as delivered functionality.
+The intended final structure is `systems/data-platform/`, `systems/azure-fabric/` and `systems/platform-portal/` as peers. Azure/Fabric documentation and placeholder source folders now exist; the Terraform source move is still pending. Platform Portal has not been migrated. Placeholders are not delivered functionality.
