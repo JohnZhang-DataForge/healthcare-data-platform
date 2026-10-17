@@ -14,6 +14,7 @@ on:
       - 'kubernetes/**'
       - 'contracts/**'
       - 'azure/**'
+      - 'azure-fabric/**'
       - 'platform-portal/**'
       - 'config/**'
       - '.github/workflows/**'

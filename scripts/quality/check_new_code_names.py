@@ -13,7 +13,7 @@ import subprocess
 PATTERN = re.compile(r"(?i)(?<![A-Za-z0-9])(?:task|step)[-_]?\d+[A-Za-z]?(?![A-Za-z0-9])")
 ROOTS = (
     "apps/", "spark/", "airflow/", "sql/", "scripts/", "tests/", "images/",
-    "kubernetes/", "contracts/", "azure/", "platform-portal/", "config/",
+    "kubernetes/", "contracts/", "azure/", "azure-fabric/", "platform-portal/", "config/",
     ".github/workflows/",
 )
 

@@ -19,6 +19,8 @@ class NewCodeNamingTests(unittest.TestCase):
             "images/task005-runtime/Dockerfile",
             ".github/workflows/task005-validation.yml",
             "kubernetes/manifests/task_005/consumer.yaml",
+            "azure-fabric/exporter/task005_snapshot.py",
+            "azure-fabric/workspace/healthcare-omop/notebooks/ingestion/step01.Notebook/notebook-content.py",
         ):
             with self.subTest(path=path):
                 self.assertTrue(policy.invalid_path(path))
@@ -34,6 +36,8 @@ class NewCodeNamingTests(unittest.TestCase):
             "images/omop-condition-writer/Dockerfile",
             ".github/workflows/condition-validation.yml",
             "kubernetes/manifests/condition/consumer-job.yaml.tpl",
+            "azure-fabric/exporter/omop_snapshot_export.py",
+            "azure-fabric/workspace/healthcare-omop/notebooks/ingestion/omop_snapshot_load.Notebook/notebook-content.py",
         ):
             with self.subTest(path=path):
                 self.assertFalse(policy.invalid_path(path))
