@@ -16,7 +16,7 @@ snapshot_sha: 49936b51d4beadc69383e931efc3e72d2f0db47e
 - **[Azure/Fabric Terraform Plan-only 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)** — Plan PASS，不是 Apply。
 - **[旧开发经验与故障记录](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/runbooks)** — 按原始日期保留。
 
-- **[旧 `SKILL-cn.md` 完整原文](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/skill/SKILL-cn.md)** — 历史规范来源；当前适用规则与退役章节见 [35 章覆盖审计](LEGACY-SKILL-COVERAGE-AUDIT.md)。
+- **[旧 `SKILL-cn.md` 完整原文](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/skill/SKILL-cn.md)** — 仅供历史查证；原 [PR #202 的 35 章审计](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/664dfed06a206ff20822a118c8f04771a307452b/documents/engineering/migration/LEGACY-SKILL-COVERAGE-AUDIT.md) 已存 Git 历史，不维护为当前 Agent 规则。
 
 **永久链接规则**：若历史文件路径为 `docs/xxx/file.md`，使用
 
