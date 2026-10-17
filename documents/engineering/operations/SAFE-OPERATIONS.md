@@ -45,4 +45,4 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 - **相同 `batch_id`、不同 Manifest/Payload Hash 必须停止**；不能以 Workflow 重跑为由覆盖已批准数据。相同批次的安全重复执行由实际 Contract 决定。
 - **正式发布必须经过数据与事务校验**：文件生成、Spark 完成或 CI 成功不等于数据库已提交，更不等于 READY/APPROVED。发布标记只能在对应 Contract 的门槛满足之后生成，下游只消费批准的数据。
 
-具体 SQL/Writer、Manifest 和幂等断言由组件 Contract 与 [Testing & Evidence](../development/TESTING-AND-EVIDENCE.md) 负责；Shell Parser、Sequence 等单次排障技巧不属于这份常驻安全规范。
+具体 SQL/Writer、Manifest 和幂等断言，以组件 Contract 和 [Testing & Evidence](../development/TESTING-AND-EVIDENCE.md) 为准。
