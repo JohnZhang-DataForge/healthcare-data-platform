@@ -7,7 +7,7 @@
 ## 当前文档目录（Data Platform / Engineering 已切换）
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
-- [架构设计讨论稿](architecture/design/README.md)：中文版 Data Platform V2 仓库迁移、组件化重建、Task004 兼容及回滚方案（Draft，尚未实施）。
+- [架构设计讨论稿](architecture/design/README.md)：Data Platform V2 重构与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（均为中文 Draft，尚未实施）。
 - [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 与 Platform Portal 仍在开发，暂保留旧文档目录。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
@@ -29,7 +29,7 @@
 - [Operations Index](engineering/operations/README.md) — 有效运维知识入口和仍需按需查阅的旧技术经验。
 - [Safe Operations](engineering/operations/SAFE-OPERATIONS.md) — 共享 K8s/Spark/Airflow/PG/S3/Azure 操作的安全门槛。
 - [Architecture Decisions](architecture/decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
-- [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 只准备，不初始化；旧未合并 PR #164 需先纠正权威来源。
+- [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 旧 PR #164 已于 2026-10-17 关闭、未合并；[新接入设计稿](architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 待审，尚未初始化。
 
 ## Azure/Fabric 与 Platform Portal（继续使用旧文档路径）
 
