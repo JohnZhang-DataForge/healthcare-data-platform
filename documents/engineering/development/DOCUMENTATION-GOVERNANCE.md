@@ -103,10 +103,8 @@ evidence: []
 - 只审核本次 STEP，避免与迁移无关的全仓改动。
 - 如发生冲突，记录并解决；无法验证则保持 DRAFT / IN_REVIEW。
 
-## 8. 旧 Skill / Lessons 的知识治理
+## 8. 历史经验与现行规范的边界
 
-- [旧 SKILL-cn.md 历史原文](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/skill/SKILL-cn.md) 与逐 STEP 故障经验继续通过 [Legacy Git 快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 追溯；对应 [35 章逐项审计](../migration/LEGACY-SKILL-COVERAGE-AUDIT.md) 说明哪些已覆盖、哪些补充、哪些已被新规范替代。**不重建**旧 docs/skill、旧 runbooks 或另一套独立 Agent 指令。
-- **经验沉淀**：原始故障和 STEP 证据保留在历史 Git、PR、真实 Run/Artifact；仅将经过核对、具有跨任务价值的做法提炼到 Development、Operations 或 Testing 的现行权威文档。不要因为有摘要就删除唯一的原始证据，也不为每次 Session 再创建一份重复的 Skill/Lessons。
-- **文档语言依实际读者决定**：现行 Engineering 治理/运行规范主要使用中文，源码目录介绍可按外部读者需要使用英文；确实需要双语时分别维护并审查，但旧 Skill 的“架构文件强制一中一英”及“治理文件必须带 -cn.md 后缀”已不再是本仓库强制规则。保留稳定文件名和链接。
-- **大型 Markdown 可靠交付**：优先版本控制的文件/PR 或明确的附件交付方式，并校验路径、完整性、文件编码、代码围栏、EOF 和 diff；不默认用超长 heredoc/Base64 经交互 Shell 搬运，也不强制用户先手动上传文件后才能进行 PR。
-
+- 旧 Skill、历史 Runbook 和故障过程仅在 [Git 历史快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 中查阅，**不作为新的 Agent 执行入口**。不得因为旧文件记载了某项操作，就恢复旧目录、过时状态或 Shell 生成源码流程。
+- 现行文档只保留跨任务稳定且会影响开发、安全或验收的工程规则。Shell Parser、Generator、特定路径等零散经验或反复遇到的坑，日后按需另行总结，**不复制进常驻规则**。
+- 文档名称保持稳定，语言按实际读者选择；不强制双语副本或语言后缀。重要的历史验收证据仍保留原始 Git/PR/Run 引用，不改写结果。
