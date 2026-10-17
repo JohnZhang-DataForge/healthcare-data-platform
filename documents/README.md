@@ -13,15 +13,19 @@
 
 **迁移结果**：本地 Data Platform 与 Engineering 已采用新的 `systems/`、`engineering/` 目录，CODE.md 源码地图和 Markdown 链接均有独立 CI。旧的本地组件及工程文档副本已按可追溯 Git 历史方式清理；**Azure/Fabric 与 Platform Portal 仍在开发，暂留 `components/` 原位置，后续单独迁移**。
 
-## Agent 必读入口
+## Agent 开工入口（基础规则必读，其余按任务选读）
 
-1. [AI/Agent 开发与安全规则](engineering/development/AGENT-RULES.md) — 当前通用 AI 操作约束。
-2. [开发工作流](engineering/development/DEVELOPMENT-WORKFLOW.md) — 当前 Healthcare / Self-Runner、STEP/PR/SHA/执行/交接流程；[Developer CODE](engineering/development/CODE.md) 定位 CI 工具和本地配置样例。
-3. **[组件与代码命名规范](engineering/development/CODE-ORGANIZATION-AND-NAMING.md)** — 新代码不能用 Task/Step 命名；Legacy 按功能逐步迁移。
-4. [测试与验收](engineering/development/TESTING-AND-EVIDENCE.md) — 分级验证、独立读回与证据格式。
-5. [文档治理与渐进迁移规则](engineering/development/DOCUMENTATION-GOVERNANCE.md) — 当前文档的唯一权威、证据、冲突、迁移门槛。
-6. [多 Session 协调规则](engineering/development/SESSION-COORDINATION.md) — 并行 PR、共享资源、人为授权、接力验证；不另建 Handoff 日志。
-7. [迁移进度与顺序](engineering/migration/MIGRATION-STATUS.md) — 明确哪些模块迁移完毕、哪些仍依赖旧资料。
+从仓库根目录的 [AGENTS.md](../AGENTS.md) 开始，阅读 [AI/Agent 开发与安全规则](engineering/development/AGENT-RULES.md) 与 [当前项目状态](engineering/status/PROJECT-STATUS.md)。**不是每次都读取下表全部文件**：先识别任务类型，再打开相关文档；混合任务合并适用项，涉及共享 Runtime 时安全检查始终优先。
+
+| 任务类型 | 需要按需查阅的权威文档 |
+| --- | --- |
+| 开发 / Shell / Git / 重构 | [开发工作流](engineering/development/DEVELOPMENT-WORKFLOW.md)、[组件与代码命名规范](engineering/development/CODE-ORGANIZATION-AND-NAMING.md)、相关组件 [CODE 导航](systems/data-platform/README.md)；通用 CI 工具见 [Developer CODE](engineering/development/CODE.md) |
+| 测试 / 幂等 / 验收证据 | [测试与验收](engineering/development/TESTING-AND-EVIDENCE.md) 和相关 Contract；如果触及 Runtime，还需安全与协作规则 |
+| 共享环境 / 发布 / 恢复 / Terraform Plan | [Safe Operations](engineering/operations/SAFE-OPERATIONS.md) 和 [多 Session 协调](engineering/development/SESSION-COORDINATION.md)；文档不构成执行授权 |
+| 文档修改 / 目录迁移 | [文档治理](engineering/development/DOCUMENTATION-GOVERNANCE.md)、[迁移状态](engineering/migration/MIGRATION-STATUS.md) 和受影响的现行页面 |
+| 架构 / 功能设计 | [当前架构](architecture/SYSTEM-OVERVIEW.md)、对应组件 README/CODE 与现行 Contract；未初始化的 OpenSpec 不作当前执行入口 |
+
+旧 [Skill 35 章覆盖审计](engineering/migration/LEGACY-SKILL-COVERAGE-AUDIT.md) 仅供历史规则核对，**不要求日常 Agent 通读，也不作为独立当前规则来源**。需调查旧经验时再从 [Git 历史快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md) 查证。
 
 ## 最终文档终审与 OpenSpec 下一步（STEP08）
 
