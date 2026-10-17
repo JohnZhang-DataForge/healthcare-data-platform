@@ -47,7 +47,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 - 在 Healthcare 仓库中直接修改模块源码、测试及配置，由适用的 Workflow 执行检查和受控验证。历史 Generator 若仍被现有代码依赖，仅维护兼容，不把这种生成模式复制到新组件。
 - 确需新增 Shell 时按组件/功能命名（如 `scripts/omop/`），不创建新的 `scripts/taskXXX/`；维护旧脚本先检查其实际副作用。人工要求命令时提供单段可执行 Bash 和清晰结果，不额外生成永久 Shell 来包裹每个代码变更。
 - 普通代码变更优先就近单测/契约测试；无需每次全量重跑旧项目或建设企业级复杂治理系统。
-- 冻结的 TASK001–TASK003、TASK004 已最终验收的 Person/Visit 路径不能仅因新任务而重新入库；TASK005 仅在对应权限/范围批准后逐步进入 Condition 实现。
+- 不因新任务擅自重放或覆盖已验收 Batch 与持久化数据；具体 CURRENT/NEXT 始终以 [Project Status](../status/PROJECT-STATUS.md) 为准。
 
 **组件源码导航**：按功能读取 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[Spark CODE](../../systems/data-platform/spark/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md)、[Airflow CODE](../../systems/data-platform/airflow/CODE.md)。通用静态工具、文档生成辅助和 [`config/local.env.example`](../../../config/local.env.example) 由 [Developer CODE](CODE.md) 维护。清单只提供源码入口，不代表可以重放已完成阶段。
 
