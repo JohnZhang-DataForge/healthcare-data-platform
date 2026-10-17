@@ -1,15 +1,24 @@
-# Fabric Data Pipelines — CODE / Native Item Source Map
+---
+status: active
+scope: azure-fabric-pipelines-source-map
+last_verified: 2026-10-16
+source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
+---
 
-**Owning source root:** [`azure-fabric/workspaces/healthcare-omop/pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/). It currently contains only `.gitkeep`. There are **zero native Data Pipeline item files** here.
+# Fabric Data Pipelines — CODE 源码地图
 
-## Owned Fabric item files
+**归属源码根目录：**[`azure-fabric/workspaces/healthcare-omop/pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/)。
 
-| Native source file | Function |
+该目录当前只有 `.gitkeep` 占位文件，**尚无真实 Data Pipeline Item 源码**。
+
+## 实际拥有的 Fabric 原生源码文件
+
+| 原生源码文件 | 功能 |
 | --- | --- |
-| *(none yet; add actual `*.DataPipeline/` source files after selecting the item identity and deployment owner)* | Not implemented |
+| （暂无；待确认 Item 身份和唯一部署责任方后，再登记真实 `*.DataPipeline/` 文件） | 尚未实现 |
 
-**Later additions:** list each real `.DataPipeline/` file (`.platform`, `pipeline-content.json`, and actual supported metadata) as an exact relative Markdown link in this inventory table. The static CODE-map guard checks completeness and requires a same-PR update when a native Pipeline source is added, moved or removed.
+**以后如何更新：**新增真实 Data Pipeline Item 时，应将其实际的 `.platform`、`pipeline-content.json` 及其他生成文件以**逐文件相对 Markdown 链接**登记在上表。静态 CODE-map CI 会检查源码完整性和归属；新增、删除或迁移源码时，必须在同一 PR 更新本 `CODE.md`。
 
-Terraform-owned [disabled/fail activity](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json) and [Notebook template](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json) stay in the [Azure-Fabric infrastructure source map](../CODE.md); they are not active native Git items.
+Terraform 中的[默认失败保护定义](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)和[Notebook Activity 模板](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json)继续由[总 CODE.md](../CODE.md)中的基础设施部分导航；它们不是已运行的 Fabric 原生 Git Item。
 
-[Pipeline responsibilities](README.md) · [Notebooks CODE](../notebooks/CODE.md) · [Azure-Fabric overview](../README.md).
+**继续阅读：**[Pipelines 职责](README.md) · [Notebooks CODE.md](../notebooks/CODE.md) · [Azure/Fabric 概览](../README.md)。

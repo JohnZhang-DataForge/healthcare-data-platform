@@ -1,11 +1,26 @@
-# Fabric Data Pipelines — orchestration
+---
+status: active
+scope: azure-fabric-pipelines-overview
+last_verified: 2026-10-16
+source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
+---
 
-The Pipeline component belongs to the existing Fabric Workspace `healthcare-omop`. Its future **native Git item sources** belong under [`azure-fabric/workspaces/healthcare-omop/pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/).
+# Fabric Data Pipelines — 编排与失败控制
 
-A future Fabric Data Pipeline receives `export_id` and `manifest_uri`, invokes a real [Fabric Notebook](../notebooks/README.md), and enforces explicit success/failure gates before acknowledging a completed analytical snapshot. This is a Fabric **Data Pipeline item**, not an Azure Data Factory service resource, and it is **not** the PySpark transformation implementation.
+Pipelines 组件属于现有的 `healthcare-omop` Fabric Workspace。未来 Fabric 原生 Data Pipeline Item 的源码保存在 [`azure-fabric/workspaces/healthcare-omop/pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/)。
 
-**Current implementation: NOT BUILT.** There is no native `*.DataPipeline/` source item or Git integration; only a `.gitkeep` placeholder. Terraform currently holds a [Fail activity definition](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json) and an [unexecuted Notebook activity template](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json); the fail-closed default must remain until the actual Notebook identity and processing code exist.
+## 组件职责
 
-Future Fabric Git items should retain their generated `.platform` and `pipeline-content.json`; do not fabricate item metadata or deploy an empty-success activity. Select one deployment owner for the same Pipeline identity before enabling Fabric Git sync alongside Terraform.
+未来 Data Pipeline 接收 `export_id`、`manifest_uri`，调用真实的 [Fabric Notebook](../notebooks/README.md)，处理执行顺序、任务参数、运行监控和失败阻断。只有 Notebook 的实际数据处理与必要验收完成后，才允许报告批次加载成功。
 
-**Sources:** [Pipelines CODE.md](CODE.md) · [Notebooks](../notebooks/README.md) · [Azure-Fabric system](../README.md) · [Source tree](../../../../azure-fabric/README.md).
+这里的 **Fabric Data Pipeline Item** 不是单独的 Azure Data Factory 服务资源，也不承担 Notebook 内部的 PySpark 转换逻辑。
+
+## 当前状态与未来源码
+
+**当前状态：业务 Pipeline 尚未开发。** 本目录现在只有 `.gitkeep` 占位，没有 `*.DataPipeline/` Item，也没有通过目录操作建立 Fabric Git Integration。
+
+Terraform 目前保存了[默认 Fail Activity 定义](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)和[未实际执行的 Notebook Activity 模板](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json)。真实 Notebook GUID 与处理程序到位前，必须保留失败保护，不能改成空的成功执行。
+
+新增原生 Item 时，应保留 Fabric 实际生成的 `.platform`、`pipeline-content.json` 等文件，明确 Item 身份和由 Fabric Git / Terraform 哪一方负责交付，防止配置漂移或双重覆盖。
+
+**相关入口：** [Pipelines CODE.md](CODE.md) · [Notebooks](../notebooks/README.md) · [Azure/Fabric 系统](../README.md) · [源码根目录](../../../../azure-fabric/README.md)。
