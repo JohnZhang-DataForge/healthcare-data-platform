@@ -102,7 +102,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 
 - PR 至少写清：本轮 STEP、代码/文档改动、前置条件、是否触碰冻结范围、Workflow/测试链接、失败风险、是否有资源写入。只有完成所声明的验收才可写 PASS。
 - 失败时查明是编译、策略 Gate、Runner、环境、业务逻辑还是后置读回；修同一个 STEP 后运行必要的复验。未知 Writer 状态一律独立只读审计，不盲目重试。
-- **同一问题最多连续调试 3 轮**：每轮指针对同一故障的一次有依据的“分析 → 修改 → 验证”；验证失败后计入一轮。若第 3 轮仍未解决，或更早已明显没有新证据，Agent 必须停止自动修改和重复触发 Workflow，不得通过改名、拆分步骤或重开 Session 规避上限。随后在 PR/Issue 中简要记录尝试过的修改、失败证据、当前 Branch/HEAD SHA、Workflow Run、待确认原因和建议下一步，交由用户决定是否继续或另开 Session。不同的独立问题分别计数；成功后正常完成验收，不强制停工。
+- **同一问题最多连续调试 3 轮**：每轮指针对同一故障的一次有依据的“分析 → 修改 → 验证”；验证失败后计入一轮。若第 3 轮仍未解决，或更早已明显没有新证据，Agent 必须停止自动修改和重复触发 Workflow，不得通过改名、拆分步骤或重开 Session 规避上限。停止后应**优先在当前开发 PR 的 Conversation 评论区**简要记录三轮修改和结果、失败原因或尚未证实的假设、当前 Branch/HEAD SHA、Workflow Run/Artifact 链接及下一步建议；尚无 PR 时记录在对应 GitHub Issue。详细执行日志保留在 Workflow/Artifact 中，不新建重复 Handoff 文档。交由用户决定是否继续或另开 Session；**新 Session 必须先查看既有 PR/Issue 调试记录并沿用同一问题的失败轮数，不得从零重试**。不同的独立问题分别计数；成功后正常完成验收，不强制停工。
 - 复杂的 STEP 需要**可恢复的短交接**：Repo+PR+完整 HEAD SHA、任务目标、已通过/未通过的具体 Run、当前真实资源/Batch、未完成任务、下一最小动作、明确禁止/需批准的操作。能在现有状态/PR/证据里表达的，不重复新建巨大 Handoff Markdown。
 - 任务状态只更新对应当前权威位置；新 `documents/` 模块 **仅在迁移表已经 ACTIVE 时**承接当前事实。旧 `docs/` 的历史 NEXT 不需要每轮修补。
 - 将来使用 OpenSpec 时：Proposal/Design/Tasks/Delta Specs 管需求演进，本文件继续管代码执行、Self-Runner、测试、安全与交接；不为此阶段提前创建 `openspec/`。
