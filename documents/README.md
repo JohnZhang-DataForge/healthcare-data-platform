@@ -7,7 +7,7 @@
 ## 当前文档目录（Data Platform / Engineering 已切换）
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
-- [架构设计讨论稿](architecture/design/README.md)：Data Platform V2 重构与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（均为中文 Draft，尚未实施）。
+- [架构设计讨论稿](architecture/design/README.md)：[V2 多来源 Fabric 与双 Portal 展示路线](architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)、Data Platform V2 源码迁移与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（均为中文 Draft，尚未实施）。
 - [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 与 Platform Portal 仍在开发，暂保留旧文档目录。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
