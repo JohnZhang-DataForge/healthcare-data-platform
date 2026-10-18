@@ -8,7 +8,9 @@ evidence: []
 
 # OpenSpec 接入与开发治理设计（讨论稿）
 
-> **DRAFT / 待审核，尚未实施。** 本文重新设计 Healthcare Data Platform 的 OpenSpec 接入方式，是 [文档迁移 STEP09](../../engineering/migration/MIGRATION-STATUS.md) 的候选实施设计；**不代表 OpenSpec 已安装、初始化、通过 CLI 校验，亦不构成运行环境授权**。
+**实施状态说明（后续补记，保留原方案历史）**：本设计稿编制后，OpenSpec G0–G4 已经按 [正式 G0–G7 计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 真实实施并合并；G5 尚未开始，业务源码迁移也未实施。下方“尚未初始化”“仅规划”均描述原设计时点，**不可作为当前 OpenSpec 状态**。
+
+> **DRAFT / 编写时待审核，尚未实施。** 本文重新设计 Healthcare Data Platform 的 OpenSpec 接入方式，是 [文档迁移 STEP09](../../engineering/migration/MIGRATION-STATUS.md) 的候选实施设计；**不代表 OpenSpec 已安装、初始化、通过 CLI 校验，亦不构成运行环境授权**。
 >
 > **核对范围**：2026-10-17 Healthcare Main `de146b294b3aa16bf8fca3b627c8ed330e20efb6` 的文档结构、Agent/开发规则、项目状态和 [OpenSpec Readiness](../../engineering/migration/OPENSPEC-READINESS.md)；参考 OpenSpec 官方 Getting Started、Existing Projects、Project Configuration、CLI 与 Spec-driven Schema 文档。旧 OpenSpec Bootstrap PR #164 已于本次设计前**关闭且未合并**，不能继续使用其旧 `docs/` 路径配置。没有执行集群、云端或业务测试。
 
