@@ -7,7 +7,9 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 # OpenSpec 迁移准备 — STEP08/STEP09 Gate
 
-> **STEP08 终审完成后的准备清单，不是 OpenSpec 初始化记录。** 正式采用 OpenSpec 管后续变更与 Agent 接力的方向已确认，但已核验的 Main 仍**没有 `openspec/`**；没有运行 OpenSpec CLI/npm，也没有为此触发业务或云端 Workflow。[最终文档权威终审](FINAL-DOCUMENTATION-AUDIT.md)。
+**历史快照说明（2026-10-16/17，G0 开始之前）**：本页正文中的“未初始化”“未执行 CLI”等均仅描述当时的 Main，**不是当前状态**。截至 2026-10-18，G0–G4 已完成并合并；当前唯一状态请见 [G0–G7 实施计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 与 [PROJECT-STATUS](../status/PROJECT-STATUS.md)。
+
+> **STEP08 终审完成后的准备清单，不是 OpenSpec 初始化记录。** 正式采用 OpenSpec 管后续变更与 Agent 接力的方向已确认，但当时核验的 Main 仍**没有 `openspec/`**；当轮没有运行 OpenSpec CLI/npm，也没有为此触发业务或云端 Workflow。[最终文档权威终审](FINAL-DOCUMENTATION-AUDIT.md)。
 
 **2026-10-17 状态补充**：旧 Bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) 已 **CLOSED / NOT MERGED**；替代方案请审阅 [OpenSpec 接入与开发治理设计讨论稿](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md)。该动作只关闭过时 PR，**不表示 G1 CLI 初始化或 STEP09 已完成**。
 
@@ -58,4 +60,4 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 7. **G6**：按组件分 PR 迁移，先验证 Import/DAG/Docker/GitSync/CI/CODE Map 路径兼容，再受控切换实际运行入口；原 DAG ID、Batch、SQL 持久化协议与 Writer Fencing 不变。Live 验证单独授权。
 8. **G7**：按 Change 独立推进 Modularization、PG→Fabric、FHIR、HL7 v2、业务 Lineage 和静态只读 Showcase；Condition 后续业务暂缓，历史 Step00 只读准备状态保留。
 
-**当前阶段：计划已更新，G0–G7 未标记任何 CLI/CI/Runtime PASS。** STEP08 文档迁移历史已完成；STEP09 OpenSpec 尚未初始化。下次从 G0 的最新 Main/CLI 基线开始。
+**STEP08 当时的阶段结论（历史）**：那一轮尚无任何 G0–G7 CLI/CI/Runtime PASS、OpenSpec 尚未初始化。此结论已被后续 G0–G4 的真实 CLI/CI/PR 证据取代，**当前不得从 G0 重新初始化**；G5 尚未开始，其范围以 [正式计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 为准。
