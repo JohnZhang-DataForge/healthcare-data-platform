@@ -53,4 +53,15 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 4. 选择一个小型**获批** Change 测试新 Session 接力与 Verify/Archive；Task 勾选不能代替 PR 合并与独立业务读回。
 5. OpenSpec 与 Self-Runner 是不同层：OpenSpec 不自动抢占任务或管理共享 Runtime；任何实际运行仍按安全规则单独授权。
 
+## 6. 2026-10-18 新建设路线对应的 STEP09 补充要求
+
+[Healthcare V2 多数据源与 Fabric 目标设计](../../architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md) 已整理讨论结果；**不改变 G2 的 Bootstrap-first 边界**，也不表示 OpenSpec 已初始化。
+
+- **G2**：只核对并执行官方 OpenSpec CLI 安装/Init/Validate 的最小 Bootstrap，更新当前 `documents/` 与 Agent 规则引用，不执行目录迁移或业务环境变更。
+- **G3**：首个 Change 优先采用 `relocate-local-data-platform` 的**一小段物理路径迁移**；将 Schema/CLI 可核实的纯 Refactor 特性（例如 `skip_specs: true`）作为候选，避免捏造业务行为 Requirement，同时在 Design/Tasks 中保留已验收 NEW_ONLY Person/Visit 回归门槛。
+- **后续 Changes**：模块化改造、PG→Fabric 分析副本、FHIR→Fabric、HL7 v2→Fabric，以及外部匿名可访问的**只读证据展示**分别管理；公开页面不能绕过 Fabric Workspace 授权或开放本地管理 API。
+- **冻结/暂停**：Condition 不再是本轮优先 Change；历史 TASK005 计划保留。旧 `docs/`、PR #164、已有 Batch 和持久化 Writer 接口均不能被 Bootstrap 擅自修改。
+
+CLI/Node 版本、`openspec validate` 参数与纯 Refactor 配置是否可用，必须以实施当时的官方文档和实际验证为准；不把本设计当成 CLI PASS。
+
 **STEP08 只完成文档审查与权威切换，STEP09 仍未初始化。** 下一阶段从最新 Main 按新设计稿初始化（旧 PR #164 已关闭），并记录真实 CLI Init/Validate、配置 Schema 与版本证据，再开展第一个受控 Change。
