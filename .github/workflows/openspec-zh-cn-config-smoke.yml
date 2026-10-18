@@ -1,0 +1,51 @@
+name: OpenSpec Chinese Config Temporary Smoke
+on:
+  pull_request:
+    paths:
+      - 'openspec/config.yaml'
+      - '.github/workflows/openspec-zh-cn-config-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  verify-config:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify pinned CLI loads Simplified Chinese context and artifact rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "#### OPENSPEC_ZH_CN_VERIFY_OUTPUT_BEGIN ####"
+          node --version
+          npm --version
+          npm install -g @fission-ai/openspec@1.14.3 --no-audit --no-fund
+          openspec --version
+          openspec schemas
+          openspec validate --all --strict
+          openspec new change verify-zh-cn-config --json
+          openspec instructions proposal --change verify-zh-cn-config --json > /tmp/openspec-proposal-instructions.json
+          node <<'NODE'
+          const fs = require('fs');
+          const obj = JSON.parse(fs.readFileSync('/tmp/openspec-proposal-instructions.json', 'utf8'));
+          const text = JSON.stringify(obj);
+          const checks = {
+            zh_CN_instruction: text.includes('简体中文（zh-CN）'),
+            english_syntax: text.includes('ADDED/MODIFIED/REMOVED/RENAMED Requirements'),
+            project_authority: text.includes('documents/engineering/status/PROJECT-STATUS.md'),
+            proposal_rule: text.includes('用简体中文说明变更原因'),
+          };
+          for (const [name, ok] of Object.entries(checks)) {
+            console.log(name + '=' + (ok ? 'PASS' : 'FAIL'));
+          }
+          if (Object.values(checks).some(ok => !ok)) process.exit(1);
+          console.log('OPENSPEC_ZH_CN_CONFIG=PASS');
+          NODE
+          echo "#### OPENSPEC_ZH_CN_VERIFY_OUTPUT_END ####"
