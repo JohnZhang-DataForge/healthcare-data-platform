@@ -2,7 +2,7 @@
 
 > **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 G0–G4 COMPLETE；G5 首个 Change 仅待独立设计。
 >
-> 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与未来 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
+> 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与今后创建的 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
 ## 当前文档目录（Data Platform / Engineering 已切换）
 
@@ -80,4 +80,4 @@
 
 我们采取 **逐领域分析 → 核对源码/运行证据 → 消除矛盾 → 新建简洁文档 → 审核切换权威** 的方式。现有历史证据不批量覆盖，不修改 `docs/` 正文来伪造一致性。
 
-迁移完成后：`documents/` 管理实际架构、开发方法、运维知识及证据索引；引入 OpenSpec 后，由 `openspec/specs/` 管理可验证行为要求，`openspec/changes/` 管理后续设计/功能变更；避免两套内容重复成为权威。
+当前权威分工：`documents/` 管理实际架构、开发方法、运维知识及证据索引；已初始化的 `openspec/specs/` 用于经核实的当前行为要求，后续 `openspec/changes/` 用于已批准开发的设计与任务；截至 G4 尚无正式业务 Specs/Changes。避免两套内容重复成为权威。
