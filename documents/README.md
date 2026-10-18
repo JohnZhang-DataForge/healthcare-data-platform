@@ -31,6 +31,8 @@
 - [Architecture Decisions](architecture/decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
 - [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 旧 PR #164 已于 2026-10-17 关闭、未合并；[接入设计稿](architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 与 [G0–G7 执行计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 已对齐，G1 已初始化、G2 已配置中文。
 
+**2026-10-18 已批准的未来源码根目录**：`local-data-platform/`（[Architecture Decisions D-07](architecture/decisions/README.md)）。当前根目录本地源码尚未搬移，现有 `documents/systems/data-platform/` 是有效文档导航，不能改成并不存在的源码链接；旧候选 `data-platform/` 在 G3 CI 仍需单独更正验证。
+
 ## Azure/Fabric 与 Platform Portal（当前有效导航）
 
 - [Platform Portal：Marquez / OpenLineage](systems/platform-portal/README.md) — 部署与 A3/A4 历史验收、Spark Job↔Run/Dataset 未完成和待讨论接入方案。
