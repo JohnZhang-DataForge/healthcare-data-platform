@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'apps/**'
+      - 'data-platform/**'
+      - '.github/legacy-relocations.json'
       - 'documents/systems/data-platform/**/CODE.md'
       - 'documents/systems/azure-fabric/**/CODE.md'
       - 'documents/engineering/development/CODE.md'

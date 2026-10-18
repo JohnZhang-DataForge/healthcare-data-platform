@@ -277,5 +277,41 @@ class CodeMapSyncTests(unittest.TestCase):
         self.assertEqual(policy.required_fabric_native_updates(set(), before, after), set())
 
 
+
+    def test_future_data_platform_uses_existing_code_map_ownership(self):
+        self.assertTrue(policy.is_guarded_source("data-platform/airflow/dags/main.py"))
+        self.assertTrue(policy.is_app_source("data-platform/apps/synthea/producer.py"))
+        self.assertTrue(policy.is_spark_source("data-platform/spark/apps/visit/main.py"))
+        self.assertTrue(policy.is_contract_sql_source("data-platform/sql/omop/visit.sql"))
+        self.assertTrue(policy.is_image_k8s_source("data-platform/images/synthea/Dockerfile"))
+        self.assertTrue(policy.is_script_config_source("data-platform/scripts/omop/verify.sh"))
+        self.assertFalse(policy.is_app_source("data-platform/apps/README.md"))
+        self.assertEqual(policy.validate_dag_file_map(
+            "[dag](../../../../data-platform/airflow/dags/main.py)",
+            {"data-platform/airflow/dags/main.py"}), ([], []))
+        self.assertEqual(policy.validate_spark_code_map(
+            "[spark](../../../../data-platform/spark/apps/visit/main.py)",
+            {"data-platform/spark/apps/visit/main.py"}), ([], [], []))
+        self.assertEqual(policy.app_links(
+            "[app](../../../../data-platform/apps/synthea/producer.py)"),
+            {"data-platform/apps/synthea/producer.py"})
+        self.assertEqual(policy.contract_sql_owned_links(
+            "| [sql](../../../../data-platform/sql/omop/visit.sql) | owner |"),
+            {"data-platform/sql/omop/visit.sql"})
+        self.assertEqual(policy.image_k8s_owned_links(
+            "| [img](../../../../data-platform/images/synthea/Dockerfile) | owner |"),
+            {"data-platform/images/synthea/Dockerfile"})
+        self.assertEqual(policy.script_config_owned_links(
+            "| [script](../../../../data-platform/scripts/omop/verify.sh) | owner |"),
+            {"data-platform/scripts/omop/verify.sh"})
+
+    def test_future_source_missing_owner_is_rejected(self):
+        missing, stale, dup = policy.validate_app_code_maps(
+            {name: "" for name in policy.APP_MAP_PATHS},
+            {"data-platform/apps/omop_writer/writer.py"})
+        self.assertEqual(missing, ["data-platform/apps/omop_writer/writer.py"])
+        self.assertEqual(stale, [])
+        self.assertEqual(dup, [])
+
 if __name__ == "__main__":
     unittest.main()

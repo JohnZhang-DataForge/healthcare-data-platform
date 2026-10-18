@@ -1,0 +1,100 @@
+name: OpenSpec Static Validation
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate-openspec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin official OpenSpec CLI
+        run: |
+          set -euo pipefail
+          npm install --global @fission-ai/openspec@1.14.3
+          node --version
+          npm --version
+          openspec --version
+          test "$(openspec --version | tr -d '\r')" = '1.14.3'
+      - name: Verify official schema and Chinese context
+        run: |
+          set -euo pipefail
+          openspec schema validate spec-driven
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/openspec"
+          cp openspec/config.yaml "$tmp/openspec/config.yaml"
+          (cd "$tmp" && openspec new change verify-ci-language-config --json >/dev/null && openspec instructions proposal --change verify-ci-language-config --json) > /tmp/openspec-proposal.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/openspec-proposal.json').read_text())
+          content = json.dumps(data, ensure_ascii=False)
+          for phrase in ('简体中文', 'Requirement', 'Scenario', 'AGENTS.md'):
+              assert phrase in content, f'Missing configuration context: {phrase}'
+          print('OPENSPEC_CHINESE_CONTEXT=PASS')
+          PY
+      - name: Strictly validate all active specs and changes
+        run: |
+          set -euo pipefail
+          echo "OPENSPEC_PR_HEAD=${{ github.event.pull_request.head.sha }}"
+          echo "OPENSPEC_CLI_VERSION=$(openspec --version)"
+          count=$(find openspec/specs -type f -name spec.md | wc -l)
+          changes=$(find openspec/changes -mindepth 1 -maxdepth 1 -type d ! -name archive | wc -l)
+          echo "OPENSPEC_CURRENT_SPEC_FILES=$count"
+          echo "OPENSPEC_ACTIVE_CHANGE_DIRS=$changes"
+          openspec validate --all --strict
+          echo "OPENSPEC_VALIDATE_EXIT=0"
+          if [ "$count" -eq 0 ] && [ "$changes" -eq 0 ]; then
+            echo 'OPENSPEC_EMPTY_BASELINE=PASS; ZERO_BUSINESS_ITEMS_VALIDATED'
+          fi
+      - name: Isolated positive and negative change validation
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/openspec/changes/g3-validation-fixture/specs/ci-contract"
+          cp openspec/config.yaml "$tmp/openspec/config.yaml"
+          cat > "$tmp/openspec/changes/g3-validation-fixture/proposal.md" <<'EOF'
+          ## Why
+          验证静态 CI 的有效性。
+          ## What Changes
+          新增临时测试契约，不进入项目 Specs。
+          ## Capabilities
+          ### New Capabilities
+          - ci-contract: Isolated validation fixture
+          ## Impact
+          无运行系统影响。
+          EOF
+          cat > "$tmp/openspec/changes/g3-validation-fixture/specs/ci-contract/spec.md" <<'EOF'
+          ## ADDED Requirements
+          ### Requirement: CI fixture
+          The system SHALL pass valid scenario validation.
+          #### Scenario: Valid path
+          - **WHEN** the check is executed
+          - **THEN** the result is accepted
+          EOF
+          (cd "$tmp" && openspec validate --all --strict)
+          echo 'OPENSPEC_POSITIVE_FIXTURE_EXIT=0'
+          cat > "$tmp/openspec/changes/g3-validation-fixture/specs/ci-contract/spec.md" <<'EOF'
+          ## ADDED Requirements
+          ### Requirement: Invalid fixture
+          The system SHALL reject requirements without scenarios.
+          EOF
+          set +e
+          (cd "$tmp" && openspec validate --all --strict)
+          result=$?
+          set -e
+          echo "OPENSPEC_NEGATIVE_FIXTURE_EXIT=$result"
+          if [ "$result" -eq 0 ]; then
+            echo 'OPENSPEC_NEGATIVE_FIXTURE=FAIL; malformed change was accepted'
+            exit 1
+          fi
+          echo 'OPENSPEC_NEGATIVE_FIXTURE=PASS'
