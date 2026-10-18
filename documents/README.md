@@ -1,6 +1,6 @@
 # Healthcare Data Platform — 文档新入口
 
-> **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 G0/G1 完成（官方 CLI 初始化），G2 后续治理待实施。
+> **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 G0–G2 完成（官方 CLI 初始化及中文项目配置），G3 CI 待实施。
 >
 > 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与未来 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
@@ -22,14 +22,14 @@
 ## 最终文档终审与 OpenSpec 下一步（STEP08）
 
 - **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — STEP08 当时的 25 份文档链接审计（历史统计，并非现行 `documents/` 文档总数）、旧入口权威纠偏及后续边界。
-- [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 的唯一阶段定义、命名 CI、首个 Change 及迁移验收门槛；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。**G1 官方 Init 已完成，`openspec/` 最小目录已创建；下一阶段 G2 项目配置。**
+- [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 的唯一阶段定义、命名 CI、首个 Change 及迁移验收门槛；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。**G1 官方 Init 与 G2 简体中文项目配置均已完成；下一阶段 G3 CI 集成。**
 
 ## 长期运维与架构决策（STEP07 已审核）
 
 - [Operations Index](engineering/operations/README.md) — 有效运维知识入口和仍需按需查阅的旧技术经验。
 - [Safe Operations](engineering/operations/SAFE-OPERATIONS.md) — 共享 K8s/Spark/Airflow/PG/S3/Azure 操作的安全门槛。
 - [Architecture Decisions](architecture/decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
-- [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 旧 PR #164 已于 2026-10-17 关闭、未合并；[接入设计稿](architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 与 [G0–G7 执行计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 已对齐，尚未初始化。
+- [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 旧 PR #164 已于 2026-10-17 关闭、未合并；[接入设计稿](architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 与 [G0–G7 执行计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 已对齐，G1 已初始化、G2 已配置中文。
 
 ## Azure/Fabric 与 Platform Portal（当前有效导航）
 
@@ -43,7 +43,7 @@
 
 ## 当前项目状态（STEP04 已审核）
 
-- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 Condition 业务暂缓但保留只读预检准备、OpenSpec G0–G7 待实施、Portal Spark 讨论中、Azure OneLake-first Terraform PLAN-ONLY。
+- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 Condition 业务暂缓但保留只读预检准备、OpenSpec G0–G2 已完成、G3–G7 待实施、Portal Spark 讨论中、Azure OneLake-first Terraform PLAN-ONLY。
 
 ## 当前整体架构（STEP03 已审核）
 
