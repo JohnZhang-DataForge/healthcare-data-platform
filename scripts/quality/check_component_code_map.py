@@ -341,7 +341,7 @@ def main() -> int:
         return 1
 
     current = {
-        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", DAG_PREFIX, DATA_PLATFORM_PREFIX + DAG_PREFIX)
+        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", DAG_PREFIX, *(prefix + DAG_PREFIX for prefix in DATA_PLATFORM_PREFIXES))
         if local_source(path).startswith(DAG_PREFIX) and path.endswith(".py")
     }
     missing, obsolete = validate_dag_file_map(map_path.read_text(encoding="utf-8"), current)
