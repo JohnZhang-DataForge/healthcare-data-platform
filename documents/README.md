@@ -33,6 +33,8 @@
 
 **2026-10-18 已批准的未来源码根目录**：`local-data-platform/`（[Architecture Decisions D-07](architecture/decisions/README.md)）。当前根目录本地源码尚未搬移，现有 `documents/systems/data-platform/` 是有效文档导航，不能改成并不存在的源码链接；旧候选 `data-platform/` 在 G3 CI 仍需单独更正验证。
 
+已完成名称决定的独立 OpenSpec 文档试点：[命名 PR #223](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/223) 已合并，验证 [OpenSpec Run #39155840396](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39155840396) 成功；[归档 PR #224](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/224) 合并后归档路径为 `openspec/changes/archive/2026-10-18-adopt-local-data-platform-naming/`。此次仅命名治理，不代表 G5 迁移 Change 或 G6 完成。
+
 ## Azure/Fabric 与 Platform Portal（当前有效导航）
 
 - [Platform Portal：Marquez / OpenLineage](systems/platform-portal/README.md) — 部署与 A3/A4 历史验收、Spark Job↔Run/Dataset 未完成和待讨论接入方案。

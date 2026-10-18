@@ -103,6 +103,8 @@ Local PostgreSQL OMOP (authoritative)
 
 **2026-10-18 已批准的本地源码目标名称**：`local-data-platform/`（参见 [Architecture Decisions D-07](../../architecture/decisions/README.md)）。命名调整采用独立的 OpenSpec docs-only 试点；当前实际本地业务源码**未搬迁**，组件文档路径仍为 `documents/systems/data-platform/`。现有 G3 命名/CODE Map/迁移白名单仍围绕旧候选 `data-platform/**` 实施，迁移前另立受审 CI 调整；`relocate-local-data-platform` 迁移 Change 的 G5 设计、G6 实施尚未开始。
 
+**OpenSpec 首轮命名 Change 的真实验证**：`adopt-local-data-platform-naming` 文档修改 [PR #223](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/223) 已合并 Main `d97f7bb7babe1468cc2fc115e511c836360f721a`；[OpenSpec 1.14.3 Strict Run #39155840396](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39155840396) 与 [Docs Links Run #39155840375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39155840375) 均 SUCCESS，最终 PR HEAD 为 `f16baba0e993c5f4d92d1aed2b3eb5ec31fcf00f`。完成的 docs-only Change 通过 [Archive PR #224](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/224) 提交，**归档仅在 #224 合并 Main 后生效**；`openspec archive` CLI 未直接执行，按受审 Git 归档。G5 物理迁移设计与 G6 仍未开始。
+
 ## 5. 文档重建与 OpenSpec
 
 | 文档里程碑 | 状态 |
