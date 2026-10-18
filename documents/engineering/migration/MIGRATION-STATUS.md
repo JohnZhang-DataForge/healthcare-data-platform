@@ -1,6 +1,6 @@
 # Documentation Rebuild — 迁移进度和源资料登记
 
-> **阶段：Pre-OpenSpec · 迁移开始日期：2026-10-16**
+> **历史迁移基线：Pre-OpenSpec · 开始日期：2026-10-16；当前状态：STEP01–08 COMPLETE / OpenSpec G0–G4 COMPLETE。** 最新 CURRENT/NEXT 以 [PROJECT-STATUS](../status/PROJECT-STATUS.md) 和 [OpenSpec G0–G7 计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 为准，下面保留的历史阶段记录不得当作当前开工命令。
 >
 > 文档不是在本文件创建时就算完成迁移。**每个领域独立核对、合并并切换权威**，完成状态以合并后的 Main 和对应验收结果为准。
 
@@ -36,9 +36,9 @@
 | **STEP06** | Portal / Azure-Fabric 专项模块 | **COMPLETE（PR #172）** | [Portal（STEP06 当时的文档）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/ad39ed608c699ea3f30b74bd4bc331733d462e99/documents/components/platform-portal/README.md)、[Azure/Fabric（当时文档）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/41be1aba4d8b730b2a9e17fadfc0450e6aec5095/documents/components/azure-fabric/README.md)：明确已验收、已批准设计和待实现/待定范围 |
 | **STEP07** | `documents/operations/`、决策索引（现位于 `documents/architecture/decisions/`）、精简 Session 协调与 OpenSpec Readiness | **COMPLETE（PR #173）** | 安全/排障长期入口、已确定决策；不新建重复 Handoff 体系；准备 STEP08/09 |
 | **STEP08** | 切换项目入口、检查引用、验收文档体系 | **COMPLETE（PR #174 合并后）** | [终审报告](FINAL-DOCUMENTATION-AUDIT.md)：历史入口降级、单一状态权威、25 篇新文档链接核验 |
-| **STEP09** | 下一阶段：正式初始化同仓库 OpenSpec | **READY TO START / NOT INITIALIZED** | 重新核对旧 PR #164，运行真实 CLI Init/Validate，Spec 从已核实行为建立；不得宣称已安装 |
+| **STEP09** | 同仓库 OpenSpec 接入与后续实施 | **G0–G4 COMPLETE；G5–G7 NOT STARTED** | [唯一 G0–G7 计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 记录真实 CLI/CI/PR/Run 证据；G5 仅首个业务 Change 的设计审核，未迁移代码 |
 
-**当前整理状态（2026-10-16 Main）**：STEP01–08 的权威终审已完成；后续 PR #187–193 推进了 `architecture/decisions/`、`systems/data-platform/` 和 `engineering/` 层级切换，并已清理原 `docs/` 和旧本地组件/工程文档副本。该段为 2026-10-16 历史状态：当时 Azure/Fabric 与 Platform Portal 文档均在 `documents/components/`。此后 Azure/Fabric 已切换为 `documents/systems/azure-fabric/`；该段为 2026-10-16 历史状态，Portal 后续已迁至 `documents/systems/platform-portal/`。OpenSpec 状态以当前专门计划与基线审计为准。以上 STEP01–08 表格保留原阶段的交付路径和验收结论。
+**2026-10-16 历史整理状态（非当前 Main）**：STEP01–08 的权威终审已完成；后续 PR #187–193 推进了 `architecture/decisions/`、`systems/data-platform/` 和 `engineering/` 层级切换，并已清理原 `docs/` 和旧本地组件/工程文档副本。该段为 2026-10-16 历史状态：当时 Azure/Fabric 与 Platform Portal 文档均在 `documents/components/`。此后 Azure/Fabric 已切换为 `documents/systems/azure-fabric/`；该段为 2026-10-16 历史状态，Portal 后续已迁至 `documents/systems/platform-portal/`。OpenSpec 状态以当前专门计划与基线审计为准。以上 STEP01–08 表格保留原阶段的交付路径和验收结论。
 
 ## 2. 候选来源（未迁移、不自动成为新权威）
 
@@ -104,7 +104,7 @@
 - **完整新文档链接审计**：25 篇新文档的 **249 条相对 Markdown 链接**目标存在；无缺失。此为 STEP08 当时的基线审计数字，不代表当前 Main 的文档和链接总数。
 - **7 个旧 Agent/状态/技术入口纠偏**：`docs/README.md`、`docs/tasks/TASK-STATUS.md`、`docs/runbooks/README.md`、`docs/skill/SKILL-cn.md`、旧 Developer Ops、Portal、Azure README；保留各自的原始历史证据及时间快照，不再将其作为新的 CURRENT/NEXT。
 - **唯一项目 CURRENT/NEXT**：[PROJECT-STATUS](../status/PROJECT-STATUS.md)。长期决策、安全与组件知识保留在 `documents/`，业务代码/Contract 和 GitHub Run 仍各自有权威。
-- **未解决且正确阻断的非文档事项**：OpenSpec CLI 未验证、旧 PR #164 未合并需修订；Portal Spark 正式集成方案未定；Azure Plan-only 没有 Apply。详见 [终审报告](FINAL-DOCUMENTATION-AUDIT.md)。
+- **STEP08 当时尚未解决的非文档事项（历史）**：OpenSpec CLI 未验证、旧 PR #164 未合并需修订。**2026-10-18 后续结果**：旧 PR #164 已关闭未合并；G0–G4 官方初始化、配置和 CI 已按 [实施计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 验证并合并。Portal Spark 正式集成方案仍未确定；Azure Terraform 仍为 Plan-only，未授权 Apply。详见 [终审报告](FINAL-DOCUMENTATION-AUDIT.md)。
 - **无 Runtime 变更**：本轮不修改 Airflow/Spark/SQL/Images/K8s/Workflow/Terraform，未运行 Self-Runner、PG/S3/Azure、没有重放冻结批次。
 
 ## 10. 每一步完成时登记
