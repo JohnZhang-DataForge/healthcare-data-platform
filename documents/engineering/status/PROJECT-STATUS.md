@@ -21,7 +21,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 | **TASK005 — Condition** | **PAUSED（优先级暂缓） / STEP00 READ-ONLY READY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 保留 STEP00 只读预检准备与原计划；重新启动 Condition 开发需另行决定，任何业务 COMMIT 须单独批准 |
 | **Platform Portal — Marquez / OpenLineage** | **前期实施/验收完成；下一阶段 Spark 接入方案讨论中** | 独立 PG14、Marquez Web/API、A3 Airflow 事件已真实验证；A4 隔离 Spark Smoke 有实际运行和部分读回证据 | **下一步如何接入真实 Spark 业务链路尚未确定**；Job↔Run 名称挂接和 Dataset I/O 完整血缘待处理，不直接启动新 Spark/共享资源 |
 | **Azure/Fabric — OMOP → OneLake** | **目标方案已敲定；IaC/Runner 工程及三个目标资源 Plan 完成；NO APPLY** | 已有 Azure Blob Landing / Workspace；Terraform 各组件资源定义、IAM 边界和 `Azure-Infra-TF` Workflow 在 Git；Lakehouse、Notebook、Pipeline 三个独立 Plan PASS | Exporter、真实 Notebook ETL、Pipeline 与 Notebook 绑定、Fabric 资源部署和数据 E2E 尚未讨论完成/实现；下一阶段先明确细节与验收门槛 |
-| **文档重建 / OpenSpec** | **STEP01–08 COMPLETE；STEP09 G0 静态审计完成，G1–G7 未执行** | [G0 Baseline Audit](../migration/OPENSPEC-BASELINE-AUDIT.md) 已核对两仓 SHA、PR、官方版本要求与 CI 缺口；无 CLI Init/Runtime 证据 | 根据 [G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 进入 G1：实测执行环境 Node/npm 与固定 CLI，官方 Init 后按 PR 验证；G5 Change/G6 物理迁移仍在后续 |
+| **文档重建 / OpenSpec** | **STEP01–08 COMPLETE；STEP09 G0/G1 COMPLETE，G2–G7 未执行** | G0 静态审计完成；G1 [官方 CLI Init Run #39144400763](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144400763) 与 [再次 Init Run #39144489059](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144489059) 成功；仓库 `openspec/` 已生成最小结构（无 Specs/Changes 业务内容） | [G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 下一步 G2：最小项目配置/Agent 规则；G3 CI、G4 Self-Runner/GitHub 开发接力仍待实现；无业务 Runtime 操作 |
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
