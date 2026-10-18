@@ -8,10 +8,10 @@
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
 - [架构设计讨论稿](architecture/design/README.md)：[V2 多来源 Fabric 与双 Portal 展示路线](architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)、Data Platform V2 源码迁移与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（均为中文 Draft，尚未实施）。
-- [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 与 Platform Portal 仍在开发，暂保留旧文档目录。
+- [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 已有 `systems/azure-fabric/` 说明，Portal 当前仍引用 `components/platform-portal/`。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
-**迁移结果**：本地 Data Platform 与 Engineering 已采用新的 `systems/`、`engineering/` 目录，CODE.md 源码地图和 Markdown 链接均有独立 CI。旧的本地组件及工程文档副本已按可追溯 Git 历史方式清理；**Azure/Fabric 已采用 `systems/azure-fabric/`；Portal 的组件知识入口仍须按实际有效路径核对**。
+**迁移结果**：本地 Data Platform 与 Engineering 已采用新的 `systems/`、`engineering/` 目录，CODE.md 源码地图和 Markdown 链接均有独立 CI。旧的本地组件及工程文档副本已按可追溯 Git 历史方式清理；**Azure/Fabric 的新系统说明已位于 `systems/azure-fabric/`，旧 `components/azure-fabric/` 文档尚保留；Portal 当前仍使用 `components/platform-portal/`。不在本次 OpenSpec 方案修改中清理这些历史页面**。
 
 ## Agent 开工入口
 
@@ -31,7 +31,7 @@
 - [Architecture Decisions](architecture/decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
 - [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 旧 PR #164 已于 2026-10-17 关闭、未合并；[接入设计稿](architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 与 [G0–G7 执行计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 已对齐，尚未初始化。
 
-## Azure/Fabric 与 Platform Portal（继续使用旧文档路径）
+## Azure/Fabric 与 Platform Portal（当前有效导航）
 
 - [Platform Portal：Marquez / OpenLineage](components/platform-portal/README.md) — 部署与 A3/A4 历史验收、Spark Job↔Run/Dataset 未完成和待讨论接入方案。
 - [Azure/Fabric：OMOP → Azure Blob → Fabric Pipeline/Notebook → OneLake](systems/azure-fabric/README.md) — OneLake-first 方案、Terraform Plan-only 证据、未完成的导出/业务装载边界。
