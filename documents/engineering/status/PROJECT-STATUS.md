@@ -101,6 +101,8 @@ Local PostgreSQL OMOP (authoritative)
 
 **依据**：[OneLake-first 方案与真实 Plan 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) · [Terraform 组件](../../systems/azure-fabric/infra-terraform/README.md) · [IaC 架构/IAM](../../systems/azure-fabric/infra-terraform/ARCHITECTURE.md) · [Notebook bootstrap](../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) · [Pipeline fail-closed definition](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)。
 
+**2026-10-18 已批准的本地源码目标名称**：`local-data-platform/`（参见 [Architecture Decisions D-07](../../architecture/decisions/README.md)）。命名调整采用独立的 OpenSpec docs-only 试点；当前实际本地业务源码**未搬迁**，组件文档路径仍为 `documents/systems/data-platform/`。现有 G3 命名/CODE Map/迁移白名单仍围绕旧候选 `data-platform/**` 实施，迁移前另立受审 CI 调整；`relocate-local-data-platform` 迁移 Change 的 G5 设计、G6 实施尚未开始。
+
 ## 5. 文档重建与 OpenSpec
 
 | 文档里程碑 | 状态 |

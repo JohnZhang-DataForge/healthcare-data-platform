@@ -16,8 +16,10 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 | **D-03** | **Portal 用 OpenLineage + Marquez 原生 Web + 独立 PostgreSQL14** | 避免自建可视化与修改 OMOP PG17；[Portal](../../systems/platform-portal/README.md) Marquez/A3/A4 分项有证据，但**真正业务 Spark 接入方式仍未选定** |
 | **D-04** | **Azure 走 OneLake-first MVP：PG → Azure Blob → Fabric Data Pipeline → PySpark Notebook → Lakehouse** | 缩减旧 Warehouse-first/多层 ETL；[Azure](../../systems/azure-fabric/README.md) 三组件仅 Plan PASS、**无 Apply/业务 E2E** |
 | **D-05** | **新代码按组件 + 功能命名，Task/Step 仅表示开发活动** | [强制规范与 CI](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md) 已合并；旧 `task004` Runtime 兼容搬迁尚未实施 |
-| **D-06** | **准备采用 OpenSpec 管 Change/Tasks/Agent 接力，GitHub 管 PR，Self-Runner 管真实执行** | 不再另建持续膨胀的 Handoff 体系；[迁移准备](../../engineering/migration/OPENSPEC-READINESS.md) 已规划，但 `openspec/` **尚未进入 Main** |
+| **D-06** | **采用 OpenSpec 管 Change/Tasks/Agent 接力，GitHub 管 PR，Self-Runner 管受控验证** | [G0–G7 实施计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md)：G0–G4 已实施，代码/运行验收仍由 PR/Run/独立读回证明 |
 
-**决策状态**：D-01/D-02 已在对应本地已验收范围实施；D-03 的 Portal 基础完成而真实业务 Spark 集成方案仍在讨论；D-04 是已批准架构但云端业务尚未实施；D-05 新代码规则生效，旧代码保持；D-06 是已接受方向而不是已启动的 OpenSpec。
+| **D-07** | **未来本地平台维护源码根目录唯一使用 `local-data-platform/`** | Hybrid Healthcare 项目分别由 Local DP 与 `azure-fabric/` 组成，避免泛称 `data-platform/` 的歧义；目前**仅名称已批准**，没有搬源码；不改既有 `documents/systems/data-platform/` 文档路径。详见 [Data Platform V2 设计](../design/DATA-PLATFORM-V2-MIGRATION-DESIGN.md)；命名 OpenSpec Change 经审核后按归档记录追溯 |
+
+**决策状态**：D-01/D-02 已在对应本地已验收范围实施；D-03 的 Portal 基础完成而真实业务 Spark 集成方案仍在讨论；D-04 是已批准架构但云端业务尚未实施；D-05 新代码规则生效，旧代码保持；D-06 的 G0–G4 治理已实施；D-07 是已批准的**未来路径命名**，不是物理迁移或运行验收。
 
 若未来出现被新事实/方案替代的决策，在本索引修订该项及其依据，链接审批的 Change/PR；不把未批准建议写成正式 ADR，也不为每次 Session 创建记录。

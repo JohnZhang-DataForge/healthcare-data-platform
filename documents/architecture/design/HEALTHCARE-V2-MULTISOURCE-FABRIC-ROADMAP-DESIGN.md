@@ -16,7 +16,7 @@ evidence: []
 
 本阶段不再以补齐所有 OMOP Domain 为优先目标，而以可核验的 **Healthcare Research Data Integration Platform** 为目标：
 
-1. **Local Data Platform（简称 Local DP）**：继续保留已验收的本地 Kubernetes、Airflow、Spark、SeaweedFS、PostgreSQL OMOP 及 Marquez；完成维护源码向仓库 `data-platform/` 的受控迁移。
+1. **Local Data Platform（简称 Local DP）**：继续保留已验收的本地 Kubernetes、Airflow、Spark、SeaweedFS、PostgreSQL OMOP 及 Marquez；完成维护源码向仓库 `local-data-platform/` 的受控迁移。
 2. **Microsoft Fabric**：将 Local DP 的 PostgreSQL OMOP 视为**一个上游数据源**；再接入独立 FHIR R4 和 HL7 v2 来源，形成多来源的 Bronze、Silver 与研究数据产品。
 3. **两侧各有可观测性**：本地 Airflow/Marquez，云端 Fabric Pipeline Monitoring/Spark Monitoring/Lineage；外部观看者通过**无需账号的公开只读 Showcase** 查看真实运行证据，不直接访问管理后台。
 4. **业务解耦**：Producer、Landing、Canonical/Transform、Identity、Writer、云端分析副本和展示层各自有清晰所有权；OMOP 是一种标准化数据产品，**不是所有 FHIR/HL7 原始事件都必须先写入的中心库**。
@@ -101,7 +101,7 @@ Local Observability: Airflow UI + Marquez     Fabric: Monitoring + Lineage
 
 ## 4. 仓库所有权及源码迁移
 
-保持现有四个主要业务/文档目录的目标设计，OpenSpec 作为额外的治理目录，与 `documents/` 同级；`Local DP` 是逻辑称呼，仓库物理路径仍用已定稿候选 `data-platform/`，**不再造 `local-dp/` 根目录**。
+保持现有四个主要业务/文档目录的目标设计，OpenSpec 作为额外的治理目录，与 `documents/` 同级；`Local DP` 是逻辑简称；**2026-10-18 已正式批准的未来仓库源码根目录为 `local-data-platform/`**，不再采用候选 `data-platform/` 或简称 `local-dp/`。目前仅为设计命名，源码仍在原位置。
 
 ~~~text
 healthcare-data-platform/
@@ -109,7 +109,7 @@ healthcare-data-platform/
 ├── AGENTS.md
 ├── README.md
 ├── openspec/            # change/spec governance (future STEP09)
-├── data-platform/       # Local DP runtime source (future relocation)
+├── local-data-platform/ # Local DP runtime source (future relocation)
 ├── azure-fabric/        # Infra Terraform + Fabric workspace items
 ├── platform-portal/     # Local Marquez / OpenLineage integration
 └── documents/           # Architecture, Systems, Engineering
@@ -132,7 +132,7 @@ healthcare-data-platform/
 | 顺序 | Change 候选 | 范围 | 验收重点 |
 | --- | --- | --- | --- |
 | 0 | OpenSpec Bootstrap（G0–G4，独立 PR） | CLI / config / 规范 CI / Agent 开发接力 | 无业务 Runtime 副作用；参见 [正式实施计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) |
-| 1 | `relocate-local-data-platform` | 根目录 → `data-platform/` | 路径/Workflow/Import/契约/回归；业务行为保持 |
+| 1 | `relocate-local-data-platform` | 根目录 → `local-data-platform/` | 路径/Workflow/Import/契约/回归；业务行为保持 |
 | 2 | `refactor-local-component-boundaries` | 旧 Task 命名及公共能力 | 新旧结果对照、兼容和回滚 |
 | 3 | `replicate-omop-to-fabric` | PG Exporter → Blob → Fabric → Delta | 一致性、双表对账、幂等 |
 | 4 | `ingest-fhir-to-fabric` | FHIR R4 → Bronze/Silver | 来源标识、Reference、重放 |
