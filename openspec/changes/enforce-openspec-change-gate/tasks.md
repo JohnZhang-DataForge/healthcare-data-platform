@@ -7,13 +7,16 @@
 
 ## 2. Implement / Test
 
-- [ ] 2.1 实现 `.github/quality/scripts/check_openspec_change_gate.py`，区分受保护开发路径与显式 docs-only 豁免。
-- [ ] 2.2 新增全面正负向单元测试；验证 PR Body/Change/Task 同步及有效 Archive。
-- [ ] 2.3 建立无 paths 过滤的 GitHub-hosted Change Gate 工作流；不接受无关联的实质性 PR。
-- [ ] 2.4 更新 `AGENTS.md`、开发工作流、OpenSpec 生命周期和状态说明；阐明 CI/归档/人工审批界限。
+- [x] 2.1 实现 `.github/quality/scripts/check_openspec_change_gate.py`，区分受保护开发路径与显式 docs-only 豁免。
+- [x] 2.2 新增全面正负向单元测试；验证 PR Body/Change/Task 同步及有效 Archive。
+- [x] 2.3 建立无 paths 过滤的 GitHub-hosted Change Gate 工作流；不接受无关联的实质性 PR。
+- [x] 2.4 更新 `AGENTS.md`、开发工作流、OpenSpec 生命周期和状态说明；阐明 CI/归档/人工审批界限。
 - [ ] 2.5 实际 PR HEAD 验证新旧静态 CI 全部适用门禁；修复首次失败，记录 SHA/Run。
 
 ## 3. Merge / Protection
+
+> 受审 PR 对应 OpenSpec-Change: enforce-openspec-change-gate；首次 CI 成功或失败的实际 Run 由后续准确 HEAD 验证补证，不预先标记所需门禁完成。
+
 
 - [ ] 3.1 核对/审查最终 PR Diff、Merge 完成，记录确切 Main SHA。
 - [ ] 3.2 配置并核验 Main 对 `OpenSpec Change Gate / require-change` 的 required status；若当前 GitHub 集成没有此权限，记录明确的**未完成**用户管理步骤，不得标注 PASS。

@@ -32,7 +32,8 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 确认用户目标、动作授权与当前 main SHA
   → 阅读 documents + 当前代码/Contract + 相关真实验收
   → 定义最小 STEP、验收标准、数据/环境副作用
-  → Healthcare feature 分支修改 canonical source 和测试
+  → 对实质性变更先创建或关联 OpenSpec Change（Proposal/Design/Tasks；实现 PR 明确绑定 Change + Task）
+  → Healthcare feature 分支修改 canonical source 和测试并同步该 Change 的 tasks.md
   → 静态检查 + 单测 + 负向/幂等性检查（按风险）
   → 需要 Runtime 时：选择现有 Self-Runner Workflow，固定 Healthcare SHA 与输入
   → 受控执行并读回真实状态；失败修同一步，不扩大范围
@@ -105,7 +106,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 - **同一问题最多连续调试 3 轮**：每轮指针对同一故障的一次有依据的“分析 → 修改 → 验证”；验证失败后计入一轮。若第 3 轮仍未解决，或更早已明显没有新证据，Agent 必须停止自动修改和重复触发 Workflow，不得通过改名、拆分步骤或重开 Session 规避上限。停止后应**优先在当前开发 PR 的 Conversation 评论区**简要记录三轮修改和结果、失败原因或尚未证实的假设、当前 Branch/HEAD SHA、Workflow Run/Artifact 链接及下一步建议；尚无 PR 时记录在对应 GitHub Issue。详细执行日志保留在 Workflow/Artifact 中，不新建重复 Handoff 文档。交由用户决定是否继续或另开 Session；**新 Session 必须先查看既有 PR/Issue 调试记录并沿用同一问题的失败轮数，不得从零重试**。不同的独立问题分别计数；成功后正常完成验收，不强制停工。
 - 复杂的 STEP 需要**可恢复的短交接**：Repo+PR+完整 HEAD SHA、任务目标、已通过/未通过的具体 Run、当前真实资源/Batch、未完成任务、下一最小动作、明确禁止/需批准的操作。能在现有状态/PR/证据里表达的，不重复新建巨大 Handoff Markdown。
 - 任务状态只更新对应当前权威位置；新 `documents/` 模块 **仅在迁移表已经 ACTIVE 时**承接当前事实。旧 `docs/` 的历史 NEXT 不需要每轮修补。
-- OpenSpec G0–G4 已经由 PR/Run 验证并完成；今后已批准的新功能、接口/行为调整和重构按 [OpenSpec 生命周期](OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 管理 Proposal/Design/Tasks/适用 Delta Specs，并保留本文件规定的代码执行、Self-Runner、测试、安全与交接。G5 首个正式 Change 尚未开始，其设计阶段不移动任何业务源码；简单文档纠偏或只读核对不强制创建 Change。
+- OpenSpec G0–G4 已经由 PR/Run 验证并完成；今后已批准的新功能、接口/行为调整和重构按 [OpenSpec 生命周期](OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 管理 Proposal/Design/Tasks/适用 Delta Specs，并保留本文件规定的代码执行、Self-Runner、测试、安全与交接。G5 首个源码迁移 Change 已通过 PR #228–#229 追溯建档并保持 Active，实际路径调试尚未完成。新的实质性 PR 必须在实施前建立或关联 Active OpenSpec Change，并在 PR Body 声明 `OpenSpec-Change: <id>` / `OpenSpec-Task: <n.n>`、同步 Tasks；仅受限的非架构文档 PR 可显式声明 `OpenSpec-Exemption: docs-only`。新 Change Gate 是 PR 静态检查，能否禁止违规合并还依赖单独核实的 Main Required Check/Bypass 设置；只读审计无 PR 时不强制创建 Change。
 
 ## 8. 多 Session 协作与接力（简化）
 
