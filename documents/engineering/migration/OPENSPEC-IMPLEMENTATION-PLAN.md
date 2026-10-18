@@ -8,7 +8,7 @@ evidence: []
 
 # OpenSpec 正式实施与 Data Platform 迁移计划（G0–G7）
 
-> **执行计划已确认；实施未开始。** 本文件是 STEP09 的**唯一 G0–G7 执行步骤与阶段验收清单**。日期和 Source SHA 表示编写时的只读 Git 基线，不是 CLI、CI、集群或云端验收记录。后续按每个 PR、已安装版本、目标 SHA 和实际 Run 更新执行状态。
+> **执行状态：G0–G3 已完成实施与 GitHub CI 验证；G3 PR 合并后在 Main 正式生效，G4–G7 尚未开始。** 本文件是 STEP09 的**唯一 G0–G7 执行步骤与阶段验收清单**。日期和 Source SHA 表示编写时的只读 Git 基线，不是 CLI、CI、集群或云端验收记录。后续按每个 PR、已安装版本、目标 SHA 和实际 Run 更新执行状态。
 >
 > [OpenSpec 接入架构设计](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 管原则和权威边界；[OpenSpec Readiness](OPENSPEC-READINESS.md) 管实施前核查；[Data Platform V2 设计](../../architecture/design/DATA-PLATFORM-V2-MIGRATION-DESIGN.md) 管目录兼容和回滚细节；[项目 CURRENT/NEXT](../status/PROJECT-STATUS.md) 管总体进度。禁止将这些文件变成相互矛盾的第二份 G0–G7 计划。
 
@@ -48,6 +48,14 @@ G3 必须：
 3. 加入至少这些负向测试：新建 `data-platform/scripts/task999/step03.sh` 必须失败；历史文件搬迁过程中夹带新 `taskNNN` 文件必须失败；修改过的 Legacy 文件不能借纯搬迁规则绕过审查；合法组件/功能路径必须通过。
 4. 迁移兼容豁免须**限定到实际 Change/PR 的固定文件列表及准确 SHA**；试点验收后清理临时宽松策略，不永久豁免整个 `data-platform/` 目录。
 
+**G3 已落实的受限搬迁机制（2026-10-18，PR #218）**：
+
+- 永久 [OpenSpec Static Validation](../../../.github/workflows/openspec-validation.yml) 使用 GitHub-hosted Node 22、CLI 1.14.3；官方 Schema / 中文上下文、`validate --all --strict`、临时 Change 正反用例验证。当前仓库 **0 个 Current Specs、0 个 Active Changes**，空集 PASS **不代表业务 Specs 验收**。临时测试 Change 只在 Runner 的临时目录创建。
+- [Component Naming Workflow](../../../.github/workflows/code-component-naming-check.yml) 和 [Naming Checker](../../../scripts/quality/check_new_code_names.py) 检查 `data-platform/**`；[CODE Map Checker](../../../scripts/quality/check_component_code_map.py) 将未来目录纳入现有组件文件所有权与路径链接校验，仍要求对应 CODE.md 在同一 PR 同步。
+- 精确审批清单 [`.github/legacy-relocations.json`](../../../.github/legacy-relocations.json) 初始为空。需**先经独立 PR 审核并合并**具体 `old_path / new_path / source_commit / blob_sha` 映射（完整 SHA）；下一份纯移动 PR 的 Naming Gate **仅从其 Base Commit 读取已批准名单**，验证 Source Commit 是 Base 祖先、源文件在该 Commit 与 Base 内容 Blob 相同、目标仅为 `data-platform/<old_path>`、旧路径已在 HEAD 删除、目标 Blob 与源 Blob 完全一致。PR 内自加豁免、带修改搬运、夹带新的违规路径均失败，任何变更行为不得冒充纯物理搬迁；G6 使用前另作逐文件审查。清单必须在迁移完成后收口清理，不能保留无限期豁免。
+- 正向临时 Change 返回 Exit 0，缺少 Scenario 的负向 Change 返回 Exit 1；新的 `data-platform/scripts/task999/step03.sh` 以及混入历史搬迁的新 Task/Step 名称均由单元测试拒绝。证据为 [OpenSpec Run #39148008534](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008534)、[Naming Run #39148008629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008629)，目标 HEAD `3f39781167dde125c806a44838ccf7e1f0060e74`。未执行 K8s、业务 SQL、Terraform 或 Self-Runner。
+- **G4 进入条件**：PR #218 合并 Main，最终 PR HEAD 的 OpenSpec、Component Naming、Documentation Relative Links 全部成功；Main 确认配置/Workflow/规则可恢复，并登记合并 SHA。G4 再核对 Self-Runner 对已删除旧 `docs/BASELINE.md` 的依赖；不直接运行旧跨仓流水线。
+
 G6 中无需立即 Rename 已验收的旧 `task004` 文件。应先保留兼容入口/适配层，以实际依赖审计为准处理不同路径；真正语义重命名留待独立 Change。
 
 ## 4. G5/G6 首个 Change 的实施边界
@@ -82,7 +90,8 @@ Condition/TASK005 状态为**业务开发暂缓，原 STEP00 READ-ONLY 就绪及
 | G0 静态基线审计 | G0 | [Baseline Audit](OPENSPEC-BASELINE-AUDIT.md)：双仓 SHA、开放 PR/过时 PR、官方 CLI/Node 前提、既有 CI/Workflow 缺口 | **COMPLETE（2026-10-18，只读；目标环境 Node/npm 未实测）** |
 | 官方 CLI Bootstrap | G1 | GitHub-hosted Node `v22.23.3` / npm `10.9.9`，Registry `@fission-ai/openspec@1.14.3`；[首次 CLI Init Run #39144400763](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144400763) 与[已提交文件的再次 Init Run #39144489059](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144489059) 均 SUCCESS；生成 `openspec/config.yaml`、`specs/.gitkeep`、`changes/archive/.gitkeep`，无 AI 工具集成 | **COMPLETE（GitHub-hosted Runner 的官方 CLI Init，非 Self-Runner 安装）** |
 | 中文项目配置 | G2 | `openspec/config.yaml` 采用 `spec-driven`、简体中文描述及英文结构保留约束，引用现有文档和安全命名规则；[官方 CLI 配置注入 Smoke Run #39145378211](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39145378211) SUCCESS，四项指令注入断言 PASS；不包含业务 Specs/Changes | **COMPLETE（配置/治理，未实施业务 Change）** |
-| 后续治理 | G3–G4 | 持续 CI 规则和 Agent/PR/Self-Runner 流程连接；不混入业务代码移动 | **NOT STARTED；下一阶段 G3** |
+| G3 静态 CI | G3 | [PR #218](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/218)：永久 [OpenSpec CI](../../../.github/workflows/openspec-validation.yml)、命名检查及 CODE Map 新旧路径覆盖、受限预授权搬迁白名单；[OpenSpec Run #39148008534](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008534) SUCCESS，[命名 Run #39148008629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008629) SUCCESS；功能验证 HEAD `3f39781167dde125c806a44838ccf7e1f0060e74`；G3 文档提交后仍须检查最终 PR HEAD 的所有触发 CI | **IMPLEMENTED / VERIFIED；以 PR #218 合并完成为 Main 生效边界** |
+| 后续治理 | G4 | Agent/PR/Self-Runner 接力和三次调试停止规则，另行实施；不混入业务源码移动 | **NOT STARTED；下一阶段 G4** |
 | 首个 Change | G5 | `relocate-local-data-platform` Proposal/Design/Tasks/Static Validate，单独审查 | **NOT STARTED** |
 | 物理迁移 | G6 | 分组件/切片 PR；路径兼容、CODE Map、测试；Live Gate 单独授权 | **NOT STARTED** |
 | 后续能力 | G7 | 分领域 Changes，实际测试 + PR/Run + 独立读回后才归档 | **NOT STARTED** |
