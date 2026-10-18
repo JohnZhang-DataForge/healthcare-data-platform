@@ -59,7 +59,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 ## 4. Azure/Fabric：目标架构已确定；Terraform 资源定义与 Plan 完成，实际 ETL 未开始
 
-**现行组件知识入口**：[Azure/Fabric 系统说明](../../systems/azure-fabric/README.md) · [源码导航](../../systems/azure-fabric/CODE.md) · [旧 Azure 目录退役审计](../migration/AZURE-DIRECTORY-RETIREMENT.md)。
+**现行组件知识入口**：[Azure/Fabric 组件说明](../../components/azure-fabric/README.md)。
 
 ### 4.1 已确认的目标（设计定稿）
 
@@ -78,7 +78,7 @@ Local PostgreSQL OMOP (authoritative)
 
 ### 4.2 已完成的基础设施工程（源码与 Plan）
 
-- Healthcare `azure-fabric/infra-terraform/` 已成为唯一有效的 Terraform 源码路径，具有七个 Root/Module、IAM 边界与 Lakehouse/Notebook/Data Pipeline 资源定义。旧 `azure/` 在源码和执行器切换审计后已从 Main 退役；远程 Backend/State Key 未变。源码目录退役不代表云端部署，也不是可运行业务 ETL 的完整实现。
+- Healthcare `azure-fabric/infra-terraform/` 已复制旧 `azure/infra-terraform/` 的 **components + modules** 结构以及目标 Lakehouse/Notebook/Data Pipeline 的 Terraform **资源定义**，包括分组件 IAM 占位与边界；原 `azure/` 未修改，Backend/State Key 未变。源码复制不代表云端部署，也不是可运行业务 ETL 的完整实现。
 - Self-Runner 上独立的 [`Azure-Infra-TF` Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 已完成开发并跑过真实 Terraform Plan；支持 component/env/operation 选项，默认 `plan`，虽提供 `apply`，**本阶段尚未获得执行授权**。
 - 已有的 Azure Storage / Blob Landing、Terraform Remote State 和 Fabric Workspace 继续复用；不以本次三个 Plan 声称新建了这些既有资源。
 

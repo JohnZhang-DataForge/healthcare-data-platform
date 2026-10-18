@@ -78,7 +78,6 @@ The component README describes responsibilities; the component CODE.md links dir
 | Directory | Contents |
 | --- | --- |
 | [`.github/`](.github/workflows) | GitHub Actions workflows and image publishing |
-| [`azure-fabric/`](azure-fabric/README.md) · [Terraform](azure-fabric/infra-terraform/README.md) | Canonical Azure/Fabric infrastructure source and future Workspace item folders; legacy `azure/` is retired |
 | [`airflow/`](airflow) · [CODE](documents/systems/data-platform/airflow/CODE.md) | DAGs, batch routing and Spark/Writer orchestration |
 | [`apps/`](apps) · [Component CODE maps](documents/systems/data-platform/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
 | [`config/`](config) · [Developer CODE](documents/engineering/development/CODE.md) | Local configuration examples; no live secrets |

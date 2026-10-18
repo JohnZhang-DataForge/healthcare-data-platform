@@ -37,11 +37,11 @@ Local PostgreSQL OMOP CDM (authoritative，已验收 Person/Visit)
 | Data Pipeline | [`fabric_data_pipeline`](../../../azure-fabric/infra-terraform/modules/data-factory/main.tf)，名 `pl_omop_snapshot_to_onelake` | `notebook_id=""` 时使用 [Fail Activity](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)；[Notebook Activity](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json) 需要未来真实 Notebook GUID；未绑定或执行 |
 | IAM | [Terraform IAM boundary](../../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md)，组件自身拥有权限配置 | `data_access_roles={}` 不创建 OneLake 权限；Fabric Workspace 权限与 Azure Blob RBAC 不等价，实际授权待核对 |
 
-**源码迁移（后续状态，2026-10-18）**：Terraform 已迁入 `azure-fabric/infra-terraform/` 并成为唯一有效执行路径；旧 `azure/infra-terraform/` 已从 Main 退役。Backend 和 State Key 不变；源码清理不代表 Azure Apply。现行文档见[系统说明](../../systems/azure-fabric/README.md)及[退役记录](../../engineering/migration/AZURE-DIRECTORY-RETIREMENT.md)。
+**源码迁移**：Terraform 已完整复制到 `azure-fabric/infra-terraform/`；旧 `azure/infra-terraform/` 保持原样。Backend 和 State Key 不变；目录迁移不代表 Azure Apply。
 
 **代码布局**：[Terraform Root/Module 总入口](../../../azure-fabric/infra-terraform/README.md)：`components/<component>/` 是独立 root，`modules/<component>/` 定义资源，`components/<component>/environments/dev.tfvars` 定义环境；State 使用既有 `dev/<component>.tfstate`。Root 有 `storage`、`workspace`、`onelake`、`notebook`、`data-factory`、`warehouse`、`foundation-iam`，不意味着当前 MVP 要全部 Apply。已存在的 Storage 与 Workspace 不需要重建。
 
-**目录清理（2026-10-16）**：早期 OIDC / Blob Terraform Smoke 源码已从 Main 删除；正式 Azure IaC 只使用 [`azure-fabric/infra-terraform/components/`](../../../azure-fabric/infra-terraform/README.md) 和对应 `modules/`。历史 Smoke 证据保留在 Git 历史中，不属于 OneLake MVP；本次没有执行云端操作。
+**目录清理（2026-10-16）**：早期 OIDC / Blob Terraform Smoke 源码已从 Main 删除；正式 Azure IaC 只使用 [`azure/infra-terraform/components/`](../../../azure-fabric/infra-terraform/README.md) 和 `modules/`。历史 Smoke 证据保留在 Git 历史中，不属于 OneLake MVP；本次没有执行云端操作。
 
 ## 3. 三个真实 Plan 已完成，但尚未 Apply
 

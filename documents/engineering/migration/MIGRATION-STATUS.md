@@ -2,8 +2,6 @@
 
 > **阶段：Pre-OpenSpec · 迁移开始日期：2026-10-16**
 >
-> **后续源码迁移记录（2026-10-18）**：旧 `azure/` 目录已退役；现行入口为 [`azure-fabric/`](../../../azure-fabric/README.md) 和 [`systems/azure-fabric/`](../../systems/azure-fabric/README.md)，详见 [退役审计](AZURE-DIRECTORY-RETIREMENT.md)。下文 STEP01–08 按原当时事实保留，不能当作 10 月 18 日现状。
->
 > 文档不是在本文件创建时就算完成迁移。**每个领域独立核对、合并并切换权威**，完成状态以合并后的 Main 和对应验收结果为准。
 
 ## 0. 迁移源和保护边界

@@ -7,7 +7,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 # Safe Operations — 运行前检查与恢复边界
 
-> **稳定操作原则，不是可直接执行的脚本。** 源自 [开发工作流](../development/DEVELOPMENT-WORKFLOW.md)、[历史经验](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/runbooks/development-lessons-cn.md)、[Portal](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/operations.md)、[Azure IaC](../../../azure-fabric/infra-terraform/README.md)。本次文档迁移没有实测当前集群或 Azure 状态。
+> **稳定操作原则，不是可直接执行的脚本。** 源自 [开发工作流](../development/DEVELOPMENT-WORKFLOW.md)、[历史经验](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/runbooks/development-lessons-cn.md)、[Portal](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/operations.md)、[Azure IaC](../../../azure/infra-terraform/README.md)。本次文档迁移没有实测当前集群或 Azure 状态。
 
 ## 每次运行前五项 Gate
 
