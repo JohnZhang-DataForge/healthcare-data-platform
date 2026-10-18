@@ -21,7 +21,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 | **TASK005 — Condition** | **PAUSED（优先级暂缓） / STEP00 READ-ONLY READY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 保留 STEP00 只读预检准备与原计划；重新启动 Condition 开发需另行决定，任何业务 COMMIT 须单独批准 |
 | **Platform Portal — Marquez / OpenLineage** | **前期实施/验收完成；下一阶段 Spark 接入方案讨论中** | 独立 PG14、Marquez Web/API、A3 Airflow 事件已真实验证；A4 隔离 Spark Smoke 有实际运行和部分读回证据 | **下一步如何接入真实 Spark 业务链路尚未确定**；Job↔Run 名称挂接和 Dataset I/O 完整血缘待处理，不直接启动新 Spark/共享资源 |
 | **Azure/Fabric — OMOP → OneLake** | **目标方案已敲定；IaC/Runner 工程及三个目标资源 Plan 完成；NO APPLY** | 已有 Azure Blob Landing / Workspace；Terraform 各组件资源定义、IAM 边界和 `Azure-Infra-TF` Workflow 在 Git；Lakehouse、Notebook、Pipeline 三个独立 Plan PASS | Exporter、真实 Notebook ETL、Pipeline 与 Notebook 绑定、Fabric 资源部署和数据 E2E 尚未讨论完成/实现；下一阶段先明确细节与验收门槛 |
-| **文档重建 / OpenSpec** | **STEP01–08 COMPLETE；STEP09 G0/G1 COMPLETE，G2–G7 未执行** | G0 静态审计完成；G1 [官方 CLI Init Run #39144400763](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144400763) 与 [再次 Init Run #39144489059](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144489059) 成功；仓库 `openspec/` 已生成最小结构（无 Specs/Changes 业务内容） | [G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 下一步 G2：最小项目配置/Agent 规则；G3 CI、G4 Self-Runner/GitHub 开发接力仍待实现；无业务 Runtime 操作 |
+| **文档重建 / OpenSpec** | **STEP01–08 COMPLETE；STEP09 G0–G2 COMPLETE，G3–G7 未执行** | G0 静态审计、G1 官方 CLI Init 成功；G2 [中文项目配置 Smoke Run #39145378211](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39145378211) 验证 CLI 注入的简体中文/英文结构/文档权威规则全部 PASS；仓库暂无业务 Specs/Changes | [G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 下一步 G3：永久 CI 和未来 `data-platform/**` 命名规则；G4 Agent/Self-Runner 接力仍待实现；无业务 Runtime 操作 |
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
@@ -113,11 +113,11 @@ Local PostgreSQL OMOP (authoritative)
 | STEP06 — Portal / Azure 专项文档 | **COMPLETE** — [PR #172](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/172) |
 | STEP07 — Operations/Decisions/Session + OpenSpec Readiness | **COMPLETE** — [PR #173](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/173) |
 | **STEP08 — 最终文档入口和权威校验** | **COMPLETE** — [PR #174](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/174)、[Final Audit](../migration/FINAL-DOCUMENTATION-AUDIT.md)（合并后正式生效） |
-| STEP09 — 引入同仓 OpenSpec | **NOT ON MAIN / NOT ADOPTED** |
+| STEP09 — 引入同仓 OpenSpec | **G0–G2 COMPLETE**：G1 [PR #216](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/216) 官方 CLI 初始化；G2 中文配置 [Run #39145378211](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39145378211)，后续 G3–G7 尚未实施 |
 
-截至 STEP08 终审源代码核对，`openspec/` **未出现在 Main**。GitHub 上另有尚未合并的 OpenSpec bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164)，它不能当成已采用的规范，也不在此次文档 PR 范围。当前 STEP01–08 的文档整理已完成（PR #174 合并后）；下一阶段才正式引入 OpenSpec，必须通过 CLI/配置真实验证。
+**历史事实**：在 STEP08 终审时 `openspec/` 尚未出现，旧 Bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) 后来关闭且未合并。**当前事实（2026-10-18）**：新 [PR #216](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/216) 已将官方 CLI 初始化生成的 `openspec/` 合并进入 Main；G2 的简体中文项目配置通过真实 CLI Smoke 验证。两者仅证明工具和配置落地，不表示业务 Specs/Changes、G3 CI 或 Runtime 验收已完成。
 
-**OpenSpec 迁移准备**：[Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../../architecture/decisions/README.md) · [Readiness Checklist](../migration/OPENSPEC-READINESS.md)。本轮没有初始化 OpenSpec。
+**OpenSpec 当前实施入口**：[G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) · [Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../../architecture/decisions/README.md)。G0–G2 已完成；G3 起按独立 PR 继续。
 
 ## 6. 这份状态文档如何更新
 
