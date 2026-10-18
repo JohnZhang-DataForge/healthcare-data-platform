@@ -1,5 +1,5 @@
 ---
-status: reviewed
+status: active
 scope: azure-fabric-terraform-component
 last_verified: 2026-10-18
 source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
@@ -7,7 +7,7 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Fabric Terraform — 基础设施组件
 
-> **迁移第一阶段（REVIEWED）**：本组件参照 [Data Platform 组件双入口](../../data-platform/README.md) 整理。**README 说明职责与边界， [CODE.md](CODE.md) 是 Terraform 唯一组件级源码导航**；深入的 IAM、OIDC、State 与历史 Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。旧源码区说明文件在最终链接切换和审核前暂时保留；本阶段不改变运行入口。
+> **已完成组件文档收口（ACTIVE）**：本组件参照 [Data Platform 组件双入口](../../data-platform/README.md) 整理。**README 说明职责与边界， [CODE.md](CODE.md) 是 Terraform 唯一组件级源码导航**；深入的 IAM、OIDC、State 与历史 Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。源码区旧说明文件在完成引用修复后退役；本次没有修改 Terraform 执行入口。
 
 ## 组件职责与系统位置
 

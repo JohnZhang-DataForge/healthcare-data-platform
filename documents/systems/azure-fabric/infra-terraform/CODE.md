@@ -1,5 +1,5 @@
 ---
-status: reviewed
+status: active
 scope: azure-fabric-terraform-source-map
 last_verified: 2026-10-18
 source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
@@ -7,7 +7,7 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Fabric Terraform — CODE 源码导航
 
-> **唯一 Terraform 组件源码地图（迁移第一阶段，REVIEWED）**。本页按 8ad52828599ae95cda95eda4d888fc601ebfdfdc 的 Git 树核对实际存在的文件，只记录源码归属、入口和关联依赖。功能介绍见 [README.md](README.md)，IAM/State/操作安全及历史验收见 [ARCHITECTURE.md](ARCHITECTURE.md)。**任何源码链接都不意味着已部署或允许 Apply**。
+> **唯一 Terraform 组件源码地图（ACTIVE）**。本页按 8ad52828599ae95cda95eda4d888fc601ebfdfdc 的 Git 树核对实际存在的文件，只记录源码归属、入口和关联依赖。功能介绍见 [README.md](README.md)，IAM/State/操作安全及历史验收见 [ARCHITECTURE.md](ARCHITECTURE.md)。**任何源码链接都不意味着已部署或允许 Apply**。
 
 ## Terraform 根目录与工作流
 
@@ -49,4 +49,4 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [Workspace State/Import 约束](ARCHITECTURE.md#iam-and-existing-resource-boundaries)：既有资源不因 Terraform 配置出现便可安全直接 Apply。
 - [历史七组件 Plan-only 证据](ARCHITECTURE.md#verified-plan-evidence)：结果仅证明对应历史 SHA/Run 的 Plan，**不是现时部署/数据端到端验证**。
 
-**维护要求**：未来调整 Root/Module/Bootstrap 的文件名、真实入口或权限所有者时，应在同一 PR 更新本 CODE.md。当前只是文档整理，未改动任何 `.tf`、`.tfvars`、`.json`、`.py` 或 Workflow。
+**维护要求**：未来调整 Root/Module/Bootstrap 的文件名、真实入口或权限所有者时，应在同一 PR 更新本 CODE.md。本次文档迁移未改动任何 `.tf`、`.tfvars`、`.json`、`.py` 或 Workflow。

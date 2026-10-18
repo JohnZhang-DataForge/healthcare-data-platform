@@ -1,5 +1,5 @@
 ---
-status: reviewed
+status: active
 scope: azure-fabric-terraform-technical-architecture-and-plan-evidence
 last_verified: 2026-10-18
 source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
@@ -7,7 +7,7 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Fabric Terraform — 技术架构、安全约束及历史验收
 
-> **迁移第一阶段（REVIEWED）**。依据现存 Terraform `README.md` 与 `docs/ARCHITECTURE.md` 的长期有效技术内容、Git 源文件和历史 GitHub Actions Run 整理；本次仅为文档静态审查，**没有读取当前云端资源/Remote State，也没有运行 Plan/Apply**。功能概述见 [README.md](README.md)，实际文件入口见 [CODE.md](CODE.md)。
+> **已完成组件文档收口（ACTIVE）**。依据现存 Terraform `README.md` 与 `docs/ARCHITECTURE.md` 的长期有效技术内容、Git 源文件和历史 GitHub Actions Run 整理；本次仅为文档静态审查，**没有读取当前云端资源/Remote State，也没有运行 Plan/Apply**。功能概述见 [README.md](README.md)，实际文件入口见 [CODE.md](CODE.md)。
 
 ## Root/module implementation model
 
