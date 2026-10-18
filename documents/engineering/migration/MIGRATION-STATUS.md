@@ -74,7 +74,7 @@
 - **用户确认**：TASK004 已关闭；Portal 前期实施完成、下一步 Spark 实际接入方案尚在讨论；Azure OMOP→Blob→Fabric Pipeline/Notebook→OneLake 方案已敲定，IaC/Workflow/Plan 完成但未 Apply，业务实施细节仍待讨论。
 - **交叉核验**：TASK004 Final Closeout + Run 38657060822/38657630069；Portal A3 实测与 A4 独立 Spark Smoke；Azure 三个 Fabric Item Plan Run 38799966270、38832798550、38832801221，全部 Plan-only。
 - **关键状态边界**：Portal 下阶段没有批准的新方案；Azure 只有资源定义与 Plan、Notebook/Pipeline 仍 fail-closed，Export/ETL/E2E 未实施；未执行任何共享资源或云端操作。
-- **未合并工作说明**：OpenSpec bootstrap PR #164 仍 open，不能代表 Main 已初始化 OpenSpec。
+- **STEP06 当时的未合并工作说明（历史）**：OpenSpec bootstrap PR #164 当时仍 open，不能代表当时 Main 已初始化 OpenSpec。此后 PR #164 已关闭未合并，新 OpenSpec G0–G4 已完成。
 
 ## 6. STEP05 — 组件和代码命名规范重建
 
@@ -95,7 +95,7 @@
 - **静态核验基线**：Healthcare `d1962f79e1c7337c372de1aebfaaec87dfc7d1c8`、Self-Runner `8f8cb877887540cbed697260c3e8154e218a49c7`。只读查 K8s/Portal/PG/Azure 技术资料、旧 Runbook、当前组件规范及未合并 OpenSpec PR #164。
 - **新权威**：[Operations](../operations/README.md)、[Safe Operations](../operations/SAFE-OPERATIONS.md)、[Decision Index](../../architecture/decisions/README.md)、[Session Coordination](../development/SESSION-COORDINATION.md)。不创建独立 `AGENT-HANDOFF.md`，OpenSpec Change/Tasks（未来）+ PR/Run（当前）承接接力状态。
 - **过时冲突**：旧 Runbook 把 TASK004 Airflow 写成 NEXT，旧 Portal Policy 把 A4 写成未执行，旧 OpenSpec PR #164 配置还指向 `docs/tasks/TASK-STATUS.md`；必须以本轮新权威为准，历史正文保留。
-- **只做准备**：[OPENSPEC-READINESS](OPENSPEC-READINESS.md) 说明 STEP08/09 Gate，当前不合并 PR #164、不执行 CLI、不写 `openspec/`。
+- **STEP07 当时只做准备（历史）**：[OPENSPEC-READINESS](OPENSPEC-READINESS.md) 记录 STEP08/09 Gate，当时不合并 PR #164、不执行 CLI、不写 `openspec/`。此后的 G0–G4 已另行完成，当前以 [正式计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 为准。
 - **运行安全**：不更改任何业务、Terraform、Self-Runner、Kubernetes、PG/S3 或 Azure；无 Live 验收。
 
 ## 9. STEP08 — 文档终审与入口权威切换
