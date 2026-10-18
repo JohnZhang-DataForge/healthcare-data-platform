@@ -1,0 +1,44 @@
+name: OpenSpec Trusted Change Gate
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  require-trusted-change:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      # Source for executable policy and tests comes ONLY from the trusted
+      # default branch, never from the PR being checked.
+      - name: Checkout trusted policy from default branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: policy
+          persist-credentials: false
+          fetch-depth: 1
+      # Candidate source is inspected strictly as passive Git tree / text.
+      # No make, pip, bash, tests, modules or scripts from candidate execute.
+      - name: Checkout candidate files as untrusted data
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Run trusted policy unit tests
+        run: python3 -m unittest discover -s policy/.github/quality/tests -p 'test_openspec_change_gate.py' -v
+      - name: Check PR candidate using only trusted base policy
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 policy/.github/quality/scripts/check_openspec_change_gate.py \
+            --repo-root "$GITHUB_WORKSPACE/candidate" \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --event "$GITHUB_EVENT_PATH"
