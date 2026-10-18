@@ -58,4 +58,4 @@
 
 当 `documents/` 与旧资料冲突：先在迁移追踪里登记源/差异/证据，再修订候选，未经审核不擅自改运行环境。涉及权限或安全，选择更保守的行为并请求必要授权。
 
-> **OpenSpec 约束**：现阶段只重建 `documents/`；没有经用户同意，不初始化 `openspec/`，也不提前将未实现功能写为 current spec。
+> **OpenSpec 约束**：OpenSpec G0–G3 已完成，G4 按 [开发接力生命周期](OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 接入 PR/静态验证；G4 不建业务 Change，不把尚未实现的计划写成 Current Specs。
