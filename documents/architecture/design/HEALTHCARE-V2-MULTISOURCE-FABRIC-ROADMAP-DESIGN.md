@@ -78,7 +78,7 @@ Local Observability: Airflow UI + Marquez     Fabric: Monitoring + Lineage
 ### 2.3 C：HL7 v2 → Fabric
 
 - 明确这里是 **HL7 v2.x 消息**，不是 FHIR（FHIR 本身也属于 HL7 标准家族）。
-- 使用 Mirth Connect（待部署）作为消息接入/ACK/解析和失败隔离边界；第一阶段考虑 ADT A01/A08 的合成测试消息，保存原文与可审计的解析输出。
+- Mirth Connect 为待选接入方案，不代表已采购或部署；开始 HL7 Change 前必须确认具体发行版、维护状态、许可及预算；第一阶段考虑 ADT A01/A08 合成测试消息，并保存原文与可审计解析输出。
 - 经 Azure Blob → Bronze → PySpark Silver；保留消息控制 ID、患者标识分配机构、消息时间、去重与重放信息，避免把消息重试当作新的临床事件。
 - 不默认把 ADT 直接写入本地 OMOP；与 FHIR/OMOP 的关联需要可核验的 crosswalk 或明确的模拟身份关联证据。
 
@@ -97,7 +97,7 @@ Local Observability: Airflow UI + Marquez     Fabric: Monitoring + Lineage
 
 **强制安全边界**：Fabric 原生 Workspace/Monitoring/Lineage 通常受 Workspace/身份权限保护，不能把分享 URL 视为匿名可访问。Airflow 和 Marquez API 不应匿名暴露。首选 GitHub Pages（或同类 HTTPS 静态站点）作为公开入口：一个主页、Local DP 页面、Fabric 页面；内容来自经审核的截图/JSON/摘要，并展示采集时间、Commit SHA、Run ID、数据 Batch/export_id 与验收状态。
 
-静态快照**必须标注历史时间**，不可伪装为实时监控；后续若开发只读代理/自动导出，需单独 Change、只读身份、匿名查询限制和安全审查。公开页面应在本地集群停机、Fabric Capacity 暂停时仍可查看已验证结果。
+静态快照**必须标注历史时间**，不可伪装为实时监控；静态 Showcase 不是实时交互 Portal。后续若开发只读代理/自动导出，需单独 Change、只读身份、匿名查询限制和安全审查。公开页面应在本地集群停机、Fabric Capacity 暂停时仍可查看已验证结果。
 
 ## 4. 仓库所有权及源码迁移
 
@@ -125,13 +125,13 @@ healthcare-data-platform/
 
 ## 5. OpenSpec 与建设顺序
 
-**OpenSpec 先于代码迁移，但不要求先写完全仓 Current Specs。** 按 [OpenSpec Adoption Design](OPENSPEC-ADOPTION-DESIGN.md) 的 G0–G4：从最新 Main 建立独立 Bootstrap PR，使用官方 CLI Init + Validate（实际版本和工具集成由执行时核查）；只建立最小 `openspec/` 及配置，不复制全部 `documents/` 或历史 `docs/`。
+**OpenSpec 先于代码迁移，但不要求先写完全仓 Current Specs。** 按 [OpenSpec Adoption Design](OPENSPEC-ADOPTION-DESIGN.md) 的 G0–G7（G0–G4 为治理体系 Bootstrap，G5 只审核首个 Change，G6 才执行源码迁移）：从最新 Main 建立独立 Bootstrap PR，使用官方 CLI Init + Validate（实际版本和工具集成由执行时核查）；只建立最小 `openspec/` 及配置，不复制全部 `documents/` 或历史 `docs/`。
 
 建议后续独立的 Change（名称为候选，实施时按范围拆分）：
 
 | 顺序 | Change 候选 | 范围 | 验收重点 |
 | --- | --- | --- | --- |
-| 0 | OpenSpec Bootstrap（独立 PR） | CLI / config / 静态验证 | 无业务 Runtime 副作用 |
+| 0 | OpenSpec Bootstrap（G0–G4，独立 PR） | CLI / config / 规范 CI / Agent 开发接力 | 无业务 Runtime 副作用；参见 [正式实施计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) |
 | 1 | `relocate-local-data-platform` | 根目录 → `data-platform/` | 路径/Workflow/Import/契约/回归；业务行为保持 |
 | 2 | `refactor-local-component-boundaries` | 旧 Task 命名及公共能力 | 新旧结果对照、兼容和回滚 |
 | 3 | `replicate-omop-to-fabric` | PG Exporter → Blob → Fabric → Delta | 一致性、双表对账、幂等 |
@@ -149,7 +149,7 @@ healthcare-data-platform/
 ## 6. 最小可展示成果与验收
 
 - **Local DP**：原 NEW_ONLY Person/Visit 路径迁移后继续通过 Import/Contract/受控回归；既有已提交 Batch 不自动重放；Marquez 已验证部分和未验证业务血缘明确区分。
-- **PG → Fabric MVP**：仅 `person` + `visit_occurrence`；Snapshot/Manifest/Notebook/Delta 对账，重复 export 不产生重复记录；验证 Source SHA、export_id、Fabric Job 与读回结果。
+- **PG → Fabric MVP**：仅 `person` + `visit_occurrence`；Snapshot/Manifest/Notebook/Delta 对账，重复 export 不产生重复记录；验证 Source SHA、export_id、Fabric Job 与读回结果。首个双表 E2E 不强制一次建设全部 Bronze/Silver/Gold 研究模型。
 - **FHIR/HL7**：独立批次/源身份，至少一条成功与一条失败/重试场景；Silver 结果可根据保留的来源标识追溯原始输入。
 - **研究侧**：一组经过验证的 SQL 查询或 Gold 数据产品，说明三源数据在 Fabric 中可被分析；不夸称已实现临床真实身份匹配。
 - **公开展示**：互联网匿名可访问、只读、稳定；Local/Fabric 两个页面有真实证据、更新时间与状态；不得公开管理端点、密钥、内部 IP/主机名、真实敏感健康记录。
