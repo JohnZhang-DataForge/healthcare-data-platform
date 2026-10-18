@@ -80,7 +80,8 @@ Condition/TASK005 状态为**业务开发暂缓，原 STEP00 READ-ONLY 就绪及
 | --- | --- | --- | --- |
 | Plan 更新 | 本文件及相关只读文档对齐 | [PR #209](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/209) 已合并，[Documentation Relative Links Run](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39136532662) SUCCESS | **COMPLETE（仅文档）** |
 | G0 静态基线审计 | G0 | [Baseline Audit](OPENSPEC-BASELINE-AUDIT.md)：双仓 SHA、开放 PR/过时 PR、官方 CLI/Node 前提、既有 CI/Workflow 缺口 | **COMPLETE（2026-10-18，只读；目标环境 Node/npm 未实测）** |
-| Bootstrap | G1–G4 | 官方 CLI 固定版本、初始化/配置/CI/Agent 接力；不混入业务代码移动 | **NOT STARTED；下一阶段 G1** |
+| 官方 CLI Bootstrap | G1 | GitHub-hosted Node `v22.23.3` / npm `10.9.9`，Registry `@fission-ai/openspec@1.14.3`；[首次 CLI Init Run #39144400763](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144400763) 与[已提交文件的再次 Init Run #39144489059](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39144489059) 均 SUCCESS；生成 `openspec/config.yaml`、`specs/.gitkeep`、`changes/archive/.gitkeep`，无 AI 工具集成 | **COMPLETE（GitHub-hosted Runner 的官方 CLI Init，非 Self-Runner 安装）** |
+| 后续治理 | G2–G4 | 最小项目 context、规则/CI、Agent/PR/Self-Runner 连接；不混入业务代码移动 | **NOT STARTED；下一阶段 G2** |
 | 首个 Change | G5 | `relocate-local-data-platform` Proposal/Design/Tasks/Static Validate，单独审查 | **NOT STARTED** |
 | 物理迁移 | G6 | 分组件/切片 PR；路径兼容、CODE Map、测试；Live Gate 单独授权 | **NOT STARTED** |
 | 后续能力 | G7 | 分领域 Changes，实际测试 + PR/Run + 独立读回后才归档 | **NOT STARTED** |
