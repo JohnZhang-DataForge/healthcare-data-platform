@@ -6,7 +6,7 @@ context: |
   保留 OpenSpec 官方模板的固定英文标题和结构标记，不翻译或改写，如 Why、What Changes、Capabilities、Impact、ADDED/MODIFIED/REMOVED/RENAMED Requirements、Requirement:、Scenario:、GIVEN、WHEN、THEN、SHALL、MUST。
   YAML 字段、CLI 命令、文件名和路径、代码/API/资源标识符均保持英文原样；Change/Capability 名称使用英文功能名（kebab-case）。新维护代码按现行组件/功能命名规范，不使用 taskNNN/stepNNN 作为代码标识。
   权威入口：AGENTS.md、documents/README.md、documents/engineering/status/PROJECT-STATUS.md、documents/engineering/development/CODE-ORGANIZATION-AND-NAMING.md、documents/engineering/operations/SAFE-OPERATIONS.md。
-  已批准未来本地平台源码根目录为 local-data-platform/，旧候选 data-platform/ 已废弃；当前根目录业务源码尚未搬迁，documents/systems/data-platform/ 的文档组件导航不变。G3 旧路径 CI 还需单独适配验证。
+  当前本地平台业务源码根目录为 local-data-platform/（PR #225），旧候选 data-platform/ 已废弃；原根级业务路径已移除。仓库质量检查工具现归 .github/quality/（PR #227）；documents/systems/data-platform/ 的组件文档导航仍然不变且链接已调整（PR #226）。当前 Active Change 为 relocate-local-data-platform，是对已合并 PR 的追溯纳管，运行路径调试与 E2E 尚未完成；不可把本次 Change 误认为事前评审。下一轮才处理强制 Change Gate/分支保护等流程问题。
   documents/ 维护架构、系统、开发与运维知识；openspec/specs/ 只表示经核实的已采用行为，尚未实现的目标属于 openspec/changes/。OpenSpec 本身不授予共享运行环境的操作权限，也不代替 GitHub PR、CI 或独立运行读回。
 
 rules:
