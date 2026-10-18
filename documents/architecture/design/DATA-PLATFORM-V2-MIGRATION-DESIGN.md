@@ -16,10 +16,10 @@ evidence: []
 
 本设计原先覆盖“目录迁移 + Task004 功能重命名 + 公共模块提取 + 运行切换”的**广义 V2 重构**。结合后续的多来源 Fabric 目标，实施时应分成两个独立里程碑，**不要将本稿后文的广义 P0–P6 全部塞进首次物理迁移 PR**：
 
-1. **V2 Relocation（先）**：在已验证的 OpenSpec Bootstrap 之后，按组件将旧根目录本地应用源码迁到 `data-platform/`，同步必需的 Workflow/Docker/Import/CI/CODE.md 引用；保持业务合同、运行标识、数据结果与权限保护不变。多 PR、可回滚，完成后单独验收“目录物理迁移”。
+1. **V2 Relocation（先）**：在 OpenSpec [G0–G4 治理 Bootstrap](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 之后，G5 先审核 `relocate-local-data-platform` 的一小段目录迁移 Change（不移动源码），G6 才按组件将旧根目录本地应用源码迁到 `data-platform/`。先保留 GitSync/DAG/Docker/Import/CI/CODE.md 路径兼容，再经单独 Gate 切换运行入口；保持业务合同、运行标识、数据结果与权限保护不变。多 PR、可回滚，完成后单独验收“目录物理迁移”。
 2. **V2 Modularization（后）**：`task004` 维护源码功能命名、模块共享/解耦与正式业务切换，继续使用本设计的原有 P0–P6 分项和安全门禁，但不作为 Fabric MVP 的一律前置条件。
 
-项目优先级新顺序：**OpenSpec G2 → V2 Relocation → PG OMOP→Fabric E2E → FHIR→Fabric → HL7 v2/Mirth→Fabric → 研究产品与双 Portal 公开只读展示**。V2 Modularization 可按依赖插入或分阶段后移；TASK005 Condition 业务开发暂停、保留原验收与计划。跨系统目标由 [Healthcare V2 多数据源与 Fabric 设计](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md) 统一描述。
+项目优先级新顺序：**OpenSpec G0–G4 → G5 首个 Change 审核 → G6 V2 Relocation → PG OMOP→Fabric E2E → FHIR→Fabric → HL7 v2/Mirth→Fabric → 研究产品与双 Portal 公开只读展示**。V2 Modularization 可按依赖插入或分阶段后移；TASK005 Condition 业务开发暂停、保留原验收与计划。跨系统目标由 [Healthcare V2 多数据源与 Fabric 设计](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md) 统一描述。
 
 原文第 14 节的 “Data Platform V2 Migration Completed” 指**广义全部重构完成**，不等于仅 Relocation 完成。两个状态必须分别报告，不能在首次源码移动通过后误报整体 V2 已完成。
 
@@ -389,7 +389,7 @@ P0–P4 的成功不等于 P5 的真实 E2E 成功。未获得运行授权时停
 - 回退路径与历史证据保留；
 - 删除 `azure/` 前完成独立的 Terraform/Workflow/链接审核。
 
-**当前完成的只是“中文迁移设计讨论稿”，尚未迁移源码、重命名 Task004、部署 V2、运行任何业务数据提交或删除 `azure/`。**
+**当前完成的只是“中文迁移设计讨论稿”，尚未迁移源码、重命名 Task004、部署 V2、运行任何业务数据提交或删除 `azure/`。** 各 Gate 执行与验收以 [OpenSpec G0–G7 计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 为准。
 
 ## 15. 相关资料
 
