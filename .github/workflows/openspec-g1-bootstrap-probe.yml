@@ -1,0 +1,67 @@
+name: OpenSpec G1 Official CLI Bootstrap Probe
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/openspec-g1-bootstrap-probe.yml'
+      - 'openspec/**'
+permissions:
+  contents: read
+jobs:
+  official-cli-init:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact PR HEAD
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Pin Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Inspect Node, npm and pinned Registry package
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "#### OPENSPEC_G1_PREREQUISITES_OUTPUT_BEGIN ####"
+          node --version
+          npm --version
+          npm view @fission-ai/openspec@1.14.3 version engines --json --fetch-retries=1
+          echo "#### OPENSPEC_G1_PREREQUISITES_OUTPUT_END ####"
+      - name: Install pinned OpenSpec CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global @fission-ai/openspec@1.14.3 --no-audit --no-fund
+          echo "#### OPENSPEC_G1_CLI_VERSION_OUTPUT_BEGIN ####"
+          openspec --version
+          echo "#### OPENSPEC_G1_CLI_VERSION_OUTPUT_END ####"
+          test "$(openspec --version | tr -d '[:space:]' | sed 's/^v//')" = "1.14.3"
+      - name: Official init in PR workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "#### OPENSPEC_G1_INIT_OUTPUT_BEGIN ####"
+          openspec init --tools none --no-animation
+          echo "#### OPENSPEC_G1_INIT_OUTPUT_END ####"
+          test -f openspec/config.yaml
+          test -d openspec/changes
+          test -d openspec/specs
+          echo "#### OPENSPEC_G1_GENERATED_FILES_BEGIN ####"
+          find openspec -maxdepth 3 -type f -print | sort
+          echo "#### OPENSPEC_G1_GENERATED_CONFIG_BEGIN ####"
+          cat openspec/config.yaml
+          echo "#### OPENSPEC_G1_GENERATED_CONFIG_END ####"
+          echo "#### OPENSPEC_G1_GENERATED_FILES_END ####"
+          echo "#### OPENSPEC_G1_SCHEMAS_BEGIN ####"
+          openspec schemas
+          echo "#### OPENSPEC_G1_SCHEMAS_END ####"
+      - name: Preserve official generated files for reviewed Git commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: openspec-g1-cli-generated-${{ github.event.pull_request.head.sha }}
+          path: openspec/
+          include-hidden-files: true
+          retention-days: 30
