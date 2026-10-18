@@ -81,7 +81,7 @@ source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
 
 ### 4.1 Terraform 的组件组织与状态
 
-- Healthcare canonical IaC：[Azure/Fabric infra-terraform](../../azure-fabric/infra-terraform/README.md)。各 `components/<name>/` 是独立 root，调用 `modules/<name>/`，拥有自己 Remote State key `dev/<component>.tfstate`。
+- Healthcare canonical IaC：[Azure/Fabric infra-terraform](../systems/azure-fabric/infra-terraform/README.md)。各 `components/<name>/` 是独立 root，调用 `modules/<name>/`，拥有自己 Remote State key `dev/<component>.tfstate`。
 - GitHub 执行器：[Self-Runner `Azure-Infra-TF`](https://github.com/JohnZhang-DataForge/Self-Runner/actions/workflows/azure-infra.yaml)。以 GitHub OIDC/Azure Blob remote backend 跑 `fmt/init/validate/plan`；源码 checkout `main`，真正操作应固定日志显示的 Healthcare SHA。
 - `operation` 是 `plan|apply`（默认 Plan）；**工具支持 Apply 并不意味着本次获得授权**。目前三个 MVP Item 仅做真实 Plan，不执行 Apply。
 - Azure RBAC 与 Fabric Workspace/OneLake Data Access IAM 互不等价；IAM 配置分组件管理，`foundation-iam` 仅共享 RG 级别，OneLake 的 access security 属 Preview，默认 `data_access_roles={}` 不生成权限。不能从 Terraform Plan 推断身份数据面权限完整。
