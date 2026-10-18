@@ -14,6 +14,8 @@
 
 现有 OpenSpec Static Validation 持续验证官方 Schema / Change 格式，Change Gate 只处理**必有 Change 及 PR 关联**，二者都必须通过。
 
+**受信任执行基线的分阶段上线**：首次 PR #230 负责将 Checker/测试/新 Workflow 正式加入 Main；它的 `pull_request` 工作流会从本次 PR Head 执行代码，**还不具备对恶意自修改 PR 的安全防护**。在 Checker 先进入 Main 后，单独跟进将 Gate 改为 `pull_request_target` 中执行 Base Branch 的受信任 Checker 和单测，HEAD 仅作为只读 Checkout/Data 输入，`contents: read` 并禁用凭据持久化，不执行 HEAD 仓库源码。最终再考虑 Required Check；绝不把过渡态的单次 PASS 当成已解决自修改绕过风险。
+
 ### B. 实质性变更与豁免
 
 默认所有改动都需要 Change。仅当 PR Body 有单独一行 `OpenSpec-Exemption: docs-only`，且修改文件**全部属于** `README.md` 或 `documents/**/*.md/.mdx`，且未修改以下治理/架构/状态敏感区时豁免：
