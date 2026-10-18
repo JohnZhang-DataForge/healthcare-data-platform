@@ -135,6 +135,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 **在 `spark/` 下新增、删除、移动或重命名任意源码、JSON Contract、YAML 模板，或变更本组件负责的 `scripts/` Shell 时，必须在同一个 PR 修改本 `CODE.md`。** 入口、职责、关键接口或依赖变化也必须审查导航内容。普通内部重构未影响导航时不要求无意义地更改文件。
 
-[CODE Map CI](../../../../scripts/quality/check_component_code_map.py) 除 Airflow / Apps 外，对 Spark 的源码清单完整性、缺失/失效/重复链接及同 PR 同步作静态校验。当前收录 **44 个文件：18 Python、14 JSON、12 YAML 模板**；以后以 Git Tree 为准，不把这个统计当永久常量。
+[CODE Map CI](../../../../.github/quality/scripts/check_component_code_map.py) 除 Airflow / Apps 外，对 Spark 的源码清单完整性、缺失/失效/重复链接及同 PR 同步作静态校验。当前收录 **44 个文件：18 Python、14 JSON、12 YAML 模板**；以后以 Git Tree 为准，不把这个统计当永久常量。
 
 历史 `task002`、`task003`、`task004` 模板/代码/合同仍可能用于兼容，不能因导航整理而修改、重新运行或批量 Rename。所有 `*.yaml.tpl` 必须先检查镜像 Digest、Namespace、ServiceAccount、S3 Batch Prefix 和共享 Spark 资源并发；新源码按 [组件命名规范](../../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md) 管理。

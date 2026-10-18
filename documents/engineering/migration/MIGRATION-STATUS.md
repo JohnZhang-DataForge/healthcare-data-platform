@@ -79,7 +79,7 @@
 ## 6. STEP05 — 组件和代码命名规范重建
 
 - **Healthcare 基线**：`2c85b485381a72425506829fd321d93b164a231d`；清点已有 apps/airflow/spark/sql/scripts/images/kubernetes/tests 中带 Task ID 的文件路径及关键 `task004_cdm` ↔ Writer 镜像/PG API 依赖。
-- **强制新增代码命名**：Domain + Component + Capability；Task/Step 只用于 PR/计划/运行记录/Legacy 证据。已新增 [规范](../development/CODE-ORGANIZATION-AND-NAMING.md)、[新增路径检查](../../../scripts/quality/check_new_code_names.py)、[CI Workflow](../../../.github/workflows/code-component-naming-check.yml)。
+- **强制新增代码命名**：Domain + Component + Capability；Task/Step 只用于 PR/计划/运行记录/Legacy 证据。已新增 [规范](../development/CODE-ORGANIZATION-AND-NAMING.md)、[新增路径检查](../../../.github/quality/scripts/check_new_code_names.py)、[CI Workflow](../../../.github/workflows/code-component-naming-check.yml)。
 - **交付**：[组件目录](../../systems/data-platform/README.md) 和五个独立 README、[Legacy 重构计划](../development/LEGACY-CODE-REFACTOR-PLAN.md)。文档审核并不意味着旧 Runtime 源码已经 Rename。
 - **安全范围**：不得借重命名自动修改旧 `etl.task004_*`、Batch/Manifest、镜像固定 Digest 或重新触发已经验收的 COMMIT。
 
