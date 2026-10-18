@@ -174,23 +174,26 @@ def main() -> int:
     parser.add_argument("--base", required=True)
     parser.add_argument("--head", required=True)
     parser.add_argument("--event", type=Path, required=True)
+    parser.add_argument("--repo-root", type=Path, default=REPO,
+                        help="Path to an untrusted PR HEAD checkout, inspected as data only")
     args = parser.parse_args()
     try:
         body = json.loads(args.event.read_text(encoding="utf-8"))["pull_request"]["body"]
         if body is None:
             body = ""
-        paths = changed_paths(args.base, args.head)
+        repo_root = args.repo_root.resolve(strict=True)
+        paths = changed_paths(args.base, args.head, root=repo_root)
         def base_has_active(change_id: str) -> bool:
             for filename in (".openspec.yaml", "tasks.md"):
                 r = subprocess.run(
                     ["git", "cat-file", "-e",
                      f"{args.base}:openspec/changes/{change_id}/{filename}"],
-                    cwd=REPO, capture_output=True, check=False,
+                    cwd=repo_root, capture_output=True, check=False,
                 )
                 if r.returncode != 0:
                     return False
             return True
-        passed, reason = evaluate(paths, body, REPO, base_has_active)
+        passed, reason = evaluate(paths, body, repo_root, base_has_active)
     except (KeyError, ValueError, OSError, UnicodeError, subprocess.CalledProcessError) as ex:
         passed, reason = False, f"Validation error: {ex}"
     print("OPENSPEC_CHANGE_GATE=" + ("PASS" if passed else "FAIL"))
