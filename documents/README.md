@@ -1,6 +1,6 @@
 # Healthcare Data Platform — 文档新入口
 
-> **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 G0–G2 完成（官方 CLI 初始化及中文项目配置），G3 CI 待实施。
+> **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 G0–G3 COMPLETE；G4 Agent/PR/Self-Runner 接力实施中。
 >
 > 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与未来 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
@@ -22,7 +22,7 @@
 ## 最终文档终审与 OpenSpec 下一步（STEP08）
 
 - **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — STEP08 当时的 25 份文档链接审计（历史统计，并非现行 `documents/` 文档总数）、旧入口权威纠偏及后续边界。
-- [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 的唯一阶段定义、命名 CI、首个 Change 及迁移验收门槛；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。**G1 官方 Init 与 G2 简体中文项目配置均已完成；下一阶段 G3 CI 集成。**
+- [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 的唯一阶段定义、命名 CI、首个 Change 及迁移验收门槛；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。**G0–G3 已完成；G4 Agent/PR/Self-Runner 接力进行中，参见 [生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md)。**
 
 ## 长期运维与架构决策（STEP07 已审核）
 
@@ -43,7 +43,7 @@
 
 ## 当前项目状态（STEP04 已审核）
 
-- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 Condition 业务暂缓但保留只读预检准备、OpenSpec G0–G2 已完成、G3–G7 待实施、Portal Spark 讨论中、Azure OneLake-first Terraform PLAN-ONLY。
+- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 Condition 业务暂缓但保留只读预检准备、OpenSpec G0–G3 已完成、G4 进行中、G5–G7 尚未开始、Portal Spark 讨论中、Azure OneLake-first Terraform PLAN-ONLY。
 
 ## 当前整体架构（STEP03 已审核）
 
@@ -65,7 +65,7 @@
 | `documents/` | Architecture 管全局与决策；Systems 管子系统组件及源码导航；Engineering 管开发、运维、迁移与项目状态。新旧文档并存期间按迁移门槛逐步切换。 |
 | [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | **仅 Git 历史快照**：旧架构、Task、Runbook、已验收证据，不存在于最新 Main；如需查阅可点开冻结链接 |
 | [`contracts/`](../contracts/) · [Synthea CODE](systems/data-platform/synthea/CODE.md) · [OMOP CODE](systems/data-platform/omop/CODE.md) | 具体行为合同和数据 Schema 等以当前 Git 源码与有效 Contract 为准，不因文档搬迁而改写 |
-| `openspec/`（未来） | **当前 Main 尚未初始化**；未来用 Specs / Changes 管可验证行为与开发接力，不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
+| `openspec/`（已初始化，业务 Specs 仍为空） | Specs / Changes 将管理经验证行为与开发接力，不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
 
 历史 `docs/` 快照存在互相矛盾的日期记录；不得仅按文件名中的 CURRENT 或文件创建日期认定事实。对代码/运行状态的陈述必须标明 **Source SHA 与对应验收证据**。有不一致时先记录，停止未经核实的权威切换。
 
