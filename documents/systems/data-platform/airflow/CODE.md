@@ -85,6 +85,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 **新增、删除、移动或重命名本组件负责的 `airflow/`、`apps/`、`images/`、`kubernetes/`、`scripts/` 下的源文件，必须在同一个 PR 同步修改本 CODE.md**，并检查现有相对链接、测试入口和真实依赖。调整现有文件的职责、入口或重要依赖时也要同步更新；普通内部实现变更可核对后确认地图无需修改。
 
-CI 的 [Component Code Naming](../../../../.github/workflows/code-component-naming-check.yml) 使用 [Code Map Sync Guard](../../../../scripts/quality/check_component_code_map.py) 对 Airflow 文件增删/改名执行最小检查，且校验这里列出的 `airflow/dags/*.py` 文件清单与实际源码一致。现在 `apps/` 的源代码由 Airflow、Synthea、Landing、OMOP 四份 CODE.md 分别拥有，并通过同一个 CI 自动检查；其它尚未建立 CODE.md 的目录不宣称覆盖。
+CI 的 [Component Code Naming](../../../../.github/workflows/code-component-naming-check.yml) 使用 [Code Map Sync Guard](../../../../.github/quality/scripts/check_component_code_map.py) 对 Airflow 文件增删/改名执行最小检查，且校验这里列出的 `airflow/dags/*.py` 文件清单与实际源码一致。现在 `apps/` 的源代码由 Airflow、Synthea、Landing、OMOP 四份 CODE.md 分别拥有，并通过同一个 CI 自动检查；其它尚未建立 CODE.md 的目录不宣称覆盖。
 
 **运行限制**：DAG/Smoke 代码存在不等于允许运行。已完成 Batch 不能随意重放；Writer UNKNOWN 需先只读核实 Claim/Stage/Checkpoint。参见 [组件说明](README.md) 和 [最终 E2E 历史验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。

@@ -14,7 +14,7 @@ PATTERN = re.compile(r"(?i)(?<![A-Za-z0-9])(?:task|step)[-_]?\d+[A-Za-z]?(?![A-Z
 ROOTS = (
     "apps/", "spark/", "airflow/", "sql/", "scripts/", "tests/", "images/",
     "kubernetes/", "contracts/", "azure/", "azure-fabric/", "platform-portal/",
-    "config/", "data-platform/", ".github/workflows/",
+    "config/", "data-platform/", "local-data-platform/", ".github/workflows/", ".github/quality/",
 )
 LEGACY_ROOTS = (
     "apps/", "spark/", "airflow/", "sql/", "scripts/", "tests/", "images/",

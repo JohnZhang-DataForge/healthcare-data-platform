@@ -41,7 +41,7 @@ evidence: []
 
 ## 3. G3 命名 CI 与 G6 迁移特例
 
-**G3 实施前问题（历史基线，已由 PR #218 修复）**：当时 [Workflow](../../../.github/workflows/code-component-naming-check.yml) 的 `pull_request.paths` 和 [Checker](../../../scripts/quality/check_new_code_names.py) 的 `ROOTS` 尚未覆盖 `data-platform/`，仅凭 `git diff --no-renames --diff-filter=A` 无法安全区分部分旧文件纯搬迁和违规新增。**当前 Main 已覆盖 `data-platform/**` 并启用在 Base 预批准、内容 Blob 严格一致的 legacy 搬迁审查；见本节 G3 完成证据。**
+**G3 实施前问题（历史基线，已由 PR #218 修复）**：当时 [Workflow](../../../.github/workflows/code-component-naming-check.yml) 的 `pull_request.paths` 和 [Checker](../../../.github/quality/scripts/check_new_code_names.py) 的 `ROOTS` 尚未覆盖 `data-platform/`，仅凭 `git diff --no-renames --diff-filter=A` 无法安全区分部分旧文件纯搬迁和违规新增。**当前 Main 已覆盖 `data-platform/**` 并启用在 Base 预批准、内容 Blob 严格一致的 legacy 搬迁审查；见本节 G3 完成证据。**
 
 G3 必须：
 
@@ -53,7 +53,7 @@ G3 必须：
 **G3 已落实的受限搬迁机制（2026-10-18，PR #218）**：
 
 - 永久 [OpenSpec Static Validation](../../../.github/workflows/openspec-validation.yml) 使用 GitHub-hosted Node 22、CLI 1.14.3；官方 Schema / 中文上下文、`validate --all --strict`、临时 Change 正反用例验证。当前仓库 **0 个 Current Specs、0 个 Active Changes**，空集 PASS **不代表业务 Specs 验收**。临时测试 Change 只在 Runner 的临时目录创建。
-- [Component Naming Workflow](../../../.github/workflows/code-component-naming-check.yml) 和 [Naming Checker](../../../scripts/quality/check_new_code_names.py) 检查 `data-platform/**`；[CODE Map Checker](../../../scripts/quality/check_component_code_map.py) 将未来目录纳入现有组件文件所有权与路径链接校验，仍要求对应 CODE.md 在同一 PR 同步。
+- [Component Naming Workflow](../../../.github/workflows/code-component-naming-check.yml) 和 [Naming Checker](../../../.github/quality/scripts/check_new_code_names.py) 检查 `data-platform/**`；[CODE Map Checker](../../../.github/quality/scripts/check_component_code_map.py) 将未来目录纳入现有组件文件所有权与路径链接校验，仍要求对应 CODE.md 在同一 PR 同步。
 - 精确审批清单 [`.github/legacy-relocations.json`](../../../.github/legacy-relocations.json) 初始为空。需**先经独立 PR 审核并合并**具体 `old_path / new_path / source_commit / blob_sha` 映射（完整 SHA）；下一份纯移动 PR 的 Naming Gate **仅从其 Base Commit 读取已批准名单**，验证 Source Commit 是 Base 祖先、源文件在该 Commit 与 Base 内容 Blob 相同、目标仅为 `data-platform/<old_path>`、旧路径已在 HEAD 删除、目标 Blob 与源 Blob 完全一致。PR 内自加豁免、带修改搬运、夹带新的违规路径均失败，任何变更行为不得冒充纯物理搬迁；G6 使用前另作逐文件审查。清单必须在迁移完成后收口清理，不能保留无限期豁免。
 - 正向临时 Change 返回 Exit 0，缺少 Scenario 的负向 Change 返回 Exit 1；新的 `data-platform/scripts/task999/step03.sh` 以及混入历史搬迁的新 Task/Step 名称均由单元测试拒绝。证据为 [OpenSpec Run #39148008534](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008534)、[Naming Run #39148008629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008629)，目标 HEAD `3f39781167dde125c806a44838ccf7e1f0060e74`。未执行 K8s、业务 SQL、Terraform 或 Self-Runner。
 - **G4 进入条件（G3 已满足）**：PR #218 已合并 Main，最终 PR HEAD `39972abf19535d892bc5759fd792187c89f29d67` 上的 [OpenSpec Run #39148192774](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192774)、[Component Naming Run #39148192762](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192762)、[Documentation Relative Links Run #39148192871](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192871) 三项 SUCCESS，Main Merge SHA `b28660a28e7c9d6b72cc64ae19d3584d7f6f52e9`。G4 已隔离 Self-Runner 对已删除旧 `docs/BASELINE.md` 的历史依赖，新增独立只读 PR 接力；不直接运行旧跨仓流水线。
@@ -64,7 +64,7 @@ G6 中无需立即 Rename 已验收的旧 `task004` 文件。应先保留兼容�
 
 **本次仅前置 Naming Change**：经用户同意的 `local-data-platform/` 名称由独立文档 Change 执行并归档；`relocate-local-data-platform` 仍应按本节正式设计、选切片与验收。实际采用“在隔离开发分支先整体复制业务源码 → 静态/构建/固定样例对比 → 独立批准的运行切换 → 退役旧入口”的候选策略，但不可用并存目录绕过纯 `git mv` 白名单、命名检查或单 Writer Gate。具体复制分类及 PR 拆分必须在 G5 依赖审计后决定。
 
-**G6 前置 CI 迁移 Gate（尚未实施）**：现有 [Naming Workflow](../../../.github/workflows/code-component-naming-check.yml)、[Naming Checker](../../../scripts/quality/check_new_code_names.py)、[CODE Map Checker](../../../scripts/quality/check_component_code_map.py) 和 [Relocation Approval](../../../.github/legacy-relocations.json) 中的 `data-platform/**` 只代表历史通过检查的候选。先单独适配 `local-data-platform/**` 并验证合法、违规新增、旧 Blob 搬迁及混合拷贝场景，再审迁移清单。不得默认两套根目录长期并存。
+**G6 前置 CI 迁移 Gate（尚未实施）**：现有 [Naming Workflow](../../../.github/workflows/code-component-naming-check.yml)、[Naming Checker](../../../.github/quality/scripts/check_new_code_names.py)、[CODE Map Checker](../../../.github/quality/scripts/check_component_code_map.py) 和 [Relocation Approval](../../../.github/legacy-relocations.json) 中的 `data-platform/**` 只代表历史通过检查的候选。先单独适配 `local-data-platform/**` 并验证合法、违规新增、旧 Blob 搬迁及混合拷贝场景，再审迁移清单。不得默认两套根目录长期并存。
 
 
 **首次选中的切片以低风险路径为优先**，先完成全仓依赖图，再按实际 Workflow/DAG/Docker 影响确定顺序，不能在设计阶段假定任意目录完全无运行引用：

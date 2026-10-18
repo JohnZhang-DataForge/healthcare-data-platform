@@ -90,7 +90,7 @@ The component README describes responsibilities; the component CODE.md links dir
 | [`scripts/`](local-data-platform/scripts) · [业务组件 CODE](documents/systems/data-platform/README.md) · [Developer CODE](documents/engineering/development/CODE.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
 | [`spark/`](local-data-platform/spark) · [CODE](documents/systems/data-platform/spark/CODE.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
 | [`sql/`](local-data-platform/sql) · [Landing CODE](documents/systems/data-platform/landing/CODE.md) · [OMOP CODE](documents/systems/data-platform/omop/CODE.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
-| [`tests/`](local-data-platform/tests) · [Repository quality tests](tests/quality) | Unit, contract and regression tests; repository-wide quality checks remain at root |
+| [`tests/`](local-data-platform/tests) · [Repository quality tests](.github/quality/tests) | Unit, contract and regression tests; repository-wide quality checks remain at root |
 
 ## Start here
 

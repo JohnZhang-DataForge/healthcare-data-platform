@@ -13,9 +13,11 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`check_component_code_map.py`](../../../scripts/quality/check_component_code_map.py) | [STATIC CI] Git diff/tree 组件 CODE.md 全量导航和新增/删除同步 CI Gate（本 PR 扩展） |
-| [`check_documentation_links.py`](../../../scripts/quality/check_documentation_links.py) | [STATIC CI] 所有 tracked Markdown 相对文件/目录链接完整性检测（离线、仅路径） |
-| [`check_new_code_names.py`](../../../scripts/quality/check_new_code_names.py) | [STATIC CI] 阻止新增正式源码采用 Task/Step 命名；历史文件豁免 |
+| [`check_component_code_map.py`](../../../.github/quality/scripts/check_component_code_map.py) | [STATIC CI] Git diff/tree 组件 CODE.md 全量导航和新增/删除同步 CI Gate（本 PR 扩展） |
+| [`check_documentation_links.py`](../../../.github/quality/scripts/check_documentation_links.py) | [STATIC CI] 所有 tracked Markdown 相对文件/目录链接完整性检测（离线、仅路径） |
+| [`check_new_code_names.py`](../../../.github/quality/scripts/check_new_code_names.py) | [STATIC CI] 阻止新增正式源码采用 Task/Step 命名；历史文件豁免 |
+
+全仓质量工具统一放在 `.github/quality/scripts/`，对应单元测试位于 [`.github/quality/tests/`](../../../.github/quality/tests)；这些不是 Local Data Platform 业务文件。
 
 ## 开发环境示例配置
 
@@ -33,10 +35,10 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 ## 维护与风险边界
 
-- **新增、删除、移动、改名这里负责的 `scripts/` / `config/` 源文件，必须在同一 PR 修改本 CODE.md**。组件脚本应更新自己所在的组件 CODE.md；工具脚本、开发环境示例归本页管理。
+- **新增、删除、移动、改名这里负责的 `.github/quality/scripts/`、`local-data-platform/scripts/` / `local-data-platform/config/` 源文件，必须在同一 PR 修改本 CODE.md**。组件脚本应更新自己所在的组件 CODE.md；工具脚本、开发环境示例归本页管理。
 - `config/local.env.example` 只示意本地目录、Synthea 来源身份和旧批次/S3 网络设置，**不是当前 Batch 的事实来源，也不是机密凭据容器**。PG/S3 真实 Secret 来自受控运行环境，绝不将真实 `.env` 或 Token 提交到 Git。
 - 许多 `prepare` / `repair` Shell 会写源文件或报告；`reset`、`upsert`、`publish` 等可能改写本地、K8s、S3 或数据库状态。静态列入导航不代表已经验证它们现在可重跑。
 - 需要精确执行哪个脚本时，应核对完整源码、依赖、目标路径、固定 SHA/Batch、权限和幂等/回滚边界，不能只看本页的风险摘要。
-- [CODE Map Sync Guard](../../../scripts/quality/check_component_code_map.py) 通过 Git Tree/Diff 校验唯一所有者、路径完整性和增删时同 PR 同步；其作用是静态质量保护，非 Runtime/业务验收。
+- [CODE Map Sync Guard](../../../.github/quality/scripts/check_component_code_map.py) 通过 Git Tree/Diff 校验唯一所有者、路径完整性和增删时同 PR 同步；其作用是静态质量保护，非 Runtime/业务验收。
 
 **Canonical location (documentation hierarchy cutover):** this Developer CODE map is maintained at `documents/engineering/development/CODE.md` and checked by `Component Code Naming` CI. The previous `documents/development/CODE.md` is a retired historical copy, not a second owner.

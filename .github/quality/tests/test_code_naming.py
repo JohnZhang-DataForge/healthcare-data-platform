@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-PATH = Path(__file__).resolve().parents[2] / "scripts/quality/check_new_code_names.py"
+PATH = Path(__file__).resolve().parents[3] / ".github/quality/scripts/check_new_code_names.py"
 SPEC = importlib.util.spec_from_file_location("code_naming", PATH)
 assert SPEC and SPEC.loader
 policy = importlib.util.module_from_spec(SPEC)
@@ -14,6 +14,8 @@ class NewCodeNamingTests(unittest.TestCase):
     def test_reject_new_task_step_code(self):
         for path in (
             "data-platform/scripts/task999/step03.sh",
+            "local-data-platform/scripts/task999/step03.sh",
+            ".github/quality/scripts/task999.py",
             "data-platform/airflow/dags/task004_pipeline.py",
             "apps/task005/condition.py", "airflow/dags/task005_pipeline.py",
             "spark/apps/task004/new_adapter.py", "sql/omop/step04a_add.sql",
@@ -30,6 +32,8 @@ class NewCodeNamingTests(unittest.TestCase):
     def test_allow_component_capability_names(self):
         for path in (
             "data-platform/apps/omop_writer/condition_writer.py",
+            "local-data-platform/apps/omop_writer/condition_writer.py",
+            ".github/quality/scripts/check_example.py",
             "data-platform/scripts/omop/verify_fk.sh",
             "apps/omop_writer/condition_writer.py",
             "airflow/dags/condition_omop_consumer.py",

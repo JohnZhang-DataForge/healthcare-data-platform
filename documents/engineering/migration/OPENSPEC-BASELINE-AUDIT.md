@@ -53,7 +53,7 @@ evidence:
 ## 3. 实际命名与 CI 现状
 
 - [命名规范](../development/CODE-ORGANIZATION-AND-NAMING.md) 与根 [AGENTS.md](../../../AGENTS.md) 已强制新增维护代码采用**组件/功能**命名，拒绝新 \`taskNNN/stepNNN\` 源码路径，保留已验收的 Legacy Runtime 身份。
-- 现有 [Component Code Naming Workflow](../../../.github/workflows/code-component-naming-check.yml) 在 \`pull_request\` 使用 \`ubuntu-latest\`、Python 单测、CODE Map 校验和 [新代码命名检查器](../../../scripts/quality/check_new_code_names.py)。
+- 现有 [Component Code Naming Workflow](../../../.github/workflows/code-component-naming-check.yml) 在 \`pull_request\` 使用 \`ubuntu-latest\`、Python 单测、CODE Map 校验和 [新代码命名检查器](../../../.github/quality/scripts/check_new_code_names.py)。
 - **确证缺口**：上述 Workflow 的 \`pull_request.paths\` 和 Checker 的 \`ROOTS\` 均**没有 \`data-platform/**\`**；检查器使用 \`git diff --no-renames --diff-filter=A\`，纯历史移动可能被归为新增文件。**G3** 必须增加覆盖与严格限定的 Legacy 搬迁例外正/负测试；**G6** 才准真实移动。
 - [PR #209](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/209) 对应的 [Documentation Relative Links Run #39136532662](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39136532662) **conclusion=success**，这证明已有文档链接 CI 可用于本次仅文档 PR 的静态验证，**不等于 OpenSpec CLI PASS**。
 - 本次审查只发现现有命名 Workflow 依赖 Python；**尚无已实施的 OpenSpec CLI CI**。G3 才增加 \`openspec validate\` 检查，并锁定 Node/CLI 版本。

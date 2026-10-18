@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 import unittest
 
-PATH = Path(__file__).resolve().parents[2] / "scripts/quality/check_component_code_map.py"
+PATH = Path(__file__).resolve().parents[3] / ".github/quality/scripts/check_component_code_map.py"
 SPEC = importlib.util.spec_from_file_location("code_map_sync", PATH)
 assert SPEC and SPEC.loader
 policy = importlib.util.module_from_spec(SPEC)
@@ -192,7 +192,8 @@ class CodeMapSyncTests(unittest.TestCase):
 
 
     def test_scripts_config_sources(self):
-        self.assertTrue(policy.is_script_config_source("scripts/quality/check_component_code_map.py"))
+        self.assertTrue(policy.is_script_config_source(".github/quality/scripts/check_component_code_map.py"))
+        self.assertEqual(policy.script_config_owned_links("| [check](../../../.github/quality/scripts/check_component_code_map.py) | tool |"), {".github/quality/scripts/check_component_code_map.py"})
         self.assertTrue(policy.is_script_config_source("scripts/omop/verify.sh"))
         self.assertTrue(policy.is_script_config_source("config/local.env.example"))
         self.assertFalse(policy.is_script_config_source("scripts/README.md"))

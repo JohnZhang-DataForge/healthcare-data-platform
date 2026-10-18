@@ -366,7 +366,7 @@ P0–P4 的成功不等于 P5 的真实 E2E 成功。未获得运行授权时停
 | 已修改的 Dockerfile 被旧源码生成脚本覆盖 | 生成器、生成结果、单测同 PR 修改并验证一致 |
 | Airflow GitSync 子目录变化导致 DAG 消失 | 先核实现有部署和 GitSync 配置，隔离验证 DAG Import |
 | `git mv` 被命名 CI 判为非法“新”Task 文件 | 经审计的路径迁移豁免，不能关闭真正的新代码检查 |
-| `scripts/quality/` / `tests/quality/` 是全仓工具 | P0 确定独立于本地平台的归属，例如候选 `.github/quality/` |
+| 全仓工具原 `scripts/quality/` / `tests/quality/` | 已决定迁入 `.github/quality/scripts/` 与 `.github/quality/tests/`，质量工具独立于本地平台源码 |
 | 旧 `azure/` 存在唯一 Terraform 资源代码 | 先 Diff、审核 State/Workflow、确认完全迁移再删除 |
 | V1/V2 并行写 OMOP | 路由互斥，保留手工闸门和独立读回 |
 | 为未来扩展设计过度通用框架 | 只提取已经发生的重复代码，保留 Domain 特殊规则 |
