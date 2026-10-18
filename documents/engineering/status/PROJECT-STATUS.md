@@ -40,7 +40,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 ## 3. Portal：已实施到 A3 / A4 Smoke；后续 Spark 集成方式仍在讨论
 
-**现行组件知识入口**：[Platform Portal 组件说明](../../components/platform-portal/README.md)。
+**现行组件知识入口**：[Platform Portal 组件说明](../../systems/platform-portal/README.md)。
 
 **已经落地/证实（历史验收）**
 
@@ -55,7 +55,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 - 任何新的 SparkApplication、修改 Airflow Scheduler/Operator、共享资源部署或运行 Self-Runner Live，都需要用户针对具体操作协调和授权；不可因为前期 Smoke 完成而自动执行。
 - Portal **目前不是自建 Web UI**；实际提供的是 Marquez 原生 Web。
 
-**证据**：[Portal Source](../../../platform-portal/README.md) · [Marquez 部署验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md) · [A3 Airflow Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) · [A4 Spark Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) · [多 Session 协调](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。
+**证据**：[Portal 源码总地图](../../systems/platform-portal/CODE.md) · [Marquez 部署验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md) · [A3 Airflow Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) · [A4 Spark Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) · [多 Session 协调](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。
 
 ## 4. Azure/Fabric：目标架构已确定；Terraform 资源定义与 Plan 完成，实际 ETL 未开始
 

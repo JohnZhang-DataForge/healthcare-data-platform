@@ -86,7 +86,7 @@ The component README describes responsibilities; the component CODE.md links dir
 | [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | Historical documentation snapshot (removed from Main); evidence remains pinned to the pre-removal commit |
 | [`images/`](images) · [组件 CODE 导航](documents/systems/data-platform/README.md) | Docker image sources for individual workloads |
 | [`kubernetes/`](kubernetes) · [Synthea CODE](documents/systems/data-platform/synthea/CODE.md) · [Airflow CODE](documents/systems/data-platform/airflow/CODE.md) | Kubernetes manifests, service accounts and runtime templates |
-| [`platform-portal/`](platform-portal/README.md) | Marquez / OpenLineage integration and observability experiments |
+| [`platform-portal/`](platform-portal/) | Marquez / OpenLineage source, manifests, probes and scripts; [system README / CODE](documents/systems/platform-portal/README.md) |
 | [`scripts/`](scripts) · [业务组件 CODE](documents/systems/data-platform/README.md) · [Developer CODE](documents/engineering/development/CODE.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
 | [`spark/`](spark) · [CODE](documents/systems/data-platform/spark/CODE.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
 | [`sql/`](sql) · [Landing CODE](documents/systems/data-platform/landing/CODE.md) · [OMOP CODE](documents/systems/data-platform/omop/CODE.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |

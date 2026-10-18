@@ -89,7 +89,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 - **Visit / Processed**：[Visit Candidate Preflight](../../../../tests/task003/test_visit_candidate_preflight_static.py)、[Processed Writer Core](../../../../tests/task003/test_processed_visit_writer_core.py)、[Processed Writer Driver](../../../../tests/task003/test_visit_processed_driver.py)、[Persisted Candidate Validator](../../../../tests/task003/test_persisted_visit_candidate_validator.py)。
 - **Reconciliation / orchestration**：[Reconciliation Tests](../../../../tests/task004/test_person_visit_reconciliation_source.py)、[NEW_ONLY Spark Integration](../../../../tests/landing_discovery/test_new_only_v2_spark_processing.py)、[Airflow CODE](../airflow/CODE.md)。
 - **下游持久化**：[OMOP CODE](../omop/CODE.md)；SparkApplication `COMPLETED`、Canonical/Processed Parquet 和 Writer Handoff 不代表 PostgreSQL 事务 COMMIT。
-- **观测**：[Portal / Marquez](../../../components/platform-portal/README.md) 的独立 Spark OpenLineage Smoke 不等于 Person/Visit 真实业务血缘已闭环。
+- **观测**：[Portal / Marquez](../../platform-portal/README.md) 的独立 Spark OpenLineage Smoke 不等于 Person/Visit 真实业务血缘已闭环。
 - **历史已验收事实**：[TASK004 Final E2E](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 
 ## 历史 Shell / 脚本导航（由 spark 组件负责）
