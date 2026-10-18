@@ -105,8 +105,8 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 - **同一问题最多连续调试 3 轮**：每轮指针对同一故障的一次有依据的“分析 → 修改 → 验证”；验证失败后计入一轮。若第 3 轮仍未解决，或更早已明显没有新证据，Agent 必须停止自动修改和重复触发 Workflow，不得通过改名、拆分步骤或重开 Session 规避上限。停止后应**优先在当前开发 PR 的 Conversation 评论区**简要记录三轮修改和结果、失败原因或尚未证实的假设、当前 Branch/HEAD SHA、Workflow Run/Artifact 链接及下一步建议；尚无 PR 时记录在对应 GitHub Issue。详细执行日志保留在 Workflow/Artifact 中，不新建重复 Handoff 文档。交由用户决定是否继续或另开 Session；**新 Session 必须先查看既有 PR/Issue 调试记录并沿用同一问题的失败轮数，不得从零重试**。不同的独立问题分别计数；成功后正常完成验收，不强制停工。
 - 复杂的 STEP 需要**可恢复的短交接**：Repo+PR+完整 HEAD SHA、任务目标、已通过/未通过的具体 Run、当前真实资源/Batch、未完成任务、下一最小动作、明确禁止/需批准的操作。能在现有状态/PR/证据里表达的，不重复新建巨大 Handoff Markdown。
 - 任务状态只更新对应当前权威位置；新 `documents/` 模块 **仅在迁移表已经 ACTIVE 时**承接当前事实。旧 `docs/` 的历史 NEXT 不需要每轮修补。
-- 将来使用 OpenSpec 时：Proposal/Design/Tasks/Delta Specs 管需求演进，本文件继续管代码执行、Self-Runner、测试、安全与交接；不为此阶段提前创建 `openspec/`。
+- OpenSpec G0–G3 已落地，G4 采用 [OpenSpec 生命周期](OPENSPEC-DEVELOPMENT-LIFECYCLE.md)：Proposal/Design/Tasks/适用 Delta Specs 管需求演进；本文件继续管代码执行、Self-Runner、测试、安全与交接。G4 不创建正式业务 Change。
 
 ## 8. 多 Session 协作与接力（简化）
 
-统一使用 [Session Coordination](SESSION-COORDINATION.md)：OpenSpec 引入前由 PR/Issue 的 Done/Next/SHA/Run 交接；OpenSpec 引入后由 Change/Tasks 负责变更进度。**不要新建每次 Session 的 Handoff 文件**，共享 K8s/PG/Cloud 操作前还必须核对实际资源与独立授权；详细门槛见 [Safe Operations](../operations/SAFE-OPERATIONS.md)。
+统一使用 [Session Coordination](SESSION-COORDINATION.md)：尚无业务 Change 时继续由 PR/Issue 的 Done/Next/SHA/Run 交接；未来有正式 Change 时由 Change/Tasks 与 PR/Run 共同负责。**不要新建每次 Session 的 Handoff 文件**，共享 K8s/PG/Cloud 操作前还必须核对实际资源与独立授权；详细门槛见 [Safe Operations](../operations/SAFE-OPERATIONS.md)。
