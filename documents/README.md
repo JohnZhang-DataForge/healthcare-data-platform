@@ -11,7 +11,7 @@
 - [Systems](systems/README.md)：Data Platform 本地五组件及源码导航；Azure/Fabric 已有 `systems/azure-fabric/` 说明，Portal 当前仍引用 `components/platform-portal/`。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
-**迁移结果**：本地 Data Platform 与 Engineering 已采用新的 `systems/`、`engineering/` 目录，CODE.md 源码地图和 Markdown 链接均有独立 CI。旧的本地组件及工程文档副本已按可追溯 Git 历史方式清理；**Azure/Fabric 的新系统说明已位于 `systems/azure-fabric/`，旧 `components/azure-fabric/` 文档尚保留；Portal 当前仍使用 `components/platform-portal/`。不在本次 OpenSpec 方案修改中清理这些历史页面**。
+**迁移结果**：本地 Data Platform 与 Engineering 已采用新的 `systems/`、`engineering/` 目录，CODE.md 源码地图和 Markdown 链接均有独立 CI。旧的本地组件及工程文档副本已按可追溯 Git 历史方式清理；**Azure/Fabric 的唯一当前系统说明位于 `systems/azure-fabric/`，旧 `components/azure-fabric/` 已退役；Portal 仍使用 `components/platform-portal/`，其迁移不在本次范围内**。
 
 ## Agent 开工入口
 

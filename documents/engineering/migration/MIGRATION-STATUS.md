@@ -22,7 +22,7 @@
 
 - 新层级：`documents/architecture/`、`documents/systems/data-platform/` 和 `documents/engineering/`。Architecture Decisions 通过 PR #187 迁入 Architecture。
 - PR #188：先复制本地五组件与 Engineering 文档，旧目录不删；PR #189：更新 documents 根入口；PR #190：更新 Architecture 引用；PR #191：更新 CODE Map CI/Agent 规则；PR #192：修复 Azure/Portal 原 README 指向 Engineering 的四个依赖链接；PR #193：新增 Markdown 链接 CI。旧的 Data Platform/Engineering 文档副本随后已从 Main 清理，历史版本仍可追溯。
-- **历史范围说明**：下表 STEP02–STEP07 中出现的 `documents/development/`、`documents/components/` 等，是当时相关 PR 的**历史位置**，不是当前 Main 的权威目录；当前导航请使用 [Systems](../../systems/README.md) 和 [Engineering](../README.md)。Azure/Fabric 和 Portal 仍保留在旧 `documents/components/` 下，不属于本轮物理迁移。
+- **历史范围说明**：下表 STEP02–STEP07 中出现的 `documents/development/`、`documents/components/` 等，是当时相关 PR 的**历史位置**，不是当前 Main 的权威目录；当前导航请使用 [Systems](../../systems/README.md) 和 [Engineering](../README.md)。该段记录 2026-10-16 的过渡情况；Azure/Fabric 后续已迁至 `documents/systems/azure-fabric/` 并退役原组件文档，Portal 仍位于 `documents/components/platform-portal/`。
 
 ## 1. 分阶段计划
 
@@ -33,12 +33,12 @@
 | **STEP03** | `documents/architecture/` 当前总体架构 | **COMPLETE（PR #169）** | 区分本地 NEW_ONLY 验收、Portal A3/A4 局限和 Azure OneLake-first 目标/PLAN-only 边界 |
 | **STEP04** | `documents/status/` 当前唯一项目状态 | **COMPLETE（PR #170）** | [唯一项目状态入口](../status/PROJECT-STATUS.md) 区分 TASK004/Condition、Portal 已验收与待商定 Spark、Azure 方案已定与 Plan-only |
 | **STEP05** | `documents/components/` Local Pipeline | **COMPLETE（PR #171：文档/命名治理）** | 五组件文档、Legacy 依赖清单、禁止新增 Task/Step 代码命名的 Agent 规则和 PR Gate；旧源码物理迁移尚未进行 |
-| **STEP06** | Portal / Azure-Fabric 专项模块 | **COMPLETE（PR #172）** | [Portal](../../components/platform-portal/README.md)、[Azure/Fabric](../../components/azure-fabric/README.md)：明确已验收、已批准设计和待实现/待定范围 |
+| **STEP06** | Portal / Azure-Fabric 专项模块 | **COMPLETE（PR #172）** | [Portal](../../components/platform-portal/README.md)、[Azure/Fabric（当时文档）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/41be1aba4d8b730b2a9e17fadfc0450e6aec5095/documents/components/azure-fabric/README.md)：明确已验收、已批准设计和待实现/待定范围 |
 | **STEP07** | `documents/operations/`、决策索引（现位于 `documents/architecture/decisions/`）、精简 Session 协调与 OpenSpec Readiness | **COMPLETE（PR #173）** | 安全/排障长期入口、已确定决策；不新建重复 Handoff 体系；准备 STEP08/09 |
 | **STEP08** | 切换项目入口、检查引用、验收文档体系 | **COMPLETE（PR #174 合并后）** | [终审报告](FINAL-DOCUMENTATION-AUDIT.md)：历史入口降级、单一状态权威、25 篇新文档链接核验 |
 | **STEP09** | 下一阶段：正式初始化同仓库 OpenSpec | **READY TO START / NOT INITIALIZED** | 重新核对旧 PR #164，运行真实 CLI Init/Validate，Spec 从已核实行为建立；不得宣称已安装 |
 
-**当前整理状态（2026-10-16 Main）**：STEP01–08 的权威终审已完成；后续 PR #187–193 推进了 `architecture/decisions/`、`systems/data-platform/` 和 `engineering/` 层级切换，并已清理原 `docs/` 和旧本地组件/工程文档副本。Azure/Fabric、Platform Portal 文档仍在 `documents/components/`，尚待单独迁移；OpenSpec STEP09 尚未开始。以上 STEP01–08 表格保留原阶段的交付路径和验收结论。
+**当前整理状态（2026-10-16 Main）**：STEP01–08 的权威终审已完成；后续 PR #187–193 推进了 `architecture/decisions/`、`systems/data-platform/` 和 `engineering/` 层级切换，并已清理原 `docs/` 和旧本地组件/工程文档副本。该段为 2026-10-16 历史状态：当时 Azure/Fabric 与 Platform Portal 文档均在 `documents/components/`。此后 Azure/Fabric 已切换为 `documents/systems/azure-fabric/`；Portal 暂保留原位置。OpenSpec 状态以当前专门计划与基线审计为准。以上 STEP01–08 表格保留原阶段的交付路径和验收结论。
 
 ## 2. 候选来源（未迁移、不自动成为新权威）
 
@@ -48,7 +48,7 @@
 | 系统总体架构 | [V4 中文](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md)、[独立 Generator 设计](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)、[Portal 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md)、[OneLake-first 方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) | [System Overview](../../architecture/SYSTEM-OVERVIEW.md)、[Data Flow](../../architecture/DATA-FLOW.md)、[Infrastructure](../../architecture/INFRASTRUCTURE.md) | **ACTIVE（PR #169）**：仅总体架构切换；详细组件与当前状态分别待 STEP04–06 |
 | 主线状态与证据 | [旧 TASK 状态](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md)、[最终 TASK004 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) 及 Portal/Azure 分项证据 | [PROJECT-STATUS](../status/PROJECT-STATUS.md) | **ACTIVE（PR #170）**：已切换全项目 CURRENT / NEXT；旧 TASK 文档继续作为历史证据 |
 | 本地数据模块 | `apps/`、`airflow/`、`spark/`、`sql/`、`contracts/`、历史 TASK 文档 | [组件目录](../../systems/data-platform/README.md)、[重构计划](../development/LEGACY-CODE-REFACTOR-PLAN.md) | **ACTIVE（PR #171）**：组件知识已迁移；现有 Task 命名 Runtime 兼容迁移另行开发 |
-| Azure Fabric | [旧 Azure 入口](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/README.md)、[OneLake-first 方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、`azure/` | [Azure/Fabric 组件](../../components/azure-fabric/README.md) | **ACTIVE（PR #172）**：OneLake-first + IaC/Plan-only 事实；尚未定稿的 ETL 实现不提前批准 |
+| Azure Fabric（STEP06 历史审计，当前入口已更新） | [旧 Azure 入口](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/README.md)、[OneLake-first 方案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、`azure/` | [Azure/Fabric 当前系统文档](../../systems/azure-fabric/README.md) | **ACTIVE（PR #172）**：OneLake-first + IaC/Plan-only 事实；尚未定稿的 ETL 实现不提前批准 |
 | Platform Portal | [旧 Portal 入口](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/README.md)、`platform-portal/` | [Platform Portal 组件](../../components/platform-portal/README.md) | **ACTIVE（PR #172）**：Marquez/A3/A4 证据与局限，后续实际 Spark 方案仍未批准 |
 | 运维和经验 | `docs/runbooks/`、`kubernetes/`、旧 Portal/Azure Operations、真实代码/验收 | [Operations](../operations/README.md)、[Safe Operations](../operations/SAFE-OPERATIONS.md)、[Session Coordination](../development/SESSION-COORDINATION.md)、[Decisions](../../architecture/decisions/README.md) | **ACTIVE（PR #173）**：通用操作/决策规则已迁移；旧技术细节仍按实际源码/历史证据查阅 |
 
@@ -108,6 +108,8 @@
 - **无 Runtime 变更**：本轮不修改 Airflow/Spark/SQL/Images/K8s/Workflow/Terraform，未运行 Self-Runner、PG/S3/Azure、没有重放冻结批次。
 
 ## 10. 每一步完成时登记
+
+**Azure/Fabric 后续迁移结果（2026-10-18，仅 Git 源码与文档）**：源基线 Healthcare `41be1aba4d8b730b2a9e17fadfc0450e6aec5095`；旧 `azure/infra-terraform/` 与新 `azure-fabric/infra-terraform/` 的 107 个 tree 条目一一对应，除两个说明文件外代码 Blob SHA 相同；Self-Runner `azure-infra.yaml` 已采用新目录，七组件历史 Plan-only 证据保持不变。当前权威文档是 [Azure/Fabric Systems README](../../systems/azure-fabric/README.md) 与 [CODE map](../../systems/azure-fabric/CODE.md)。旧组件文档及旧 Terraform 副本从 Main 退役，可通过上述固定历史 Commit 读取。没有执行 Terraform Plan/Apply/Destroy 或 Azure 数据操作。
 
 下一 STEP 的 PR 在本文件追加或更新：**领域、旧文件/代码来源、Source SHA、核实的证据及运行时间、冲突决议、新文件路径、ACTIVE/未完成范围、PR 号、合并 SHA**。不要提前猜测 PR 和合并 SHA。
 

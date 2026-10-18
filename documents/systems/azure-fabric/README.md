@@ -40,7 +40,7 @@ Azure/Fabric 与本地 Data Platform 是**平级子系统**。本地 PostgreSQL 
 
 ## 三、原 Azure Terraform README 的知识归属
 
-旧 [`azure/infra-terraform/README.md`](../../../azure/infra-terraform/README.md) **目前仍然保留**，并非已经全文迁入 `documents/`。其长期有效内容已分类整理，避免直接复制多份：
+旧 [`azure/infra-terraform/README.md`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/41be1aba4d8b730b2a9e17fadfc0450e6aec5095/azure/infra-terraform/README.md) 已从 Main 退役，但可在固定 Git 快照中阅读；其长期有效内容已分类整理，不在 `documents/` 重复全文：
 
 | 原文主题 | 当前主要查阅位置 |
 | --- | --- |
@@ -51,7 +51,7 @@ Azure/Fabric 与本地 Data Platform 是**平级子系统**。本地 PostgreSQL 
 | 历史 Plan Run/新路径回归证据 | [Terraform 技术架构的验收记录](../../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md#verified-plan-evidence) |
 | 已完成与待开发状态 | [项目状态](../../engineering/status/PROJECT-STATUS.md) |
 
-**维护原则：** `documents/` 负责给人和 Agent 阅读的系统说明与源码导航；Terraform 目录中的 README/技术文档负责 IaC 的实现细节和安全限制，不再复制另一份 CURRENT/NEXT。旧 `azure/` 是过渡参考，不是新 Terraform 的日常执行入口。
+**维护原则：** `documents/` 负责给人和 Agent 阅读的系统说明与源码导航；Terraform 目录中的 README/技术文档负责 IaC 的实现细节和安全限制，不再复制另一份 CURRENT/NEXT。旧 `azure/` 已从 Main 删除，当前 Terraform 仅以 `azure-fabric/infra-terraform/` 为源码入口。
 
 Self-Runner 已指向 `azure-fabric/infra-terraform/`。历史七个组件的 Plan-only 证据不构成资源创建或业务入库的证据；本次文档整理也不触发 Plan/Apply。
 

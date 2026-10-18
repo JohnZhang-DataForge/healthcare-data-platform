@@ -14,7 +14,6 @@ on:
       - 'images/**'
       - 'kubernetes/**'
       - 'contracts/**'
-      - 'azure/**'
       - 'azure-fabric/**'
       - 'platform-portal/**'
       - 'config/**'
