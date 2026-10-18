@@ -16,12 +16,14 @@ evidence: []
 
 本设计原先覆盖“目录迁移 + Task004 功能重命名 + 公共模块提取 + 运行切换”的**广义 V2 重构**。结合后续的多来源 Fabric 目标，实施时应分成两个独立里程碑，**不要将本稿后文的广义 P0–P6 全部塞进首次物理迁移 PR**：
 
-1. **V2 Relocation（先）**：在 OpenSpec [G0–G4 治理 Bootstrap](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 之后，G5 先审核 `relocate-local-data-platform` 的一小段目录迁移 Change（不移动源码），G6 才按组件将旧根目录本地应用源码迁到 `data-platform/`。先保留 GitSync/DAG/Docker/Import/CI/CODE.md 路径兼容，再经单独 Gate 切换运行入口；保持业务合同、运行标识、数据结果与权限保护不变。多 PR、可回滚，完成后单独验收“目录物理迁移”。
+1. **V2 Relocation（先）**：在 OpenSpec [G0–G4 治理 Bootstrap](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 之后，G5 先审核 `relocate-local-data-platform` 的一小段目录迁移 Change（不移动源码），G6 才按组件将旧根目录本地应用源码迁到 `local-data-platform/`。先保留 GitSync/DAG/Docker/Import/CI/CODE.md 路径兼容，再经单独 Gate 切换运行入口；保持业务合同、运行标识、数据结果与权限保护不变。多 PR、可回滚，完成后单独验收“目录物理迁移”。
 2. **V2 Modularization（后）**：`task004` 维护源码功能命名、模块共享/解耦与正式业务切换，继续使用本设计的原有 P0–P6 分项和安全门禁，但不作为 Fabric MVP 的一律前置条件。
 
 项目优先级新顺序：**OpenSpec G0–G4 → G5 首个 Change 审核 → G6 V2 Relocation → PG OMOP→Fabric E2E → FHIR→Fabric → HL7 v2/Mirth→Fabric → 研究产品与双 Portal 公开只读展示**。V2 Modularization 可按依赖插入或分阶段后移；TASK005 Condition 业务开发暂停、保留原验收与计划。跨系统目标由 [Healthcare V2 多数据源与 Fabric 设计](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md) 统一描述。
 
 原文第 14 节的 “Data Platform V2 Migration Completed” 指**广义全部重构完成**，不等于仅 Relocation 完成。两个状态必须分别报告，不能在首次源码移动通过后误报整体 V2 已完成。
+
+**2026-10-18 命名决策（D-07）**：未来 Local DP 根目录由原候选 `data-platform/` 正式改为 `local-data-platform/`。本文件以下为长期 V2 设计；改名不表示源码已移动或宽泛 P0–P6 重构已经实施。G3 的现有 CI 仍覆盖旧候选 `data-platform/**`，迁移前必须另行更新检查器/白名单并完成正反测试。
 
 ## 1. 背景与总体方案
 
@@ -31,12 +33,12 @@ evidence: []
 
 但源码主要按开发阶段逐步演进，`apps/task004/`、`scripts/task004/`、`spark/apps/task004/` 以及部分 `task004_cdm_*.py` 与组件目录并存。Task/Step 脚本中还夹杂了历史检查、源码生成、运行控制和业务入口，今后开发 Condition、Procedure、Drug 等数据域时容易继续复制这些实现。
 
-本设计选择：**在新的 `data-platform/` 下按组件进行增量重建，选择性复用已通过验收的逻辑；通过新旧行为对比、受控切换完成迁移。** 这既不是把原目录完整搬过去之后再重复整理，也不是推倒重写一条未经验证的新链路。
+本设计选择：**在新的 `local-data-platform/` 下按组件进行增量重建，选择性复用已通过验收的逻辑；通过新旧行为对比、受控切换完成迁移。** 这既不是把原目录完整搬过去之后再重复整理，也不是推倒重写一条未经验证的新链路。
 
 设计目标：
 
 1. 保留现有 NEW_ONLY Person/Visit 的数据规则、成功路径、失败保护、幂等性和验收证据。
-2. 本地源码统一收口到 `data-platform/`，Azure、Portal、文档作为同级子系统。
+2. 本地源码统一收口到 `local-data-platform/`，Azure、Portal、文档作为同级子系统。
 3. 新维护代码按照**组件 + 业务能力**命名，不再让 `taskNNN/stepNNN` 成为正式源码的组织依据。
 4. 从真实重复逻辑中提取 Manifest、Claim、数据质量、领域处理、Writer Handoff、事务及对账能力。
 5. 让新数据域仅补充自己的字段映射、Vocabulary、外键和领域校验，不必复制整条 Task004 流程。
@@ -54,7 +56,7 @@ healthcare-data-platform/
 ├── AGENTS.md                         # 全局 Agent 规范
 ├── README.md                         # 项目总导航
 │
-├── data-platform/                    # 本地 K8s + SeaweedFS + Airflow + Spark + OMOP
+├── local-data-platform/                    # 本地 K8s + SeaweedFS + Airflow + Spark + OMOP
 │   ├── airflow/
 │   │   └── dags/
 │   ├── apps/
@@ -92,7 +94,7 @@ healthcare-data-platform/
 
 **`azure/` 为计划删除的旧目录，但不是直接无条件删除：** 必须先对照 `azure-fabric/` 逐项确认有效源码、Terraform State、Workflow、文档链接、回退价值已经转移。删除 Git 目录不等于执行 Terraform Destroy，也不能由于名字相似就判断两个目录完全等价。
 
-**`platform-portal/` 不移动到 `data-platform/`。** 两者可以集成，但 Portal 作为独立子系统维护。`documents/` 继续是唯一项目文档入口；`.github/` 是仓库级基础设施，不算第五个业务模块。
+**`platform-portal/` 不移动到 `local-data-platform/`。** 两者可以集成，但 Portal 作为独立子系统维护。`documents/` 继续是唯一项目文档入口；`.github/` 是仓库级基础设施，不算第五个业务模块。
 
 ## 3. 本次改造范围与不做的事情
 
@@ -219,6 +221,8 @@ healthcare-data-platform/
 
 ### 6.3 命名 CI 的特殊处理
 
+**当前 G3 现状**：CI/Checker 中的纯迁移许可和测试固定为旧候选 `data-platform/**`。以上新的 `local-data-platform/**` 只是未来目标，必须在独立 PR 先修改、验证并合并 CI，不能沿用旧 PASS 证明新路径安全。
+
 现有 `check_new_code_names.py` 通过 `git diff --no-renames` 检查新文件。只做 `git mv` 也可能被识别为新增 `task004` 文件而失败。
 
 因此需要先列出经审计的旧路径→新路径映射，允许**内容一致、源路径可追溯的纯迁移**通过，同时依旧禁止真正新增 `taskNNN/stepNNN` 正式代码。不能临时整体关闭 CI 规则。
@@ -228,12 +232,12 @@ healthcare-data-platform/
 建议明确三种根目录：
 
 - **REPOSITORY_ROOT**：整个 `healthcare-data-platform/`。
-- **PLATFORM_ROOT**：`healthcare-data-platform/data-platform/`，供本地平台源码、脚本、合同及测试使用。
+- **PLATFORM_ROOT**：`healthcare-data-platform/local-data-platform/`，供本地平台源码、脚本、合同及测试使用。
 - **RUNTIME_ROOT**：Docker / K8s 内部实际安装或挂载根目录，由镜像和部署清单确定，**不必**与 Git 目录相同。
 
 | 路径场景 | 示例 | 迁移处理 |
 | --- | --- | --- |
-| Git 仓库源码 | `spark/apps/person/xxx.py` → `data-platform/spark/apps/person/xxx.py` | 仓库级引用加新前缀 |
+| Git 仓库源码 | `spark/apps/person/xxx.py` → `local-data-platform/spark/apps/person/xxx.py` | 仓库级引用加新前缀 |
 | 平台内部逻辑 | `PLATFORM_ROOT / spark/apps/visit/...` | 保留相对模块路径，只修改平台根的解析/调用 |
 | Docker COPY 源文件 | `COPY apps/...` | 若构建上下文仍是仓库根，则改为 `COPY data-platform/apps/...` |
 | 镜像中的运行文件 | `/opt/task004/`、`/opt/spark/app/` | 没有迁移理由时保持不变 |
@@ -252,7 +256,7 @@ healthcare-data-platform/
 7. Airflow GitSync DAG 同步目录、Self-Runner Checkout 后的工作目录，以及 GitHub Actions `paths` 触发条件。
 8. 组件 `CODE.md`、全仓 Markdown 链接检查与命名/所有者检查。
 
-**不要简单做全仓文本替换**（例如所有 `spark/` → `data-platform/spark/`）。有些字符串是业务验证的相对文件名或序列化结果，而不是仓库路径。
+**不要简单做全仓文本替换**（例如所有 `spark/` → `local-data-platform/spark/`）。有些字符串是业务验证的相对文件名或序列化结果，而不是仓库路径。
 
 ## 8. 为什么选择“增量重建”，而不是简单搬迁或彻底重写
 
@@ -282,7 +286,7 @@ healthcare-data-platform/
 | 阶段 | 交付内容 | 验收条件 | 运行环境变更 |
 | --- | --- | --- | --- |
 | **P0 — 清点与冻结** | 精确源码 SHA；路径依赖、活跃/历史分类、接口清单、旧版验收索引 | DAG、镜像、Shell 生成器、Contracts、CODE.md、Workflow、持久化协议都完成清点 | 无 |
-| **P1 — 建立新框架** | `data-platform/` 组件目录；全局质量工具归属；根文档导航 | 静态路径、源码根定位、命名 CI、基本 Import 都可检查 | 无 |
+| **P1 — 建立新框架** | `local-data-platform/` 组件目录；全局质量工具归属；根文档导航 | 静态路径、源码根定位、命名 CI、基本 Import 都可检查 | 无 |
 | **P2 — 公共合同封装** | Manifest/BatchIdentity/Claim、通用校验、DQ、Handoff 的兼容模块 | 同一固定输入下新旧输出及负向 Gate 对齐；持久化身份不变 | 无 |
 | **P3 — 领域代码重建** | Person、Visit、Spark Bundle、对账、OMOP Writer 组合 | 对固定合成数据，新旧 Schema、行数、键、映射结果匹配；无重复提交路径 | 无 |
 | **P4 — 构建与 CI** | Docker 构建、DAG 导入、Self-Runner 路径、组件 CODE.md、全仓质量检查 | 候选 SHA 上 Unit / Contract / Build / Package 通过；镜像入口校验 | 只构建、不部署 |
@@ -304,7 +308,7 @@ P0–P4 的成功不等于 P5 的真实 E2E 成功。未获得运行授权时停
 | Reconciliation | 输入/输出计数、业务主键、关系完整性及错误报告一致 |
 | OMOP Writer | Claim/Fence 拒绝、冲突 Manifest 拒绝、同批次幂等、稳定 ID、FK 和原子事务 |
 | Docker/镜像 | `COPY` 源文件存在；生成器与已提交 Dockerfile 一致；候选镜像入口正确 |
-| GitHub Actions | `data-platform/**` 变更可以触发对应 CI；命名、CODE Map、文档链接校验仍生效 |
+| GitHub Actions | `local-data-platform/**` 变更可以触发对应 CI；命名、CODE Map、文档链接校验仍生效 |
 | Self-Runner | 跨仓库 Checkout、源码目录、命令执行工作目录与目标 SHA 绑定 |
 | Azure Terraform | 新旧 `azure` 对比、远程 State/Backend 核对；只允许明确批准范围内的 Plan，不 Apply |
 | 受控运行 | 使用全新批次，真实 Airflow / Spark 执行与独立 PostgreSQL Ledger/Stage/CDM 读回 |
@@ -381,7 +385,7 @@ P0–P4 的成功不等于 P5 的真实 E2E 成功。未获得运行授权时停
 只有同时满足以下条件，才可以宣布 **Data Platform V2 Migration Completed**：
 
 - 目标四个项目目录、根入口和全仓 CI 导航一致；
-- 本地业务维护代码进入 `data-platform/`，对应 CODE.md 可追溯；
+- 本地业务维护代码进入 `local-data-platform/`，对应 CODE.md 可追溯；
 - Legacy Task/Step 命名被功能命名替代，保留部分有明确兼容/历史理由；
 - Manifest/Claim/Canonical/DQ/Writer/Reconciliation 的公共代码得到 Person/Visit 真实复用；
 - Unit / Contract / Build / DAG / Spark / Writer 相关验证通过；
