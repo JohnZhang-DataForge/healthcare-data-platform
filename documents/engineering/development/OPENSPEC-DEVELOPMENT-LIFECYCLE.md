@@ -1,6 +1,6 @@
 # OpenSpec 开发接力与 PR 生命周期（G4）
 
-> 状态：G4 治理规则，**G0–G4 已验证并合并**；参见 [正式计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md)。G4 的边界是未创建业务 Specs/Changes，未搬迁或执行业务代码；G5 首个业务 Change 尚未开始。
+> 状态：G4 治理规则，**G0–G4 已验证并合并**；参见 [正式计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md)。G4 的边界是未创建业务 Specs/Changes，未搬迁或执行业务代码；G5 原应事前建 Change，实际源码搬迁 PR #225–#227 先行发生；现在通过 [Active 追溯 Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) 纳管，运行验证未完成。
 >
 > 适用权威：[G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md)、[Development Workflow](DEVELOPMENT-WORKFLOW.md)、[安全操作](../operations/SAFE-OPERATIONS.md)、[Session Coordination](SESSION-COORDINATION.md)。本页解释职责和接力，不建立新的自动执行器/锁服务。
 
@@ -42,4 +42,4 @@ PR/Issue 的最小可恢复记录：Done / Not Done / Next，Repo、Branch、Bas
 
 ## G4 完成与 G5 入口
 
-G4 的完成门槛是两仓 PR/最终 SHA、策略正负向单测、真实 Healthcare PR 准确 HEAD 绑定成功的 Self-Runner Run、Healthcare PR 适用 CI PASS，并记录失败及未授权边界。这些已在 Healthcare PR #220、Self-Runner PR #136 与 [正式计划的 G4 证据表](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 中验证并收口。G5 才可独立设计 `relocate-local-data-platform` Change；G4 未移动 Data Platform 源码。
+G4 的完成门槛是两仓 PR/最终 SHA、策略正负向单测、真实 Healthcare PR 准确 HEAD 绑定成功的 Self-Runner Run、Healthcare PR 适用 CI PASS，并记录失败及未授权边界。这些已在 Healthcare PR #220、Self-Runner PR #136 与 [正式计划的 G4 证据表](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 中验证并收口。G4 当时确未移动源码；但此后 PR #225–#227 已完成目录级迁移，正式 Change 是事后追溯建立而非先行审批。以后仍应遵循本文件规定的事前 Change 生命周期；下一轮独立治理任务将检查如何增加强制 PR/Change Gate。

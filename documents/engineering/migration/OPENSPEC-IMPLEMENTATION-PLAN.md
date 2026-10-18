@@ -8,14 +8,14 @@ evidence: []
 
 # OpenSpec 正式实施与 Data Platform 迁移计划（G0–G7）
 
-> **执行状态：G0–G4 COMPLETE（G3 PR #218 / G4 Healthcare PR #220 与 Self-Runner PR #136 均已合并 Main）；G5–G7 尚未开始。** 本文件是 STEP09 的**唯一 G0–G7 执行步骤与阶段验收清单**。日期和 Source SHA 表示编写时的只读 Git 基线，不是 CLI、CI、集群或云端验收记录。后续按每个 PR、已安装版本、目标 SHA 和实际 Run 更新执行状态。
+> **当前执行状态（2026-10-18）：G0–G4 COMPLETE；G5 追溯建档进行中；G6 已完成物理目录迁移 PR #225–#227，但源码运行入口兼容与 E2E 尚未完成；G7 未启动。** 本文件是 STEP09 的**唯一 G0–G7 执行步骤与阶段验收清单**。日期和 Source SHA 表示编写时的只读 Git 基线，不是 CLI、CI、集群或云端验收记录。后续按每个 PR、已安装版本、目标 SHA 和实际 Run 更新执行状态。
 >
 > [OpenSpec 接入架构设计](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 管原则和权威边界；[OpenSpec Readiness](OPENSPEC-READINESS.md) 管实施前核查；[Data Platform V2 设计](../../architecture/design/DATA-PLATFORM-V2-MIGRATION-DESIGN.md) 管目录兼容和回滚细节；[项目 CURRENT/NEXT](../status/PROJECT-STATUS.md) 管总体进度。禁止将这些文件变成相互矛盾的第二份 G0–G7 计划。
 
 ## 1. 不变原则与范围
 
 - **仓库根目录 `openspec/` 与 `documents/` 平级**；`documents/` 保留架构、系统导航、工程规则及运维，`openspec/specs/` 只维护经核实的当前行为，`openspec/changes/` 管变更意图/设计/任务/增量要求。`contracts/`、源码、GitHub PR/Run、独立运行读回各自保持事实权威。
-- STEP09 的 G0–G4 是 **OpenSpec 开发治理体系 Bootstrap**，**不移动业务源码、不自动创建 Current Specs、不触发 Live Runtime**。G5 是首个 Change 的设计与审批；G6 才允许按独立 PR 实际物理迁移；G7 是未来 Change 的持续运营。
+- STEP09 的 G0–G4 是 **OpenSpec 开发治理体系 Bootstrap**，**不移动业务源码、不自动创建 Current Specs、不触发 Live Runtime**。原设计规定 G5 先审核 Change、G6 再物理迁移；实际因用户授权调整顺序，PR #225–#227 在正式 Change 建立之前已合并。现通过 Active `relocate-local-data-platform` 补全**事后追溯**记录，原 G5 事前审核未发生，G6 运行验收仍未完成；G7 是未来持续运营。
 - **不把历史 `docs/` 全量导入 OpenSpec**，历史证据由固定 Git Snapshot 保存；旧 PR #164 已关闭、未合并，不能复制其旧配置。
 - 只复用 GitHub PR、GitHub Actions 与 Self-Runner；OpenSpec 不替代调度器、访问控制、分布式锁或数据提交验证。
 - 对所有 **新增维护代码**，严禁 `taskNNN` / `stepNNN` 等开发编号作为组件目录、文件、函数、类、DAG ID、SQL、正式 Shell、镜像、Manifest、Workflow、测试及 Contract 的语义名称。开发计划、OpenSpec `tasks.md` 步骤号、Issue/PR、Run/日志与历史证据可以保留阶段编号。唯一命名权威：[Code Organization & Naming](../development/CODE-ORGANIZATION-AND-NAMING.md)。
@@ -62,9 +62,9 @@ G6 中无需立即 Rename 已验收的旧 `task004` 文件。应先保留兼容�
 
 ## 4. G5/G6 首个 Change 的实施边界
 
-**本次仅前置 Naming Change**：经用户同意的 `local-data-platform/` 名称由独立文档 Change 执行并归档；`relocate-local-data-platform` 仍应按本节正式设计、选切片与验收。实际采用“在隔离开发分支先整体复制业务源码 → 静态/构建/固定样例对比 → 独立批准的运行切换 → 退役旧入口”的候选策略，但不可用并存目录绕过纯 `git mv` 白名单、命名检查或单 Writer Gate。具体复制分类及 PR 拆分必须在 G5 依赖审计后决定。
+**原始 G5/G6 方案与实际偏离**：命名试点已经按 OpenSpec 归档；实际经用户同意，先将 393 个业务文件独立备份到 Healthcare-Specs（PR #2），再将整体源码迁入 `local-data-platform/`（Healthcare PR #225），修复文档/源码地图（#226）并将质量工具收归 `.github/quality/`（#227）。这些发生时**未创建正式 G5 Change**；PR #225 的组件质量检查失败但仍合并。事后由 [Active 迁移 Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) 记录原 PR/SHA/Run 与尚未完成的 Import、DAG、GitSync、Docker、Spark、Workflow、E2E 安全门槛。上文原 G5 先审批/G6 分片实施的流程仍作为**历史原计划**保留，不声称其已被遵守。
 
-**G6 前置 CI 迁移 Gate（尚未实施）**：现有 [Naming Workflow](../../../.github/workflows/code-component-naming-check.yml)、[Naming Checker](../../../.github/quality/scripts/check_new_code_names.py)、[CODE Map Checker](../../../.github/quality/scripts/check_component_code_map.py) 和 [Relocation Approval](../../../.github/legacy-relocations.json) 中的 `data-platform/**` 只代表历史通过检查的候选。先单独适配 `local-data-platform/**` 并验证合法、违规新增、旧 Blob 搬迁及混合拷贝场景，再审迁移清单。不得默认两套根目录长期并存。
+**原 G6 前置 CI 迁移 Gate（历史设计，未按此顺序执行）**：现有 [Naming Workflow](../../../.github/workflows/code-component-naming-check.yml)、[Naming Checker](../../../.github/quality/scripts/check_new_code_names.py)、[CODE Map Checker](../../../.github/quality/scripts/check_component_code_map.py) 和 [Relocation Approval](../../../.github/legacy-relocations.json) 中的 `data-platform/**` 只代表历史通过检查的候选。先单独适配 `local-data-platform/**` 并验证合法、违规新增、旧 Blob 搬迁及混合拷贝场景，再审迁移清单。不得默认两套根目录长期并存。
 
 
 **首次选中的切片以低风险路径为优先**，先完成全仓依赖图，再按实际 Workflow/DAG/Docker 影响确定顺序，不能在设计阶段假定任意目录完全无运行引用：
@@ -100,9 +100,9 @@ Condition/TASK005 状态为**业务开发暂缓，原 STEP00 READ-ONLY 就绪及
 | G3 静态 CI | G3 | [PR #218](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/218)：永久 [OpenSpec CI](../../../.github/workflows/openspec-validation.yml)、命名检查及 CODE Map 新旧路径覆盖、受限预授权搬迁白名单；[OpenSpec Run #39148008534](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008534) SUCCESS，[命名 Run #39148008629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008629) SUCCESS；功能验证 HEAD `3f39781167dde125c806a44838ccf7e1f0060e74`；G3 文档提交后仍须检查最终 PR HEAD 的所有触发 CI | **COMPLETE — PR #218 MERGED，合并 SHA `b28660a28e7c9d6b72cc64ae19d3584d7f6f52e9`** |
 | Agent / PR 静态接力 | G4 | [生命周期](../development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md)、Healthcare [PR #220](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/220)、Self-Runner [PR #136](https://github.com/JohnZhang-DataForge/Self-Runner/pull/136) 已合并（SHA `ffd0eccecbf0148183b956e6e4416d4b8d99002b`）；Policy CI [39149481844](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39149481844) SUCCESS，实际跨仓静态绑定 [Run 39149531730](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39149531730) SUCCESS（Controller `3b40533fcf9ec63b15f9c51bf84c7e400149d43c`，Healthcare PR #220 HEAD `f6859911a58dcae6396e359244e282799346d051`）；临时请求已在测试分支删除，未进入 Main | **COMPLETE — Healthcare PR #220 MERGED `10d65bb8e7a83ca5a308a738201bbf6d82669d22`；Self-Runner PR #136 MERGED `ffd0eccecbf0148183b956e6e4416d4b8d99002b`** |
 | G4 终验补充 | G4 | 最终 Healthcare PR #220 HEAD `7b1fc6e6308a0fa5821b418f76ee1da7accf7b2e` 上 [OpenSpec Run #39149670066](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39149670066) 与 [Documentation Links Run #39149670014](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39149670014) 均 SUCCESS；已合并的 Self-Runner Main 上受控请求 controller commit `ac6873aa31cafa4b554162aa03a3fcbde09efbd0`，[实际跨仓 Run #39149690050](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39149690050) SUCCESS，Artifact `openspec-pr-handoff-39149690050` 保存身份与静态校验证据，目标 SHA 与最终 Healthcare PR HEAD 一致；临时请求已删除，不在 Self-Runner Main | **COMPLETE / STATIC ONLY，未执行任何业务 Runtime** |
-| 首个源码迁移 Change（命名试点另行追踪） | G5 | `relocate-local-data-platform` Proposal/Design/Tasks/Static Validate，单独审查 | **NOT STARTED** |
+| 首个源码迁移 Change（命名试点另行追踪） | G5 | [`relocate-local-data-platform`](../../../openspec/changes/relocate-local-data-platform/tasks.md) 已事后补建 Proposal/Design/Tasks；原 PR #225–#227 **没有**事前 Change 审核，正在通过独立追溯 PR 做 OpenSpec Static Validate | **RETROSPECTIVE ACTIVE；不宣称事前门禁满足** |
 | Naming docs-only 试点 | G5 前置演练 | `adopt-local-data-platform-naming` [PR #223](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/223) 已合并 Main `d97f7bb7babe1468cc2fc115e511c836360f721a`；严格校验 [OpenSpec Run #39155840396](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39155840396) SUCCESS，文档链接 [Run #39155840375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39155840375) SUCCESS，均绑定最终 PR HEAD `f16baba0e993c5f4d92d1aed2b3eb5ec31fcf00f`；[Archive PR #224](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/224) 以本次提交合并 Main 为归档生效 Gate | **NAMING PILOT VERIFIED；ARCHIVE 随 PR #224 合并生效；不涉及 G5 源码迁移设计或 G6** |
-| 物理迁移 | G6 | 分组件/切片 PR；路径兼容、CODE Map、测试；Live Gate 单独授权 | **NOT STARTED** |
+| 物理迁移 | G6 | Healthcare [PR #225](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/225) 文件搬迁（组件 CI FAIL）、[PR #226](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/226) 文档/CODE Map（CI PASS）、[PR #227](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/227) 质量工具整理（CI PASS）；备份 Healthcare-Specs PR #2。运行入口、Import、镜像/DAG/Spark 与真实 E2E 仍需要后续独立验证与授权 | **PHYSICAL TREE COMPLETE / RUNTIME NOT VERIFIED** |
 | 后续能力 | G7 | 分领域 Changes，实际测试 + PR/Run + 独立读回后才归档 | **NOT STARTED** |
 
 **实际完成声明必须填写**：实施日期、实际 Main 与 PR HEAD 完整 SHA、OpenSpec CLI/Node 版本、Workflow Run ID、检查参数/输出、目标环境（如有）、Batch/export_id（如有）、持久化独立读回（如有）及未验证范围。未运行的 Gate 始终为 NOT STARTED，不推测 PASS。
