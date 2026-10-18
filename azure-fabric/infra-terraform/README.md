@@ -2,7 +2,7 @@
 
 **Canonical runnable source:** `azure-fabric/infra-terraform/`, selected by [Self-Runner / Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml). This directory manages **infrastructure resources and their permissions**, not the PostgreSQL snapshot exporter or complete Fabric Spark/Data Pipeline business logic. See the [Azure/Fabric code-root guide](../README.md) for the rest of the subsystem and [technical Terraform design](docs/ARCHITECTURE.md) for IAM, state, adoption and historical regression evidence.
 
-The old [`azure/infra-terraform/`](../../azure/infra-terraform/README.md) remains untouched as a transition/rollback copy. Do not apply independently from both copies to the same remote State. No Terraform Apply/Destroy or data processing was performed by this code-organization work.
+The legacy `azure/infra-terraform/` copy was removed from `main` after validating identical implementation files and the Self-Runner cutover. Its [pre-retirement snapshot](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/a0891d08eb934ef1c954576c9ca006fe99b1c02b/azure/infra-terraform) is retained in Git history for reference and rollback. `azure-fabric/infra-terraform/` is the only active IaC source. No Terraform Apply/Destroy or cloud data processing was performed by this code-organization change.
 
 ## Where Terraform code lives
 

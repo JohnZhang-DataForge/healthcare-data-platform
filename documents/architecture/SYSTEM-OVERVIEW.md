@@ -54,7 +54,7 @@ flowchart TB
 | [Airflow](../../airflow/dags/new_only_omop_consumer.py) + [Spark CODE](../systems/data-platform/spark/CODE.md) | 手动选择 READY Batch；合法 Claim 路由后处理 Person/Visit，再进行 reconciliation / writer handoff | 新批次 Airflow Person/Visit → PostgreSQL 写入、同一已提交批次 SKIP 均有独立证据；不代表所有模式已自动运行 |
 | [PostgreSQL OMOP CODE](../systems/data-platform/omop/CODE.md) | Person/Visit ID Map、CDM、事务 Claim / Stage / Commit、真实读回 | TASK004 对已指定 NEW_ONLY 批次的 atomic COMMIT 验收通过；Condition/其他域未完成 |
 | [Platform Portal](../../platform-portal/README.md) | Airflow/Spark lineage 可观测性，不是业务 ETL 的 Producer/Writer | Marquez 和原生 Web、Airflow A3 真实事件、Spark A4 独立 Smoke 已测试；Job/Run 对应与 Dataset I/O 完整血缘仍未通过 |
-| [Azure + Fabric](../../azure/infra-terraform/README.md) | 本地 OMOP 作为**来源权威**，导出一致性快照至已有 Azure Blob，再由 Fabric Pipeline+Notebook 将数据写入 OneLake Lakehouse | Storage/Workspace 既有；3 个 Fabric item **Terraform Plan PASS**，但未 Apply、Notebook/Exporter/业务 Pipeline 未完成，OneLake ETL 无 E2E |
+| [Azure + Fabric](../../azure-fabric/README.md) | 本地 OMOP 作为**来源权威**，导出一致性快照至已有 Azure Blob，再由 Fabric Pipeline+Notebook 将数据写入 OneLake Lakehouse | Storage/Workspace 既有；3 个 Fabric item **Terraform Plan PASS**，但未 Apply、Notebook/Exporter/业务 Pipeline 未完成，OneLake ETL 无 E2E |
 
 ### 当前明确区分的两个 landing
 
@@ -100,4 +100,4 @@ flowchart TB
 
 - 历史 [V4 总设计](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/Healthcare-Data-Platform-Architecture-and-Implementation.v4.zh-CN.md)（仅用于旧方案演进追溯）、[独立 Synthea 提案](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/architecture/TASK-004-INDEPENDENT-SYNTHEA-GENERATORS-AND-AIRFLOW-CONSUMER-v1.0.zh-CN.md)。
 - [Portal A3 实测](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)、[Portal A4 独立 Spark 实测](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
-- [Azure OneLake-first 和三个真实 Plan](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、[Azure Terraform 架构](../../azure/infra-terraform/docs/ARCHITECTURE.md)。
+- [Azure OneLake-first 和三个真实 Plan](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md)、[Azure Terraform 架构](../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md)。

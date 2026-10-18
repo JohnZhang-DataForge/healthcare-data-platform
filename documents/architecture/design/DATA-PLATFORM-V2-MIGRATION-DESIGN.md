@@ -329,6 +329,8 @@ P0–P4 的成功不等于 P5 的真实 E2E 成功。未获得运行授权时停
 
 ### 12.1 Azure / Fabric
 
+> **2026-10-18 实施状态补记：** 以下是设计阶段的删除前 Gate；经逐项核对后，旧 `azure/` 已按单独的[目录退役审计](../../engineering/migration/AZURE-DIRECTORY-RETIREMENT.md)从 Main 删除。新源码和 Self-Runner 入口为 `azure-fabric/infra-terraform/`。此补记不表示本地 Data Platform G5/G6 迁移已执行。
+
 `azure-fabric/infra-terraform/` 与 `azure-fabric/workspaces/` 保持独立。Self-Runner 的 Azure Terraform Workflow 目前使用 `healthcare/azure-fabric/infra-terraform/components/$COMPONENT`，本地平台重构不能破坏该路径。
 
 删除旧 `azure/` 前核对：

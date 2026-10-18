@@ -120,7 +120,7 @@ healthcare-data-platform/
 - 第一批只做现有应用源码的路径迁移和**必需的引用适配**，修复 GitHub Actions/Self-Runner、Docker build context/COPY、DAG GitSync、SparkApp、Python import/path、Contracts、CI 和 `CODE.md` 链接。
 - 保留已验收 DAG ID、持久化 `etl.task004_*`、Batch/Manifest/Claim/Checkpoint、镜像 Digest、容器运行兼容路径；以行为不变和回滚为硬条件。
 - 之后再拆 Change 重命名旧 `task004` 源码、提取公共身份/Manifest/DQ/Writer；不在首次 `git mv` 批次中穿插业务语义修改。
-- 保留旧 `azure/` 的并行 Terraform 来源直到 State/Workflow/Import/链接验证无歧义，再依据单独审计淘汰，严禁意外重复 Apply/Destroy。
+- **设计时的旧目录 Gate 已在 2026-10-18 完成：** 旧 `azure/` 经独立[源码退役审计](../../engineering/migration/AZURE-DIRECTORY-RETIREMENT.md)删除；仅 `azure-fabric/infra-terraform/` 是当前 IaC 入口。严禁意外重复 Apply/Destroy，既有 State/Import 风险仍需每次正式部署前审查。
 - 本方案沿用 [Data Platform V2 Migration Design](DATA-PLATFORM-V2-MIGRATION-DESIGN.md)，该文件负责具体迁移边界、兼容和回退细节；此处仅描述跨工作线顺序。
 
 ## 5. OpenSpec 与建设顺序
