@@ -1,0 +1,113 @@
+{
+  "access_policy": {
+    "preflight_database_access": "READ_ONLY",
+    "preflight_database_mutation": false,
+    "preflight_s3_access": "READ_ONLY",
+    "preflight_s3_mutation": false
+  },
+  "authoritative_visit_id_mapping": {
+    "mapping_sha256": "7e74c9c0a179e6222a7c4ded2993b8cf61a20d9b06b1d6349d7f21f6a0c03c9f",
+    "max_visit_occurrence_id": 5800,
+    "min_visit_occurrence_id": 2,
+    "rows": 5799
+  },
+  "database_baseline": {
+    "cdm_visit_rows": 0,
+    "person_map_rows": 113,
+    "sequence_is_called": true,
+    "sequence_last_value": 5800,
+    "visit_id_map_rows": 5799
+  },
+  "foreign_key_feasibility": {
+    "care_site": "PASS",
+    "concept": "PASS",
+    "distinct_care_site_ids": 0,
+    "distinct_concept_ids": 6,
+    "distinct_person_ids": 113,
+    "distinct_preceding_visit_ids": 0,
+    "distinct_provider_ids": 0,
+    "person": "PASS",
+    "preceding_visit": "PASS",
+    "provider": "PASS"
+  },
+  "git_checkpoint_before_preflight": "8595a2dd46092517ec8fde40408172b1dfb76c09",
+  "materialization_policy": {
+    "blind_retry_after_uncertain_mutation": "FORBIDDEN",
+    "cdm_visit_occurrence_mutated": false,
+    "fresh_database_revalidation_before_mutation": "REQUIRED",
+    "materialization_transaction_required": true,
+    "row_shape_is_authoritative_pre_mutation_payload": true
+  },
+  "person_mapping": {
+    "person_map_sha256": "f52f95120b8a9bd80d33029d04d9abf4cb1c59206d00b745b59e39b5a89c9a98",
+    "rows": 113
+  },
+  "prepared_cdm_row_shape": {
+    "cast_violations": 0,
+    "column_count": 17,
+    "date_datetime_consistency_violations": 0,
+    "date_order_violations": 0,
+    "datetime_order_violations": 0,
+    "required_null_violations": 0,
+    "row_shape_sha256": "995724ba282f443892074d9b189be134fde8819b2afda05f021729323b0ebce1",
+    "rows": 5799,
+    "unique_visit_occurrence_ids": 5799,
+    "varchar_length_violations": 0
+  },
+  "runtime_evidence": {
+    "c1_summary_sha256": "6a472fbeadaffbb477d0651cae9dc73dfb753c8be01ef78785067618d8195d6b",
+    "c2_driver_log_sha256": "d316496f4c128e54e00ceb3728225e01d0088244ed97887b9d1fdc9d59a6f630",
+    "c2_post_database_state_sha256": "d9f3839654751fd10aafa8446e09de811c361339bbcdddfb1c7891578c0d16b5",
+    "c2_result_sha256": "7f3d3f5e8f4c6a8e331c4ed2a7942e6d3cacf85c3643f8db51708b24246671cd",
+    "c2_sparkapplication_manifest_sha256": "c84e108207ba40c65ac70e5e4f48842b3d550f52c95de42029414358824bb53a",
+    "c2_verified_spark_application_sha256": "ccb6f8b77c9c5d4f763f80d4bcfff8d9e79bbb50ce9e323085c7fc8d60e1d66d"
+  },
+  "source_lineage": {
+    "candidate_business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e",
+    "candidate_column_count": 36,
+    "candidate_rows": 5799,
+    "candidate_unique_business_keys": 5799,
+    "canonical_encounter_contract": "spark/contracts/canonical/encounter-v1.json",
+    "canonical_encounter_contract_sha256": "473ae45225c9063a7560b0092ed7914d71a43623f593d4959c66294e942a5837"
+  },
+  "status": "CDM_VISIT_MATERIALIZATION_PREFLIGHT_FROZEN",
+  "step": "STEP-06C3",
+  "target_schema": {
+    "column_count": 17,
+    "columns": [
+      "visit_occurrence_id",
+      "person_id",
+      "visit_concept_id",
+      "visit_start_date",
+      "visit_start_datetime",
+      "visit_end_date",
+      "visit_end_datetime",
+      "visit_type_concept_id",
+      "provider_id",
+      "care_site_id",
+      "visit_source_value",
+      "visit_source_concept_id",
+      "admitted_from_concept_id",
+      "admitted_from_source_value",
+      "discharged_to_concept_id",
+      "discharged_to_source_value",
+      "preceding_visit_occurrence_id"
+    ],
+    "constraint_count": 10,
+    "identity_column_count": 0,
+    "index_count": 3,
+    "required_insert_column_count": 6,
+    "required_insert_columns": [
+      "visit_occurrence_id",
+      "person_id",
+      "visit_concept_id",
+      "visit_start_date",
+      "visit_end_date",
+      "visit_type_concept_id"
+    ],
+    "user_trigger_count": 0
+  },
+  "target_table": "cdm.visit_occurrence",
+  "task": "TASK-003",
+  "version": "v1"
+}

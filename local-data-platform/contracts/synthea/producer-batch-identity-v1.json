@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "contract": "synthea-producer-batch-identity",
+  "legacy": {
+    "mode": "LEGACY_AIRFLOW",
+    "batch_prefix": "task004-airflow-",
+    "status": "HISTORICAL_COMPATIBILITY_ONLY",
+    "consumer_regex": "^task004-airflow-[A-Za-z0-9._-]+$"
+  },
+  "producer_modes": [
+    {
+      "mode": "NEW_ONLY",
+      "batch_prefix": "synthea-new-only-",
+      "namespace": "dw-synthea",
+      "directory": "apps/synthea/new_only",
+      "state": "LOCAL_GENERATION_REAL_RUN_PASS; S3_READY_NOT_PUBLISHED"
+    },
+    {
+      "mode": "UPDATE_ONLY",
+      "batch_prefix": "synthea-update-only-",
+      "namespace": "dw-synthea",
+      "directory": "apps/synthea/update_only",
+      "state": "DESIGN_ONLY_ON_HOLD"
+    },
+    {
+      "mode": "MIX_DATA",
+      "batch_prefix": "synthea-mix-data-",
+      "namespace": "dw-synthea",
+      "directory": "apps/synthea/mix_data",
+      "state": "DESIGN_ONLY_ON_HOLD"
+    }
+  ],
+  "request_id_regex": "^[A-Za-z0-9][A-Za-z0-9-]{7,65}$",
+  "authorization": "BATCH_PREFIX_IS_NOT_AUTHORIZATION",
+  "gate": "EXISTING_TARGET_DRIFT_MUST_REMAIN_ENABLED",
+  "rollout": "EXPLICIT_VERSIONED_CONSUMER_AND_WRITER_COMPATIBILITY_REQUIRED"
+}

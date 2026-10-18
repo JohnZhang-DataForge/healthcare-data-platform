@@ -1,0 +1,52 @@
+{
+  "contract_version": "v1",
+  "entity": "visit_occurrence",
+  "git_checkpoint": "4e1a7a8d3870141ec0f97ad515e8a0d6f13802d4",
+  "run_id": "visit-proc-20261009t192437z-2081886",
+  "task": "TASK-003",
+  "step": "STEP-06A",
+  "candidate": {
+    "rows": 5799,
+    "unique_business_keys": 5799,
+    "referenced_persons": 113,
+    "business_key": [
+      "source_system",
+      "source_encounter_id"
+    ],
+    "business_key_sha256": "aa5be446a3fe0ce4688594db45db19a33ad9bb182cca61e6a19cdb69ff74f72e"
+  },
+  "database_baseline": {
+    "visit_map_rows": 0,
+    "cdm_visit_rows": 0,
+    "person_map_rows": 113
+  },
+  "sequence": {
+    "name": "etl.visit_occurrence_id_map_visit_occurrence_id_seq",
+    "last_value": 1,
+    "is_called": false,
+    "column_default": null,
+    "pg_get_serial_sequence_binding": "etl.visit_occurrence_id_map_visit_occurrence_id_seq",
+    "automatic_default_nextval": false,
+    "explicit_allocation_required": true
+  },
+  "reconciliation": {
+    "existing_candidate_mappings": 0,
+    "new_candidate_mappings": 5799,
+    "candidate_only_keys": 5799,
+    "map_only_synthea_keys": 0
+  },
+  "fingerprints": {
+    "allocation_plan_sha256": "28cf06fecb744c8da477221abde37e7afd72ba7d974ef2c93f847a3d79b63c93",
+    "reconciliation_result_sha256": "fb2905064173c564a8074b7f946c976b8d2ea1e0165ce7f2f3f2b3feb258eb31"
+  },
+  "safety": {
+    "s3_read_only": true,
+    "database_read_only": true,
+    "nextval_called": false,
+    "setval_called": false,
+    "visit_id_allocation_started": false,
+    "visit_id_map_mutated": false,
+    "sequence_advanced": false,
+    "cdm_visit_occurrence_write": false
+  }
+}
