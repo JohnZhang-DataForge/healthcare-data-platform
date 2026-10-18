@@ -1,0 +1,49 @@
+# Tasks
+
+> **2026-10-18 追溯建档**：本 Change 是在 PR #225–#227 合并以后补建。前面标记 `[x]` 的事项由其原 PR、Git Tree / CI 证据支撑，**不表示当时已有 OpenSpec 事前审批**。未来运行调试尚未执行，不得把目录检查 PASS 记为 Runtime PASS。
+
+## 1. 溯源与独立备份（已实施）
+
+- [x] 1.1 记录命名试点 `adopt-local-data-platform-naming` 及原始 Main SHA `eb216b544381ab0e73bd221cd54d8887f77b9a10`。
+- [x] 1.2 在独立私有 Healthcare-Specs 仓库 Main 保存 393 个业务文件及原始相对路径与 Blob 清单；393/393 一致、0 差异，备份 PR #2 / Merge `6089a2fcf934a26ea0c3fbb8dbdd11bc6f0a42a5`。
+- [x] 1.3 记录备份既非代码工作树中的第二套可导入源码，也不是数据库/S3/K8s 的数据备份。
+
+## 2. 物理源码与仓库结构（已实施，按历史事实）
+
+- [x] 2.1 复制并核对 393 个原始业务文件的 Blob；在隔离分支移除对应根目录业务文件，PR #225 / Merge `377df7c9fae770cde985f6e7bcbc47d40ecfa355`。
+- [x] 2.2 在 Main 核对 `local-data-platform/` 有 393 个内容一致的业务文件，原有根目录业务路径无残留；保留独立的 `azure-fabric/`、`platform-portal/` 等系统边界。
+- [x] 2.3 **如实登记未通过的 Gate**：PR #225 Component Code Naming Run #39160915562 FAIL；OpenSpec Run #39160915519 SUCCESS；该次 Merge 不代表运行兼容完成。
+- [x] 2.4 更新文档与 CODE.md 导航，PR #226 / Merge `3af772f60c8ce5aac6f474cf8b291b13d82d3d88`，适用三项 CI PASS。
+- [x] 2.5 将 3 个全仓检查器和 3 个质量单测迁入 `.github/quality/`；修 CI、模块加载和文档，PR #227 / Merge `7e969718cfad9368fd13866053636c787e24ca7e`，三项 CI PASS；根目录 `scripts/`、`tests/` 已退出。
+
+## 3. OpenSpec 正式补建与当前事实同步（本轮）
+
+- [x] 3.1 将已实施事项以**追溯**形式写入本 Change 的 Proposal / Design / Tasks，标明原始 PR、SHA、Run、失败和权限边界；不伪造事前审批。
+- [x] 3.2 维护不变性要求与恢复边界：目录内容一致不等于 DAG/镜像/Writer 运行完成；`skip_specs: true` 不新建无证据的业务 Spec。
+- [ ] 3.3 在本轮追溯文档 PR 的最终 HEAD 上执行 OpenSpec strict validate、文档链接/适用 CI，记录实际 Run。
+- [ ] 3.4 通过受审 PR 合并 Main，核对 `openspec/changes/relocate-local-data-platform/` 保持 Active，并记录最终 Main Merge SHA。
+
+## 4. 待完成：新路径兼容与运行验证（后续独立 PR）
+
+- [ ] 4.1 全量扫描并分类尚未修复的源码/工具运行路径，建立引用矩阵与缺失路径负向断言；包括 Python Import、Shell、Actions/Self-Runner、Airflow GitSync、Spark、Docker COPY、镜像生成器和部署配置。
+- [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
+- [ ] 4.3 修 Docker COPY 与构建 Context、生成器和 immutable 镜像来源，完成真实干净构建及容器 Import/Smoke 验证，保存镜像 Digest。
+- [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
+- [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
+- [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
+- [ ] 4.7 对所有修复结果进行受控接入、负向路径测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
+
+## 5. 结束条件（暂不归档）
+
+- [ ] 5.1 复核完整源码目录、文档、CI 和实际运行入口与验收证据，更新唯一项目状态文档和本 Tasks。
+- [ ] 5.2 核实无行为变化时维持 `skip_specs: true`；确实有可观察行为变化则另行讨论 Delta Spec/Change，不擅自写 Current Specs。
+- [ ] 5.3 满足适用回归与运行读回后再 Archive；保持与独立命名试点归档互不混淆。
+
+## 6. 已核实的历史证据索引
+
+| 事项 | PR / Main SHA | 实际验证 |
+| --- | --- | --- |
+| Backup | Healthcare-Specs [PR #2](https://github.com/JohnZhang-DataForge/Healthcare-Specs/pull/2) / `6089a2fcf934a26ea0c3fbb8dbdd11bc6f0a42a5` | [Run #39158372198](https://github.com/JohnZhang-DataForge/Healthcare-Specs/actions/runs/39158372198) SUCCESS；393 个 Blob 全匹配 |
+| Physical move | Healthcare [PR #225](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/225) / `377df7c9fae770cde985f6e7bcbc47d40ecfa355` | [OpenSpec #39160915519](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39160915519) SUCCESS；[Component #39160915562](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39160915562) **FAIL**；无 E2E |
+| Doc/CODE links | Healthcare [PR #226](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/226) / `3af772f60c8ce5aac6f474cf8b291b13d82d3d88` | [Docs #39162992543](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39162992543)、[Component #39162992540](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39162992540)、[OpenSpec #39162992541](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39162992541) SUCCESS |
+| Repo quality tools | Healthcare [PR #227](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/227) / `7e969718cfad9368fd13866053636c787e24ca7e` | [Docs #39163725180](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39163725180)、[Component #39163725249](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39163725249)、[OpenSpec #39163725294](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39163725294) SUCCESS；38 单测、1,035 文档链接无失效 |
