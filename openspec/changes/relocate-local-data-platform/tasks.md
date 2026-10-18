@@ -20,10 +20,12 @@
 
 - [x] 3.1 将已实施事项以**追溯**形式写入本 Change 的 Proposal / Design / Tasks，标明原始 PR、SHA、Run、失败和权限边界；不伪造事前审批。
 - [x] 3.2 维护不变性要求与恢复边界：目录内容一致不等于 DAG/镜像/Writer 运行完成；`skip_specs: true` 不新建无证据的业务 Spec。
-- [ ] 3.3 在本轮追溯文档 PR 的最终 HEAD 上执行 OpenSpec strict validate、文档链接/适用 CI，记录实际 Run。
-- [ ] 3.4 通过受审 PR 合并 Main，核对 `openspec/changes/relocate-local-data-platform/` 保持 Active，并记录最终 Main Merge SHA。
+- [x] 3.3 在追溯文档 PR #228 的最终 HEAD `e684ba67f9081f171b11c650d45d067a892920bd` 上完成 [OpenSpec 1.14.3 Strict Run #39169339352](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39169339352) SUCCESS（Active Changes = 1，Current Specs = 0，Validate Exit 0）及 [Docs Links Run #39169339318](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39169339318) SUCCESS（67 Markdown、1,039 链接、0 缺失）；没有触发 Component Code Naming，此 PR 仅为 OpenSpec/事实文档更新。
+- [x] 3.4 [追溯建档 PR #228](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/228) 已合并 Main SHA `866065757d1d311cd44d3055cdeee9f4ad88dba0`；`openspec/changes/relocate-local-data-platform/` 保持 **Active**，不是 Archive。此项仅关闭“追溯建档”环节，不表示第 4、5 节的运行兼容/E2E 门槛完成。
 
 ## 4. 待完成：新路径兼容与运行验证（后续独立 PR）
+
+> 本轮追溯完成后，下一阶段仍须建立单独实施 PR。不得将已关闭的追溯建档任务视为迁移最终验收。
 
 - [ ] 4.1 全量扫描并分类尚未修复的源码/工具运行路径，建立引用矩阵与缺失路径负向断言；包括 Python Import、Shell、Actions/Self-Runner、Airflow GitSync、Spark、Docker COPY、镜像生成器和部署配置。
 - [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
