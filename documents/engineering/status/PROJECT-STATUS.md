@@ -34,7 +34,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 - 业务 DAG 的 `schedule=None`，接受已授权的手工 Batch；定时 `landing_batch_discovery` 的默认读取/发现不等于自动业务 COMMIT。
 - UPDATE_ONLY、MIX_DATA、Condition Writer、复杂的双 Writer 并发与灾难恢复属于独立后续范围；本次关闭不证明这些已完成。
 
-**证据**：[TASK004 Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [实际 Airflow + PG 只读验收 Run 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822) · [相同 Batch SKIP Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) · [Airflow 源码](../../../airflow/dags/new_only_omop_consumer.py)。
+**证据**：[TASK004 Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [实际 Airflow + PG 只读验收 Run 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822) · [相同 Batch SKIP Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) · [Airflow 源码](../../../local-data-platform/airflow/dags/new_only_omop_consumer.py)。
 
 **Condition 优先级（2026-10-18 更新）**：TASK005 业务开发暂缓；历史 [Condition 计划](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 的 STEP00 READ-ONLY 仍可作为将来恢复的起点；不自动授权数据库写入、批次处理或资源部署。当前主线改为 OpenSpec G0–G4、Data Platform G5/G6、PG→Fabric 双表 MVP，随后按独立 Change 引入 FHIR/HL7；开发优先级仍由用户每轮确认。
 
