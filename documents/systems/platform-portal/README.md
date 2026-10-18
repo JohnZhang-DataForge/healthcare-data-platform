@@ -28,7 +28,7 @@ Marquez 使用 `dw-marquez` 的 API/Web 与独立 `dw-postgre14` PostgreSQL14 �
 | --- | --- | --- | --- |
 | **Marquez** | [README](marquez/README.md) · [CODE](marquez/CODE.md) | [`marquez/`](../../../platform-portal/marquez/) | Helm 配置、API/Web、受控恢复、验证；没有独立自研 UI |
 | **PostgreSQL14** | [README](postgres/README.md) · [CODE](postgres/CODE.md) | [`postgres/`](../../../platform-portal/postgres/) | 独立 Marquez metadata 持久化；Git YAML 是历史已部署快照，不是重装指令 |
-| **Airflow OpenLineage** | [README](airflow/README.md) · [CODE](airflow/CODE.md) | [`openlineage/airflow/`](../../../platform-portal/openlineage/airflow/) · [Probe DAG](../../../airflow/dags/platform_portal_openlineage_probe.py) | A3 opt-in Provider 真正的 Task/Run 事件验证；不等于业务全 DAG |
+| **Airflow OpenLineage** | [README](airflow/README.md) · [CODE](airflow/CODE.md) | [`openlineage/airflow/`](../../../platform-portal/openlineage/airflow/) · [Probe DAG](../../../local-data-platform/airflow/dags/platform_portal_openlineage_probe.py) | A3 opt-in Provider 真正的 Task/Run 事件验证；不等于业务全 DAG |
 | **Spark OpenLineage** | [README](spark/README.md) · [CODE](spark/CODE.md) | [`openlineage/spark/`](../../../platform-portal/openlineage/spark/) | A4 隔离真实 Smoke 有部分完成的证据；完整 Job↔Run / Dataset I/O **未通过** |
 
 ## 已验证结果、保留的失败事实
