@@ -46,6 +46,8 @@ evidence: []
 - 不修改业务代码、Self-Runner Workflow、K8s、Airflow、Spark、PostgreSQL、S3 或 Azure 资源。
 - 不将 OpenSpec 当作共享资源的锁、授权、部署平台或业务成功的证明。
 
+**2026-10-18 命名更新**：长期本地平台源码根目录采用 `local-data-platform/`（D-07），原 `data-platform/` 为旧候选；先用独立 docs-only 的 `adopt-local-data-platform-naming` Change 演练 OpenSpec 全流程，不替代 G5 原计划 `relocate-local-data-platform` 的源码迁移设计。G3 旧候选路径 CI 需在 G6 前另行适配并测试。
+
 ## 3. 权威边界：各层只管理自己的事实
 
 | 层 | 唯一职责 | 不应复制/取代 |
@@ -91,12 +93,12 @@ healthcare-data-platform/
 │       │   └── tasks.md
 │       └── archive/                # 经验证、同步后由 OpenSpec 归档
 │
-├── data-platform/                  # V2 设计目标；尚未完成源码迁移
+├── local-data-platform/            # V2 设计目标（2026-10-18 已定名）；尚未完成源码迁移
 ├── azure-fabric/
 └── platform-portal/
 ~~~
 
-OpenSpec 是与 `documents/` 平级的治理目录，不属于 Data Platform、Azure 或 Portal 的业务运行目录。仓库目前未完成 Data Platform V2 源码迁移，以上结构中 `data-platform/` 是**未来目标**，不是当前 Main 实际文件树。
+OpenSpec 是与 `documents/` 平级的治理目录，不属于 Data Platform、Azure 或 Portal 的业务运行目录。仓库目前未完成 Data Platform V2 源码迁移，以上结构中 `local-data-platform/` 是**未来目标**，不是当前 Main 实际文件树。
 
 **命名**：Change 与 Capability 用稳定、功能导向的 kebab-case（如 `landing-batch-validation`、`omop-person-visit-ingestion`），不采用 `task005/step03`、日期或会话号作为代码或长期 Capability 名称。`task`/`step` 仍可作为阶段性实施计划及历史证据编号。
 
