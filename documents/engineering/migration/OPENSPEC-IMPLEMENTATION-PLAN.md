@@ -39,7 +39,7 @@ evidence: []
 
 ## 3. G3 命名 CI 与 G6 迁移特例
 
-当前实际检查入口：[Workflow](../../../.github/workflows/code-component-naming-check.yml) 和 [Checker](../../../scripts/quality/check_new_code_names.py)。目前 Workflow `pull_request.paths` 和 Checker `ROOTS` 尚不包含 `data-platform/`；Checker 的 `git diff --no-renames --diff-filter=A` 还会把部分纯移动旧文件视作新增。**现状有效，但对未来目标目录不完整**。
+**G3 实施前问题（历史基线，已由 PR #218 修复）**：当时 [Workflow](../../../.github/workflows/code-component-naming-check.yml) 的 `pull_request.paths` 和 [Checker](../../../scripts/quality/check_new_code_names.py) 的 `ROOTS` 尚未覆盖 `data-platform/`，仅凭 `git diff --no-renames --diff-filter=A` 无法安全区分部分旧文件纯搬迁和违规新增。**当前 Main 已覆盖 `data-platform/**` 并启用在 Base 预批准、内容 Blob 严格一致的 legacy 搬迁审查；见本节 G3 完成证据。**
 
 G3 必须：
 
@@ -54,7 +54,7 @@ G3 必须：
 - [Component Naming Workflow](../../../.github/workflows/code-component-naming-check.yml) 和 [Naming Checker](../../../scripts/quality/check_new_code_names.py) 检查 `data-platform/**`；[CODE Map Checker](../../../scripts/quality/check_component_code_map.py) 将未来目录纳入现有组件文件所有权与路径链接校验，仍要求对应 CODE.md 在同一 PR 同步。
 - 精确审批清单 [`.github/legacy-relocations.json`](../../../.github/legacy-relocations.json) 初始为空。需**先经独立 PR 审核并合并**具体 `old_path / new_path / source_commit / blob_sha` 映射（完整 SHA）；下一份纯移动 PR 的 Naming Gate **仅从其 Base Commit 读取已批准名单**，验证 Source Commit 是 Base 祖先、源文件在该 Commit 与 Base 内容 Blob 相同、目标仅为 `data-platform/<old_path>`、旧路径已在 HEAD 删除、目标 Blob 与源 Blob 完全一致。PR 内自加豁免、带修改搬运、夹带新的违规路径均失败，任何变更行为不得冒充纯物理搬迁；G6 使用前另作逐文件审查。清单必须在迁移完成后收口清理，不能保留无限期豁免。
 - 正向临时 Change 返回 Exit 0，缺少 Scenario 的负向 Change 返回 Exit 1；新的 `data-platform/scripts/task999/step03.sh` 以及混入历史搬迁的新 Task/Step 名称均由单元测试拒绝。证据为 [OpenSpec Run #39148008534](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008534)、[Naming Run #39148008629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008629)，目标 HEAD `3f39781167dde125c806a44838ccf7e1f0060e74`。未执行 K8s、业务 SQL、Terraform 或 Self-Runner。
-- **G4 进入条件（G3 已满足）**：PR #218 已合并 Main，最终 PR HEAD `39972abf19535d892bc5759fd792187c89f29d67` 上的 [OpenSpec Run #39148192774](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192774)、[Component Naming Run #39148192762](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192762)、[Documentation Relative Links Run #39148192871](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192871) 三项 SUCCESS，Main Merge SHA `b28660a28e7c9d6b72cc64ae19d3584d7f6f52e9`。G4 再核对 Self-Runner 对已删除旧 `docs/BASELINE.md` 的依赖；不直接运行旧跨仓流水线。
+- **G4 进入条件（G3 已满足）**：PR #218 已合并 Main，最终 PR HEAD `39972abf19535d892bc5759fd792187c89f29d67` 上的 [OpenSpec Run #39148192774](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192774)、[Component Naming Run #39148192762](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192762)、[Documentation Relative Links Run #39148192871](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148192871) 三项 SUCCESS，Main Merge SHA `b28660a28e7c9d6b72cc64ae19d3584d7f6f52e9`。G4 已隔离 Self-Runner 对已删除旧 `docs/BASELINE.md` 的历史依赖，新增独立只读 PR 接力；不直接运行旧跨仓流水线。
 
 G6 中无需立即 Rename 已验收的旧 `task004` 文件。应先保留兼容入口/适配层，以实际依赖审计为准处理不同路径；真正语义重命名留待独立 Change。
 

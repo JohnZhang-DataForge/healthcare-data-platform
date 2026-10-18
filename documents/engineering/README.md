@@ -5,7 +5,7 @@
 - [Development](development/DEVELOPMENT-WORKFLOW.md) — agent rules, workflow, testing, naming, documentation governance and source maps for shared tooling.
 - [Legacy code refactor plan](development/LEGACY-CODE-REFACTOR-PLAN.md) — gradual code modernization, separate from the documentation migration.
 - [Operations](operations/README.md) — safe operations, recovery and runtime guardrails.
-- [Migration](migration/MIGRATION-STATUS.md) — documentation history, provenance and change status. [OpenSpec G0–G7 rollout plan](migration/OPENSPEC-IMPLEMENTATION-PLAN.md) defines implementation gates without implying CLI initialization.
+- [Migration](migration/MIGRATION-STATUS.md) — documentation history, provenance and change status. [OpenSpec G0–G7 rollout plan](migration/OPENSPEC-IMPLEMENTATION-PLAN.md) is the authoritative implementation record: G0–G4 verified/merged, G5 first actual Change not started. [Agent/PR lifecycle](development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md) covers future work.
 - [Project Status](status/PROJECT-STATUS.md) — cross-system status and accepted evidence boundaries.
 
 The new hierarchy is a documentation organization only. Historical Git snapshots, runtime contracts and source file locations remain unchanged.

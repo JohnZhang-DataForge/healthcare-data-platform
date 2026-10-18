@@ -2,12 +2,12 @@
 
 > **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 G0–G4 COMPLETE；G5 首个 Change 仅待独立设计。
 >
-> 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与未来 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
+> 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与今后创建的 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
 ## 当前文档目录（Data Platform / Engineering 已切换）
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
-- [架构设计讨论稿](architecture/design/README.md)：[V2 多来源 Fabric 与双 Portal 展示路线](architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)、Data Platform V2 源码迁移与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（均为中文 Draft，尚未实施）。
+- [架构设计讨论稿](architecture/design/README.md)：[V2 多来源 Fabric 与双 Portal 展示路线](architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)、Data Platform V2 源码迁移与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（为编制时点的中文 Draft；OpenSpec 治理 G0–G4 已另行实现并验收，V2 业务迁移尚未实施）。
 - [Systems](systems/README.md)：Data Platform 本地五组件、Azure/Fabric 与 Platform Portal 已统一进入 `systems/`，均提供 README/CODE 组件导航。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
@@ -17,9 +17,9 @@
 
 **先读 [AGENTS.md](../AGENTS.md)、[Agent 规则](engineering/development/AGENT-RULES.md) 和 [当前项目状态](engineering/status/PROJECT-STATUS.md)。** 根目录 `AGENTS.md` 是唯一按任务分流入口：它会根据代码开发、测试、文档或共享环境操作指向必要的详细规范。不要每次通读全部工程文档，也不在本目录维护第二套任务分类表。
 
-当前采用 **直接维护 Git 正式源码 + Self-Runner / GitHub Actions 受控验证** 的开发模式。具体实施参见 [Development Workflow](engineering/development/DEVELOPMENT-WORKFLOW.md)；需要真实 Runtime 操作时必须遵守 [Safe Operations](engineering/operations/SAFE-OPERATIONS.md)。旧 Skill 和零散排障经验只保留在 [历史 Git 快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md)，不作为现行开发流程。
+当前采用 **直接维护 Git 正式源码 + Self-Runner / GitHub Actions 受控验证** 的开发模式。**G0–G4 已完成；正式功能/重构变更应先按 [OpenSpec 开发生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 与 [唯一 G0–G7 计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 确定 Change 范围；G5 尚未启动，仅设计首个 Change，G6 才允许迁移业务源码。** 原 `documents/` 保留架构、组件、人类可读开发/运维规范的权威，不被 OpenSpec 替代。具体实施参见 [Development Workflow](engineering/development/DEVELOPMENT-WORKFLOW.md)；需要真实 Runtime 操作时必须遵守 [Safe Operations](engineering/operations/SAFE-OPERATIONS.md)。旧 Skill 和零散排障经验只保留在 [历史 Git 快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md)，不作为现行开发流程。
 
-## 最终文档终审与 OpenSpec 下一步（STEP08）
+## 文档终审历史与当前 OpenSpec 入口
 
 - **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — STEP08 当时的 25 份文档链接审计（历史统计，并非现行 `documents/` 文档总数）、旧入口权威纠偏及后续边界。
 - [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 的唯一阶段定义、命名 CI、首个 Change 及迁移验收门槛；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。**G0–G4 已完成；G5 需独立审核变更设计，参见 [生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md)。**
@@ -41,11 +41,11 @@
 - [Data Platform 组件目录与职责](systems/data-platform/README.md) — Synthea、Landing、Airflow、Spark、OMOP 五个可长期维护的业务模块。
 - [Legacy Task-named 代码重构计划](engineering/development/LEGACY-CODE-REFACTOR-PLAN.md) — 旧 `task004` 依赖、兼容门槛、逐阶段源码迁移计划（尚未实际 Rename）。
 
-## 当前项目状态（STEP04 已审核）
+## 当前项目状态（由 PROJECT-STATUS 维护）
 
 - **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 Condition 业务暂缓但保留只读预检准备、OpenSpec G0–G4 已完成、G5–G7 尚未开始、Portal Spark 讨论中、Azure OneLake-first Terraform PLAN-ONLY。
 
-## 当前整体架构（STEP03 已审核）
+## 当前整体架构（STEP03 审核基线）
 
 - [总体系统架构](architecture/SYSTEM-OVERVIEW.md) — 本地 Synthea/OMOP、Portal OpenLineage/Marquez、Azure OneLake-first 目标和验收边界。
 - [数据流架构](architecture/DATA-FLOW.md) — 本地真实 E2E、Portal 观测事件、PG → Azure Blob → Fabric Pipeline → Notebook → OneLake 的目标流。
@@ -69,7 +69,7 @@
 
 历史 `docs/` 快照存在互相矛盾的日期记录；不得仅按文件名中的 CURRENT 或文件创建日期认定事实。对代码/运行状态的陈述必须标明 **Source SHA 与对应验收证据**。有不一致时先记录，停止未经核实的权威切换。
 
-## 已知项目基线（迁移上下文，不是新一轮实时探针）
+## 已知项目基线（历史验收，不是新一轮实时探针）
 
 - [仓库根 README](../README.md) 描述已验收的本地 Synthea → S3 Landing → Airflow → Spark Person/Visit → PostgreSQL OMOP 路径。
 - TASK004 NEW_ONLY Person/Visit 实际 E2E 和同批次 SKIP 有[最终验收证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)；该结论不代表其他数据域或所有并发/恢复场景已验收。
@@ -80,4 +80,4 @@
 
 我们采取 **逐领域分析 → 核对源码/运行证据 → 消除矛盾 → 新建简洁文档 → 审核切换权威** 的方式。现有历史证据不批量覆盖，不修改 `docs/` 正文来伪造一致性。
 
-迁移完成后：`documents/` 管理实际架构、开发方法、运维知识及证据索引；引入 OpenSpec 后，由 `openspec/specs/` 管理可验证行为要求，`openspec/changes/` 管理后续设计/功能变更；避免两套内容重复成为权威。
+当前权威分工：`documents/` 管理实际架构、开发方法、运维知识及证据索引；已初始化的 `openspec/specs/` 用于经核实的当前行为要求，后续 `openspec/changes/` 用于已批准开发的设计与任务；截至 G4 尚无正式业务 Specs/Changes。避免两套内容重复成为权威。

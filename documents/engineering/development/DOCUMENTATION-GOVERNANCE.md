@@ -1,8 +1,8 @@
 # 文档重建与生命周期治理规则 v1
 
-> **历史目录清理**：原 `docs/` 已从 Main 退休；旧验收/Runbook 通过 [固定 Git 快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 读取，不允许新文件写回 `docs/`。所有新增权威项目说明写入 `documents/`，未来 Specs/Changes 则归 OpenSpec。
+> **历史目录清理**：原 `docs/` 已从 Main 退休；旧验收/Runbook 通过 [固定 Git 快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 读取，不允许新文件写回 `docs/`。所有新增权威项目说明写入 `documents/`；经审核的行为规范与开发变更分别归已初始化的 `openspec/specs/` 与 `openspec/changes/`。
 
-> **状态：ACTIVE · 2026-10-16** · **目标：为未来 OpenSpec 建立准确、可演进、不重复的事实基础。**
+> **状态：ACTIVE · 2026-10-16** · **目标：持续维护准确、可演进、不重复的事实基础；OpenSpec G0–G4 已完成，G5 首个 Change 尚未开始。**
 
 ## 1. 基本原则
 
@@ -26,7 +26,7 @@
 | Engineering / Status | `documents/engineering/status/` | 少量经证据核对的当前项目与组件状态 |
 | Architecture Decisions | `documents/architecture/decisions/` | 重大已批准设计决定、理由、影响和旧方案关系 |
 | Evidence | 原 Closeout / GitHub Actions / 已核验的证据索引 | 真实历史验收，不盲目复制日志 |
-| OpenSpec（以后） | `openspec/specs/`、`openspec/changes/` | 可测试行为规范和未来 Change 的 Proposal/Design/Tasks |
+| OpenSpec（G0–G4 已初始化与集成，业务 Specs/Changes 仍为空） | `openspec/specs/`、`openspec/changes/` | 可测试行为规范和未来 Change 的 Proposal/Design/Tasks |
 
 Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`，其旧 `documents/components/azure-fabric/` 已退役；Platform Portal 的唯一系统文档入口是 `documents/systems/platform-portal/`，旧 `documents/components/platform-portal/` 已退役。旧 Data Platform、Development、Operations、Migration、Status 的重复副本已从 Main 清理，历史版本仍可通过对应 Git Commit 追溯；任何后续变更只更新新目录。
 
@@ -82,7 +82,7 @@ evidence: []
 
 | 变化 | 文档处理 |
 | --- | --- |
-| 新功能 / 设计调整 | 先说明目标和受影响模块；更新设计及未完成部分；OpenSpec 引入后使用 Change |
+| 新功能 / 设计调整 | 先说明目标和受影响模块；更新设计及未完成部分；已完成 OpenSpec G0–G4 后按适用的 Change 管理 |
 | 新 STEP / Bug 修复 | 仅更新受影响模块、测试与必要状态；不强制新建独立文档 |
 | 已验证的功能 / 部署 | 基于 Commit + Run/Readback 更新当前状态和证据索引 |
 | 工作流/开发方式改变 | 更新现行 Development 规则，不回写旧验收为新过程 |
@@ -95,7 +95,7 @@ evidence: []
 - 原 `docs/tasks/` 已从 Main 清理；其中 Closeout、冻结 Contract、Runbook 等历史证据仍可通过 [Legacy Docs 固定快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 访问。后续整理不得将这些历史路径描述为当前目录；需要更新证据索引时应先核对来源与可追溯位置。
 - 历史文件的正文原则上保持原貌；新解释放在 ACTIVE 文档或迁移说明，修复过期链接时按文件用途审查。
 - 本次 Document Rebuild PR 默认 **docs-only、无 K8s/PG/S3/Azure/GitHub Workflow 的运行副作用**。需要 Runtime 验证单独提出并授权。
-- 后续加入 OpenSpec 时，不复制 `documents/systems/data-platform/` 中所有实现说明到 Spec：**Specs 只放可验证行为要求，Docs 放架构/部署/运维知识**。
+- 使用 OpenSpec 时，不复制 `documents/systems/data-platform/` 中所有实现说明到 Spec：**Specs 只放可验证行为要求，Docs 放架构/部署/运维知识**。
 
 ## 7. PR 最小验收
 
