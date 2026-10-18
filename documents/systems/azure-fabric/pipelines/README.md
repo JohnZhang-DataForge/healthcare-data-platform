@@ -23,4 +23,4 @@ Terraform 目前保存了[默认 Fail Activity 定义](../../../../azure-fabric/
 
 新增原生 Item 时，应保留 Fabric 实际生成的 `.platform`、`pipeline-content.json` 等文件，明确 Item 身份和由 Fabric Git / Terraform 哪一方负责交付，防止配置漂移或双重覆盖。
 
-**相关入口：** [Pipelines CODE.md](CODE.md) · [Notebooks](../notebooks/README.md) · [Azure/Fabric 系统](../README.md) · [源码根目录](../../../../azure-fabric/README.md)。
+**相关入口：** [Pipelines CODE.md](CODE.md) · [Notebooks](../notebooks/README.md) · [Azure/Fabric 系统](../README.md) · [Azure/Fabric 总源码地图](../CODE.md)。

@@ -37,6 +37,7 @@ Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`
 - `documents/systems/data-platform/<component>/README.md`：组件职责、主要数据流、架构边界、当前能力范围和其它权威文档导航；避免在这里重复完整的源码表。
 - `documents/systems/data-platform/<component>/CODE.md`：**唯一组件级源码导航入口**，直接链接实际源文件/目录、主要测试、Contract 和构建/部署入口；不复制 CURRENT/NEXT、架构全文或 Runbook。跨组件源码按功能所有权分别登记，不机械复制每个代码目录的 README。
 - 原代码目录 README 若只有导航或已有信息，在核对后迁移独有知识、修复所有反向链接、通过路径检查即可逐步删除；不改源码、Runtime、冻结契约或历史证据。
+- **Azure/Fabric 源码/文档分离**：`documents/systems/azure-fabric/` 是该系统的唯一正式文档入口；`infra-terraform/`、`notebooks/`、`pipelines/` 子组件分别以 `README.md`（职责）和 `CODE.md`（源码）管理。Terraform 详细 IAM/OIDC/Remote State/验收说明集中于 `infra-terraform/ARCHITECTURE.md`。`azure-fabric/` 源码区禁止重复维护说明性 README、CODE 或 ARCHITECTURE；`.tf`、`.tfvars`、JSON、Python 及 Fabric Item 的 `.platform` 等机器可读源码和元数据必须仍放在实际运行源码目录。文档迁移不得改变 Terraform 资源定义、Remote State、Workflow 的部署行为或 Fabric Item 所有权。
 - **必须同步**：新增、删除、改名或移动组件源码文件时，**同一个 PR 必须修改对应 CODE.md**，核对导航链接、测试入口和依赖；现有文件的入口/职责/关键依赖改变也必须检查并更新 CODE.md。普通代码内部修改不要求无意义改动，但 Reviewer 需要确认导航未过期。
 - **Contract / SQL**：机器可读 Contract、DDL、DML 和只读 SQL 仍是原目录的事实来源，CODE.md 只提供组件所有权导航。SQL 源码地图必须区分只读核验、Rollback 演练、DDL 和 DML；任何导航条目均不代表执行许可。
 - **镜像 / Kubernetes**：`images/` 的 Dockerfile/Entrypoint 和 `kubernetes/` 的 YAML / 模板按**工作负载功能所有权**归入组件 CODE.md；RBAC、Secret 引用、持久化资源与镜像 Digest 是实际依赖，不能在文档清理中改动。源目录不能代替 Live Cluster 状态，通用节点/Namespace/存储说明仍由 [Infrastructure](../../architecture/INFRASTRUCTURE.md) 负责。

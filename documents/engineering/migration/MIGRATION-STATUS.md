@@ -111,6 +111,9 @@
 
 **Azure/Fabric 后续迁移结果（2026-10-18，仅 Git 源码与文档）**：源基线 Healthcare `41be1aba4d8b730b2a9e17fadfc0450e6aec5095`；旧 `azure/infra-terraform/` 与新 `azure-fabric/infra-terraform/` 的 107 个 tree 条目一一对应，除两个说明文件外代码 Blob SHA 相同；Self-Runner `azure-infra.yaml` 已采用新目录，七组件历史 Plan-only 证据保持不变。当前权威文档是 [Azure/Fabric Systems README](../../systems/azure-fabric/README.md) 与 [CODE map](../../systems/azure-fabric/CODE.md)。旧组件文档及旧 Terraform 副本从 Main 退役，可通过上述固定历史 Commit 读取。没有执行 Terraform Plan/Apply/Destroy 或 Azure 数据操作。
 
+
+**Azure/Fabric 文档职责收口（PR #214，2026-10-18）**：参照 Data Platform 现行组件 README/CODE 方式，`documents/systems/azure-fabric/README.md` 是唯一系统总入口，`CODE.md` 为跨组件索引，Terraform 的职责、逐文件源码导航及 IAM/OIDC/State/历史 Plan 证据分别位于 `infra-terraform/README.md`、`CODE.md` 和 `ARCHITECTURE.md`。源码区旧 `azure-fabric/README.md`、`azure-fabric/infra-terraform/README.md`、`azure-fabric/infra-terraform/docs/ARCHITECTURE.md` 已退役，历史原文仍可通过 PR 前固定 Git Commit 追溯。本次仅 Git 文档移动、链接修复及 CI 检查，Terraform 定义、State、云端资源均未触及，无 Plan/Apply/Destroy。
+
 下一 STEP 的 PR 在本文件追加或更新：**领域、旧文件/代码来源、Source SHA、核实的证据及运行时间、冲突决议、新文件路径、ACTIVE/未完成范围、PR 号、合并 SHA**。不要提前猜测 PR 和合并 SHA。
 
 在某领域 ACTIVE 前，新 Agent 仍必须从代码/Contract/当前证据与未迁移的有效旧操作规则获取事实。旧文档中的历史 CURRENT/NEXT 不应作为新一轮自动执行命令。

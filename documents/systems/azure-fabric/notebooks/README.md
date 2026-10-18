@@ -23,4 +23,4 @@ Notebook **不重新执行**本地 Synthea、Canonical 或 OMOP 映射。Pipelin
 
 开始接入真实 Item 时，须保留 Fabric 生成的 `.platform`、`notebook-content.py` 等真实文件，核对现有 Notebook GUID、Runtime 和授权，并确定由 Fabric Git 还是 Terraform 负责部署，避免双重管理。不能为了补齐目录而手工伪造 Item 元数据。
 
-**相关入口：** [Notebooks CODE.md](CODE.md) · [Pipelines](../pipelines/README.md) · [Azure/Fabric 系统](../README.md) · [源码根目录](../../../../azure-fabric/README.md)。
+**相关入口：** [Notebooks CODE.md](CODE.md) · [Pipelines](../pipelines/README.md) · [Azure/Fabric 系统](../README.md) · [Azure/Fabric 总源码地图](../CODE.md)。

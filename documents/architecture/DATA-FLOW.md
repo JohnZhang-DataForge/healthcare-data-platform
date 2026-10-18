@@ -91,7 +91,7 @@ flowchart LR
 
 ## D. Azure 当前 Infra 证据（与云端数据流验收区分）
 
-Terraform Components 位于 [`azure-fabric/infra-terraform/`](../../azure-fabric/infra-terraform/README.md)，执行器为 Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/actions/workflows/azure-infra.yaml)。2026-10-15 三次真实 Plan 均是相同 Healthcare SHA `6acb59353f5d7630f65b6f417c8e8bfbd39cf651`，各 **1 add / 0 change / 0 destroy**：
+Terraform Components 位于 [`azure-fabric/infra-terraform/`](../systems/azure-fabric/infra-terraform/README.md)，执行器为 Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/actions/workflows/azure-infra.yaml)。2026-10-15 三次真实 Plan 均是相同 Healthcare SHA `6acb59353f5d7630f65b6f417c8e8bfbd39cf651`，各 **1 add / 0 change / 0 destroy**：
 
 - [OneLake Lakehouse Plan 38799966270 attempt2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38799966270/attempts/2)：`lh_omop_analytics`。
 - [Notebook Plan 38832798550](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38832798550)：`nb_omop_snapshot_load`。
