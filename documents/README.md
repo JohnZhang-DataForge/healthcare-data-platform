@@ -22,6 +22,7 @@
 ## 最终文档终审与 OpenSpec 下一步（STEP08）
 
 - **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — STEP08 当时的 25 份文档链接审计（历史统计，并非现行 `documents/` 文档总数）、旧入口权威纠偏及后续边界。
+- [Azure 旧源码目录退役记录](engineering/migration/AZURE-DIRECTORY-RETIREMENT.md) — 新旧 Terraform 文件树、Self-Runner 路径与文档清理证据；旧 `azure/` 已从 Main 退役，Azure 云端资源及 State 未变。
 - [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 的唯一阶段定义、命名 CI、首个 Change 及迁移验收门槛；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。**下一阶段 G1；`openspec/` 尚未初始化。**
 
 ## 长期运维与架构决策（STEP07 已审核）

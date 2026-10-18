@@ -9,7 +9,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 本文件记录**当前 Git Main 中真实存在的 Azure/Fabric 源码和配置入口**，不把计划中的功能当成已实现能力。系统职责见 [README](README.md)；全项目代码命名规则见 [开发规范](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md)，真实环境操作须遵守[安全操作规范](../../engineering/operations/SAFE-OPERATIONS.md)。
 
-当前 Terraform 的执行源码位于 `azure-fabric/infra-terraform/`。原 `azure/infra-terraform/` 尚保留但不应并行执行；Self-Runner 已切换到新目录，七个组件在新路径下的 Plan-only 检查通过。Fabric 原生 Notebook/Pipeline 的源码归属由下方两个组件 CODE.md 分别维护。
+当前 Terraform 的执行源码位于 `azure-fabric/infra-terraform/`。旧 `azure/infra-terraform/` 已从 Main 退役；Self-Runner 已切换到新目录，七个组件在新路径下的 Plan-only 检查通过。旧版源码仅从 Git 历史获取，不再有第二份可执行目录。Fabric 原生 Notebook/Pipeline 的源码归属由下方两个组件 CODE.md 分别维护。
 
 ## 一、Terraform 基础设施导航
 
