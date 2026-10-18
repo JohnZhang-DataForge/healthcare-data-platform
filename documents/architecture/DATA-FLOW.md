@@ -34,7 +34,7 @@ source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
 - **发现 DAG 与入库 DAG 不是一个能力**：`landing_batch_discovery` 每 15 分钟扫描的默认路径是 Discovery/只读 Claim Guard（不代表自动 Writer）；真正 NEW_ONLY Writer DAG `new_only_omop_consumer` 为 `schedule=None`、`max_active_runs=1`、需显式授权。
 - **成功验证的范围**：三条真实 NEW_ONLY Batch 的最终 Claim 均为 COMPLETED。第三批 `synthea-new-only-gh-38588671004` 的 1 Person / 244 Visit 写入后独立读取 `cdm.person=208`、`cdm.visit_occurrence=21934`、Claim=3，并验证同一个 Batch 再消费时跳过 Spark/Writer、PG 不变；这些是 **2026-10-14 验收读数**，不是当前实时数据库统计。
 - **尚未完成**：UPDATE_ONLY、MIX_DATA、Condition/Procedure/Drug/Observation 其他域的业务 Writer、自动批次 Claim 及所有复杂恢复/并发路径。不能将历史 ROLLBACK/PASS 泛化为未来任意 Commit 安全。
-- [当前 DAG 源码](../../airflow/dags/new_only_omop_consumer.py)、[Discovery DAG](../../airflow/dags/landing_batch_discovery.py)、[TASK004 最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
+- [当前 DAG 源码](../../local-data-platform/airflow/dags/new_only_omop_consumer.py)、[Discovery DAG](../../local-data-platform/airflow/dags/landing_batch_discovery.py)、[TASK004 最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 
 ## B. 已部分验收：OpenLineage → Marquez（元数据流，不是业务数据流）
 

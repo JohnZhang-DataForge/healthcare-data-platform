@@ -78,19 +78,19 @@ The component README describes responsibilities; the component CODE.md links dir
 | Directory | Contents |
 | --- | --- |
 | [`.github/`](.github/workflows) | GitHub Actions workflows and image publishing |
-| [`airflow/`](airflow) · [CODE](documents/systems/data-platform/airflow/CODE.md) | DAGs, batch routing and Spark/Writer orchestration |
-| [`apps/`](apps) · [Component CODE maps](documents/systems/data-platform/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
-| [`config/`](config) · [Developer CODE](documents/engineering/development/CODE.md) | Local configuration examples; no live secrets |
-| [`contracts/`](contracts) · [Synthea CODE](documents/systems/data-platform/synthea/CODE.md) · [OMOP CODE](documents/systems/data-platform/omop/CODE.md) | Source and writer identity / schema contracts |
+| [`airflow/`](local-data-platform/airflow) · [CODE](documents/systems/data-platform/airflow/CODE.md) | DAGs, batch routing and Spark/Writer orchestration |
+| [`apps/`](local-data-platform/apps) · [Component CODE maps](documents/systems/data-platform/README.md) | Source discovery, generator, claims and OMOP writer Python applications |
+| [`config/`](local-data-platform/config) · [Developer CODE](documents/engineering/development/CODE.md) | Local configuration examples; no live secrets |
+| [`contracts/`](local-data-platform/contracts) · [Synthea CODE](documents/systems/data-platform/synthea/CODE.md) · [OMOP CODE](documents/systems/data-platform/omop/CODE.md) | Source and writer identity / schema contracts |
 | [`documents/`](documents/README.md) | New, incrementally verified project documentation; authoritative migration and AI rules | 
 | [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | Historical documentation snapshot (removed from Main); evidence remains pinned to the pre-removal commit |
-| [`images/`](images) · [组件 CODE 导航](documents/systems/data-platform/README.md) | Docker image sources for individual workloads |
-| [`kubernetes/`](kubernetes) · [Synthea CODE](documents/systems/data-platform/synthea/CODE.md) · [Airflow CODE](documents/systems/data-platform/airflow/CODE.md) | Kubernetes manifests, service accounts and runtime templates |
+| [`images/`](local-data-platform/images) · [组件 CODE 导航](documents/systems/data-platform/README.md) | Docker image sources for individual workloads |
+| [`kubernetes/`](local-data-platform/kubernetes) · [Synthea CODE](documents/systems/data-platform/synthea/CODE.md) · [Airflow CODE](documents/systems/data-platform/airflow/CODE.md) | Kubernetes manifests, service accounts and runtime templates |
 | [`platform-portal/`](platform-portal/) | Marquez / OpenLineage source, manifests, probes and scripts; [system README / CODE](documents/systems/platform-portal/README.md) |
-| [`scripts/`](scripts) · [业务组件 CODE](documents/systems/data-platform/README.md) · [Developer CODE](documents/engineering/development/CODE.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
-| [`spark/`](spark) · [CODE](documents/systems/data-platform/spark/CODE.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
-| [`sql/`](sql) · [Landing CODE](documents/systems/data-platform/landing/CODE.md) · [OMOP CODE](documents/systems/data-platform/omop/CODE.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
-| [`tests/`](tests) | Unit, contract and regression tests |
+| [`scripts/`](local-data-platform/scripts) · [业务组件 CODE](documents/systems/data-platform/README.md) · [Developer CODE](documents/engineering/development/CODE.md) | Component/capability-named verification scripts; historical Task-scoped scripts retained for reproducibility |
+| [`spark/`](local-data-platform/spark) · [CODE](documents/systems/data-platform/spark/CODE.md) | PySpark adapters, shared gates, contracts and SparkApplication templates |
+| [`sql/`](local-data-platform/sql) · [Landing CODE](documents/systems/data-platform/landing/CODE.md) · [OMOP CODE](documents/systems/data-platform/omop/CODE.md) | PostgreSQL schema, mapping, staging, rollback and read-only checks |
+| [`tests/`](local-data-platform/tests) · [Repository quality tests](tests/quality) | Unit, contract and regression tests; repository-wide quality checks remain at root |
 
 ## Start here
 
@@ -98,7 +98,7 @@ The component README describes responsibilities; the component CODE.md links dir
 
 **Contributors / agents:** start with [AGENTS.md](AGENTS.md) → [documents/README.md](documents/README.md) → **[current PROJECT-STATUS](documents/engineering/status/PROJECT-STATUS.md)** → [Agent rules](documents/engineering/development/AGENT-RULES.md) and [safe operations](documents/engineering/operations/SAFE-OPERATIONS.md). For detailed historical troubleshooting or evidence only, consult the **read-only historical snapshot** at the [legacy documentation index](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) and dated [TASK history](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-STATUS.md); neither controls current NEXT. New source paths use [component-first naming](documents/engineering/development/CODE-ORGANIZATION-AND-NAMING.md). As of the last verified closeout, **TASK004 is completed** and **Condition TASK005 is paused** (its STEP00 read-only preparation is preserved). **OpenSpec G0–G4 are complete; G5 change design is the next agreed workstream**, not Condition execution. The single authoritative current priority is [PROJECT-STATUS](documents/engineering/status/PROJECT-STATUS.md); do not reuse dated README NEXT statements.
 
-**Environment:** the lab has configuration examples in [config/local.env.example](config/local.env.example). This repository is **not a one-command production installer**; cluster components, namespace-specific secrets and historical deployments must be audited before reproducing the runtime. The prior `/data/spark/phase3c` baseline is historical and intentionally protected; it is not the active source tree.
+**Environment:** the lab has configuration examples in [config/local.env.example](local-data-platform/config/local.env.example). This repository is **not a one-command production installer**; cluster components, namespace-specific secrets and historical deployments must be audited before reproducing the runtime. The prior `/data/spark/phase3c` baseline is historical and intentionally protected; it is not the active source tree.
 
 ---
 

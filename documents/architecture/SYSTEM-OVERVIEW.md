@@ -50,8 +50,8 @@ flowchart TB
 | 子系统 | 当前职责 | 到 2026-10-16 可支持的结论 |
 | --- | --- | --- |
 | Kubernetes & local storage | SeaweedFS、Airflow、Spark、PG 的容器调度和持久卷；NEW_ONLY 生成与消费解耦 | 有真实运行和存储验收；**本轮未重做在线探针** |
-| [Synthea NEW_ONLY](../../kubernetes/manifests/synthea/new-only) | 独立生成/校验/发布不可变 S3 Batch，Airflow 不启动 Generator | NEW_ONLY 的真实新批次生产 + 下游消费已被验收；UPDATE_ONLY / MIX_DATA 未完成 |
-| [Airflow](../../airflow/dags/new_only_omop_consumer.py) + [Spark CODE](../systems/data-platform/spark/CODE.md) | 手动选择 READY Batch；合法 Claim 路由后处理 Person/Visit，再进行 reconciliation / writer handoff | 新批次 Airflow Person/Visit → PostgreSQL 写入、同一已提交批次 SKIP 均有独立证据；不代表所有模式已自动运行 |
+| [Synthea NEW_ONLY](../../local-data-platform/kubernetes/manifests/synthea/new-only) | 独立生成/校验/发布不可变 S3 Batch，Airflow 不启动 Generator | NEW_ONLY 的真实新批次生产 + 下游消费已被验收；UPDATE_ONLY / MIX_DATA 未完成 |
+| [Airflow](../../local-data-platform/airflow/dags/new_only_omop_consumer.py) + [Spark CODE](../systems/data-platform/spark/CODE.md) | 手动选择 READY Batch；合法 Claim 路由后处理 Person/Visit，再进行 reconciliation / writer handoff | 新批次 Airflow Person/Visit → PostgreSQL 写入、同一已提交批次 SKIP 均有独立证据；不代表所有模式已自动运行 |
 | [PostgreSQL OMOP CODE](../systems/data-platform/omop/CODE.md) | Person/Visit ID Map、CDM、事务 Claim / Stage / Commit、真实读回 | TASK004 对已指定 NEW_ONLY 批次的 atomic COMMIT 验收通过；Condition/其他域未完成 |
 | [Platform Portal](../systems/platform-portal/README.md) | Airflow/Spark lineage 可观测性，不是业务 ETL 的 Producer/Writer | Marquez 和原生 Web、Airflow A3 真实事件、Spark A4 独立 Smoke 已测试；Job/Run 对应与 Dataset I/O 完整血缘仍未通过 |
 | [Azure + Fabric](../systems/azure-fabric/infra-terraform/README.md) | 本地 OMOP 作为**来源权威**，导出一致性快照至已有 Azure Blob，再由 Fabric Pipeline+Notebook 将数据写入 OneLake Lakehouse | Storage/Workspace 既有；3 个 Fabric item **Terraform Plan PASS**，但未 Apply、Notebook/Exporter/业务 Pipeline 未完成，OneLake ETL 无 E2E |

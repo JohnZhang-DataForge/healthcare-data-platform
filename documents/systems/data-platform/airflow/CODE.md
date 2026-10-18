@@ -13,60 +13,60 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件（直接链接） | 作用 / 使用范围 |
 | --- | --- |
-| [`new_only_omop_consumer.py`](../../../../airflow/dags/new_only_omop_consumer.py) | 经 Person/Visit E2E 验收的手工 NEW_ONLY Consumer DAG；串联 READY 选择、只读 Claim、Spark、对账和受控 Writer |
-| [`new_only_omop_routing.py`](../../../../airflow/dags/new_only_omop_routing.py) | 纯 Batch/Manifest 校验及 fail-closed 路由；完成批次走 `already_completed_no_replay` |
-| [`new_only_omop_writer_handoff.py`](../../../../airflow/dags/new_only_omop_writer_handoff.py) | Spark 结果与 Writer 之间的不可变交接校验；自身不授权 COMMIT |
-| [`landing_batch_discovery.py`](../../../../airflow/dags/landing_batch_discovery.py) | 独立、周期性 S3 Landing Discovery DAG；扫描不等于自动业务提交 |
-| [`landing_spark_processing.py`](../../../../airflow/dags/landing_spark_processing.py) | Landing/Spark opt-in 选择 Gate、校验及 KPO 工厂；辅助模块而非独立 DAG |
+| [`new_only_omop_consumer.py`](../../../../local-data-platform/airflow/dags/new_only_omop_consumer.py) | 经 Person/Visit E2E 验收的手工 NEW_ONLY Consumer DAG；串联 READY 选择、只读 Claim、Spark、对账和受控 Writer |
+| [`new_only_omop_routing.py`](../../../../local-data-platform/airflow/dags/new_only_omop_routing.py) | 纯 Batch/Manifest 校验及 fail-closed 路由；完成批次走 `already_completed_no_replay` |
+| [`new_only_omop_writer_handoff.py`](../../../../local-data-platform/airflow/dags/new_only_omop_writer_handoff.py) | Spark 结果与 Writer 之间的不可变交接校验；自身不授权 COMMIT |
+| [`landing_batch_discovery.py`](../../../../local-data-platform/airflow/dags/landing_batch_discovery.py) | 独立、周期性 S3 Landing Discovery DAG；扫描不等于自动业务提交 |
+| [`landing_spark_processing.py`](../../../../local-data-platform/airflow/dags/landing_spark_processing.py) | Landing/Spark opt-in 选择 Gate、校验及 KPO 工厂；辅助模块而非独立 DAG |
 
 ## Legacy / 兼容性源码（不可因文件名而删除）
 
 | 源文件（直接链接） | 作用 / 使用范围 |
 | --- | --- |
-| [`task004_cdm_materialization_plan.py`](../../../../airflow/dags/task004_cdm_materialization_plan.py) | 受约束的动态 CDM 批次 Plan 与标识校验 |
-| [`task004_cdm_preflight_contract.py`](../../../../airflow/dags/task004_cdm_preflight_contract.py) | Airflow → CDM Handoff 的只读前置合同校验 |
-| [`task004_cdm_dynamic_source.py`](../../../../airflow/dags/task004_cdm_dynamic_source.py) | 从已验证 S3 Processing Parquet 读取动态批次数据 |
-| [`task004_cdm_dynamic_adapters.py`](../../../../airflow/dags/task004_cdm_dynamic_adapters.py) | Person/Visit Canonical → OMOP 行适配、映射及校验 |
-| [`task004_cdm_dynamic_pg_writer.py`](../../../../airflow/dags/task004_cdm_dynamic_pg_writer.py) | PG 事务 SQL 渲染；不同 Writer 路径具有严格授权限制 |
-| [`task004_cdm_postgres_readonly.py`](../../../../airflow/dags/task004_cdm_postgres_readonly.py) | 只读 PostgreSQL / CDM 查询及权限验证 |
-| [`task004_cdm_postgres_rollback_executor.py`](../../../../airflow/dags/task004_cdm_postgres_rollback_executor.py) | 受控 PostgreSQL Rollback-only 验证执行器 |
-| [`task004_processing_pipeline.py`](../../../../airflow/dags/task004_processing_pipeline.py) | 历史 Processing-first DAG；保留其证据与依赖兼容 |
+| [`task004_cdm_materialization_plan.py`](../../../../local-data-platform/airflow/dags/task004_cdm_materialization_plan.py) | 受约束的动态 CDM 批次 Plan 与标识校验 |
+| [`task004_cdm_preflight_contract.py`](../../../../local-data-platform/airflow/dags/task004_cdm_preflight_contract.py) | Airflow → CDM Handoff 的只读前置合同校验 |
+| [`task004_cdm_dynamic_source.py`](../../../../local-data-platform/airflow/dags/task004_cdm_dynamic_source.py) | 从已验证 S3 Processing Parquet 读取动态批次数据 |
+| [`task004_cdm_dynamic_adapters.py`](../../../../local-data-platform/airflow/dags/task004_cdm_dynamic_adapters.py) | Person/Visit Canonical → OMOP 行适配、映射及校验 |
+| [`task004_cdm_dynamic_pg_writer.py`](../../../../local-data-platform/airflow/dags/task004_cdm_dynamic_pg_writer.py) | PG 事务 SQL 渲染；不同 Writer 路径具有严格授权限制 |
+| [`task004_cdm_postgres_readonly.py`](../../../../local-data-platform/airflow/dags/task004_cdm_postgres_readonly.py) | 只读 PostgreSQL / CDM 查询及权限验证 |
+| [`task004_cdm_postgres_rollback_executor.py`](../../../../local-data-platform/airflow/dags/task004_cdm_postgres_rollback_executor.py) | 受控 PostgreSQL Rollback-only 验证执行器 |
+| [`task004_processing_pipeline.py`](../../../../local-data-platform/airflow/dags/task004_processing_pipeline.py) | 历史 Processing-first DAG；保留其证据与依赖兼容 |
 
 ## 历史 TASK004 Airflow 只读核验（源码位于 apps）
 
 | 实际源码文件 | 作用及使用边界 |
 | --- | --- |
-| [`step04a_inspect_airflow_log_lineage.py`](../../../../apps/task004/step04a_inspect_airflow_log_lineage.py) | 历史 Airflow DagRun 日志血缘只读检查 |
-| [`step04a_xcom_uri_readonly.py`](../../../../apps/task004/step04a_xcom_uri_readonly.py) | 历史 Airflow XCom Processing URI 只读核验 |
+| [`step04a_inspect_airflow_log_lineage.py`](../../../../local-data-platform/apps/task004/step04a_inspect_airflow_log_lineage.py) | 历史 Airflow DagRun 日志血缘只读检查 |
+| [`step04a_xcom_uri_readonly.py`](../../../../local-data-platform/apps/task004/step04a_xcom_uri_readonly.py) | 历史 Airflow XCom Processing URI 只读核验 |
 
 ## 平台探针
 
 | 源文件（直接链接） | 作用 / 使用范围 |
 | --- | --- |
-| [`platform_portal_openlineage_probe.py`](../../../../airflow/dags/platform_portal_openlineage_probe.py) | opt-in Airflow OpenLineage A3 Probe，不执行 S3/Spark/OMOP 业务 |
-| [`airflow_smoke_test.py`](../../../../airflow/dags/airflow_smoke_test.py) | 独立 Airflow 基础部署 Smoke DAG，非业务消费链路 |
+| [`platform_portal_openlineage_probe.py`](../../../../local-data-platform/airflow/dags/platform_portal_openlineage_probe.py) | opt-in Airflow OpenLineage A3 Probe，不执行 S3/Spark/OMOP 业务 |
+| [`airflow_smoke_test.py`](../../../../local-data-platform/airflow/dags/airflow_smoke_test.py) | 独立 Airflow 基础部署 Smoke DAG，非业务消费链路 |
 
 ## 相关测试、Contract 与构建入口
 
-- **DAG / 路由**：[Consumer tests](../../../../tests/landing_discovery/test_new_only_omop_airflow_consumer.py)、[Writer branch tests](../../../../tests/landing_discovery/test_new_only_airflow_writer_branch.py)、[Discovery DAG contract](../../../../tests/landing_discovery/test_airflow_dag_contract.py)。
-- **Processing / Handoff**：[Spark processing gate](../../../../tests/landing_discovery/test_spark_processing_gate.py)、[Airflow handoff](../../../../tests/task004/test_step04f_airflow_handoff.py)、[Writer runtime](../../../../tests/omop_writer/test_new_only_airflow_writer_runtime.py)。
-- **契约**：[NEW_ONLY Batch identity](../../../../contracts/synthea/producer-batch-identity-v1.json)、[Writer identity](../../../../contracts/omop-writer/writer-batch-identity-v1.json)。
-- **镜像依赖**：[Writer Dockerfile](../../../../images/new-only-omop-writer/Dockerfile)、[Legacy 重构约束](../../../engineering/development/LEGACY-CODE-REFACTOR-PLAN.md)。历史 `task004_cdm_*.py` 的 Docker COPY、Import、镜像 Digest/数据库标识均需要迁移评审；README 整理不改变它们。
+- **DAG / 路由**：[Consumer tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_omop_airflow_consumer.py)、[Writer branch tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_airflow_writer_branch.py)、[Discovery DAG contract](../../../../local-data-platform/tests/landing_discovery/test_airflow_dag_contract.py)。
+- **Processing / Handoff**：[Spark processing gate](../../../../local-data-platform/tests/landing_discovery/test_spark_processing_gate.py)、[Airflow handoff](../../../../local-data-platform/tests/task004/test_step04f_airflow_handoff.py)、[Writer runtime](../../../../local-data-platform/tests/omop_writer/test_new_only_airflow_writer_runtime.py)。
+- **契约**：[NEW_ONLY Batch identity](../../../../local-data-platform/contracts/synthea/producer-batch-identity-v1.json)、[Writer identity](../../../../local-data-platform/contracts/omop-writer/writer-batch-identity-v1.json)。
+- **镜像依赖**：[Writer Dockerfile](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile)、[Legacy 重构约束](../../../engineering/development/LEGACY-CODE-REFACTOR-PLAN.md)。历史 `task004_cdm_*.py` 的 Docker COPY、Import、镜像 Digest/数据库标识均需要迁移评审；README 整理不改变它们。
 
 ## 历史控制面镜像（Airflow 调度及旧 TASK004）
 
 | 源文件（直接链接） | 用途与运行边界 |
 | --- | --- |
-| [`Dockerfile`](../../../../images/task004-runtime/Dockerfile) | 历史 Airflow/Spark 控制面容器：kubectl、生成/处理脚本与跨 namespace 编排，不是 Spark 执行器 |
-| [`entrypoint.sh`](../../../../images/task004-runtime/entrypoint.sh) | 历史控制面 CLI：resolve / generate-publish / person / visit / reconcile；调用固定旧脚本 |
+| [`Dockerfile`](../../../../local-data-platform/images/task004-runtime/Dockerfile) | 历史 Airflow/Spark 控制面容器：kubectl、生成/处理脚本与跨 namespace 编排，不是 Spark 执行器 |
+| [`entrypoint.sh`](../../../../local-data-platform/images/task004-runtime/entrypoint.sh) | 历史控制面 CLI：resolve / generate-publish / person / visit / reconcile；调用固定旧脚本 |
 
 ## 历史控制面与跨 Namespace RBAC
 
 | 源文件（直接链接） | 用途与运行边界 |
 | --- | --- |
-| [`airflow-task004-control-runtime-rbac.yaml`](../../../../kubernetes/manifests/task004/airflow-task004-control-runtime-rbac.yaml) | 历史 dw-spark Airflow Pod Launcher Role/Binding：跨 namespace Scheduler Pod 权限 |
-| [`control-runtime-rbac.yaml`](../../../../kubernetes/manifests/task004/control-runtime-rbac.yaml) | 历史 dw-spark 控制面 ServiceAccount/Role/Binding：SparkApplication、ConfigMap、Pods 权限 |
-| [`control-runtime-synthea-rbac.yaml`](../../../../kubernetes/manifests/task004/control-runtime-synthea-rbac.yaml) | 历史控制面跨 dw-synthea 的 Job/ConfigMap/Secret RBAC；不等于当前授权 |
+| [`airflow-task004-control-runtime-rbac.yaml`](../../../../local-data-platform/kubernetes/manifests/task004/airflow-task004-control-runtime-rbac.yaml) | 历史 dw-spark Airflow Pod Launcher Role/Binding：跨 namespace Scheduler Pod 权限 |
+| [`control-runtime-rbac.yaml`](../../../../local-data-platform/kubernetes/manifests/task004/control-runtime-rbac.yaml) | 历史 dw-spark 控制面 ServiceAccount/Role/Binding：SparkApplication、ConfigMap、Pods 权限 |
+| [`control-runtime-synthea-rbac.yaml`](../../../../local-data-platform/kubernetes/manifests/task004/control-runtime-synthea-rbac.yaml) | 历史控制面跨 dw-synthea 的 Job/ConfigMap/Secret RBAC；不等于当前授权 |
 
 **RBAC 安全**：这些 Role/Binding 是旧控制面真实权限声明，包括 Pod 执行、SparkApplication/ConfigMap 变更和跨 `dw-synthea` Secret 读取。不能作为新 Agent 的默认运行授权，也不能仅凭文件存在断言当前集群已部署。修改 RBAC 或重放历史 Job 必须单独审查权限、现网 Namespace、会话冲突与部署窗口。
 
@@ -78,8 +78,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`05b-prepare-person-visit-runtime-interface.sh`](../../../../scripts/task004/05b-prepare-person-visit-runtime-interface.sh) | [PREPARE / may write] 历史 TASK004 prepare person visit runtime interface 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`06a-prepare-unified-runtime-image.sh`](../../../../scripts/task004/06a-prepare-unified-runtime-image.sh) | [PREPARE / may write] 历史 TASK004 prepare unified runtime image 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05b-prepare-person-visit-runtime-interface.sh`](../../../../local-data-platform/scripts/task004/05b-prepare-person-visit-runtime-interface.sh) | [PREPARE / may write] 历史 TASK004 prepare person visit runtime interface 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`06a-prepare-unified-runtime-image.sh`](../../../../local-data-platform/scripts/task004/06a-prepare-unified-runtime-image.sh) | [PREPARE / may write] 历史 TASK004 prepare unified runtime image 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 
 ## CODE.md 同步规则（本组件）
 

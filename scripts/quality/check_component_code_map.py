@@ -10,12 +10,15 @@ from pathlib import Path
 import re
 import subprocess
 
-DATA_PLATFORM_PREFIX = "data-platform/"
+DATA_PLATFORM_PREFIXES = ("local-data-platform/", "data-platform/")
 
 
 def local_source(path: str) -> str:
     """Classify old and future data-platform sources by the same component rules."""
-    return path.removeprefix(DATA_PLATFORM_PREFIX)
+    for prefix in DATA_PLATFORM_PREFIXES:
+        if path.startswith(prefix):
+            return path[len(prefix):]
+    return path
 
 
 AIRFLOW_PREFIX = "airflow/"
@@ -43,7 +46,7 @@ def added_removed_sources(base: str, head: str) -> list[str]:
 def validate_dag_file_map(contents: str, current_dags: set[str]) -> tuple[list[str], list[str]]:
     """All tracked Airflow DAG Python files must be linked directly and none be stale."""
     linked = set(re.findall(
-        r"\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?airflow/dags/[^\s)#?]+\.py)\)", contents
+        r"\]\(\.\./\.\./\.\./\.\./((?:(?:local-)?data-platform/)?airflow/dags/[^\s)#?]+\.py)\)", contents
     ))
     return sorted(current_dags - linked), sorted(linked - current_dags)
 
@@ -55,7 +58,7 @@ APP_MAP_PATHS = (
     "documents/systems/data-platform/omop/CODE.md",
     "documents/systems/data-platform/airflow/CODE.md",
 )
-APP_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?apps/[^\s)#?]+)\)")
+APP_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./((?:(?:local-)?data-platform/)?apps/[^\s)#?]+)\)")
 
 
 def is_app_source(path: str) -> bool:
@@ -92,7 +95,7 @@ def required_app_updates(changed_sources: set[str], before: dict[str, str], afte
 
 
 SPARK_MAP = "documents/systems/data-platform/spark/CODE.md"
-SPARK_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?spark/[^\s)#?]+)\)")
+SPARK_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./((?:(?:local-)?data-platform/)?spark/[^\s)#?]+)\)")
 
 
 def is_spark_source(path: str) -> bool:
@@ -114,7 +117,7 @@ CONTRACT_SQL_MAP_PATHS = (
 )
 # Inventory table rows declare ownership; cross-component prose links do not.
 CONTRACT_SQL_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?(?:contracts|sql)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:(?:local-)?data-platform/)?(?:contracts|sql)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
@@ -164,7 +167,7 @@ IMAGE_K8S_MAP_PATHS = (
 )
 # Only source inventory table rows declare an owner, not incidental prose links.
 IMAGE_K8S_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?(?:images|kubernetes)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:(?:local-)?data-platform/)?(?:images|kubernetes)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
@@ -217,7 +220,7 @@ SCRIPT_CONFIG_MAP_PATHS = (
 # Inventory table rows alone declare ownership. Developer CODE.md is one directory
 # shallower than components: accept exactly ../../ or ../../../ source links.
 SCRIPT_CONFIG_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}((?:data-platform/)?(?:scripts|config)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}((?:(?:local-)?data-platform/)?(?:scripts|config)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
@@ -338,7 +341,7 @@ def main() -> int:
         return 1
 
     current = {
-        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", DAG_PREFIX, DATA_PLATFORM_PREFIX + DAG_PREFIX)
+        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", DAG_PREFIX, *(prefix + DAG_PREFIX for prefix in DATA_PLATFORM_PREFIXES))
         if local_source(path).startswith(DAG_PREFIX) and path.endswith(".py")
     }
     missing, obsolete = validate_dag_file_map(map_path.read_text(encoding="utf-8"), current)
@@ -351,7 +354,7 @@ def main() -> int:
         return 1
 
     app_sources = {
-        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "apps/", "data-platform/apps/")
+        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "apps/", "data-platform/apps/", "local-data-platform/apps/")
         if is_app_source(path)
     }
     after = {doc: Path(doc).read_text(encoding="utf-8") for doc in APP_MAP_PATHS}
@@ -380,7 +383,7 @@ def main() -> int:
         return 1
 
     spark_sources = {
-        p for p in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "spark/", "data-platform/spark/")
+        p for p in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "spark/", "data-platform/spark/", "local-data-platform/spark/")
         if is_spark_source(p)
     }
     spark_doc = Path(SPARK_MAP)
@@ -413,7 +416,7 @@ def main() -> int:
 
     cs_sources = {
         p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
-                             "--", "contracts/", "sql/", "data-platform/contracts/", "data-platform/sql/")
+                             "--", "contracts/", "sql/", "data-platform/contracts/", "local-data-platform/contracts/", "data-platform/sql/", "local-data-platform/sql/")
         if is_contract_sql_source(p)
     }
     cs_after = {p: Path(p).read_text(encoding="utf-8") for p in CONTRACT_SQL_MAP_PATHS}
@@ -443,7 +446,7 @@ def main() -> int:
 
     image_k8s_sources = {
         p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
-                             "--", "images/", "kubernetes/", "data-platform/images/", "data-platform/kubernetes/")
+                             "--", "images/", "kubernetes/", "data-platform/images/", "local-data-platform/images/", "data-platform/kubernetes/", "local-data-platform/kubernetes/")
         if is_image_k8s_source(p)
     }
     image_k8s_after = {
@@ -481,7 +484,7 @@ def main() -> int:
 
     script_config_sources = {
         p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
-                             "--", "scripts/", "config/", "data-platform/scripts/", "data-platform/config/")
+                             "--", "scripts/", "config/", "data-platform/scripts/", "local-data-platform/scripts/", "data-platform/config/", "local-data-platform/config/")
         if is_script_config_source(p)
     }
     script_config_after = {

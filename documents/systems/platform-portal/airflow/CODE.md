@@ -9,7 +9,7 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 
 | 实际源码文件 | 功能、部署与安全边界 |
 | --- | --- |
-| [`airflow/dags/platform_portal_openlineage_probe.py`](../../../../airflow/dags/platform_portal_openlineage_probe.py) | 真实 Airflow opt-in Probe DAG，`schedule=None`，2 个无业务数据任务；部署读取仍通过现有 Airflow DAG GitSync |
+| [`airflow/dags/platform_portal_openlineage_probe.py`](../../../../local-data-platform/airflow/dags/platform_portal_openlineage_probe.py) | 真实 Airflow opt-in Probe DAG，`schedule=None`，2 个无业务数据任务；部署读取仍通过现有 Airflow DAG GitSync |
 | [`configure-scheduler.sh`](../../../../platform-portal/openlineage/airflow/configure-scheduler.sh) | 有副作用：改共享 Scheduler 的 OpenLineage 环境变量、选择性采集并触发滚动更新 |
 | [`verify-real-events.sh`](../../../../platform-portal/openlineage/airflow/verify-real-events.sh) | **真实 DAG Trigger**、Task 状态和 Marquez API 查询，不是离线单元测试 |
 

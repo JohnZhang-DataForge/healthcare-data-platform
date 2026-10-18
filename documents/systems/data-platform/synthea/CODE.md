@@ -13,26 +13,26 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 实际源码文件 | 作用及使用边界 |
 | --- | --- |
-| [`entrypoint.py`](../../../../apps/synthea/new_only/entrypoint.py) | 独立 NEW_ONLY 多阶段运行入口；显式 fail-closed |
-| [`generate_new_only.py`](../../../../apps/synthea/new_only/generate_new_only.py) | 固定请求与 Seed 的本地 CSV 生成器；不发布 READY |
-| [`preflight.py`](../../../../apps/synthea/new_only/preflight.py) | Producer 的 K8s / 存储只读预检 |
-| [`prepublish_gate.py`](../../../../apps/synthea/new_only/prepublish_gate.py) | 生成后、上传前的本地发布安全校验 |
-| [`publish_v1_verified.py`](../../../../apps/synthea/new_only/publish_v1_verified.py) | NEW_ONLY v1 S3 不可变发布 |
-| [`publish_v2_verified.py`](../../../../apps/synthea/new_only/publish_v2_verified.py) | NEW_ONLY v2 S3 不可变发布 |
-| [`verify_v1_ready.py`](../../../../apps/synthea/new_only/verify_v1_ready.py) | v1 READY 的全对象校验与只读读回 |
-| [`verify_v2_ready.py`](../../../../apps/synthea/new_only/verify_v2_ready.py) | v2 READY 的 18 CSV 和 Manifest 只读读回 |
+| [`entrypoint.py`](../../../../local-data-platform/apps/synthea/new_only/entrypoint.py) | 独立 NEW_ONLY 多阶段运行入口；显式 fail-closed |
+| [`generate_new_only.py`](../../../../local-data-platform/apps/synthea/new_only/generate_new_only.py) | 固定请求与 Seed 的本地 CSV 生成器；不发布 READY |
+| [`preflight.py`](../../../../local-data-platform/apps/synthea/new_only/preflight.py) | Producer 的 K8s / 存储只读预检 |
+| [`prepublish_gate.py`](../../../../local-data-platform/apps/synthea/new_only/prepublish_gate.py) | 生成后、上传前的本地发布安全校验 |
+| [`publish_v1_verified.py`](../../../../local-data-platform/apps/synthea/new_only/publish_v1_verified.py) | NEW_ONLY v1 S3 不可变发布 |
+| [`publish_v2_verified.py`](../../../../local-data-platform/apps/synthea/new_only/publish_v2_verified.py) | NEW_ONLY v2 S3 不可变发布 |
+| [`verify_v1_ready.py`](../../../../local-data-platform/apps/synthea/new_only/verify_v1_ready.py) | v1 READY 的全对象校验与只读读回 |
+| [`verify_v2_ready.py`](../../../../local-data-platform/apps/synthea/new_only/verify_v2_ready.py) | v2 READY 的 18 CSV 和 Manifest 只读读回 |
 
 ## 历史 Producer / S3 发布兼容代码
 
 | 实际源码文件 | 作用及使用边界 |
 | --- | --- |
-| [`validate_synthea_batch.py`](../../../../apps/task001/validate_synthea_batch.py) | 历史 TASK001 18 CSV/Schema/SHA 验证 |
-| [`publish_synthea_landing.py`](../../../../apps/task004/publish_synthea_landing.py) | 历史 v1 发布模块，仍为部分 NEW_ONLY 路径复用 |
-| [`validate_generated_synthea_batch.py`](../../../../apps/task004/validate_generated_synthea_batch.py) | 历史 TASK004 生成数据本地校验与 Manifest 构造 |
+| [`validate_synthea_batch.py`](../../../../local-data-platform/apps/task001/validate_synthea_batch.py) | 历史 TASK001 18 CSV/Schema/SHA 验证 |
+| [`publish_synthea_landing.py`](../../../../local-data-platform/apps/task004/publish_synthea_landing.py) | 历史 v1 发布模块，仍为部分 NEW_ONLY 路径复用 |
+| [`validate_generated_synthea_batch.py`](../../../../local-data-platform/apps/task004/validate_generated_synthea_batch.py) | 历史 TASK004 生成数据本地校验与 Manifest 构造 |
 
 ## 关联入口
 
-[独立镜像](../../../../images/synthea-new-only/Dockerfile) · [K8s Job 模板](../../../../kubernetes/manifests/synthea/new-only) · [Synthea Contract](../../../../contracts/synthea/producer-batch-identity-v1.json) · [Producer Tests](../../../../tests/synthea_new_only)
+[独立镜像](../../../../local-data-platform/images/synthea-new-only/Dockerfile) · [K8s Job 模板](../../../../local-data-platform/kubernetes/manifests/synthea/new-only) · [Synthea Contract](../../../../local-data-platform/contracts/synthea/producer-batch-identity-v1.json) · [Producer Tests](../../../../local-data-platform/tests/synthea_new_only)
 
 `publish_synthea_landing.py` 的旧版接口仍被新的 v1 路径复用，不能为了重排目录改变它。
 
@@ -40,10 +40,10 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件 | 角色 / 安全边界 |
 | --- | --- |
-| [`csv-contract-v2.json`](../../../../contracts/synthea/new-only/csv-contract-v2.json) | NEW_ONLY v2 CSV 数据集、Manifest 和 Patient/Encounter 必须非空约束 |
-| [`ready-publication-policy-v1.json`](../../../../contracts/synthea/new-only/ready-publication-policy-v1.json) | READY Manifest-last 的发布门槛、Consumer 兼容验收记录 |
-| [`producer-batch-identity-v1.json`](../../../../contracts/synthea/producer-batch-identity-v1.json) | Synthea Producer Batch ID / Legacy / NEW_ONLY / 后续模式的版本化身份 |
-| [`csv-contract.json`](../../../../contracts/synthea/v3.3.0/csv-contract.json) | Synthea 18 CSV Inventory/Header v1；原有非空行规则 |
+| [`csv-contract-v2.json`](../../../../local-data-platform/contracts/synthea/new-only/csv-contract-v2.json) | NEW_ONLY v2 CSV 数据集、Manifest 和 Patient/Encounter 必须非空约束 |
+| [`ready-publication-policy-v1.json`](../../../../local-data-platform/contracts/synthea/new-only/ready-publication-policy-v1.json) | READY Manifest-last 的发布门槛、Consumer 兼容验收记录 |
+| [`producer-batch-identity-v1.json`](../../../../local-data-platform/contracts/synthea/producer-batch-identity-v1.json) | Synthea Producer Batch ID / Legacy / NEW_ONLY / 后续模式的版本化身份 |
+| [`csv-contract.json`](../../../../local-data-platform/contracts/synthea/v3.3.0/csv-contract.json) | Synthea 18 CSV Inventory/Header v1；原有非空行规则 |
 
 **Contract 治理**：这些机器可读协议不能为了文档整理而改写。冻结版本中如有旧的 `state`、`consumer_compatibility` 记录，代表该版本写入时的判断；现在的 Runtime 是否验收应以真实 Commit/Run/Readback 证据为准。修改身份、Headers 或 CSV 策略必须先做生产者和消费者兼容性评估，必要时创建新版本。
 
@@ -51,22 +51,22 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件（直接链接） | 用途与运行边界 |
 | --- | --- |
-| [`Dockerfile`](../../../../images/synthea-new-only/Dockerfile) | 独立 NEW_ONLY Generator/Publisher 镜像：固定历史 Synthea 基镜像 Digest、v1/v2 合同和 Readback |
-| [`Dockerfile`](../../../../images/synthea/Dockerfile) | 历史 Synthea v3.3.0 多阶段构建：固定上游 Commit + 本地 CSV Validator |
-| [`entrypoint.sh`](../../../../images/synthea/entrypoint.sh) | 历史 Synthea Generator 入口：Seed、日期和 18 CSV 校验，只生成本地 Manifest |
+| [`Dockerfile`](../../../../local-data-platform/images/synthea-new-only/Dockerfile) | 独立 NEW_ONLY Generator/Publisher 镜像：固定历史 Synthea 基镜像 Digest、v1/v2 合同和 Readback |
+| [`Dockerfile`](../../../../local-data-platform/images/synthea/Dockerfile) | 历史 Synthea v3.3.0 多阶段构建：固定上游 Commit + 本地 CSV Validator |
+| [`entrypoint.sh`](../../../../local-data-platform/images/synthea/entrypoint.sh) | 历史 Synthea Generator 入口：Seed、日期和 18 CSV 校验，只生成本地 Manifest |
 
 ## 独立 NEW_ONLY / 历史 Task Job、PVC 和 StorageClass
 
 | 源文件（直接链接） | 用途与运行边界 |
 | --- | --- |
-| [`job.yaml.tpl`](../../../../kubernetes/manifests/synthea/new-only/job.yaml.tpl) | 早期 NEW_ONLY 生成 Job 模板：worker01、只读 ConfigMap、持久化 PVC；需完整参数渲染 |
-| [`publish-v1-job.yaml.tpl`](../../../../kubernetes/manifests/synthea/new-only/publish-v1-job.yaml.tpl) | 历史固定 v1 S3 发布模板；使用 Digest Pin / Secret / 显式只读来源 Gate |
-| [`pvc.yaml`](../../../../kubernetes/manifests/synthea/new-only/pvc.yaml) | Synthea 生成请求持久化 PVC：dw-synthea、synthea-local、5Gi；不是 SeaweedFS PVC |
-| [`runtime-generate-job.yaml.tpl`](../../../../kubernetes/manifests/synthea/new-only/runtime-generate-job.yaml.tpl) | 独立 NEW_ONLY generate 阶段 Job：固定请求 ID、Digest、worker01 和 Synthea State PVC |
-| [`runtime-landing-job.yaml.tpl`](../../../../kubernetes/manifests/synthea/new-only/runtime-landing-job.yaml.tpl) | 独立 NEW_ONLY 发布/校验 Job：S3 Secret 引用、SOURCE/PG 审计 Gate；不授权业务写库 |
-| [`storageclass.yaml`](../../../../kubernetes/manifests/synthea/new-only/storageclass.yaml) | synthea-local StorageClass：Retain、WaitForFirstConsumer；实际 nodePathMap 与文件系统需 Live 核实 |
-| [`synthea-generate-only-job.yaml.tpl`](../../../../kubernetes/manifests/task004/synthea-generate-only-job.yaml.tpl) | 旧 TASK004 单独生成 Job：固定批次参数、worker01、历史验收兼容模板 |
-| [`synthea-generate-publish-job.yaml.tpl`](../../../../kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl) | 旧 TASK004 生成并 S3 发布 Job：旧入口和 Secret、不可当 NEW_ONLY 独立模式 |
+| [`job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/synthea/new-only/job.yaml.tpl) | 早期 NEW_ONLY 生成 Job 模板：worker01、只读 ConfigMap、持久化 PVC；需完整参数渲染 |
+| [`publish-v1-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/synthea/new-only/publish-v1-job.yaml.tpl) | 历史固定 v1 S3 发布模板；使用 Digest Pin / Secret / 显式只读来源 Gate |
+| [`pvc.yaml`](../../../../local-data-platform/kubernetes/manifests/synthea/new-only/pvc.yaml) | Synthea 生成请求持久化 PVC：dw-synthea、synthea-local、5Gi；不是 SeaweedFS PVC |
+| [`runtime-generate-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/synthea/new-only/runtime-generate-job.yaml.tpl) | 独立 NEW_ONLY generate 阶段 Job：固定请求 ID、Digest、worker01 和 Synthea State PVC |
+| [`runtime-landing-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/synthea/new-only/runtime-landing-job.yaml.tpl) | 独立 NEW_ONLY 发布/校验 Job：S3 Secret 引用、SOURCE/PG 审计 Gate；不授权业务写库 |
+| [`storageclass.yaml`](../../../../local-data-platform/kubernetes/manifests/synthea/new-only/storageclass.yaml) | synthea-local StorageClass：Retain、WaitForFirstConsumer；实际 nodePathMap 与文件系统需 Live 核实 |
+| [`synthea-generate-only-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/task004/synthea-generate-only-job.yaml.tpl) | 旧 TASK004 单独生成 Job：固定批次参数、worker01、历史验收兼容模板 |
+| [`synthea-generate-publish-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl) | 旧 TASK004 生成并 S3 发布 Job：旧入口和 Secret、不可当 NEW_ONLY 独立模式 |
 
 **部署约束**：这些文件不是一键集群重建清单；Job `*.yaml.tpl` 必须按受控 Request、Batch、Digest、Namespace 和 PVC 渲染后审查。`synthea-local` 的 `Retain` 不代表实际硬盘隔离或备份；`dw-synthea` Secret、PVC/StorageClass 和历史 Job 的使用须先核实真实集群。当前独立 Generator 与 Legacy Task 模板并存不代表可以重新执行已完成批次。
 
@@ -78,19 +78,19 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`01-validate-build-draft.sh`](../../../../scripts/task001/01-validate-build-draft.sh) | [PREPARE / may write] 历史 TASK001 validate build draft 脚本 |
+| [`01-validate-build-draft.sh`](../../../../local-data-platform/scripts/task001/01-validate-build-draft.sh) | [PREPARE / may write] 历史 TASK001 validate build draft 脚本 |
 
 ## 历史 task004（7 个入口）
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`01-prepare-synthea-generator-image-source.sh`](../../../../scripts/task004/01-prepare-synthea-generator-image-source.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generator image source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`02-prepare-synthea-ghcr-workflow.sh`](../../../../scripts/task004/02-prepare-synthea-ghcr-workflow.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea ghcr workflow 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`03a-prepare-synthea-generate-only-runtime.sh`](../../../../scripts/task004/03a-prepare-synthea-generate-only-runtime.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generate only runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`03b-run-synthea-generate-only.sh`](../../../../scripts/task004/03b-run-synthea-generate-only.sh) | [PREPARE / may write] 历史 TASK004 run synthea generate only 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
-| [`04a-prepare-synthea-landing-publisher.sh`](../../../../scripts/task004/04a-prepare-synthea-landing-publisher.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea landing publisher 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`04b-sync-s3-secret-to-synthea.sh`](../../../../scripts/task004/04b-sync-s3-secret-to-synthea.sh) | [HIGH / review] 历史 TASK004 sync S3 secret to synthea 脚本；涉及跨 Namespace Secret，须独立授权 |
-| [`04c-run-synthea-generate-publish.sh`](../../../../scripts/task004/04c-run-synthea-generate-publish.sh) | [PREPARE / may write] 历史 TASK004 run synthea generate publish 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`01-prepare-synthea-generator-image-source.sh`](../../../../local-data-platform/scripts/task004/01-prepare-synthea-generator-image-source.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generator image source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`02-prepare-synthea-ghcr-workflow.sh`](../../../../local-data-platform/scripts/task004/02-prepare-synthea-ghcr-workflow.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea ghcr workflow 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`03a-prepare-synthea-generate-only-runtime.sh`](../../../../local-data-platform/scripts/task004/03a-prepare-synthea-generate-only-runtime.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generate only runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`03b-run-synthea-generate-only.sh`](../../../../local-data-platform/scripts/task004/03b-run-synthea-generate-only.sh) | [PREPARE / may write] 历史 TASK004 run synthea generate only 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
+| [`04a-prepare-synthea-landing-publisher.sh`](../../../../local-data-platform/scripts/task004/04a-prepare-synthea-landing-publisher.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea landing publisher 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`04b-sync-s3-secret-to-synthea.sh`](../../../../local-data-platform/scripts/task004/04b-sync-s3-secret-to-synthea.sh) | [HIGH / review] 历史 TASK004 sync S3 secret to synthea 脚本；涉及跨 Namespace Secret，须独立授权 |
+| [`04c-run-synthea-generate-publish.sh`](../../../../local-data-platform/scripts/task004/04c-run-synthea-generate-publish.sh) | [PREPARE / may write] 历史 TASK004 run synthea generate publish 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
 
 ## 源码维护约定
 

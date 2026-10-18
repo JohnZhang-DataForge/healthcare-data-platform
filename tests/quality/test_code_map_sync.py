@@ -313,5 +313,42 @@ class CodeMapSyncTests(unittest.TestCase):
         self.assertEqual(stale, [])
         self.assertEqual(dup, [])
 
+    def test_local_data_platform_moved_paths_are_validated(self):
+        prefix = "local-data-platform/"
+        self.assertEqual(policy.local_source(prefix + "airflow/dags/main.py"), "airflow/dags/main.py")
+        self.assertTrue(policy.is_guarded_source(prefix + "airflow/dags/main.py"))
+        self.assertTrue(policy.is_app_source(prefix + "apps/landing_claim/ledger.py"))
+        self.assertTrue(policy.is_spark_source(prefix + "spark/apps/visit/reader.py"))
+        self.assertTrue(policy.is_contract_sql_source(prefix + "contracts/synthea/identity.json"))
+        self.assertTrue(policy.is_contract_sql_source(prefix + "sql/omop/write.sql"))
+        self.assertTrue(policy.is_image_k8s_source(prefix + "images/omop/Dockerfile"))
+        self.assertTrue(policy.is_image_k8s_source(prefix + "kubernetes/manifests/omop/job.yaml"))
+        self.assertTrue(policy.is_script_config_source(prefix + "scripts/omop/run.sh"))
+        self.assertTrue(policy.is_script_config_source(prefix + "config/local.env.example"))
+        self.assertFalse(policy.is_app_source(prefix + "apps/README.md"))
+
+        dag = prefix + "airflow/dags/main.py"
+        self.assertEqual(policy.validate_dag_file_map(
+            "[dag](../../../../" + dag + ")", {dag}), ([], []))
+        self.assertEqual(policy.validate_dag_file_map(
+            "[dag](../../../../" + dag + ")", {dag, prefix + "airflow/dags/missing.py"})[0],
+            [prefix + "airflow/dags/missing.py"])
+        app = prefix + "apps/landing_claim/ledger.py"
+        self.assertEqual(policy.app_links("[app](../../../../" + app + ")"), {app})
+        spark = prefix + "spark/apps/visit/reader.py"
+        self.assertEqual(policy.validate_spark_code_map(
+            "[spark](../../../../" + spark + ")", {spark}), ([], [], []))
+        sql = prefix + "sql/omop/write.sql"
+        self.assertEqual(policy.contract_sql_owned_links(
+            "| [sql](../../../../" + sql + ") | owner |"), {sql})
+        img = prefix + "images/omop/Dockerfile"
+        self.assertEqual(policy.image_k8s_owned_links(
+            "| [img](../../../../" + img + ") | owner |"), {img})
+        shell = prefix + "scripts/omop/run.sh"
+        self.assertEqual(policy.script_config_owned_links(
+            "| [script](../../../../" + shell + ") | owner |"), {shell})
+
+
+
 if __name__ == "__main__":
     unittest.main()
