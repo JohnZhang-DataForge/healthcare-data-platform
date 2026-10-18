@@ -9,7 +9,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 本文件记录**当前 Git Main 中真实存在的 Azure/Fabric 源码和配置入口**，不把计划中的功能当成已实现能力。系统职责见 [README](README.md)；全项目代码命名规则见 [开发规范](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md)，真实环境操作须遵守[安全操作规范](../../engineering/operations/SAFE-OPERATIONS.md)。
 
-当前 Terraform 的执行源码位于 `azure-fabric/infra-terraform/`。原 `azure/infra-terraform/` 尚保留但不应并行执行；Self-Runner 已切换到新目录，七个组件在新路径下的 Plan-only 检查通过。Fabric 原生 Notebook/Pipeline 的源码归属由下方两个组件 CODE.md 分别维护。
+当前 Terraform 的执行源码位于 `azure-fabric/infra-terraform/`。原 `azure/infra-terraform/` 已通过等价性与引用审计退役；Self-Runner 已切换到新目录，七个组件在新路径下的 Plan-only 检查通过。Fabric 原生 Notebook/Pipeline 的源码归属由下方两个组件 CODE.md 分别维护。
 
 ## 一、Terraform 基础设施导航
 
@@ -54,7 +54,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 ## 四、Workflow、证据与维护约束
 
-- [Azure-Infra-TF 执行器](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 仅在明确触发时运行，支持七个 Root、`environment=dev` 和 `operation=plan|apply`（默认 Plan）。当前实际入口为 `healthcare/azure-fabric/infra-terraform/components/$COMPONENT`，执行旧 `azure/` 副本可能与远程 State 发生冲突。
+- [Azure-Infra-TF 执行器](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 仅在明确触发时运行，支持七个 Root、`environment=dev` 和 `operation=plan|apply`（默认 Plan）。当前实际入口为 `healthcare/azure-fabric/infra-terraform/components/$COMPONENT`，已删除的旧 `azure/` 副本不得从历史 Commit 恢复为第二个并行执行入口，以免共享远程 State 冲突。
 - [Terraform 验证证据](../../../azure-fabric/infra-terraform/docs/ARCHITECTURE.md#verified-plan-evidence)记录历史 Plan Run。Plan 成功并不等于 Apply、Delta 数据写入或业务 E2E 完成；不能根据本文件授予部署权限。
 - [当前项目状态](../../engineering/status/PROJECT-STATUS.md) 是进度唯一权威，`CODE.md` 只负责真实源码导航。
 

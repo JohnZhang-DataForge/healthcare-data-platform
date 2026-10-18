@@ -49,7 +49,7 @@ The OIDC federated identity is bound to **Self-Runner** rather than `healthcare-
 
 The former `components/iam` / `modules/iam` root was replaced with `foundation-iam`. Historical `dev/iam.tfstate` is **not** migrated or removed. If a State object is discovered at that key, inspect before adoption. Old one-off OIDC/Blob smoke roots were removed earlier; their historical evidence exists in Git history and must not be reintroduced as deployable roots. Two old manual Self-Runner smoke workflows refer to frozen Healthcare commits and are **not** an alternative to the normal Azure-Infra-TF workflow.
 
-The original [`azure/infra-terraform/`](../../../azure/infra-terraform/README.md) remains physically present. The new copy is selected for execution. **Do not independently Apply both copies against identical backend State keys.**
+The original [`azure/infra-terraform/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/41be1aba4d8b730b2a9e17fadfc0450e6aec5095/azure/infra-terraform/README.md) was retired from Main, with the immutable historical snapshot retained for traceability. The new copy is the **only canonical execution path**. **Do not restore and independently Apply both copies against identical backend State keys.**
 
 ## Fabric Bootstrap and source ownership
 
