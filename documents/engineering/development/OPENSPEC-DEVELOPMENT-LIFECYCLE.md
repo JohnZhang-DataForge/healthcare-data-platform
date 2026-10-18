@@ -30,6 +30,7 @@ OpenSpec-Task: 2.3
 - 只有**非架构、非工程治理**的文档类 PR（`README.md` 或允许的 `documents/**/*.md`，排除 `documents/architecture/**`、`documents/engineering/**`、`documents/README.md` 和所有 `CODE.md`）可在 PR Body 独立写 `OpenSpec-Exemption: docs-only`，且不可夹带任何代码、配置、工作流或 OpenSpec 修改。
 - Archive PR 必须关联原 Change、由 Active 移动到 Archive、完成全部 Task；归档不代表部署验证。
 - 新 [OpenSpec Change Gate Workflow](../../../.github/workflows/openspec-change-gate.yml) 是全 PR 触发的**静态关联检查**，与原 OpenSpec Schema/CLI Validate 分工互补；由 [Policy Checker](../../../.github/quality/scripts/check_openspec_change_gate.py) 实现严格路径与 Tasks 同步验证。原来 G4 的 0 Active Changes Validate PASS 不再能作为实质性 PR 无 Change 的放行依据。
+- **受信任策略执行**：新增 [Trusted Change Gate](../../../.github/workflows/openspec-trusted-change-gate.yml) 从默认分支运行受信任 Python Checker/单测，只把候选 PR checkout 当数据，不执行候选代码。与普通 Head CI 分离；管理员应将可信 Job 设为 Required 并确认组织/仓库的 `pull_request_target` Actions Policy（GitHub 官方 2026-11-02 公共仓库默认策略切换需留意），不可仅凭 Workflow 文件存在认定受信任门禁已生效。
 - **合并保护区别**：CI 失败与 Main 确实禁止合并不是一回事；须在 GitHub Rulesets/Branch protection 设置 `OpenSpec Change Gate / require-change` 为 Required，并核对 bypass 权限。当前集成读取 `branches/main/protection` 返回 HTTP 403，尚不能确认或配置 Required。不要把普通 PR CI SUCCESS 当作 Required 已生效的证据。
 - 当任务完成后，准确 SHA/Run/必要 Runtime 读回由原 PR 和 `tasks.md` 共同记录；运行验收未达到时保持 Change Active，不为了合并先全部打勾。
 

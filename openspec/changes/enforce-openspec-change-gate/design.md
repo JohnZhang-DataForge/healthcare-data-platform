@@ -49,3 +49,10 @@ GitHub Action 的成功表示“PR HEAD 符合静态 Change 关联规则”，**
 - PR 确切 HEAD：OpenSpec CLI 1.14.3 `validate --all --strict`，新 Change Gate，Component Code Naming，Documentation Relative Links 均适用。
 - 检查 PR Diff 不包含业务源码、集群或云修改。
 - Main 合并之后只读核查新的 Workflow/检查器及 docs 已存在；单独核实分支保护规则，不以 Merge Success 或 GitHub branch `protected` 代替 Required 的实测。
+
+
+### F. Trusted-base hardening and 2026 public-repo policy
+
+第一阶段 #230 的 PR Head 脚本验证保留为普通非特权检查。第二阶段新增只读 `OpenSpec Trusted Change Gate` 使用 `pull_request_target`，来自仓库默认分支的 workflow/Checker/Test 属于受信任代码，PR Head 单独 checkout 到 `candidate/`，仅用 Git Diff 与 `Path.read_text` 当作**数据**检查；禁用 checkout token 持久化、限制 `contents: read`、不能从候选分支运行任何命令或模块。`--repo-root` 指向独立候选目录，防止基线检查器误扫 Base Tree。
+
+安全限制：`pull_request_target` 有提升执行上下文，必须确认不运行 untrusted source；若 GitHub 策略阻止此事件，**不能取消策略以换取假成功**。GitHub 于 2026-10-18 公布的 [Securely using pull_request_target](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target) 指出公开仓库默认事件策略将于 **2026-11-02** 强制；管理员需要审查仓库/组织 Actions Policy 是否允许该安全用法。无法核实权限时，此项作为未完成部署门，原普通 Change Gate 保留运行，但不声称防止恶意 PR 自修改。

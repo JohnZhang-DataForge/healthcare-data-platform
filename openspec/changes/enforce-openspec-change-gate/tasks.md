@@ -11,9 +11,11 @@
 - [x] 2.2 新增全面正负向单元测试；验证 PR Body/Change/Task 同步及有效 Archive。
 - [x] 2.3 建立无 paths 过滤的 GitHub-hosted Change Gate 工作流；不接受无关联的实质性 PR。
 - [x] 2.4 更新 `AGENTS.md`、开发工作流、OpenSpec 生命周期和状态说明；阐明 CI/归档/人工审批界限。
-- [ ] 2.5 完成首次 PR #230 的新旧 CI 精确 HEAD 校验与 Merge，记录 SHA/Run；当前首个候选 HEAD `162906577daf2ddd5d0498ab3da0cc5e087bdb9c` 上 [Change Gate #39170631410](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631410)、[OpenSpec #39170631407](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631407)、[Component #39170631435](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631435)、[Docs #39170631502](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631502) 均 SUCCESS，25 门禁测试、总计 63 质量单测、1,043 文档链接 0 失效；最终 HEAD 仍须重新校验。
+- [x] 2.5 完成首次 [PR #230](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/230) 新旧 CI 和 Merge；最终 PR HEAD `73a4c7dcc73b9cf0bfae2c22f0fe061fa1933b4e` 四项 CI SUCCESS（[Gate #39170772502](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170772502)、[OpenSpec #39170772516](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170772516)、[Component #39170772517](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170772517)、[Docs #39170772578](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170772578)）；Main Merge SHA `825c7ae19b091d0d407e1b28c61e55a0249e08fe`。历史首个候选 HEAD `162906577daf2ddd5d0498ab3da0cc5e087bdb9c` 上 [Change Gate #39170631410](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631410)、[OpenSpec #39170631407](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631407)、[Component #39170631435](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631435)、[Docs #39170631502](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631502) 均 SUCCESS，25 门禁测试、总计 63 质量单测、1,043 文档链接 0 失效；最终 HEAD 仍须重新校验。
 
-- [ ] 2.6 安全加固：待 #230 合并使检查器进入 Main 后，另一个 PR 从受信任 Main/Base checkout 执行 Checker，只将 PR Head 当作静态待检查数据；防止 PR 直接修改自身验证器使同轮 PASS，验证新 PR HEAD 与对应 Runs。
+- [ ] 2.6 安全加固：新增 [OpenSpec Trusted Change Gate](../../../.github/workflows/openspec-trusted-change-gate.yml)，使用 `pull_request_target` 默认分支受信任策略脚本与单测、仅把 PR Head 当只读文件/树数据，不执行候选代码；它首次合并到 Main 以后需要用独立 PR 进行真实正/负触发验证。GitHub 当前文档指出公共仓库默认事件策略于 2026-11-02 开始阻断 `pull_request_target`，管理员须检查相应 Actions Policy；不允许把暂时成功当作长期可用。
+
+- [ ] 2.7 核验可信门禁真实 PR 的 PASS/FAIL 与 Main required check 绑定；如无法读取/修改分支规则或事件策略，清晰登记 HOLD 和人工后续动作。
 
 ## 3. Merge / Protection
 
