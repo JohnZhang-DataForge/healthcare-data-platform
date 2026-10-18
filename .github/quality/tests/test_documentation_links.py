@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import importlib.util
 import unittest
 
-FILE = Path(__file__).resolve().parents[2] / "scripts/quality/check_documentation_links.py"
+FILE = Path(__file__).resolve().parents[3] / ".github/quality/scripts/check_documentation_links.py"
 SPEC = importlib.util.spec_from_file_location("documentation_links", FILE)
 assert SPEC and SPEC.loader
 guard = importlib.util.module_from_spec(SPEC)

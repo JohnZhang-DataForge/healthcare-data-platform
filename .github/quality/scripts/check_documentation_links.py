@@ -11,7 +11,7 @@ import subprocess
 from pathlib import Path
 from urllib.parse import unquote
 
-REPO = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[3]
 LINK_RE = re.compile(r"!?\[[^\]]*\]\(\s*(<[^>]+>|[^\s)]+)")
 FENCE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
 SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")

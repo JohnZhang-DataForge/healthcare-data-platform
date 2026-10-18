@@ -220,13 +220,13 @@ SCRIPT_CONFIG_MAP_PATHS = (
 # Inventory table rows alone declare ownership. Developer CODE.md is one directory
 # shallower than components: accept exactly ../../ or ../../../ source links.
 SCRIPT_CONFIG_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}((?:(?:local-)?data-platform/)?(?:scripts|config)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}((?:(?:(?:local-)?data-platform/)?(?:scripts|config)/|\.github/quality/scripts/)[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
 
 def is_script_config_source(path: str) -> bool:
-    return local_source(path).startswith(("scripts/", "config/")) and not path.endswith(
+    return (local_source(path).startswith(("scripts/", "config/")) or path.startswith(".github/quality/scripts/")) and not path.endswith(
         (".md", ".mdx", ".rst", ".txt")
     )
 
@@ -484,7 +484,7 @@ def main() -> int:
 
     script_config_sources = {
         p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
-                             "--", "scripts/", "config/", "data-platform/scripts/", "local-data-platform/scripts/", "data-platform/config/", "local-data-platform/config/")
+                             "--", "scripts/", "config/", "data-platform/scripts/", "local-data-platform/scripts/", "data-platform/config/", "local-data-platform/config/", ".github/quality/scripts/")
         if is_script_config_source(p)
     }
     script_config_after = {
