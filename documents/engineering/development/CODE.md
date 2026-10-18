@@ -21,15 +21,15 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`local.env.example`](../../../config/local.env.example) | [EXAMPLE ONLY] 历史 runner01 的项目路径、Phase3c、Synthea/SeaweedFS Batch 和 S3 配置示例；不是运行态身份/Secret |
+| [`local.env.example`](../../../local-data-platform/config/local.env.example) | [EXAMPLE ONLY] 历史 runner01 的项目路径、Phase3c、Synthea/SeaweedFS Batch 和 S3 配置示例；不是运行态身份/Secret |
 
 ## 跨组件的历史开发辅助 / 文档生成 Shell
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`00-reset-task003.sh`](../../../scripts/task003/00-reset-task003.sh) | [HIGH / review] 历史 TASK003 reset 历史 Task 脚本；可能清理本地文件/临时资源，禁止无审查重放 |
-| [`04-write-closeout-docs.sh`](../../../scripts/task003/04-write-closeout-docs.sh) | [PREPARE / may write] 历史 TASK003 write closeout docs 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`05f2-write-freeze-doc.sh`](../../../scripts/task003/05f2-write-freeze-doc.sh) | [PREPARE / may write] 历史 TASK003 write freeze doc 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`00-reset-task003.sh`](../../../local-data-platform/scripts/task003/00-reset-task003.sh) | [HIGH / review] 历史 TASK003 reset 历史 Task 脚本；可能清理本地文件/临时资源，禁止无审查重放 |
+| [`04-write-closeout-docs.sh`](../../../local-data-platform/scripts/task003/04-write-closeout-docs.sh) | [PREPARE / may write] 历史 TASK003 write closeout docs 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+| [`05f2-write-freeze-doc.sh`](../../../local-data-platform/scripts/task003/05f2-write-freeze-doc.sh) | [PREPARE / may write] 历史 TASK003 write freeze doc 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 
 ## 维护与风险边界
 

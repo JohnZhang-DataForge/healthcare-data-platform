@@ -49,7 +49,7 @@ source_sha: 63524cc244b64f784ff0e7887caa8e63fed5049f
 - 普通代码变更优先就近单测/契约测试；无需每次全量重跑旧项目或建设企业级复杂治理系统。
 - 不因新任务擅自重放或覆盖已验收 Batch 与持久化数据；具体 CURRENT/NEXT 始终以 [Project Status](../status/PROJECT-STATUS.md) 为准。
 
-**组件源码导航**：按功能读取 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[Spark CODE](../../systems/data-platform/spark/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md)、[Airflow CODE](../../systems/data-platform/airflow/CODE.md)。通用静态工具、文档生成辅助和 [`config/local.env.example`](../../../config/local.env.example) 由 [Developer CODE](CODE.md) 维护。清单只提供源码入口，不代表可以重放已完成阶段。
+**组件源码导航**：按功能读取 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[Spark CODE](../../systems/data-platform/spark/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md)、[Airflow CODE](../../systems/data-platform/airflow/CODE.md)。通用静态工具、文档生成辅助和 [`config/local.env.example`](../../../local-data-platform/config/local.env.example) 由 [Developer CODE](CODE.md) 维护。清单只提供源码入口，不代表可以重放已完成阶段。
 
 ## 3. 如何正确选择 Workflow（先核对再复用）
 
