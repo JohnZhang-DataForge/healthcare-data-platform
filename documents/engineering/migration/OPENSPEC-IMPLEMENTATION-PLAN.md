@@ -78,8 +78,9 @@ Condition/TASK005 状态为**业务开发暂缓，原 STEP00 READ-ONLY 就绪及
 
 | 批次 | 包含 Gate | GitHub 实施要求 | 当前结果 |
 | --- | --- | --- | --- |
-| Plan 更新 | 本文件及相关只读文档对齐 | 文档 Branch/PR、相对链接检查、审查不变事实 | **文档修改中；不是 CLI PASS** |
-| Bootstrap | G0–G4 | 官方 CLI 固定版本、初始化/配置/CI/Agent 接力；不混入业务代码移动 | **NOT STARTED** |
+| Plan 更新 | 本文件及相关只读文档对齐 | [PR #209](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/209) 已合并，[Documentation Relative Links Run](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39136532662) SUCCESS | **COMPLETE（仅文档）** |
+| G0 静态基线审计 | G0 | [Baseline Audit](OPENSPEC-BASELINE-AUDIT.md)：双仓 SHA、开放 PR/过时 PR、官方 CLI/Node 前提、既有 CI/Workflow 缺口 | **COMPLETE（2026-10-18，只读；目标环境 Node/npm 未实测）** |
+| Bootstrap | G1–G4 | 官方 CLI 固定版本、初始化/配置/CI/Agent 接力；不混入业务代码移动 | **NOT STARTED；下一阶段 G1** |
 | 首个 Change | G5 | `relocate-local-data-platform` Proposal/Design/Tasks/Static Validate，单独审查 | **NOT STARTED** |
 | 物理迁移 | G6 | 分组件/切片 PR；路径兼容、CODE Map、测试；Live Gate 单独授权 | **NOT STARTED** |
 | 后续能力 | G7 | 分领域 Changes，实际测试 + PR/Run + 独立读回后才归档 | **NOT STARTED** |
