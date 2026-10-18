@@ -6,6 +6,7 @@ context: |
   保留 OpenSpec 官方模板的固定英文标题和结构标记，不翻译或改写，如 Why、What Changes、Capabilities、Impact、ADDED/MODIFIED/REMOVED/RENAMED Requirements、Requirement:、Scenario:、GIVEN、WHEN、THEN、SHALL、MUST。
   YAML 字段、CLI 命令、文件名和路径、代码/API/资源标识符均保持英文原样；Change/Capability 名称使用英文功能名（kebab-case）。新维护代码按现行组件/功能命名规范，不使用 taskNNN/stepNNN 作为代码标识。
   权威入口：AGENTS.md、documents/README.md、documents/engineering/status/PROJECT-STATUS.md、documents/engineering/development/CODE-ORGANIZATION-AND-NAMING.md、documents/engineering/operations/SAFE-OPERATIONS.md。
+  已批准未来本地平台源码根目录为 local-data-platform/，旧候选 data-platform/ 已废弃；当前根目录业务源码尚未搬迁，documents/systems/data-platform/ 的文档组件导航不变。G3 旧路径 CI 还需单独适配验证。
   documents/ 维护架构、系统、开发与运维知识；openspec/specs/ 只表示经核实的已采用行为，尚未实现的目标属于 openspec/changes/。OpenSpec 本身不授予共享运行环境的操作权限，也不代替 GitHub PR、CI 或独立运行读回。
 
 rules:
