@@ -7,7 +7,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 # Healthcare Data Platform — 项目当前状态
 
-> **唯一项目级 CURRENT / NEXT 入口（Pre-OpenSpec）** · 快照日期：2026-10-16 EDT。
+> **唯一项目级 CURRENT / NEXT 入口（Pre-OpenSpec）** · 运行证据快照日期：2026-10-16 EDT；开发优先级更新：2026-10-18（计划决定，不是 Live 复测）。
 >
 > **定义**：本文仅汇总 **项目/工作线进度、已批准的目标与证据边界**；[总体架构](../../architecture/SYSTEM-OVERVIEW.md) 负责系统设计；具体实现由源码、Contracts、运行记录及后续组件文档承担。`docs/tasks/TASK-STATUS.md` 和旧 Agent Handoff 仍用于历史追溯，但其过时的 `CURRENT/NEXT` **不再覆盖本文**。
 >
@@ -18,10 +18,10 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |
 | --- | --- | --- | --- |
 | **TASK004 — Synthea NEW_ONLY → Local OMOP Person/Visit** | **COMPLETED / CLOSED** | 独立 Synthea、S3 READY → Airflow 手工 Consumer → Spark Person/Visit → 原子 OMOP COMMIT；独立 PG 对账及同批次 SKIP | 已验收范围冻结；不因后续任务而重放已完成批次 |
-| **TASK005 — Condition** | **READY FOR STEP00 READ-ONLY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 从源合同、外键、Vocabulary、OMOP Schema 的只读预检开始；任何业务 COMMIT 须单独批准 |
+| **TASK005 — Condition** | **PAUSED（优先级暂缓） / STEP00 READ-ONLY READY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 保留 STEP00 只读预检准备与原计划；重新启动 Condition 开发需另行决定，任何业务 COMMIT 须单独批准 |
 | **Platform Portal — Marquez / OpenLineage** | **前期实施/验收完成；下一阶段 Spark 接入方案讨论中** | 独立 PG14、Marquez Web/API、A3 Airflow 事件已真实验证；A4 隔离 Spark Smoke 有实际运行和部分读回证据 | **下一步如何接入真实 Spark 业务链路尚未确定**；Job↔Run 名称挂接和 Dataset I/O 完整血缘待处理，不直接启动新 Spark/共享资源 |
 | **Azure/Fabric — OMOP → OneLake** | **目标方案已敲定；IaC/Runner 工程及三个目标资源 Plan 完成；NO APPLY** | 已有 Azure Blob Landing / Workspace；Terraform 各组件资源定义、IAM 边界和 `Azure-Infra-TF` Workflow 在 Git；Lakehouse、Notebook、Pipeline 三个独立 Plan PASS | Exporter、真实 Notebook ETL、Pipeline 与 Notebook 绑定、Fabric 资源部署和数据 E2E 尚未讨论完成/实现；下一阶段先明确细节与验收门槛 |
-| **文档重建 / OpenSpec** | **STEP01–08 文档重建 COMPLETE（PR #174 合并后）；STEP09 未开始** | 治理、状态、架构、本地/Portal/Azure 组件、运维决策、协作规则和导航审核均已纳入 Main | 下一阶段按 [Readiness](../migration/OPENSPEC-READINESS.md) 正式初始化/验证 OpenSpec；业务开发不能把未实现能力写成已验收 |
+| **文档重建 / OpenSpec** | **STEP01–08 文档重建 COMPLETE；STEP09 G0–G7 已规划、未初始化** | 治理、状态、架构、本地/Portal/Azure 组件、运维决策、协作规则和导航审核均已纳入 Main | 按 [G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 从 G0 开始；G0–G4 Bootstrap 后 G5 Change、G6 物理迁移，再推进 PG→Fabric MVP；未获得 CLI/Runtime PASS |
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
@@ -36,7 +36,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 **证据**：[TASK004 Final Acceptance](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md) · [实际 Airflow + PG 只读验收 Run 38657060822](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657060822) · [相同 Batch SKIP Run 38657630069](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38657630069) · [Airflow 源码](../../../airflow/dags/new_only_omop_consumer.py)。
 
-**下一业务域**：TASK005 [Condition 计划](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 的 STEP00 READ-ONLY；不自动授权数据库写入、批次处理或资源部署。开发优先级仍由用户每轮确认。
+**Condition 优先级（2026-10-18 更新）**：TASK005 业务开发暂缓；历史 [Condition 计划](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 的 STEP00 READ-ONLY 仍可作为将来恢复的起点；不自动授权数据库写入、批次处理或资源部署。当前主线改为 OpenSpec G0–G4、Data Platform G5/G6、PG→Fabric 双表 MVP，随后按独立 Change 引入 FHIR/HL7；开发优先级仍由用户每轮确认。
 
 ## 3. Portal：已实施到 A3 / A4 Smoke；后续 Spark 集成方式仍在讨论
 

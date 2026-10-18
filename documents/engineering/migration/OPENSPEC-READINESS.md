@@ -9,7 +9,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 > **STEP08 终审完成后的准备清单，不是 OpenSpec 初始化记录。** 正式采用 OpenSpec 管后续变更与 Agent 接力的方向已确认，但已核验的 Main 仍**没有 `openspec/`**；没有运行 OpenSpec CLI/npm，也没有为此触发业务或云端 Workflow。[最终文档权威终审](FINAL-DOCUMENTATION-AUDIT.md)。
 
-**2026-10-17 状态补充**：旧 Bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) 已 **CLOSED / NOT MERGED**；替代方案请审阅 [OpenSpec 接入与开发治理设计讨论稿](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md)。该动作只关闭过时 PR，**不表示 G2 CLI 初始化或 STEP09 已完成**。
+**2026-10-17 状态补充**：旧 Bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) 已 **CLOSED / NOT MERGED**；替代方案请审阅 [OpenSpec 接入与开发治理设计讨论稿](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md)。该动作只关闭过时 PR，**不表示 G1 CLI 初始化或 STEP09 已完成**。
 
 **目录调整提示**：旧 `docs/` 已进入 [Legacy Snapshot](LEGACY-DOCS-SNAPSHOT.md)，不在当前 Main。旧 PR #164 对 `docs/README.md`、`docs/tasks/TASK-STATUS.md` 的引用在目录删除后更不可能作为有效 OpenSpec `config.yaml` 上下文；正式采用前必须替换为现行 `documents/`。
 
@@ -45,23 +45,17 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 3. 确认新代码组件/功能命名规则持续生效；旧 Task-named Runtime 不要因文档搬迁被 Rename。
 4. 确认 `docs/archive/` 没有被重建，原 Private Healthcare-Specs Archive 只作历史参考。
 
-## 5. STEP09 正式采用时的 Gate
+## 5. STEP09 G0–G7 开工门槛（实施前核查）
 
-1. **G0 已完成**：旧 PR #164 已于 2026-10-17 关闭且未合并；正式初始化仍必须从**实施时最新 Main** 开始，以[新设计稿](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md)为讨论基准，不能直接合并旧 config。
-2. 在适合的受控静态执行环境中查核**当时官方支持的 OpenSpec CLI 版本和命令**，运行 Init/Validate 并记录 Tool Version、Source SHA、输出；不能因为文件存在就说「CLI PASS」。
-3. 仅添加必需 `openspec/`、配置和最小可验证 Baseline；不复制全部 `documents/`，不重放 TASK004 或修改 K8s/Azure。
-4. 选择一个小型**获批** Change 测试新 Session 接力与 Verify/Archive；Task 勾选不能代替 PR 合并与独立业务读回。
-5. OpenSpec 与 Self-Runner 是不同层：OpenSpec 不自动抢占任务或管理共享 Runtime；任何实际运行仍按安全规则单独授权。
+**唯一完整执行方案：**[OpenSpec G0–G7 实施计划](OPENSPEC-IMPLEMENTATION-PLAN.md)。本文只保留 Readiness 与历史证据边界；之前讨论稿中“G2 Bootstrap / G3 首个 Change”的编号**已废止**，不能与新 G0–G7 混用。
 
-## 6. 2026-10-18 新建设路线对应的 STEP09 补充要求
+1. **G0**：每次开始执行都从最新 Main 记录真实 SHA，确认 PR #164 CLOSED/NOT MERGED、当前 CODE Map/命名 CI 及实际 Node/CLI 兼容性。旧 PR 配置不得继续使用。
+2. **G1**：固定并记录安装的官方 CLI 版本，真实执行 Init；确认在仓库根目录生成 `openspec/`，不将预先写出的 Markdown 视为安装成功。
+3. **G2**：验证默认 Schema 与最小 config，引用现行 `documents/`、`AGENTS.md`、项目状态及[命名规范](../development/CODE-ORGANIZATION-AND-NAMING.md)；不用一次生成所有 Current Specs。
+4. **G3**：CI 真实覆盖 OpenSpec 校验与未来 `data-platform/` 路径。旧代码**纯移动**只能在固定源 SHA、明确旧新路径、Blob 一致性及新代码负向测试的保护下受限豁免；不能关闭整个命名 Gate。
+5. **G4**：复用 GitHub PR、Actions、Self-Runner、三轮失败停止规则和已有 Session 协调；Task 完成不等于 PR Merge 或 PG/S3/Delta 独立读回完成。
+6. **G5**：先审核一个 `relocate-local-data-platform` 的 Proposal/Design/Tasks，确认 CLI 是否支持纯 Refactor 的 `skip_specs: true`，**不要移动代码**。
+7. **G6**：按组件分 PR 迁移，先验证 Import/DAG/Docker/GitSync/CI/CODE Map 路径兼容，再受控切换实际运行入口；原 DAG ID、Batch、SQL 持久化协议与 Writer Fencing 不变。Live 验证单独授权。
+8. **G7**：按 Change 独立推进 Modularization、PG→Fabric、FHIR、HL7 v2、业务 Lineage 和静态只读 Showcase；Condition 后续业务暂缓，历史 Step00 只读准备状态保留。
 
-[Healthcare V2 多数据源与 Fabric 目标设计](../../architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md) 已整理讨论结果；**不改变 G2 的 Bootstrap-first 边界**，也不表示 OpenSpec 已初始化。
-
-- **G2**：只核对并执行官方 OpenSpec CLI 安装/Init/Validate 的最小 Bootstrap，更新当前 `documents/` 与 Agent 规则引用，不执行目录迁移或业务环境变更。
-- **G3**：首个 Change 优先采用 `relocate-local-data-platform` 的**一小段物理路径迁移**；将 Schema/CLI 可核实的纯 Refactor 特性（例如 `skip_specs: true`）作为候选，避免捏造业务行为 Requirement，同时在 Design/Tasks 中保留已验收 NEW_ONLY Person/Visit 回归门槛。
-- **后续 Changes**：模块化改造、PG→Fabric 分析副本、FHIR→Fabric、HL7 v2→Fabric，以及外部匿名可访问的**只读证据展示**分别管理；公开页面不能绕过 Fabric Workspace 授权或开放本地管理 API。
-- **冻结/暂停**：Condition 不再是本轮优先 Change；历史 TASK005 计划保留。旧 `docs/`、PR #164、已有 Batch 和持久化 Writer 接口均不能被 Bootstrap 擅自修改。
-
-CLI/Node 版本、`openspec validate` 参数与纯 Refactor 配置是否可用，必须以实施当时的官方文档和实际验证为准；不把本设计当成 CLI PASS。
-
-**STEP08 只完成文档审查与权威切换，STEP09 仍未初始化。** 下一阶段从最新 Main 按新设计稿初始化（旧 PR #164 已关闭），并记录真实 CLI Init/Validate、配置 Schema 与版本证据，再开展第一个受控 Change。
+**当前阶段：计划已更新，G0–G7 未标记任何 CLI/CI/Runtime PASS。** STEP08 文档迁移历史已完成；STEP09 OpenSpec 尚未初始化。下次从 G0 的最新 Main/CLI 基线开始。

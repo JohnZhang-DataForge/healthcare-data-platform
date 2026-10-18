@@ -119,7 +119,7 @@ OpenSpec 是与 `documents/` 平级的治理目录，不属于 Data Platform、A
 
 [Data Platform V2 重构讨论稿](DATA-PLATFORM-V2-MIGRATION-DESIGN.md) 已有架构选择、目录迁移、公共组件、Task004 兼容与回滚内容。**保留它作为人读的架构设计源，不立即原样复制到 Change。**
 
-正式开发前选择最小可验收切片，如“Landing Manifest 校验公共接口”或“OMOP Writer Handoff 接口规范化”；每片创建独立 Change、明确依赖与回滚。大规模 V2 计划可以通过设计稿与多个有界 Change 串联，避免单个庞大 Change 长期无法归档。
+首个 Change 已选定候选 `relocate-local-data-platform`，仅审核一个小范围物理路径迁移切片，G5 只建立和审查 Proposal/Design/Tasks，G6 才允许实际改动源码。之后 Landing Manifest 接口或 OMOP Writer Handoff 等模块化改造分别创建新 Change、明确依赖与回滚。大规模 V2 计划仍由多个有界 Change 串联，避免单个 Change 长期无法归档。
 
 ## 6. 标准开发生命周期与 Agent 接力
 
@@ -191,31 +191,24 @@ rules:
 3. 不在配置中硬编码 Runner Secrets、Kubeconfig、数据库连接、过时的 Commit SHA、已删除的 `docs/` 路径或旧 Task 状态。
 4. 第一次初始化时核查 CLI 版本、配置 Schema、生成的 AI 工具命令和输出，再决定是否需要额外 Schema/CI。不要为了套流程预先构建复杂平台。
 
-## 8. STEP09 建议实施分段与验收标准
+## 8. STEP09 正式实施：统一采用 G0–G7
 
-| 阶段 | 交付 | 验收门槛 |
+> **唯一详细执行步骤、验收清单与实际状态记录**：[OpenSpec G0–G7 实施计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md)。本设计稿负责架构边界，不再维护与实施计划重复的 Gate 表格。旧版 G0–G4 是**历史讨论稿编号**，已被 G0–G7 替换；其他文档不得继续用旧编号作为当前实施指令。
+
+| 阶段 | 核心责任 | 是否修改业务源码 |
 | --- | --- | --- |
-| **G0：清理冲突** | 关闭未合并的过时 OpenSpec PR #164；保留审计链接 | PR 为 CLOSED / NOT MERGED，Main 仍未初始化 OpenSpec |
-| **G1：审核设计** | 本设计稿及设计目录导航 | 用户确认 `documents/` / OpenSpec 权威边界、首个试点、变更粒度 |
-| **G2：正式 Bootstrap** | 从最新 Main 用官方 OpenSpec CLI Init；最小 `config.yaml`；按需 Agent 入口和开发规范增补 | 记录 CLI/version、Main SHA、实际生成目录、`openspec validate` 及静态链接检查；通过 PR 合并 |
-| **G3：一个真实小 Change** | 针对一个已获批准的行为变更编写 Proposal/Specs/Design/Tasks，通过 PR + 适用测试验证 | 新 Session 可从 Git/Change/PR/Run 恢复；没有擅自 Runtime 副作用；通过实际验证并归档 |
-| **G4：扩展到 V2/业务域** | 将 V2 分切片开发，按需纳入 Condition/Portal/Azure Change | 每片有明确受影响代码、合同、兼容、回滚和真实证据；Current Specs 与实际采用行为一致 |
+| G0 | 核对 Main、当前 CI、CLI/Node 版本及冲突 | 否 |
+| G1 | 官方 CLI 在仓库根目录初始化 `openspec/` | 否 |
+| G2 | 最小 `config.yaml`、Agent/文档/状态治理对齐 | 否 |
+| G3 | OpenSpec 校验 CI、`data-platform/` 命名 CI 覆盖、迁移兼容例外测试 | 否（只允许治理 CI/测试） |
+| G4 | 与 PR/Self-Runner、三轮失败停止和跨 Session 证据接力集成 | 否 |
+| G5 | 首个 `relocate-local-data-platform` Change 的 Proposal/Design/Tasks 审核 | **不移动源码** |
+| G6 | 经审核的按组件物理迁移、路径兼容及另行授权的 Runtime 切换 | 是，分切片 PR |
+| G7 | 独立管理 Modularization、Fabric、FHIR/HL7、Lineage、公开只读 Showcase | 按 Change 审核 |
 
-**G2 与 G3 是不同的 PR/验收范围**。G2 只验证规范工具落地，不以工具初始化冒充业务功能完成。G3 需要明确的功能授权；若测试必须触及共享 Runtime，另行核对资源并取得本次运行授权。
+**G0–G4 结束后治理体系即可使用，无需等 Data Platform V2 全部迁移。** G1–G4 Bootstrap 与 G5/G6 业务变更必须使用不同 PR。G3 只准备覆盖 `data-platform/**` 的新增命名检查、严格限定的旧文件迁移例外及其正负测试；G6 才用真实文件迁移验证它，不能取消检查。纯目录 Refactor 可在当前 CLI 验证后用 `skip_specs: true`，但不可省略“不改变当前 NEW_ONLY Person/Visit 行为”的断言与回滚验证。
 
-## 8.1 2026-10-18 路线调整：OpenSpec 应先于 Data Platform 目录迁移
-
-新的跨工作线目标见 [Healthcare V2 多数据源与 Fabric 路线设计](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)。**这不改变 G0–G2 的 Bootstrap 安装、配置和验证范围**：从最新 Main 做独立 PR，官方 CLI 安装/Init/Validate，保留最小配置，不迁移历史 `docs/`、不部署 K8s 或 Azure。执行时核对官方当前的 Node.js 最低版本、CLI 版本、可用工具集成，以及实际生成的目录；不将历史 CLI 示例当作已验证命令。
-
-**正式 Bootstrap 与业务开发分离**：先 G2 合并，再用首个实际 Change 管理源码迁移。首个候选 `relocate-local-data-platform` 只做**物理路径迁移和必需引用兼容**，而不同时完成 Task004 语义重命名、共用基类重构或 Fabric ETL。按组件拆小 PR，并保留源 SHA、测试、原路径兼容、回滚及单一 Writer 保护。
-
-**纯结构性 Change 不强行制造业务行为增量**。官方 OpenSpec CLI 文档现有 `skip_specs: true` 选项供纯 Refactor/Tooling/Docs Changes 在无 Delta Specs 时通过验证；能否采用必须以实际安装版本、默认 Schema 及验证结果为准。即使不新增业务 Requirement，仍需在 Design/Tasks 中指定“不改变现有 NEW_ONLY Person/Visit 行为”的可观察回归门槛。
-
-后续候选 Change 分别为 `refactor-local-component-boundaries`、`replicate-omop-to-fabric`、`ingest-fhir-to-fabric`、`ingest-hl7v2-to-fabric`、`publish-public-showcase` 和 `integrate-lineage-reporting`。其中 Condition/TASK005 业务开发暂缓（不删除历史），Local DP → Fabric 的现有 OneLake-first 设计继续有效；FHIR/HL7 **独立**进入 Fabric，不要求经过本地 PostgreSQL OMOP。
-
-公开展示采取**静态只读证据入口**，而非匿名开放 Airflow/Marquez 管理 API 或 Fabric Monitoring Hub。Fabric 管理/Lineage 的 Workspace 授权不能由 OpenSpec 代替；公共展示的数据脱敏、来源 Run、时间戳和只读安全验证属于单独 Change。
-
-**本次只是调整设计稿，不表示已运行 G2、创建 OpenSpec Change、开始源代码迁移或已部署 Fabric**。G3 的小 Change 试点可以与首次迁移切片合并实施，但应保持独立于 G2 Bootstrap 的 PR/验收。
+新优先级为 **OpenSpec G0–G4 → G5/G6 物理迁移 → PG OMOP→Fabric 双表 E2E → FHIR / HL7 v2 独立 Fabric 输入 → Gold/只读展示**；模块化重构和 Lineage 可按依赖另立 Change，Condition 业务开发暂缓。Mirth Connect 版本/维护/许可必须先核定；公开只读静态证据与实时交互 Portal、Fabric Workspace/Marquez/Airflow 管理面明确隔离。见 [Healthcare V2 多来源路线](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)。
 
 ## 9. 设计验收与待审事项
 
@@ -224,9 +217,9 @@ rules:
 - [ ] 确认按变更增量建立 Specs，而非一次性全量 Baseline 迁移。
 - [ ] 确认 Data Platform V2 使用小型 Change 逐阶段实现，不创建不可收尾的大 Change。
 - [ ] 确认 “连续三轮失败停止” 应纳入的现行规则位置及报告格式。
-- [ ] 确认 G2 只做 OpenSpec CLI/静态验证，是否开展第一个业务 Change 另行决定。
+- [x] 明确 G0–G4 只进行 Bootstrap/治理/CI，不搬业务源码；G5 只设计首个 Change，G6 才执行并按单独 Runtime Gate 审核。
 
-本稿经确认后，才可启动 G2 正式初始化。**当前这份文件只改变设计讨论，不改变 Main 的功能事实或 STEP09 实施状态。**
+已确定上述实施顺序，执行状态以 [G0–G7 计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 为准。**本次只更新设计和计划，不表示已安装 CLI、初始化 `openspec/` 或开始 G6 源码迁移。**
 
 ## 10. 权威资料与参考
 
