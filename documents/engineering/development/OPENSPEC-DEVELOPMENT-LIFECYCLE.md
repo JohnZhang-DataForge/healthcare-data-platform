@@ -16,6 +16,23 @@
 | Merge / Sync | Review、核对最终 PR HEAD 与 CI，合并后确认 Main；仅将已经实施并证实的可观察行为同步 Current Specs | 设计批准不等于实现；不得把尚未实施的目标写成 Current |
 | Archive | 相应功能已实施、经适用测试/真实读回、验收条件满足并审查 Archive PR | 单独 CLI Validate PASS 或 PR Merge 不能自动 Archive；G5 设计阶段不得归档 |
 
+
+## OpenSpec Change Gate（2026-10-18 治理改造）
+
+对 **代码、GitHub Workflow、架构、OpenSpec / AGENTS 治理、CODE.md 与运行配置**的变更，Agent 应先创建或选定 `openspec/changes/<id>/` 的 Active Change，再进入实施 PR。PR Body 必须在独立行写：
+
+```text
+OpenSpec-Change: enforce-openspec-change-gate
+OpenSpec-Task: 2.3
+```
+
+- Change 需要 `.openspec.yaml`、`proposal.md`、`design.md`、`tasks.md`，Task 编号必须在 `tasks.md` 中存在，且本 PR 必须修改对应 `tasks.md`；一个 Change 可覆盖多个有界 PR。
+- 只有**非架构、非工程治理**的文档类 PR（`README.md` 或允许的 `documents/**/*.md`，排除 `documents/architecture/**`、`documents/engineering/**`、`documents/README.md` 和所有 `CODE.md`）可在 PR Body 独立写 `OpenSpec-Exemption: docs-only`，且不可夹带任何代码、配置、工作流或 OpenSpec 修改。
+- Archive PR 必须关联原 Change、由 Active 移动到 Archive、完成全部 Task；归档不代表部署验证。
+- 新 [OpenSpec Change Gate Workflow](../../../.github/workflows/openspec-change-gate.yml) 是全 PR 触发的**静态关联检查**，与原 OpenSpec Schema/CLI Validate 分工互补；由 [Policy Checker](../../../.github/quality/scripts/check_openspec_change_gate.py) 实现严格路径与 Tasks 同步验证。原来 G4 的 0 Active Changes Validate PASS 不再能作为实质性 PR 无 Change 的放行依据。
+- **合并保护区别**：CI 失败与 Main 确实禁止合并不是一回事；须在 GitHub Rulesets/Branch protection 设置 `OpenSpec Change Gate / require-change` 为 Required，并核对 bypass 权限。当前集成读取 `branches/main/protection` 返回 HTTP 403，尚不能确认或配置 Required。不要把普通 PR CI SUCCESS 当作 Required 已生效的证据。
+- 当任务完成后，准确 SHA/Run/必要 Runtime 读回由原 PR 和 `tasks.md` 共同记录；运行验收未达到时保持 Change Active，不为了合并先全部打勾。
+
 ## 新 Session 的恢复流程
 
 读取 AGENTS.md → documents/README.md → PROJECT-STATUS.md → relevant component CODE.md 和本页。再次核对 Healthcare 和 Self-Runner 最新 Main SHA、开放 PR、Branch/HEAD、目标 Change/Tasks、相关 Run/Artifact 及历史 PR/Issue 评论。旧聊天摘要只供线索，不能代替准确 Git/Run 证据。没有正式 Change（包括 G4）则继续使用 PR/Issue 接力，不创建虚假 Change。
@@ -42,4 +59,4 @@ PR/Issue 的最小可恢复记录：Done / Not Done / Next，Repo、Branch、Bas
 
 ## G4 完成与 G5 入口
 
-G4 的完成门槛是两仓 PR/最终 SHA、策略正负向单测、真实 Healthcare PR 准确 HEAD 绑定成功的 Self-Runner Run、Healthcare PR 适用 CI PASS，并记录失败及未授权边界。这些已在 Healthcare PR #220、Self-Runner PR #136 与 [正式计划的 G4 证据表](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 中验证并收口。G4 当时确未移动源码；但此后 PR #225–#227 已完成目录级迁移，正式 Change 是事后追溯建立而非先行审批。以后仍应遵循本文件规定的事前 Change 生命周期；下一轮独立治理任务将检查如何增加强制 PR/Change Gate。
+G4 的完成门槛是两仓 PR/最终 SHA、策略正负向单测、真实 Healthcare PR 准确 HEAD 绑定成功的 Self-Runner Run、Healthcare PR 适用 CI PASS，并记录失败及未授权边界。这些已在 Healthcare PR #220、Self-Runner PR #136 与 [正式计划的 G4 证据表](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 中验证并收口。G4 当时确未移动源码；但此后 PR #225–#227 已完成目录级迁移，正式 Change 是事后追溯建立而非先行审批。以后仍应遵循本文件规定的事前 Change 生命周期；本轮治理 Change `enforce-openspec-change-gate` 正在实现 PR/Task 的自动绑定，Branch protection Required/Bypass 配置仍须独立证实。
