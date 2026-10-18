@@ -10,6 +10,14 @@ from pathlib import Path
 import re
 import subprocess
 
+DATA_PLATFORM_PREFIX = "data-platform/"
+
+
+def local_source(path: str) -> str:
+    """Classify old and future data-platform sources by the same component rules."""
+    return path.removeprefix(DATA_PLATFORM_PREFIX)
+
+
 AIRFLOW_PREFIX = "airflow/"
 CODE_MAP = "documents/systems/data-platform/airflow/CODE.md"
 DAG_PREFIX = "airflow/dags/"
@@ -22,7 +30,7 @@ def git_lines(*args: str) -> list[str]:
 
 
 def is_guarded_source(path: str) -> bool:
-    return path.startswith(AIRFLOW_PREFIX) and Path(path).suffix.lower() in SOURCE_SUFFIXES
+    return local_source(path).startswith(AIRFLOW_PREFIX) and Path(path).suffix.lower() in SOURCE_SUFFIXES
 
 
 def added_removed_sources(base: str, head: str) -> list[str]:
@@ -35,7 +43,7 @@ def added_removed_sources(base: str, head: str) -> list[str]:
 def validate_dag_file_map(contents: str, current_dags: set[str]) -> tuple[list[str], list[str]]:
     """All tracked Airflow DAG Python files must be linked directly and none be stale."""
     linked = set(re.findall(
-        r"\]\(\.\./\.\./\.\./\.\./(airflow/dags/[^\s)#?]+\.py)\)", contents
+        r"\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?airflow/dags/[^\s)#?]+\.py)\)", contents
     ))
     return sorted(current_dags - linked), sorted(linked - current_dags)
 
@@ -47,11 +55,11 @@ APP_MAP_PATHS = (
     "documents/systems/data-platform/omop/CODE.md",
     "documents/systems/data-platform/airflow/CODE.md",
 )
-APP_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./(apps/[^\s)#?]+)\)")
+APP_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?apps/[^\s)#?]+)\)")
 
 
 def is_app_source(path: str) -> bool:
-    return path.startswith("apps/") and not path.endswith((".md", ".mdx", ".rst", ".txt"))
+    return local_source(path).startswith("apps/") and not path.endswith((".md", ".mdx", ".rst", ".txt"))
 
 
 def app_links(text: str) -> set[str]:
@@ -84,11 +92,11 @@ def required_app_updates(changed_sources: set[str], before: dict[str, str], afte
 
 
 SPARK_MAP = "documents/systems/data-platform/spark/CODE.md"
-SPARK_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./(spark/[^\s)#?]+)\)")
+SPARK_LINK_RE = re.compile(r"\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?spark/[^\s)#?]+)\)")
 
 
 def is_spark_source(path: str) -> bool:
-    return path.startswith("spark/") and not path.endswith((".md", ".mdx", ".rst", ".txt"))
+    return local_source(path).startswith("spark/") and not path.endswith((".md", ".mdx", ".rst", ".txt"))
 
 
 def validate_spark_code_map(contents: str, actual: set[str]) -> tuple[list[str], list[str], list[str]]:
@@ -106,13 +114,13 @@ CONTRACT_SQL_MAP_PATHS = (
 )
 # Inventory table rows declare ownership; cross-component prose links do not.
 CONTRACT_SQL_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:contracts|sql)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?(?:contracts|sql)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
 
 def is_contract_sql_source(path: str) -> bool:
-    return path.startswith(("contracts/", "sql/")) and not path.endswith(
+    return local_source(path).startswith(("contracts/", "sql/")) and not path.endswith(
         (".md", ".mdx", ".rst", ".txt")
     )
 
@@ -156,13 +164,13 @@ IMAGE_K8S_MAP_PATHS = (
 )
 # Only source inventory table rows declare an owner, not incidental prose links.
 IMAGE_K8S_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:images|kubernetes)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\(\.\./\.\./\.\./\.\./((?:data-platform/)?(?:images|kubernetes)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
 
 def is_image_k8s_source(path: str) -> bool:
-    return path.startswith(("images/", "kubernetes/")) and not path.endswith(
+    return local_source(path).startswith(("images/", "kubernetes/")) and not path.endswith(
         (".md", ".mdx", ".rst", ".txt")
     )
 
@@ -209,13 +217,13 @@ SCRIPT_CONFIG_MAP_PATHS = (
 # Inventory table rows alone declare ownership. Developer CODE.md is one directory
 # shallower than components: accept exactly ../../ or ../../../ source links.
 SCRIPT_CONFIG_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}((?:scripts|config)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}((?:data-platform/)?(?:scripts|config)/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
 
 def is_script_config_source(path: str) -> bool:
-    return path.startswith(("scripts/", "config/")) and not path.endswith(
+    return local_source(path).startswith(("scripts/", "config/")) and not path.endswith(
         (".md", ".mdx", ".rst", ".txt")
     )
 
@@ -330,8 +338,8 @@ def main() -> int:
         return 1
 
     current = {
-        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", DAG_PREFIX)
-        if path.startswith(DAG_PREFIX) and path.endswith(".py")
+        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", DAG_PREFIX, DATA_PLATFORM_PREFIX + DAG_PREFIX)
+        if local_source(path).startswith(DAG_PREFIX) and path.endswith(".py")
     }
     missing, obsolete = validate_dag_file_map(map_path.read_text(encoding="utf-8"), current)
     for path in missing:
@@ -343,7 +351,7 @@ def main() -> int:
         return 1
 
     app_sources = {
-        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "apps/")
+        path for path in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "apps/", "data-platform/apps/")
         if is_app_source(path)
     }
     after = {doc: Path(doc).read_text(encoding="utf-8") for doc in APP_MAP_PATHS}
@@ -372,7 +380,7 @@ def main() -> int:
         return 1
 
     spark_sources = {
-        p for p in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "spark/")
+        p for p in git_lines("ls-tree", "-r", "--name-only", args.head, "--", "spark/", "data-platform/spark/")
         if is_spark_source(p)
     }
     spark_doc = Path(SPARK_MAP)
@@ -405,7 +413,7 @@ def main() -> int:
 
     cs_sources = {
         p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
-                             "--", "contracts/", "sql/")
+                             "--", "contracts/", "sql/", "data-platform/contracts/", "data-platform/sql/")
         if is_contract_sql_source(p)
     }
     cs_after = {p: Path(p).read_text(encoding="utf-8") for p in CONTRACT_SQL_MAP_PATHS}
@@ -435,7 +443,7 @@ def main() -> int:
 
     image_k8s_sources = {
         p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
-                             "--", "images/", "kubernetes/")
+                             "--", "images/", "kubernetes/", "data-platform/images/", "data-platform/kubernetes/")
         if is_image_k8s_source(p)
     }
     image_k8s_after = {
@@ -473,7 +481,7 @@ def main() -> int:
 
     script_config_sources = {
         p for p in git_lines("ls-tree", "-r", "--name-only", args.head,
-                             "--", "scripts/", "config/")
+                             "--", "scripts/", "config/", "data-platform/scripts/", "data-platform/config/")
         if is_script_config_source(p)
     }
     script_config_after = {
