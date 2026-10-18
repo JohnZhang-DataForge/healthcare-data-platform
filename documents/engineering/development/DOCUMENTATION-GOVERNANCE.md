@@ -28,7 +28,7 @@
 | Evidence | 原 Closeout / GitHub Actions / 已核验的证据索引 | 真实历史验收，不盲目复制日志 |
 | OpenSpec（以后） | `openspec/specs/`、`openspec/changes/` | 可测试行为规范和未来 Change 的 Proposal/Design/Tasks |
 
-Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`，其旧 `documents/components/azure-fabric/` 已退役；Platform Portal 仍在开发，权威说明暂位于 `documents/components/platform-portal/`，需单独迁移。旧 Data Platform、Development、Operations、Migration、Status 的重复副本已从 Main 清理，历史版本仍可通过对应 Git Commit 追溯；任何后续变更只更新新目录。
+Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`，其旧 `documents/components/azure-fabric/` 已退役；Platform Portal 的唯一系统文档入口是 `documents/systems/platform-portal/`，旧 `documents/components/platform-portal/` 已退役。旧 Data Platform、Development、Operations、Migration、Status 的重复副本已从 Main 清理，历史版本仍可通过对应 Git Commit 追溯；任何后续变更只更新新目录。
 
 现有源码中的 `contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
 
@@ -37,6 +37,7 @@ Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`
 - `documents/systems/data-platform/<component>/README.md`：组件职责、主要数据流、架构边界、当前能力范围和其它权威文档导航；避免在这里重复完整的源码表。
 - `documents/systems/data-platform/<component>/CODE.md`：**唯一组件级源码导航入口**，直接链接实际源文件/目录、主要测试、Contract 和构建/部署入口；不复制 CURRENT/NEXT、架构全文或 Runbook。跨组件源码按功能所有权分别登记，不机械复制每个代码目录的 README。
 - 原代码目录 README 若只有导航或已有信息，在核对后迁移独有知识、修复所有反向链接、通过路径检查即可逐步删除；不改源码、Runtime、冻结契约或历史证据。
+- **Platform Portal 的 README/CODE 收口**：`documents/systems/platform-portal/` 是唯一系统文档入口；Marquez、PostgreSQL14、Airflow OpenLineage、Spark OpenLineage 四个组件各自以 `README.md` 管职责/验收边界，以 `CODE.md` 管真实源码/配置/测试。`platform-portal/` 源码目录不再维护同义 README；真实 Helm、YAML、Shell、Python、CSV 和测试原位保留。新增/删除/移动 Portal 真实源码时，同一个 PR 检查对应 CODE.md；不要混淆 A3/A4 历史分项验收与未批准的 Spark 业务集成，删除 README 不授权部署或 PG14 重装。
 - **Azure/Fabric 源码/文档分离**：`documents/systems/azure-fabric/` 是该系统的唯一正式文档入口；`infra-terraform/`、`notebooks/`、`pipelines/` 子组件分别以 `README.md`（职责）和 `CODE.md`（源码）管理。Terraform 详细 IAM/OIDC/Remote State/验收说明集中于 `infra-terraform/ARCHITECTURE.md`。`azure-fabric/` 源码区禁止重复维护说明性 README、CODE 或 ARCHITECTURE；`.tf`、`.tfvars`、JSON、Python 及 Fabric Item 的 `.platform` 等机器可读源码和元数据必须仍放在实际运行源码目录。文档迁移不得改变 Terraform 资源定义、Remote State、Workflow 的部署行为或 Fabric Item 所有权。
 - **必须同步**：新增、删除、改名或移动组件源码文件时，**同一个 PR 必须修改对应 CODE.md**，核对导航链接、测试入口和依赖；现有文件的入口/职责/关键依赖改变也必须检查并更新 CODE.md。普通代码内部修改不要求无意义改动，但 Reviewer 需要确认导航未过期。
 - **Contract / SQL**：机器可读 Contract、DDL、DML 和只读 SQL 仍是原目录的事实来源，CODE.md 只提供组件所有权导航。SQL 源码地图必须区分只读核验、Rollback 演练、DDL 和 DML；任何导航条目均不代表执行许可。

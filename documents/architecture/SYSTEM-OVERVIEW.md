@@ -7,7 +7,7 @@ source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
 
 # Healthcare Data Platform — 总体系统架构
 
-> **权威范围**：本文件是已核对的当前 **overall architecture**。只陈述主链路、子系统职责和目标方向；Data Platform 的模块实现导航位于 `documents/systems/data-platform/`；Azure/Fabric 现由 `documents/systems/azure-fabric/` 维护系统文档，Platform Portal 仍在开发并暂用原组件文档位置。工程规范与操作安全规则位于 `documents/engineering/`，需求变更将来交给 OpenSpec。
+> **权威范围**：本文件是已核对的当前 **overall architecture**。只陈述主链路、子系统职责和目标方向；Data Platform 的模块实现导航位于 `documents/systems/data-platform/`；Azure/Fabric 现由 `documents/systems/azure-fabric/` 维护系统文档，Platform Portal 现已在 `documents/systems/platform-portal/` 维护 README/CODE；真实业务 Spark 集成仍待设计。工程规范与操作安全规则位于 `documents/engineering/`，需求变更将来交给 OpenSpec。
 >
 > **核验方法**：基于 Healthcare Main `8d276dc7a121c15396a9ce328fcfea4688a795ae` 的 DAG、K8s/Portal/Terraform 源码和截至 2026-10-15 的真实验收记录做**文档与源码只读核对**，未在本次整理中执行 Live Cluster / Azure / PostgreSQL 操作。部署类陈述均标注其对应的**历史验收范围**，不是 2026-10-16 的实时可用性探针。
 
@@ -53,7 +53,7 @@ flowchart TB
 | [Synthea NEW_ONLY](../../kubernetes/manifests/synthea/new-only) | 独立生成/校验/发布不可变 S3 Batch，Airflow 不启动 Generator | NEW_ONLY 的真实新批次生产 + 下游消费已被验收；UPDATE_ONLY / MIX_DATA 未完成 |
 | [Airflow](../../airflow/dags/new_only_omop_consumer.py) + [Spark CODE](../systems/data-platform/spark/CODE.md) | 手动选择 READY Batch；合法 Claim 路由后处理 Person/Visit，再进行 reconciliation / writer handoff | 新批次 Airflow Person/Visit → PostgreSQL 写入、同一已提交批次 SKIP 均有独立证据；不代表所有模式已自动运行 |
 | [PostgreSQL OMOP CODE](../systems/data-platform/omop/CODE.md) | Person/Visit ID Map、CDM、事务 Claim / Stage / Commit、真实读回 | TASK004 对已指定 NEW_ONLY 批次的 atomic COMMIT 验收通过；Condition/其他域未完成 |
-| [Platform Portal](../../platform-portal/README.md) | Airflow/Spark lineage 可观测性，不是业务 ETL 的 Producer/Writer | Marquez 和原生 Web、Airflow A3 真实事件、Spark A4 独立 Smoke 已测试；Job/Run 对应与 Dataset I/O 完整血缘仍未通过 |
+| [Platform Portal](../systems/platform-portal/README.md) | Airflow/Spark lineage 可观测性，不是业务 ETL 的 Producer/Writer | Marquez 和原生 Web、Airflow A3 真实事件、Spark A4 独立 Smoke 已测试；Job/Run 对应与 Dataset I/O 完整血缘仍未通过 |
 | [Azure + Fabric](../systems/azure-fabric/infra-terraform/README.md) | 本地 OMOP 作为**来源权威**，导出一致性快照至已有 Azure Blob，再由 Fabric Pipeline+Notebook 将数据写入 OneLake Lakehouse | Storage/Workspace 既有；3 个 Fabric item **Terraform Plan PASS**，但未 Apply、Notebook/Exporter/业务 Pipeline 未完成，OneLake ETL 无 E2E |
 
 ### 当前明确区分的两个 landing
