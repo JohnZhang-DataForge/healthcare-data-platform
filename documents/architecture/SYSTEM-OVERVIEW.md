@@ -7,7 +7,7 @@ source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
 
 # Healthcare Data Platform — 总体系统架构
 
-> **权威范围**：本文件是已核对的当前 **overall architecture**。只陈述主链路、子系统职责和目标方向；Data Platform 的模块实现导航位于 `documents/systems/data-platform/`；Azure/Fabric 现由 `documents/systems/azure-fabric/` 维护系统文档，Platform Portal 现已在 `documents/systems/platform-portal/` 维护 README/CODE；真实业务 Spark 集成仍待设计。工程规范与操作安全规则位于 `documents/engineering/`，需求变更将来交给 OpenSpec。
+> **权威范围**：本文件是已核对的当前 **overall architecture**。只陈述主链路、子系统职责和目标方向；Data Platform 的模块实现导航位于 `documents/systems/data-platform/`；Azure/Fabric 现由 `documents/systems/azure-fabric/` 维护系统文档，Platform Portal 现已在 `documents/systems/platform-portal/` 维护 README/CODE；真实业务 Spark 集成仍待设计。工程规范与操作安全规则位于 `documents/engineering/`，后续已获批准的功能/架构变更由现有 OpenSpec Change 流程管理（G0–G4 已完成）。
 >
 > **核验方法**：基于 Healthcare Main `8d276dc7a121c15396a9ce328fcfea4688a795ae` 的 DAG、K8s/Portal/Terraform 源码和截至 2026-10-15 的真实验收记录做**文档与源码只读核对**，未在本次整理中执行 Live Cluster / Azure / PostgreSQL 操作。部署类陈述均标注其对应的**历史验收范围**，不是 2026-10-16 的实时可用性探针。
 
@@ -74,7 +74,7 @@ flowchart TB
 | Airflow 调度 | 业务 `new_only_omop_consumer` 手工触发、独立 Writer 授权；`landing_batch_discovery` 每 15 分钟可发现，但默认不自动 Claim/业务提交 | 「自动发现」不能直接写成「所有 READY 自动入库」 |
 | Portal | OpenLineage + Marquez 官方 Web，独立 PG14 元数据 | 暂不开发自定义 Portal UI、Superset/OpenMetadata/Kafka |
 | Azure 分析 | PostgreSQL → 快照 → Azure Blob → **Fabric Data Pipeline** → PySpark Notebook → OneLake Lakehouse | 旧 Warehouse-first / 多层云端重做 ETL 非当前 MVP；Warehouse 和高级 marts 可选后续 |
-| 仓库工作方式 | 同一 Healthcare Repo 保存源码/新 `documents/`；Self-Runner 执行；OpenSpec 尚未初始化 | 不另建独立文档服务，也不把尚未实现目标当成已验收行为 Spec |
+| 仓库工作方式 | 同一 Healthcare Repo 保存源码/`documents/` 与已初始化的 `openspec/`；OpenSpec 1.14.3 已接入 CI，Self-Runner 已完成只读 PR 接力；首个业务 Change G5 尚未开始 | 不另建独立文档服务，也不把尚未实现目标当成已验收行为 Spec |
 
 ## 4. 为什么 Azure 路线要简化
 
