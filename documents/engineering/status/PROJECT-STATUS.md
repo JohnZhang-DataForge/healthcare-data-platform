@@ -21,7 +21,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 | **TASK005 — Condition** | **PAUSED（优先级暂缓） / STEP00 READ-ONLY READY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 保留 STEP00 只读预检准备与原计划；重新启动 Condition 开发需另行决定，任何业务 COMMIT 须单独批准 |
 | **Platform Portal — Marquez / OpenLineage** | **前期实施/验收完成；下一阶段 Spark 接入方案讨论中** | 独立 PG14、Marquez Web/API、A3 Airflow 事件已真实验证；A4 隔离 Spark Smoke 有实际运行和部分读回证据 | **下一步如何接入真实 Spark 业务链路尚未确定**；Job↔Run 名称挂接和 Dataset I/O 完整血缘待处理，不直接启动新 Spark/共享资源 |
 | **Azure/Fabric — OMOP → OneLake** | **目标方案已敲定；IaC/Runner 工程及三个目标资源 Plan 完成；NO APPLY** | 已有 Azure Blob Landing / Workspace；Terraform 各组件资源定义、IAM 边界和 `Azure-Infra-TF` Workflow 在 Git；Lakehouse、Notebook、Pipeline 三个独立 Plan PASS | Exporter、真实 Notebook ETL、Pipeline 与 Notebook 绑定、Fabric 资源部署和数据 E2E 尚未讨论完成/实现；下一阶段先明确细节与验收门槛 |
-| **文档重建 / OpenSpec** | **STEP01–08 COMPLETE；STEP09 G0–G3 COMPLETE（PR #218 已合并 Main）** | G0 审计、G1 官方 CLI Init、G2 中文配置均已完成；G3 [OpenSpec Run #39148008534](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008534) 及 [Naming Run #39148008629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008629) SUCCESS：Node22/CLI1.14.3、Schema/中文指令、严格验证、正反测试、未来 `data-platform/**` 命名与 CODE Map 审核；当前 0 Specs / 0 Changes | [G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md)：G3 合并 SHA `b28660a28e7c9d6b72cc64ae19d3584d7f6f52e9`；下一阶段 G4 Agent/PR/Self-Runner 接力；G5–G7 未启动，没有业务 Runtime 操作 |
+| **文档重建 / OpenSpec** | **STEP01–08 COMPLETE；STEP09 G0–G3 COMPLETE（PR #218 已合并 Main）** | G0 审计、G1 官方 CLI Init、G2 中文配置均已完成；G3 [OpenSpec Run #39148008534](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008534) 及 [Naming Run #39148008629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39148008629) SUCCESS：Node22/CLI1.14.3、Schema/中文指令、严格验证、正反测试、未来 `data-platform/**` 命名与 CODE Map 审核；当前 0 Specs / 0 Changes | [G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md)：G3 合并 SHA `b28660a28e7c9d6b72cc64ae19d3584d7f6f52e9`；G4 Agent/PR/Self-Runner 静态接力 IN PROGRESS；G5–G7 未启动，没有业务 Runtime 操作 |
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
@@ -117,7 +117,7 @@ Local PostgreSQL OMOP (authoritative)
 
 **历史事实**：在 STEP08 终审时 `openspec/` 尚未出现，旧 Bootstrap [PR #164](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/164) 后来关闭且未合并。**当前事实（2026-10-18）**：新 [PR #216](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/216) 已将官方 CLI 初始化生成的 `openspec/` 合并进入 Main；G2 的简体中文项目配置通过真实 CLI Smoke 验证。前两项仅证明工具和配置落地；G3 静态 CI 已通过 PR #218 真实验证并合并 Main，但仓库仍为 0 个正式业务 Specs / Changes，不表示业务验收或 Runtime 验收。
 
-**OpenSpec 当前实施入口**：[G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) · [Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../../architecture/decisions/README.md)。G0–G3 已验证并合并 Main，G3 最终三项 PR CI 均成功。下一阶段 G4 独立处理 Agent/PR/Self-Runner 接力及旧文档路径兼容；G5–G7 不自动进入。
+**OpenSpec 当前实施入口**：[G0–G7 实施计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) · [Operations](../operations/README.md) · [Session Coordination](../development/SESSION-COORDINATION.md) · [Architecture Decisions](../../architecture/decisions/README.md)。G0–G3 已验证并合并 Main，G3 最终三项 PR CI 均成功。G4 正在独立 PR 集成 Agent/PR/Self-Runner 的只读接力及旧文档路径隔离；G5–G7 不自动进入。
 
 ## 6. 这份状态文档如何更新
 
