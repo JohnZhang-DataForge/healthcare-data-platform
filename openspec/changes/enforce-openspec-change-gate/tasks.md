@@ -11,7 +11,9 @@
 - [x] 2.2 新增全面正负向单元测试；验证 PR Body/Change/Task 同步及有效 Archive。
 - [x] 2.3 建立无 paths 过滤的 GitHub-hosted Change Gate 工作流；不接受无关联的实质性 PR。
 - [x] 2.4 更新 `AGENTS.md`、开发工作流、OpenSpec 生命周期和状态说明；阐明 CI/归档/人工审批界限。
-- [ ] 2.5 实际 PR HEAD 验证新旧静态 CI 全部适用门禁；修复首次失败，记录 SHA/Run。
+- [ ] 2.5 完成首次 PR #230 的新旧 CI 精确 HEAD 校验与 Merge，记录 SHA/Run；当前首个候选 HEAD `162906577daf2ddd5d0498ab3da0cc5e087bdb9c` 上 [Change Gate #39170631410](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631410)、[OpenSpec #39170631407](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631407)、[Component #39170631435](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631435)、[Docs #39170631502](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39170631502) 均 SUCCESS，25 门禁测试、总计 63 质量单测、1,043 文档链接 0 失效；最终 HEAD 仍须重新校验。
+
+- [ ] 2.6 安全加固：待 #230 合并使检查器进入 Main 后，另一个 PR 从受信任 Main/Base checkout 执行 Checker，只将 PR Head 当作静态待检查数据；防止 PR 直接修改自身验证器使同轮 PASS，验证新 PR HEAD 与对应 Runs。
 
 ## 3. Merge / Protection
 
