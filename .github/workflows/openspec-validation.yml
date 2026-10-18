@@ -27,7 +27,11 @@ jobs:
         run: |
           set -euo pipefail
           openspec schema validate spec-driven
-          openspec instructions proposal --json > /tmp/openspec-proposal.json
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/openspec"
+          cp openspec/config.yaml "$tmp/openspec/config.yaml"
+          (cd "$tmp" && openspec new change verify-ci-language-config --json >/dev/null && openspec instructions proposal --change verify-ci-language-config --json) > /tmp/openspec-proposal.json
           python3 - <<'PY'
           import json
           from pathlib import Path
