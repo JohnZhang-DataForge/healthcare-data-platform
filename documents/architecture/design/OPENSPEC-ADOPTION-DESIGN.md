@@ -203,6 +203,20 @@ rules:
 
 **G2 与 G3 是不同的 PR/验收范围**。G2 只验证规范工具落地，不以工具初始化冒充业务功能完成。G3 需要明确的功能授权；若测试必须触及共享 Runtime，另行核对资源并取得本次运行授权。
 
+## 8.1 2026-10-18 路线调整：OpenSpec 应先于 Data Platform 目录迁移
+
+新的跨工作线目标见 [Healthcare V2 多数据源与 Fabric 路线设计](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)。**这不改变 G0–G2 的 Bootstrap 安装、配置和验证范围**：从最新 Main 做独立 PR，官方 CLI 安装/Init/Validate，保留最小配置，不迁移历史 `docs/`、不部署 K8s 或 Azure。执行时核对官方当前的 Node.js 最低版本、CLI 版本、可用工具集成，以及实际生成的目录；不将历史 CLI 示例当作已验证命令。
+
+**正式 Bootstrap 与业务开发分离**：先 G2 合并，再用首个实际 Change 管理源码迁移。首个候选 `relocate-local-data-platform` 只做**物理路径迁移和必需引用兼容**，而不同时完成 Task004 语义重命名、共用基类重构或 Fabric ETL。按组件拆小 PR，并保留源 SHA、测试、原路径兼容、回滚及单一 Writer 保护。
+
+**纯结构性 Change 不强行制造业务行为增量**。官方 OpenSpec CLI 文档现有 `skip_specs: true` 选项供纯 Refactor/Tooling/Docs Changes 在无 Delta Specs 时通过验证；能否采用必须以实际安装版本、默认 Schema 及验证结果为准。即使不新增业务 Requirement，仍需在 Design/Tasks 中指定“不改变现有 NEW_ONLY Person/Visit 行为”的可观察回归门槛。
+
+后续候选 Change 分别为 `refactor-local-component-boundaries`、`replicate-omop-to-fabric`、`ingest-fhir-to-fabric`、`ingest-hl7v2-to-fabric`、`publish-public-showcase` 和 `integrate-lineage-reporting`。其中 Condition/TASK005 业务开发暂缓（不删除历史），Local DP → Fabric 的现有 OneLake-first 设计继续有效；FHIR/HL7 **独立**进入 Fabric，不要求经过本地 PostgreSQL OMOP。
+
+公开展示采取**静态只读证据入口**，而非匿名开放 Airflow/Marquez 管理 API 或 Fabric Monitoring Hub。Fabric 管理/Lineage 的 Workspace 授权不能由 OpenSpec 代替；公共展示的数据脱敏、来源 Run、时间戳和只读安全验证属于单独 Change。
+
+**本次只是调整设计稿，不表示已运行 G2、创建 OpenSpec Change、开始源代码迁移或已部署 Fabric**。G3 的小 Change 试点可以与首次迁移切片合并实施，但应保持独立于 G2 Bootstrap 的 PR/验收。
+
 ## 9. 设计验收与待审事项
 
 - [ ] 确认同仓 OpenSpec，不把旧 Private Archive 或 Self-Runner 变成第二份当前 Specs。

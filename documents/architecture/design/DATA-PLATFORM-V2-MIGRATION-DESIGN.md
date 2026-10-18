@@ -12,6 +12,17 @@ evidence: []
 >
 > **依据与边界：** 2026-10-17 对 Healthcare Main `664dfed06a206ff20822a118c8f04771a307452b` 的只读源码调查，以及先前已保存的 Person/Visit 验收证据。本次仅整理文档；没有执行 Kubernetes、Airflow、Spark、S3、PostgreSQL、GitHub Actions 或 Azure 实际操作。此处的路径是迁移目标，不代表文件已移动。
 
+## 2026-10-18 实施顺序补充（不修改已验收事实）
+
+本设计原先覆盖“目录迁移 + Task004 功能重命名 + 公共模块提取 + 运行切换”的**广义 V2 重构**。结合后续的多来源 Fabric 目标，实施时应分成两个独立里程碑，**不要将本稿后文的广义 P0–P6 全部塞进首次物理迁移 PR**：
+
+1. **V2 Relocation（先）**：在已验证的 OpenSpec Bootstrap 之后，按组件将旧根目录本地应用源码迁到 `data-platform/`，同步必需的 Workflow/Docker/Import/CI/CODE.md 引用；保持业务合同、运行标识、数据结果与权限保护不变。多 PR、可回滚，完成后单独验收“目录物理迁移”。
+2. **V2 Modularization（后）**：`task004` 维护源码功能命名、模块共享/解耦与正式业务切换，继续使用本设计的原有 P0–P6 分项和安全门禁，但不作为 Fabric MVP 的一律前置条件。
+
+项目优先级新顺序：**OpenSpec G2 → V2 Relocation → PG OMOP→Fabric E2E → FHIR→Fabric → HL7 v2/Mirth→Fabric → 研究产品与双 Portal 公开只读展示**。V2 Modularization 可按依赖插入或分阶段后移；TASK005 Condition 业务开发暂停、保留原验收与计划。跨系统目标由 [Healthcare V2 多数据源与 Fabric 设计](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md) 统一描述。
+
+原文第 14 节的 “Data Platform V2 Migration Completed” 指**广义全部重构完成**，不等于仅 Relocation 完成。两个状态必须分别报告，不能在首次源码移动通过后误报整体 V2 已完成。
+
 ## 1. 背景与总体方案
 
 目前本地 Healthcare Data Platform 已有一条经过真实验收的业务链路：
