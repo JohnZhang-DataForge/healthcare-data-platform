@@ -107,7 +107,8 @@ def validate(config: object) -> dict[str, object]:
     return {
         "status": "STATIC_PREFLIGHT_PASS",
         "environment": environment,
-        "workspace_name": workspace,\n        "identity_topology": identity_topology,
+        "workspace_name": workspace,
+        "identity_topology": identity_topology,
         "backend_location": "johnzhang/tfstate",
         "landing_location": "johnzhang/landing",
         "state_keys": {
