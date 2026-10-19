@@ -81,6 +81,12 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`05b-prepare-person-visit-runtime-interface.sh`](../../../../local-data-platform/scripts/task004/05b-prepare-person-visit-runtime-interface.sh) | [PREPARE / may write] 历史 TASK004 prepare person visit runtime interface 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`06a-prepare-unified-runtime-image.sh`](../../../../local-data-platform/scripts/task004/06a-prepare-unified-runtime-image.sh) | [PREPARE / may write] 历史 TASK004 prepare unified runtime image 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 
+## 只读部署来源核验
+
+| 真实源文件 | 主要职责与执行风险 |
+| --- | --- |
+| [`read-only-gitsync-spark-provenance.sh`](../../../../local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh) | [CHECK / read-only opt-in] 只读采集 Airflow Pod DAG 挂载和指定 Spark ConfigMap；核对 Git 中单个 Python 源文件 SHA256。需显式 Kubernetes context 和最小只读权限，不自动执行，不核验运行中 GitSync checkout SHA；原始证据敏感，不提交仓库 |
+
 ## CODE.md 同步规则（本组件）
 
 **新增、删除、移动或重命名本组件负责的 `airflow/`、`apps/`、`images/`、`kubernetes/`、`scripts/` 下的源文件，必须在同一个 PR 同步修改本 CODE.md**，并检查现有相对链接、测试入口和真实依赖。调整现有文件的职责、入口或重要依赖时也要同步更新；普通内部实现变更可核对后确认地图无需修改。
