@@ -7,7 +7,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 # OpenSpec 迁移准备 — STEP08/STEP09 Gate
 
-**历史快照说明（2026-10-16/17，G0 开始之前）**：本页正文中的“未初始化”“未执行 CLI”等均仅描述当时的 Main，**不是当前状态**。截至 2026-10-18，G0–G4 已完成并合并；当前唯一状态请见 [G0–G7 实施计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 与 [PROJECT-STATUS](../status/PROJECT-STATUS.md)。
+**历史快照说明（2026-10-16/17，G0 开始之前）**：本页正文中的“未初始化”“未执行 CLI”等均仅描述当时的 Main，**不是当前状态**。截至 2026-10-18，G0–G4 已完成并合并；当前状态以 [PROJECT-STATUS](../status/PROJECT-STATUS.md) 和 [Active Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) 为准；[G0–G7 实施计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 只供 Bootstrap 历史审计。
 
 > **STEP08 终审完成后的准备清单，不是 OpenSpec 初始化记录。** 正式采用 OpenSpec 管后续变更与 Agent 接力的方向已确认，但当时核验的 Main 仍**没有 `openspec/`**；当轮没有运行 OpenSpec CLI/npm，也没有为此触发业务或云端 Workflow。[最终文档权威终审](FINAL-DOCUMENTATION-AUDIT.md)。
 
@@ -49,7 +49,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 ## 5. STEP09 G0–G7 开工门槛（实施前核查）
 
-**唯一完整执行方案：**[OpenSpec G0–G7 实施计划](OPENSPEC-IMPLEMENTATION-PLAN.md)。本文只保留 Readiness 与历史证据边界；之前讨论稿中“G2 Bootstrap / G3 首个 Change”的编号**已废止**，不能与新 G0–G7 混用。
+**当时的完整执行方案（历史）：**[OpenSpec G0–G7 实施计划](OPENSPEC-IMPLEMENTATION-PLAN.md)。本文只保留 Readiness 与历史证据边界；之前讨论稿中“G2 Bootstrap / G3 首个 Change”的编号**已废止**，不能与新 G0–G7 混用。
 
 1. **G0**：每次开始执行都从最新 Main 记录真实 SHA，确认 PR #164 CLOSED/NOT MERGED、当前 CODE Map/命名 CI 及实际 Node/CLI 兼容性。旧 PR 配置不得继续使用。
 2. **G1**：固定并记录安装的官方 CLI 版本，真实执行 Init；确认在仓库根目录生成 `openspec/`，不将预先写出的 Markdown 视为安装成功。
@@ -60,4 +60,4 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 7. **G6**：按组件分 PR 迁移，先验证 Import/DAG/Docker/GitSync/CI/CODE Map 路径兼容，再受控切换实际运行入口；原 DAG ID、Batch、SQL 持久化协议与 Writer Fencing 不变。Live 验证单独授权。
 8. **G7**：按 Change 独立推进 Modularization、PG→Fabric、FHIR、HL7 v2、业务 Lineage 和静态只读 Showcase；Condition 后续业务暂缓，历史 Step00 只读准备状态保留。
 
-**STEP08 当时的阶段结论（历史）**：那一轮尚无任何 G0–G7 CLI/CI/Runtime PASS、OpenSpec 尚未初始化。此结论已被后续 G0–G4 的真实 CLI/CI/PR 证据取代，**当前不得从 G0 重新初始化**；G5 尚未开始，其范围以 [正式计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 为准。
+**STEP08 当时的阶段结论（历史）**：那一轮尚无任何 G0–G7 CLI/CI/Runtime PASS、OpenSpec 尚未初始化。此结论已被后续 G0–G4 的真实 CLI/CI/PR 证据取代，**当前不得从 G0 重新初始化**；G5/G6 随后已按调整顺序启动，未完成的运行兼容由 [Active Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) 跟踪。

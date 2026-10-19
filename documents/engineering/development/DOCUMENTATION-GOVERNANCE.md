@@ -2,7 +2,7 @@
 
 > **历史目录清理**：原 `docs/` 已从 Main 退休；旧验收/Runbook 通过 [固定 Git 快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 读取，不允许新文件写回 `docs/`。所有新增权威项目说明写入 `documents/`；经审核的行为规范与开发变更分别归已初始化的 `openspec/specs/` 与 `openspec/changes/`。
 
-> **状态：ACTIVE · 2026-10-16** · **目标：持续维护准确、可演进、不重复的事实基础；OpenSpec G0–G4 已完成，G5 首个 Change 尚未开始。**
+> **状态：ACTIVE · 2026-10-16** · **目标：持续维护准确、可演进、不重复的事实基础；OpenSpec 已管理具体 Change/Tasks，Main Required Gate 已通过正反 PR 验证。**
 
 ## 1. 基本原则
 
@@ -18,19 +18,19 @@
 
 | 类型 | 目标位置 | 权威内容 |
 | --- | --- | --- |
-| 入口、迁移表 | `documents/README.md`、`documents/engineering/migration/` | 模块导航、迁移状态 |
+| Agent 入口、历史迁移记录 | `AGENTS.md`、`documents/README.md`、`documents/engineering/migration/` | 唯一 Agent 入口、系统导航、历史迁移证据，不维护现行 Change Tasks |
 | Architecture | `documents/architecture/` | 当前系统结构、数据流、设计与部署差异 |
 | Systems / Data Platform | `documents/systems/data-platform/<component>/` | 代码路径、依赖、集成方式、实现范围 |
 | Engineering / Development | `documents/engineering/development/` | Agent、PR/Self-Runner、测试、文档规则 |
 | Engineering / Operations | `documents/engineering/operations/` | 部署、恢复、故障排查、安全操作 |
-| Engineering / Status | `documents/engineering/status/` | 少量经证据核对的当前项目与组件状态 |
+| Engineering / Status | `documents/engineering/status/PROJECT-STATUS.md` | 跨项目 CURRENT/NEXT 摘要；链接 Change，不重复执行 Tasks |
 | Architecture Decisions | `documents/architecture/decisions/` | 重大已批准设计决定、理由、影响和旧方案关系 |
 | Evidence | 原 Closeout / GitHub Actions / 已核验的证据索引 | 真实历史验收，不盲目复制日志 |
-| OpenSpec（G0–G4 已初始化与集成，业务 Specs/Changes 仍为空） | `openspec/specs/`、`openspec/changes/` | 可测试行为规范和未来 Change 的 Proposal/Design/Tasks |
+| OpenSpec（已正式使用） | `openspec/changes/`、`openspec/specs/` | 每个实质性变更的唯一 Proposal/Design/Tasks/验收，和已确认采用的可验证行为要求 |
 
 Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`，其旧 `documents/components/azure-fabric/` 已退役；Platform Portal 的唯一系统文档入口是 `documents/systems/platform-portal/`，旧 `documents/components/platform-portal/` 已退役。旧 Data Platform、Development、Operations、Migration、Status 的重复副本已从 Main 清理，历史版本仍可通过对应 Git Commit 追溯；任何后续变更只更新新目录。
 
-现有源码中的 `contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
+现有源码中的 `local-data-platform/contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
 
 ### Component README / CODE 双入口约定
 
@@ -42,7 +42,7 @@ Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`
 - **必须同步**：新增、删除、改名或移动组件源码文件时，**同一个 PR 必须修改对应 CODE.md**，核对导航链接、测试入口和依赖；现有文件的入口/职责/关键依赖改变也必须检查并更新 CODE.md。普通代码内部修改不要求无意义改动，但 Reviewer 需要确认导航未过期。
 - **Contract / SQL**：机器可读 Contract、DDL、DML 和只读 SQL 仍是原目录的事实来源，CODE.md 只提供组件所有权导航。SQL 源码地图必须区分只读核验、Rollback 演练、DDL 和 DML；任何导航条目均不代表执行许可。
 - **镜像 / Kubernetes**：`images/` 的 Dockerfile/Entrypoint 和 `kubernetes/` 的 YAML / 模板按**工作负载功能所有权**归入组件 CODE.md；RBAC、Secret 引用、持久化资源与镜像 Digest 是实际依赖，不能在文档清理中改动。源目录不能代替 Live Cluster 状态，通用节点/Namespace/存储说明仍由 [Infrastructure](../../architecture/INFRASTRUCTURE.md) 负责。
-- **开发脚本和配置**：`scripts/` 的历史 Task-named Shell 按实际业务功能归到已有组件 CODE.md；质量 CI、开发辅助和本地配置示例收口到 [Developer CODE](CODE.md)，不伪造一个新的业务组件。`prepare` 可生成/覆写源码，`reset`/`publish`/`upsert` 等可能改写集群或持久数据；源码导航不是执行授权。新正式 Shell 仍须使用组件名/能力名，不新增 Task/Step 目录。
+- **开发脚本和配置**：`local-data-platform/scripts/` 的历史 Task-named Shell 按实际业务功能归到已有组件 CODE.md；质量 CI、开发辅助和本地配置示例收口到 [Developer CODE](CODE.md)，不伪造一个新的业务组件。`prepare` 可生成/覆写源码，`reset`/`publish`/`upsert` 等可能改写集群或持久数据；源码导航不是执行授权。新正式 Shell 仍须使用组件名/能力名，不新增 Task/Step 目录。
 - **校验**：先对已建立 CODE.md 的组件启用对应静态 CI Gate（已启用 Airflow、apps/、Spark、contracts/、sql/、images/、kubernetes/、scripts/ 与 config/ 的 CODE.md 检查），检查增删/移动时 CODE.md 与 PR 同步，并核对已登记文件存在；各组件逐步启用，不因其它组件暂未迁移而阻止其正常开发。
 
 

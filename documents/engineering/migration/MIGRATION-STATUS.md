@@ -1,6 +1,6 @@
 # Documentation Rebuild — 迁移进度和源资料登记
 
-> **历史迁移基线：Pre-OpenSpec · 开始日期：2026-10-16；当前状态：STEP01–08 COMPLETE / OpenSpec G0–G4 COMPLETE。** 最新 CURRENT/NEXT 以 [PROJECT-STATUS](../status/PROJECT-STATUS.md) 和 [OpenSpec G0–G7 计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 为准，下面保留的历史阶段记录不得当作当前开工命令。
+> **历史迁移基线：Pre-OpenSpec · 开始日期：2026-10-16；当前状态：STEP01–08 COMPLETE / OpenSpec G0–G4 COMPLETE。** 最新 CURRENT/NEXT 以 [PROJECT-STATUS](../status/PROJECT-STATUS.md) 和 [Active Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) 为准；[OpenSpec G0–G7 计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 仅保留历史 Bootstrap 证据，下面保留的历史阶段记录不得当作当前开工命令。
 >
 > 文档不是在本文件创建时就算完成迁移。**每个领域独立核对、合并并切换权威**，完成状态以合并后的 Main 和对应验收结果为准。
 
@@ -36,7 +36,7 @@
 | **STEP06** | Portal / Azure-Fabric 专项模块 | **COMPLETE（PR #172）** | [Portal（STEP06 当时的文档）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/ad39ed608c699ea3f30b74bd4bc331733d462e99/documents/components/platform-portal/README.md)、[Azure/Fabric（当时文档）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/41be1aba4d8b730b2a9e17fadfc0450e6aec5095/documents/components/azure-fabric/README.md)：明确已验收、已批准设计和待实现/待定范围 |
 | **STEP07** | `documents/operations/`、决策索引（现位于 `documents/architecture/decisions/`）、精简 Session 协调与 OpenSpec Readiness | **COMPLETE（PR #173）** | 安全/排障长期入口、已确定决策；不新建重复 Handoff 体系；准备 STEP08/09 |
 | **STEP08** | 切换项目入口、检查引用、验收文档体系 | **COMPLETE（PR #174 合并后）** | [终审报告](FINAL-DOCUMENTATION-AUDIT.md)：历史入口降级、单一状态权威、25 篇新文档链接核验 |
-| **STEP09** | 同仓库 OpenSpec 接入与后续实施 | **G0–G4 COMPLETE；G5–G7 NOT STARTED** | [唯一 G0–G7 计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 记录真实 CLI/CI/PR/Run 证据；G5 仅首个业务 Change 的设计审核，未迁移代码 |
+| **STEP09（历史 Bootstrap）** | 同仓 OpenSpec 接入 | **G0–G4 COMPLETE；G5/G6 实际顺序变更** | [G0–G7 历史计划](OPENSPEC-IMPLEMENTATION-PLAN.md) 保留 CLI/CI/PR/Run 事实；源码已物理迁移 PR #225–#227，后续运行兼容/E2E 转交 [Active Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) |
 
 **2026-10-16 历史整理状态（非当前 Main）**：STEP01–08 的权威终审已完成；后续 PR #187–193 推进了 `architecture/decisions/`、`systems/data-platform/` 和 `engineering/` 层级切换，并已清理原 `docs/` 和旧本地组件/工程文档副本。该段为 2026-10-16 历史状态：当时 Azure/Fabric 与 Platform Portal 文档均在 `documents/components/`。此后 Azure/Fabric 已切换为 `documents/systems/azure-fabric/`；该段为 2026-10-16 历史状态，Portal 后续已迁至 `documents/systems/platform-portal/`。OpenSpec 状态以当前专门计划与基线审计为准。以上 STEP01–08 表格保留原阶段的交付路径和验收结论。
 
