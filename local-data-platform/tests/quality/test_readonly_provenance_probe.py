@@ -46,7 +46,7 @@ class ReadOnlyProvenanceProbeTests(unittest.TestCase):
                 "FAKE_CONFIGMAP": configmap,
                 "FAKE_PAYLOAD": payload,
             })
-            result = subprocess.run(["bash", str(SCRIPT)], cwd=root, env=env, capture_output=True, text=True, timeout=20)
+            result = subprocess.run(["bash", str(SCRIPT)], cwd=ROOT.parent, env=env, capture_output=True, text=True, timeout=20)
             return result
 
     def test_matching_source_is_partial_only(self):
