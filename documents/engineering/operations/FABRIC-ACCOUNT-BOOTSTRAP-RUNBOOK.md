@@ -2,12 +2,12 @@
 status: active
 scope: fabric-environment-manual-bootstrap-checklist
 last_reviewed: 2026-10-19
-implementation_status: preflight-only
+implementation_status: offline-roots-and-validation-only
 ---
 
 # Fabric 新账号 / 新环境人工前置 Runbook
 
-> **范围**：本 Runbook 是每次接入新 Fabric 账号/Capacity/Entra Tenant 前，必须由有对应权限的人手工准备或审查的事项。**目前只实现离线环境 Preflight CLI，不是已经可运行的一键部署流程。** 后续 Terraform Provider/Backend 双身份、Connection、fabric-cicd、Self-Runner Workflow 仍需独立开发、授权与 E2E。长期目标见 [Fabric 多环境架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；原有 [Terraform 安全边界](../../systems/azure-fabric/infra-terraform/ARCHITECTURE.md) 仍有效。
+> **范围**：本 Runbook 是每次接入新 Fabric 账号/Capacity/Entra Tenant 前，必须由有对应权限的人手工准备或审查的事项。**当前已完成独立 Workspace、Lakehouse、Connection 资源声明与离线 Preflight/CI，但**从未对新环境进行 Terraform Init/Plan/Apply**，仍不是可运行的一键部署流程。** 后续 Terraform Provider/Backend 双身份、Connection、fabric-cicd、Self-Runner Workflow 仍需独立开发、授权与 E2E。长期目标见 [Fabric 多环境架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；原有 [Terraform 安全边界](../../systems/azure-fabric/infra-terraform/ARCHITECTURE.md) 仍有效。
 
 ## 0. 稳定资产 vs 新账号范围
 
@@ -22,7 +22,7 @@ implementation_status: preflight-only
 | Fabric 部署用 Service Principal、租户 API 设置、Capacity 角色 | 首次建 Tenant B 必须 | 换 Tenant 时**每次** | Fabric Tenant B 管理员 |
 | GitHub Environment 中新部署身份的 OIDC/Secrets/Vars | 首次准备 | **每新 Tenant 更新** | Repo 管理员 |
 | 新环境独立的 State Prefix/Workspace 名 | 首次选择 | **每新环境生成** | 部署流程 |
-| Blob Connection、Workspace、Lakehouse、Notebook/Pipeline | 尚未实现部署自动化 | **最终由 Workflow 自动创建，不手工逐项配置** | Terraform + fabric-cicd |
+| Blob Connection、Workspace、Lakehouse、Notebook/Pipeline | Terraform Root 已声明前三种但尚未部署；Notebook/Pipeline 未实现 | **最终由 Workflow 自动创建，不手工逐项配置** | Terraform + fabric-cicd |
 
 **Fabric Trial 不保证可重复获得**。本架构适用于任何已经合法准备好且有容量的 Fabric 环境，不能自动申请新的 60 天试用。
 
@@ -43,7 +43,7 @@ implementation_status: preflight-only
 2. 由 Fabric Tenant 管理员在 Fabric Portal 的 **Govern → Configurations → Tenant settings → Developer settings** 检查 **Service principals can use Fabric APIs** 是否对部署 SPN 所在的安全组开放（具体 UI 字样可能变化）。
 3. 在目标 Capacity 上为部署身份分配允许新建 Workspace 的角色，并确保部署后 Workspace 管理权限能由 Terraform 安全授予；如果策略禁止则 HOLD，不尝试提升到全租户管理员绕过限制。
 4. 由 Repo/Entra 管理员为 Self-Runner 的**确切 GitHub Repo/Ref 或 GitHub Environment** 配置对应的 OIDC federated credential。GitHub OIDC token 的 issuer/subject/audience 必须和 Tenant B 的信任记录精确匹配；现有 Tenant A 的 OIDC 不会自动在 B 生效。
-5. 如后续版本选择安全的 Client Secret 代替 OIDC，应将其放在受保护的 GitHub Environment Secrets 中，并定义轮换周期；**不得放入 .tfvars、仓库 JSON、日志或 PR**。
+5. Fabric **部署身份**优先使用 GitHub OIDC；若未来另行批准使用部署 Client Secret，必须将其隔离存入受保护的 GitHub Environment Secrets 并定义轮换周期。**Blob Reader 凭据不交给 GitHub Runner**：当前 Connection Root 只接受指向**现存 Fabric Key Vault Connection**的 Secret Reference（ID、名称、可选版本），不是 Secret 值。绝不放入 .tfvars、仓库 JSON、日志或 PR。
 
 **未实现部分**：当前 Self-Runner `azure-infra.yaml` 将 `ARM_*` 与 `FABRIC_*` 指向同一套 GitHub 变量，只支持 `dev`；更换 Tenant 前必须由后续 Change 把两个认证流真正分离。此 Runbook 不授予直接运行旧 Workflow 针对新环境的权限。
 
@@ -58,9 +58,9 @@ implementation_status: preflight-only
 ### D. GitHub 环境和信息分层
 
 - GitHub Repository 保存**非秘密**的部署配置、Terraform 源、Fabric 原生 Item 定义、Preflight 代码/测试。
-- 新 Tenant 的 SPN 联合身份或临时 Secret、Azure Blob Reader Secret 只进受保护的 Secret Store/GitHub Environment Secrets，不复制 Tenant A 的敏感值到 PR/文档。
+- GitHub Environment 只保存受保护的部署身份配置和 OIDC 所需非敏感标识；不要把 Blob Reader Secret 放进 Runner、GitHub Secrets、TF_VAR 或 Terraform State。Reader Secret 留在被授权的 Azure Key Vault，并由已存在且经过独立验证的 Fabric Key Vault Connection 引用。
 - 非敏感的新 Tenant ID、Capacity ID、Workspace 名、State Prefix/环境名可放在隔离的环境配置中；**若部署输出/CI 公开可见，仍避免打印不必要的标识**。
-- 保留 `Plan → 人工批准 Apply → fabric-cicd Deploy → E2E Readback` 的审批边界。当前无一键 Workflow，不得将这里的预检步骤解释成资源已创建。
+- 保留 `Plan → 人工批准 Apply → fabric-cicd Deploy → E2E Readback` 的审批边界。当前无一键 Workflow，不得将这里的预检步骤解释成资源已创建。只有纯 `terraform fmt` 静态 CI 已启用；此操作不初始化 Backend、不下载 Provider、不会向云端认证。
 
 ## 2. 当前已经可以使用的离线检查（不会访问 Azure）
 
@@ -110,6 +110,36 @@ python3 -m unittest discover \
   -s azure-fabric/infra-terraform/tests \
   -p 'test_fabric_environment_preflight.py' -v
 ```
+
+
+## 2A. Task 2.4/2.5：Connection 凭据与上线前最小证据清单（目前 HOLD）
+
+新环境 `connection/main.tf` 已有 `fabric_connection.azure_blob` 声明，但下列项目必须独立取得证据后才能考虑**单独申请** Terraform Init/Plan 权限。**所有审批变量默认 false；单纯设置 true 不是证据。**
+
+| 关卡 | 需要检查的内容 | 应当保留的非秘密证据 / 停止条件 |
+| --- | --- | --- |
+| Fabric Tenant | 目标 Entra Tenant ID、Capacity ID、Fabric CLI/API 会话 Tenant 一致；当前同 Tenant A→A′，未来允许 A→B | 记录 Tenant GUID 和日期；任何会话不匹配立即 HOLD |
+| Backend Operator | 单独的应用 Client ID、Tenant A OIDC federated credential，仅对批准的 State 容器有适当权限 | 明确区别旧 `dev/*.tfstate`；新 State Key 必须经过独立库存检查；**Blob Prefix 不构成 RBAC 隔离** |
+| Fabric Deployer | 独立应用 Client ID、Fabric Tenant OIDC/API/Capacity 权限，不能等于 Backend Operator | 实际令牌颁发、Fabric API 权限未验证前 HOLD；不能借用 Azure CLI 的用户账号冒充应用身份 |
+| Blob Reader (ServicePrincipal) | 第三个应用 Client ID，Tenant A，`landing` 容器 **Storage Blob Data Reader**，无 Blob Data Contributor | Client ID 必须与 Backend/Fabric 不同；核对访问范围、网络 ACL、跨 Tenant B→A 读取方式 |
+| Key Vault Secret Reference | 目标租户内**已存在**的 Fabric Key Vault Connection GUID、被授权的 Key Vault Secret 名称/版本和凭据轮换责任人 | 不提交 Secret 值、Access Key、SAS、Bearer Token；若引用不存在或无法读取则 HOLD |
+| WorkspaceIdentity（可选） | 目标 Workspace 的真实 Workspace Identity、必要 Blob Reader RBAC、Fabric Provider 对该组合的实际支持情况 | 元数据支持类型不等于网络/RBAC/跨 Tenant 可用；未验证继续保持审批为 false |
+| AzureBlobs 元数据 | 目标 Tenant 正式 `supportedConnectionTypes` 返回类型 `AzureBlobs` / 方法 `AzureBlobs`，必填 `account`、`domain`；核对 `domain` 的实际值 | 必须从目标 Tenant/连接 UI 验证实际值；不可猜 `blob.core.windows.net` 一定是所需 `domain` 参数 |
+| Connection 资源所有权 | 列出新环境预期同名 `HDP-<environment>-azureblobs` 连接及权限；核对是否已有 Connection、后端 State 是否已有对象 | 不在未经批准条件下创建重复连接或导入；遇到未知资源继续 HOLD |
+| GitHub CI | GitHub-hosted Fabric Preflight 离线 Python tests + `terraform fmt -check` | 无 `id-token:write`，无 Azure/Fabric Secret、无 `terraform init/plan/apply/destroy`；PASS 不等于真实 Provider Schema 验证 |
+| 后续部署授权 | 精确 Change、PR/SHA、Environment、State Key、只读库存结果、预计资源清单以及回退策略 | 未来单独审批 `init/plan`，计划评估后再次独立审批 `apply`；绝不自动降级绕过检查 |
+
+**用户现在无需执行 Azure 命令。** 等需要核实实际 Fabric Tenant/Capacity、Connection 现存库存、Reader/RBAC 或 Key Vault 引用时，再按最小权限提供明确的只读操作。核验时不要回传 JWT、Secret、SAS、Storage Key 或包含凭据的导出。
+
+### 不涉及云端的验收命令（仅在本地检出仓库时）
+
+```bash
+python3 -m unittest discover -s azure-fabric/infra-terraform/tests -v
+# 仅格式及 HCL 解析：不需要 init、不读取 State、不安装 Provider。
+terraform fmt -check -diff azure-fabric/infra-terraform/new-environments/connection
+```
+
+如果无法在本地安装 Terraform CLI，可直接使用 PR 的 **Fabric Environment Preflight (Offline)** 检查结果。该格式检查仅覆盖本批 Connection Root；旧 Workspace/OneLake Roots 未因此获得 live validation。
 
 ## 3. 旧手工 Workspace：不能因为“空”就直接删除
 
