@@ -6,7 +6,7 @@
 
 - [x] 1.1 核实已批准架构、PR #247 离线 Preflight Main 合并和 PR #248 归档，确认旧 State/Workspace/Storage 保护约束。
 - [x] 1.2 核对 Terraform Root/Module/Provider 版本和 Self-Runner `azure-infra.yaml` 当前身份映射；取得真实源码审计结论。
-- [ ] 1.3 锁定新环境的独立 Root/State Key、Tenant A Backend vs Tenant B Provider 输入、认证选择及负向测试方案。
+- [x] 1.3 锁定新环境的独立 Root/State Key、Tenant A Backend vs Tenant B Provider 输入、认证选择及负向测试方案。
 
 ## 2. Terraform offline implementation
 
@@ -28,3 +28,10 @@
 - Self-Runner `JohnZhang-DataForge/Self-Runner/.github/workflows/azure-infra.yaml`（本轮只读）使用 `dw-runner-set`，只支持 `dev`，按 `$ENVIRONMENT/$COMPONENT.tfstate` 选择 State；`ARM_CLIENT_ID`/`ARM_TENANT_ID` 与 `FABRIC_CLIENT_ID`/`FABRIC_TENANT_ID` 都来源于同一 `AZURE_*` 变量；默认 Plan，但工作流也公开 Apply 选择。这是与设计中跨 Tenant 双身份和独立 State 不兼容的已证实差距。
 - 后续实现必须独立于旧 `azure-infra.yaml` 建立新环境入口，确保 `fabric/<environment>/<component>.tfstate`，不得因配置字符串隔离便声称 Azure Blob RBAC 已隔离；身份分离/OIDC 真实验证仍需另行授权。
 - 本轮没有调用 Terraform、GitHub Workflow dispatch、Azure/Fabric API 或读写 Remote State；完成的是 1.2 静态审计，不是 1.3 身份方案完成。
+
+## Task 1.3 离线合同设计决策
+
+- 在旧七 Root 和 Self-Runner `azure-infra.yaml` 之外新增独立 `fabric_deployment_target.py`，复用现有严格 JSON Preflight；新环境 State Key 固定在 `fabric/<environment>/{workspace,onelake,connection}.tfstate`，不得使用旧 `dev/*`。
+- 显式传入 Backend Tenant A / Fabric Tenant B 和不同的 Client ID；即使属于同一 Tenant，Backend Operator 和 Fabric Deployer 仍应是不同身份。检查 ID 与批准的环境合同完全匹配；不将凭据写入 JSON。
+- 只产生离线 Backend 参数摘要，暂不调用 `terraform init/plan` 或以脚本设置 OIDC；Tenant A RBAC 与 Tenant B Fabric 权限仍属于未授权的后续实测。新增正常及负向单元测试，由现有 Fabric Preflight CI 执行。
+- Task 2.1 的实际 Terraform Root/Backend 及 Self-Runner 绑定尚未实现，不因本次纯 Python 合同完成而勾选。

@@ -59,3 +59,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [历史七组件 Plan-only 证据](ARCHITECTURE.md#verified-plan-evidence)：结果仅证明对应历史 SHA/Run 的 Plan，**不是现时部署/数据端到端验证**。
 
 **维护要求**：未来调整 Root/Module/Bootstrap 的文件名、真实入口或权限所有者时，应在同一 PR 更新本 CODE.md。本次文档迁移未改动任何 `.tf`、`.tfvars`、`.json`、`.py` 或 Workflow。
+
+## 新环境 Backend / Fabric 身份离线合同（尚未部署）
+
+- [fabric_deployment_target.py](../../../../azure-fabric/infra-terraform/tools/fabric_deployment_target.py)：使用已验证环境 JSON 和明确区分的 Tenant A Backend / Tenant B Fabric 客户端 UUID，生成无副作用的 Backend State Key 与部署摘要；**不运行 Terraform、不使用 OIDC Token，也不访问云端**。
+- [test_fabric_deployment_target.py](../../../../azure-fabric/infra-terraform/tests/test_fabric_deployment_target.py)：覆盖跨租户/同租户独立主体、身份不匹配、共用身份、旧 State Key 和 Secret 字段拒绝。
+- 此工具不是 Terraform Backend 的真实初始化器；OIDC federated credentials、RBAC、State 是否已被使用以及远端 Workspace 存在性仍未验证。

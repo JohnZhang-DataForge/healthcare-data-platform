@@ -5,6 +5,8 @@ on:
     paths:
       - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_environment_preflight.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_deployment_target.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_deployment_target.py'
       - 'azure-fabric/infra-terraform/environments/fabric-environment.example.json'
       - '.github/workflows/fabric-environment-preflight.yml'
   workflow_dispatch:
@@ -30,6 +32,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_environment_preflight.py' -v
+      - name: Validate isolated backend and tenant identities
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_deployment_target.py' -v
       - name: Confirm example is deliberately non-deployable
         run: |
           set -euo pipefail
