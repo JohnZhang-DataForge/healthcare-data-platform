@@ -1,13 +1,13 @@
 # Healthcare Data Platform — 文档新入口
 
-> **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec STEP09 G0–G4 COMPLETE；G5 首个 Change 仅待独立设计。
+> **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec G0–G4 Bootstrap 已完成，后续工作由 Active Changes 管理（2026-10-18 核对）。
 >
 > 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与今后创建的 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
 ## 当前文档目录（Data Platform / Engineering 已切换）
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
-- [架构设计讨论稿](architecture/design/README.md)：[V2 多来源 Fabric 与双 Portal 展示路线](architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)、Data Platform V2 源码迁移与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（为编制时点的中文 Draft；OpenSpec 治理 G0–G4 已另行实现并验收，V2 业务迁移尚未实施）。
+- [架构设计讨论稿](architecture/design/README.md)：[V2 多来源 Fabric 与双 Portal 展示路线](architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)、Data Platform V2 源码迁移与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（为编制时点的 Draft；OpenSpec 已投入变更管理，本地物理目录已迁移但运行路径/E2E 未验收；Fabric 新业务 ETL 尚未实施）。
 - [Systems](systems/README.md)：Data Platform 本地五组件、Azure/Fabric 与 Platform Portal 已统一进入 `systems/`，均提供 README/CODE 组件导航。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
 
@@ -17,12 +17,12 @@
 
 **先读 [AGENTS.md](../AGENTS.md)、[Agent 规则](engineering/development/AGENT-RULES.md) 和 [当前项目状态](engineering/status/PROJECT-STATUS.md)。** 根目录 `AGENTS.md` 是唯一按任务分流入口：它会根据代码开发、测试、文档或共享环境操作指向必要的详细规范。不要每次通读全部工程文档，也不在本目录维护第二套任务分类表。
 
-当前采用 **直接维护 Git 正式源码 + Self-Runner / GitHub Actions 受控验证** 的开发模式。**G0–G4 已完成；正式功能/重构变更应先按 [OpenSpec 开发生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 与 [唯一 G0–G7 计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 确定 Change 范围；G5 尚未启动，仅设计首个 Change，G6 才允许迁移业务源码。** 原 `documents/` 保留架构、组件、人类可读开发/运维规范的权威，不被 OpenSpec 替代。具体实施参见 [Development Workflow](engineering/development/DEVELOPMENT-WORKFLOW.md)；需要真实 Runtime 操作时必须遵守 [Safe Operations](engineering/operations/SAFE-OPERATIONS.md)。旧 Skill 和零散排障经验只保留在 [历史 Git 快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md)，不作为现行开发流程。
+当前采用 **直接维护 Git 正式源码 + Self-Runner / GitHub Actions 受控验证** 的开发模式。**正式功能、治理与重构变更以 [OpenSpec 开发生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 和 [Active Changes](../openspec/changes/relocate-local-data-platform/tasks.md) 为具体设计/Tasks 入口，遵守 Main Required CI；历史 [G0–G7 计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 仅供 Bootstrap 审计，不再指挥当前 G5/G6。** 原 `documents/` 保留架构、组件、人类可读开发/运维规范的权威，不被 OpenSpec 替代。具体实施参见 [Development Workflow](engineering/development/DEVELOPMENT-WORKFLOW.md)；需要真实 Runtime 操作时必须遵守 [Safe Operations](engineering/operations/SAFE-OPERATIONS.md)。旧 Skill 和零散排障经验只保留在 [历史 Git 快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md)，不作为现行开发流程。
 
 ## 文档终审历史与当前 OpenSpec 入口
 
 - **[Final Authority Audit](engineering/migration/FINAL-DOCUMENTATION-AUDIT.md)** — STEP08 当时的 25 份文档链接审计（历史统计，并非现行 `documents/` 文档总数）、旧入口权威纠偏及后续边界。
-- [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 的唯一阶段定义、命名 CI、首个 Change 及迁移验收门槛；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。**G0–G4 已完成；G5 需独立审核变更设计，参见 [生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md)。**
+- [OpenSpec G0–G7 正式实施计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — STEP09 当时的历史实施阶段和 PR/Run 证据，**不再维护当前变更 Tasks**；[G0 基线审计](engineering/migration/OPENSPEC-BASELINE-AUDIT.md) 已完成只读检查，[Readiness](engineering/migration/OPENSPEC-READINESS.md) 为开工检查。G0–G4 历史阶段已完成，G5/G6 的实际推进在 [源码迁移 Change](../openspec/changes/relocate-local-data-platform/tasks.md)，参见 [生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md)。
 
 ## 长期运维与架构决策（STEP07 已审核）
 
@@ -31,7 +31,7 @@
 - [Architecture Decisions](architecture/decisions/README.md) — 已批准的重要架构路线和代替旧方案的原因。
 - [OpenSpec 迁移准备与 STEP08/09 Gate](engineering/migration/OPENSPEC-READINESS.md) — 旧 PR #164 已于 2026-10-17 关闭、未合并；[接入设计稿](architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 与 [G0–G7 执行计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 已对齐，G1 已初始化、G2 已配置中文。
 
-**2026-10-18 已批准的未来源码根目录**：`local-data-platform/`（[Architecture Decisions D-07](architecture/decisions/README.md)）。当前根目录本地源码尚未搬移，现有 `documents/systems/data-platform/` 是有效文档导航，不能改成并不存在的源码链接；旧候选 `data-platform/` 在 G3 CI 仍需单独更正验证。
+**2026-10-18 已落实的源码根目录**：本地业务源码已通过 [PR #225](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/225) 移至 `local-data-platform/`，文档源码链接与代码地图在 #226 修复、仓库质量工具在 #227 归入 `.github/quality/`。`documents/systems/data-platform/` 仍是组件**文档**命名空间；**物理目录完成不等于 Import/Docker/Airflow/Spark/E2E 已验收**，后续由 [Active Change](../openspec/changes/relocate-local-data-platform/tasks.md) 跟踪。
 
 已完成名称决定的独立 OpenSpec 文档试点：[命名 PR #223](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/223) 已合并，验证 [OpenSpec Run #39155840396](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39155840396) 成功；[归档 PR #224](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/224) 合并后归档路径为 `openspec/changes/archive/2026-10-18-adopt-local-data-platform-naming/`。此次仅命名治理，不代表 G5 迁移 Change 或 G6 完成。
 
@@ -47,7 +47,7 @@
 
 ## 当前项目状态（由 PROJECT-STATUS 维护）
 
-- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 项目唯一 CURRENT/NEXT：TASK004 Closed、TASK005 Condition 业务暂缓但保留只读预检准备、OpenSpec G0–G4 已完成、G5–G7 尚未开始、Portal Spark 讨论中、Azure OneLake-first Terraform PLAN-ONLY。
+- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 跨项目唯一 CURRENT/NEXT 总览：TASK004 历史验收冻结、TASK005 暂缓、目录源码迁移运行兼容仍待办、OpenSpec 门禁已真实通过 Ruleset 正反验证、Portal/Azure 分别保留待办；各变更具体进度链接到对应 OpenSpec Change。
 
 ## 当前整体架构（STEP03 审核基线）
 
@@ -69,7 +69,7 @@
 | `documents/` | Architecture 管全局与决策；Systems 管子系统组件及源码导航；Engineering 管开发、运维、迁移与项目状态。新旧文档并存期间按迁移门槛逐步切换。 |
 | [`docs/`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/README.md) | **仅 Git 历史快照**：旧架构、Task、Runbook、已验收证据，不存在于最新 Main；如需查阅可点开冻结链接 |
 | [`contracts/`](../local-data-platform/contracts) · [Synthea CODE](systems/data-platform/synthea/CODE.md) · [OMOP CODE](systems/data-platform/omop/CODE.md) | 具体行为合同和数据 Schema 等以当前 Git 源码与有效 Contract 为准，不因文档搬迁而改写 |
-| `openspec/`（已初始化，业务 Specs 仍为空） | Specs / Changes 将管理经验证行为与开发接力，不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
+| [`openspec/`](../openspec/config.yaml) | `changes/` 是具体变更的唯一 Proposal/Design/Tasks/验收记录；`specs/` 仅放经核实并采用的行为要求；不代替 `documents/` 的架构/运维、GitHub PR 或 Runtime 锁 |
 
 历史 `docs/` 快照存在互相矛盾的日期记录；不得仅按文件名中的 CURRENT 或文件创建日期认定事实。对代码/运行状态的陈述必须标明 **Source SHA 与对应验收证据**。有不一致时先记录，停止未经核实的权威切换。
 
@@ -84,4 +84,4 @@
 
 我们采取 **逐领域分析 → 核对源码/运行证据 → 消除矛盾 → 新建简洁文档 → 审核切换权威** 的方式。现有历史证据不批量覆盖，不修改 `docs/` 正文来伪造一致性。
 
-当前权威分工：`documents/` 管理实际架构、开发方法、运维知识及证据索引；已初始化的 `openspec/specs/` 用于经核实的当前行为要求，后续 `openspec/changes/` 用于已批准开发的设计与任务；截至 G4 尚无正式业务 Specs/Changes。避免两套内容重复成为权威。
+**当前权威分工**：`AGENTS.md` 是 Agent 开工入口；`documents/` 管长期架构、系统、开发规范、运维和跨系统状态；`openspec/changes/` 是具体变更及任务进度的唯一记录，`openspec/specs/` 只管理已核实采用的行为；代码/Contract 与 GitHub PR/Run 是实际实现及验收依据。不要在 Engineering 维护平行 Tasks。
