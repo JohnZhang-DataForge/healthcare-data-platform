@@ -70,7 +70,7 @@ def inspect_metadata(data, *, connection_type, creation_method, credential_type,
         if data_type not in allowed_types:
             raise UnsupportedConnection("invalid or absent data type")
         allowed_values = item.get("allowedValues", [])
-        if not isinstance(allowed_values, list) or any(
+        if allowed_values is None:\n            allowed_values = []\n        if not isinstance(allowed_values, list) or any(
             not isinstance(value, str) for value in allowed_values
         ) or len(allowed_values) != len(set(allowed_values)):
             raise UnsupportedConnection("invalid allowed values")
