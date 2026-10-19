@@ -18,7 +18,7 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
                 if component in ("workspace", "onelake"):
                     expected.update({"main.tf", "variables.tf", "outputs.tf"})
                 if component == "connection":
-                    expected.add("SCHEMA.md")
+                    expected.update({"SCHEMA.md", "main.tf", "variables.tf", "outputs.tf"})
                 self.assertEqual(names, expected)
                 versions = (location / "versions.tf").read_text(encoding="utf-8")
                 self.assertIn('backend "azurerm" {}', versions)
@@ -27,20 +27,17 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
                 self.assertNotIn("johnzhang", versions)
 
     def test_no_resource_or_execution_bypasses(self):
-        for component in ("connection",):
-            contents = "\n".join(
-                p.read_text(encoding="utf-8")
-                for p in (ROOT / component).glob("*.tf")
-            )
-            # No module, resource, data, provisioner, or local-exec allowed in
-            # this scaffold; ownership and schema are later Change tasks.
-            self.assertNotRegex(
-                contents,
-                r'(?m)^\s*(?:resource|data|module|import|removed|moved|provisioner)\s*["{]',
-            )
-            self.assertNotIn("local-exec", contents)
-            self.assertNotIn("client_secret", contents)
-            self.assertNotIn("access_key", contents)
+        contents = "\n".join(
+            p.read_text(encoding="utf-8")
+            for p in (ROOT / "connection").glob("*.tf")
+        )
+        # Exactly one new Connection is explicitly owned; no additional
+        # data sources, modules, IAM, import or execution are allowed.
+        self.assertEqual(contents.count('resource "fabric_connection"'), 1)
+        self.assertNotRegex(contents, r'(?m)^\s*(?:data|module|import|removed|moved|provisioner)\s*["{]')
+        self.assertNotIn("local-exec", contents)
+        self.assertNotIn("client_secret_wo", contents)
+        self.assertNotIn("access_key", contents)
 
     def test_provider_uses_explicit_fabric_oidc_not_backend_identity(self):
         for component in COMPONENTS:
@@ -79,17 +76,17 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
     def test_connection_schema_gate_blocks_unverified_resource(self):
         location = ROOT / "connection"
         schema = (location / "SCHEMA.md").read_text(encoding="utf-8")
-        self.assertIn("resource NOT implemented", schema)
+        self.assertIn("resource declared but not deployed", schema)
         self.assertIn("List Supported Connection Types API", schema)
         self.assertIn("creation_method", schema)
         self.assertIn("Service Principal", schema)
         self.assertIn("Tenant A", schema)
         self.assertIn("connection.tfstate", schema)
-        self.assertFalse((location / "main.tf").exists())
+        self.assertTrue((location / "main.tf").exists())
 
     def test_safety_documented(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        for marker in ("SCAFFOLD ONLY", "no resources", "dev/*.tfstate",
+        for marker in ("SCAFFOLD ONLY", "dev/*.tfstate",
                        "init", "plan", "apply", "destroy", "fabric-cicd"):
             self.assertIn(marker, readme)
 
