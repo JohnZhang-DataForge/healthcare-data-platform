@@ -31,6 +31,7 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         'connection_id = var.key_vault_connection_id',
         'secret_name   = var.key_vault_secret_name',
         'var.blob_reader_tenant_id == var.backend_tenant_id',
+        'var.backend_operator_client_id != var.fabric_deployer_client_id',
         'var.blob_reader_client_id != var.backend_operator_client_id',
         'var.blob_reader_client_id != var.fabric_deployer_client_id',
         'var.workspace_identity_verified',
@@ -119,6 +120,7 @@ class ConnectionRootTests(unittest.TestCase):
         for clause in (
             "var.blob_reader_tenant_id == var.backend_tenant_id",
             "var.blob_reader_client_id != var.fabric_deployer_client_id",
+            "var.backend_operator_client_id != var.fabric_deployer_client_id",
             'var.storage_account_name == "johnzhang"',
             "var.workspace_identity_verified",
             "var.key_vault_reference_verified",
