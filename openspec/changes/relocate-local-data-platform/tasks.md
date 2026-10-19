@@ -30,6 +30,8 @@
 > **2026-10-18 方案扩展（用户确认）**：完成路径兼容的同时清理经证实无用的历史脚本、Probe、实验生成器、重复代码及失效测试；不删有效回归测试、不重构业务语义。**本方案更新 PR 不清理任何文件、不执行 Runtime**。实施次序：**4.1 → 4.8 → 4.2–4.4 → 4.9–4.10 → 4.5–4.7 → 5**；根据依赖先验证再删除。
 
 - [ ] 4.1 在新的 Main 完整 SHA 上重新清点 `local-data-platform/` **全部当前 tracked 文件**，以“**A Active Runtime / B Required Engineering / C Historical Only / D Obsolete-Duplicate / E Unknown**”逐文件分类，记录 Owner、Blob SHA、有效使用者、动态依赖、测试价值、去留及证据；另建立旧路径引用矩阵和缺失路径负向断言。检查 Python、Shell、Actions/Self-Runner、Airflow GitSync、Spark、Docker COPY/Context、镜像生成器、部署配置及文档导航。393 是迁移前备份数，**不得当作今天的实际数量**。
+> **4.1 首轮只读清点（PARTIAL，不打勾）**：已对固定 Healthcare Main `52237e773941def7625de72c6cecb2533f11e5d8` 获取未截断 Git Tree，确认 `local-data-platform/` **393 个 tracked 文件**，建立[393 行全量路径/Blob/候选职责 HOLD 矩阵](evidence/LOCAL-DP-FILE-INVENTORY-20261018.md)；[入口预检证据](evidence/LOCAL-DP-REFERENCE-PREFLIGHT-20261018.md) 记录 **8 个 Dockerfile、5 个核心 Build Workflow、10 个历史 Task004 Workflow、8 个 Self-Runner 示例**的静态扫描与已确认的旧路径不匹配。原备份与本轮 Main 从 #225 至今对比无 Local DP 变更；**并未验证全部间接依赖、当前部署/GitSync、全部 Self-Runner 或 Runtime，也没有批准任何删除**。下一步继续 4.1 动态依赖和双仓全量覆盖，随后 4.8 备份/逐文件去留审计。
+
 - [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
 - [ ] 4.3 按镜像确定并记录 Build Context（优先以 `local-data-platform/` 为本地平台 Context，逐项审核例外）、Docker COPY、生成器和 immutable 镜像来源；保留无必要变化的容器 RUNTIME_ROOT / DAG / Batch 持久身份。完成绑定新 SHA 的真实 Clean Build、容器 `module.__file__` / Import/Entrypoint Smoke、旧来源负向验证，保存镜像 Digest。
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
