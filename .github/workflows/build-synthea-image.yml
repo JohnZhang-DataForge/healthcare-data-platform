@@ -8,11 +8,11 @@ on:
       - main
     paths:
       - ".github/workflows/build-synthea-image.yml"
-      - "images/synthea/**"
-      - "apps/task004/validate_generated_synthea_batch.py"
-      - "contracts/synthea/v3.3.0/csv-contract.json"
-      - "scripts/task004/01-prepare-synthea-generator-image-source.sh"
-      - "tests/task004/test_synthea_generator_image_source.py"
+      - "local-data-platform/images/synthea/**"
+      - "local-data-platform/apps/task004/validate_generated_synthea_batch.py"
+      - "local-data-platform/contracts/synthea/v3.3.0/csv-contract.json"
+      - "local-data-platform/scripts/task004/01-prepare-synthea-generator-image-source.sh"
+      - "local-data-platform/tests/task004/test_synthea_generator_image_source.py"
 
 permissions:
   contents: read
@@ -63,8 +63,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./images/synthea/Dockerfile
+          context: ./local-data-platform
+          file: ./local-data-platform/images/synthea/Dockerfile
           platforms: linux/amd64
           push: true
           pull: true
