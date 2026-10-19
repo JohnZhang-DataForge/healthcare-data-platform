@@ -11,8 +11,8 @@ SCRIPT = ROOT / "scripts/quality/read-only-gitsync-spark-provenance.sh"
 
 
 class ReadOnlyProvenanceProbeTests(unittest.TestCase):
-    def invoke(self, *, pods=1, configmap="probe-cm", payload="print('ok')\\n",
-               expected="print('ok')\\n", report=None):
+    def invoke(self, *, pods=1, configmap="probe-cm", payload="print('ok')\n",
+               expected="print('ok')\n", report=None):
         with tempfile.TemporaryDirectory(prefix="local-dp-probe-test-") as td:
             root = Path(td)
             bin_dir = root / "bin"
@@ -21,16 +21,16 @@ class ReadOnlyProvenanceProbeTests(unittest.TestCase):
             code.write_text(expected)
             fake = bin_dir / "kubectl"
             fake.write_text(
-                "#!/usr/bin/env python3\\n"
-                "import json, os, sys\\n"
-                "args = sys.argv[1:]\\n"
-                "if len(args) < 7 or args[0] != '--context' or args[2] != '-n' or args[4] != 'get':\\n"
-                "    raise SystemExit('UNEXPECTED_KUBECTL_COMMAND')\\n"
-                "if args[5] == 'pods':\\n"
-                "    print(json.dumps({'items': [{'metadata': {'name': 'airflow-0'}, 'spec': {'containers': [{'name': 'scheduler', 'env': [], 'volumeMounts': []}]}}] * int(os.environ['FAKE_PODS'])}))\\n"
-                "elif args[5] == 'configmap':\\n"
-                "    print(json.dumps({'metadata': {'name': os.environ['FAKE_CONFIGMAP']}, 'data': {'reconcile_person_visit.py': os.environ['FAKE_PAYLOAD']}}))\\n"
-                "else: raise SystemExit('UNEXPECTED_RESOURCE')\\n"
+                "#!/usr/bin/env python3\n"
+                "import json, os, sys\n"
+                "args = sys.argv[1:]\n"
+                "if len(args) < 7 or args[0] != '--context' or args[2] != '-n' or args[4] != 'get':\n"
+                "    raise SystemExit('UNEXPECTED_KUBECTL_COMMAND')\n"
+                "if args[5] == 'pods':\n"
+                "    print(json.dumps({'items': [{'metadata': {'name': 'airflow-0'}, 'spec': {'containers': [{'name': 'scheduler', 'env': [], 'volumeMounts': []}]}}] * int(os.environ['FAKE_PODS'])}))\n"
+                "elif args[5] == 'configmap':\n"
+                "    print(json.dumps({'metadata': {'name': os.environ['FAKE_CONFIGMAP']}, 'data': {'reconcile_person_visit.py': os.environ['FAKE_PAYLOAD']}}))\n"
+                "else: raise SystemExit('UNEXPECTED_RESOURCE')\n"
             )
             fake.chmod(0o755)
             env = os.environ.copy()
