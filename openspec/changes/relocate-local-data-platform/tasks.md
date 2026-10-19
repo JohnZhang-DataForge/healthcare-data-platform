@@ -34,6 +34,8 @@
 > **4.1 第二轮只读依赖审计（PARTIAL，仍不打勾，2026-10-19）**：在 Healthcare Main `b5c49258d2102c21601ebd74bfd0aff8ba518df7`、Self-Runner Main `ffd0eccecbf0148183b956e6e4416d4b8d99002b` 基线下，已静态审阅 **21/21 Healthcare Workflows、14/14 `scripts/task004/`、24 个样本 Self-Runner Workflows、8 个样本 Task003 Shell、6 个测试及关键 DAG/Entrypoint**；发现当前五个业务镜像构建入口旧仓根路径、两份镜像测试误把仓库级 `.github` 定位至 Platform Root，以及旧镜像对 5 个 Task004 Shell 的直接依赖。历史固定 SHA 工作流不能直接当成 Main 旧路径故障。详见[第二轮跨仓依赖证据](evidence/LOCAL-DP-CROSS-REPO-CONSUMER-AUDIT-20261019.md)；尚未覆盖全部 **123 个 Self-Runner Workflows、94 个 Task003 Shell、105 个测试、Live GitSync**，任何清理均保持 HOLD，无 Runtime/构建/部署操作。继续 4.1，待完整消费者和恢复证明后再进入 4.8。
 
 
+> **4.1 第三轮静态全量清点（PARTIAL，仍不打勾，2026-10-19）**：以 Healthcare `ea2d2e5ffd98c529c79626c7c926828a32fb7a7b`、Self-Runner `ffd0eccecbf0148183b956e6e4416d4b8d99002b` 为冻结基线，已逐文件读取并生成 **94/94 Task003 Shell**、**105/105 Local DP Tests**、**123/123 Self-Runner Workflows**、**32/32 Self-Runner CI 脚本**的文件级静态清单；见 [第三轮总结](evidence/LOCAL-DP-AUDIT-ROUND3-SUMMARY-20261019.md) 及其四个矩阵。静态发现 51 个生成器/历史复核候选（**非获准删除**）、2 个明确测试 Root 映射问题、65 个含旧路径的 Self-Runner Workflow（多数需按 frozen ref 正确认定）。尚缺生成器/间接调用闭包、测试实际运行、GitSync/Spark 真实来源证明，故保持 4.1 OPEN。
+
 - [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
 - [ ] 4.3 按镜像确定并记录 Build Context（优先以 `local-data-platform/` 为本地平台 Context，逐项审核例外）、Docker COPY、生成器和 immutable 镜像来源；保留无必要变化的容器 RUNTIME_ROOT / DAG / Batch 持久身份。完成绑定新 SHA 的真实 Clean Build、容器 `module.__file__` / Import/Entrypoint Smoke、旧来源负向验证，保存镜像 Digest。
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
@@ -44,6 +46,8 @@
 ### 4A. 新增：业务无关历史文件清理（尚未实施）
 
 - [ ] 4.8 根据 4.1 逐文件清单提供“保留 / 候选删除 / HOLD”建议，查明每个候选的实际直接与间接消费者、现有测试覆盖和历史恢复路径；对比 [Healthcare-Specs 固定备份](https://github.com/JohnZhang-DataForge/Healthcare-Specs) 的 393 个旧 Blob 与当前 SHA，针对后续新增或修改的文件确认固定 Git 恢复 Commit 及按需独立增量备份。审计报告/证据绑定 SHA，未经验证一律 E=HOLD；**此步骤不删除任何文件**。
+> **4.8 部分备份证据（PARTIAL，仍不打勾，2026-10-19）**：已在冻结 Healthcare Main 与独立 Private Healthcare-Specs Main Git Tree 之间完成 **393/393 路径 + Git Blob SHA 双向读回一致、0 遗失、0 差异**，见[跨仓备份读回](evidence/LOCAL-DP-BACKUP-BLOB-READBACK-20261019.md)。这只证明对应两个 Git Commit 的源码恢复基础；每个删除候选的现行消费者和回归覆盖尚未得到负向证明，也未验证 K8s/PG/S3/镜像恢复，故 4.8 OPEN、批准删除数 0。
+
 - [ ] 4.9 在 4.2–4.4 适用兼容 Gate 通过后，按组件/依赖簇分批移除确认为 C/D 的历史 Shell、Probe、一次性生成器、重复旧实现；每一小 PR 同步受影响 CODE.md、导航、Workflow、生成器及不可变历史链接，记录恢复 SHA、证据和负向检查。A/B/E 禁删，历史 `taskNNN` 名字本身不构成删除理由。
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
