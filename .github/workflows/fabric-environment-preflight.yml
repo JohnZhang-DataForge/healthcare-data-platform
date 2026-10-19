@@ -6,6 +6,8 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tools/fabric_deployment_target.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_backend_config.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_backend_config.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_deployment_target.py'
       - 'azure-fabric/infra-terraform/environments/fabric-environment.example.json'
       - '.github/workflows/fabric-environment-preflight.yml'
@@ -37,6 +39,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_deployment_target.py' -v
+      - name: Validate safe offline backend configuration
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_backend_config.py' -v
       - name: Confirm example is deliberately non-deployable
         run: |
           set -euo pipefail
