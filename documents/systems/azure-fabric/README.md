@@ -58,6 +58,8 @@ azure-fabric/
 
 只读 PostgreSQL Exporter、不可变 Manifest、Hash/Schema/PK/FK 校验、Blob 发布、云端幂等写入及独立跨平台 Reconciliation 均**尚未实现**。过去 `azure-fabric/exporter/` 和 `azure-fabric/tests/` 只有空占位 `.gitkeep`，已被清理；**删除占位不代表放弃能力**。未来 Exporter 应作为本地业务流程开发，并按实际部署与 API 契约确定源码/测试位置，不将它伪装为 Workspace 原生 Item。
 
+**可重建架构的首个安全开发切片**：新增 [离线环境 Preflight](infra-terraform/CODE.md#fabric-多环境离线-preflight新增静态工具不接触云资源) 和 [新账号人工前置 Runbook](../../engineering/operations/FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md)，保护旧 State/Workspace。**Terraform 本体与 Self-Runner 部署仍保持原状，跨 Tenant 自动部署尚未实现。**
+
 ## 源码导航、安全与验收
 
 - [总 CODE](CODE.md)：跨组件源码归属，细节交给各组件 CODE；[Terraform CODE](infra-terraform/CODE.md)：七个 Root/Module、Bootstrap、IAM 和执行入口。
