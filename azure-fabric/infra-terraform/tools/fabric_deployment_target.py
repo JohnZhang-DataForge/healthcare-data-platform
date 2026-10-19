@@ -50,7 +50,7 @@ def target(profile: dict, backend_client_id: str, fabric_client_id: str,
         raise InvalidEnvironment("state keys are not isolated")
     return {
         "status": "OFFLINE_TARGET_PASS",
-        "environment": profile["environment"],
+        "environment": profile["environment"],\n        "identity_topology": ("same-tenant" if btenant == ftenant else "cross-tenant"),
         "backend": {
             "storage_account_name": "johnzhang",
             "container_name": "tfstate",
