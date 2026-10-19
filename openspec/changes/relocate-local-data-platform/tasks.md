@@ -47,6 +47,8 @@
 > **4.3 隔离 Clean Build 验证（2026-10-19，实施中）**：新增独立 GitHub PR Workflow 对 Synthea 与 TASK004 Runtime 进行 `--pull --no-cache`、`--network none` Entrypoint 非业务 Smoke、COPY 来源检查与本地 Image ID 记录；禁止镜像 Push / GHCR Login / K8s / PG / S3。此前静态 CI 和源码单测 PASS 不等于此项 PASS；须依据当前 PR HEAD 的实际两个 Job 结果逐个更新，失败按三轮 HOLD。见 [隔离构建验证](evidence/LOCAL-DP-ISOLATED-IMAGE-BUILD-20261019.md)。
 
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
+> **4.4 Airflow 静态源文件预检（2026-10-19，验证 PR）**：新 GitHub PR Gate 对 `local-data-platform/airflow/dags/*.py` 进行 AST / compile（不导入 Airflow、无 DagBag、无调度或 Runtime），核对本地模块名称与静态 `dag_id` 唯一性，输出 `DAG_PARSE_RUNTIME=NOT_VERIFIED`。现存 `.github/workflows/task004-airflow-step03e-main-runtime-pin.yml` 的历史路径 `airflow/dags/...` 与迁移后位置不同，且限特定 feature 分支，不可当当前运行 PASS。真正 DAG Parse、GitSync 单一加载与 Spark Runtime 仍 HOLD。见 [Airflow 静态来源预检](evidence/LOCAL-DP-AIRFLOW-SOURCE-PREFLIGHT-20261019.md)。
+
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
 - [ ] 4.7 对所有修复与清理结果进行受控接入、负向路径/已删除源码依赖测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
