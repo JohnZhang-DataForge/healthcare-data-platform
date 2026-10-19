@@ -3,36 +3,6 @@ name: Build TASK004 Runtime Image
 on:
   workflow_dispatch:
 
-  push:
-    branches:
-      - main
-      - 'feature/**'
-    paths:
-      - ".github/workflows/build-task004-runtime-image.yml"
-      - "local-data-platform/images/task004-runtime/**"
-      - "local-data-platform/apps/task004/resolve_verified_landing_file.py"
-      - "local-data-platform/apps/task004/publish_synthea_landing.py"
-      - "local-data-platform/scripts/task004/04c-run-synthea-generate-publish.sh"
-      - "local-data-platform/scripts/task004/05b-prepare-person-visit-runtime-interface.sh"
-      - "local-data-platform/scripts/task004/05c-resolve-runtime-lineage.sh"
-      - "local-data-platform/scripts/task004/05d-run-person-canonical.sh"
-      - "local-data-platform/scripts/task004/05e-run-visit-canonical.sh"
-      - "local-data-platform/scripts/task004/05f-reconcile-person-visit.sh"
-      - "local-data-platform/scripts/task004/06a-prepare-unified-runtime-image.sh"
-      - "local-data-platform/kubernetes/manifests/task004/synthea-generate-publish-job.yaml.tpl"
-      - "local-data-platform/kubernetes/manifests/task004/control-runtime-rbac.yaml"
-      - "local-data-platform/spark/apps/person/synthea_patient_adapter.py"
-      - "local-data-platform/spark/common/batch_manifest.py"
-      - "local-data-platform/spark/contracts/canonical/patient-v1.json"
-      - "local-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl"
-      - "local-data-platform/spark/apps/visit/synthea_encounter_adapter.py"
-      - "local-data-platform/spark/contracts/canonical/encounter-v1.json"
-      - "local-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl"
-      - "local-data-platform/spark/apps/task004/reconcile_person_visit.py"
-      - "local-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl"
-      - "local-data-platform/tests/task004/test_person_visit_runtime_interface.py"
-      - "local-data-platform/tests/task004/test_unified_runtime_image_source.py"
-
 permissions:
   contents: read
   packages: write
