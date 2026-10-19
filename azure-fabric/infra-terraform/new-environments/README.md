@@ -1,14 +1,14 @@
 # Fabric new-environment Terraform roots — SCAFFOLD ONLY
 
 These three roots are isolated from the legacy seven Terraform roots in `components/`.
-They deliberately contain **no resources, modules, data sources or outputs**.
+Only `workspace/` now contains a guarded `fabric_workspace` resource. `onelake/` and `connection/` still contain **no resources or modules**. Workspace creation defaults to denied and requires independently reviewed inventory and explicit approval; `prevent_destroy` protects accidental deletion.
 The Backend `azurerm` blocks are partial configurations; the approved offline
 `tools/fabric_backend_config.py` determines the unique `fabric/<env>/<component>.tfstate`
 key for each root. A Backend key string does not prove State vacancy or RBAC isolation.
 
 This is **not** an executable deployment procedure. Do not run Terraform init,
 plan, apply, destroy or state commands against these roots before the subsequent
-Change tasks add real resources, authenticated backend/provider execution,
+Change tasks add authenticated backend/provider execution,
 remote-state inventory, explicit approval and live resource ownership gates.
 
 Authentication boundary: ARM_* is for the existing Storage Tenant A backend;
