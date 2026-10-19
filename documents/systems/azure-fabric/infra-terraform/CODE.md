@@ -75,5 +75,12 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 ## 独立新环境 Terraform Root 骨架（Task 2.1 第二批）
 
 - [New-environments README](../../../../azure-fabric/infra-terraform/new-environments/README.md)：独立 Root 的严格非部署边界及身份分工。
-- [Workspace Root](../../../../azure-fabric/infra-terraform/new-environments/workspace/versions.tf)、[OneLake Root](../../../../azure-fabric/infra-terraform/new-environments/onelake/versions.tf)、[Connection Root](../../../../azure-fabric/infra-terraform/new-environments/connection/versions.tf)：仅有 Partial AzureRM Backend 和 Fabric OIDC Provider 声明；目前**没有任何 Resource/Module**。
+- [Workspace Root](../../../../azure-fabric/infra-terraform/new-environments/workspace/versions.tf)、[OneLake Root](../../../../azure-fabric/infra-terraform/new-environments/onelake/versions.tf)、[Connection Root](../../../../azure-fabric/infra-terraform/new-environments/connection/versions.tf)：保留隔离的 Partial AzureRM Backend 和 Fabric OIDC Provider；Workspace、Lakehouse、Connection 均已在新环境 Root 声明受审批保护的 Resource，但**未部署**。
 - [静态安全测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_root_skeleton.py)：检查三 Root 必要配置，阻止提前添加资源和认证混用；GitHub-hosted CI 验证。未经单独授权绝不执行 Terraform init/plan/apply/destroy。
+
+## 新环境 Azure Blob Connection Root（Task 2.4 第五批，仅离线源码）
+
+- [Connection Root](../../../../azure-fabric/infra-terraform/new-environments/connection/main.tf) · [variables.tf](../../../../azure-fabric/infra-terraform/new-environments/connection/variables.tf) · [outputs.tf](../../../../azure-fabric/infra-terraform/new-environments/connection/outputs.tf)：定义唯一的 `fabric_connection.azure_blob`，凭据选项为 ServicePrincipal + **现存 Key Vault Connection Secret Reference** 或独立验证的 WorkspaceIdentity；只输出新 Connection ID。
+- [Connection 安全和 Provider v1.13.0 Schema](../../../../azure-fabric/infra-terraform/new-environments/connection/SCHEMA.md)：冻结 `AzureBlobs/AzureBlobs` 和 `account/domain`，要求库存、domain、Blob Reader 权限、Reader/Fabric/Backend 三身份以及手工审批。所有审批默认 false；`prevent_destroy` 和不跳过真实连接测试。凭据值不进入 HCL/State 输入。
+- [Connection Root 离线测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_connection_root.py) 和 [独立 Root 测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_root_skeleton.py)：静态守门/错误回归，经 [Fabric Environment Preflight CI](../../../../.github/workflows/fabric-environment-preflight.yml) 执行。
+- **状态**：仅在活跃 OpenSpec `implement-fabric-multi-environment-terraform` 内实现本次源码。未实测 Provider Init/Plan/Apply、Remote State、Fabric Connection 库存、Reader RBAC/OIDC、跨租户 WorkspaceIdentity；新 Root 不连接旧 `dev/*.tfstate`，与 Self-Runner 旧工作流独立。不得把源码声明视为真实 Azure/Fabric 资源。
