@@ -15,11 +15,10 @@ echo "#### LOCAL_DP_PROVENANCE_OUTPUT_BEGIN ####"
 echo "KUBE_CONTEXT=${KUBE_CONTEXT}"
 echo "GIT_HEAD=$(git rev-parse HEAD)"
 echo "EXPECTED_SPARK_SOURCE_SHA256=$(sha256sum "${EXPECTED_SPARK_FILE}" | cut -d' ' -f1)"
-kubectl --context "${KUBE_CONTEXT}" config current-context >/dev/null 2>&1 || true
 kubectl --context "${KUBE_CONTEXT}" -n "${AIRFLOW_NAMESPACE}" get pods -o json > "${REPORT_DIR}/airflow-pods.json"
 kubectl --context "${KUBE_CONTEXT}" -n "${SPARK_NAMESPACE}" get configmap "${SPARK_CONFIGMAP}" -o json > "${REPORT_DIR}/spark-configmap.json"
 python3 - "${REPORT_DIR}" "${EXPECTED_SPARK_FILE}" <<'PY'
-import base64, hashlib, json, pathlib, sys
+import hashlib, json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 expected = pathlib.Path(sys.argv[2])
 pods = json.loads((root/'airflow-pods.json').read_text())
@@ -29,7 +28,6 @@ for pod in pods.get('items',[]):
     spec = pod.get('spec',{})
     name = pod.get('metadata',{}).get('name','')
     for c in spec.get('containers',[]):
-        for key,val in c.get('env',[]).__class__.__mro__[:0]: pass
         print('POD_CONTAINER=' + name + '/' + c.get('name',''))
         for mount in c.get('volumeMounts',[]):
             if 'dag' in mount.get('mountPath','').lower():
