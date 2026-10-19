@@ -25,7 +25,7 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         'creation_method = "AzureBlobs"',
         '{ name = "account", value = var.storage_account_name }',
         '{ name = "domain", value = var.blob_domain }',
-        'credential_type     = var.reader_credential_type',
+        'credential_type      = var.reader_credential_type',
         'var.reader_credential_type == "ServicePrincipal"',
         'service_principal_secret_reference = {',
         'connection_id = var.key_vault_connection_id',
