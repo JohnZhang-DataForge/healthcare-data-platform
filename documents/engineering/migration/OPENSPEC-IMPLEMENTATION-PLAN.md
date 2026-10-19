@@ -1,5 +1,5 @@
 ---
-status: reviewed
+status: historical
 scope: openspec-g0-g7-rollout-implementation-plan
 last_verified: 2026-10-18
 source_sha: a5047ea41e50837351965fbee0ba053ac61d3a50
@@ -8,7 +8,7 @@ evidence: []
 
 # OpenSpec 正式实施与 Data Platform 迁移计划（G0–G7）
 
-> **当前执行状态（2026-10-18）：G0–G4 COMPLETE；G5 追溯建档进行中；G6 已完成物理目录迁移 PR #225–#227，但源码运行入口兼容与 E2E 尚未完成；G7 未启动。** 本文件是 STEP09 的**唯一 G0–G7 执行步骤与阶段验收清单**。日期和 Source SHA 表示编写时的只读 Git 基线，不是 CLI、CI、集群或云端验收记录。后续按每个 PR、已安装版本、目标 SHA 和实际 Run 更新执行状态。
+> **历史 G0–G7 Bootstrap 计划 / 实际实施证据（2026-10-18）**：G0–G4 COMPLETE；原定 G5 先设计/G6 再迁移的顺序与后来用户批准的实际执行不同：PR #225–#227 先完成物理目录迁移，PR #228–#229 后补追溯 Change，**运行入口与 E2E 仍待验证**。本页保留原 G0–G7 原方案、固定 SHA/PR/Run 及失败记录，**不再是当前实施任务来源**；请改读 [relocate-local-data-platform](../../../openspec/changes/relocate-local-data-platform/tasks.md)、[enforce-openspec-change-gate](../../../openspec/changes/enforce-openspec-change-gate/tasks.md) 及 [PROJECT-STATUS](../status/PROJECT-STATUS.md)。下文原将来时表格是历史原计划，不自动授权未来开发。
 >
 > [OpenSpec 接入架构设计](../../architecture/design/OPENSPEC-ADOPTION-DESIGN.md) 管原则和权威边界；[OpenSpec Readiness](OPENSPEC-READINESS.md) 管实施前核查；[Data Platform V2 设计](../../architecture/design/DATA-PLATFORM-V2-MIGRATION-DESIGN.md) 管目录兼容和回滚细节；[项目 CURRENT/NEXT](../status/PROJECT-STATUS.md) 管总体进度。禁止将这些文件变成相互矛盾的第二份 G0–G7 计划。
 

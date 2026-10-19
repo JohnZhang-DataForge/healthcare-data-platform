@@ -1,5 +1,5 @@
 ---
-status: active
+status: historical
 scope: legacy-docs-historical-snapshot
 last_verified: 2026-10-16
 snapshot_sha: 49936b51d4beadc69383e931efc3e72d2f0db47e
@@ -31,6 +31,6 @@ https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4b
 - [AGENTS.md](../../../AGENTS.md) → [documents/README.md](../../README.md) → [PROJECT-STATUS](../status/PROJECT-STATUS.md)
 - 新代码按 [Component-first Naming](../development/CODE-ORGANIZATION-AND-NAMING.md)；共享运行按 [Session Coordination](../development/SESSION-COORDINATION.md)。
 - `documents/` 保留稳定的架构、组件、运维、安全和决策；**不要重新创建 `docs/` 或 `docs/archive/`**。
-- [OpenSpec Readiness](OPENSPEC-READINESS.md)：旧未合并 PR #164 仍需修订当前文档上下文，再做真实 CLI 验证。
+- [OpenSpec Readiness](OPENSPEC-READINESS.md)：当时的旧 PR #164 修订要求属于历史准备事项，当前 OpenSpec 已初始化且正式接入 Main Required CI，不是需要再次初始化的待办。
 
 **Git 历史保存策略与长期取舍**：快照 Commit `49936b51d4beadc69383e931efc3e72d2f0db47e` 是当时 Main 的祖先，删除当前目录不会删除 Git 的祖先提交。仓库被永久删除、历史被特殊重写或访问权限改变则另当别论。若将来需要独立归档，可再迁移到用户已有的 Healthcare-Specs 仓库；本次不对另一仓库做复制/写入。

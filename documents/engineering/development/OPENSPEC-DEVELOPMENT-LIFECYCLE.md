@@ -9,7 +9,7 @@
 | 过程 | 事实载体和责任 | 必须满足 |
 | --- | --- | --- |
 | Explore | Agent 核对最新双仓 Main、开放 PR、权威状态、代码/Contract、影响范围和资源风险 | 只读；未知并行工作需协调 |
-| Proposal / Design / Delta Specs / Tasks | 用户确认需求后，Agent 在 Healthcare OpenSpec Change 中以英文功能名建立文件、中文说明；代码标识和官方语法仍为英文 | G4 只验证方法；首个正式业务 Change 要等 G5 |
+| Proposal / Design / Delta Specs / Tasks | 用户确认需求后，Agent 在 Healthcare OpenSpec Change 中以英文功能名建立文件、中文说明；代码标识和官方语法仍为英文 | 当前实质性开发必须先创建/选定 Active Change，再关联具体 Task |
 | Implement / PR | Healthcare 功能分支维护 canonical source、测试与 CODE.md，PR 保存 Base/HEAD | PR 未合并不是 Main 生效；不得擅自修改冻结运行标识 |
 | Static / Test | Healthcare PR 上的 OpenSpec、命名/CODE Map、文档链接 CI；独立 Self-Runner 静态接力可按准确 SHA 额外验证 | 0 Specs 的 Validate PASS 仅是空集通过，不是业务验收 |
 | Runtime / Readback | 仅在用户针对具体共享动作授权、资源协调并通过安全 Gate 后进行 | 独立 Run/Artifact 和读回证明相应事实；静态 PASS 不表示写入成功 |
@@ -30,8 +30,8 @@ OpenSpec-Task: 2.3
 - 只有**非架构、非工程治理**的文档类 PR（`README.md` 或允许的 `documents/**/*.md`，排除 `documents/architecture/**`、`documents/engineering/**`、`documents/README.md` 和所有 `CODE.md`）可在 PR Body 独立写 `OpenSpec-Exemption: docs-only`，且不可夹带任何代码、配置、工作流或 OpenSpec 修改。
 - Archive PR 必须关联原 Change、由 Active 移动到 Archive、完成全部 Task；归档不代表部署验证。
 - 新 [OpenSpec Change Gate Workflow](../../../.github/workflows/openspec-change-gate.yml) 是全 PR 触发的**静态关联检查**，与原 OpenSpec Schema/CLI Validate 分工互补；由 [Policy Checker](../../../.github/quality/scripts/check_openspec_change_gate.py) 实现严格路径与 Tasks 同步验证。原来 G4 的 0 Active Changes Validate PASS 不再能作为实质性 PR 无 Change 的放行依据。
-- **受信任策略执行**：新增 [Trusted Change Gate](../../../.github/workflows/openspec-trusted-change-gate.yml) 从默认分支运行受信任 Python Checker/单测，只把候选 PR checkout 当数据，不执行候选代码。与普通 Head CI 分离；管理员应将可信 Job 设为 Required 并确认组织/仓库的 `pull_request_target` Actions Policy（GitHub 官方 2026-11-02 公共仓库默认策略切换需留意），不可仅凭 Workflow 文件存在认定受信任门禁已生效。
-- **合并保护区别**：CI 失败与 Main 确实禁止合并不是一回事；须在 GitHub Rulesets/Branch protection 设置 `OpenSpec Change Gate / require-change` 为 Required，并核对 bypass 权限。当前集成读取 `branches/main/protection` 返回 HTTP 403，尚不能确认或配置 Required。不要把普通 PR CI SUCCESS 当作 Required 已生效的证据。
+- **受信任策略执行**：新增 [Trusted Change Gate](../../../.github/workflows/openspec-trusted-change-gate.yml) 从默认分支运行受信任 Python Checker/单测，只把候选 PR checkout 当数据，不执行候选代码。与普通 Head CI 分离；已通过 Main Ruleset #25365902 将可信 Job 设置为 Required，PR #233 负向 blocked、#234 正向无人工审批合并；仍需在 GitHub 后续事件策略变化时复核 `pull_request_target`。
+- **合并保护区别**：CI 失败与 Main 确实禁止合并不是一回事；Main [Ruleset #25365902](https://github.com/JohnZhang-DataForge/healthcare-data-platform/rules/25365902) 已 Required `require-trusted-change`、`validate-openspec`，0 审批、无 Bypass Actors。PR #233 `blocked` 未合并、#234 `clean` 并合并已实证；不把 CI PASS 解释为业务运行验收。
 - 当任务完成后，准确 SHA/Run/必要 Runtime 读回由原 PR 和 `tasks.md` 共同记录；运行验收未达到时保持 Change Active，不为了合并先全部打勾。
 
 ## 新 Session 的恢复流程
@@ -60,4 +60,4 @@ PR/Issue 的最小可恢复记录：Done / Not Done / Next，Repo、Branch、Bas
 
 ## G4 完成与 G5 入口
 
-G4 的完成门槛是两仓 PR/最终 SHA、策略正负向单测、真实 Healthcare PR 准确 HEAD 绑定成功的 Self-Runner Run、Healthcare PR 适用 CI PASS，并记录失败及未授权边界。这些已在 Healthcare PR #220、Self-Runner PR #136 与 [正式计划的 G4 证据表](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 中验证并收口。G4 当时确未移动源码；但此后 PR #225–#227 已完成目录级迁移，正式 Change 是事后追溯建立而非先行审批。以后仍应遵循本文件规定的事前 Change 生命周期；本轮治理 Change `enforce-openspec-change-gate` 正在实现 PR/Task 的自动绑定，Branch protection Required/Bypass 配置仍须独立证实。
+G4 的完成门槛是两仓 PR/最终 SHA、策略正负向单测、真实 Healthcare PR 准确 HEAD 绑定成功的 Self-Runner Run、Healthcare PR 适用 CI PASS，并记录失败及未授权边界。这些已在 Healthcare PR #220、Self-Runner PR #136 与 [正式计划的 G4 证据表](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 中验证并收口。G4 当时确未移动源码；但此后 PR #225–#227 已完成目录级迁移，正式 Change 是事后追溯建立而非先行审批。以后仍应遵循本文件规定的事前 Change 生命周期；治理 Change `enforce-openspec-change-gate` 已实现并验证 Main Required Gate；其 Current Spec 同步及 Archive 尚未完成，由其本身的 Tasks 负责收尾。

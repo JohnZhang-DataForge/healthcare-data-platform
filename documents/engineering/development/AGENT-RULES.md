@@ -58,4 +58,4 @@
 
 当 `documents/` 与旧资料冲突：先在迁移追踪里登记源/差异/证据，再修订候选，未经审核不擅自改运行环境。涉及权限或安全，选择更保守的行为并请求必要授权。
 
-> **OpenSpec 约束（G0–G4 已完成）**：对已批准的新功能、业务行为/接口修改及重构，优先按 [开发接力生命周期](OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 管理 Change → PR → 静态验证 → 适用的运行读回 → Sync/Archive。G5 尚未开始，仅允许设计首个 `relocate-local-data-platform` Change；G6 才可能在独立 PR 中移动源码。文档事实纠偏和只读审计无需伪造业务 Change；未经证实的计划不得写入 Current Specs，安全操作需另行授权。
+> **OpenSpec 强制关联（2026-10-18 已验证）**：实质性代码/Workflow/架构/治理变更应在实施前创建或使用 Active Change，PR Body 声明 `OpenSpec-Change` 与 `OpenSpec-Task`，同 PR 更新该 Change 的 `tasks.md`。[Trusted Change Gate](../../../.github/workflows/openspec-trusted-change-gate.yml) 和 Main Ruleset #25365902 已通过真实正反 PR；文档和 Engineering 不再记录平行实施 Tasks。业务目录已物理迁移到 `local-data-platform/`，但运行路径和 E2E 尚未验收。真正共享环境操作仍需单独授权，未经证实行为不得进入 Current Specs。

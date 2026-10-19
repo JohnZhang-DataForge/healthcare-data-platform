@@ -1,5 +1,5 @@
 ---
-status: active
+status: historical
 scope: legacy-code-refactor-plan
 last_verified: 2026-10-16
 source_sha: 2c85b485381a72425506829fd321d93b164a231d
@@ -7,7 +7,9 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 # Legacy Task-named Code — 依赖调查与渐进迁移计划
 
-> **当前是源码整理清单及计划，不是已完成的代码搬迁。** 用户决定保留旧代码的历史命名，未来新增可维护代码必须使用**组件/功能名称**。任何迁移首先保护 NEW_ONLY Person/Visit 已验证的运行行为。
+> **历史静态清单（2026-10-16）**：旧根目录 `apps/`、`scripts/`、`airflow/` 等是迁移前快照，并非当前源码位置（已在 `local-data-platform/`）。R2–R5 未来实施任务已纳入独立 [modernize-legacy-task-code](../../../openspec/changes/modernize-legacy-task-code/tasks.md) Change，**尚未授权实施代码**；本文件冻结为当时调查，不作为当前进度账本。
+>
+> **当时的描述**： 用户决定保留旧代码的历史命名，未来新增可维护代码必须使用**组件/功能名称**。任何迁移首先保护 NEW_ONLY Person/Visit 已验证的运行行为。
 
 ## 1. 静态目录清点（Main `2c85b485381a72425506829fd321d93b164a231d`）
 
@@ -32,7 +34,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 - 早期版本因覆盖基础镜像中部分旧 `task004_cdm` 模块而遭遇 `BLOCKED=batch_id`，最终通过协调版本 COPY 修复；见 [最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
 - Batch ID/Manifest URI/Contract Version/Claim/Checkpoint/镜像 Digest 等是不可变身份/持久化协议；**绝不批量替换 task 字符串**。
 
-## 3. 未来真正重构代码的阶段
+## 3. 原计划重构阶段（历史记录，实时 Tasks 见 OpenSpec）
 
 | 阶段 | 迁移单位 | 必备证明 |
 | --- | --- | --- |
