@@ -53,6 +53,8 @@
 
 > **4.4 来源闭包继续核对（2026-10-19，PARTIAL）**：PR #261 / Run #39295887624 Airflow 3.2.2 DagBag 真实离线 Parse PASS（isolated image 装入固定 `psycopg`）；仍未验证正在运行的 GitSync checkout、Helm DAG 挂载、Spark ConfigMap data SHA 与 `mainApplicationFile` 来源。任务 4.9 不得因此解锁。见 [GitSync / Spark 来源 HOLD 证据](evidence/LOCAL-DP-GITSYNC-SPARK-PROVENANCE-HOLD-20261019.md)。
 
+> **4.4 来源探针准备（2026-10-19，未执行）**：添加手动 opt-in 的只读 `local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh`；仅 `kubectl get` Airflow Pod / 指定 Spark ConfigMap，核对一个 ConfigMap Python key 与固定 Git 文件 SHA256，输出 GitSync 配置相关键名与挂载位置；**不证明实时 GitSync checkout SHA / Pod import __file__，不触发集群写入，未执行任何探针**。原始 JSON 需按敏感配置处理，不允许提交仓库。见 [只读探针使用与限制](evidence/LOCAL-DP-READONLY-LIVE-PROVENANCE-PROBE-20261019.md)，4.4 PARTIAL / 4.9 HOLD。
+
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
 - [ ] 4.7 对所有修复与清理结果进行受控接入、负向路径/已删除源码依赖测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
