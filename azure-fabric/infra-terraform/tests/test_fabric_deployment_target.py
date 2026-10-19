@@ -39,14 +39,14 @@ class DeploymentTargetTests(unittest.TestCase):
         data = self.check(profile())
         self.assertEqual(data["backend"]["state_keys"]["connection"],
                          "fabric/lab-b/connection.tfstate")
-        self.assertFalse(data["remote_state_checked"])
+        self.assertEqual(data["identity_topology"], "cross-tenant")\n        self.assertFalse(data["remote_state_checked"])
         self.assertFalse(data["terraform_executed"])
         self.assertNotIn("dev/", json.dumps(data))
 
     def test_same_tenant_with_separate_identities(self):
         data = profile()
         data["fabric"]["tenant_id"] = A
-        self.assertEqual(self.check(data, fabric_tenant=A)["status"], "OFFLINE_TARGET_PASS")
+        result = self.check(data, fabric_tenant=A)\n        self.assertEqual(result["status"], "OFFLINE_TARGET_PASS")\n        self.assertEqual(result["identity_topology"], "same-tenant")
 
     def test_identity_mismatch_blocked(self):
         with self.assertRaises(InvalidEnvironment):
