@@ -48,6 +48,8 @@
 - [ ] 4.8 根据 4.1 逐文件清单提供“保留 / 候选删除 / HOLD”建议，查明每个候选的实际直接与间接消费者、现有测试覆盖和历史恢复路径；对比 [Healthcare-Specs 固定备份](https://github.com/JohnZhang-DataForge/Healthcare-Specs) 的 393 个旧 Blob 与当前 SHA，针对后续新增或修改的文件确认固定 Git 恢复 Commit 及按需独立增量备份。审计报告/证据绑定 SHA，未经验证一律 E=HOLD；**此步骤不删除任何文件**。
 > **4.8 部分备份证据（PARTIAL，仍不打勾，2026-10-19）**：已在冻结 Healthcare Main 与独立 Private Healthcare-Specs Main Git Tree 之间完成 **393/393 路径 + Git Blob SHA 双向读回一致、0 遗失、0 差异**，见[跨仓备份读回](evidence/LOCAL-DP-BACKUP-BLOB-READBACK-20261019.md)。这只证明对应两个 Git Commit 的源码恢复基础；每个删除候选的现行消费者和回归覆盖尚未得到负向证明，也未验证 K8s/PG/S3/镜像恢复，故 4.8 OPEN、批准删除数 0。
 
+> **4.8 首批有据可查的 C 类退役候选（PARTIAL，2026-10-19；不执行删除）**：已在固定 Healthcare Main `f3b2d9e97d9afe4e7457a1d48fde9e655add47d7` 全部 **622/622 tracked 文件**及 Self-Runner SHA `ffd0eccecbf0148183b956e6e4416d4b8d99002b` **270/270 tracked 文件**中进行三个历史文档生成器的精确名称静态消费扫描，并核对三个脚本与独立备份 **3/3 Git Blob 一致**；锁定 `scripts/task003/{04-write-closeout-docs.sh,05-write-ae-freeze-doc.sh,05f2-write-freeze-doc.sh}` 为首批 **C / 推荐后续退役候选**。现行精确名称引用仅历史脚本自述、CODE.md 导航和 OpenSpec 审计材料，未发现正式 Workflow、DAG、镜像等直接字面调用；仍须排除动态路径/外部调用并通过 4.2–4.4 的 Build/DAG/回归门禁，才可在单独 4.9 PR 删除。见 [首批退役候选与恢复门槛](evidence/LOCAL-DP-FIRST-RETIREMENT-CANDIDATES-20261019.md)。**4.1 / 4.8 仍 OPEN，已删除 0，当前批准删除 0。**
+
 - [ ] 4.9 在 4.2–4.4 适用兼容 Gate 通过后，按组件/依赖簇分批移除确认为 C/D 的历史 Shell、Probe、一次性生成器、重复旧实现；每一小 PR 同步受影响 CODE.md、导航、Workflow、生成器及不可变历史链接，记录恢复 SHA、证据和负向检查。A/B/E 禁删，历史 `taskNNN` 名字本身不构成删除理由。
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
