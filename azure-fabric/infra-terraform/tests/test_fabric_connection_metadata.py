@@ -64,6 +64,38 @@ class ConnectionMetadataTests(unittest.TestCase):
         with self.assertRaises(UnsupportedConnection):
             inspect(data)
 
+    def test_parameter_types_and_allowed_values(self):
+        data = response()
+        data["value"][0]["creationMethods"][0]["parameters"][0]["allowedValues"] = ["a", "b"]
+        result = inspect(data)
+        self.assertEqual(result["parameters"][0]["allowed_values"], ["a", "b"])
+        data["value"][0]["creationMethods"][0]["parameters"][0]["dataType"] = "MadeUp"
+        with self.assertRaises(UnsupportedConnection):
+            inspect(data)
+
+    def test_malformed_allowed_values(self):
+        for invalid in (["a", "a"], [3], "abc"):
+            data = response()
+            data["value"][0]["creationMethods"][0]["parameters"][0]["allowedValues"] = invalid
+            with self.subTest(value=invalid), self.assertRaises(UnsupportedConnection):
+                inspect(data)
+
+    def test_user_controlled_code_permission_is_independent(self):
+        with self.assertRaises(UnsupportedConnection):
+            inspect_metadata(response(), connection_type="ExampleBlobType",
+                             creation_method="ExampleMethod",
+                             credential_type="ServicePrincipal",
+                             user_controlled_code=True)
+        data = response()
+        data["value"][0]["supportedCredentialTypesForUsageInUserControlledCode"] = [
+            "ServicePrincipal"
+        ]
+        result = inspect_metadata(data, connection_type="ExampleBlobType",
+                                  creation_method="ExampleMethod",
+                                  credential_type="ServicePrincipal",
+                                  user_controlled_code=True)
+        self.assertTrue(result["user_controlled_code"])
+
     def test_missing_required_flag_rejected(self):
         data = response()
         del data["value"][0]["creationMethods"][0]["parameters"][0]["required"]
