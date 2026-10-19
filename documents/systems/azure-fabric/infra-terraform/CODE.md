@@ -71,3 +71,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [fabric_backend_config.py](../../../../azure-fabric/infra-terraform/tools/fabric_backend_config.py)：基于已验证身份和新环境，逐组件生成 `johnzhang/tfstate` 的 `fabric/<env>/<component>.tfstate` 后端参数预览；不写文件、不执行 Terraform、不会访问 Remote State。
 - [test_fabric_backend_config.py](../../../../azure-fabric/infra-terraform/tests/test_fabric_backend_config.py)：检验三 Root 独立 Key、跨环境隔离、拒绝旧 State、非授权组件、错误 Storage、Secret/输出注入。
 - **实施边界**：后续仍需独立 Terraform Root 和受控执行 Workflow；此处没有实际初始化 Backend 或验证真实 State 不存在。
+
+## 独立新环境 Terraform Root 骨架（Task 2.1 第二批）
+
+- [New-environments README](../../../../azure-fabric/infra-terraform/new-environments/README.md)：独立 Root 的严格非部署边界及身份分工。
+- [Workspace Root](../../../../azure-fabric/infra-terraform/new-environments/workspace/versions.tf)、[OneLake Root](../../../../azure-fabric/infra-terraform/new-environments/onelake/versions.tf)、[Connection Root](../../../../azure-fabric/infra-terraform/new-environments/connection/versions.tf)：仅有 Partial AzureRM Backend 和 Fabric OIDC Provider 声明；目前**没有任何 Resource/Module**。
+- [静态安全测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_root_skeleton.py)：检查三 Root 必要配置，阻止提前添加资源和认证混用；GitHub-hosted CI 验证。未经单独授权绝不执行 Terraform init/plan/apply/destroy。
