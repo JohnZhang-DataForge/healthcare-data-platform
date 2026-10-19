@@ -68,3 +68,8 @@
 - 新增 `tools/fabric_connection_metadata.py`：使用**预先取得的**官方 `supportedConnectionTypes` JSON 响应，按显式给定的 connector type、creation method、credential type 检查支持情况，并提取参数名称及是否必填。拒绝未处理分页、重复或不完整元数据、未经支持的 ServicePrincipal/WorkspaceIdentity，不推断 Blob connector 的具体值。
 - 新增 Python 单测并接入 Fabric Preflight CI。单测只使用虚构连接类型作为模拟输入，不代表真实 Tenant 支持该类型。
 - 该工具不请求访问令牌、不会调用 Fabric API，也不处理真实 Secret。目标 Tenant 元数据、云端 Reader 凭据及 RBAC 尚未验证，`fabric_connection` 资源继续保持未实现；2.4 不勾选。
+
+## Task 2.4 第三批：Connection Metadata 合同加固
+
+- 根据微软 REST API 官方字段，离线校验器增加 `dataType` 枚举与 `allowedValues` 校验，以及 `--user-controlled-code` 对 `supportedCredentialTypesForUsageInUserControlledCode` 的独立许可检查。连接本身可创建不代表可以供 Notebook 等执行用户代码的 Item 使用。
+- 完全离线的负向单元测试覆盖未知类型、格式错误、重复 allowed values、Notebook 权限缺失等；不查询租户、不访问 State、不执行 Terraform。Target Tenant Blob Connector 真实元数据与数据读取主体仍待核实；Task 2.4 继续不勾选。
