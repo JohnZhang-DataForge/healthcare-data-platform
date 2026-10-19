@@ -13,3 +13,7 @@
 ## 尚未通过的 Gates
 
 此次路径修复不证明 Docker Clean Build、GHCR Digest、Entrypoint Smoke、实际来源或动态调用闭包。该 Workflow 在 `main` push 时自动运行并带 `packages: write` 和 `push: true`；**合并此 PR 可能触发 GHCR 真实发布**，因此在发布策略确认前保持 Draft/HOLD，不把 CI 静态 PASS 当作运行验收。Task004 Runtime 构建和其旧生成器仍另需单独处理。4.2–4.4 及 Task 4.9 未完成，业务 Writer、K8s、PG、S3 均不触碰。
+
+## 后续安全修订
+
+原 `main` Push 自动触发已在本 PR 内移除；Synthea GHCR 工作流现在仅 `workflow_dispatch`，并增加测试负向断言。仍须确认完整源码测试、Build Context / Docker COPY / Entrypoint Smoke，才可认为 4.3 PASS。该修订不执行发布。
