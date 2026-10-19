@@ -8,7 +8,7 @@ evidence: []
 
 # Healthcare Data Platform V2：双平台、多数据源与公开展示路线（讨论稿）
 
-> **DRAFT / 目标设计，不代表已部署或获准执行。** 本文整理 2026-10-18 的新方向；关于现状，以 [PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md)、现有源码、有效 Contract 和实际验收为准。本文不是 Emory 内部架构事实，也不推断其 Snowflake/Fabric/Enterprise OMOP 的实际集成关系。
+> **DRAFT / 总路线讨论稿，不代表已部署或获准执行。** FHIR/HL7 的具体 MVP 技术取舍已于 2026-10-19 确认，以 [FHIR/HL7 MVP 专项设计](FHIR-HL7-MULTISOURCE-MVP-DESIGN.md) 为准；仍未部署或完成运行验收。 本文整理 2026-10-18 的新方向；关于现状，以 [PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md)、现有源码、有效 Contract 和实际验收为准。本文不是 Emory 内部架构事实，也不推断其 Snowflake/Fabric/Enterprise OMOP 的实际集成关系。
 
 ## 1. 背景、目标与新的边界
 
@@ -68,19 +68,20 @@ Local Observability: Airflow UI + Marquez     Fabric: Monitoring + Lineage
 - Notebook 需验证行数、PK/FK、Schema、内容、幂等重放；云端是分析副本，不回写本地 OMOP。首期不强制 Warehouse/dbt。
 - 原 [Data Flow](../DATA-FLOW.md) 中约定的 PG→Blob→Pipeline→Notebook→Lakehouse OneLake-first MVP **继续有效**，不得被新多源路线覆盖或绕过。
 
-### 2.2 B：FHIR R4 → Fabric
+### 2.2 B：FHIR R4 → Fabric（MVP 已明确）
 
-- FHIR 作为**独立数据交付合同和运行批次**，优先 Patient、Encounter；原始 FHIR JSON/NDJSON 保留、源 ID 与 Reference 可追踪。
-- 先按源格式落 Azure Blob / Bronze，Fabric PySpark 执行解析、版本/去重、Schema/Reference/DQ 校验后得到带来源标识的 Silver。
-- 可以利用 Synthea 生成测试 FHIR，但**不能仅把同一 CSV 换格式就声称完成跨来源患者整合**；应另设独立源系统命名空间和关联用例。
-- 不强制同步 Local PostgreSQL OMOP，不直接假定 FHIR Patient ID 等于 OMOP person_id。
+> 已确认的最小架构与验收合同见 [FHIR / HL7 多来源 MVP 设计](FHIR-HL7-MULTISOURCE-MVP-DESIGN.md)；此处只保留跨系统总路线，不重复维护详细规格。
 
-### 2.3 C：HL7 v2 → Fabric
+- Hospital B 复用版本化 Synthea 核心和合成患者基线，原生导出 **FHIR R4 Bundle JSON**（Patient、Encounter），按独立来源身份、Batch、READY Manifest 发布 Azure Blob。
+- Fabric Bronze 保留 FHIR 原文，PySpark Notebook 负责解析/Reference/DQ 与 Silver；不先部署 HAPI FHIR Server，不强制 NDJSON，也不要求进入 Local OMOP。
+- 三个医院为**模拟来源系统**；患者身份有意部分重叠，但源患者 ID 独立；不能把同一 CSV 直接换格式当作已经完成跨来源患者整合。
 
-- 明确这里是 **HL7 v2.x 消息**，不是 FHIR（FHIR 本身也属于 HL7 标准家族）。
-- Mirth Connect 为待选接入方案，不代表已采购或部署；开始 HL7 Change 前必须确认具体发行版、维护状态、许可及预算；第一阶段考虑 ADT A01/A08 合成测试消息，并保存原文与可审计解析输出。
-- 经 Azure Blob → Bronze → PySpark Silver；保留消息控制 ID、患者标识分配机构、消息时间、去重与重放信息，避免把消息重试当作新的临床事件。
-- 不默认把 ADT 直接写入本地 OMOP；与 FHIR/OMOP 的关联需要可核验的 crosswalk 或明确的模拟身份关联证据。
+### 2.3 C：HL7 v2 → Fabric（MVP 已明确）
+
+- Hospital C 使用同一 Synthea 基础合成群体，经轻量场景/患者/Encounter 关联准备标准化 CSV/JSON 事件，再由本地 Kubernetes 上的 **Open Integration Engine（OIE）Channel Transformer** 生成 HL7 v2 ADT A01/A08 原文；不另外编写 Python HL7 报文编码器。
+- OIE File Writer → 本地持久化 spool → 轻量 Blob Publisher → Azure Blob READY；Fabric Bronze 保存原始 HL7，PySpark 在 Silver 解析 MSH/PID/PV1、去重并附加来源标识。**Fabric 不运行第二套 OIE。**
+- **Kafka 不进入首版**；MLLP/ACK 演示不作为 MVP 的前置条件。OIE 转换成功不等于 Blob READY 或 Fabric 处理成功，三者需独立证据；未来如需实时集成再单独 Change。
+- 实施前核验 OIE 当前发行版的许可证、Channel、Connector 和 Kubernetes 部署兼容；旧商业 Mirth 或旧社区示例不能直接充当 OIE 实测结果。
 
 ### 2.4 汇总≠无依据地合并患者
 
