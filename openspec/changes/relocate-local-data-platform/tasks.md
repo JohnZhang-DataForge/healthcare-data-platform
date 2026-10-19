@@ -37,6 +37,8 @@
 > **4.1 第三轮静态全量清点（PARTIAL，仍不打勾，2026-10-19）**：以 Healthcare `ea2d2e5ffd98c529c79626c7c926828a32fb7a7b`、Self-Runner `ffd0eccecbf0148183b956e6e4416d4b8d99002b` 为冻结基线，已逐文件读取并生成 **94/94 Task003 Shell**、**105/105 Local DP Tests**、**123/123 Self-Runner Workflows**、**32/32 Self-Runner CI 脚本**的文件级静态清单；见 [第三轮总结](evidence/LOCAL-DP-AUDIT-ROUND3-SUMMARY-20261019.md) 及其四个矩阵。静态发现 51 个生成器/历史复核候选（**非获准删除**）、2 个明确测试 Root 映射问题、65 个含旧路径的 Self-Runner Workflow（多数需按 frozen ref 正确认定）。尚缺生成器/间接调用闭包、测试实际运行、GitSync/Spark 真实来源证明，故保持 4.1 OPEN。
 
 - [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
+> **4.2 首个局部修复（2026-10-19，待 PR 验收）**：两项 `tests/task004` 的静态测试已将仓库级 `.github/workflows` 定位到 `REPO_ROOT`，保留镜像/运行资源在 `PLATFORM_ROOT`。尚未消除工作流本身的旧根 Build Context / COPY / Path Filters 与测试旧断言；仅此修复不能标为 4.2 PASS，更不构成 4.3/4.4 验收。关联证据：`evidence/LOCAL-DP-TEST-ROOT-FIRST-FIX-20261019.md`。不执行 GHCR/K8s/PG/S3。
+
 - [ ] 4.3 按镜像确定并记录 Build Context（优先以 `local-data-platform/` 为本地平台 Context，逐项审核例外）、Docker COPY、生成器和 immutable 镜像来源；保留无必要变化的容器 RUNTIME_ROOT / DAG / Batch 持久身份。完成绑定新 SHA 的真实 Clean Build、容器 `module.__file__` / Import/Entrypoint Smoke、旧来源负向验证，保存镜像 Digest。
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
