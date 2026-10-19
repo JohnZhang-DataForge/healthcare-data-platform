@@ -19,6 +19,6 @@
 > 本次实施只更改文档与 OpenSpec；以下验收任务尚待真实 PR HEAD 的 CI 和 Main Merge，不提前声明 PASS。
 
 
-- [ ] 3.1 正式实施 PR 的所有适用 CI 对准确 HEAD SUCCESS（尤其 `require-trusted-change`、`validate-openspec`、相对链接检查）；检查 diff 仅限文档/OpenSpec。
-- [ ] 3.2 正式实施 PR 合并 Main 后，确认文件 19 份、相关 Change 的准确状态与必要的证据回填。
-- [ ] 3.3 清理 Change 自身的 Done/Not Done/Run 记录，若前面任务均有证据，提交独立 Archive PR；不得归档尚未完成的 `relocate-local-data-platform` 或 `enforce-openspec-change-gate`。
+- [x] 3.1 正式实施 [PR #237](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/237) 最终 HEAD `ce890cda665a207d398e0bad9318257f167cc1b8` 上适用 CI 均 SUCCESS：[OpenSpec #39186625899](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39186625899)、[Docs Links #39186625844](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39186625844)、[Component #39186626009](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39186626009)、[OpenSpec Change Gate #39186625956](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39186625956)，受信任 `require-trusted-change` SUCCESS；Docs 77 篇 / 链接 1,073 个 / missing 0，质量单测 63 PASS。Diff 仅限文档、AGENTS 和 OpenSpec。
+- [x] 3.2 PR #237 已 Squash Merge Main `07fb861a3b2e106d4f31f8fd44de2fd74f48668c`；只读 Main Git Tree 复核 `documents/engineering/**/*.md` **19/19 均保留**，现有 `relocate-local-data-platform` 与 `enforce-openspec-change-gate` 继续 Active、Legacy `modernize-legacy-task-code` 为 Proposed/Active（R2–R5 全部未开始），历史 Archive 不变。
+- [x] 3.3 在本**独立 Archive PR** 中将本 Change 全部文档从 `openspec/changes/engineering-governance-cleanup/` 移入 `openspec/changes/archive/2026-10-18-engineering-governance-cleanup/`，并更新项目总览引用；仅在 Archive PR Required CI 全部通过且合并 Main 后归档正式生效。其他两项未完成的 Active Changes 以及拟议 Legacy Change 不归档、不修改执行状态。

@@ -6,7 +6,7 @@ context: |
   保留 OpenSpec 官方模板的固定英文标题和结构标记，不翻译或改写，如 Why、What Changes、Capabilities、Impact、ADDED/MODIFIED/REMOVED/RENAMED Requirements、Requirement:、Scenario:、GIVEN、WHEN、THEN、SHALL、MUST。
   YAML 字段、CLI 命令、文件名和路径、代码/API/资源标识符均保持英文原样；Change/Capability 名称使用英文功能名（kebab-case）。新维护代码按现行组件/功能命名规范，不使用 taskNNN/stepNNN 作为代码标识。
   权威入口：AGENTS.md、documents/README.md、documents/engineering/status/PROJECT-STATUS.md、documents/engineering/development/CODE-ORGANIZATION-AND-NAMING.md、documents/engineering/operations/SAFE-OPERATIONS.md。
-  当前本地平台业务源码根目录为 local-data-platform/（PR #225），旧候选 data-platform/ 已废弃；原根级业务路径已移除。仓库质量检查工具现归 .github/quality/（PR #227）；documents/systems/data-platform/ 的组件文档导航仍然不变且链接已调整（PR #226）。现有 relocate-local-data-platform Change 追溯已合并 PR，运行路径调试/E2E 尚未完成；不得假装事前评审。enforce-openspec-change-gate 已落实可信 PR Gate 与 Main Ruleset #25365902，真实正反 PR 已验证（#233 阻止、#234 合规合并），该治理 Change 的 Current Spec/Archive 收尾仍待完成。engineering-governance-cleanup 当前仅整理长期文档权威；modernize-legacy-task-code 若出现也仅为待授权的未来重构。
+  当前本地平台业务源码根目录为 local-data-platform/（PR #225），旧候选 data-platform/ 已废弃；原根级业务路径已移除。仓库质量检查工具现归 .github/quality/（PR #227）；documents/systems/data-platform/ 的组件文档导航仍然不变且链接已调整（PR #226）。现有 relocate-local-data-platform Change 追溯已合并 PR，运行路径调试/E2E 尚未完成；不得假装事前评审。enforce-openspec-change-gate 已落实可信 PR Gate 与 Main Ruleset #25365902，真实正反 PR 已验证（#233 阻止、#234 合规合并），该治理 Change 的 Current Spec/Archive 收尾仍待完成。engineering-governance-cleanup 已完成长期文档职责清理，本 Change 的 Archive PR 经校验并合并后以 archive/ 为权威；modernize-legacy-task-code 若出现也仅为待授权的未来重构。
   AGENTS.md 为 Agent 唯一入口；documents/ 维护长期架构、系统、开发、运维及 PROJECT-STATUS 跨项目总览，绝不另存具体 Change 的平行 Tasks；openspec/changes/ 负责实质变更的 Proposal、Design、Tasks、验收与 Archive；openspec/specs/ 只表示经核实的已采用行为。OpenSpec 本身不授予共享运行环境的操作权限，也不代替 GitHub PR、CI 或独立运行读回。
 
 rules:

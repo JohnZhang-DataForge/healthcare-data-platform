@@ -3,8 +3,8 @@
 ## Context and audited inventory
 
 审计基线：Healthcare Main `8a146cf5f5ed4fde8d6a20c7f6d80c62ce81442c`，`documents/engineering/` 有 **19 个 Markdown**。两项已有 Active Change：
-- [`relocate-local-data-platform`](../relocate-local-data-platform/tasks.md)：393 业务文件物理目录移到 `local-data-platform/`，文档/CODE Map 和 `.github/quality/` 已搬；Import、Docker、GitSync、Spark 与 E2E 等 **仍待完成**。
-- [`enforce-openspec-change-gate`](../enforce-openspec-change-gate/tasks.md)：可信 CI、Main Ruleset #25365902 与受控正反 PR 均通过；治理收尾/Current Spec/Archive **仍待完成**。
+- [`relocate-local-data-platform`](../../relocate-local-data-platform/tasks.md)：393 业务文件物理目录移到 `local-data-platform/`，文档/CODE Map 和 `.github/quality/` 已搬；Import、Docker、GitSync、Spark 与 E2E 等 **仍待完成**。
+- [`enforce-openspec-change-gate`](../../enforce-openspec-change-gate/tasks.md)：可信 CI、Main Ruleset #25365902 与受控正反 PR 均通过；治理收尾/Current Spec/Archive **仍待完成**。
 
 ## Classification of the 19 existing Engineering documents
 
