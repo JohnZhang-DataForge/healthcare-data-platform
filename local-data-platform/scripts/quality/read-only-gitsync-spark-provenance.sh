@@ -3,7 +3,6 @@ set -Eeuo pipefail
 # Read-only, fail-closed audit: no create/patch/delete/apply/exec/cp.
 : "${KUBE_CONTEXT:?Set KUBE_CONTEXT to the explicitly approved read-only context}"
 : "${AIRFLOW_NAMESPACE:?Set AIRFLOW_NAMESPACE}"
-: "${AIRFLOW_RELEASE:?Set AIRFLOW_RELEASE}"
 : "${SPARK_NAMESPACE:?Set SPARK_NAMESPACE}"
 : "${SPARK_CONFIGMAP:?Set SPARK_CONFIGMAP to the exact rendered Spark ConfigMap name}"
 : "${EXPECTED_SPARK_FILE:?Set EXPECTED_SPARK_FILE to the expected Git source path}"
@@ -27,7 +26,7 @@ print('AIRFLOW_POD_COUNT=' + str(len(pods.get('items',[]))))
 for pod in pods.get('items',[]):
     spec = pod.get('spec',{})
     name = pod.get('metadata',{}).get('name','')
-    for c in spec.get('containers',[]):
+    for c in spec.get('initContainers',[]) + spec.get('containers',[]):
         print('POD_CONTAINER=' + name + '/' + c.get('name',''))
         for mount in c.get('volumeMounts',[]):
             if 'dag' in mount.get('mountPath','').lower():
