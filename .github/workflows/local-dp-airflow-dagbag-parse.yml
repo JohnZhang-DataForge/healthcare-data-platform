@@ -1,0 +1,57 @@
+name: Local DP Airflow 3.2.2 DagBag Parse
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/local-dp-airflow-dagbag-parse.yml"
+      - "local-data-platform/airflow/dags/**"
+      - "openspec/changes/relocate-local-data-platform/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dagbag:
+    name: Airflow 3.2.2 DagBag offline parse
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Parse DAGs using pinned Airflow image (no scheduler or task runs)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm \
+            --network none \
+            --read-only \
+            --tmpfs /tmp:rw,nosuid,nodev \
+            -e AIRFLOW_HOME=/tmp/airflow \
+            -e AIRFLOW__CORE__LOAD_EXAMPLES=False \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -v "${PWD}/local-data-platform/airflow/dags:/opt/airflow/dags:ro" \
+            --entrypoint python \
+            apache/airflow:3.2.2 \
+            -c '
+          import importlib.util
+          from pathlib import Path
+          from airflow.models.dagbag import DagBag
+          providers = {
+              "airflow.providers.cncf.kubernetes.operators.pod":
+              importlib.util.find_spec("airflow.providers.cncf.kubernetes")
+          }
+          if any(v is None for v in providers.values()):
+              raise SystemExit("DAGBAG_HOLD=KUBERNETES_PROVIDER_NOT_IN_PINNED_IMAGE")
+          root = Path("/opt/airflow/dags")
+          assert root.is_dir(), "DAG_SOURCE_MISSING"
+          bag = DagBag(dag_folder=str(root), include_examples=False, safe_mode=False)
+          if bag.import_errors:
+              for path, error in sorted(bag.import_errors.items()):
+                  print("DAG_IMPORT_ERROR", path, error)
+              raise SystemExit("DAGBAG_PARSE=FAIL")
+          print("DAGBAG_PARSE=PASS")
+          print("DAG_IDS=" + ",".join(sorted(bag.dags)))
+          print("DAG_COUNT=" + str(len(bag.dags)))
+          print("DAG_TASK_EXECUTION=NOT_PERFORMED")
+          '
