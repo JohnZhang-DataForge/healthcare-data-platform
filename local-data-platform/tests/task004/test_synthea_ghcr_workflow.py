@@ -130,10 +130,8 @@ class SyntheaGhcrWorkflowTests(unittest.TestCase):
     def test_workflow_can_be_manually_retried(self):
         text = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn(
-            "workflow_dispatch:",
-            text,
-        )
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("\n  push:\n", text)
 
     def test_workflow_trigger_is_narrow(self):
         text = WORKFLOW.read_text(encoding="utf-8")
