@@ -1,34 +1,104 @@
 name: Build Landing Discovery Runtime Image
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - feature/landing-batch-discovery-airflow-20261013
-      - feature/landing-airflow-v2-reader-runtime-20261013
+  pull_request:
     paths:
-      - .github/workflows/build-landing-discovery-image.yml
-      - apps/landing_discovery/**
-      - images/landing-discovery-runtime/**
-      - apps/task004/resolve_verified_landing_file.py
-      - apps/task004/validate_new_only_v2_manifest.py
-      - contracts/synthea/new-only/csv-contract-v2.json
-      - tests/landing_discovery/**
+      - ".github/workflows/build-landing-discovery-image.yml"
+      - "local-data-platform/apps/landing_discovery/**"
+      - "local-data-platform/images/landing-discovery-runtime/**"
+      - "local-data-platform/apps/task004/resolve_verified_landing_file.py"
+      - "local-data-platform/apps/task004/validate_new_only_v2_manifest.py"
+      - "local-data-platform/contracts/synthea/new-only/csv-contract-v2.json"
+      - "local-data-platform/tests/landing_discovery/**"
+
 permissions:
   contents: read
-  packages: write
+
 jobs:
-  build:
+  validate-source:
+    name: Landing Discovery clean build and read-only offline tests (no publish)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - name: Test independent discovery and XCom contract
+      - name: Checkout immutable source
+        uses: actions/checkout@v6
+      - name: Verify platform-relative Docker COPY inputs
+        shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m unittest discover -s tests/landing_discovery -p 'test_*.py' -v
-          python3 -m py_compile apps/landing_discovery/*.py
-          echo LANDING_DISCOVERY_IMAGE_TESTS=PASS
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("local-data-platform")
+          dockerfile = (root / "images/landing-discovery-runtime/Dockerfile").read_text()
+          paths = (
+            "apps/landing_discovery/scan_ready_batches.py",
+            "apps/landing_discovery/run_airflow_scan.py",
+            "apps/task004/resolve_verified_landing_file.py",
+            "apps/task004/validate_new_only_v2_manifest.py",
+            "contracts/synthea/new-only/csv-contract-v2.json",
+          )
+          for path in paths:
+              assert (root / path).is_file(), "MISSING_SOURCE=" + path
+              assert path in dockerfile, "MISSING_DOCKER_COPY=" + path
+          print("LANDING_DISCOVERY_COPY_SOURCE_GATE=PASS")
+          PY
+      - name: Isolated clean build, no registry push
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build --pull --no-cache \
+            -f local-data-platform/images/landing-discovery-runtime/Dockerfile \
+            -t local-dp-landing-discovery:verification \
+            local-data-platform
+          docker image inspect local-dp-landing-discovery:verification \
+            --format 'LOCAL_IMAGE_ID={{.Id}}'
+          echo "CLEAN_BUILD=PASS"
+          echo "GHCR_PUBLISH=NOT_PERFORMED"
+      - name: Verify installed Python modules without entrypoint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --network none --read-only \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --entrypoint python local-dp-landing-discovery:verification -c '
+          import sys
+          sys.path[:0] = ["/opt/healthcare/landing_discovery", "/opt/healthcare/task004"]
+          import run_airflow_scan, scan_ready_batches, resolve_verified_landing_file
+          from pathlib import Path
+          for module in (run_airflow_scan, scan_ready_batches, resolve_verified_landing_file):
+              assert Path(module.__file__).is_file()
+              assert str(Path(module.__file__)).startswith("/opt/healthcare/")
+              print("PACKAGED_MODULE=" + str(Path(module.__file__)))
+          '
+          echo "ENTRYPOINT_NOT_EXECUTED=PASS"
+      - name: Read-only discovery regression, fake S3 only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for suite in test_scan_ready_batches.py test_run_airflow_scan.py; do
+            docker run --rm --network none --read-only \
+              --security-opt no-new-privileges --cap-drop ALL \
+              --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+              -v "$PWD/local-data-platform:/src:ro" \
+              --entrypoint python \
+              local-dp-landing-discovery:verification \
+              -m unittest discover -s /src/tests/landing_discovery -p "$suite" -v
+          done
+          echo "LANDING_DISCOVERY_OFFLINE_REGRESSION=PASS"
+          echo "KUBERNETES_PG_S3_ACCESS=NOT_PERFORMED"
+
+  build-and-push:
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate-source
+    name: Publish Landing Discovery image (manual dispatch only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -39,8 +109,8 @@ jobs:
         id: image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: images/landing-discovery-runtime/Dockerfile
+          context: ./local-data-platform
+          file: ./local-data-platform/images/landing-discovery-runtime/Dockerfile
           platforms: linux/amd64
           push: true
           provenance: true
@@ -53,4 +123,4 @@ jobs:
           set -Eeuo pipefail
           [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           echo "LANDING_DISCOVERY_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-landing-discovery@$IMAGE_DIGEST"
-          echo "LANDING_DISCOVERY_IMAGE_PUBLISHED=PASS"
+          echo "LANDING_DISCOVERY_IMAGE_PUBLISHED=PASS
