@@ -19,6 +19,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Build temporary parse-only image with psycopg
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          printf 'FROM apache/airflow:3.2.2\nRUN pip install --no-cache-dir "psycopg[binary]==3.2.12"\n' | docker build --pull -t local-dp-airflow-dagbag:test -f - .
+          
       - name: Parse DAGs using pinned Airflow image (no scheduler or task runs)
         shell: bash
         run: |
@@ -32,7 +38,7 @@ jobs:
             -e PYTHONDONTWRITEBYTECODE=1 \
             -v "${PWD}/local-data-platform/airflow/dags:/opt/airflow/dags:ro" \
             --entrypoint python \
-            apache/airflow:3.2.2 \
+            local-dp-airflow-dagbag:test \
             -c '
           import importlib.util
           from pathlib import Path
