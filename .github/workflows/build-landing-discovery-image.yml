@@ -123,4 +123,4 @@ jobs:
           set -Eeuo pipefail
           [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           echo "LANDING_DISCOVERY_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-landing-discovery@$IMAGE_DIGEST"
-          echo "LANDING_DISCOVERY_IMAGE_PUBLISHED=PASS
+          echo "LANDING_DISCOVERY_IMAGE_PUBLISHED=PASS"
