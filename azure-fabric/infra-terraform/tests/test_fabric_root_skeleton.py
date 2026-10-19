@@ -14,7 +14,10 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
             with self.subTest(component=component):
                 location = ROOT / component
                 names = {p.name for p in location.iterdir() if p.is_file()}
-                self.assertEqual(names, {"versions.tf", "providers.tf"})
+                expected = {"versions.tf", "providers.tf"}
+                if component == "workspace":
+                    expected.update({"main.tf", "variables.tf", "outputs.tf"})
+                self.assertEqual(names, expected)
                 versions = (location / "versions.tf").read_text(encoding="utf-8")
                 self.assertIn('backend "azurerm" {}', versions)
                 self.assertIn('source  = "microsoft/fabric"', versions)
@@ -22,7 +25,7 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
                 self.assertNotIn("johnzhang", versions)
 
     def test_no_resource_or_execution_bypasses(self):
-        for component in COMPONENTS:
+        for component in ("onelake", "connection"):
             contents = "\n".join(
                 p.read_text(encoding="utf-8")
                 for p in (ROOT / component).glob("*.tf")
@@ -44,6 +47,18 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
             self.assertRegex(provider, r"use_oidc\s*=\s*true")
             self.assertNotRegex(provider, r"(?m)^\s*(?:tenant_id|client_id)\s*=")
             self.assertNotIn("var.azure", provider.lower())
+
+    def test_workspace_requires_explicit_approval_and_blocks_destroy(self):
+        main = (ROOT / "workspace" / "main.tf").read_text(encoding="utf-8")
+        variables = (ROOT / "workspace" / "variables.tf").read_text(encoding="utf-8")
+        self.assertIn('resource "fabric_workspace" "current"', main)
+        self.assertIn("prevent_destroy = true", main)
+        self.assertIn("precondition {", main)
+        self.assertIn("var.workspace_creation_approved", main)
+        self.assertIn('var.workspace_name == "HDP-${var.environment}"', main)
+        self.assertIn("default = false", variables)
+        self.assertIn("var.capacity_id", variables)
+        self.assertNotIn("role_assignment", main)
 
     def test_safety_documented(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
