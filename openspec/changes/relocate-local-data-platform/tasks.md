@@ -65,6 +65,8 @@
 
 > **4.4 探针离线回归（2026-10-19，PR #269 / Merge `22c98426e72517b70d59b3396c943ce383b9a62a`；Run #39305517399 PASS）**：新 `tests/quality/test_readonly_provenance_probe.py` 用临时目录中的假 `kubectl` 验证正常匹配只代表 PARTIAL、空 Pod / ConfigMap 身份错 / SHA 不符 / 相对报告路径均应拒绝；已在 PR HEAD `2ddbd34aab05c388eaa3c44120740415413a2776` 的 Probe Static Gate 实际验证五项 unittest PASS；切换 Ready 后 Required Checks 重新 PASS。没有真实 Kubernetes 网络请求。见 [探针回归证据](evidence/LOCAL-DP-PROVENANCE-PROBE-REGRESSION-20261019.md)。4.4 / 4.9 仍 HOLD。
 
+> **4.4 Self-Runner 真实 GET-only 来源清单（2026-10-19，PARTIAL，未打勾）**：使用现有 `generic-task-executor.yml` 的固定 Request Push 间接触发 `dw-runner-set`，Self-Runner [PR #138](https://github.com/JohnZhang-DataForge/Self-Runner/pull/138) 已合并 Main `1d5dc09c1c4c39d7a7ffc51dd584ecf0e0077b30`，修复 ARC Runner 缺省 kubeconfig：临时配置引用现有 SA 的 `tokenFile`（不输出 Token）。[真实 Run #39341833708](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39341833708) SUCCESS，8/8 离线安全测试 PASS，GET 读回 Airflow 4 Pods、Spark 27 Applications 与 26 源码 ConfigMaps（哈希）；无 Kubernetes 资源修改及 PG/S3 访问。实验 PR #137 的前三轮失败由 Runner 无 Context 导致，已记录并关闭。**GitSync 当前 checkout SHA、Spark Driver 实际 import 路径及现有 Main 的逐文件哈希匹配均 NOT_VERIFIED**，4.4 继续 PARTIAL / 4.9 HOLD；批准删除 0。详见 [Self-Runner SA GET 来源证据](evidence/LOCAL-DP-SELF-RUNNER-SA-GET-PROVENANCE-20261019.md)。
+
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
 - [ ] 4.7 对所有修复与清理结果进行受控接入、负向路径/已删除源码依赖测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
