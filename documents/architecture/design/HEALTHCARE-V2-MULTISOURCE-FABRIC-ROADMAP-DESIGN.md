@@ -26,12 +26,12 @@ evidence: []
 ## 2. 目标逻辑数据流
 
 ~~~text
-     LOCAL DP (Kubernetes)                   INDEPENDENT CLINICAL SOURCES
-  Synthea CSV → S3 → Airflow                  FHIR R4 / NDJSON
+     LOCAL DP (Kubernetes)                   SIMULATED CLINICAL SOURCES
+  Synthea CSV → S3 → Airflow                  Synthea FHIR R4 Bundle JSON
                 ↓                                │
              PySpark                             ├──→ Azure Blob (FHIR landing)
                 ↓                                │
-     PostgreSQL OMOP 5.4              HL7 v2 ADT → Mirth Connect
+     PostgreSQL OMOP 5.4              Synthea events → OIE ADT
                 │                                │
                 ↓                                └──→ Azure Blob (HL7 landing)
       Read-only Consistent Export
@@ -137,7 +137,7 @@ healthcare-data-platform/
 | 2 | `refactor-local-component-boundaries` | 旧 Task 命名及公共能力 | 新旧结果对照、兼容和回滚 |
 | 3 | `replicate-omop-to-fabric` | PG Exporter → Blob → Fabric → Delta | 一致性、双表对账、幂等 |
 | 4 | `ingest-fhir-to-fabric` | FHIR R4 → Bronze/Silver | 来源标识、Reference、重放 |
-| 5 | `ingest-hl7v2-to-fabric` | HL7 v2 → Mirth → Bronze/Silver | ACK、消息幂等、审计 |
+| 5 | `ingest-hl7v2-to-fabric` | Synthea events → OIE ADT → Blob → Bronze/Silver | OIE 转换、文件发布、消息幂等与错误留档（MLLP/ACK 非 MVP 门槛） |
 | 6 | `publish-public-showcase` | Local/Fabric 公开只读证据 | 匿名访问、安全、准确状态 |
 | 7 | `integrate-lineage-reporting` | 业务运行证据与血缘关联 | 不虚构 Dataset/Job 事件 |
 
