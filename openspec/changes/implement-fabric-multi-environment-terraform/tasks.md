@@ -35,3 +35,8 @@
 - 显式传入 Backend Tenant A / Fabric Tenant B 和不同的 Client ID；即使属于同一 Tenant，Backend Operator 和 Fabric Deployer 仍应是不同身份。检查 ID 与批准的环境合同完全匹配；不将凭据写入 JSON。
 - 只产生离线 Backend 参数摘要，暂不调用 `terraform init/plan` 或以脚本设置 OIDC；Tenant A RBAC 与 Tenant B Fabric 权限仍属于未授权的后续实测。新增正常及负向单元测试，由现有 Fabric Preflight CI 执行。
 - Task 2.1 的实际 Terraform Root/Backend 及 Self-Runner 绑定尚未实现，不因本次纯 Python 合同完成而勾选。
+
+## Task 2.1 — 第一批安全实现（离线配置生成）
+
+- 新增 `fabric_backend_config.py` 和相应负向单测；使用 Task 1.3 已验证的 Tenant A/B 身份合同，给 workspace/onelake/connection 输出 AzureRM Backend `storage_account_name`、`container_name`、`key`、`tenant_id`、`client_id`、OIDC 标志的**纯文本预览**。
+- 该 PR **只覆盖** Backend 参数生成与校验，不设置 Runner 身份，也没有 Terraform Root、`init/plan/apply/destroy` 或云端 State 读写；**2.1 保持未完成**，直到新 Root/身份接入及适用静态验收全部完成。
