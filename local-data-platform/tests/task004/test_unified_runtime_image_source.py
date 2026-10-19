@@ -355,10 +355,8 @@ class UnifiedRuntimeImageSourceTests(
             "bash scripts/task004/06a-prepare-unified-runtime-image.sh",
             text,
         )
-        self.assertIn(
-            '"local-data-platform/images/task004-runtime/**"',
-            text,
-        )
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("\n  push:\n", text)
 
     def test_workflow_tracks_reconciliation_sources(self):
         text = WORKFLOW.read_text(
