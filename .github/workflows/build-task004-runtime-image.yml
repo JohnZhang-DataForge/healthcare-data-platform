@@ -1,3 +1,5 @@
+name: Build TASK004 Runtime Image
+
 on:
   workflow_dispatch:
   pull_request:
