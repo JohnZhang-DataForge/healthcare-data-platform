@@ -73,3 +73,9 @@
 
 - 根据微软 REST API 官方字段，离线校验器增加 `dataType` 枚举与 `allowedValues` 校验，以及 `--user-controlled-code` 对 `supportedCredentialTypesForUsageInUserControlledCode` 的独立许可检查。连接本身可创建不代表可以供 Notebook 等执行用户代码的 Item 使用。
 - 完全离线的负向单元测试覆盖未知类型、格式错误、重复 allowed values、Notebook 权限缺失等；不查询租户、不访问 State、不执行 Terraform。Target Tenant Blob Connector 真实元数据与数据读取主体仍待核实；Task 2.4 继续不勾选。
+
+## Task 2.4 第四批：用户 AzureBlobs API 元数据回归
+
+- 用户在当前 Azure CLI 会话中成功调用 Fabric Supported Connection Types API，返回 `type=AzureBlobs`、`creationMethod=AzureBlobs`、必填 `account` 和 `domain` (Text)，ServicePrincipal/WorkspaceIdentity 同时支持，且 ServicePrincipal 允许用户代码使用。由于先前 `az login --tenant YOUR_FABRIC_TENANT_ID` 失败，**响应所属 Tenant 尚未确认**，不可据此授权部署。
+- 修复合法 API 响应 `allowedValues: null` 被错误拒绝的问题；添加来自提供的非敏感元数据的回归单测。仍未创建 Connection Terraform resource，未请求或保存 Token，不调用 Azure/Fabric，也未执行 Terraform。
+- 下一步需核实当前 Azure CLI Session Tenant、目标 Tenant 一致性、`account`/`domain` 具体允许值与认证策略及真实 Connection/Blob 权限；Task 2.4 保留未完成。
