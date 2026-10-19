@@ -1,5 +1,5 @@
 # New-environment-only root. Backend key must be provided by validated
-# fabric_backend_config.py output; never use dev/*.tfstate.
+# fabric_backend_config.py output; legacy State must remain untouched.
 terraform {
   required_version = ">= 1.13.0, < 2.0.0"
   required_providers {
