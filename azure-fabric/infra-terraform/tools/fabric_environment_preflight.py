@@ -94,6 +94,11 @@ def validate(config: object) -> dict[str, object]:
     _uuid(fabric["tenant_id"], "fabric.tenant_id")
     _uuid(fabric["capacity_id"], "fabric.capacity_id")
 
+    identity_topology = (
+        "same-tenant" if backend["tenant_id"].lower() == fabric["tenant_id"].lower()
+        else "cross-tenant"
+    )
+
     prefix = f"fabric/{environment}"
     _literal(backend, "state_prefix", prefix, "backend")
     workspace = f"HDP-{environment}"
@@ -103,6 +108,7 @@ def validate(config: object) -> dict[str, object]:
         "status": "STATIC_PREFLIGHT_PASS",
         "environment": environment,
         "workspace_name": workspace,
+        "identity_topology": identity_topology,
         "backend_location": "johnzhang/tfstate",
         "landing_location": "johnzhang/landing",
         "state_keys": {

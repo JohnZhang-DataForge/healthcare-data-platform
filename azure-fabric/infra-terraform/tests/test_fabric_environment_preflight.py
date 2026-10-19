@@ -35,6 +35,7 @@ class FabricEnvironmentPreflightTests(unittest.TestCase):
     def test_valid_cross_tenant_and_deterministic_state_keys(self):
         expected = validate(good())
         self.assertEqual(expected["status"], "STATIC_PREFLIGHT_PASS")
+        self.assertEqual(expected["identity_topology"], "cross-tenant")
         self.assertEqual(expected["state_keys"]["workspace"], "fabric/lab-b/workspace.tfstate")
         self.assertEqual(expected["state_keys"]["onelake"], "fabric/lab-b/onelake.tfstate")
         self.assertEqual(expected["state_keys"]["connection"], "fabric/lab-b/connection.tfstate")
@@ -45,7 +46,9 @@ class FabricEnvironmentPreflightTests(unittest.TestCase):
     def test_same_tenant_is_allowed(self):
         candidate = good()
         candidate["fabric"]["tenant_id"] = candidate["backend"]["tenant_id"]
-        self.assertEqual(validate(candidate)["status"], "STATIC_PREFLIGHT_PASS")
+        result = validate(candidate)
+        self.assertEqual(result["status"], "STATIC_PREFLIGHT_PASS")
+        self.assertEqual(result["identity_topology"], "same-tenant")
 
     def test_unknown_fields_and_credential_keys_fail_closed(self):
         candidate = good()

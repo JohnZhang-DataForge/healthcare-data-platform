@@ -79,3 +79,9 @@
 - 用户在当前 Azure CLI 会话中成功调用 Fabric Supported Connection Types API，返回 `type=AzureBlobs`、`creationMethod=AzureBlobs`、必填 `account` 和 `domain` (Text)，ServicePrincipal/WorkspaceIdentity 同时支持，且 ServicePrincipal 允许用户代码使用。由于先前 `az login --tenant YOUR_FABRIC_TENANT_ID` 失败，**响应所属 Tenant 尚未确认**，不可据此授权部署。
 - 修复合法 API 响应 `allowedValues: null` 被错误拒绝的问题；添加来自提供的非敏感元数据的回归单测。仍未创建 Connection Terraform resource，未请求或保存 Token，不调用 Azure/Fabric，也未执行 Terraform。
 - 下一步需核实当前 Azure CLI Session Tenant、目标 Tenant 一致性、`account`/`domain` 具体允许值与认证策略及真实 Connection/Blob 权限；Task 2.4 保留未完成。
+
+## 2026-10-19 认证拓扑修正（A→A′ / A→B）
+
+- 已根据 Entra Default Directory 截图与 Azure CLI 的同一 Tenant ID 确定：当前 Storage/Fabric 是同一 Tenant 内的两个用户；用户账号不是自动化 Service Principal。当前部署目标采用 A→A′，未来 A→B 保留原有跨租户兼容。
+- Preflight 和 Target 增加 `identity_topology` 输出：Tenant ID 相同为 `same-tenant`，否则 `cross-tenant`；不以拓扑模式降低 Client ID 必须独立、Profile 租户匹配、禁止旧 State、审批默认拒绝等限制。新增两模式离线回归测试。
+- 此次仅源代码和设计修正；不改旧 Terraform Root、Self-Runner、现有 State、Workspace，也不执行任何 Terraform/Azure/Fabric 实际操作。真正 OIDC/RBAC 与跨租户数据读取仍须单独验证。
