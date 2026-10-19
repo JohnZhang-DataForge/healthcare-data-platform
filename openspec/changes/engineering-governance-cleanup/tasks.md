@@ -9,12 +9,15 @@
 ## 2. 权威与入口清理
 
 - [x] 2.1 保留 19 个原文件，纠正 Engineering/README、documents/README、AGENTS 和 config 的 CURRENT 与导航；明确 **Change→OpenSpec，通用规则→Engineering**。
-- [ ] 2.2 将历史 G0–G7 实施计划、文档迁移审计标为历史记录，取消“唯一现行 G5/G6 Tasks”的误导；不修改旧验收事实。
-- [ ] 2.3 给 Legacy R2–R5 建立独立 `modernize-legacy-task-code` 待授权 Change，并把原 Refactor Plan 标为历史静态清单；不得触碰任何旧 ID 或部署。
+- [x] 2.2 将历史 G0–G7 实施计划、文档迁移审计标为历史记录，取消“唯一现行 G5/G6 Tasks”的误导；不修改旧验收事实。
+- [x] 2.3 给 Legacy R2–R5 建立独立 `modernize-legacy-task-code` 待授权 Change，并把原 Refactor Plan 标为历史静态清单；不得触碰任何旧 ID 或部署。
 - [x] 2.4 `PROJECT-STATUS.md` 仅汇总跨项目进度及两个已有 Change/待实施 Legacy Change；不复制具体实施 Tasks。
-- [ ] 2.5 复核开发生命周期、Session 与文档治理中所有“G5 尚未开始”“Current Change 为空”等过时 CURRENT；标记纯历史快照的时态，不篡改当时证据。
+- [x] 2.5 复核开发生命周期、Session 与文档治理中所有“G5 尚未开始”“Current Change 为空”等过时 CURRENT；标记纯历史快照的时态，不篡改当时证据。
 
 ## 3. 测试、合并与归档
+
+> 本次实施只更改文档与 OpenSpec；以下验收任务尚待真实 PR HEAD 的 CI 和 Main Merge，不提前声明 PASS。
+
 
 - [ ] 3.1 正式实施 PR 的所有适用 CI 对准确 HEAD SUCCESS（尤其 `require-trusted-change`、`validate-openspec`、相对链接检查）；检查 diff 仅限文档/OpenSpec。
 - [ ] 3.2 正式实施 PR 合并 Main 后，确认文件 19 份、相关 Change 的准确状态与必要的证据回填。
