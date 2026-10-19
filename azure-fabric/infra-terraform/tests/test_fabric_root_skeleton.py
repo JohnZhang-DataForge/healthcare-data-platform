@@ -17,6 +17,8 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
                 expected = {"versions.tf", "providers.tf"}
                 if component in ("workspace", "onelake"):
                     expected.update({"main.tf", "variables.tf", "outputs.tf"})
+                if component == "connection":
+                    expected.add("SCHEMA.md")
                 self.assertEqual(names, expected)
                 versions = (location / "versions.tf").read_text(encoding="utf-8")
                 self.assertIn('backend "azurerm" {}', versions)
@@ -73,6 +75,17 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
         self.assertEqual(variables.count("default = false"), 2)
         self.assertNotIn("role_assignment", main)
         self.assertNotIn('resource "fabric_notebook"', main)
+
+    def test_connection_schema_gate_blocks_unverified_resource(self):
+        location = ROOT / "connection"
+        schema = (location / "SCHEMA.md").read_text(encoding="utf-8")
+        self.assertIn("resource NOT implemented", schema)
+        self.assertIn("List Supported Connection Types API", schema)
+        self.assertIn("creation_method", schema)
+        self.assertIn("Service Principal", schema)
+        self.assertIn("Tenant A", schema)
+        self.assertIn("connection.tfstate", schema)
+        self.assertFalse((location / "main.tf").exists())
 
     def test_safety_documented(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
