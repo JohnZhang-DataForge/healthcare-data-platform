@@ -1,3 +1,5 @@
+name: Build Synthea Generator Image
+
 on:
   workflow_dispatch:
   pull_request:
