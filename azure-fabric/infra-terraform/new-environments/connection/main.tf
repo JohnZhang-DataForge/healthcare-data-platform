@@ -53,6 +53,7 @@ resource "fabric_connection" "azure_blob" {
         var.workspace_identity_verified
       ) : (
         var.key_vault_reference_verified &&
+        var.backend_operator_client_id != var.fabric_deployer_client_id &&
         var.blob_reader_client_id != null &&
         var.blob_reader_tenant_id == var.backend_tenant_id &&
         var.blob_reader_client_id != var.backend_operator_client_id &&
