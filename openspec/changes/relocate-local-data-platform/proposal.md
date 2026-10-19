@@ -14,6 +14,7 @@
 - 将尚未完成的 Python Import、Airflow/DAG GitSync、Docker COPY/构建上下文、Spark、Actions/Runner 及独立 E2E 的验证作为未完成任务，不声称此前已运行通过。
 - 标记 PR #225 当时的组件检查失败与运行切换风险，不隐瞒历史 Gate。
 - 修正必要的事实状态入口，使新 Agent 不再误判“业务源码尚未搬迁”。
+- **2026-10-18 用户新增批准的后续范围（计划，尚未清理）**：在新路径兼容验收中进行逐文件依赖清点；识别并分批移除已证实不再被当前业务、构建、CI、部署或有效回归测试使用的一次性 Shell、实验 Probe、过期测试/生成器及重复实现。删除不等于已完成；先证明可恢复、无有效间接依赖且测试保护不退化。
 
 ## Capabilities
 
@@ -30,5 +31,7 @@
 - 已改变（历史事实）：仓库 `apps/`、`airflow/`、`spark/`、`images/` 等本地业务根目录移动到 `local-data-platform/`；根目录 `scripts/quality/`、`tests/quality/` 移至 `.github/quality/`，根级这两个目录已退出 Main。
 - 已改变（历史事实）：`documents/` 的有效源码链接更新；仓库级 CODE Map 检查器和相关 CI/测试已适配。
 - **尚未证明**：生产/实验集群中运行的 DAG、GitSync、镜像及 Spark/PG/S3 全链路已适配新路径。目录内容 Blob 一致、文档链接 CI PASS 不等于运行 E2E PASS。
-- 本轮事后纳管 PR **只改 OpenSpec/事实性状态文档**；不执行构建、K8s、Airflow、Spark、PG、S3、Azure、Terraform，也不回放已经完成的批次。
+- 历史追溯建档 PR **只改 OpenSpec/事实性状态文档**；不执行构建、K8s、Airflow、Spark、PG、S3、Azure、Terraform，也不回放已经完成的批次。**当前清理方案 PR 亦仅改本 Active Change 的 Proposal/Design/Tasks，不删除源码或运行测试。** 后续删除必须独立审查和验证。
+- 最终 `local-data-platform/` 保留有效业务源码，以及业务构建、测试、Contract、部署和维护必需的工程文件；**不以“只剩业务 Python”为目标**。有效单测/合同/回归测试、可恢复性与安全门禁不能因为文件含 `taskNNN` 就删除。
+- 迁移前的独立 393 文件备份只覆盖固定历史 SHA；后续新增/改动文件删除前还需比对当前 Blob、核对 Git 历史的固定 Commit 和按需独立增量备份。业务记录、数据库对象与 GHCR 镜像 Digest 不因 Git 清理而自动可恢复。
 - OpenSpec Change Gate、PR 强制绑定、分支保护和合并后状态自动同步属于**下一轮独立治理修复**，不在本 Change 中悄悄启用。

@@ -26,18 +26,26 @@
 ## 4. 待完成：新路径兼容与运行验证（后续独立 PR）
 
 > 本轮追溯完成后，下一阶段仍须建立单独实施 PR。不得将已关闭的追溯建档任务视为迁移最终验收。
+>
+> **2026-10-18 方案扩展（用户确认）**：完成路径兼容的同时清理经证实无用的历史脚本、Probe、实验生成器、重复代码及失效测试；不删有效回归测试、不重构业务语义。**本方案更新 PR 不清理任何文件、不执行 Runtime**。实施次序：**4.1 → 4.8 → 4.2–4.4 → 4.9–4.10 → 4.5–4.7 → 5**；根据依赖先验证再删除。
 
-- [ ] 4.1 全量扫描并分类尚未修复的源码/工具运行路径，建立引用矩阵与缺失路径负向断言；包括 Python Import、Shell、Actions/Self-Runner、Airflow GitSync、Spark、Docker COPY、镜像生成器和部署配置。
+- [ ] 4.1 在新的 Main 完整 SHA 上重新清点 `local-data-platform/` **全部当前 tracked 文件**，以“**A Active Runtime / B Required Engineering / C Historical Only / D Obsolete-Duplicate / E Unknown**”逐文件分类，记录 Owner、Blob SHA、有效使用者、动态依赖、测试价值、去留及证据；另建立旧路径引用矩阵和缺失路径负向断言。检查 Python、Shell、Actions/Self-Runner、Airflow GitSync、Spark、Docker COPY/Context、镜像生成器、部署配置及文档导航。393 是迁移前备份数，**不得当作今天的实际数量**。
 - [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
-- [ ] 4.3 修 Docker COPY 与构建 Context、生成器和 immutable 镜像来源，完成真实干净构建及容器 Import/Smoke 验证，保存镜像 Digest。
+- [ ] 4.3 按镜像确定并记录 Build Context（优先以 `local-data-platform/` 为本地平台 Context，逐项审核例外）、Docker COPY、生成器和 immutable 镜像来源；保留无必要变化的容器 RUNTIME_ROOT / DAG / Batch 持久身份。完成绑定新 SHA 的真实 Clean Build、容器 `module.__file__` / Import/Entrypoint Smoke、旧来源负向验证，保存镜像 Digest。
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
-- [ ] 4.7 对所有修复结果进行受控接入、负向路径测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
+- [ ] 4.7 对所有修复与清理结果进行受控接入、负向路径/已删除源码依赖测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
+
+### 4A. 新增：业务无关历史文件清理（尚未实施）
+
+- [ ] 4.8 根据 4.1 逐文件清单提供“保留 / 候选删除 / HOLD”建议，查明每个候选的实际直接与间接消费者、现有测试覆盖和历史恢复路径；对比 [Healthcare-Specs 固定备份](https://github.com/JohnZhang-DataForge/Healthcare-Specs) 的 393 个旧 Blob 与当前 SHA，针对后续新增或修改的文件确认固定 Git 恢复 Commit 及按需独立增量备份。审计报告/证据绑定 SHA，未经验证一律 E=HOLD；**此步骤不删除任何文件**。
+- [ ] 4.9 在 4.2–4.4 适用兼容 Gate 通过后，按组件/依赖簇分批移除确认为 C/D 的历史 Shell、Probe、一次性生成器、重复旧实现；每一小 PR 同步受影响 CODE.md、导航、Workflow、生成器及不可变历史链接，记录恢复 SHA、证据和负向检查。A/B/E 禁删，历史 `taskNNN` 名字本身不构成删除理由。
+- [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
 ## 5. 结束条件（暂不归档）
 
-- [ ] 5.1 复核完整源码目录、文档、CI 和实际运行入口与验收证据，更新唯一项目状态文档和本 Tasks。
+- [ ] 5.1 复核清理后 `local-data-platform/` 仅保留当前业务及其必要的构建、测试、部署、Contract、安全/运维工程文件；C/D 已审计删除，E 有显式 HOLD 和理由，历史文件均有经核验的恢复引用；核查文档、CODE Map、CI、唯一源码/构建入口和实际运行验收证据，更新唯一项目状态文档和本 Tasks。
 - [ ] 5.2 核实无行为变化时维持 `skip_specs: true`；确实有可观察行为变化则另行讨论 Delta Spec/Change，不擅自写 Current Specs。
 - [ ] 5.3 满足适用回归与运行读回后再 Archive；保持与独立命名试点归档互不混淆。
 
