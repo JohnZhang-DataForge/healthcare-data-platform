@@ -66,6 +66,40 @@ healthcare-data-platform/
 5. 调试每同一问题最多三次尝试；未知结果、冲突、Writer UNKNOWN、不可重复的已完成 Batch = HOLD 并记录 PR/HEAD/Run/症状与安全 Next。
 6. 实际源码/运行验收之后才更新 Current Specs（如行为有可证明变更）和 Archive；当前 `skip_specs: true` 因此 Change 只跟踪路径结构与不变性要求。
 
+### 4A. 后续扩展：源文件清点、历史清理和路径一致性（2026-10-18 已批准的实施目标；本方案 PR 尚未实施）
+
+**目标**：将 `local-data-platform/` 从历史 Task/Step 过程文件集合，整理为能从当前 Git 主线独立构建、测试和部署的本地业务平台。保留有效业务代码以及真实需要的 Contracts、SQL、镜像、K8s 模板、正式运维脚本与**有效自动化测试**；不建立仓库内第二个 `archive/` 或历史代码镜像目录。此项只清理经证据证明无用的文件，**不**包含业务逻辑改写、`task004` 业务模块统一重命名、公共接口抽取、PG 持久化接口或 DAG ID 改名，后者仍属 `modernize-legacy-task-code` 独立 Change。
+
+**1. 可重现清点与逐文件决策**
+
+以审计启动当天的 Healthcare Main 完整 SHA 和 `git ls-files local-data-platform/` **重新计算实际文件总数**；设计中的 **393** 只是迁移前固定备份清单，不能冒充现行文件数。为全部当前 tracked 文件建立可审计矩阵；每行至少包括：相对路径、组件 Owner、当前 Blob SHA、类别、用途、直接/动态消费者、相关 Workflow/Docker/DAG/Spark/K8s/测试、是否有活跃回归价值、备份/恢复 Commit、建议动作、未决风险、证据链接。分类：
+
+| 类别 | 判定 | 处置 |
+| --- | --- | --- |
+| **A — Active Runtime** | 实际 DAG、Spark、Writer、Producer、容器入口或受控运行依赖（含动态模板/间接引用） | 保留并修复迁移路径；不可直接删除 |
+| **B — Required Engineering** | 当前 Build、CI、Unit/Contract/Regression Test、部署、Contract、Schema、恢复与安全 Gate 真正需要 | 保留；测试因历史文件名不自动删除 |
+| **C — Historical Only** | 一次性 Task/Step、旧验收/Probe/临时生成器，确认不再有当前消费者且不承担独有回归保护 | 具备恢复及负向证明后按组件小批量删除 |
+| **D — Obsolete / Duplicate** | 已被正式实现替代、重复、失效且无有效调用者 | 有替代/无引用证据和回归保护后小批量删除 |
+| **E — Unknown** | 间接引用、运行路径、动态调用或历史兼容仍不确定 | **HOLD**，不得凭 grep 无匹配就删除 |
+
+排查不仅是静态字符串：还须检查 GitHub Actions/Self-Runner 的 `working-directory` / `paths` / `checkout` 与固定 SHA、构建调用和生成器、Docker `COPY` 和基础镜像、Airflow GitSync/DagBag、SparkApplication、SQL/Secret/RBAC、Python 动态导入、容器 Entrypoint 及 CODE.md/Contract 引用。区分**部署/维护中的当前入口**和**只用于复现历史 Run 的冻结入口**，历史文件可恢复不等于应保留在 Main。
+
+**2. 路径与镜像构建策略**
+
+明确三层：`REPOSITORY_ROOT` = 仓库；`PLATFORM_ROOT` = `local-data-platform/`；`RUNTIME_ROOT` = 镜像/Pod 内由已验收协议定义的真实路径，三者不得机械相等。推荐在逐个镜像审计验证后，将**本地 DP 镜像 Build Context 统一选择为 `local-data-platform/`**，使 `COPY apps/...` / `COPY spark/...` 等路径相对于 Platform Root；实际 Workflow 的 `context`、Dockerfile 相对位置和 COPY 可访问文件必须逐项验证。若某镜像依赖仓库级输入则登记受控例外，**不得在核对前批量重写 COPY**。容器内 `/opt/task004/`、`/data/spark/healthcare-data-platform/`、`PYTHONPATH`、XCom、DAG ID 与数据持久化身份均以现行兼容性为先，不为 Git 目录美观而更改。
+
+Clean Build 必须来自明确的 Healthcare SHA、唯一源码根和审定 Context；区分复用 Digest-pinned **旧基础镜像**的业务兼容性与由新源码真实打包的目标模块来源。检查 `module.__file__`、Entrypoint、镜像 Digest；做“旧仓库根业务路径不存在/不意外可导入”和“被删除文件不再被有效 Build/DAG/Workflow 引用”的负向断言。原有镜像 Digest 作为历史证据保留。
+
+**3. 清理执行与退出门槛**
+
+- **先审计，后兼容修复，再按组件/依赖簇删除**。先完成影响范围、备份增量检查及适用静态/单测/Contract；对 C/D 清理使用小 PR，不允许一次性批量删除所有 `scripts/taskNNN/` 或 `tests/taskNNN/`。A/B/E 不删除，除非另行证实并变更分类。
+- 每次拟删除的文件须附当前 SHA、被移除的调用链或替代入口、证明没有剩余消费者的方法、被其覆盖的有效测试是否迁入正式测试、受影响 `CODE.md` / 导航 / Workflow / 生成器 / CI 更新情况、恢复引用。涉及生成器的，必须核对重生成是否会复活旧文件/旧路径。遗留文档若需继续引用历史文件，转为经校验的冻结 Git Commit 链接而非失效的 Main 路径。
+- 删除前核对独立私有备份覆盖的准确 Blob：迁移前 393 份只证明备份基线；基线后新增/修改的文件需提供不可变 Git 恢复 Commit，并按风险保存独立增量备份；不得把 Git 目录恢复等同于 PG、S3、K8s 回滚。历史证据绝不覆盖或改写。
+- 删除后的验证至少包括：全仓依赖/失效路径检查、组件 CODE Map、Markdown Links、CI/单测/Contract、Clean Docker Build 与容器内导入；DAG Parse/GitSync 和 Spark 配置/来源检查。再按照原 Task 4.5–4.7 经**单独授权**完成受控 Runtime/E2E 和读回。不能用旧 Batch 的历史 PASS 冒充新 SHA 验收。
+- 每轮 PR 说明 Remove / Keep / HOLD 结论及验证等级，无法证明安全的文件留待后续，不能以“清理率”替代功能等价性。连续三次同类失败或未知 Writer 状态按既有规则 HOLD。
+
+**实施次序**：Task **4.1 → 4.8（审计和备份决策）→ 4.2–4.4（兼容与 Build/DAG/Spark）→ 4.9–4.10（分批清理和测试质量）→ 4.5–4.7（隔离/授权后的 E2E）→ 5（核验归档）**。某删除 PR 的受影响镜像/测试如无法在当时验证，须先 HOLD 而非等到末尾一起冒险清理。实际审计结果以未来对应 PR 和固定 SHA 的报告为准，本文不预判可删除文件数。
+
 ### 5. 回退边界
 
 - 源码：由独立 Git 备份与固定 SHA 恢复；不将历史源码重放到生产部署视为自动安全操作。
