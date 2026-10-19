@@ -47,7 +47,7 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
     for name in DENIALS:
         match = re.search(
             r'variable "' + re.escape(name) +
-            r'"\\s*\\{[^}]*?\\bdefault\\s*=\\s*(true|false)', variables, re.S
+            r'"\s*\{[^}]*?\bdefault\s*=\s*(true|false)', variables, re.S
         )
         if match is None or match.group(1) != "false":
             raise ValueError("default-deny approval missing: " + name)
@@ -65,14 +65,14 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         raise ValueError("required domain must be explicit")
     if 'output "connection_id"' not in outputs or 'fabric_connection.azure_blob.id' not in outputs:
         raise ValueError("connection ownership output missing")
-    if len(re.findall(r'(?m)^resource\\s+"', main)) != 1:
+    if len(re.findall(r'(?m)^resource\s+"', main)) != 1:
         raise ValueError("unexpected resource count")
     for source in (main, variables, outputs):
-        if re.search(r'(?m)^\\s*(data|module|import|removed|moved|provisioner)\\s+["{]', source):
+        if re.search(r'(?m)^\s*(data|module|import|removed|moved|provisioner)\s+["{]', source):
             raise ValueError("non-owned Terraform construct found")
-        if re.search(r'\\b(?:client_secret_wo|client_secret|access_key|sas_token|local-exec)\\b', source):
+        if re.search(r'\b(?:client_secret_wo|client_secret|access_key|sas_token|local-exec)\b', source):
             raise ValueError("secret value, access-key or execution bypass found")
-    if re.search(r'(?m)^\\s*default\\s*=\\s*true\\s*$', variables):
+    if re.search(r'(?m)^\s*default\s*=\s*true\s*$', variables):
         raise ValueError("default true must never silently enable creation")
 
 
@@ -110,8 +110,8 @@ class ConnectionRootTests(unittest.TestCase):
         for name in DENIALS:
             with self.subTest(name=name), self.assertRaises(ValueError):
                 text = re.sub(
-                    r'(variable "' + re.escape(name) + r'"\\s*\\{[^}]*?default\\s*=\\s*)false',
-                    r'\\g<1>true', self.variables, count=1, flags=re.S
+                    r'(variable "' + re.escape(name) + r'"\s*\{[^}]*?default\s*=\s*)false',
+                    r'\g<1>true', self.variables, count=1, flags=re.S
                 )
                 audit_source(self.main, text, self.outputs)
 
