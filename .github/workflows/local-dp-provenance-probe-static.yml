@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/local-dp-provenance-probe-static.yml"
       - "local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh"
+      - "local-data-platform/tests/quality/test_readonly_provenance_probe.py"
       - "openspec/changes/relocate-local-data-platform/**"
 
 permissions:
@@ -34,3 +35,11 @@ jobs:
           print('PROBE_SOURCE_GUARD=PASS')
           print('KUBERNETES_ACCESS=NOT_PERFORMED')
           PY
+
+      - name: Verify opt-in collector with fake kubectl (never reaches cluster)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s local-data-platform/tests/quality \
+            -p 'test_readonly_provenance_probe.py' -v
