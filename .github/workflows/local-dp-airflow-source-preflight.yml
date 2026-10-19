@@ -37,7 +37,7 @@ jobs:
               for node in ast.walk(tree):
                   if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
                       module = node.module.split(".")[0]
-                      if not (module in names or module in {"airflow", "datetime", "pathlib", "typing", "collections", "functools", "itertools", "json", "sys", "os", "re", "hashlib", "time", "logging", "uuid", "decimal", "copy", "dataclasses", "base64", "urllib", "subprocess", "tempfile", "math", "csv"}):
+                      if not (module in names or module in {"__future__", "airflow", "datetime", "pathlib", "typing", "collections", "functools", "itertools", "json", "sys", "os", "re", "hashlib", "time", "logging", "uuid", "decimal", "copy", "dataclasses", "base64", "urllib", "subprocess", "tempfile", "math", "csv"}):
                           imports.append(module)
               if imports:
                   failures.append(f"{path}:UNRECOGNIZED_IMPORTS:{','.join(sorted(set(imports)))}")
