@@ -1,7 +1,14 @@
-name: Build TASK004 Runtime Image
-
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-task004-runtime-image.yml"
+      - "local-data-platform/images/task004-runtime/**"
+      - "local-data-platform/tests/task004/test_unified_runtime_image_source.py"
+      - "local-data-platform/scripts/task004/**"
+      - "local-data-platform/apps/task004/**"
+      - "local-data-platform/kubernetes/manifests/task004/**"
+      - "local-data-platform/spark/**"
 
 permissions:
   contents: read
@@ -12,7 +19,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-source:
+    name: TASK004 source tests (no publish)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Validate canonical runtime sources without executing legacy generator
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd local-data-platform
+          bash -n images/task004-runtime/entrypoint.sh
+          for script in \
+            scripts/task004/04c-run-synthea-generate-publish.sh \
+            scripts/task004/05c-resolve-runtime-lineage.sh \
+            scripts/task004/05d-run-person-canonical.sh \
+            scripts/task004/05e-run-visit-canonical.sh \
+            scripts/task004/05f-reconcile-person-visit.sh; do
+            bash -n "$script"
+          done
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s tests/task004 \
+            -p 'test_unified_runtime_image_source.py' \
+            -v
+          echo "TASK004_RUNTIME_SOURCE_GATE=PASS"
+
+
   build-and-push:
+    if: github.event_name == 'workflow_dispatch'
     name: Build and push TASK004 runtime
     runs-on: ubuntu-latest
 
