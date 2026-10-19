@@ -1,7 +1,7 @@
 # Fabric new-environment Terraform roots — SCAFFOLD ONLY
 
 These three roots are isolated from the legacy seven Terraform roots in `components/`.
-`workspace/` and `onelake/` contain guarded `fabric_workspace` and `fabric_lakehouse` resources respectively. `connection/` still has **no resources or modules**. Both creation approval flags default to false; Lakehouse also requires an independently verified Workspace ID and schema-enabled creation. These flags are not live inventory. `prevent_destroy` guards both resources against accidental deletion.
+`workspace/`, `onelake/`, and `connection/` now declare separate, default-deny `fabric_workspace`, `fabric_lakehouse` and `fabric_connection` resources respectively. Connection uses only a verified schema and an existing Key Vault secret reference or explicitly reviewed Workspace Identity; no secrets are accepted by this Root. All resource creation approval flags default to false; Lakehouse additionally requires an independently verified Workspace ID and schema-enabled creation. Connection separately requires existing-connection inventory, supported AzureBlobs metadata, verified account/domain, Reader RBAC and its chosen credential mode. These flags are not live inventory. `prevent_destroy` guards both resources against accidental deletion.
 The Backend `azurerm` blocks are partial configurations; the approved offline
 `tools/fabric_backend_config.py` determines the unique `fabric/<env>/<component>.tfstate`
 key for each root. A Backend key string does not prove State vacancy or RBAC isolation.
@@ -14,5 +14,4 @@ remote-state inventory, explicit approval and live resource ownership gates.
 Authentication boundary: ARM_* is for the existing Storage Tenant A backend;
 FABRIC_* is for the new Fabric Tenant B. These must not be aliased. Existing
 Self-Runner `azure-infra.yaml`, existing `dev/*.tfstate`, Workspaces and
-`johnzhang/landing` are untouched. Connection resource schema is not yet
-verified. Notebook and Pipeline remain reserved for fabric-cicd.
+`johnzhang/landing` are untouched. Connection v1.13 schema has been verified **offline**, not against the live Fabric tenant. Notebook and Pipeline remain reserved for fabric-cicd. New `connection/SCHEMA.md` describes the secret-free Key Vault reference and gated Workspace Identity choices.
