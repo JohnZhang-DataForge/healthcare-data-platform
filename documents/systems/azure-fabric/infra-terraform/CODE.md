@@ -65,3 +65,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [fabric_deployment_target.py](../../../../azure-fabric/infra-terraform/tools/fabric_deployment_target.py)：使用已验证环境 JSON 和明确区分的 Tenant A Backend / Tenant B Fabric 客户端 UUID，生成无副作用的 Backend State Key 与部署摘要；**不运行 Terraform、不使用 OIDC Token，也不访问云端**。
 - [test_fabric_deployment_target.py](../../../../azure-fabric/infra-terraform/tests/test_fabric_deployment_target.py)：覆盖跨租户/同租户独立主体、身份不匹配、共用身份、旧 State Key 和 Secret 字段拒绝。
 - 此工具不是 Terraform Backend 的真实初始化器；OIDC federated credentials、RBAC、State 是否已被使用以及远端 Workspace 存在性仍未验证。
+
+## 新环境 AzureRM Backend 参数离线生成（Task 2.1 第一批）
+
+- [fabric_backend_config.py](../../../../azure-fabric/infra-terraform/tools/fabric_backend_config.py)：基于已验证身份和新环境，逐组件生成 `johnzhang/tfstate` 的 `fabric/<env>/<component>.tfstate` 后端参数预览；不写文件、不执行 Terraform、不会访问 Remote State。
+- [test_fabric_backend_config.py](../../../../azure-fabric/infra-terraform/tests/test_fabric_backend_config.py)：检验三 Root 独立 Key、跨环境隔离、拒绝旧 State、非授权组件、错误 Storage、Secret/输出注入。
+- **实施边界**：后续仍需独立 Terraform Root 和受控执行 Workflow；此处没有实际初始化 Backend 或验证真实 State 不存在。
