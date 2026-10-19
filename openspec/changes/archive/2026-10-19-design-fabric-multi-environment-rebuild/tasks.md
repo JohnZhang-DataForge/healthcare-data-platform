@@ -11,4 +11,4 @@
 
 ## 2. Closeout
 
-- [ ] 2.1 设计 PR 合并后记录准确 PR/Merge SHA；文档交付完成后按治理规则独立审查 Archive，不创建尚未实现的 Current Specs。
+- [x] 2.1 设计 PR [#244](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/244) 已于 2026-10-19 Squash Merge Main `efda4df4bb6a1d7c2163c06b6c8de2a77eaa234b`；精确 PR HEAD `091e2a0587959637db002c9472049303bde720ca` 的 OpenSpec Static Validation `39276328160`、Change Gate `39276327906`、Documentation Relative Links `39276328073` 均 SUCCESS，主分支 Required Merge Gate 通过。无 Terraform / Fabric / Runner Runtime 操作。本独立 Archive PR 仅迁移这个纯设计 Change 的 4 个文件，保留后续实施为未完成的独立 Change；合并后 Archive 才正式生效。

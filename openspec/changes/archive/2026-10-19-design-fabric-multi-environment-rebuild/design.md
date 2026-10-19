@@ -4,7 +4,7 @@
 
 用户已确认 **方案 B：Terraform + GitHub Actions + fabric-cicd**，目标为“有效新 Fabric 账号/容量准备好之后，使用同一份源码和固定的 Azure Blob，一次受控部署就恢复 Fabric 分析环境”。仓库当前只拥有失败保护 Bootstrap Terraform 和 Plan-only 历史证据，不能把设计当作已验证能力。
 
-长期权威设计：[Fabric Multi-Environment Rebuild Design](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；现状请以 [Terraform Architecture](../../../documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md) 和 [Project Status](../../../documents/engineering/status/PROJECT-STATUS.md) 为准。本 Change 不复制完整架构或创建另一份开发任务总账。
+长期权威设计：[Fabric Multi-Environment Rebuild Design](../../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；现状请以 [Terraform Architecture](../../../../documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md) 和 [Project Status](../../../../documents/engineering/status/PROJECT-STATUS.md) 为准。本 Change 不复制完整架构或创建另一份开发任务总账。
 
 ## Decisions
 
