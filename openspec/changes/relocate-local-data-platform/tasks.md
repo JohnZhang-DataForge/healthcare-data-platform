@@ -44,6 +44,8 @@
 - [ ] 4.3 按镜像确定并记录 Build Context（优先以 `local-data-platform/` 为本地平台 Context，逐项审核例外）、Docker COPY、生成器和 immutable 镜像来源；保留无必要变化的容器 RUNTIME_ROOT / DAG / Batch 持久身份。完成绑定新 SHA 的真实 Clean Build、容器 `module.__file__` / Import/Entrypoint Smoke、旧来源负向验证，保存镜像 Digest。
 > **4.3 TASK004 Runtime 独立小批次（2026-10-19，PR 待验证）**：构建 Context 改为 `local-data-platform/`，镜像及 Shell COPY 源码按原 Platform Root 保持，静态源码检查不再执行过时的 `06a-prepare-unified-runtime-image.sh`（该脚本会覆盖 Workflow/Test/Dockerfile）。为防止 feature/main Push 自动发布 GHCR，将此 Runtime Workflow 暂定`workflow_dispatch` 或安全的 `pull_request` 源码测试（发布 Job 仅手动）；没有授权 Dispatch。PR 仅 Draft，Clean Build/Digest/Smoke 未验证。详见 `evidence/LOCAL-DP-TASK004-RUNTIME-CONTEXT-20261019.md`；4.3 继续 OPEN，4.9 HOLD。
 
+> **4.3 隔离 Clean Build 验证（2026-10-19，实施中）**：新增独立 GitHub PR Workflow 对 Synthea 与 TASK004 Runtime 进行 `--pull --no-cache`、`--network none` Entrypoint 非业务 Smoke、COPY 来源检查与本地 Image ID 记录；禁止镜像 Push / GHCR Login / K8s / PG / S3。此前静态 CI 和源码单测 PASS 不等于此项 PASS；须依据当前 PR HEAD 的实际两个 Job 结果逐个更新，失败按三轮 HOLD。见 [隔离构建验证](evidence/LOCAL-DP-ISOLATED-IMAGE-BUILD-20261019.md)。
+
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
