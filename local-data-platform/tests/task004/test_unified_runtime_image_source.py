@@ -343,6 +343,21 @@ class UnifiedRuntimeImageSourceTests(
         )
 
 
+    def test_workflow_builds_from_platform_root_without_legacy_generator(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("context: ./local-data-platform", text)
+        self.assertIn(
+            "file: ./local-data-platform/images/task004-runtime/Dockerfile",
+            text,
+        )
+        self.assertIn("cd local-data-platform", text)
+        self.assertNotIn(
+            "bash scripts/task004/06a-prepare-unified-runtime-image.sh",
+            text,
+        )
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("\n  push:\n", text)
+
     def test_workflow_tracks_reconciliation_sources(self):
         text = WORKFLOW.read_text(
             encoding="utf-8"
@@ -350,8 +365,7 @@ class UnifiedRuntimeImageSourceTests(
 
         for path in (
             "05f-reconcile-person-visit.sh",
-            "reconcile_person_visit.py",
-            "person-visit-reconciliation.yaml.tpl",
+            "local-data-platform/spark/**",
         ):
             self.assertIn(
                 path,
