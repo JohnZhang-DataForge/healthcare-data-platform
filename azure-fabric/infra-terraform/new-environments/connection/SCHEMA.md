@@ -17,3 +17,8 @@ Microsoft List Supported Connection Types API: https://learn.microsoft.com/en-us
 5. Revisit actual published Provider schema and available official examples for the pinned version before attempting a non-offline `terraform validate`, `init`, `plan` or `apply`.
 
 The current connection root intentionally contains just `providers.tf` and `versions.tf`. **Never invent connector creation parameters or use anonymous access as a substitute for Blob Reader.**
+
+## Offline tenant metadata contract (next slice)
+
+- [Validator](../../tools/fabric_connection_metadata.py) and [tests](../../tests/test_fabric_connection_metadata.py) accept a saved response from the [List Supported Connection Types API](https://learn.microsoft.com/en-us/rest/api/fabric/core/connections/list-supported-connection-types). The tool requires explicit type, creation_method and credential_type, rejects incomplete pagination, and outputs the declared parameter names; it **does not query the tenant or approve a deployment**.
+- All example tests use an intentionally fictitious connector type; actual Azure Blob creation parameters are not inferred. Subsequent authorized metadata acquisition must protect tokens and personal details; do not commit an unreviewed live payload or credentials.

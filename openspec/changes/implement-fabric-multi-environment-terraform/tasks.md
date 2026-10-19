@@ -62,3 +62,9 @@
 - 查阅 Microsoft Fabric Provider 1.13.x 官方 `fabric_connection` Schema 与 Fabric Connections REST API：确认资源及 Cloud/ServicePrincipal 顶层结构确实支持，且 Provider 部署身份不等于 Blob 数据源身份。
 - `new-environments/connection/SCHEMA.md` 冻结资源定义前的阻断条件：目标 Tenant 的 Connector type/creation_method/parameters、Service Principal 或 Workspace Identity 凭据兼容性、原有连接库存与 Blob Reader 权限均待核实。
 - 新增静态测试，强制该 Root 继续没有 `main.tf` 或 `fabric_connection` Resource，避免使用推测参数和 Secret 产生貌似可部署的代码。本次未进行租户 API 调用、Terraform Init/Plan/Apply/Destroy，**2.4 保留未完成**。
+
+## Task 2.4 第二批：离线 Supported Connection Types 元数据检查
+
+- 新增 `tools/fabric_connection_metadata.py`：使用**预先取得的**官方 `supportedConnectionTypes` JSON 响应，按显式给定的 connector type、creation method、credential type 检查支持情况，并提取参数名称及是否必填。拒绝未处理分页、重复或不完整元数据、未经支持的 ServicePrincipal/WorkspaceIdentity，不推断 Blob connector 的具体值。
+- 新增 Python 单测并接入 Fabric Preflight CI。单测只使用虚构连接类型作为模拟输入，不代表真实 Tenant 支持该类型。
+- 该工具不请求访问令牌、不会调用 Fabric API，也不处理真实 Secret。目标 Tenant 元数据、云端 Reader 凭据及 RBAC 尚未验证，`fabric_connection` 资源继续保持未实现；2.4 不勾选。
