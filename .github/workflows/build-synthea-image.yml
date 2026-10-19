@@ -2,17 +2,14 @@ name: Build Synthea Generator Image
 
 on:
   workflow_dispatch:
-
-  push:
-    branches:
-      - main
+  pull_request:
     paths:
       - ".github/workflows/build-synthea-image.yml"
-      - "images/synthea/**"
-      - "apps/task004/validate_generated_synthea_batch.py"
-      - "contracts/synthea/v3.3.0/csv-contract.json"
-      - "scripts/task004/01-prepare-synthea-generator-image-source.sh"
-      - "tests/task004/test_synthea_generator_image_source.py"
+      - "local-data-platform/images/synthea/**"
+      - "local-data-platform/apps/task004/validate_generated_synthea_batch.py"
+      - "local-data-platform/contracts/synthea/v3.3.0/csv-contract.json"
+      - "local-data-platform/tests/task004/test_synthea_ghcr_workflow.py"
+      - "local-data-platform/tests/task004/test_synthea_generator_image_source.py"
 
 permissions:
   contents: read
@@ -23,7 +20,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-source:
+    name: Synthea source and contract tests (no publish)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run source and contract tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd local-data-platform
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/task004 -p 'test_synthea_ghcr_workflow.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/task004 -p 'test_synthea_generator_image_source.py' -v
+
   build-and-push:
+    if: github.event_name == 'workflow_dispatch'
     name: Build and push Synthea image
     runs-on: ubuntu-latest
 
@@ -63,8 +76,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./images/synthea/Dockerfile
+          context: ./local-data-platform
+          file: ./local-data-platform/images/synthea/Dockerfile
           platforms: linux/amd64
           push: true
           pull: true
