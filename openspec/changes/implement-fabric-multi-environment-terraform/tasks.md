@@ -46,3 +46,8 @@
 - 在 `azure-fabric/infra-terraform/new-environments/{workspace,onelake,connection}/` 新建独立 Root：各自配置受版本约束的 `microsoft/fabric` Provider、Fabric OIDC 和 Partial `azurerm` Backend，**没有 Terraform Resource、Module、Data Source 或执行入口**。
 - 新增非部署 README 和 fail-closed 的 Root 静态结构单元测试；扩展原有 Fabric Preflight CI 触发路径。
 - 禁止使用旧 `components/` 的 `dev` State、不复用 Self-Runner 单租户 Workflow；实际 Backend Init/Provider 验证、Workspace/Lakehouse/Connection 实施仍未授权。**2.1 未整体完成**。
+
+## Task 2.2 Workspace 第一批（PR 审查中）
+
+- 新环境 workspace 资源定义加入显式创建允许开关，默认为 false；明确 HDP 环境命名、Capacity UUID、prevent_destroy 和输出 Workspace ID。
+- 尚未进行真实资源存在性检查、State inventory、认证或 Terraform Plan/Apply。审批开关不构成资源不存在的证明，2.2 继续保留未完成。
