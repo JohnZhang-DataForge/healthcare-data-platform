@@ -6,7 +6,7 @@
 
 ## Identity and state isolation
 
-Backend 身份属于旧 Storage 的 Entra Tenant A，仅允许读取/写入被明确批准的新 `fabric/<env>/...` State Key；Fabric Provider 部署身份属于目标 Tenant B，只在新 Workspace/Capacity/Lakehouse/Connection 权限域内使用。避免以共享的 `AZURE_TENANT_ID` 同时承担两者；通过显式且可审核的独立 Provider/Backend 配置和 GitHub OIDC 权限映射实施。Backend 的 Blob RBAC 可能需要容器级授予，不能把 key 前缀当作天然的 Azure RBAC 隔离边界。
+Backend 身份访问现有 Storage 的 Entra Tenant A；Fabric Provider 部署身份使用目标 Fabric Tenant（当前同为 A，未来可以为 B）。当前实际配置是 **A→A′（同一 Tenant，不同用户；自动化仍须独立的应用身份）**，未来保留 **A→B（不同 Tenant）**。本项目不得把两个不同用户误判为两个 Tenant。独立环境代码不得写死两 Tenant 相等或不等。Backend 仅允许使用明确批准的 `fabric/<env>/...` State Key；Fabric 身份只在授权的 Workspace/Capacity/Lakehouse/Connection 权限域中使用。避免以共享的 `AZURE_TENANT_ID` 同时承担两者；通过显式且可审核的独立 Provider/Backend 配置和 GitHub OIDC 权限映射实施。Backend 的 Blob RBAC 可能需要容器级授予，不能把 key 前缀当作天然的 Azure RBAC 隔离边界。
 
 ## Ownership
 
@@ -32,3 +32,9 @@ Backend 身份属于旧 Storage 的 Entra Tenant A，仅允许读取/写入被�
 ## Out of scope
 
 不实现 Notebook/Pipeline fabric-cicd、自动 Apply、Blob 批次发布、业务 E2E、跨租户真实连通测试以及旧 Workspace 清理。
+
+## Verified topology correction (2026-10-19)
+
+- Entra Default Directory ID `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a` was confirmed by user-provided Azure Portal screenshot and matches `az account show`; the secondary `johnzhang-fabric` user was created inside the same directory. This establishes the current **same-tenant** topology, not separate application/service-principal credentials.
+- Offline Preflight now labels same Tenant IDs `same-tenant` and differing IDs `cross-tenant`, without rejecting either. `fabric_deployment_target` continues to reject identical Backend/Fabric **client application IDs** and identity–environment tenant mismatch. User IDs are not Client IDs.
+- Live OIDC federation, Service Principal creation, Container RBAC, Fabric permissions and remote-state inventory remain outside this static change. Cross-tenant data access is a separate runtime acceptance gate, not implied by a passing profile.
