@@ -41,6 +41,15 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 这些 Bootstrap 文件不属于未来 `azure-fabric/workspaces/healthcare-omop/notebooks/` 或 `pipelines/` 中的 Fabric Git 原生业务 Item。后者由 [Notebooks CODE](../notebooks/CODE.md) 和 [Pipelines CODE](../pipelines/CODE.md) 负责；未来真实 Item 的 `.platform` 元数据和 Terraform 交付权属必须先完成审查。
 
+## Fabric 多环境离线 Preflight（新增静态工具，不接触云资源）
+
+- [fabric_environment_preflight.py](../../../../azure-fabric/infra-terraform/tools/fabric_environment_preflight.py)：纯本地验证新 Fabric 环境 JSON、禁止旧 `dev` State Key / 旧 Workspace 冲突、输出隔离的 `fabric/<environment>/<component>.tfstate` 目标；**不运行 Terraform，不访问 Azure/Fabric**。
+- [fabric-environment.example.json](../../../../azure-fabric/infra-terraform/environments/fabric-environment.example.json)：故意包含无效占位符的非部署示例；真实配置不提交 Git，Secret 永远由受保护变量提供。
+- [test_fabric_environment_preflight.py](../../../../azure-fabric/infra-terraform/tests/test_fabric_environment_preflight.py)：标准库 Unit Tests，覆盖合法和失败输入、状态隔离、敏感字段阻断。
+- [新账号人工前置 Runbook](../../../engineering/operations/FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md)：Tenant/Capacity/RBAC/OIDC/Blob Reader 的手工工作和旧 Workspace 安全处理。
+
+**本轮代码不修改上方七个 Terraform Root 或正式 Self-Runner `azure-infra.yaml`，并不意味着跨租户 IaC 已可使用。** 后续独立 Change 才能将 Preflight 接入受控 Deployment Workflow。
+
 ## 重要配置和权限入口
 
 - [Storage IAM](../../../../azure-fabric/infra-terraform/modules/storage/iam.tf) 与 [Workspace IAM](../../../../azure-fabric/infra-terraform/modules/workspace/iam.tf)：Blob 数据权限、Workspace 成员权与 Azure 管理平面权限必须分别核对。
