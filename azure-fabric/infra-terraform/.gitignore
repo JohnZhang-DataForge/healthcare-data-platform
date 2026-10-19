@@ -10,3 +10,7 @@
 **/environments/*secret*.tfvars
 **/environments/*.auto.tfvars
 !**/.terraform.lock.hcl
+
+# Keep per-environment JSON profiles out of Git unless intentionally a placeholder example.
+/environments/*.json
+!/environments/*.example.json
