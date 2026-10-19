@@ -84,3 +84,10 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [Connection 安全和 Provider v1.13.0 Schema](../../../../azure-fabric/infra-terraform/new-environments/connection/SCHEMA.md)：冻结 `AzureBlobs/AzureBlobs` 和 `account/domain`，要求库存、domain、Blob Reader 权限、Reader/Fabric/Backend 三身份以及手工审批。所有审批默认 false；`prevent_destroy` 和不跳过真实连接测试。凭据值不进入 HCL/State 输入。
 - [Connection Root 离线测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_connection_root.py) 和 [独立 Root 测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_root_skeleton.py)：静态守门/错误回归，经 [Fabric Environment Preflight CI](../../../../.github/workflows/fabric-environment-preflight.yml) 执行。
 - **状态**：仅在活跃 OpenSpec `implement-fabric-multi-environment-terraform` 内实现本次源码。未实测 Provider Init/Plan/Apply、Remote State、Fabric Connection 库存、Reader RBAC/OIDC、跨租户 WorkspaceIdentity；新 Root 不连接旧 `dev/*.tfstate`，与 Self-Runner 旧工作流独立。不得把源码声明视为真实 Azure/Fabric 资源。
+
+## Task 2.5 离线 CI 与 Runbook 安全收口（未完成真正部署验收）
+
+- [Fabric Preflight Workflow](../../../../.github/workflows/fabric-environment-preflight.yml)：在 GitHub-hosted runner 使用 Terraform 1.13.0 **仅执行 `fmt -check -diff`** 检查 Connection HCL；单元测试独立检查该 Workflow 不能调用 Init/Plan/Apply/Destroy 或云端命令。不下载 Fabric Provider，不获取 OIDC Token 或访问 Remote State。
+- [离线 CI 防越权测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_ci_offline.py)：阻止在 Preflight Workflow 中加入带云端副作用的 Terraform/Azure/Fabric 操作。
+- [新账号 Bootstrap Runbook](../../../engineering/operations/FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md#2a-task-2425connection-凭据与上线前最小证据清单目前-hold)：整理三身份、AzureBlobs 参数、Key Vault 引用、State/Connection 库存、准入与停止条件，真实云端核验仍需独立授权。
+- **仅通过格式/静态检查不得把 OpenSpec 2.1–2.5 标记为已真正部署**；旧 Self-Runner `azure-infra.yaml` 完全不涉及本轮。
