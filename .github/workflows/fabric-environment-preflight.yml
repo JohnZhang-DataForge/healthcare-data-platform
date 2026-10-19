@@ -1,0 +1,41 @@
+name: Fabric Environment Preflight (Offline)
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_environment_preflight.py'
+      - 'azure-fabric/infra-terraform/environments/fabric-environment.example.json'
+      - '.github/workflows/fabric-environment-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-environment-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python for preflight tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate preflight unit tests
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_environment_preflight.py' -v
+      - name: Confirm example is deliberately non-deployable
+        run: |
+          set -euo pipefail
+          if python3 azure-fabric/infra-terraform/tools/fabric_environment_preflight.py \
+             --config azure-fabric/infra-terraform/environments/fabric-environment.example.json; then
+            echo "::error::Example must FAIL until placeholder IDs are configured."
+            exit 1
+          fi
+          echo "EXAMPLE_FAIL_CLOSED=PASS"
