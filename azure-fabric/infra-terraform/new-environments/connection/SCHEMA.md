@@ -22,3 +22,7 @@ The current connection root intentionally contains just `providers.tf` and `vers
 
 - [Validator](../../tools/fabric_connection_metadata.py) and [tests](../../tests/test_fabric_connection_metadata.py) accept a saved response from the [List Supported Connection Types API](https://learn.microsoft.com/en-us/rest/api/fabric/core/connections/list-supported-connection-types). The tool requires explicit type, creation_method and credential_type, rejects incomplete pagination, and outputs the declared parameter names; it **does not query the tenant or approve a deployment**.
 - All example tests use an intentionally fictitious connector type; actual Azure Blob creation parameters are not inferred. Subsequent authorized metadata acquisition must protect tokens and personal details; do not commit an unreviewed live payload or credentials.
+
+## Metadata contract hardening
+
+Supported Connection Types API also supplies `dataType`, optional `allowedValues`, and `supportedCredentialTypesForUsageInUserControlledCode`. Connection creation eligibility is not equivalent to eligibility for Notebook/Pipeline user-controlled code. The offline validator checks both when `--user-controlled-code` is requested, rejects unknown parameter data types or invalid allowed-values declarations, and never elevates these checks to live tenant authorization. Source: https://learn.microsoft.com/en-us/rest/api/fabric/core/connections/list-supported-connection-types
