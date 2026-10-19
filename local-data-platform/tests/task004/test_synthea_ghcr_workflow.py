@@ -81,16 +81,16 @@ class SyntheaGhcrWorkflowTests(unittest.TestCase):
             text,
         )
 
-    def test_workflow_uses_repo_root_context(self):
+    def test_workflow_uses_platform_root_context(self):
         text = WORKFLOW.read_text(encoding="utf-8")
 
         self.assertIn(
-            "context: .",
+            "context: ./local-data-platform",
             text,
         )
 
         self.assertIn(
-            "file: ./images/synthea/Dockerfile",
+            "file: ./local-data-platform/images/synthea/Dockerfile",
             text,
         )
 
@@ -130,19 +130,17 @@ class SyntheaGhcrWorkflowTests(unittest.TestCase):
     def test_workflow_can_be_manually_retried(self):
         text = WORKFLOW.read_text(encoding="utf-8")
 
-        self.assertIn(
-            "workflow_dispatch:",
-            text,
-        )
+        self.assertIn("workflow_dispatch:", text)
+        self.assertNotIn("\n  push:\n", text)
 
     def test_workflow_trigger_is_narrow(self):
         text = WORKFLOW.read_text(encoding="utf-8")
 
         required_paths = [
             '".github/workflows/build-synthea-image.yml"',
-            '"images/synthea/**"',
-            '"apps/task004/validate_generated_synthea_batch.py"',
-            '"contracts/synthea/v3.3.0/csv-contract.json"',
+            '"local-data-platform/images/synthea/**"',
+            '"local-data-platform/apps/task004/validate_generated_synthea_batch.py"',
+            '"local-data-platform/contracts/synthea/v3.3.0/csv-contract.json"',
         ]
 
         for item in required_paths:
