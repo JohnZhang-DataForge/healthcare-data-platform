@@ -1,7 +1,7 @@
 # Fabric new-environment Terraform roots — SCAFFOLD ONLY
 
 These three roots are isolated from the legacy seven Terraform roots in `components/`.
-Only `workspace/` now contains a guarded `fabric_workspace` resource. `onelake/` and `connection/` still contain **no resources or modules**. Workspace creation defaults to denied and requires independently reviewed inventory and explicit approval; `prevent_destroy` protects accidental deletion.
+`workspace/` and `onelake/` contain guarded `fabric_workspace` and `fabric_lakehouse` resources respectively. `connection/` still has **no resources or modules**. Both creation approval flags default to false; Lakehouse also requires an independently verified Workspace ID and schema-enabled creation. These flags are not live inventory. `prevent_destroy` guards both resources against accidental deletion.
 The Backend `azurerm` blocks are partial configurations; the approved offline
 `tools/fabric_backend_config.py` determines the unique `fabric/<env>/<component>.tfstate`
 key for each root. A Backend key string does not prove State vacancy or RBAC isolation.
