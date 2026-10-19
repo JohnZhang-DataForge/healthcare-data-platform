@@ -11,6 +11,8 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 ## 系统目标与真实边界
 
+> **新确认的目标设计（尚未实施）**：[Fabric 多环境可重建架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 已确定采用 Terraform + Self-Runner GitHub Actions + fabric-cicd，复用现有 Blob/Backend，Fabric 环境使用独立身份和 State Key；**这不会改变下文的 Plan-only、Workspace 手工建立与业务 Item 尚未完成的当前事实**。
+
 Azure/Fabric 与本地 [Data Platform](../data-platform/README.md) 平级。本地 PostgreSQL OMOP 是权威数据源，Azure/Fabric 用于构建可重建的云端分析副本。现阶段批准的 OneLake-first 数据流：
 
 ```text
