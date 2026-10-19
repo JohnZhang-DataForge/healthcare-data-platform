@@ -5,9 +5,9 @@
 ## 1. Implement safe preflight
 
 - [x] 1.1 核对已批准多环境设计、旧七 Root/Runner 身份与 State Key、受保护 Workspace 以及官方非交互式部署前置条件。
-- [ ] 1.2 提交非敏感环境 JSON 示例与 fail-closed 的 Python Preflight 校验源码；记录旧 State 不可覆盖的约束。
+- [x] 1.2 提交非敏感环境 JSON 示例与 fail-closed 的 Python Preflight 校验源码；静态合同禁止旧 `dev` State、非法 GUID 和旧 Workspace 名称，且不访问 Azure/Fabric。
 - [ ] 1.3 提交并执行正常/非法/重复配置及 Secret 边界的单元测试，记录准确测试结果。
-- [ ] 1.4 编写中文“每个新 Fabric 账号手工前置 Runbook”，同步 Operations 入口与 Terraform CODE.md；区分首次初始化与每次新账号。
+- [x] 1.4 编写中文“每个新 Fabric 账号手工前置 Runbook”，同步 Operations 入口与 Terraform CODE.md；区分首次初始化与每次新账号，并新增离线单测 PR CI 工作流。
 - [ ] 1.5 核对本轮仅新增 Tool/Tests/Docs/Spec，不触碰现有 Terraform Root、Runner、State/Workspace，PR HEAD 静态与适用 CI PASS。
 
 ## 2. Closeout
