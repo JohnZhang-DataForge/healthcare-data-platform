@@ -51,3 +51,8 @@
 
 - 新环境 workspace 资源定义加入显式创建允许开关，默认为 false；明确 HDP 环境命名、Capacity UUID、prevent_destroy 和输出 Workspace ID。
 - 尚未进行真实资源存在性检查、State inventory、认证或 Terraform Plan/Apply。审批开关不构成资源不存在的证明，2.2 继续保留未完成。
+
+## Task 2.3 第一批：Lakehouse 资源声明（PR 验证中）
+
+- 新环境 `onelake/` 添加 schema-enabled 的 `fabric_lakehouse`、显式 Workspace UUID、环境绑定的 `HDP-<environment>-omop` 名称、`prevent_destroy`；`workspace_id_verified` 和 `lakehouse_creation_approved` 默认均为 false。
+- 仅声明和静态检验依赖合同。两个布尔变量是独立人工审查的确认，不验证目标 Workspace 的真实归属、Fabric item 存在性或 State。实际 Apply/Plan、provider init、跨租户访问均未进行；Task 2.3 保持未完成。

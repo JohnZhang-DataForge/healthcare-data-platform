@@ -15,7 +15,7 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
                 location = ROOT / component
                 names = {p.name for p in location.iterdir() if p.is_file()}
                 expected = {"versions.tf", "providers.tf"}
-                if component == "workspace":
+                if component in ("workspace", "onelake"):
                     expected.update({"main.tf", "variables.tf", "outputs.tf"})
                 self.assertEqual(names, expected)
                 versions = (location / "versions.tf").read_text(encoding="utf-8")
@@ -25,7 +25,7 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
                 self.assertNotIn("johnzhang", versions)
 
     def test_no_resource_or_execution_bypasses(self):
-        for component in ("onelake", "connection"):
+        for component in ("connection",):
             contents = "\n".join(
                 p.read_text(encoding="utf-8")
                 for p in (ROOT / component).glob("*.tf")
@@ -59,6 +59,20 @@ class IsolatedRootSkeletonTests(unittest.TestCase):
         self.assertIn("default = false", variables)
         self.assertIn("var.capacity_id", variables)
         self.assertNotIn("role_assignment", main)
+
+    def test_lakehouse_depends_on_verified_workspace_and_approval(self):
+        main = (ROOT / "onelake" / "main.tf").read_text(encoding="utf-8")
+        variables = (ROOT / "onelake" / "variables.tf").read_text(encoding="utf-8")
+        self.assertIn('resource "fabric_lakehouse" "current"', main)
+        self.assertIn("var.workspace_id", main)
+        self.assertIn("enable_schemas = true", main)
+        self.assertIn("prevent_destroy = true", main)
+        self.assertIn("var.lakehouse_creation_approved", main)
+        self.assertIn("var.workspace_id_verified", main)
+        self.assertIn('var.lakehouse_name == "HDP-${var.environment}-omop"', main)
+        self.assertEqual(variables.count("default = false"), 2)
+        self.assertNotIn("role_assignment", main)
+        self.assertNotIn('resource "fabric_notebook"', main)
 
     def test_safety_documented(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
