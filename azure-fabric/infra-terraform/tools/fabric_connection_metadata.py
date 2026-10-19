@@ -24,7 +24,8 @@ def unique_object(pairs):
     return obj
 
 
-def inspect_metadata(data, *, connection_type, creation_method, credential_type,\n                     user_controlled_code=False):
+def inspect_metadata(data, *, connection_type, creation_method, credential_type,
+                     user_controlled_code=False):
     if not isinstance(data, dict) or not isinstance(data.get("value"), list):
         raise UnsupportedConnection("expected supportedConnectionTypes response")
     if data.get("continuationToken") or data.get("continuationUri"):
@@ -79,7 +80,8 @@ def inspect_metadata(data, *, connection_type, creation_method, credential_type,
         "status": "METADATA_OFFLINE_PASS",
         "connection_type": connection_type,
         "creation_method": creation_method,
-        "credential_type": credential_type,\n        "user_controlled_code": user_controlled_code,
+        "credential_type": credential_type,
+        "user_controlled_code": user_controlled_code,
         "parameters": safe,
         "tenant_access_verified": False,
         "credential_delivery_verified": False,
@@ -89,7 +91,8 @@ def inspect_metadata(data, *, connection_type, creation_method, credential_type,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--response", required=True, type=Path)\n    parser.add_argument("--user-controlled-code", action="store_true")
+    parser.add_argument("--response", required=True, type=Path)
+    parser.add_argument("--user-controlled-code", action="store_true")
     parser.add_argument("--connection-type", required=True)
     parser.add_argument("--creation-method", required=True)
     parser.add_argument("--credential-type", choices=("ServicePrincipal", "WorkspaceIdentity"), required=True)
@@ -97,7 +100,8 @@ def main():
     try:
         response = json.loads(args.response.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
         output = inspect_metadata(response, connection_type=args.connection_type,
-                                  creation_method=args.creation_method, credential_type=args.credential_type,\n                                  user_controlled_code=args.user_controlled_code)
+                                  creation_method=args.creation_method, credential_type=args.credential_type,
+                                  user_controlled_code=args.user_controlled_code)
     except (OSError, ValueError, TypeError):
         print("STATUS=FAIL; connection metadata is missing or unsupported")
         return 2
