@@ -2,7 +2,9 @@ import unittest
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[2]
+PLATFORM_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = PLATFORM_ROOT.parent
+ROOT = PLATFORM_ROOT
 
 DOCKERFILE = (
     ROOT
@@ -15,7 +17,7 @@ ENTRYPOINT = (
 )
 
 WORKFLOW = (
-    ROOT
+    REPO_ROOT
     / ".github/workflows/"
     "build-task004-runtime-image.yml"
 )
