@@ -1,0 +1,36 @@
+name: Local DP Provenance Probe Static Gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/local-dp-provenance-probe-static.yml"
+      - "local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh"
+      - "openspec/changes/relocate-local-data-platform/**"
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check probe syntax and protected API verbs (no Kubernetes access)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          script=local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh
+          bash -n "$script"
+          python3 - "$script" <<'PY'
+          import pathlib, re, sys
+          text = pathlib.Path(sys.argv[1]).read_text()
+          commands = re.findall(r'^kubectl\b[^\n]+', text, flags=re.MULTILINE)
+          assert len(commands) == 2, commands
+          for command in commands:
+              assert re.search(r'\sget\s(?:pods|configmap)\b', command), command
+              assert '--context ' in command and '-n ' in command, command
+          for token in ['AIRFLOW_PODS_EMPTY=HOLD', 'REPORT_DIR_INSIDE_CHECKOUT_FORBIDDEN', 'SPARK_CONFIGMAP_IDENTITY_MISMATCH=HOLD']:
+              assert token in text, token
+          print('PROBE_SOURCE_GUARD=PASS')
+          print('KUBERNETES_ACCESS=NOT_PERFORMED')
+          PY
