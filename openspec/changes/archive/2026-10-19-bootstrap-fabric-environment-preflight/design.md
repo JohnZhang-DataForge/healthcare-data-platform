@@ -2,7 +2,7 @@
 
 ## Context and scope
 
-批准的长期架构：[Fabric Multi-Environment Rebuild](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)，现有 Root/State/权限现状：[Terraform Architecture](../../../documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md)。此次只实现首个安全、可单测的“环境合同 + Preflight + 人工前置手册”，不创建云端资源。
+批准的长期架构：[Fabric Multi-Environment Rebuild](../../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)，现有 Root/State/权限现状：[Terraform Architecture](../../../../documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md)。此次只实现首个安全、可单测的“环境合同 + Preflight + 人工前置手册”，不创建云端资源。
 
 ## Contract
 

@@ -12,7 +12,7 @@
 
 ## 2. Closeout
 
-- [ ] 2.1 PR 合并后根据确切 Main SHA 与测试证据完成本 Change 的验收与独立归档；不因为本次通过静态检查就称“Fabric 环境已一键重建”。
+- [x] 2.1 PR 合并后根据确切 Main SHA 与测试证据完成本 Change 的验收与独立归档；不因为本次通过静态检查就称“Fabric 环境已一键重建”。
 
 ## 验收记录（PR #247）
 
@@ -20,4 +20,6 @@
 - Offline tests: [Fabric Environment Preflight Run #39280299661](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39280299661) SUCCESS；包含正反向与示例 fail-closed。
 - OpenSpec Static [Run #39280299540](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39280299540)、Docs Links [Run #39280299477](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39280299477)、Naming [Run #39280299375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39280299375) SUCCESS。
 - Change Gate [Run #39280299409](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39280299409) 的 job 各步骤 SUCCESS；最终 Run 结论与 merge 前重新确认。
-- 1.3/1.5 表示静态与代码范围检查，不代表 Backend/Fabric 身份、网络、实际 State/资源存在性、Terraform Plan/Apply 或 Fabric E2E 已验收。2.1 仍需 Main Merge 与独立 Archive PR。
+- 1.3/1.5 表示静态与代码范围检查，不代表 Backend/Fabric 身份、网络、实际 State/资源存在性、Terraform Plan/Apply 或 Fabric E2E 已验收。2.1 已由 Main 合并 `882a7248f059508b2c135403b3bf3ad01438f604` 和本独立归档 PR 收尾；仅离线行为验收，不代表云端 E2E。
+
+- Final PR HEAD: `5eebe04f610255554ed7f2d6ec63a16f23c45505`；[Offline #39283789373](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39283789373)、[OpenSpec #39283789389](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39283789389)、[Change Gate #39283789353](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39283789353)、[Naming #39283789371](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39283789371)、[Docs #39283789447](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39283789447) 全部 SUCCESS；[PR #247](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/247) 已合并。归档 PR 合并仍需独立 CI 门槛。
