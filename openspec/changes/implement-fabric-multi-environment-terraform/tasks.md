@@ -56,3 +56,9 @@
 
 - 新环境 `onelake/` 添加 schema-enabled 的 `fabric_lakehouse`、显式 Workspace UUID、环境绑定的 `HDP-<environment>-omop` 名称、`prevent_destroy`；`workspace_id_verified` 和 `lakehouse_creation_approved` 默认均为 false。
 - 仅声明和静态检验依赖合同。两个布尔变量是独立人工审查的确认，不验证目标 Workspace 的真实归属、Fabric item 存在性或 State。实际 Apply/Plan、provider init、跨租户访问均未进行；Task 2.3 保持未完成。
+
+## Task 2.4 — Provider Connection Schema 核对（第一批）
+
+- 查阅 Microsoft Fabric Provider 1.13.x 官方 `fabric_connection` Schema 与 Fabric Connections REST API：确认资源及 Cloud/ServicePrincipal 顶层结构确实支持，且 Provider 部署身份不等于 Blob 数据源身份。
+- `new-environments/connection/SCHEMA.md` 冻结资源定义前的阻断条件：目标 Tenant 的 Connector type/creation_method/parameters、Service Principal 或 Workspace Identity 凭据兼容性、原有连接库存与 Blob Reader 权限均待核实。
+- 新增静态测试，强制该 Root 继续没有 `main.tf` 或 `fabric_connection` Resource，避免使用推测参数和 Secret 产生貌似可部署的代码。本次未进行租户 API 调用、Terraform Init/Plan/Apply/Destroy，**2.4 保留未完成**。
