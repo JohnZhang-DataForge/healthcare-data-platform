@@ -23,6 +23,8 @@ evidence: []
 
 **明确优先级调整**：暂停 Condition/TASK005 后续业务开发（保留计划、代码与历史证据，不删除、不宣称完成）；以 OpenSpec Bootstrap、目录迁移、PG→Fabric、FHIR→Fabric、HL7→Fabric 和公开展示为主线。重新启动 Condition 另行批准。
 
+**Fabric 部署架构（2026-10-19 已确认目标、尚未实施）**：继续以现有 `johnzhang/landing` 与 `johnzhang/tfstate` 为稳定存储边界，Fabric 环境独立 State/身份，采用 **Terraform + GitHub Actions Self-Runner + fabric-cicd**，从 GitHub 自动部署 Notebook/Pipeline 并重新加载 Blob；不强制原生 Workspace GitHub Integration。详见 [Fabric 多环境可重建设计](FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)，本文不复制其部署合同。
+
 ## 2. 目标逻辑数据流
 
 ~~~text
