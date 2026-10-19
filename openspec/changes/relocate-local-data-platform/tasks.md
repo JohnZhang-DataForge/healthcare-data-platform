@@ -55,6 +55,8 @@
 
 > **4.4 来源探针准备（2026-10-19，未执行）**：添加手动 opt-in 的只读 `local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh`；仅 `kubectl get` Airflow Pod / 指定 Spark ConfigMap，核对一个 ConfigMap Python key 与固定 Git 文件 SHA256，输出 GitSync 配置相关键名与挂载位置；**不证明实时 GitSync checkout SHA / Pod import __file__，不触发集群写入，未执行任何探针**。原始 JSON 需按敏感配置处理，不允许提交仓库。见 [只读探针使用与限制](evidence/LOCAL-DP-READONLY-LIVE-PROVENANCE-PROBE-20261019.md)，4.4 PARTIAL / 4.9 HOLD。
 
+> **4.4 只读探针安全加固（2026-10-19，验证中）**：补充无 Airflow Pod、ConfigMap 身份不符、报告目录不安全的 fail-closed 条件，并添加仅 `bash -n` / 命令白名单的 PR CI。此 CI 不访问 Kubernetes，也不证明 GitSync 真实 SHA 或 Spark Driver 文件；4.4 PARTIAL，4.9 HOLD。证据见 [Probe Safety Gate](evidence/LOCAL-DP-PROVENANCE-PROBE-SAFETY-20261019.md)。
+
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
 - [ ] 4.7 对所有修复与清理结果进行受控接入、负向路径/已删除源码依赖测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
