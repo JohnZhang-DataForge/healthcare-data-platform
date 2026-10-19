@@ -85,3 +85,10 @@
 - 已根据 Entra Default Directory 截图与 Azure CLI 的同一 Tenant ID 确定：当前 Storage/Fabric 是同一 Tenant 内的两个用户；用户账号不是自动化 Service Principal。当前部署目标采用 A→A′，未来 A→B 保留原有跨租户兼容。
 - Preflight 和 Target 增加 `identity_topology` 输出：Tenant ID 相同为 `same-tenant`，否则 `cross-tenant`；不以拓扑模式降低 Client ID 必须独立、Profile 租户匹配、禁止旧 State、审批默认拒绝等限制。新增两模式离线回归测试。
 - 此次仅源代码和设计修正；不改旧 Terraform Root、Self-Runner、现有 State、Workspace，也不执行任何 Terraform/Azure/Fabric 实际操作。真正 OIDC/RBAC 与跨租户数据读取仍须单独验证。
+
+## Task 2.4 第五批：Provider v1.13 AzureBlobs Connection Root（本 PR 仅离线）
+
+- 将锁定版本 `microsoft/fabric v1.13.0` 的官方 tag 文档确认为字段依据：`fabric_connection` + `ShareableCloud` + `AzureBlobs/AzureBlobs`，参数 `account`、`domain`；Provider 支持 `service_principal_secret_reference` 和 `WorkspaceIdentity`。参考：<https://github.com/microsoft/terraform-provider-fabric/blob/v1.13.0/docs/resources/connection.md>。
+- 在隔离的 `new-environments/connection/` 添加受保护 `fabric_connection.azure_blob`、变量、ID 输出。ServicePrincipal 仅引用已经存在的 Fabric Key Vault Connection 的 Secret 名称/版本，不在 Terraform 源码、State 输入、JSON 或 CI 中注入 Secret 值。WorkspaceIdentity 为显式可选但需独立审查的模式。
+- 所有创建/库存/元数据/domain/RBAC/模式审批默认为 false；固定现有 Storage Account 为 `johnzhang`，domain 必须独立提供，禁止从测试值推断。新资源带 `prevent_destroy`，无 Storage、IAM、Role Assignment、Import 或数据源写入。
+- 更新 Root 静态测试、专门的默认拒绝/身份隔离/防 Secret 回归测试、Fabric Preflight CI 和非部署文档。真正后端 Init/Plan/Apply、凭据授予、Remote State 空位、Connection 现存库存、真实端点与 Workspace Identity 的可用性尚未授权或验证；**Task 2.4 保留未完成**，并不能把静态测试当云端验收。
