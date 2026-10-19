@@ -10,6 +10,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 > **STEP07 运维索引**。核验依据：Healthcare Main `d1962f79e1c7337c372de1aebfaaec87dfc7d1c8`、Self-Runner Main `8f8cb877887540cbed697260c3e8154e218a49c7` 和既有历史验收；**本轮没有访问 Live Kubernetes/PG/S3/Azure**。这里只记录长期有效的操作原则，历史 Runbook 的具体命令必须与当前源码、权限和实际资源核对后再使用。
 
 - [Safe Operations](SAFE-OPERATIONS.md)：跨组件运行前 Gate、故障与恢复边界。
+- [Fabric 新账号/新环境人工前置 Runbook](FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md)：Capacity/Tenant/API/Service Principal、旧 Azure Blob Reader/State 与 GitHub OIDC/Secrets 的人工准备清单；当前只具备离线环境预检，未实现自动部署。
 - [Session Coordination](../development/SESSION-COORDINATION.md)：不同 AI Session 如何协调共享 Airflow/Spark/PG/K8s/Azure。**只有规则，没有逐 Session 日志。**
 - [Development Workflow](../development/DEVELOPMENT-WORKFLOW.md) 与 [Testing & Evidence](../development/TESTING-AND-EVIDENCE.md)：PR、Workflow、SHA、测试分级。
 - [PROJECT-STATUS](../status/PROJECT-STATUS.md)：唯一全项目 CURRENT/NEXT；Operations 不复制项目进度。
