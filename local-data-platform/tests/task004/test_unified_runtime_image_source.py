@@ -212,8 +212,7 @@ class UnifiedRuntimeImageSourceTests(
         )
 
         for path in (
-            "reconcile_person_visit.py",
-            "person-visit-reconciliation.yaml.tpl",
+            "local-data-platform/spark/**",
         ):
             self.assertIn(
                 path,
