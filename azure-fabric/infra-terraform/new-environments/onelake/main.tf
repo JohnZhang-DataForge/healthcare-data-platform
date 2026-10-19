@@ -12,7 +12,7 @@ resource "fabric_lakehouse" "current" {
   lifecycle {
     prevent_destroy = true
     precondition {
-      condition     = var.lakehouse_creation_approved && var.workspace_id_verified
+      condition     = var.lakehouse_creation_approved && var.workspace_id_verified && var.lakehouse_name == "HDP-${var.environment}-omop"
       error_message = "Explicit Lakehouse approval and verified new-environment Workspace ID are required."
     }
   }
