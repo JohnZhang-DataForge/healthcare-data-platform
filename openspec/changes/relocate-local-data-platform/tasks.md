@@ -39,7 +39,7 @@
 - [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
 > **4.2 首个局部修复（2026-10-19，待 PR 验收）**：两项 `tests/task004` 的静态测试已将仓库级 `.github/workflows` 定位到 `REPO_ROOT`，保留镜像/运行资源在 `PLATFORM_ROOT`。尚未消除工作流本身的旧根 Build Context / COPY / Path Filters 与测试旧断言；仅此修复不能标为 4.2 PASS，更不构成 4.3/4.4 验收。关联证据：`evidence/LOCAL-DP-TEST-ROOT-FIRST-FIX-20261019.md`。不执行 GHCR/K8s/PG/S3。
 
-> **4.3 Synthea 构建路径首个修复 PR（2026-10-19，尚未通过 Clean Build）**：针对 `build-synthea-image.yml` 修正源文件 Trigger Paths、Docker Context=`./local-data-platform`、Dockerfile 路径，保持 Dockerfile 内 COPY 路径和容器内部绝对路径不变，并同步静态单测断言。实际 Build、Digest、Import/Entrypoint Smoke 均未执行；Main push 触发 GHCR publish，故 PR 保持 Draft、禁止未经检查直接 Merge。证据见 [Synthea 构建路径修复](evidence/LOCAL-DP-SYNTHEA-BUILD-CONTEXT-20261019.md)。4.3 仍 OPEN。
+> **4.3 Synthea 构建路径首个修复 PR（2026-10-19，尚未通过 Clean Build）**：针对 `build-synthea-image.yml` 修正源文件 Trigger Paths、Docker Context=`./local-data-platform`、Dockerfile 路径，保持 Dockerfile 内 COPY 路径和容器内部绝对路径不变，并同步静态单测断言。实际 Build、Digest、Import/Entrypoint Smoke 均未执行；本 PR 已移除 Main push 自动发布，GHCR 仅可手动 Dispatch；PR 仍保持 Draft，直至源码验证和 Clean Build Gate 完成。证据见 [Synthea 构建路径修复](evidence/LOCAL-DP-SYNTHEA-BUILD-CONTEXT-20261019.md)。4.3 仍 OPEN。
 
 - [ ] 4.3 按镜像确定并记录 Build Context（优先以 `local-data-platform/` 为本地平台 Context，逐项审核例外）、Docker COPY、生成器和 immutable 镜像来源；保留无必要变化的容器 RUNTIME_ROOT / DAG / Batch 持久身份。完成绑定新 SHA 的真实 Clean Build、容器 `module.__file__` / Import/Entrypoint Smoke、旧来源负向验证，保存镜像 Digest。
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
