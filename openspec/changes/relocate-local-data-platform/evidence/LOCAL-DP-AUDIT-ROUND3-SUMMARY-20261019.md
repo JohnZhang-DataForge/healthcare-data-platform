@@ -26,6 +26,9 @@
 4. **备份达到重要里程碑**：经两仓固定 Git Tree 逐路径/Blob SHA 双向比对，当前 393 个 Local DP 文件与私有 Healthcare-Specs 备份 **393/393 完全一致**，缺失 0、内容不一致 0、备份额外业务文件 0。迁移以来的 Local DP 文件仍未有源码增量，故**这些固定提交之间**不需补增量 Git 源码备份；将来一旦有修改必须重算。备份不包含数据库、K8s 持久卷、S3 对象和镜像恢复证明。
 5. **目前能明确保护的代码**：`images/task004-runtime/Dockerfile` / Entrypoint 引用的五个历史 Shell、正式 DAG、Writer/Fencing/Claim 关键模块和具有独有防错价值的 Test。它们属于先保留后兼容修复/独立重构，不能为追求清理率直接删除。
 
+
+> **检查器范围说明**：矩阵的路径次数仅统计所列字面路径模式；Self-Runner YAML 可能通过 Bash/Python/模板或 `uses:` 间接引用真正执行的文件。特别是 **26 个没有显式 Healthcare checkout 的 Workflow** 仍可能通过 reusable workflow 或脚本获得 Healthcare 源码，因此它们均不能自动归类为“与 Local DP 无关”。
+
 ## 需要继续完成的 4.1 / 4.8 安全证明
 
 **本次新读过的 94+105+123+32 文件均为源码文本级分类，并未完成以下验证：**
