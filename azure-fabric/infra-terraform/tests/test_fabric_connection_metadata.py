@@ -96,6 +96,41 @@ class ConnectionMetadataTests(unittest.TestCase):
                                   user_controlled_code=True)
         self.assertTrue(result["user_controlled_code"])
 
+    def test_actual_azureblobs_response_null_allowed_values(self):
+        # Non-sensitive connector metadata observed via the user's Fabric API call;
+        # tenant identity is still unverified and is NOT implied by this test.
+        data = {"value": [{
+            "type": "AzureBlobs",
+            "creationMethods": [{
+                "name": "AzureBlobs",
+                "parameters": [
+                    {"name": "account", "dataType": "Text",
+                     "required": True, "allowedValues": None},
+                    {"name": "domain", "dataType": "Text",
+                     "required": True, "allowedValues": None},
+                ],
+            }],
+            "supportedCredentialTypes": [
+                "Anonymous", "Key", "OAuth2", "SharedAccessSignature",
+                "ServicePrincipal", "WorkspaceIdentity",
+            ],
+            "supportedCredentialTypesForUsageInUserControlledCode": [
+                "Anonymous", "Key", "SharedAccessSignature",
+                "ServicePrincipal", "WorkspaceIdentity",
+            ],
+        }]}
+        result = inspect_metadata(
+            data, connection_type="AzureBlobs", creation_method="AzureBlobs",
+            credential_type="ServicePrincipal", user_controlled_code=True,
+        )
+        self.assertEqual(
+            [p["name"] for p in result["parameters"]], ["account", "domain"]
+        )
+        self.assertEqual(
+            [p["allowed_values"] for p in result["parameters"]], [[], []]
+        )
+        self.assertFalse(result["tenant_access_verified"])
+
     def test_missing_required_flag_rejected(self):
         data = response()
         del data["value"][0]["creationMethods"][0]["parameters"][0]["required"]
