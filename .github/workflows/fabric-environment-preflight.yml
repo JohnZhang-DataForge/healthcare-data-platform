@@ -12,6 +12,7 @@ on:
       - 'azure-fabric/infra-terraform/tests/test_fabric_connection_metadata.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_root_skeleton.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_connection_root.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_ci_offline.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_backend_config.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_deployment_target.py'
       - 'azure-fabric/infra-terraform/environments/fabric-environment.example.json'
@@ -74,6 +75,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_connection_root.py' -v
+      - name: Ensure CI cannot execute Terraform cloud/state commands
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_ci_offline.py' -v
       - name: Confirm example is deliberately non-deployable
         run: |
           set -euo pipefail
