@@ -36,6 +36,8 @@
 
 > **4.1 第三轮静态全量清点（PARTIAL，仍不打勾，2026-10-19）**：以 Healthcare `ea2d2e5ffd98c529c79626c7c926828a32fb7a7b`、Self-Runner `ffd0eccecbf0148183b956e6e4416d4b8d99002b` 为冻结基线，已逐文件读取并生成 **94/94 Task003 Shell**、**105/105 Local DP Tests**、**123/123 Self-Runner Workflows**、**32/32 Self-Runner CI 脚本**的文件级静态清单；见 [第三轮总结](evidence/LOCAL-DP-AUDIT-ROUND3-SUMMARY-20261019.md) 及其四个矩阵。静态发现 51 个生成器/历史复核候选（**非获准删除**）、2 个明确测试 Root 映射问题、65 个含旧路径的 Self-Runner Workflow（多数需按 frozen ref 正确认定）。尚缺生成器/间接调用闭包、测试实际运行、GitSync/Spark 真实来源证明，故保持 4.1 OPEN。
 
+> **4.1 新增文件增量跟踪（2026-10-19，不重复已完成全量审计）**：Git Compare `f3b2d9e97d9afe4e7457a1d48fde9e655add47d7` → Main `22c98426e72517b70d59b3396c943ce383b9a62a` 仅 2 个 Local DP 新文件、2 个修改文件，原 393 tracked 基线无删除，故该固定 Main 有 395 tracked（两个新增均暂保留 B/HOLD）。见 [增量变更证据](evidence/LOCAL-DP-INCREMENTAL-FILE-DELTA-20261019.md)。此数字不代替动态消费证明；4.1/4.8 OPEN，批准删除 0。
+
 - [ ] 4.2 按目标 SHA 修复 Python / Script / Workflow 入口路径，跑单元测试、Contract、静态质量门，验证新源码来自唯一根目录且无旧源可回退误导。
 > **4.2 首个局部修复（2026-10-19，待 PR 验收）**：两项 `tests/task004` 的静态测试已将仓库级 `.github/workflows` 定位到 `REPO_ROOT`，保留镜像/运行资源在 `PLATFORM_ROOT`。尚未消除工作流本身的旧根 Build Context / COPY / Path Filters 与测试旧断言；仅此修复不能标为 4.2 PASS，更不构成 4.3/4.4 验收。关联证据：`evidence/LOCAL-DP-TEST-ROOT-FIRST-FIX-20261019.md`。不执行 GHCR/K8s/PG/S3。
 
@@ -47,6 +49,8 @@
 > **4.3 隔离 Clean Build 验证（2026-10-19，实施中）**：新增独立 GitHub PR Workflow 对 Synthea 与 TASK004 Runtime 进行 `--pull --no-cache`、`--network none` Entrypoint 非业务 Smoke、COPY 来源检查与本地 Image ID 记录；禁止镜像 Push / GHCR Login / K8s / PG / S3。此前静态 CI 和源码单测 PASS 不等于此项 PASS；须依据当前 PR HEAD 的实际两个 Job 结果逐个更新，失败按三轮 HOLD。见 [隔离构建验证](evidence/LOCAL-DP-ISOLATED-IMAGE-BUILD-20261019.md)。
 
 > **4.2 / 4.3 Landing Claim 单组件镜像兼容（2026-10-19，PR #270 首轮构建/回归 PASS，最终 PR HEAD 待复验）**：基于 Main `22c98426e72517b70d59b3396c943ce383b9a62a` 修正 `.github/workflows/build-landing-claim-image.yml` 的 Platform Root Context、COPY/Tests 路径；移除 Main Push 自动发布，将 GHCR Push 限于未经触发的手动 Dispatch；PR 独立执行 Clean Build、本地 Image ID 和 `--network none` 只读容器内三组 Claim/Fencing 离线回归。暂不把其它 Landing/Writer 镜像算作已修复，PR #270 初始 HEAD `7f4329b005bd2b34292ef37183de9a0c2b152a79` 的 Run #39336793115 Clean Build / 26 tests PASS、GHCR SKIPPED；最终 HEAD / 合并后 Main 尚未复核。见 [Landing Claim Gate 证据](evidence/LOCAL-DP-LANDING-CLAIM-CONTEXT-GATE-20261019.md)。整体 4.2/4.3 OPEN、4.9 HOLD。
+
+> **4.2 / 4.3 Landing Discovery 单组件镜像兼容（2026-10-19，PR #271 初始 HEAD 构建和回归 PASS，最终 HEAD 待复核）**：在 Main `6a49fa760086867b2961ff9f22bde9e7def3af18` 基线修正 `.github/workflows/build-landing-discovery-image.yml` 新平台 Build Context、源路径和测试入口；禁止 Main Push 自动发布，PR 仅本地 Clean Build、无网络 Import 与只读模拟 S3 单测，GHCR Job 手动 Dispatch 才可启用且本轮不执行。初始 HEAD `756829341eba01c2493224ef43c74cd9715bc8b3` / Run #39337678147：Clean Build、3 模块 `__file__` 和 11 项假 S3 单测 PASS，Publish SKIPPED；最终 PR HEAD / 合并 Main 另复核。参见 [Discovery Gate Evidence](evidence/LOCAL-DP-LANDING-DISCOVERY-CONTEXT-GATE-20261019.md)。不能据此勾选全部 4.2–4.3，4.9 仍 HOLD。
 
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
 > **4.4 Airflow 静态源文件预检（2026-10-19，验证 PR）**：新 GitHub PR Gate 对 `local-data-platform/airflow/dags/*.py` 进行 AST / compile（不导入 Airflow、无 DagBag、无调度或 Runtime），核对本地模块名称与静态 `dag_id` 唯一性，输出 `DAG_PARSE_RUNTIME=NOT_VERIFIED`。现存 `.github/workflows/task004-airflow-step03e-main-runtime-pin.yml` 的历史路径 `airflow/dags/...` 与迁移后位置不同，且限特定 feature 分支，不可当当前运行 PASS。真正 DAG Parse、GitSync 单一加载与 Spark Runtime 仍 HOLD。见 [Airflow 静态来源预检](evidence/LOCAL-DP-AIRFLOW-SOURCE-PREFLIGHT-20261019.md)。
