@@ -21,13 +21,13 @@ class OfflineWorkflowTests(unittest.TestCase):
             stripped = line.strip()
             if stripped.startswith("#"):
                 continue
-            if re.search(r"^terraform\\s+(?!fmt\\b)", stripped):
+            if re.search(r"^terraform\s+(?!fmt\b)", stripped):
                 self.fail("CI must not run stateful Terraform commands")
         forbidden = (
-            r"\\baz\\s+(?:login|rest|account|storage|role)\\b",
-            r"\\b(?:curl|wget)\\b.*(?:management\\.azure|api\\.fabric\\.microsoft)",
-            r"\\b(?:terraform\\s+(?:init|validate|plan|apply|destroy|import|state|refresh|force-unlock))\\b",
-            r"\\b(?:ARM_CLIENT_SECRET|FABRIC_CLIENT_SECRET|AZURE_CLIENT_SECRET)\\b",
+            r"\baz\s+(?:login|rest|account|storage|role)\b",
+            r"\b(?:curl|wget)\b.*(?:management\.azure|api\.fabric\.microsoft)",
+            r"\b(?:terraform\s+(?:init|validate|plan|apply|destroy|import|state|refresh|force-unlock))\b",
+            r"\b(?:ARM_CLIENT_SECRET|FABRIC_CLIENT_SECRET|AZURE_CLIENT_SECRET)\b",
         )
         for pattern in forbidden:
             with self.subTest(pattern=pattern):
