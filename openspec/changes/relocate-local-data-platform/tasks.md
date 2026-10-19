@@ -51,6 +51,8 @@
 
 > **4.4 DagBag 隔离 Parse 试验（2026-10-19）**：PR 新增 GitHub-hosted Runner 上的 `apache/airflow:3.2.2`、`--network none` / DAG 目录只读挂载的真实 `DagBag` 加载检查；不开 Scheduler、不执行 Task、不访问集群。镜像是否预装 Kubernetes Provider 尚不保证；若缺失或 API 不兼容按真实失败/HOLD 记录，绝不标记 PASS。无需改动任何业务 DAG。证据见 [DagBag 验证](evidence/LOCAL-DP-AIRFLOW-DAGBAG-20261019.md)。
 
+> **4.4 来源闭包继续核对（2026-10-19，PARTIAL）**：PR #261 / Run #39295887624 Airflow 3.2.2 DagBag 真实离线 Parse PASS（isolated image 装入固定 `psycopg`）；仍未验证正在运行的 GitSync checkout、Helm DAG 挂载、Spark ConfigMap data SHA 与 `mainApplicationFile` 来源。任务 4.9 不得因此解锁。见 [GitSync / Spark 来源 HOLD 证据](evidence/LOCAL-DP-GITSYNC-SPARK-PROVENANCE-HOLD-20261019.md)。
+
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。
 - [ ] 4.7 对所有修复与清理结果进行受控接入、负向路径/已删除源码依赖测试及必要运行验证，明确未覆盖范围。发生同一问题三轮失败即 HOLD 并保存证据。
