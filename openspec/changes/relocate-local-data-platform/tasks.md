@@ -46,6 +46,8 @@
 
 > **4.3 隔离 Clean Build 验证（2026-10-19，实施中）**：新增独立 GitHub PR Workflow 对 Synthea 与 TASK004 Runtime 进行 `--pull --no-cache`、`--network none` Entrypoint 非业务 Smoke、COPY 来源检查与本地 Image ID 记录；禁止镜像 Push / GHCR Login / K8s / PG / S3。此前静态 CI 和源码单测 PASS 不等于此项 PASS；须依据当前 PR HEAD 的实际两个 Job 结果逐个更新，失败按三轮 HOLD。见 [隔离构建验证](evidence/LOCAL-DP-ISOLATED-IMAGE-BUILD-20261019.md)。
 
+> **4.2 / 4.3 Landing Claim 单组件镜像兼容（2026-10-19，PR #270 首轮构建/回归 PASS，最终 PR HEAD 待复验）**：基于 Main `22c98426e72517b70d59b3396c943ce383b9a62a` 修正 `.github/workflows/build-landing-claim-image.yml` 的 Platform Root Context、COPY/Tests 路径；移除 Main Push 自动发布，将 GHCR Push 限于未经触发的手动 Dispatch；PR 独立执行 Clean Build、本地 Image ID 和 `--network none` 只读容器内三组 Claim/Fencing 离线回归。暂不把其它 Landing/Writer 镜像算作已修复，PR #270 初始 HEAD `7f4329b005bd2b34292ef37183de9a0c2b152a79` 的 Run #39336793115 Clean Build / 26 tests PASS、GHCR SKIPPED；最终 HEAD / 合并后 Main 尚未复核。见 [Landing Claim Gate 证据](evidence/LOCAL-DP-LANDING-CLAIM-CONTEXT-GATE-20261019.md)。整体 4.2/4.3 OPEN、4.9 HOLD。
+
 - [ ] 4.4 验证 Airflow DAG Parse、稳定 DAG ID/依赖/Schedule 与 GitSync 单一加载路径；验证 Spark manifests / SparkApplication 包装和模块来源。
 > **4.4 Airflow 静态源文件预检（2026-10-19，验证 PR）**：新 GitHub PR Gate 对 `local-data-platform/airflow/dags/*.py` 进行 AST / compile（不导入 Airflow、无 DagBag、无调度或 Runtime），核对本地模块名称与静态 `dag_id` 唯一性，输出 `DAG_PARSE_RUNTIME=NOT_VERIFIED`。现存 `.github/workflows/task004-airflow-step03e-main-runtime-pin.yml` 的历史路径 `airflow/dags/...` 与迁移后位置不同，且限特定 feature 分支，不可当当前运行 PASS。真正 DAG Parse、GitSync 单一加载与 Spark Runtime 仍 HOLD。见 [Airflow 静态来源预检](evidence/LOCAL-DP-AIRFLOW-SOURCE-PREFLIGHT-20261019.md)。
 
@@ -57,7 +59,7 @@
 
 > **4.4 只读探针安全加固（2026-10-19，验证中）**：补充无 Airflow Pod、ConfigMap 身份不符、报告目录不安全的 fail-closed 条件，并添加仅 `bash -n` / 命令白名单的 PR CI。此 CI 不访问 Kubernetes，也不证明 GitSync 真实 SHA 或 Spark Driver 文件；4.4 PARTIAL，4.9 HOLD。证据见 [Probe Safety Gate](evidence/LOCAL-DP-PROVENANCE-PROBE-SAFETY-20261019.md)。
 
-> **4.4 探针离线回归（2026-10-19，待 PR CI）**：新 `tests/quality/test_readonly_provenance_probe.py` 用临时目录中的假 `kubectl` 验证正常匹配只代表 PARTIAL、空 Pod / ConfigMap 身份错 / SHA 不符 / 相对报告路径均应拒绝；通过现有 Probe Static Gate 执行。没有真实 Kubernetes 网络请求。见 [探针回归证据](evidence/LOCAL-DP-PROVENANCE-PROBE-REGRESSION-20261019.md)。4.4 / 4.9 仍 HOLD。
+> **4.4 探针离线回归（2026-10-19，PR #269 / Merge `22c98426e72517b70d59b3396c943ce383b9a62a`；Run #39305517399 PASS）**：新 `tests/quality/test_readonly_provenance_probe.py` 用临时目录中的假 `kubectl` 验证正常匹配只代表 PARTIAL、空 Pod / ConfigMap 身份错 / SHA 不符 / 相对报告路径均应拒绝；已在 PR HEAD `2ddbd34aab05c388eaa3c44120740415413a2776` 的 Probe Static Gate 实际验证五项 unittest PASS；切换 Ready 后 Required Checks 重新 PASS。没有真实 Kubernetes 网络请求。见 [探针回归证据](evidence/LOCAL-DP-PROVENANCE-PROBE-REGRESSION-20261019.md)。4.4 / 4.9 仍 HOLD。
 
 - [ ] 4.5 使用非业务写入或隔离依赖完成固定数据比较；若需共享资源执行，先单独审批、检查并行作业和 Writer Fencing。
 - [ ] 4.6 经授权完成隔离端到端 NEW_ONLY 路线、独立 PostgreSQL/S3 Readback 和安全同 Batch SKIP，记录 SHA、Run、Batch、镜像 Digest 与结果；不得重放已经成功的历史批次。

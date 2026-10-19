@@ -1,30 +1,76 @@
 name: Build Landing Claim Runtime Image
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - feature/landing-discovery-to-claim-20261013
+  pull_request:
     paths:
-      - .github/workflows/build-landing-claim-image.yml
-      - apps/landing_claim/**
-      - images/landing-claim-runtime/**
-      - tests/landing_claim/**
+      - ".github/workflows/build-landing-claim-image.yml"
+      - "local-data-platform/apps/landing_claim/**"
+      - "local-data-platform/images/landing-claim-runtime/**"
+      - "local-data-platform/tests/landing_claim/**"
+
 permissions:
   contents: read
-  packages: write
+
 jobs:
-  build:
+  validate-source:
+    name: Landing Claim clean build and offline contract (no publish)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - name: Verify isolated consumer claim gate
+      - name: Checkout immutable source
+        uses: actions/checkout@v6
+      - name: Verify platform-relative Docker COPY inputs
+        shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m unittest discover -s tests/landing_claim -p 'test_*.py' -v
-          python3 -m py_compile apps/landing_claim/*.py
-          echo LANDING_CLAIM_GUARD_TESTS=PASS
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("local-data-platform")
+          dockerfile = (root / "images/landing-claim-runtime/Dockerfile").read_text()
+          for path in ("apps/landing_claim/batch_ledger.py",
+                       "apps/landing_claim/claim_discovered_inventory.py"):
+              assert (root / path).is_file(), "MISSING_SOURCE=" + path
+              assert path in dockerfile, "MISSING_DOCKER_COPY=" + path
+          print("LANDING_CLAIM_SOURCE_GATE=PASS")
+          PY
+      - name: Isolated clean build, no registry push
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build --pull --no-cache \
+            -f local-data-platform/images/landing-claim-runtime/Dockerfile \
+            -t local-dp-landing-claim:verification \
+            local-data-platform
+          docker image inspect local-dp-landing-claim:verification \
+            --format 'LOCAL_IMAGE_ID={{.Id}}'
+          echo "CLEAN_BUILD=PASS"
+          echo "GHCR_PUBLISH=NOT_PERFORMED"
+      - name: Run Claim and Fencing regression tests without network
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --network none --read-only \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+            -v "$PWD/local-data-platform:/src:ro" \
+            --entrypoint python \
+            local-dp-landing-claim:verification \
+            -m unittest discover -s /src/tests/landing_claim -p 'test_*.py' -v
+          echo "CLAIM_FENCING_OFFLINE_REGRESSION=PASS"
+          echo "KUBERNETES_PG_S3_ACCESS=NOT_PERFORMED"
+
+  build-and-push:
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate-source
+    name: Publish Landing Claim image (manual dispatch only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -35,8 +81,8 @@ jobs:
         id: image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: images/landing-claim-runtime/Dockerfile
+          context: ./local-data-platform
+          file: ./local-data-platform/images/landing-claim-runtime/Dockerfile
           platforms: linux/amd64
           push: true
           provenance: true
