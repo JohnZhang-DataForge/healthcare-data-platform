@@ -20,8 +20,8 @@ resource "fabric_connection" "azure_blob" {
   # through an existing, separately inventoried Fabric Key Vault connection.
   # WorkspaceIdentity contains no secret and requires its own RBAC verification.
   credential_details = {
-    credential_type     = var.reader_credential_type
-    single_sign_on_type = "None"
+    credential_type      = var.reader_credential_type
+    single_sign_on_type  = "None"
     skip_test_connection = false
     service_principal_credentials = var.reader_credential_type == "ServicePrincipal" ? {
       client_id = var.blob_reader_client_id
@@ -43,6 +43,7 @@ resource "fabric_connection" "azure_blob" {
         var.connector_metadata_verified &&
         var.blob_domain_verified &&
         var.reader_access_verified &&
+        var.backend_operator_client_id != var.fabric_deployer_client_id &&
         var.connection_name == "HDP-${var.environment}-azureblobs" &&
         var.storage_account_name == "johnzhang"
       )
@@ -51,9 +52,8 @@ resource "fabric_connection" "azure_blob" {
     precondition {
       condition = var.reader_credential_type == "WorkspaceIdentity" ? (
         var.workspace_identity_verified
-      ) : (
+        ) : (
         var.key_vault_reference_verified &&
-        var.backend_operator_client_id != var.fabric_deployer_client_id &&
         var.blob_reader_client_id != null &&
         var.blob_reader_tenant_id == var.backend_tenant_id &&
         var.blob_reader_client_id != var.backend_operator_client_id &&

@@ -92,3 +92,10 @@
 - 在隔离的 `new-environments/connection/` 添加受保护 `fabric_connection.azure_blob`、变量、ID 输出。ServicePrincipal 仅引用已经存在的 Fabric Key Vault Connection 的 Secret 名称/版本，不在 Terraform 源码、State 输入、JSON 或 CI 中注入 Secret 值。WorkspaceIdentity 为显式可选但需独立审查的模式。
 - 所有创建/库存/元数据/domain/RBAC/模式审批默认为 false；固定现有 Storage Account 为 `johnzhang`，domain 必须独立提供，禁止从测试值推断。新资源带 `prevent_destroy`，无 Storage、IAM、Role Assignment、Import 或数据源写入。
 - 更新 Root 静态测试、专门的默认拒绝/身份隔离/防 Secret 回归测试、Fabric Preflight CI 和非部署文档。真正后端 Init/Plan/Apply、凭据授予、Remote State 空位、Connection 现存库存、真实端点与 Workspace Identity 的可用性尚未授权或验证；**Task 2.4 保留未完成**，并不能把静态测试当云端验收。
+
+## Task 2.5 第一批：静态格式/安全 CI 与人工 Runbook（离线 PR）
+
+- Connection Root 新增共同 `backend_operator_client_id != fabric_deployer_client_id` 前置条件：对 ServicePrincipal 和 WorkspaceIdentity 两种 Blob Reader 方式均适用，而不是仅由 SP 分支约束；补充静态负向测试验证该条件在分支之前执行。
+- Fabric PR CI 新增 GitHub-hosted Terraform 1.13.0 **`fmt -check -diff`**（只检查 Connection Root、仅解析格式，无 Terraform Init/Plan/Apply/Destroy、无 Provider 下载）；再新增独立单测限制该 CI 不得执行云端命令、使用 OIDC 写权限或输出凭据。其余测试继续不触发云端。
+- 将人工证据表加入 `documents/engineering/operations/FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md`：确认 Tenant A→A′ / A→B、三应用身份、Key Vault 引用、Storage Blob Data Reader、AzureBlobs domain、现存连接及 State Key 库存、OIDC、独立 Plan/Apply 授权。
+- 该 PR 仅提供离线静态/格式级别验收，不赋予创建连接、读取现存 State/Container、提交秘密或部署权限；**Task 2.4、2.5 继续未勾选**。真正 Owner Inventory、Provider 初始化/Schema 和现场网络/OIDC/RBAC 证明尚待授权。

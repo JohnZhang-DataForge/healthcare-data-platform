@@ -25,7 +25,7 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         'creation_method = "AzureBlobs"',
         '{ name = "account", value = var.storage_account_name }',
         '{ name = "domain", value = var.blob_domain }',
-        'credential_type     = var.reader_credential_type',
+        'credential_type      = var.reader_credential_type',
         'var.reader_credential_type == "ServicePrincipal"',
         'service_principal_secret_reference = {',
         'connection_id = var.key_vault_connection_id',
@@ -60,6 +60,12 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         'variable "blob_reader_client_id"', 'variable "reader_credential_type"',
     )):
         raise ValueError("reader and deployment identity inputs must stay separate")
+    # Shared precondition must apply BEFORE choosing either credential branch.
+    common_gate = main.split('var.reader_credential_type == "WorkspaceIdentity"', 1)[0]
+    if 'var.backend_operator_client_id != var.fabric_deployer_client_id' not in common_gate:
+        raise ValueError("backend/deployer app identity separation must be common to both modes")
+    if 'var.connection_creation_approved' not in common_gate:
+        raise ValueError("creation approval must apply to both credential modes")
     if 'contains(["ServicePrincipal", "WorkspaceIdentity"], var.reader_credential_type)' not in variables:
         raise ValueError("only vetted credential modes are permitted")
     if 'var.blob_domain' not in main or 'variable "blob_domain"' not in variables:

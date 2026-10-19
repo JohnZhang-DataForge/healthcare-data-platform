@@ -72,7 +72,7 @@ variable "fabric_deployer_client_id" {
 
 # Tenant A identity owning data access; SP only.
 variable "blob_reader_tenant_id" {
-  type = string
+  type    = string
   default = null
   validation {
     condition     = var.blob_reader_tenant_id == null || (can(regex("^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$", var.blob_reader_tenant_id)) && var.blob_reader_tenant_id != "00000000-0000-0000-0000-000000000000")
@@ -82,7 +82,7 @@ variable "blob_reader_tenant_id" {
 
 # Third application identity with read-only Blob access; SP only.
 variable "blob_reader_client_id" {
-  type = string
+  type    = string
   default = null
   validation {
     condition     = var.blob_reader_client_id == null || (can(regex("^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$", var.blob_reader_client_id)) && var.blob_reader_client_id != "00000000-0000-0000-0000-000000000000")
@@ -92,7 +92,7 @@ variable "blob_reader_client_id" {
 
 # ID of pre-existing, authorized Fabric Key Vault connection; SP only.
 variable "key_vault_connection_id" {
-  type = string
+  type    = string
   default = null
   validation {
     condition     = var.key_vault_connection_id == null || (can(regex("^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$", var.key_vault_connection_id)) && var.key_vault_connection_id != "00000000-0000-0000-0000-000000000000")
@@ -102,7 +102,7 @@ variable "key_vault_connection_id" {
 
 # Secret NAME only. Never accept or store the secret VALUE.
 variable "key_vault_secret_name" {
-  type = string
+  type    = string
   default = null
   validation {
     condition     = var.key_vault_secret_name == null || can(regex("^[A-Za-z0-9-]{1,127}$", var.key_vault_secret_name))
@@ -112,7 +112,7 @@ variable "key_vault_secret_name" {
 
 # Optional Key Vault secret version; no secret value.
 variable "key_vault_secret_version" {
-  type = string
+  type    = string
   default = null
   validation {
     condition     = var.key_vault_secret_version == null || can(regex("^[0-9a-fA-F]{32}$", var.key_vault_secret_version))
@@ -122,48 +122,48 @@ variable "key_vault_secret_version" {
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "connection_creation_approved" {
-  type = bool
+  type    = bool
   default = false
 }
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "connection_inventory_verified" {
-  type = bool
+  type    = bool
   default = false
 }
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "connector_metadata_verified" {
-  type = bool
+  type    = bool
   default = false
 }
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "blob_domain_verified" {
-  type = bool
+  type    = bool
   default = false
 }
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "reader_access_verified" {
-  type = bool
+  type    = bool
   default = false
 }
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "key_vault_reference_verified" {
-  type = bool
+  type    = bool
   default = false
 }
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "workspace_identity_verified" {
-  type = bool
+  type    = bool
   default = false
 }
 
 # Explicit external approval acknowledgement, never live inventory.
 variable "user_controlled_code_approved" {
-  type = bool
+  type    = bool
   default = false
 }
