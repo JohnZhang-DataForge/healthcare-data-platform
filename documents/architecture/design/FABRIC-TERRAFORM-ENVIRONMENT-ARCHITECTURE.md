@@ -40,10 +40,9 @@ azure-fabric/infra-terraform/
 │   ├── workspace/                # 复用现有定义及 Workspace IAM
 │   ├── lakehouse/                # 由 modules/onelake 整理
 │   └── connection/               # 按实际 Provider Schema 新建可复用 Module
-├── environments/
-│   ├── dev.tfvars
-│   └── trial-lab.tfvars
-└── environments/               # 只放当前环境真实配置；不恢复旧 Bootstrap tools/tests
+└── environments/               # 环境参数；不恢复旧 Bootstrap tools/tests
+    ├── dev.tfvars
+    └── trial-lab.tfvars
 ```
 
 - **Root** 负责 Provider 登录、Backend Key、环境输入、Modules 编排及 Outputs；Module 内**不**声明 Backend、登录主体和固定环境/账号/Blob 资源名。

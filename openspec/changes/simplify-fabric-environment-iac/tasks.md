@@ -10,7 +10,7 @@
 
 ## 2. Terraform refactor (not started)
 
-- [ ] 2.1 盘点已存七 Root、Modules、新三个 Root、Terraform State/地址、业务所有权和 Self-Runner 依赖，确定保留/迁移/删除范围。
+- [ ] 2.1 盘点仍存的七个 Root/Modules、已删除三个新 Root 的历史源码、Terraform State/地址、业务所有权和 Self-Runner 依赖，确定保留/迁移/删除范围。
 - [ ] 2.2 复用 `modules/workspace` 和 `modules/onelake`，整理正式 Workspace/Lakehouse Modules，保留 IAM，抽取 `modules/connection`。
 - [ ] 2.3 建立 `components/fabric-environment` 组合 Root；环境配置、Provider、Backend 独立 State Keys、Module 输出与依赖可复用且无硬编码账号。
 - [ ] 2.4 形成测试/CI/CODE.md：Terraform fmt/init -backend=false/validate，配置/State 隔离与 Modules 单元测试。
@@ -25,6 +25,6 @@
 ## 4. Clean superseded scaffolds first (user-authorized 2026-10-20)
 
 - [x] 4.1 按用户明确授权，先删除从未真实部署的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/` 及仅服务于旧工具的 JSON 示例；移除失效 Preflight CI，将 Provider 静态校验重定向到原有七个 Components/Modules；不动远端 State 或 Fabric/Azure 云端资源。
-- [ ] 4.2 确认新 Provider 校验 CI 通过，并处理 Self-Runner 中仍指向已删除 Roots 的旧 `fabric-controlled-entry` / OIDC 试验入口；原 `azure-infra.yaml` 必须保留。更新权威 CODE.md、Runbook、架构目标与文档链接，记录已合并 PR/Run。
+- [x] 4.2 Healthcare [PR #335](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/335) 合并，12/12 CI PASS（含七个旧 Components/Modules 的 Terraform Provider 校验、OpenSpec、链接）；Self-Runner [PR #169](https://github.com/JohnZhang-DataForge/Self-Runner/pull/169) 合并，移除 20 个失效的 Fabric Bootstrap/OIDC 实验工作流、脚本、测试和文档。原 `azure-infra.yaml` 保留，CODE.md、Runbook、目标架构与项目状态已同步；历史代码可通过 Git 追溯。
 
-**Status**：新方案源码脚手架清理已开展；保留既有七 Root/Modules。统一可复用 Environment 编排还未开发，未改远程 State、未执行真实 Apply 或 Fabric E2E。
+**Status**：旧 Bootstrap/Tests/Tools/New-environments 源码及 Self-Runner 相关失效实验入口已删除并合并；现存七个 Root/Modules 和 `azure-infra.yaml` 保留。统一可复用 Environment Root 尚未开发，未改远程 State、未执行真实 Apply 或 Fabric E2E。
