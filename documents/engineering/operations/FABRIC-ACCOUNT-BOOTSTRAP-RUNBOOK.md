@@ -233,6 +233,6 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 
 ## 7. Task 3.3 跨仓库离线就绪阻断器（2026-10-20）
 
-- 源码：`azure-fabric/infra-terraform/tools/fabric_execution_readiness.py`；详见 [离线验收 / Live 前置清单](../../../../azure-fabric/infra-terraform/bootstrap/OFFLINE-READINESS.md)。
+- 源码：`azure-fabric/infra-terraform/tools/fabric_execution_readiness.py`；详见 [离线验收 / Live 前置清单](../../../azure-fabric/infra-terraform/bootstrap/OFFLINE-READINESS.md)。
 - 消费独立 Self-Runner `fabric-controlled-entry.yml` 的**未核实** Intent HOLD 值，以及 Bootstrap 的四份非秘密交接值。拒绝伪造已授权、用户名/Secrets、未匹配环境/Root/SHA/State 的输入，且即使静态合同满足也始终输出 `FABRIC_OFFLINE_INTEGRATION_HOLD`。
 - 全部检查都是本地逻辑和 synthetic test；**没有实时 Main 来源真实性检查**，也没有对真实 Saved Plan/Capacity UUID 的校验。不得使用结果作为 `init/plan/apply` 或付费创建的执行许可。申请真实测试前须根据同一 Runbook 逐项重新批准并提供受保护证据。
