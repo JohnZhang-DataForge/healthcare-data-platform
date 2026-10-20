@@ -20,6 +20,15 @@
 
 在已成功的 NEW_ONLY 真实 E2E 和七批历史安装器退役之上，将余下 26 个 TASK003 **历史审计候选**集中分类，统一由 Runner 双仓 Checkout 完成一次只读依赖/完整生成产物审计，并在候选明确为 C/D 且无活动或独立恢复消费者时，集中由一个后续 PR 删除；A/B/E 保留或 HOLD。**未在本方案 PR 中批准或实施任何删除**。删除前与拟删除版本后分别跑来源与 SHA 明确的全新 Batch E2E/独立 PG-S3 Readback/同 Batch SKIP；若无法证明候选 PR 真实被 Airflow/Spark/镜像运行，停止有风险删除、不得冒充验收。不是所有零引用文件都无用，也不以 Git 文件修改时间作为判断依据。详见 [集中清理决策与验收门](evidence/LOCAL-DP-CONSOLIDATED-CLEANUP-PLAN-20261020.md) 和本 Change Task 4.9.1–4.9.5。优先一次清理并尽快收尾；无足够高置信候选则直接结束清理，保留明确 E/HOLD。不涉及 Fabric、Portal、业务 Writer/Fencing 合同或 OLD_ONLY/MIXED 新增支持。
 
+### 镜像重建优先（2026-10-20）——新增实施目标，尚未执行
+
+用户确认调整：**先让全部 8 个 Local DP 应用镜像从当前 Git 重新构建、发布、在真实新 Batch 上完成 E2E；随后集中清理历史 Shell/测试**，不再用多轮旧文件审计阻断镜像重建。修改代码时移除 Airflow DAG/Kubernetes 业务镜像及 Dockerfile 父镜像中的**历史 Digest 硬编码**；开发环境统一使用项目 GHCR 镜像名和 `:latest`，新 Pod 拉取策略为 `Always`；子镜像采用 `ARG BASE_IMAGE` 注入本轮刚构建的父镜像。继续使用既有 GitHub Actions、Self-Runner、GHCR，不新建复杂发布管理系统。
+
+保留不可变 `:git-<sha>` 发布标签、镜像实际 Digest 与新 Pod `imageID` 作为自动化验收/回滚证据；所有适用检查通过后才更新 `:latest`。8/8 镜像发布并经过新 Synthea → S3 READY → Airflow/Spark → Writer → 独立 PG/S3 Readback → 同 Batch SKIP 验收后，清理无活动或回滚引用的旧**业务镜像**，不提前删唯一恢复版本或无关基础镜像。已记录的随机 Writer `unknown_demographic` 等业务缺陷继续独立追踪，不在本轮改 Mapper/SQL/业务合同。
+
+**本次 PR 只调整本 OpenSpec 的 Proposal/Design/Tasks**；没有实际修改 Dockerfile、DAG、Workflow、镜像、集群或数据，也不声称构建/发布/E2E 已成功。新顺序以 [Design 4C](design.md) 和 [Tasks 4.11](tasks.md) 为准，旧历史清理计划仍保留事实记录但在执行优先级上让位。
+
+
 ## Capabilities
 
 ### New Capabilities

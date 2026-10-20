@@ -142,6 +142,18 @@
 
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
+### 4C. 镜像重建优先（2026-10-20）——新优先级，尚未实施
+
+> 用户确认：先完成 8 镜像可重建与真实 E2E，再处理剩余历史 Shell/测试。以下 Task 4.11 覆盖上文旧“先清理”实施顺序，不覆盖旧证据或有效安全要求；设计见 [Design 4C](design.md)。本 PR 仅变更 OpenSpec，不执行镜像或 Runtime。
+
+- [ ] 4.11.1 冻结最新 Healthcare/Self-Runner SHA；定向核对 8 个 Dockerfile、父子依赖、有效 Build/Publish Workflow、DAG/K8s 引用、旧 Digest/固定 SHA 校验。确定镜像名称和最小修改清单，不重复 818 文件审计。
+- [ ] 4.11.2 将三份子 Dockerfile 的固定历史父镜像 Digest 改为 `ARG BASE_IMAGE`，由本轮构建流程传入；DAG/K8s 业务镜像去硬编码 Digest，开发统一 `:latest` + `Always`；联动修改对应的 CI/镜像断言，维持 DAG ID、数据合同及 Writer/Fencing 行为。
+- [ ] 4.11.3 使用当前 Git 新源码及 `local-data-platform/` Context，按**5 独立 → 3 子镜像**顺序完成 8/8 无历史项目镜像缓存的 Clean Build。第二批必须使用本轮构建的父镜像；Docker COPY、Import/`module.__file__`、Entrypoint、适用单测/合同通过，记录实际 HEAD 与错误修复。
+- [ ] 4.11.4 使用已有 Actions/Self-Runner 向 GHCR 发布全部 8 个新镜像，记录不可变 `:git-<sha>`、实际 Digest、父镜像身份与构建来源；8/8 检查成功后更新 `:latest`，不增加新的发布管理系统。
+- [ ] 4.11.5 校验 Airflow GitSync 与实际新 K8s Pod `imageID`/Spark/Writer 来源后，运行全新 Synthea Batch 完整 E2E（18/18 S3 READY、Airflow、Spark Person/Visit/Reconciliation、Atomic Writer、独立 PG/S3 Readback、同 Batch SKIP 与 PG 零变化）。记录 Run/Batch/SHA/Digest；不在 DagRun 中途混用镜像版本；`unknown_demographic` 业务 Bug 暂缓修复并独立记证。
+- [ ] 4.11.6 真实验收成功后，清理无活动/回滚消费者的旧**项目业务镜像**和相关缓存，保留必要恢复版本，不触碰平台基础镜像、PVC、PG/S3；更新 OpenSpec 与受影响 CODE.md/PROJECT-STATUS，然后再处理 Task 4.1/4.8/4.9/4.10 剩余历史文件与 Task 5 收尾。
+
+
 ## 5. 结束条件（暂不归档）
 
 - [ ] 5.1 复核清理后 `local-data-platform/` 仅保留当前业务及其必要的构建、测试、部署、Contract、安全/运维工程文件；C/D 已审计删除，E 有显式 HOLD 和理由，历史文件均有经核验的恢复引用；核查文档、CODE Map、CI、唯一源码/构建入口和实际运行验收证据，更新唯一项目状态文档和本 Tasks。

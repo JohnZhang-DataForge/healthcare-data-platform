@@ -116,6 +116,27 @@ Clean Build 必须来自明确的 Healthcare SHA、唯一源码根和审定 Cont
 
 **权威新方案与不可跳过 Gate**：[Local DP 一次性集中清理方案（2026-10-20）](evidence/LOCAL-DP-CONSOLIDATED-CLEANUP-PLAN-20261020.md)。本次方案 PR 只更新 Proposal/Design/Tasks/Evidence，不自动批准删除清单，也不执行 K8s/PG/S3/GHCR 写入或 Airflow 真实运行。下一实施 PR 须提供来自准确 SHA 的实际矩阵与验证记录。维护 Task 5 Archive 为最终关闭门槛。
 
+### 4C. 镜像重建优先（2026-10-20）——覆盖旧清理优先的执行顺序
+
+**新优先级**：Task **4.11：去旧 Digest/重建全部 8 个镜像 → GHCR 发布 → 在新 Pod 上跑全新 Batch E2E → 清理不再引用的旧业务镜像 → 4.1/4.8/4.9/4.10 历史 Shell/测试收尾 → 5 归档**。上文旧的“先完成历史文件清理”仅为当时方案和历史证据；不再阻挡本轮镜像构建。此处是**设计批准，尚未实施**。
+
+| 构建顺序 | 镜像 | 当前源码中的关系 |
+| --- | --- | --- |
+| 第 1 批（5 个） | `synthea`、`task004-runtime`、`task004-cdm-runtime`、`landing-discovery-runtime`、`landing-claim-runtime` | 不依赖其他本项目镜像，外部基础镜像按 Dockerfile 构建 |
+| 第 2 批（3 个） | `synthea-new-only`、`landing-processing-runtime`、`new-only-omop-writer` | 分别继承本轮新构建的 Synthea、TASK004 Runtime、CDM Runtime |
+
+**具体设计**：
+
+1. **镜像引用解耦**：三份子镜像 Dockerfile 的 `FROM` 改为 `ARG BASE_IMAGE` + `FROM ${BASE_IMAGE}`；构建时注入本轮新父镜像（可使用本轮不可变 Git SHA 标签或新生成的 Digest）。DAG/K8s 业务镜像引用改为项目镜像名称 + `:latest`，并使用 `image_pull_policy="Always"`；联动修改依赖旧 Digest 的源码测试、Workflow 断言及 Job 模板。**旧 Digest 不再作为业务源码常量，但自动生成的运行证据可以且应该包含 Digest**。
+2. **8/8 重建**：在确定的 Healthcare HEAD、`local-data-platform/` Build Context 中完成第一批 5 个干净构建，随后以新父镜像构建第二批 3 个；不能靠拉取已发布的**旧项目父镜像**冒充重建。执行 Docker COPY、Python `module.__file__`、Entrypoint、必要单测/Contract，失败直接修复真实构建阻断，不重做历史 818 文件全量审计。
+3. **发布简单化**：使用现有 Actions/Self-Runner 将成功的 8 个镜像发布 GHCR，保留不可变 `:git-<sha>` 标记和本轮父子版本/Digest 对应关系；适用检查通过后更新开发 `:latest`。不引入新镜像管理系统，不以手工修改 DAG Digest 作为每次发布步骤。
+4. **真实运行**：先处理/隔离正在运行的 DagRun，避免一个执行中 Batch 的 Pod 混用发布前后标签；用实际 K8s Pod `image`/`imageID` 验证新版本，保存 Airflow GitSync、Spark、Writer 的实际来源。生成全新唯一 Batch，验收 18/18 S3 READY → Airflow → Spark Person/Visit/Reconciliation → Atomic OMOP Writer → 独立 PG/S3 Readback → 同 Batch SKIP/PG 零变化。浮动 `:latest` 只保证新 Pod 请求更新版本，不能代替实际 Digest 的验证。
+5. **旧镜像清理**：新构建、发布、部署及完整 E2E 成功以后，清除确认不再有运行/回滚消费者的旧 GHCR 项目镜像和相关缓存。保留必需恢复版本；不清理集群全节点镜像，不碰 Airflow/PostgreSQL/Spark/SeaweedFS 等基础镜像、PVC、S3 或数据库。L1 验收为业务镜像构建闭包与业务 E2E，**不冒充从空白 Kubernetes 集群恢复全部基础设施（L2）**。
+6. **保留现有范围**：不在镜像迁移中修改 `unknown_demographic` Writer 的业务映射、SQL、Contract 或 DAG ID；该缺陷仍独立跟踪。重新构建后的随机 Batch 若再发生同类 Writer 错误，记录独立 FAIL，不能宣称整体 E2E PASS。
+
+**规范状态**：此 PR 只修改 OpenSpec 计划，`skip_specs: true` 保持不变；实际部署行为改动后依据 5.2 判断是否需要另行形成可观察 Requirement/Delta Spec。历史 Digest、失败批次与旧 Clean Build 的证据原样保留，不再作为当前发布配置。
+
+
 ### 5. 回退边界
 
 - 源码：由独立 Git 备份与固定 SHA 恢复；不将历史源码重放到生产部署视为自动安全操作。
