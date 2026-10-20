@@ -27,6 +27,8 @@
 
 > 本轮追溯完成后，下一阶段仍须建立单独实施 PR。不得将已关闭的追溯建档任务视为迁移最终验收。
 >
+> **2026-10-20 开发环境执行优先调整（用户最新授权；覆盖下列历史实施次序，不覆盖删除前的依赖门槛）**：本地 K8s、Airflow、Spark、SeaweedFS 和 PostgreSQL OMOP 是合成数据开发环境；现在以**尽快跑通一条真实 NEW_ONLY 新批次 Synthea → S3 → Airflow → Spark Person/Visit → 原子 OMOP Writer → 独立 PG 读回 → 同 Batch 幂等 SKIP**为第一优先级。允许按当前有效合同进行真实 Kubernetes Job/DAG 调度、生成新合成数据、写入/回滚实验批次，并在故障后修复再测；不再要求 4.1/4.8 全量审计、全部镜像/DAG 来源取证以及 4.9/4.10 的历史代码清理**先于**新批次真实验收。新执行顺序：**只修实际运行阻断的 4.2–4.4 → 4.5/4.6 真实 E2E（新唯一 Batch）→ 4.7 真实回归 → 4.1/4.8 针对仍需清理的消费者闭包 → 4.9/4.10 删除 → 5 收口**；4.1/4.8 仍是最终删除前门槛。仅保留密钥不泄露、不破坏集群基础设施/其他并行工作负载、不能盲目重放状态不明的已 COMMIT Batch、商业 Azure/Fabric 费用资源须独立确认的最低保护。第一次移植后 Live 探索 [Self-Runner Run #39419162734](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39419162734) 真实发现 Scheduler 配置 DAG Folder 仍指旧根，未开始 DagRun；实验修复 Runner 源路径验证后使用 [Run #39419382836](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39419382836) 接着检查，结果以各 Run 最终日志为准，未经证实不能标 E2E PASS。
+
 > **2026-10-18 方案扩展（用户确认）**：完成路径兼容的同时清理经证实无用的历史脚本、Probe、实验生成器、重复代码及失效测试；不删有效回归测试、不重构业务语义。**本方案更新 PR 不清理任何文件、不执行 Runtime**。实施次序：**4.1 → 4.8 → 4.2–4.4 → 4.9–4.10 → 4.5–4.7 → 5**；根据依赖先验证再删除。
 
 - [ ] 4.1 在新的 Main 完整 SHA 上重新清点 `local-data-platform/` **全部当前 tracked 文件**，以“**A Active Runtime / B Required Engineering / C Historical Only / D Obsolete-Duplicate / E Unknown**”逐文件分类，记录 Owner、Blob SHA、有效使用者、动态依赖、测试价值、去留及证据；另建立旧路径引用矩阵和缺失路径负向断言。检查 Python、Shell、Actions/Self-Runner、Airflow GitSync、Spark、Docker COPY/Context、镜像生成器、部署配置及文档导航。393 是迁移前备份数，**不得当作今天的实际数量**。
