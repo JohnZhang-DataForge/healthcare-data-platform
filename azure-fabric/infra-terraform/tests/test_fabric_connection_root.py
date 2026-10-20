@@ -41,6 +41,7 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         'var.bootstrap_mode == "reuse-existing"',
         'var.bootstrap_mode == "fresh-bootstrap"',
         'var.storage_account_name == "johnzhang"',
+        '!var.fresh_storage_provenance_verified',
         'var.storage_account_name != "johnzhang"',
         'var.fresh_storage_provenance_verified',
         'can(regex("^hdp[a-z0-9]{0,21}$", var.storage_account_name))',
