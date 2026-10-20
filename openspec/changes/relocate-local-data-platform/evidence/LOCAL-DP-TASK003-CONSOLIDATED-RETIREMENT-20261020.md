@@ -1,6 +1,6 @@
 # Local DP TASK003 one-pass consolidated retirement evidence — 2026-10-20
 
-> Change `relocate-local-data-platform`, Task 4.9 PARTIAL. **Implementation branch only / candidate runtime acceptance still pending**. This file logs the actual 26-way Runner classification; it is NOT a declaration that post-delete E2E has passed.
+> Change `relocate-local-data-platform`, Task 4.9 PARTIAL. **Implementation PR HEAD verified by applicable CI; production-like runtime verification is scheduled only after Main merge by user's explicit choice**. This file logs the actual 26-way Runner classification; it is NOT a declaration that post-delete E2E has passed.
 
 ## Source and coverage
 
@@ -85,6 +85,6 @@ Notable reasons: `05f2b` contains a helper `PY_TEMPLATE` that dynamically writes
 
 - Remove only the nine frozen historical generator installers, from an explicit Git allowlist; update Landing CODE Map **33→27** and Spark CODE Map **9→6** with immutable Git links. Do NOT delete 19 retained outputs, Contracts, DAGs, tests, actual Writer launch/rollback scripts, images, Dockerfiles, Spark Applications, active manifests, or unrelated Fabric/Portal code.
 - GitHub final-PR-HEAD CI: OpenSpec Change Gate, Static Validation, Documentation Links, Naming, Airflow DagBag + Source/Provenance Gates, isolated Docker builds, NEW_ONLY Writer and CDM Reader smoke; require all applicable PASS.
-- [Prior postmove real E2E #39422787433](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422787433) proved the old frozen SHA only. The new Main-before-deletion fresh-batch E2E and the candidate-ref SHA-isolated E2E are independent, still to be recorded.
-- **Fail closed on provenance**: current shared Airflow GitSync tracking Main cannot serve as proof of an unmerged PR branch. Verify a candidate-specific isolated DAG/source checkout, exact Spark driver module source and image digest (not inherited old Main tags), independent PG/S3 readback, and same-Batch idempotency SKIP. If this cannot be arranged, hold the PR without merging or falsely claiming E2E.
+- [Prior postmove real E2E #39422787433](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422787433) proved the old frozen SHA only. New Main-before-deletion Synthea/S3 baseline PASS is recorded above; complete pre-merge Airflow baseline did not run. The essential **post-merge Main** E2E/PG-S3 Readback/SKIP remains NOT_VERIFIED until its real Run passes.
+- **User-approved Merge-first runtime verification**: current shared Airflow GitSync follows Main and cannot prove unmerged PR behavior. Following final PR SHA CI PASS, merge to Main, verify the live Scheduler/DAG Processor Git HEAD and key DAG file hashes match the resulting Main merge SHA, then generate a **new** Synthea Batch and verify real Airflow/Spark/Writer execution, independent PG/S3 readback, and same-Batch SKIP. Never claim the prior Main's PASS was post-deletion acceptance. If any of these fail, HOLD change closeout and revert Git source deletion before further writes; no implied PG/S3 rollback.
 - No historical committed Batch replay, no Azure/Fabric chargeable Apply, no removal of valid unit/Contract tests. Any issues require bounded fixes and re-run the final HEAD; HOLD is a valid safe outcome. Keep Tasks 4.1 / 4.7 / 4.8 / 4.9 / 4.10 / 5 OPEN until proven.
