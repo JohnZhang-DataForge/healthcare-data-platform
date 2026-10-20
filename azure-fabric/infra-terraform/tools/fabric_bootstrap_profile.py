@@ -123,6 +123,7 @@ def validate(profile: object) -> dict:
     ):
         raise InvalidBootstrapProfile("unsupported Capacity mode")
     cap_mode = capacity["mode"]
+    capacity_subscription_id = None
     if cap_mode == "reuse-existing":
         _fields(capacity, {"mode", "capacity_id"}, "capacity")
         capacity_id = _uuid(capacity["capacity_id"])
@@ -138,8 +139,6 @@ def validate(profile: object) -> dict:
             raise InvalidBootstrapProfile("unsupported Fabric F SKU")
         _match(REGION_RE, capacity["region"], "capacity.region")
         capacity_subscription_id = _uuid(capacity["subscription_id"])
-        if mode == "fresh-bootstrap" and capacity_subscription_id != storage_subscription_id:
-            raise InvalidBootstrapProfile("fresh Capacity and Storage subscriptions differ")
         owner = capacity["billing_owner"]
         if not isinstance(owner, str) or not re.fullmatch(r"[A-Za-z0-9._@-]{2,80}", owner):
             raise InvalidBootstrapProfile("invalid billing owner")
@@ -175,6 +174,7 @@ def validate(profile: object) -> dict:
             for part in ("workspace", "onelake", "connection")
         },
         "capacity_mode": cap_mode,
+        "capacity_subscription_id": capacity_subscription_id,
         "capacity_id": capacity_id,
         "paid_creation_requested": cap_mode == "create-new",
         "cost_review_verified": False,

@@ -66,3 +66,10 @@
 - fresh 模式声明仅新环境 RG、新 HDP Storage 与两个 private Containers，关闭 Public Network/Shared Key，下一阶段需先解决私网连通；只有 Seed、库存、初始 State 保管、私网及创建授权全部明确标志才具备创建候选。全新目标名称仍需要真实 Inventory 验证。
 - RBAC 严格引用**刚由本 Root 声明**的 Container Resource Manager Scope；Backend Operator 获取新 `tfstate` 的 Data Contributor，Blob Reader 获取新 `landing` 的 Data Reader。三个服务主体不互借；角色使用 Object ID 且必须事前独立核验。变量布尔值不是运行授权。
 - 静态回归 `test_fabric_bootstrap_storage_root.py` + GitHub-hosted Terraform `fmt -check` 后可判定代码阶段 PASS；**Task 2.3 不打勾**，直到 Source/Provider 边界审查与独立授权的真实库存/网络/State/权限证据到位。任何 Init/Plan/Apply/Destroy/Import 继续 HOLD。
+
+## Task 2.4 第一批：AzAPI Capacity Terraform（离线资源声明）
+
+- 新增 `bootstrap/capacity/`，锁定 `Azure/azapi = 2.8.0`，仅使用 Microsoft 官方 `Microsoft.Fabric/capacities@2023-11-01` Schema。`reuse-existing` 模式没有资源/DataSource，只引用未核实 Capacity UUID；`create-new` 资源需 Tenant B/订阅/RG、Region、F SKU、管理员与计费审核证据、来源 SHA、受保护 Environment/Seed/库存各标志共同允许，全部默认 false。
+- 始终坚持**账单授权与代码审批分别独立**：成本审核字段不等于付款许可，付费授权必须外部核验，未得到许可不运行 Terraform。使用 `prevent_destroy`，不开发 Suspend/Resume。初始 State 仍为独立受控 Local State。
+- `created_azure_arm_id` 不是 Fabric Capacity UUID，`created_fabric_uuid=null`，待授权真实独立读回；Provider Init/Plan/Apply、SKU可用性、订阅权限与实际账单均未验证。Task 2.4 **继续未完成真实部署验收**。
+- 修订 Profile v1 的一处跨租户限制：Tenant A Storage Subscription 与 Tenant B Capacity Subscription 可以不同，均须真实单独核实；补离线单测。CI 新增 Capacity fmt/static tests。
