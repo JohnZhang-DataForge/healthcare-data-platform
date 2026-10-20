@@ -97,3 +97,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [严格 Bootstrap Profile validator](../../../../azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py)：两模式、Tenant A/A′/B、Storage/State、OIDC 目标、付费 Capacity 全部 fail-closed；**不接触云端**。
 - [Bootstrap Profile 合同](../../../../azure-fabric/infra-terraform/bootstrap/PROFILE-CONTRACT.md) 与 [故意无效示例](../../../../azure-fabric/infra-terraform/bootstrap/bootstrap-profile.example.json)：新资源命名、独立 Bootstrap 初始 State、人工保管/费用/权限门槛。
 - [Bootstrap Profile 测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_bootstrap_profile.py)：正常、非法、重复、跨租户、费用 HOLD 与 Secret 阻断；由 [现有 Fabric 离线 CI](../../../../.github/workflows/fabric-environment-preflight.yml) 运行。Task 1.1 的静态合同不等于 Task 1.2 身份/OIDC、Task 2 Terraform 或已部署。
+
+## Bootstrap Identity + OIDC（OpenSpec Task 1.2，纯离线）
+
+- [Identity/OIDC validator](../../../../azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py)：独立 Seed/Backend/Reader/Fabric 主体；两套受保护 GitHub Environment 与 Repo/Ref 精确校验，验证新创建的三个互异 Client ID 格式，所有实际权限验证均为 false。
+- [Identity Contract](../../../../azure-fabric/infra-terraform/bootstrap/IDENTITY-CONTRACT.md) 与 [非敏感虚构请求](../../../../azure-fabric/infra-terraform/bootstrap/identity-request.example.json)：不创建或 Adopt 旧 `github-terraform` Application；Task 2.2 才会真正声明 Terraform Source。
+- [Negative/Replay Tests](../../../../azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity.py)：测试跨租户、OIDC PR/Branch 拒绝、角色隔离与密钥泄露防护，由现有纯离线 CI 验证。

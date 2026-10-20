@@ -24,3 +24,7 @@ Entry: [`fabric_bootstrap_profile.py`](../tools/fabric_bootstrap_profile.py) —
 Output includes resolved tenancy topology (A→A′ or A→B), environment-scoped state keys for `workspace/onelake/connection`, target storage IDs, GitHub OIDC subject *target*, Capacity mode and ID when reused. It always reports `verified=false`, `remote_state_checked=false`, `initial_bootstrap_state_verified=false`, `oidc_verified=false`, `terraform_executed=false`. No backend import, live identity/RBAC or billing evidence is inferred.
 
 **HOLD:** any known name conflict, identity collision, invalid JSON/credentials, unknown Tenant/Subscription, unresolved provider support or missing separate human authorization. This contract is not sufficient to drive Terraform apply. Phase 1 identity handoff, OIDC ref/environment controls, independent applications/Client IDs and approval evidence are separate Task 1.2/1.3 contracts.
+
+## Identity handoff (Task 1.2)
+
+The Bootstrap Profile's `github_oidc.environment` is a **namespace prefix only**, NOT an authorization to grant a cloud token. The two exact provisionable subjects and mandatory protected-environment branch rules are defined exclusively in [IDENTITY-CONTRACT.md](IDENTITY-CONTRACT.md). This separation prevents reusing a broad root-level GitHub Environment to grant both Backend and Fabric write identities.
