@@ -118,6 +118,8 @@
 
 > **4.9 第四批 STEP06C3 源码生成器清理（2026-10-20，仍 PARTIAL）**：以 Healthcare Main `ac687129d41792b1ace54333c01a89b3544ca85b` 为冻结来源，将固定旧 Context 的 `local-data-platform/scripts/task003/06c3-prepare-cdm-materialization-preflight.sh` 从当前源码树退役，原始 Blob `52ef3b8000f56f16cdcaf0d0313ead06e3030a71` 与旧冻结盘点一致且固定历史 Git 链接可恢复；生成的六份正式 Python / Shell / Contract / 单测产物与当前 Git **6/6 逐字节一致且全部保留**。对本轮实际读取的 66/66 高优先级 Workflow/DAG/Docker/Task004/Image、86/86 Task003 Shell 及 16/16 相关 Self-Runner Workflow 未见其精确文件名直接调用；不能排除动态外部引用。`06c4e-prepare-committed-cdm-visit-materialization.sh` 因动态 Contract 闭包未证实继续 **HOLD**。OMOP CODE.md 同 PR 27→26，详见 [第四批 STEP06C3 生成器退役证据](evidence/LOCAL-DP-STEP06C3-FROZEN-GENERATOR-PRUNE-20261020.md)。本 Change 不提前关闭 4.1/4.8/4.9/4.10，以本 PR 最终 Head 的实际 CI 为准。
 
+> **4.9 第五批历史源码生成器退役（2026-10-20，仍 PARTIAL）**：按冻结 Healthcare Main `0177ee3b466215492254803d28dfa4de06eff244`，从 Task003 移除五个一次性源码安装生成器（Plan Validation、Writer Bundle Inventory、Writer Observer、Processed DQ、Processed Manifest）；五者生成的正式 Shell/Python/Unit Tests 与当前 Git **13/13 完整字节一致并全部保留**。固定 Main 的 66/66 当前高优先构建/编排入口、85/85 TASK003 Shell、Self-Runner 16/16 相关 Workflow 中仅发现生成器自身包含对应精确文件名，没有其他直接字面调用；不代表所有外部/动态路径闭包。Landing CODE.md 47→42，并附原始 Git SHA 的不可变恢复链接，不触发业务/历史 Batch 重放。详见 [第五批 13/13 证据](evidence/LOCAL-DP-TASK003-BATCH5-FIVE-GENERATORS-20261020.md)。**Task 4.9 继续 OPEN**；最终验收依赖本 PR 的所有适用 CI。
+
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
 ## 5. 结束条件（暂不归档）
