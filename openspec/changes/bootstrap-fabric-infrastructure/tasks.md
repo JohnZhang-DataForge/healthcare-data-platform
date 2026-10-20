@@ -124,3 +124,10 @@
 - 本 PR #298 的 GitHub Files API 确认 **仅 6 个源码范围文件**：`.github/workflows/fabric-environment-preflight.yml`、`tools/fabric_execution_readiness.py`、`tests/test_fabric_execution_readiness.py`、`bootstrap/OFFLINE-READINESS.md`、本 `tasks.md` 与人工 Runbook；没有修改旧七 Terraform Root、`azure-infra.yaml`、既有 Storage/Remote State、任何 `*.tfstate` 或付费 Capacity。
 - Self-Runner 对应离线 Intake PR：<https://github.com/JohnZhang-DataForge/Self-Runner/pull/150>，已合并 `a951cb5e8589815cc1adb2096252e2c221dd0184`，GitHub-hosted 受限 Controller CI Run `39394922136` success；没有实际调度该 Workflow，也未从不可信 PR 签发云 Token。
 - **仍须 HOLD**：Task 2.1–2.4 官方 Provider Runtime/真实 Azure 权限、Identity/Storage/Capacity 资源库存及私网、Task 3.1 的可信现场 provenance、Task 3.2 真正隔离权限的可执行受保护 Self-Runner Jobs、Task 3.4 部署后验收/Closeout；新 Capacity 的创建、真实 OIDC/RBAC、Plan 与 Apply 均需另行申请独立批准。
+
+## Task 3.2 第二批：三阶段权限隔离的 OIDC 阻断器与不可变 Subject 设计（2026-10-20）
+
+- Self-Runner PR #151：<https://github.com/JohnZhang-DataForge/Self-Runner/pull/151>，合并 `7f252b2c9eced200b73e23235be7eba466819418`；新增 `src/ci/fabric_phase_review.py` 和 `tests/ci/test_fabric_phase_review.py`，并接入现有 **GitHub-hosted、无 OIDC、无云调用**的手工 Controller；所有 `bootstrap/plan/apply` 意图继续一律 HOLD。
+- **明确发现结构性不匹配**：新 Workflow 归属于 Self-Runner，但当前 Entra Identity Root GitHub Federation 固定引用 Healthcare Repo；并且 `fabric-<env>-backend` / `-deployer` 两个 Role Environment 不能自然兼容同一 Job 的 `fabric-<env>-plan` 或 `-apply` Environment。
+- **2026 年 GitHub 不可变 OIDC Subject**：GitHub Repo API 确认两个 Repo 都在 2026-07-15 之后建立（Healthcare `2026-10-05` / Self-Runner `2026-10-11`），官方格式含 `@owner_id/@repo_id`，而当前 Identity Root 使用 name-only Subjects。新增 `tools/fabric_oidc_subject_audit.py` + `tests/test_fabric_oidc_subject_audit.py`，CI 记录此不兼容并禁止未经审查静默切换 Federation Subject；**没有实际获取 OIDC token 或调用云端**。
+- 方案决策保留可审查的 A（Healthcare 执行，Self-Runner 只控制）或 B（Self-Runner 执行并修改 Entra OIDC）的分叉；两者都必须先获得 Protected Environment、Main/Source SHA、受控 Plan Artifact、独立审核人与云端调用授权。当前 Task 3.2 checkbox 未勾选，不能使用默认 IAM 或 `id-token:write` 绕过此阻断。

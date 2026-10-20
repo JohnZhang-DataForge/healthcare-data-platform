@@ -6,6 +6,8 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_oidc_subject_audit.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_oidc_subject_audit.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_handoff.py'
       - 'azure-fabric/infra-terraform/tools/fabric_execution_readiness.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_execution_readiness.py'
@@ -91,6 +93,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_bootstrap_identity.py' -v
+      - name: Detect unreviewed immutable OIDC and cross-repository phase trust
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_oidc_subject_audit.py' -v
       - name: Validate Bootstrap Capacity billing evidence HOLD policy
         run: |
           python3 -m unittest discover \

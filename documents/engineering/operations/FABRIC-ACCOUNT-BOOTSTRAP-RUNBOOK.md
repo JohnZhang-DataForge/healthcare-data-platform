@@ -236,3 +236,10 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 - 源码：`azure-fabric/infra-terraform/tools/fabric_execution_readiness.py`；详见 [离线验收 / Live 前置清单](../../../azure-fabric/infra-terraform/bootstrap/OFFLINE-READINESS.md)。
 - 消费独立 Self-Runner `fabric-controlled-entry.yml` 的**未核实** Intent HOLD 值，以及 Bootstrap 的四份非秘密交接值。拒绝伪造已授权、用户名/Secrets、未匹配环境/Root/SHA/State 的输入，且即使静态合同满足也始终输出 `FABRIC_OFFLINE_INTEGRATION_HOLD`。
 - 全部检查都是本地逻辑和 synthetic test；**没有实时 Main 来源真实性检查**，也没有对真实 Saved Plan/Capacity UUID 的校验。不得使用结果作为 `init/plan/apply` 或付费创建的执行许可。申请真实测试前须根据同一 Runbook 逐项重新批准并提供受保护证据。
+
+## 8. Task 3.2 新发现的执行前 OIDC 必须修复事项（2026-10-20）
+
+- Self-Runner PR #151 的静态策略明确报告 `FABRIC_PHASE_TRUST_BOUNDARY_HOLD`。目前 **Controller 的仓库**是 Self-Runner，但 **Identity Root 的 Entra OIDC Subject**绑定 Healthcare；受保护 `plan/apply` 的 Environment Subject 与 `backend/deployer` Role Subject 也不相同。不能因为两仓均属于同一组织就认为相同 OIDC 令牌可用。
+- 两仓创建于 2026 年 10 月，GitHub 文档指明这类新仓库默认使用带 owner/repo 数字 ID 的 **immutable OIDC `sub`**；目前 Identity Root 是 name-only 旧格式。下一轮必须先确定真正执行 Privileged Job 的仓库，并按**实际** Repo ID/Owner ID/OIDC settings 的安全验证重新生成 Federation 和 GitHub Environment 配置；不可盲目启用现有 `identity_creation_approved`。
+- Separate Seed、Plan、Apply 受保护 Environment 的存在、审批人、分支策略、Token issuer/audience/sub、最小权限以及 Saved Plan Artifact 的可信存储/Hash/来源未核验。仅保存本地 `terraform show -json` 的文字内容或用手输 SHA256 比对不代表 Approved Plan；Terraform State/Plan 可能含 Secrets，禁止在公开 CI 中传播。
+- **未触发 Self-Runner dispatch，也未使用 Cloud Token。** 不执行任何 Terraform Init/Plan/Apply、身份创建、资源写入和收费 Capacity 创建。
