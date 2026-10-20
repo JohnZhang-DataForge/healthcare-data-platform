@@ -1,5 +1,8 @@
 # Design
 
+> **当前实施基线（2026-10-20；优先于以下历史双模式讨论）**：[A=B + existing Blob 决策](../../../documents/architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)。用户已明确确认 Tenant A = Tenant B = `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`；`Azure subscription 1` = `56107520-5920-4e96-9833-5441ded0a90c`，`Enabled`（CLI 输出）。当前 **`reuse-existing` `johnzhang/landing` + `johnzhang/tfstate`**，旧 `dev/*.tfstate` 不动；新环境独立 State Keys。旧 `johnzhang-fabric` 子账号、已创建 Workspace/权限只是历史背景，非自动化依赖；不再要求主账号重新证明 A=B、Fabric 子账号 CLI 登录或创建新 Tenant/Storage。人工管理员 Seed 用主账号或授权身份，新应用/SPN/OIDC/RBAC 用 Terraform/脚本创建。同 Tenant 的 Backend 和 Fabric 应用仍各自独立，不共用 Client ID。**A≠B 为未来可配置路径，不阻塞当前 A=B**。以下 `fresh-bootstrap` 是可选扩展，不是本次部署路线。初始 Seed Identity 临时 Local State 只是过渡；最终要核对后落到现有 `tfstate` 的新隔离 Key，不自动采用/迁移旧 State。
+
+
 ## Context
 
 用户已批准 [Fabric Multi-Environment Rebuild Design](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 的 2026-10-19 修订：**Bootstrap as Code**、Capacity IaC 可复用或创建付费 F SKU；不开发 Capacity 自动暂停控制器。现有 Terraform 新环境 Root 由 [implement-fabric-multi-environment-terraform](../implement-fabric-multi-environment-terraform/tasks.md) 独立维护，受保护旧 Azure 资源不在本 Change 直接迁移范围内。
