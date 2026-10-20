@@ -6,6 +6,8 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_seed_identity_inventory.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_seed_identity_inventory.py'
       - 'azure-fabric/infra-terraform/tools/fabric_oidc_subject_audit.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_oidc_subject_audit.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_handoff.py'
@@ -93,6 +95,14 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_bootstrap_identity.py' -v
+      - name: Simulate isolated Azure Tenant A/B identity and FIC live inventory
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_seed_identity_inventory.py' -v
+          echo "SEED_IDENTITY_LIVE_INVENTORY_MOCK=PASS"
+          echo "AZURE_SESSION_USED=NO"
+
       - name: Detect unreviewed immutable OIDC and cross-repository phase trust
         run: |
           python3 -m unittest discover \
