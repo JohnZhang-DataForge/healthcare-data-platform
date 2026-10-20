@@ -90,11 +90,12 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`04-publish-intake-manifest.sh`](../../../../local-data-platform/scripts/task001/04-publish-intake-manifest.sh) | [EXECUTE / review] 历史 TASK001 publish intake manifest 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
 | [`05-validate-task001.sh`](../../../../local-data-platform/scripts/task001/05-validate-task001.sh) | [CHECK / verify effects] 历史 TASK001 validate 历史 Task 脚本 |
 
-## 历史 task003（48 个入口）
+> **历史退役（2026-10-20）**：2026-10-20 退役：STEP05A-E 一次性验收冻结 Markdown 生成器，不是 Landing 工作负载。原始源码保留于 [`05-write-ae-freeze-doc.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/b418c1e077be7db21d56f9131709f73fcb0b66b9/local-data-platform/scripts/task003/05-write-ae-freeze-doc.sh)（只读历史链接），并由独立 Healthcare-Specs 备份保存；这些链接不是当前可执行入口。
+
+## 历史 task003（47 个入口）
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`05-write-ae-freeze-doc.sh`](../../../../local-data-platform/scripts/task003/05-write-ae-freeze-doc.sh) | [PREPARE / may write] 历史 TASK003 write ae freeze doc 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05d-prepare-visit-remote-metadata.sh`](../../../../local-data-platform/scripts/task003/05d-prepare-visit-remote-metadata.sh) | [PREPARE / may write] 历史 TASK003 prepare visit remote metadata 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05d-verify-visit-remote-metadata.sh`](../../../../local-data-platform/scripts/task003/05d-verify-visit-remote-metadata.sh) | [CHECK / verify effects] 历史 TASK003 verify visit remote metadata 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
 | [`05e-prepare-visit-raw.sh`](../../../../local-data-platform/scripts/task003/05e-prepare-visit-raw.sh) | [PREPARE / may write] 历史 TASK003 prepare visit raw 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
