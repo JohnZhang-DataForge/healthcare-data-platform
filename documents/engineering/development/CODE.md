@@ -16,6 +16,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`check_component_code_map.py`](../../../.github/quality/scripts/check_component_code_map.py) | [STATIC CI] Git diff/tree 组件 CODE.md 全量导航和新增/删除同步 CI Gate（本 PR 扩展） |
 | [`check_documentation_links.py`](../../../.github/quality/scripts/check_documentation_links.py) | [STATIC CI] 所有 tracked Markdown 相对文件/目录链接完整性检测（离线、仅路径） |
 | [`check_new_code_names.py`](../../../.github/quality/scripts/check_new_code_names.py) | [STATIC CI] 阻止新增正式源码采用 Task/Step 命名；历史文件豁免 |
+| [`check_spark_manifest_source_closure.py`](../../../.github/quality/scripts/check_spark_manifest_source_closure.py) | [STATIC CI] 对现存 SparkApplication YAML 模板逐个检查 mainApplicationFile 的唯一 Python 源码、路径、Driver/Executor ConfigMap 只读挂载；辅助 Pod 分类排除。不渲染模板、不部署或运行 Spark；单测 [test_spark_manifest_source_closure.py](../../../.github/quality/tests/test_spark_manifest_source_closure.py) 和现有 [Local DP Provenance Static Gates](../../../.github/workflows/local-dp-provenance-probe-static.yml) 执行。 |
 | [`check_openspec_change_gate.py`](../../../.github/quality/scripts/check_openspec_change_gate.py) | [STATIC CI] 将所有实质性 PR 与 Active OpenSpec Change/Task 绑定，并限制 docs-only 例外；Main Ruleset #25365902 的可信 Job 已 Required 且通过 #233/#234 正反 PR；仍非业务运行验收 |
 
 全仓质量工具统一放在 `.github/quality/scripts/`，对应单元测试位于 [`.github/quality/tests/`](../../../.github/quality/tests)；这些不是 Local Data Platform 业务文件。
