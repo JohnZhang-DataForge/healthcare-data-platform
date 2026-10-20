@@ -78,7 +78,7 @@ class StorageBootstrapRootTests(unittest.TestCase):
                       "allow_nested_items_to_be_public = false",
                       "shared_access_key_enabled       = false",
                       "default_to_oauth_authentication = true",
-                      "public_network_access_enabled  = false"):
+                      "public_network_access_enabled   = false"):
             self.assertIn(field, self.main)
         self.assertEqual(self.main.count('container_access_type = "private"'), 2)
         self.assertEqual(
@@ -114,8 +114,8 @@ class StorageBootstrapRootTests(unittest.TestCase):
             'backend "azurerm"', "remote-exec", "local-exec",
         ):
             self.assertNotIn(forbidden, combined)
-        self.assertIn("remote_state_checked         = false", self.outputs)
-        self.assertIn("cloud_access_verified        = false", self.outputs)
+        self.assertIn("remote_state_checked          = false", self.outputs)
+        self.assertIn("cloud_access_verified         = false", self.outputs)
 
 
 if __name__ == "__main__":
