@@ -13,6 +13,8 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 >
 > **核对基线**：Healthcare Main `c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed`；Self-Runner Main `8f8cb877887540cbed697260c3e8154e218a49c7`。本页根据当前仓库源码、用户确认的方向和已保存的最终真实验收整理，**不是本日重新执行的集群、PG 或 Azure Live 健康检查**。历史验证数值应附原运行日期；没有本轮探针时不写「此刻 Running」。
 
+> **Fabric 设计方向更新（2026-10-20，非运行验收）**：[Module-first Environment Architecture](../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 确定以已授权 Fabric 部署账号、现成 Landing/State/Capacity 为外部前置，并复用旧 `components → modules → environments` 模型。唯一新实施入口是 [`simplify-fabric-environment-iac`](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)；原 Bootstrap/Tenant 双模式计划改为历史方案。当前源码未重构，真实 Terraform Apply 与 Fabric E2E 尚未执行。
+
 ## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |

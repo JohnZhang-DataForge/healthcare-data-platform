@@ -7,6 +7,8 @@ source_sha: f3b2d9e97d9afe4e7457a1d48fde9e655add47d7
 
 # 架构设计讨论稿
 
+- **[Fabric Terraform Module-first Environment Architecture（新权威设计）](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)**：以预授权 Fabric 账号、现成 Landing/Backend/Capacity 为外部前置；沿用旧 Root→Module→环境配置的一套代码部署多环境；实施见 [新 OpenSpec Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。旧多环境 Bootstrap 设计仅供历史追溯。
+
 本目录集中导航**讨论稿与已确认但尚未实施的目标架构设计**。每份设计以自身 status 为准；任何目标设计都不代表已经部署或运行验收，也不取代系统实际源码、项目唯一状态与 OpenSpec Change。
 
 - [Data Platform V2：仓库迁移与模块化重构设计](DATA-PLATFORM-V2-MIGRATION-DESIGN.md)：四个顶层模块、本地组件划分、Task004 兼容重命名、公共能力提取、实施阶段、测试和回滚。

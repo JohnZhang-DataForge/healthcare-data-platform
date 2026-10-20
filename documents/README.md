@@ -4,6 +4,8 @@
 >
 > 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与今后创建的 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
 
+> **Fabric 新权威架构（2026-10-20）**：[Module-first Terraform Environment](architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) · [实施 OpenSpec](../openspec/changes/simplify-fabric-environment-iac/tasks.md)。以已授权部署身份、可用 Capacity、现成 Landing 和 Terraform State 为外部前置，继续复用旧 Azure-Infra 的 Module 架构；历史 A=B/Bootstrap 不再是当前开发主线。**仅是架构更新，非真实 Apply**。
+
 ## 当前文档目录（Data Platform / Engineering 已切换）
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。

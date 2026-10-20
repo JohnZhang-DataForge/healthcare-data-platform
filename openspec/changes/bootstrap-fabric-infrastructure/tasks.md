@@ -1,5 +1,7 @@
 # Tasks
 
+> **STOP — 未来实施路线已被取代（2026-10-20）**：不继续为普通 Fabric 环境部署开发三 Entra App/Seed、双 Tenant Bootstrap、fresh Storage 强制模式。本文件中复选框与 PR/Run 是历史审计记录，不得视为当前未完成任务指令。唯一下一阶段实施入口：[新 Module-first Tasks](../simplify-fabric-environment-iac/tasks.md)。这不授权修改远端 State 或删除旧 Azure 资源。
+
 > **CURRENT DEPLOYMENT DECISION (2026-10-20): A=B / REUSE EXISTING STORAGE — MUST READ BEFORE WORK.** See [authoritative account/Storage baseline](../../../documents/architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md). 用户已定性：**Tenant A = Tenant B = `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`**，Azure Subscription `56107520-5920-4e96-9833-5441ded0a90c` 为 Enabled；主账号为 `guangbinzhang8888@gmail.com`，旧 `johnzhang-fabric` Fabric 管理员子账号、旧 Workspace、RBAC 均为**历史背景而非新部署依赖**。不再要求发现另一个 Tenant、尝试旧子账号 CLI 登录，或创建第二个人类用户/新 Tenant/新 Storage。当前 Profile **`reuse-existing`**，仅保留已有 `johnzhang/landing` + `johnzhang/tfstate`，后续 Terraform State 使用新的隔离 `fabric/<env>/*.tfstate` Keys；旧 `dev/*.tfstate` 原样保护。使用脚本/Terraform 创建三套新的 Entra App/SPN、OIDC、最小 RBAC 与新 Fabric 环境；GitHub Actions 在 Self-Runner private main，Plan/Apply 独立手动选择（默认 Plan）。未来 A≠B 只作为参数化扩展，**不阻塞当前 A=B 完成**。任何遗留旧文档中的“先确认是否 A=B”/“fresh-bootstrap 是当前默认”均被此决定覆盖；不将此决定等同真实云端 Apply PASS。
 
 

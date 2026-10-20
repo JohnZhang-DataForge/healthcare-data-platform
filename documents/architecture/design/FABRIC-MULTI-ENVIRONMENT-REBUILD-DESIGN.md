@@ -7,6 +7,8 @@ implementation_status: offline-fabric-roots-partial-bootstrap-not-implemented
 
 # Healthcare V2 — Microsoft Fabric 多环境可重建部署设计
 
+> **SUPERSEDED / 历史架构**：其中双 Tenant A/B、三身份和独立 Bootstrap/fresh 模式已不再是 Fabric Environment 的强制前置；当前可实施目标请使用 [Module-first Environment Architecture](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 和 [新 OpenSpec Tasks](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。保留本文旧架构、Provider 依据与当时风险分析供追溯，但**不继续以本页指导新代码开发**。
+
 > **2026-10-20 最新部署决定（优先于本文 2026-10-19 的通用设计示例）**：[当前固定基线：A=B + reuse-existing Storage/State/Landing](FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)。Tenant A/B 同为 `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`，Subscription `56107520-5920-4e96-9833-5441ded0a90c` 已启用；当前不新建人类管理员账号、不新建 Tenant/Storage/Landing，已有 `johnzhang/tfstate` 作为**最终**远端 Backend 的目标，只使用新的隔离 State Key。旧手工 Fabric Workspace/子账号不作为新环境依赖，旧 State 不动。所需应用身份/配置优先自动化。A≠B 的 Provider 参数仍保留为未来兼容，不作为本轮阻塞条件；收费 Capacity 无独立费用批准不创建。此处是设计更新，不是云端 Apply 已完成。
 
 

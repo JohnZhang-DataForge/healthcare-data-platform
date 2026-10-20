@@ -1,5 +1,7 @@
 # Proposal
 
+> **SUPERSEDED FOR FUTURE IMPLEMENTATION（2026-10-20）**：三套 App/SPN、Seed、fresh/reuse Storage 和 Tenant A/B 身份体系**不再是**正常 Fabric Environment 部署的强制前置。旧源码/PR/已做的测试证据原样保留，不继续以本 Change 指导新开发。新目标：[Module-first 架构](../../../documents/architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) · [新 Tasks](../simplify-fabric-environment-iac/tasks.md)。
+
 ## Why
 
 现有 [Fabric 多环境架构设计](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 已于 2026-10-19 明确批准 **Bootstrap as Code + Terraform + GitHub Actions + fabric-cicd**。当前 `implement-fabric-multi-environment-terraform` 只具备受保护的新环境 Workspace/Lakehouse/Connection 离线 Terraform Root，仍依赖人工预备 Entra Apps/SPN、GitHub OIDC、RBAC、State Backend、Fabric Capacity。换 Tenant 或账号后不能仅凭代码重建。

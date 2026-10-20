@@ -7,6 +7,8 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Microsoft Fabric — OMOP 云端分析子系统
 
+> **新目标架构（2026-10-20）**：[Module-first Fabric Environment](../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) · [新 OpenSpec Tasks](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。已授权 Fabric 账号、现成 Landing/State/Capacity 是外部前置；复用旧 `components → modules → environments`；旧 A=B/Bootstrap/new-environments 是历史方案或当前源码事实，**不是当前实施方向**。下方旧决策小节仅供历史追溯，新的 Terraform 代码仍未真正 Apply。
+
 > **唯一系统总导航**：本文说明整体业务架构、组件分工和验收范围；总源码导航见 [CODE.md](CODE.md)，各组件的 README 解释职责，CODE 定位源码。全项目实时 CURRENT/NEXT 以 [Project Status](../../engineering/status/PROJECT-STATUS.md) 为准。
 
 ## 当前部署固定基线（2026-10-20）

@@ -1,11 +1,13 @@
 ---
-status: approved-current-deployment-baseline
+status: superseded
 scope: azure-fabric-bootstrap-current-account-and-storage
 decision_date: 2026-10-20
 implementation_status: partial; live Entra and Terraform Apply not yet proven
 ---
 
 # Fabric Bootstrap — 当前账号与现有 Storage 固定基线（2026-10-20）
+
+> **SUPERSEDED / 历史事实快照**：2026-10-20 后续讨论已将新目标改为 [Module-first Environment Architecture](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)。本文记录当时实际账号/Storage 背景和先前同 Tenant Bootstrap 的决策，**不再要求新部署使用三 App/Seed、A=B 模式或 `johnzhang` 固定参数**。旧 Storage/State 的保护要求和已核实事实继续有效，不能因设计转向破坏既有资源。
 
 > **执行前必读 / 本次用户明确确认的决定**。当前部署路径已经定为 **Tenant A = Tenant B**；不能再将 A/B 是否同租户列为待用户回答的问题。**复用现有 Azure Blob Storage、Landing、Terraform State Backend**，其余 Entra 身份/OIDC/RBAC/Fabric 新资源尽量用代码部署。该决定覆盖此前以 `fresh-bootstrap`、新 Storage、新 Tenant、或要求 `johnzhang-fabric` 通过 `az login` 为当前部署前置条件的建议。原有历史记录保留，但不作为当前工作清单。
 

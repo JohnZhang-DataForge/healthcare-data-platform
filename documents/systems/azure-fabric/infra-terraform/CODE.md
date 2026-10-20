@@ -7,6 +7,8 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Fabric Terraform — CODE 源码导航
 
+> **CODE.md 保持已存在的源码位置地图（并不宣称已完成重构）**。将来基于 [Module-first 新架构](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 复用已有 Modules、建立统一环境 Root 的源码提交，必须在同 PR 更新本页和相关 CI/Workflow 导航。
+
 > **唯一 Terraform 组件源码地图（ACTIVE）**。本页按 8ad52828599ae95cda95eda4d888fc601ebfdfdc 的 Git 树核对实际存在的文件，只记录源码归属、入口和关联依赖。功能介绍见 [README.md](README.md)，IAM/State/操作安全及历史验收见 [ARCHITECTURE.md](ARCHITECTURE.md)。**任何源码链接都不意味着已部署或允许 Apply**。
 
 ## Terraform 根目录与工作流
