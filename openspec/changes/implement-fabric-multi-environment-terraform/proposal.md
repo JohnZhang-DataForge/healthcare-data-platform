@@ -21,6 +21,12 @@ Fabric 多环境离线 Preflight 已由 PR #247 验收并于 PR #248 归档，�
 
 - 新环境 Terraform 部署路径，与旧七 Root 的 dev 模式并行存在，不能静默替换、导入或重置旧状态。
 
+## Approved architecture revision (2026-10-19)
+
+上层目标已批准调整为 **Bootstrap as Code + Terraform + GitHub Actions + fabric-cicd**。身份（Backend Operator/Fabric Deployer/Blob Reader）、GitHub OIDC、最小 RBAC、可选 Storage/Backend 和 Capacity 可由**独立 Bootstrap Change** 通过 IaC 管理；Capacity 支持复用已有或有费用审批地创建付费 F SKU，**不做自动暂停/恢复**。此项是架构决策，而非云端创建授权。
+
+本 Change 原来的新环境 Workspace/Lakehouse/Connection Root 继续保持隔离的静态验收任务；`johnzhang` 固定合同是已有资产 `reuse-existing` 模式的适配，`fresh-bootstrap` 的新 Backend/Identity/Capacity 输入需要后续 Change 另行实现和审核。批准新架构**不表示**可以 Destroy/Import 旧 Storage/State/Workspace 或无审批购买 Capacity。
+
 ## Impact
 
 仅在独立实施 PR 和静态检查通过后提供可部署的 Terraform 定义。本 Change 的建立不授权 Azure/Fabric API、Terraform init/plan/apply/destroy、RBAC 写入、旧 Workspace 迁移或 Blob/State 删除。后续 fabric-cicd + Self-Runner 完整部署需独立 Change。

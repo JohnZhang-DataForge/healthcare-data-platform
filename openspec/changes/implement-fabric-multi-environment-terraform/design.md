@@ -2,7 +2,16 @@
 
 ## Context
 
-权威方案：[Fabric Multi-Environment Rebuild](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；已有 Terraform：[ARCHITECTURE](../../../documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md)；Preflight 已由 PR #247 合并 Main，归档 PR #248 合并。本阶段仅新建隔离环境，旧环境与七 Root 原有 dev State 保持原状。
+权威方案：[Fabric Multi-Environment Rebuild](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；已有 Terraform：[ARCHITECTURE](../../../documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md)；Preflight 已由 PR #247 合并 Main，归档 PR #248 合并。本阶段仅实现**隔离的 Fabric Control Plane Root 离线开发**，旧环境与七 Root 原有 dev State 保持原状。**2026-10-19 用户已批准 Bootstrap as Code + Terraform Capacity 创建能力的上层修订设计**；Bootstrap 实施必须以独立 OpenSpec Change 切分，不把已完成的静态 Terraform Root 误认为已具备引导权限。
+
+## Approved dependency revision (2026-10-19)
+
+- 统一目标：`Bootstrap as Code -> Terraform Fabric control plane -> fabric-cicd -> E2E`。减少换账号时的 Portal 操作，允许首次具权限管理员 Seed 授权及租户设置确认；**不能从无权限 Tenant 自行提权**。
+- `reuse-existing`：复用受保护 `johnzhang/landing` 和 `johnzhang/tfstate`，新 State Key `fabric/<env>/...`；不可将旧 State/Workspace 直接 Import/Adopt/Destroy。
+- `fresh-bootstrap`：独立 Bootstrap Root/State 创建应用、SPN、Groups、GitHub OIDC、必要最小 RBAC、可选新 Storage/Backend 与可选 Fabric Capacity；Bootstrap 初次 State 必须避免后端循环依赖，State 转移单独审核。新环境在 Backend 准备完成后才可以安全 Plan。
+- **Capacity**：用户批准由 Terraform 选择引用已存在 Capacity 或显式创建付费 F SKU；**不纳入动态 Suspend/Resume/按任务暂停功能**。付费创建应为 default-deny，按 SKU/region/subscription/费用独立批准，未批准不允许实际创建。
+- 现有硬编码 `johnzhang` 的合同和 Root 在 **reuse-existing** 模式下仍有效；fresh-bootstrap 要求以后另行实现环境化，不通过本次纯文档变更直接替换。当前 A→A′ 与未来 A→B 保留三身份隔离。
+- **Change 边界**：本 Change 继续拥有 Workspace/Lakehouse/Connection 的离线实现与接入门槛；身份/Backend/Capacity Bootstrap 应单独设计并验收。后续跨 Change 只使用经过验证的非敏感 Outputs，保护 legacy State 与 Self-Runner。
 
 ## Identity and state isolation
 

@@ -2,6 +2,13 @@
 
 > **Active / Stage 0**：先冻结实现边界，再进行小步代码 PR；不得执行任何 Terraform init/plan/apply/destroy 或 Azure/Fabric 写操作。PR 必须绑定本 Change 并更新对应 Task。
 
+## 0. Revised architecture approval (2026-10-19)
+
+- [x] 0.1 用户通过 **Bootstrap as Code + Terraform + GitHub Actions + fabric-cicd** 修订目标，支持 `reuse-existing` 与 `fresh-bootstrap`。容量支持 Terraform 引用或**显式授权后新建**；**本期不实现自动 Suspend/Resume**。
+- [ ] 0.2 以单独的 Bootstrap OpenSpec Change 冻结首次管理员 Seed、身份/Group/OIDC、RBAC、Backend State 初始化、Storage 两模式、Capacity 费用门禁与回滚/离线测试；此项属于后续独立实施，不使本 Change 的 Task 2.1–2.5 自动完成。
+- [ ] 0.3 Bootstrap 和 Fabric Root 的**非敏感 Outputs/变量衔接合同**：来源 Tenant/身份与 Backend 真实库存确认、旧 `johnzhang`/State 拒绝接管、Capacity ID 与账单授权证明；须在后续离线源码 PR 实施。
+- **修订的权限边界**：本 Change 仅维护已声明 Workspace/Lakehouse/Connection 及静态校验，Bootstrap 新建需独立 OpenSpec 和单独的真实 Azure 写操作授权。设计通过≠允许付费 Capacity 创建/Apply。
+
 ## 1. Baseline and safety
 
 - [x] 1.1 核实已批准架构、PR #247 离线 Preflight Main 合并和 PR #248 归档，确认旧 State/Workspace/Storage 保护约束。
@@ -99,3 +106,8 @@
 - Fabric PR CI 新增 GitHub-hosted Terraform 1.13.0 **`fmt -check -diff`**（只检查 Connection Root、仅解析格式，无 Terraform Init/Plan/Apply/Destroy、无 Provider 下载）；再新增独立单测限制该 CI 不得执行云端命令、使用 OIDC 写权限或输出凭据。其余测试继续不触发云端。
 - 将人工证据表加入 `documents/engineering/operations/FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md`：确认 Tenant A→A′ / A→B、三应用身份、Key Vault 引用、Storage Blob Data Reader、AzureBlobs domain、现存连接及 State Key 库存、OIDC、独立 Plan/Apply 授权。
 - 该 PR 仅提供离线静态/格式级别验收，不赋予创建连接、读取现存 State/Container、提交秘密或部署权限；**Task 2.4、2.5 继续未勾选**。真正 Owner Inventory、Provider 初始化/Schema 和现场网络/OIDC/RBAC 证明尚待授权。
+
+## 2026-10-19 Bootstrap/Capacity 方案通过说明
+
+- 本轮为文档与 OpenSpec 目标修订，不运行 `terraform init/plan/apply/destroy`、云端资源写入或远端 State 修改，不移除原 7 Roots、不改 Self-Runner。
+- 先完成 Bootstrap 独立 Change 的设计和离线实现，后续再连接当前 `new-environments/` 的三 Root 与 Fabric Capacity Outputs。保留 Task 2.1–2.5 未勾选与 PR #273/#274 的历史静态验收事实；不得把方案批准等同实际部署成功。
