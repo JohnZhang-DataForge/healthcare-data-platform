@@ -1,6 +1,6 @@
 # Fabric Infrastructure Bootstrap
 
-> **HISTORICAL / SUPERSEDED DELTA**：旧 Bootstrap 要求不再是当前 Fabric 环境部署合同，按 [Module-first Change](../../simplify-fabric-environment-iac/tasks.md) 开发。这里的历史 ADDED Requirements 不表示已同步成为生效的 Current Spec。
+> **HISTORICAL / SUPERSEDED DELTA**：旧 Bootstrap 要求不再是当前 Fabric 环境部署合同，按 [Module-first Change](../../../simplify-fabric-environment-iac/tasks.md) 开发。这里的历史 ADDED Requirements 不表示已同步成为生效的 Current Spec。
 
 ## ADDED Requirements
 
