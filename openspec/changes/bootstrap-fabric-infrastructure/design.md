@@ -78,3 +78,35 @@ Fresh Mode 的首次 Terraform Backend **不能放在它自己尚未创建的 St
 ## Controlled Self-Runner intent (offline-only implementation, Task 3.2)
 
 Self-Runner now contains a **separate unprivileged manual intake** `fabric-controlled-entry.yml` (PR #150), independent of old `azure-infra.yaml`. Main-only workflow_dispatch validates target environment, root and exact Healthcare SHA syntax for `bootstrap`/`plan`/`apply`. The Apply intent also requires Plan digest syntax. It uses GitHub-hosted `ubuntu-latest`, never `dw-runner-set`, never OIDC tokens, Terraform, Azure/Fabric, cross-repo checkout or State. Successful input validation returns `HOLD`, **never execution approval**. Each future real phase requires its own explicitly verified protected Environment, SHA/source and saved Plan identity binding, isolated Tenant A/B roles and operator authorization; paid Capacity requires independent billing permission. No live executor is built or authorized yet. The authoritative Self-Runner runbook is <https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/docs/fabric-controlled-entry.md>.
+
+## Task 3.2 — OIDC issuer, immutable subject and phase-separated execution (2026-10-20; BLOCKER)
+
+### Confirmed from current tracked code and GitHub repository metadata
+
+Self-Runner `fabric-controlled-entry.yml` currently executes **only** unprivileged manual, GitHub-hosted intake. Healthcare `bootstrap/identity/main.tf` independently declares Entra federated credentials with source subjects:
+
+- `repo:JohnZhang-DataForge/healthcare-data-platform:environment:fabric-${var.environment}-backend`
+- `repo:JohnZhang-DataForge/healthcare-data-platform:environment:fabric-${var.environment}-deployer`
+
+These are **not compatible** with a future privileged job executed in Self-Runner: its GitHub OIDC JWT is issued for the Self-Runner repository, not Healthcare. Nor can a single job Environment `fabric-<env>-plan` or `fabric-<env>-apply` simultaneously equal the above two distinct role-based Environment subjects. Both issues are independent from A→A′ vs A→B Entra Tenant topology.
+
+**Additional 2026 immutability issue:** GitHub created the Healthcare repo on **2026-10-05** (repo ID `1404947726`) and Self-Runner on **2026-10-11** (repo ID `1413796156`); the owner ID from GitHub API is `337895338`. GitHub's post-**2026-07-15** immutable OIDC default includes owner and repository IDs, e.g. `repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-<env>-plan`. The literal *name-only* subjects in current Identity Terraform Root do not match that documented format. This is a **static incompatibility warning**, not a decoded GitHub JWT or authenticated Entra result. Repository-specific OIDC customization and the actual `sub` claim must still be verified in a separately authorized secure diagnostic; **do not request or print a JWT in PR CI**.
+
+Official references:
+- GitHub OIDC subject / post-July-2026 behavior: <https://docs.github.com/en/actions/concepts/security/openid-connect>
+- Microsoft immutable-subject migration and `@owner_id/@repo_id`: <https://learn.microsoft.com/en-us/entra/workload-id/workload-identities-github-immutable-subjects>
+- Microsoft Entra federated trust: <https://learn.microsoft.com/en-us/entra/workload-id/workload-identity-federation-create-trust>
+
+### Intended future trust separation; NOT deployed
+
+| Phase | Workflow boundary | Required distinct trust and evidence |
+| --- | --- | --- |
+| Intake | Self-Runner manual main, GitHub-hosted, `contents:read` | **No** OIDC, Terraform or paid creation. Always HOLD. |
+| Bootstrap | Protected operator/Seed scope, independent initial local State | Inventory and Seed/admin grant; avoid self-bootstrapping Backend; never use Backend/Fabric job token as Seed automatically. |
+| Plan | Dedicated protected `fabric-<env>-plan` Environment for the **chosen execution repository** | Source SHA, Tenant A/B, Backend-specific lock rights, distinct Fabric provider identity, actual read-only inventories. Plan's state lock may require data-plane write rights, so do not claim Plan cloud read-only categorically. |
+| Apply | Separate protected `fabric-<env>-apply` Environment and independently approved **exact** Plan artifact | New reviewer authorization, binary digest and provenance, source/State/tenant/scope match, no destructive changes; do not reuse controller input as approval. |
+| Paid Capacity | Additional independent human billing approval prior to any permitted planning/execution | SKU/Region/Subscription, hourly and recurring cost, approved source, resource ownership and trusted external authorization. |
+
+**Execution-location decision remains gated:** Route A runs privileged jobs inside Healthcare (issuer = Healthcare), with Self-Runner remaining an unprivileged trigger; Route B runs privileged jobs within Self-Runner (issuer = Self-Runner), requiring a deliberate new Entra OIDC subject/Environment model and updated Identity Root. Either route requires at least one reviewed cross-repo trust/dispatch design, phase-specific Env protection/identities, secured Plan artifact custody, and explicit authorization **before** any `id-token:write` or `dw-runner-set` privileged job is introduced. **Do not silently repoint** the existing application credentials; they are default-count-zero source and have not been deployed. No environment is created automatically from untrusted input.
+
+Phase review in Self-Runner PR #151 (<https://github.com/JohnZhang-DataForge/Self-Runner/pull/151>, merged `7f252b2c9eced200b73e23235be7eba466819418`) now reports the repository/Environment mismatch as `FABRIC_PHASE_TRUST_BOUNDARY_HOLD`, and a synthetic JSON Plan action/digest scanner always HOLDs. The Healthcare `tools/fabric_oidc_subject_audit.py` captures the additional immutable subject blocker and fails CI on unreviewed changes to the existing Terraform subjects. Neither tool verifies OIDC authentication, actual binary `.tfplan`, cloud IAM, GitHub Environment protections or real billing approval. Task 3.2 remains OPEN.
