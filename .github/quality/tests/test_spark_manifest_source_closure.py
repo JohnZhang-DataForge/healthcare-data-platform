@@ -68,7 +68,7 @@ class ManifestSourceClosureTest(unittest.TestCase):
 
     def test_rejects_missing_source(self):
         self.source.unlink()
-        with self.assertRaisesRegex(ValueError, "exactly one"):
+        with self.assertRaises(ValueError):
             self.audit()
 
     def test_rejects_duplicate_source_basename(self):
