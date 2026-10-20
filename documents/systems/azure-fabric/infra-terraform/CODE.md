@@ -103,3 +103,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [Identity/OIDC validator](../../../../azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py)：独立 Seed/Backend/Reader/Fabric 主体；两套受保护 GitHub Environment 与 Repo/Ref 精确校验，验证新创建的三个互异 Client ID 格式，所有实际权限验证均为 false。
 - [Identity Contract](../../../../azure-fabric/infra-terraform/bootstrap/IDENTITY-CONTRACT.md) 与 [非敏感虚构请求](../../../../azure-fabric/infra-terraform/bootstrap/identity-request.example.json)：不创建或 Adopt 旧 `github-terraform` Application；Task 2.2 才会真正声明 Terraform Source。
 - [Negative/Replay Tests](../../../../azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity.py)：测试跨租户、OIDC PR/Branch 拒绝、角色隔离与密钥泄露防护，由现有纯离线 CI 验证。
+
+## Capacity 账单审批与 Provider 官方合同（OpenSpec 1.3 / 2.1）
+
+- [Capacity approval validator](../../../../azure-fabric/infra-terraform/tools/fabric_capacity_approval.py) · [负向单测](../../../../azure-fabric/infra-terraform/tests/test_fabric_capacity_approval.py)：请求与分离账单记录严格匹配，但无论是否填写完整审批字段都保持 `paid_creation_authorized=false`，**不授权支付**。
+- [Capacity Billing Contract](../../../../azure-fabric/infra-terraform/bootstrap/CAPACITY-APPROVAL-CONTRACT.md)：独立审查责任人、SHA/预算/时间限制、复用模式和受保护 Environment 成本控制。
+- [官方 Provider/ARM Freeze](../../../../azure-fabric/infra-terraform/bootstrap/PROVIDER-SCHEMA-REFERENCE.md)：版本选择、跨 Tenant provider alias、Blob container 范围 RBAC、Fabric Capacity ARM 2023-11-01 的准确字段与待核实项。

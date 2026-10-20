@@ -6,6 +6,8 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_capacity_approval.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_capacity_approval.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/bootstrap/**'
@@ -66,6 +68,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_bootstrap_identity.py' -v
+      - name: Validate Bootstrap Capacity billing evidence HOLD policy
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_capacity_approval.py' -v
       - name: Validate preflight unit tests
         run: |
           python3 -m unittest discover \

@@ -11,7 +11,7 @@
 
 - [x] 1.1 固定 `reuse-existing` 与 `fresh-bootstrap` 配置 Schema（离线 Profile v1 + 负向测试 + CI；仅静态合同，未获得 Live 授权）；拒绝旧 Storage/State 的误创建、自动 Adopt、环境跨 Tenant 混淆、Secret 字段和非法命名。
 - [x] 1.2 定义 Seed Operator、Backend Operator、Fabric Deployer、Blob Reader 应用与 GitHub OIDC Environment/Repo/Ref 映射的非敏感输入/输出合同；防止身份复用及跨租户错误。
-- [ ] 1.3 定义 Capacity `reuse-existing` 默认与 `create-new` 单独允许方案，必须携带 Subscription/Region/SKU、实际账单审核证明；缺失默认 HOLD。不得实现自动 Suspend/Resume。
+- [x] 1.3 定义 Capacity `reuse-existing` 默认与 `create-new` 单独允许方案，必须携带 Subscription/Region/SKU、实际账单审核证明；缺失默认 HOLD。不得实现自动 Suspend/Resume。
 - [ ] 1.4 提交离线 Python 单测（合法、失败、重复/防碰撞、费用拒绝）和 GitHub-hosted *no-cloud* CI，更新 Azure Terraform `CODE.md` 与 Runbook。
 
 ## 2. Terraform Bootstrap modules (code only until separately approved)
@@ -46,3 +46,10 @@
 - `tools/fabric_bootstrap_identity.py`、`bootstrap/IDENTITY-CONTRACT.md` 定义 Seed Operator 人工边界，三个互异新 App 的准确 Tenant、名字和用途，两个精确 GitHub OIDC Environment/Repo/Ref/Audience/Issuer，以及创建后 Client ID 的非敏感交接检查。
 - `test_fabric_bootstrap_identity.py` 检验 same/cross Tenant、重复/越权/跨环境/PR ref/secret/自动 Adopt 拒绝，由 GitHub-hosted Fabric Offline CI 执行；只允许格式/静态结果。
 - **不代表** GitHub Environment 已受保护、管理员同意已经取得、实际 AzureAD/Fabric/RBAC 权限可用、Client ID 存在或 Terraform 可以执行。下一步 Task 1.3 和 2.1–2.5 保持开放。
+
+
+## Capacity Billing Gate / Provider freeze（2026-10-19，离线）
+
+- Task 1.3：`tools/fabric_capacity_approval.py` 和 `bootstrap/CAPACITY-APPROVAL-CONTRACT.md` 固定 SKU/Region/Subscription、来源 SHA、估价与月度限额、账单审核记录和独立审查人；无论字段是否齐全，只有外部信任审批才能解除付费创建 HOLD。
+- Task 2.1 前置调研：`bootstrap/PROVIDER-SCHEMA-REFERENCE.md` 冻结 AzureAD 3.8.0、AzureRM 4.60.0、AzAPI 2.8.0 的官方链接与资源字段；实际 Provider 安装/Schema/IAM/授权未经核查，Task 2.1 **暂不勾选**。
+- 后续仍需身份/存储/Capacity Terraform Module/Root 的静态源码、格式检查和独立授权的真实验证。无云端写入/费用产生。
