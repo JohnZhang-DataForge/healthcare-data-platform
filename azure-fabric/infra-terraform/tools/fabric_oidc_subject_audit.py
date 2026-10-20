@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reviewed static identity topology: immutable Self-Runner OIDC; live state still HOLD."""
+"""Reviewed static two-app main-ref Self-Runner identity; Entra live still HOLD."""
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -11,13 +11,10 @@ HEALTHCARE = "healthcare-data-platform"
 HEALTHCARE_REPOSITORY_ID = 1404947726
 SELF_RUNNER = "Self-Runner"
 SELF_RUNNER_REPOSITORY_ID = 1413796156
-ENV_TOKEN = "${var.environment}"
 IMMUTABLE_PREFIX = f"repo:{OWNER}@{OWNER_ID}/{SELF_RUNNER}@{SELF_RUNNER_REPOSITORY_ID}"
 BINDINGS = {
-    "backend_operator_plan": ("backend", "backend_operator", "plan-backend"),
-    "backend_operator_apply": ("backend", "backend_operator", "apply-backend"),
-    "fabric_deployer_plan": ("fabric", "fabric_deployer", "plan-deployer"),
-    "fabric_deployer_apply": ("fabric", "fabric_deployer", "apply-deployer"),
+    "backend_operator_plan": ("backend", "backend_operator"),
+    "fabric_deployer_plan": ("fabric", "fabric_deployer"),
 }
 
 class OIDCSourceDrift(ValueError):
@@ -33,15 +30,15 @@ def inspect_source(hcl: str) -> dict:
         raise OIDCSourceDrift("unexpected federated credential ownership")
     subjects = {}
     for name, body in blocks:
-        alias, app, suffix = BINDINGS[name]
-        expected = f"{IMMUTABLE_PREFIX}:environment:fabric-{ENV_TOKEN}-{suffix}"
+        alias, app = BINDINGS[name]
+        expected = f"{IMMUTABLE_PREFIX}:ref:refs/heads/main"
         if (not re.search(r'(?m)^\s*subject\s*=\s*"' + re.escape(expected) + r'"\s*$', body)
                 or f"provider       = azuread.{alias}" not in body
                 or f"application_id = azuread_application_registration.{app}[0].id" not in body
                 or "count          = var.identity_creation_approved ? 1 : 0" not in body
                 or "prevent_destroy = true" not in body
                 or body.count("subject") != 1):
-            raise OIDCSourceDrift("immutable subject/role/phase drift")
+            raise OIDCSourceDrift("immutable main-ref subject/application drift")
         subjects[name] = expected
     if re.search(r'(?m)^\s*subject\s*=\s*"repo:[^"@]+/', hcl):
         raise OIDCSourceDrift("name-only federated subject")
@@ -53,10 +50,12 @@ def inspect_source(hcl: str) -> dict:
         "source_repository": f"{OWNER}/{HEALTHCARE}",
         "github_repositories_created_after_immutable_default": True,
         "separate_backend_and_fabric_tenants_required": True,
-        "protected_phase_environments_required": True,
+        "protected_phase_environments_required": False,
+        "workflow_isolation_by_oidc_subject": False,
+        "role_separation_by_enra_app": True,
         "blockers": [
-            "GITHUB_ENVIRONMENT_BRANCH_AND_REVIEWER_RULES_NOT_LIVE_VERIFIED",
-            "GITHUB_OIDC_TOKEN_SUB_NOT_LIVE_PREVIEWED",
+            "NO_GITHUB_ENVIRONMENT_ON_PRIVATE_FREE_REPO",
+            "SHARED_MAIN_REF_SUBJECT_ACROSS_WORKFLOWS",
             "ENTRA_APP_CREDENTIAL_AND_RBAC_NOT_CREATED_OR_VERIFIED",
             "STATE_AND_FABRIC_TRIAL_INVENTORY_NOT_VERIFIED",
             "NO_ISOLATED_TRUSTED_TERRAFORM_PLAN_YET",
