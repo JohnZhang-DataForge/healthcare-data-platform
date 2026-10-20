@@ -7,6 +7,8 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Fabric Terraform — 技术架构、安全约束及历史验收
 
+> **本页的旧 Root/Module、State、Plan 证据是现存实现事实。** 新目标架构沿用已存在的 `components → modules → environments` 分层，详见 [Module-first Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)；新的开发进度见 [Change Tasks](../../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。以下过时的 Bootstrap/Tenant 实施决策不覆盖新目标。
+
 > **已完成组件文档收口（ACTIVE）**。依据现存 Terraform `README.md` 与 `docs/ARCHITECTURE.md` 的长期有效技术内容、Git 源文件和历史 GitHub Actions Run 整理；本次仅为文档静态审查，**没有读取当前云端资源/Remote State，也没有运行 Plan/Apply**。功能概述见 [README.md](README.md)，实际文件入口见 [CODE.md](CODE.md)。
 
 ## Root/module implementation model
