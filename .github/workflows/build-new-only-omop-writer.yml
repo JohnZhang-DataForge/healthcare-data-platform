@@ -1,30 +1,124 @@
 name: Build NEW_ONLY Airflow Atomic OMOP Writer Image
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feature/task004-airflow-writer-final-leg-20261014
-      - feature/task004-fix-writer-newonly-image-plan-20261014
-      - feature/task004-fix-newonly-s3-adapter-runtime-20261014
+    inputs:
+      publish_approved:
+        description: "Explicit authorization required to publish an immutable image"
+        type: boolean
+        required: true
+        default: false
+  pull_request:
     paths:
-      - images/new-only-omop-writer/Dockerfile
-      - apps/omop_writer/new_only_airflow_writer.py
-      - tests/omop_writer/test_new_only_airflow_writer_runtime.py
-      - .github/workflows/build-new-only-omop-writer.yml
+      - ".github/workflows/build-new-only-omop-writer.yml"
+      - "local-data-platform/images/new-only-omop-writer/**"
+      - "local-data-platform/apps/omop_writer/**"
+      - "local-data-platform/airflow/dags/new_only_omop_writer_handoff.py"
+      - "local-data-platform/airflow/dags/new_only_omop_routing.py"
+      - "local-data-platform/airflow/dags/task004_cdm_*.py"
+      - "local-data-platform/tests/omop_writer/**"
+      - "openspec/changes/relocate-local-data-platform/**"
 permissions:
   contents: read
-  packages: write
+
 jobs:
+  validate-source:
+    name: NEW_ONLY Writer isolated clean build and regression (no publish)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout immutable input
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check canonical COPY inputs and reject old root fallback
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path("local-data-platform")
+          dockerfile=root/"images/new-only-omop-writer/Dockerfile"
+          text=dockerfile.read_text(encoding="utf-8")
+          assert "task004-cdm-runtime@sha256:94979587aeee2f2ea13e2c27ffc5a8850b97381f3f126c72201fe2b2b3086f5e" in text
+          source=[]
+          for line in text.splitlines():
+              if not line.startswith("COPY "):continue
+              parts=[p for p in line.split()[1:] if not p.startswith("--")]
+              if len(parts)<2:raise ValueError("BAD_COPY_SOURCE")
+              source.extend(parts[:-1])
+          assert source,"EMPTY_WRITER_COPY_SET"
+          for p in source:
+              if p.startswith(("/", "$")) or "*" in p or ".." in Path(p).parts:
+                  raise ValueError("UNSUPPORTED_SOURCE="+p)
+              assert (root/p).is_file(),"MISSING_CANONICAL_SOURCE="+p
+              assert not Path(p).exists(),"OLD_ROOT_FALLBACK="+p
+          print("WRITER_COPY_SOURCE_COUNT="+str(len(source)))
+          print("WRITER_SOURCE_ROOT=local-data-platform")
+          print("WRITER_OLD_ROOT_FALLBACK=ABSENT")
+          print("WRITER_SOURCE_GATE=PASS")
+          PY
+
+      - name: Local clean Docker build with no publish or registry credentials
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+          docker build --pull --no-cache \
+            -f local-data-platform/images/new-only-omop-writer/Dockerfile \
+            -t local-dp-new-only-omop-writer:verify \
+            local-data-platform
+          docker image inspect local-dp-new-only-omop-writer:verify --format 'LOCAL_IMAGE_ID={{.Id}}'
+          echo "WRITER_CLEAN_BUILD=PASS"
+          echo "GHCR_PUBLISH=NOT_PERFORMED"
+
+      - name: Confirm packaged imports without running business entrypoint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --network none --read-only \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --entrypoint python local-dp-new-only-omop-writer:verify -c '
+          from pathlib import Path
+          import new_only_airflow_writer, build_s3_rollback_plan, task004_cdm_dynamic_pg_writer
+          for module in (new_only_airflow_writer, build_s3_rollback_plan, task004_cdm_dynamic_pg_writer):
+              p=Path(module.__file__).resolve()
+              assert p.parent==Path("/opt/task004"),"WRONG_IMAGE_IMPORT_ROOT"
+              print("IMAGE_IMPORT="+module.__name__+" FILE="+str(p))
+          '
+          echo "IMAGE_IMPORT_GATE=PASS"
+
+      - name: Writer and identity regressions with network disabled
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for suite in test_new_only_airflow_writer_runtime.py test_new_only_writer_identity.py; do
+            docker run --rm --network none --read-only \
+              --security-opt no-new-privileges --cap-drop ALL \
+              -e PYTHONDONTWRITEBYTECODE=1 \
+              -v "$PWD/local-data-platform:/src:ro" \
+              --entrypoint python local-dp-new-only-omop-writer:verify \
+              -m unittest discover -s /src/tests/omop_writer -p "$suite" -v
+          done
+          echo "WRITER_OFFLINE_TESTS=PASS"
+          echo "DAG_SPARK_PG_S3_ACTION=NONE"
+
   build:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_approved == true
+    needs: validate-source
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Offline fail-closed runtime regression
         run: |
           set -Eeuo pipefail
-          python3 -m compileall -q apps/omop_writer/new_only_airflow_writer.py
-          python3 -m unittest discover -s tests/omop_writer -p 'test_*airflow_writer*.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python3 -c 'import ast; from pathlib import Path; p=Path("local-data-platform/apps/omop_writer/new_only_airflow_writer.py"); ast.parse(p.read_text(), filename=str(p))'
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/omop_writer -p 'test_*airflow_writer*.py' -v
           echo TASK004_NEW_ONLY_WRITER_IMAGE_REGRESSION=PASS
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -36,8 +130,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: images/new-only-omop-writer/Dockerfile
+          context: ./local-data-platform
+          file: ./local-data-platform/images/new-only-omop-writer/Dockerfile
           platforms: linux/amd64
           push: true
           provenance: true
