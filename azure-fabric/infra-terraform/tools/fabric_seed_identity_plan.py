@@ -188,8 +188,11 @@ def execute(profile: Path, identities: Path, repo: Path, sha: str, custody: Path
     contract = load_identity(profile, identities)
     if summary["environment"] != contract["environment"]:
         raise SeedPlanHold("CONTRACT_MISMATCH")
-    if summary["bootstrap_mode"] != "fresh-bootstrap":
-        raise SeedPlanHold("FRESH_ONLY")
+    # Identity creation is independent of Storage ownership. Both modes may
+    # create only the ten NEW identities under isolated, local Seed custody.
+    # In reuse-existing mode the existing Blob/State are never opened here.
+    if summary["bootstrap_mode"] not in ("reuse-existing", "fresh-bootstrap"):
+        raise SeedPlanHold("BOOTSTRAP_MODE")
     if summary["capacity_mode"] != "reuse-existing":
         raise SeedPlanHold("PAID_CAPACITY_NOT_ACCEPTED")
     source = verify_source(repo, sha)
@@ -227,6 +230,10 @@ def execute(profile: Path, identities: Path, repo: Path, sha: str, custody: Path
     result = review_plan_json(raw)
     result["healthcare_source_sha"] = sha
     result["target_environment"] = summary["environment"]
+    result["bootstrap_mode"] = summary["bootstrap_mode"]
+    result["existing_storage_unmodified"] = True
+    result["initial_identity_state_local_only"] = True
+    result["final_identity_remote_state_verified"] = False
     with plan.open("rb") as stream:
         result["plan_sha256"] = hashlib.file_digest(stream, "sha256").hexdigest()
     result["binary_plan_bytes"] = plan.stat().st_size
