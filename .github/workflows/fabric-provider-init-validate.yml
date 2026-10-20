@@ -72,3 +72,10 @@ jobs:
           echo "PROVIDER_SCHEMA_VALIDATE=PASS"
           echo "TERRAFORM_PLAN_APPLY=NO"
           echo "#### FABRIC_PROVIDER_VALIDATE_OUTPUT_END ####"
+          {
+            echo "## Terraform Provider Init/Validate — PASS"
+            printf 'Source SHA: \`%s\`\n\n' "$GITHUB_SHA"
+            printf 'Isolated Root: \`%s\`\n\n' "$CHECK_ROOT"
+            echo 'Actual provider plugin initialized and HCL schema validated.'
+            echo 'Backend initialized: NO; Azure/Fabric credential: NONE; Plan/Apply: NONE.'
+          } >> "$GITHUB_STEP_SUMMARY"
