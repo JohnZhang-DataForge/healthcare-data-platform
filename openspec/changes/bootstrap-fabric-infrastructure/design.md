@@ -154,3 +154,19 @@ Two distinct newly created Entra Apps (Tenant A Backend Operator, Tenant B Fabri
 Implement plan-only identity bindings in the new Identity v3 Bootstrap contract; Apply is not activated by creating additional duplicate subject credentials. Cloud Plan requires a fresh isolated State and inspected target; apply requires an explicit, reviewed exact Plan digest and no unapproved billed/destructive operations. Do not interpret `workflow_dispatch` itself as independent reviewer approval. The user intentionally waived GitHub Environment approval for this personal lab.
 
 Evidence: <https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422174619>; Self-Runner PR #162 and Healthcare PR #320. Previous dedicated executor/Public Healthcare suggestions remain historical, not executable requirements.
+
+
+## Final manual execution UI contract — Plan / Apply must be separately selected (2026-10-20)
+
+This section refines the **final solo-operator Self-Runner decision above** and **supersedes** all earlier advice that requires GitHub Environment protection or automatically couples Plan and Apply. The user does **not** require Environment / Required Reviewers, a new executor repository, or a two-person approval service for this personal lab. Their **non-negotiable** control is an explicit GitHub Actions **Run workflow** operation selector:
+
+| Manual `operation` | UI default | Allowed meaning | Never allowed |
+| --- | --- | --- | --- |
+| `plan` | **YES** | Inspect source/target/State and create a Terraform Plan artifact to review, once the live executor exists | Running `terraform apply`, automatically dispatching an Apply workflow/job, promoting a Plan success to approval |
+| `apply` | No; operator must select explicitly | In a **new, independent workflow_dispatch Run**, verify and execute the **exact previously generated and reviewed binary Plan** after confirming source SHA, root/environment, State, Tenant/Subscription, digest and cost/destruction safeguards | Automatic chaining from Plan, silently creating a new unreviewed Plan, trusting only a user-typed SHA/digest, unapproved paid Capacity |
+
+GitHub Action `fabric-controlled-entry.yml` in the **existing private Self-Runner repository** now exposes `operation` as a required **choice** with only `plan` and `apply` (default `plan`); the old `bootstrap` option remains internal/offline API compatibility but **not in this UI dropdown**. The selection is wired to the existing offline `--phase` validator. There must be **two separate dispatches / Run IDs / logs**, with no `needs:` Plan→Apply dependency and no automated `workflow_run` / reusable-workflow trigger bridging the phases. `target_environment` is a logical Fabric deployment target input; it is **not** a GitHub Environment approval.
+
+**Present implementation stage:** Self-Runner PR [#163](https://github.com/JohnZhang-DataForge/Self-Runner/pull/163), merged Main `fb1be4292e295fd0824b1af255171a846f541fb2`, updates only the manual **offline HOLD** selector, tests and runbook. This is **not** yet a real Terraform executor: both chosen operations still produce `HOLD`, no Terraform or Azure/Fabric Plan/Apply, no OIDC access, no State access, no billing. Test success validates the UI contract, **not** deployment capability.
+
+**For future live work:** preserve manual Plan vs Apply as separate jobs/runs in the **same Self-Runner repository**, with separate exact immutable artifact verification prior to Apply and auditable Run IDs. Use least-privilege Tenant A/B identities without pretending that a shared Main-ref OIDC subject provides cryptographic workflow separation. Do not enforce GitHub Environment reviewers. Continue to refuse missing/mismatched Plan, unreviewed destructive actions, legacy State adoption and paid F SKU purchases without cost authorization. Never automatically apply immediately after a successful Plan.
