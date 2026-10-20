@@ -6,6 +6,8 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_handoff.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_handoff.py'
       - 'azure-fabric/infra-terraform/tools/fabric_capacity_approval.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_capacity_approval.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity_root.py'
@@ -112,6 +114,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_bootstrap_cross_root.py' -v
+      - name: Validate non-secret Bootstrap-to-Fabric handoff and HOLD gates
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_bootstrap_handoff.py' -v
       - name: Validate preflight unit tests
         run: |
           python3 -m unittest discover \

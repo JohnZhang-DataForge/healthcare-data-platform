@@ -79,3 +79,10 @@
 - 将三项 Bootstrap Root（Identity / Storage / Capacity）与三项新环境 Root（Workspace / Onelake / Connection）全部纳入 GitHub-hosted Terraform `fmt -check -diff`；不执行任何 Terraform init/validate/plan/apply/destroy/import，也不设置 GitHub OIDC token 写权限。
 - 新增 `tests/test_fabric_bootstrap_cross_root.py`：固定各 Root 的资源类型与数目、独立 State Backend、自举禁令、单一资源所有权、默认创建审批和 CI 无凭据规则。负向回归阻止跨 Root 重复管理、旧 Storage 接管或 Capacity 付费创建门禁绕过。
 - **离线源码/格式关卡，不是可部署证明**：真实 Provider Schema、租户与订阅、RBAC、网络、远端 State 及收费审批仍未验证。Task 2.5 checkbox 暂不勾选，下一批继续校验非敏感 Bootstrap → 新环境交接与 fresh 模式断点。此次变更不触碰旧七 Root、旧 `dev/*.tfstate`、Self-Runner 或真实云端。
+
+## Task 3.1 第一批：非敏感输出交接合同与 fresh 阻断（2026-10-19）
+
+- 新增 `tools/fabric_bootstrap_handoff.py` 和 `bootstrap/HANDOFF-CONTRACT.md`：仅处理 Profile、三独立 Client ID、Storage Target 和 Capacity Target **value-only 离线对象**；逐字段验证 Tenant/Subscription/ARM Resource ID、唯一身份、State Key、容量来源与所有 false 审核标志。
+- `reuse-existing + reuse-existing` 仅提供现有 Preflight 可接受的**未验证**环境配置预览和 Backend 静态摘要；真实 State/Storage/Capacity 不做查询，绝不返回 approval=true。
+- `fresh-bootstrap` 默认阻断与旧 Root 自动衔接：当前 `fabric_environment_preflight.py` / `fabric_deployment_target.py` / `fabric_backend_config.py` / `new-environments/connection` 仍对 `johnzhang` 写死；下一 PR 必须单独泛化并防止旧 Storage 回退。付费 `create-new` 容量必须独立核验真实 Fabric Capacity UUID，ARM ID 不能转换代替。
+- 单独 Python 正/负/跨 Tenant/Secret/付费回归并接入 GitHub-hosted no-cloud CI。**Task 3.1、下游 Task 0.3 保持未完成**，直到代码与实际受控交接边界完成；本 PR 无 Terraform/云端操作/费用/旧资源变更。
