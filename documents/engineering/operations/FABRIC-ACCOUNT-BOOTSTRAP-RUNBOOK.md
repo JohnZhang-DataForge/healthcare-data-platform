@@ -243,3 +243,11 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 - 两仓创建于 2026 年 10 月，GitHub 文档指明这类新仓库默认使用带 owner/repo 数字 ID 的 **immutable OIDC `sub`**；目前 Identity Root 是 name-only 旧格式。下一轮必须先确定真正执行 Privileged Job 的仓库，并按**实际** Repo ID/Owner ID/OIDC settings 的安全验证重新生成 Federation 和 GitHub Environment 配置；不可盲目启用现有 `identity_creation_approved`。
 - Separate Seed、Plan、Apply 受保护 Environment 的存在、审批人、分支策略、Token issuer/audience/sub、最小权限以及 Saved Plan Artifact 的可信存储/Hash/来源未核验。仅保存本地 `terraform show -json` 的文字内容或用手输 SHA256 比对不代表 Approved Plan；Terraform State/Plan 可能含 Secrets，禁止在公开 CI 中传播。
 - **未触发 Self-Runner dispatch，也未使用 Cloud Token。** 不执行任何 Terraform Init/Plan/Apply、身份创建、资源写入和收费 Capacity 创建。
+
+## 9. 开始真实测试：分级执行权限（2026-10-20 更新）
+
+用户已明确允许 **Terraform init / validate / 真实 Plan**、Azure/Entra/Fabric 只读/OIDC 验证；隔离新资源的 Apply 在 Plan 审查后可逐步实施。不要再因为旧版“只许 fmt”约定拒绝真实测试。但先校验源 SHA、执行 Identity、受保护 GitHub Environment、目标 Subscription 和 State 空位。Fabric Trial 60 天**不等于 Azure 全资源免费**，新 F SKU Capacity、Private Endpoint、Storage 等资源可能额外收费，付费创建继续独立审核。
+
+第一批真实 Provider 检查 GitHub-hosted `.github/workflows/fabric-provider-init-validate.yml` 已启用：六个新 Root 执行 `terraform init -backend=false -input=false` 与 `terraform validate`，**确实下载并验证 Provider Schema**，但不会 Azure 登录、不会读取或初始化旧 Remote State、不会创建 Workspace 或付费 Capacity。
+
+**实际 Plan 阶段下一步**：先核实 GitHub immutable OIDC Sub/执行仓库、独立 Backend/Fabric Client ID、RBAC/Capacity Trial 访问和网络；规划只选择新隔离 Root，State Key 为 `fabric/<env>/<root>.tfstate`；保管初始 Bootstrap State，保存不公开的 Plan artifact 并在 Apply 前验真。不要运行旧 Self-Runner `azure-infra.yaml` 以跳过身份不匹配。Trial Workspace/Notebook 等真正创建需在确认 Plan 不包含 Destroy/Replace/意外收费项后进行。

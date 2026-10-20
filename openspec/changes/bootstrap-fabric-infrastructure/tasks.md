@@ -1,6 +1,6 @@
 # Tasks
 
-> **Active / Design First**：Bootstrap as Code + paid Capacity Terraform *ability* 已经用户批准，但**所有真实云端写入、Terraform Init/Plan/Apply/Destroy/Import 与购买付费 Capacity 均未授权**。开发以小 PR/离线证据完成，按真实 Main SHA 和 Run 更新。
+> **Active / Incremental Live Testing Approved (2026-10-20)**：用户已明确允许隔离环境的 Terraform Init、Validate、真实只读库存与 Plan/OIDC 验证；计划进入真实测试而非只做静态源码。PR CI 仍必须 **无云凭据、无远端 State、无 Plan/Apply**；新增 `init -backend=false` + `validate` 进行真实 Provider Schema 检测。实际带云权限的 Plan 需经源 SHA、Identity/Subscription、隔离 State Key 和现有资源库存核验；可在确认 Plan 后对明确隔离的 Trial 资源进行 Apply。旧 `johnzhang`/历史 State、旧 Workspace 保留保护。新收费 F SKU Capacity、意外成本或破坏性操作需另行批准。开发以小 PR + 真实测试证据验收。
 
 ## 0. Approved boundary and Change creation
 
@@ -20,7 +20,7 @@
 - [ ] 2.2 实现隔离 Identity/SPN/Group/OIDC Root/Modules；不创建原 `github-terraform` 的重复同名 App、不自动接管旧 App；默认拒绝写操作。
 - [ ] 2.3 实现可选 fresh Storage/Containers、最小 RBAC 和独立的初始 Bootstrap State 策略；阻止 backend 自举循环、旧 `dev/*.tfstate` 和 `johnzhang` 资源接管。
 - [ ] 2.4 实现 Capacity 的 `reuse-existing` / `create-new` Resource/Output；使用经过验证的官方 ARM Schema，付费创建在 CI/Root 中默认拒绝，`prevent_destroy` 与预算/人工审批不互相代替。
-- [x] 2.5 为所有 Terraform Root 增加纯离线 `fmt`/静态合同和负向测试；PR CI 禁止执行 `init/plan/apply/destroy/import` 或访问云端。
+- [x] 2.5 为所有 Terraform Root 增加纯离线 `fmt`/静态合同和负向测试；原 `fabric-environment-preflight.yml` fmt-only PR CI 仍禁止 `init/plan/apply/destroy/import` 及云端访问。另有 2026-10-20 批准的独立无凭据 Provider CI，可执行 `init -backend=false` 和 `validate`，仍不得运行真实 Plan/Apply。
 
 ## 3. Integration and controlled operational readiness
 
@@ -131,3 +131,10 @@
 - **明确发现结构性不匹配**：新 Workflow 归属于 Self-Runner，但当前 Entra Identity Root GitHub Federation 固定引用 Healthcare Repo；并且 `fabric-<env>-backend` / `-deployer` 两个 Role Environment 不能自然兼容同一 Job 的 `fabric-<env>-plan` 或 `-apply` Environment。
 - **2026 年 GitHub 不可变 OIDC Subject**：GitHub Repo API 确认两个 Repo 都在 2026-07-15 之后建立（Healthcare `2026-10-05` / Self-Runner `2026-10-11`），官方格式含 `@owner_id/@repo_id`，而当前 Identity Root 使用 name-only Subjects。新增 `tools/fabric_oidc_subject_audit.py` + `tests/test_fabric_oidc_subject_audit.py`，CI 记录此不兼容并禁止未经审查静默切换 Federation Subject；**没有实际获取 OIDC token 或调用云端**。
 - 方案决策保留可审查的 A（Healthcare 执行，Self-Runner 只控制）或 B（Self-Runner 执行并修改 Entra OIDC）的分叉；两者都必须先获得 Protected Environment、Main/Source SHA、受控 Plan Artifact、独立审核人与云端调用授权。当前 Task 3.2 checkbox 未勾选，不能使用默认 IAM 或 `id-token:write` 绕过此阻断。
+
+## 2026-10-20 开发策略变更：Provider 真实 Init/Validate，Plan 准备就绪
+
+- 用户撤销了此前对全部 Init/Validate/Plan 的一刀切限制：允许真实云只读检查、OIDC 登录验证、隔离新环境的 Plan，隔离 Trial 资源在审核 Plan 后 Apply；但**不视为批准新建收费的 Fabric F SKU Capacity 或破坏旧状态**。此前的 2.5 fmt-only 静态 CI 保留，作为快速无云回归。
+- 新增专门 `.github/workflows/fabric-provider-init-validate.yml`，在 GitHub-hosted 六 Root 矩阵中执行 **Terraform 1.13.5 `init -backend=false` → `validate`**：实际下载相应固定 Provider、检查 HCL/Provider Schema，不配置 Azure/Fabric 身份、不访问 Blob Backend、无 `id-token:write`。此验证可能因 Provider 官方 Schema 不兼容而 FAIL；需要修复源码而不是假装 PASS。
+- `tests/test_fabric_provider_validation_workflow.py` 防止 CI 自行增加 Remote Backend、State、OIDC、Secrets 或 Apply。**`init -backend=false` 不等于云端初始化、真实远程 Plan 或资源创建**。后续在 Self-Runner 受保护通道中才设计云身份验证/Plan，先解决 immutable OIDC Subject 与执行仓库不一致，再核实 Trial Capacity UUID 和 State。
+- 源码限定在上述 Workflow、静态 Workflow 安全测试及 Task/Runbook；旧 `azure-infra.yaml`/旧 Storage/State/七 Root 不修改。相关真实六 Root GitHub CI Run、准确 SHA/错误与修复记录以本 PR 完成时更新。Task 2.1 Provider 验证**只达到 Schema 子阶段**，仍须完成最小 IAM、真实权限。Task 3.2 真正可信的 Plan/Apply 入口仍开放。
