@@ -107,7 +107,9 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`04-publish-canonical-patient.sh`](../../../../local-data-platform/scripts/task002/04-publish-canonical-patient.sh) | [EXECUTE / review] 历史 TASK002 publish canonical patient 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
 | [`05-map-person-omop.sh`](../../../../local-data-platform/scripts/task002/05-map-person-omop.sh) | [EXECUTE / review] 历史 TASK002 map person OMOP 脚本 |
 
-## 历史 task003（11 个入口）
+> **历史源码安装器退役（2026-10-20，Task 4.9 第六批）**：移除 2 份已物化到正式 Git 源码的历史安装器；对应正式源码、Contract、运行脚本、单测 **4/4 全字节 MATCH** 且全部保留。原生成器可使用固定 Git 恢复地址：[`05g2c2b-prepare-visit-processed-writer-core.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/e3ce9f2e5adbfd22f25e3bfca1b2ae892f4f086a/local-data-platform/scripts/task003/05g2c2b-prepare-visit-processed-writer-core.sh)、[`05g2c2c1-prepare-visit-processed-spark-driver.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/e3ce9f2e5adbfd22f25e3bfca1b2ae892f4f086a/local-data-platform/scripts/task003/05g2c2c1-prepare-visit-processed-spark-driver.sh)。不可将历史链接当作现行入口，也不自动重放旧 Batch。
+
+## 历史 task003（9 个入口）
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
@@ -119,8 +121,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`05f2a-prepare-visit-candidate-driver.sh`](../../../../local-data-platform/scripts/task003/05f2a-prepare-visit-candidate-driver.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate driver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05f2b-prepare-visit-candidate-runtime.sh`](../../../../local-data-platform/scripts/task003/05f2b-prepare-visit-candidate-runtime.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05f2c-validate-visit-candidate.sh`](../../../../local-data-platform/scripts/task003/05f2c-validate-visit-candidate.sh) | [CHECK / verify effects] 历史 TASK003 validate visit candidate 脚本 |
-| [`05g2c2b-prepare-visit-processed-writer-core.sh`](../../../../local-data-platform/scripts/task003/05g2c2b-prepare-visit-processed-writer-core.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed writer core 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`05g2c2c1-prepare-visit-processed-spark-driver.sh`](../../../../local-data-platform/scripts/task003/05g2c2c1-prepare-visit-processed-spark-driver.sh) | [PREPARE / may write] 历史 TASK003 prepare visit processed spark driver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05g2c2c3d2b1-prepare-persisted-validator-source.sh`](../../../../local-data-platform/scripts/task003/05g2c2c3d2b1-prepare-persisted-validator-source.sh) | [PREPARE / may write] 历史 TASK003 prepare persisted validator source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 
 ## 历史 task004（3 个入口）
