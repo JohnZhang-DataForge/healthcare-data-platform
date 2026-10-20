@@ -73,7 +73,7 @@ Bootstrap outputs SHALL omit secrets and SHALL identify source Tenant/identity, 
 
 ### Requirement: Current same-Tenant deployment SHALL preserve user-provisioned Storage and State
 
-The CURRENT approved target SHALL use `bootstrap_mode=reuse-existing`, with Tenant A and Tenant B both set to `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`, Azure Subscription `56107520-5920-4e96-9833-5441ded0a90c`, and existing `johnzhang/landing` plus `johnzhang/tfstate`. Provisioning SHALL NOT require a second Entra Tenant or the legacy `johnzhang-fabric` human account to authenticate with Azure CLI. It SHALL preserve legacy `dev/*.tfstate` and must use isolated new remote State keys. Initial local Seed Bootstrap State MAY be used only as a protected transitional custody state; long-lived Bootstrap State MUST have an explicit reviewed retention/migration/recovery plan under the existing Backend. Existing manually created Workspace and legacy RBAC SHALL NOT become dependencies, be implicitly adopted or automatically destroyed. Current A=B implementation takes priority; future A!=B remains configurable and must not delay same-Tenant acceptance.
+The CURRENT target SHALL use `reuse-existing`, with A=B and the approved subscription. It MUST preserve `johnzhang/landing`, `johnzhang/tfstate` and `dev/*.tfstate` while using only isolated new State keys. It MUST NOT depend on the old Fabric administrator account or manually provisioned Workspace. Local Seed State is transitional, with explicit recovery/migration before long-term use. Future A!=B SHALL remain configurable without blocking the current A=B deployment.
 
 #### Scenario: current known Tenant/Subscription reused
 
