@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "environment": "lab-b",
   "seed_operator": {
     "backend_tenant_id": "899a04e8-8d3d-486c-88a1-7bdeb22d5f1a",
@@ -26,35 +26,17 @@
   "oidc_bindings": {
     "plan_backend": {
       "repository": "JohnZhang-DataForge/Self-Runner",
-      "environment": "fabric-lab-b-plan-backend",
       "ref": "refs/heads/main",
       "issuer": "https://token.actions.githubusercontent.com",
       "audience": "api://AzureADTokenExchange",
-      "protected_environment_required": true
-    },
-    "apply_backend": {
-      "repository": "JohnZhang-DataForge/Self-Runner",
-      "environment": "fabric-lab-b-apply-backend",
-      "ref": "refs/heads/main",
-      "issuer": "https://token.actions.githubusercontent.com",
-      "audience": "api://AzureADTokenExchange",
-      "protected_environment_required": true
+      "trust_mode": "single-operator-main-ref"
     },
     "plan_deployer": {
       "repository": "JohnZhang-DataForge/Self-Runner",
-      "environment": "fabric-lab-b-plan-deployer",
       "ref": "refs/heads/main",
       "issuer": "https://token.actions.githubusercontent.com",
       "audience": "api://AzureADTokenExchange",
-      "protected_environment_required": true
-    },
-    "apply_deployer": {
-      "repository": "JohnZhang-DataForge/Self-Runner",
-      "environment": "fabric-lab-b-apply-deployer",
-      "ref": "refs/heads/main",
-      "issuer": "https://token.actions.githubusercontent.com",
-      "audience": "api://AzureADTokenExchange",
-      "protected_environment_required": true
+      "trust_mode": "single-operator-main-ref"
     }
   }
 }

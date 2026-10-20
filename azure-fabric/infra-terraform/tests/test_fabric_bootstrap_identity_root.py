@@ -35,7 +35,7 @@ class IdentityRootTests(unittest.TestCase):
             r'^resource "([^"]+)" "([^"]+)"\s*{(.*?)(?=^resource "|\Z)',
             self.main, re.M | re.S,
         )
-        self.assertEqual(len(resources), 12)
+        self.assertEqual(len(resources), 10)
         for typ, name, body in resources:
             with self.subTest(kind=typ, name=name):
                 self.assertIn("var.identity_creation_approved ? 1 : 0", body)
@@ -48,13 +48,15 @@ class IdentityRootTests(unittest.TestCase):
             ("azuread_application_registration", 3),
             ("azuread_service_principal", 3),
             ("azuread_group", 2),
-            ("azuread_application_federated_identity_credential", 4),
+            ("azuread_application_federated_identity_credential", 2),
         ):
             self.assertEqual(self.main.count('resource "' + kind + '"'), count)
         self.assertIn('audiences      = ["api://AzureADTokenExchange"]', self.main)
         self.assertIn('issuer         = "https://token.actions.githubusercontent.com"', self.main)
-        for suffix in ("plan-backend", "apply-backend", "plan-deployer", "apply-deployer"):
-            self.assertIn("environment:fabric-${var.environment}-" + suffix, self.main)
+        self.assertEqual(self.main.count('subject        = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:ref:refs/heads/main"'), 2)
+        self.assertNotIn(":environment:", self.main)
+        self.assertNotIn("backend_operator_apply", self.main)
+        self.assertNotIn("fabric_deployer_apply", self.main)
         self.assertIn("repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156", self.main)
         self.assertNotIn("repo:JohnZhang-DataForge/healthcare-data-platform", self.main)
         self.assertNotIn("refs/pull/", self.main)

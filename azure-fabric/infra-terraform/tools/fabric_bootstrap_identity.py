@@ -21,14 +21,10 @@ AUDIENCE = "api://AzureADTokenExchange"
 MAIN_REF = "refs/heads/main"
 SEED_REF_RE = re.compile(r"^SEED-[A-Z0-9-]{8,72}$")
 ROLES = ("backend_operator", "fabric_deployer", "blob_reader")
-OIDC_BINDINGS = {"plan_backend": ("backend_operator", "plan-backend"),
-                 "apply_backend": ("backend_operator", "apply-backend"),
-                 "plan_deployer": ("fabric_deployer", "plan-deployer"),
-                 "apply_deployer": ("fabric_deployer", "apply-deployer")}
-
-
-def _role_environment(profile: dict, binding: str) -> str:
-    return f"fabric-{profile['environment']}-{OIDC_BINDINGS[binding][1]}"
+# Main-ref trust is shared across all main workflows. Separate Azure Entra App
+# permissions restrict impact, but OIDC does not bind an individual workflow.
+OIDC_BINDINGS = {"plan_backend": "backend_operator",
+                 "plan_deployer": "fabric_deployer"}
 
 
 def validate_identity_request(bootstrap_profile: object, request: object) -> dict:
@@ -36,7 +32,7 @@ def validate_identity_request(bootstrap_profile: object, request: object) -> dic
     p = validate(bootstrap_profile)
     r = _fields(request, {"schema_version", "environment", "seed_operator",
                           "applications", "oidc_bindings"}, "identity_request")
-    if type(r["schema_version"]) is not int or r["schema_version"] != 2:
+    if type(r["schema_version"]) is not int or r["schema_version"] != 3:
         raise InvalidBootstrapProfile("unsupported identity schema")
     if r["environment"] != p["environment"]:
         raise InvalidBootstrapProfile("identity environment differs from Bootstrap profile")
@@ -68,25 +64,26 @@ def validate_identity_request(bootstrap_profile: object, request: object) -> dic
 
     bindings = _fields(r["oidc_bindings"], set(OIDC_BINDINGS), "oidc_bindings")
     resolved_bindings = {}
-    for binding_name, (role, suffix) in OIDC_BINDINGS.items():
-        binding = _fields(bindings[binding_name],
-                          {"repository", "environment", "ref", "issuer", "audience",
-                           "protected_environment_required"}, f"oidc_bindings.{binding_name}")
-        environment = _role_environment(p, binding_name)
+    for binding_name, role in OIDC_BINDINGS.items():
+        binding = _fields(
+            bindings[binding_name],
+            {"repository", "ref", "issuer", "audience", "trust_mode"},
+            f"oidc_bindings.{binding_name}"
+        )
         if (binding["repository"] != REPOSITORY
-                or binding["environment"] != environment
                 or binding["ref"] != MAIN_REF
                 or binding["issuer"] != ISSUER
                 or binding["audience"] != AUDIENCE
-                or binding["protected_environment_required"] is not True):
-            raise InvalidBootstrapProfile("unsafe OIDC issuer, repo, ref or environment")
+                or binding["trust_mode"] != "single-operator-main-ref"):
+            raise InvalidBootstrapProfile("unsafe OIDC issuer, repository or main-ref scope")
         resolved_bindings[binding_name] = {
             "tenant_id": apps[role]["tenant_id"],
             "application_role": role,
             "issuer": ISSUER,
             "audience": AUDIENCE,
-            "subject": f"{IMMUTABLE_PREFIX}:environment:{environment}",
+            "subject": f"{IMMUTABLE_PREFIX}:ref:{MAIN_REF}",
             "required_branch_ref": MAIN_REF,
+            "workflow_role_isolation_by_oidc": False,
         }
 
     return {
@@ -96,6 +93,9 @@ def validate_identity_request(bootstrap_profile: object, request: object) -> dic
         "identity_topology": p["identity_topology"],
         "seed_authorization_verified": False,
         "github_environment_protection_verified": False,
+        "github_environment_required": False,
+        "workflow_role_isolation_by_oidc": False,
+        "apply_authorized": False,
         "application_inventory_verified": False,
         "app_client_ids_resolved": False,
         "applications": {

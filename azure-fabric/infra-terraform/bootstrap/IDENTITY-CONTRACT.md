@@ -1,22 +1,9 @@
-# Bootstrap Identity and Self-Runner immutable OIDC contract (v2)
+# Bootstrap Identity and Self-Runner Immutable Main-Ref OIDC Contract (v3)
 
-**OpenSpec Task 3.2 — source alignment, live verification pending.** The Healthcare repository supplies reviewed IaC at an immutable commit; Self-Runner is the only designated GitHub Actions executor and OIDC token issuer. The two repositories' verified 2026-10-20 IDs are owner `337895338`, Healthcare `1404947726`, Self-Runner `1413796156`. Re-query GitHub OIDC preview and actual token claim before live credential enrollment.
+The user selected the existing `JohnZhang-DataForge/Self-Runner` Private repository, GitHub Free, without GitHub Environments, separate reviewers or another repo. Real issuer validation on Self-Runner Main [Run 39422174619](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422174619) confirmed `repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:ref:refs/heads/main` with the intended audience. This is **not** evidence of Entra access to new applications.
 
-Identity v2 request contains `schema_version=2`, `environment`, separately authorized `seed_operator`, three distinct new `applications` for Tenant A Backend Operator, Tenant A Blob Reader and Tenant B Fabric Deployer, and **exactly four** `oidc_bindings` named `plan_backend`, `apply_backend`, `plan_deployer`, `apply_deployer`. Each binding requires Self-Runner repository, exact `fabric-<env>-<phase>-<role>` Environment, `refs/heads/main` branch policy, official GitHub OIDC issuer, Azure TokenExchange audience and explicit `protected_environment_required=true`. A JSON approval flag is NOT verified GitHub Environment configuration.
+Identity request schema `3` requires a separate Seed authorization record, three **new** applications: Backend Operator, Blob Reader (Tenant A) and Fabric Deployer (Tenant B), and exactly two OIDC bindings `plan_backend` and `plan_deployer` with `trust_mode=single-operator-main-ref`. Backend and Fabric get distinct new Client IDs and least-privileged permissions, but their FICs deliberately share the *same* `main` subject. **The GitHub OIDC token cannot distinguish their roles or workflows.** Do not pretend this is per-role/per-phase trust isolation, and don't mutate existing Self-Runner OIDC customization.
 
-Each Application's federated credential uses its appropriate immutable subject:
+The Fabric Plan/Apply executor requires explicit main-branch, manual input, reviewed immutable Source SHA and isolation of State key and Tenant. Terraform Plan can require write rights to lock the State; no automatic Apply should be enabled. No Apply credential is added: the same app trust can technically be reused by an authorized future workflow; enforce independent action/Plan digest/billing and scope controls before permitting it. Blob Reader has no CI OIDC binding.
 
-```text
-repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-<env>-plan-backend
-repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-<env>-apply-backend
-repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-<env>-plan-deployer
-repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-<env>-apply-deployer
-```
-
-Plan and Apply are separate protected jobs/Environments; no single job attempts both Entra principals with one immutable OIDC `sub`. GitHub Environment protection MUST restrict deployments to trusted `main` and require separately verified reviewers, including a dedicated `fabric-<env>-bootstrap` Environment for initial external Seed identity provisioning. The bootstrap Seed may span two tenants only via separately authorized identities; never rely on the self-created SPN to create itself. Blob Reader remains without CI OIDC credentials; its separate landing-data authentication needs review.
-
-Plan/Apply share each role's application identity, so **phase separation in GitHub does not produce different Azure permissions**; enforce independent protected approvals, immutable plan provenance, State scope, deny destructive or paid actions, and avoid uncontrolled workflows. Do not trust unverified PR refs, claims, or user-supplied plan digests as approvals.
-
-Contract and Terraform root default to no resource creation, `prevent_destroy`, initial isolated local State (with separately verified secure custody), no legacy App import, no rights granted by merely creating Entra applications. Resolved client IDs remain unverified until real inventory. No token, administrator consent, Storage State, GitHub protected Environment, Capacity Trial or Cloud Plan has been successfully tested in this code-only revision.
-
-Official: https://learn.microsoft.com/en-us/entra/workload-id/workload-identities-github-immutable-subjects
+The Seed Operator is a separately authorized administrative principal, with isolated encrypted initial local Bootstrap State and independent Tenant A/B consent. This Root has default `identity_creation_approved=false`, `prevent_destroy=true`, no old App adoption or privilege bootstrap. No live app creation, FIC enrollment, access token exchange, State or charged F SKU authorization follows from source validation. `task 3.2` stays OPEN until actual verification.

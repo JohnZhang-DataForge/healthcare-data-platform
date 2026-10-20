@@ -26,7 +26,7 @@ def profile(cross=False):
         "bootstrap_mode": "fresh-bootstrap",
         "tenants": {"backend_tenant_id": A, "fabric_tenant_id": B if cross else A},
         "github_oidc": {"repository": "JohnZhang-DataForge/Self-Runner",
-                        "environment": "fabric-lab-b"},
+                        "ref": "refs/heads/main"},
         "storage": {"account": "hdplabbstorage", "subscription_id": SUB,
                     "resource_group": "rg-hdp-lab-b", "landing_container": "landing",
                     "state_container": "tfstate", "state_prefix": "fabric/lab-b"},
@@ -39,14 +39,14 @@ def profile(cross=False):
 def request(cross=False):
     ftenant = B if cross else A
     repo = "JohnZhang-DataForge/Self-Runner"
-    def binding(env):
-        return {"repository": repo, "environment": env,
+    def binding():
+        return {"repository": repo,
                 "ref": "refs/heads/main",
                 "issuer": "https://token.actions.githubusercontent.com",
                 "audience": "api://AzureADTokenExchange",
-                "protected_environment_required": True}
+                "trust_mode": "single-operator-main-ref"}
     return {
-        "schema_version": 2, "environment": "lab-b",
+        "schema_version": 3, "environment": "lab-b",
         "seed_operator": {"backend_tenant_id": A, "fabric_tenant_id": ftenant,
                           "authorization_reference": "SEED-ADMIN-APPROVAL-0001"},
         "applications": {
@@ -56,13 +56,10 @@ def request(cross=False):
             for name in ("backend_operator", "fabric_deployer", "blob_reader")
         },
         "oidc_bindings": {
-            "plan_backend": binding("fabric-lab-b-plan-backend"),
-            "apply_backend": binding("fabric-lab-b-apply-backend"),
-            "plan_deployer": binding("fabric-lab-b-plan-deployer"),
-            "apply_deployer": binding("fabric-lab-b-apply-deployer"),
+            "plan_backend": binding(),
+            "plan_deployer": binding(),
         },
     }
-
 
 def ids(cross=False):
     client_ids = ("35174fe8-88a8-4d12-b97c-c395f64fd1eb",
@@ -77,13 +74,15 @@ class IdentityContractTests(unittest.TestCase):
         with self.assertRaises(InvalidBootstrapProfile):
             validate_identity_request(p, r)
 
-    def test_same_tenant_separate_apps_and_exact_environments(self):
+    def test_same_tenant_separate_apps_shared_main_ref_subject(self):
         result = validate_identity_request(profile(), request())
         self.assertEqual(result["identity_topology"], "same-tenant")
         self.assertEqual(result["oidc_bindings"]["plan_backend"]["subject"],
-                         "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-lab-b-plan-backend")
-        self.assertNotEqual(result["oidc_bindings"]["plan_backend"]["subject"],
-                            result["oidc_bindings"]["plan_deployer"]["subject"])
+                         "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:ref:refs/heads/main")
+        self.assertEqual(result["oidc_bindings"]["plan_backend"]["subject"],
+                         result["oidc_bindings"]["plan_deployer"]["subject"])
+        self.assertFalse(result["workflow_role_isolation_by_oidc"])
+        self.assertFalse(result["apply_authorized"])
         self.assertFalse(result["seed_authorization_verified"])
         self.assertFalse(result["github_environment_protection_verified"])
         self.assertFalse(result["cloud_executed"])
@@ -111,20 +110,23 @@ class IdentityContractTests(unittest.TestCase):
             target[name] = "NEVER_SHOW_SECRET"
             self.reject(profile(), r)
 
-    def test_ref_and_environment_protection(self):
+    def test_main_ref_binding_rejects_unsafe_or_environment_claims(self):
         for key, value in (("ref", "refs/pull/1/merge"),
                            ("ref", "refs/heads/feature/attacker"),
                            ("environment", "fabric-lab-b"),
-                           ("environment", "fabric-other-plan-backend"),
                            ("repository", "wrong/other"),
                            ("issuer", "https://attacker.invalid"),
                            ("audience", "wrong-audience"),
-                           ("protected_environment_required", False),
-                           ("protected_environment_required", "true")):
+                           ("trust_mode", "environment-protected"),
+                           ("trust_mode", False)):
             with self.subTest(key=key):
                 r = request()
                 r["oidc_bindings"]["plan_backend"][key] = value
                 self.reject(profile(), r)
+        for forbidden in ("apply_backend", "apply_deployer"):
+            r = request()
+            r["oidc_bindings"][forbidden] = deepcopy(r["oidc_bindings"]["plan_backend"])
+            self.reject(profile(), r)
 
     def test_seed_is_not_implicit_administrator_credential(self):
         for key, value in (("backend_tenant_id", B),
