@@ -35,3 +35,12 @@
 ## 4. 要求的 CI 证据
 
 新 PR 最终 HEAD 须在 GitHub Runner 上真实达到：`CDM_LEGACY_WORKFLOW_COUNT=3`、`CDM_PROTECTED_HISTORIC_TEST_SUITES=7`、`CDM_LEGACY_TEST_COVERAGE_GATE=PASS`、离线 **37/37 测试 PASS**、`CDM_SOURCE_GATE=PASS`、`CDM_CLEAN_BUILD=PASS`、`CDM_IMAGE_IMPORT_GATE=PASS`，以及两个现行 GHCR 发布 Jobs **SKIPPED**。其他 Required Checks 需绿；必须记录实际 PR Head 与 Run，不能根据源码提交预测 CI 结果。
+
+## 5. 实际 CI 首次验收（实现 HEAD，结果已核对）
+
+- 本轮 [Healthcare PR #301](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/301)、[真实 Run #39406065172](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39406065172) 的 `CDM reader clean build and complete historical offline contract regression (no publish)` Job **SUCCESS**。Log 直接报告 `SOURCE_SHA=ee52aef3d230e36e3c33edc9241552757889686f`；这是**实现代码 HEAD**，本轮补充证据后的**最终 PR HEAD 仍须复验**。
+- `CDM_COPY_COUNT=7` / `CDM_SOURCE_GATE=PASS`；`CDM_LEGACY_WORKFLOW_COUNT=3` / `CDM_PROTECTED_HISTORIC_TEST_SUITES=7` / `CDM_LEGACY_TEST_COVERAGE_GATE=PASS`，仅证明历史三个 Workflow 内引用的**七组测试名称**在当前 Reader CI 中均有覆盖，文件存在且不存在旧根路径。
+- `CDM_CLEAN_BUILD=PASS`；本地临时 `LOCAL_IMAGE_ID=sha256:843dfde6a94fec46a392d0d63dea54f101ab1087d553f01183e21913d75d970b`（**不是** GHCR Digest）。4 个目标 `module.__file__` 来自镜像 `/opt/task004/`，`CDM_IMAGE_IMPORT_GATE=PASS`。
+- 七个测试套件逐项 **5 + 3 + 5 + 8 + 2 + 10 + 4 = 37/37 PASS**，`CDM_OFFLINE_REGRESSION=PASS`。容器 `--network none`、`--read-only`；`LIVE_POSTGRESQL_S3_AIRFLOW_K8S=NOT_PERFORMED`；本次 PR 的 CDM `build-and-push` **SKIPPED**，`GHCR_PUBLISH=NOT_PERFORMED`。
+- 上述只证明此实现代码在本次隔离 GitHub CI 下的源码/构建/导入/单测结果。**没有证明**这三个历史 GHCR 工作流没有其他外部消费者，未取代旧 Snapshot 或已有 GHCR Digest，亦未执行历史分支审计后的真实部署/业务恢复。E/HOLD、B/KEEP 和删除 0 不变。
+
