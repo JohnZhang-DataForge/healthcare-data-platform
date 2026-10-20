@@ -54,12 +54,12 @@ resource "fabric_connection" "azure_blob" {
       condition = (
         (var.bootstrap_mode == "reuse-existing" &&
           var.storage_account_name == "johnzhang" &&
-          !var.fresh_storage_provenance_verified) ||
+        !var.fresh_storage_provenance_verified) ||
         (var.bootstrap_mode == "fresh-bootstrap" &&
           var.fresh_storage_provenance_verified &&
           var.storage_account_name != "johnzhang" &&
           can(regex("^hdp[a-z0-9]{0,21}$", var.storage_account_name)) &&
-          length(var.storage_account_name) >= 3)
+        length(var.storage_account_name) >= 3)
       )
       error_message = "Storage origin mismatch: fresh requires an externally approved HDP Storage target; legacy must remain johnzhang."
     }
