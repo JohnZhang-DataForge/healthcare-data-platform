@@ -34,8 +34,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
 | [`00-reset-task003.sh`](../../../local-data-platform/scripts/task003/00-reset-task003.sh) | [HIGH / review] 历史 TASK003 reset 历史 Task 脚本；可能清理本地文件/临时资源，禁止无审查重放 |
-| [`04-write-closeout-docs.sh`](../../../local-data-platform/scripts/task003/04-write-closeout-docs.sh) | [PREPARE / may write] 历史 TASK003 write closeout docs 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`05f2-write-freeze-doc.sh`](../../../local-data-platform/scripts/task003/05f2-write-freeze-doc.sh) | [PREPARE / may write] 历史 TASK003 write freeze doc 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
+
+> **历史退役（2026-10-20）**：2026-10-20 退役：仅产生固定 STEP04/STEP05F2 历史文稿的两个一次性生成器，不再是活动 Shell；历史源可按固定提交恢复。原始源码保留于 [`04-write-closeout-docs.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/b418c1e077be7db21d56f9131709f73fcb0b66b9/local-data-platform/scripts/task003/04-write-closeout-docs.sh)、[`05f2-write-freeze-doc.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/b418c1e077be7db21d56f9131709f73fcb0b66b9/local-data-platform/scripts/task003/05f2-write-freeze-doc.sh)（只读历史链接），并由独立 Healthcare-Specs 备份保存；这些链接不是当前可执行入口。
 
 ## 维护与风险边界
 
