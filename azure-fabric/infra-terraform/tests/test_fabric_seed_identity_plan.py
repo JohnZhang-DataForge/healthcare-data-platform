@@ -118,7 +118,7 @@ class SeedIdentityRealPlanTests(unittest.TestCase):
                 return 0, json.dumps({"user": {"type": "user"}})
             return 0, ""
         env = {k: "" for k in FORBIDDEN_AUTH_ENV}
-        with patch.dict(os.environ, env), patch(
+        with patch.dict(os.environ, env, clear=True), patch(
                 "fabric_seed_identity_plan.run", side_effect=fake_run):
             validate_cloud_access(A, B)
         self.assertEqual(sum("get-access-token" in arg for cmd in calls for arg in cmd), 2)
