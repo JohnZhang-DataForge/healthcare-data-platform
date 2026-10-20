@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   validate-source:
-    name: CDM reader clean build and offline rollback-contract regression (no publish)
+    name: CDM reader clean build and complete historical offline contract regression (no publish)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -65,6 +65,41 @@ jobs:
           print("CDM_OLD_ROOT_FALLBACK=ABSENT")
           print("CDM_BASE_IMAGE_DIGEST=NOT_PINNED")
           print("CDM_SOURCE_GATE=PASS")
+          PY
+
+      - name: Fail closed if a legacy CDM publication workflow has unprotected regression suites
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root=Path(".github/workflows")
+          active=root/"task004-cdm-pg-read-publish.yml"
+          historic=(
+              root/"task004-cdm-rollback-image.yml",
+              root/"task004-s3-writer-rollback-image.yml",
+              root/"task004-step04f-cdm-ghcr-publish.yml",
+          )
+          pattern=r"test_step04f_[a-z0-9_]+[.]py"
+          # This gate protects the test-name inventory, not all external
+          # workflow consumers or the semantics of a historical publish.
+          covered=set(re.findall(pattern,active.read_text(encoding="utf-8")))
+          assert len(covered)==7,"EXPECTED_SEVEN_CDM_PROTECTED_SUITES"
+          missing=set()
+          for p in historic:
+              assert p.is_file(),"MISSING_HISTORIC_WORKFLOW="+p.name
+              prior=set(re.findall(pattern,p.read_text(encoding="utf-8")))
+              assert prior,"MISSING_HISTORIC_TEST_REFERENCES="+p.name
+              missing|=prior-covered
+          assert not missing,"UNPROTECTED_HISTORIC_CDM_TESTS="+",".join(sorted(missing))
+          for test in covered:
+              assert (Path("local-data-platform/tests/task004")/test).is_file(),"MISSING_CDM_TEST_FILE="+test
+              assert not (Path("tests/task004")/test).exists(),"LEGACY_TEST_ROOT_STILL_PRESENT="+test
+          print("CDM_LEGACY_WORKFLOW_COUNT=3")
+          print("CDM_PROTECTED_HISTORIC_TEST_SUITES=7")
+          print("CDM_LEGACY_TEST_COVERAGE_GATE=PASS")
+          print("LEGACY_CONSUMER_ABSENCE=NOT_VERIFIED")
           PY
 
       - name: Local clean image build without publication or credentials
@@ -110,7 +145,9 @@ jobs:
             test_step04f_cdm_postgres_readonly.py \
             test_step04f_cdm_writer_runtime_rollback.py \
             test_step04f_dynamic_pg_writer.py \
-            test_step04f_s3_writer_rollback.py; do
+            test_step04f_s3_writer_rollback.py \
+            test_step04f_dynamic_row_adapters.py \
+            test_step04f_dynamic_source.py; do
             docker run --rm --network none --read-only \
               --security-opt no-new-privileges --cap-drop ALL \
               --tmpfs /tmp:rw,nosuid,nodev,size=64m \

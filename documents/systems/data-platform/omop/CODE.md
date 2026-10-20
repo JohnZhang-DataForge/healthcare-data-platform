@@ -53,7 +53,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 ## 关联入口
 
-[Writer Dockerfile](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile) · [CDM Reader Dockerfile](../../../../local-data-platform/images/task004-cdm-runtime/Dockerfile)（只读 Plan/Reader 模块打包，也包含独立 Rollback 测试辅助；不可直接执行） · [CDM Reader Build Workflow](../../../../.github/workflows/task004-cdm-pg-read-publish.yml)（PR 本地 Clean Build/离线回归，GHCR 发布仅独立手工批准） · [Writer Build Workflow](../../../../.github/workflows/build-new-only-omop-writer.yml)（PR 仅离线 Clean Build/回归；GHCR 发布须手动显式批准） · [Writer Contract](../../../../local-data-platform/contracts/omop-writer/writer-batch-identity-v1.json) · [Writer Tests](../../../../local-data-platform/tests/omop_writer) · [SQL 源目录](../../../../local-data-platform/sql)
+[Writer Dockerfile](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile) · [CDM Reader Dockerfile](../../../../local-data-platform/images/task004-cdm-runtime/Dockerfile)（只读 Plan/Reader 模块打包，也包含独立 Rollback 测试辅助；不可直接执行） · [CDM Reader Build Workflow](../../../../.github/workflows/task004-cdm-pg-read-publish.yml)（PR 本地 Clean Build/离线回归，保留动态 Row Adapters、Fake-S3 Source 和 Rollback 七组合同测试；GHCR 发布仅独立手工批准） · [Writer Build Workflow](../../../../.github/workflows/build-new-only-omop-writer.yml)（PR 仅离线 Clean Build/回归；GHCR 发布须手动显式批准） · [Writer Contract](../../../../local-data-platform/contracts/omop-writer/writer-batch-identity-v1.json) · [Writer Tests](../../../../local-data-platform/tests/omop_writer) · [SQL 源目录](../../../../local-data-platform/sql)
 
 `commit_new_only_batch_once.py`、`step04c_person_runner.py`、`step04d_visit_runner.py` 包含历史受控 COMMIT 路径，绝不能当成通用执行器。SQL 渲染、只读预检与真实 Commit 不是同一权限；当前 Person/Visit 的完成不代表 Condition 已入库。
 
