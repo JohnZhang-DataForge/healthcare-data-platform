@@ -12,7 +12,7 @@
 - [x] 1.1 固定 `reuse-existing` 与 `fresh-bootstrap` 配置 Schema（离线 Profile v1 + 负向测试 + CI；仅静态合同，未获得 Live 授权）；拒绝旧 Storage/State 的误创建、自动 Adopt、环境跨 Tenant 混淆、Secret 字段和非法命名。
 - [x] 1.2 定义 Seed Operator、Backend Operator、Fabric Deployer、Blob Reader 应用与 GitHub OIDC Environment/Repo/Ref 映射的非敏感输入/输出合同；防止身份复用及跨租户错误。
 - [x] 1.3 定义 Capacity `reuse-existing` 默认与 `create-new` 单独允许方案，必须携带 Subscription/Region/SKU、实际账单审核证明；缺失默认 HOLD。不得实现自动 Suspend/Resume。
-- [ ] 1.4 提交离线 Python 单测（合法、失败、重复/防碰撞、费用拒绝）和 GitHub-hosted *no-cloud* CI，更新 Azure Terraform `CODE.md` 与 Runbook。
+- [x] 1.4 提交离线 Python 单测（合法、失败、重复/防碰撞、费用拒绝）和 GitHub-hosted *no-cloud* CI，更新 Azure Terraform `CODE.md` 与 Runbook。
 
 ## 2. Terraform Bootstrap modules (code only until separately approved)
 
@@ -53,3 +53,9 @@
 - Task 1.3：`tools/fabric_capacity_approval.py` 和 `bootstrap/CAPACITY-APPROVAL-CONTRACT.md` 固定 SKU/Region/Subscription、来源 SHA、估价与月度限额、账单审核记录和独立审查人；无论字段是否齐全，只有外部信任审批才能解除付费创建 HOLD。
 - Task 2.1 前置调研：`bootstrap/PROVIDER-SCHEMA-REFERENCE.md` 冻结 AzureAD 3.8.0、AzureRM 4.60.0、AzAPI 2.8.0 的官方链接与资源字段；实际 Provider 安装/Schema/IAM/授权未经核查，Task 2.1 **暂不勾选**。
 - 后续仍需身份/存储/Capacity Terraform Module/Root 的静态源码、格式检查和独立授权的真实验证。无云端写入/费用产生。
+
+## Task 2.2 identity source candidate, code-only (2026-10-19)
+
+- New isolated bootstrap/identity Terraform Root pins AzureAD 3.8.0 and uses separately configured Tenant A/B aliases. Three new independently named applications/service principals, two security groups without IAM assignments, and two tightly scoped GitHub OIDC environments are declared with resource count=0 unless creation is separately approved.
+- State uses a separately protected initial local backend and cannot depend on new yet-to-exist Storage. No current github-terraform adoption or old Storage/state access. Each resource has prevent_destroy; not a substitute for inventory or manual approval.
+- A GitHub-hosted CI step checks terraform fmt only and Python static guardrails (including default false, exact resource count and no credentials). No provider init/validate/plan/apply or remote side effects. Task 2.1 live/provider privileges, Task 2.2 tenant runtime/provider validation and Task 2.3/2.4 implementations still require separate gated steps. This code is NOT DEPLOYED.
