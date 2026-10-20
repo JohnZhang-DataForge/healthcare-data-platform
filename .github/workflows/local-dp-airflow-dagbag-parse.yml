@@ -36,6 +36,7 @@ jobs:
             -e AIRFLOW_HOME=/tmp/airflow \
             -e AIRFLOW__CORE__LOAD_EXAMPLES=False \
             -e PYTHONDONTWRITEBYTECODE=1 \
+            -e PYTHONPATH=/opt/airflow/dags \
             -v "${PWD}/local-data-platform/airflow/dags:/opt/airflow/dags:ro" \
             --entrypoint python \
             local-dp-airflow-dagbag:test \
