@@ -7,6 +7,8 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_handoff.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_execution_readiness.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_execution_readiness.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_handoff.py'
       - 'azure-fabric/infra-terraform/tools/fabric_capacity_approval.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_capacity_approval.py'
@@ -119,6 +121,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_bootstrap_handoff.py' -v
+      - name: Enforce all phases' offline integration HOLD and untrusted evidence rejection
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_execution_readiness.py' -v
       - name: Validate preflight unit tests
         run: |
           python3 -m unittest discover \

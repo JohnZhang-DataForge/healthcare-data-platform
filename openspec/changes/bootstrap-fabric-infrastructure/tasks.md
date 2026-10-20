@@ -109,3 +109,10 @@
 - **保留 Task 3.2 未勾选**：计划中的 Bootstrap/Plan/Apply 受保护 GitHub Environment、实际受控 Self-Runner executor、可信 Main SHA/Plan artifact/State 回读、财务和人工二次审批均尚未实现/授权；此 PR 只是不会部署的安全控制器，绝不把 CI PASS 解释成运行批准。
 - 完全未修改旧 `Self-Runner/.github/workflows/azure-infra.yaml`，也没有触及旧 `johnzhang`、`dev/*.tfstate`、旧七 Root 或付费 Capacity。
 
+
+## Task 3.3 第一批：跨 Self-Runner × Healthcare 的统一离线 HOLD Gate（2026-10-20）
+
+- 新增 `tools/fabric_execution_readiness.py`，在本地以严格非敏感 JSON 校验 Self-Runner PR #150 的 Controller Intake 摘要 + Bootstrap Profile + 三个身份 + Storage Target + Capacity Target；所有阶段 `bootstrap|plan|apply` 均生成 `FABRIC_OFFLINE_INTEGRATION_HOLD`。
+- 对六个新 Root、独立 `fabric/<env>/<component>.tfstate`、Tenant A/B、fresh Storage Profile 绑定与付费 Capacity UUID 来源做交叉检查。全部实际云权限/支付/可信来源/State/Provider/网络布尔值必须为 false；即使输入 Claim 携带 SHA 和 Plan 摘要的语法，**绝不自动证明该 SHA 属于 Main 或 Plan Artifact 已批准**。
+- 增加 `tests/test_fabric_execution_readiness.py`，覆盖 Bootstrap/Plan/Apply、A→A′/A→B、旧/新 Storage、已存在/收费 Capacity、未知字段与 Secrets、伪造批准、错误 Root/State/SHA；CI 在 `ubuntu-latest` 上只使用 Python 和六 Root `terraform fmt`。
+- 运行前离线检查清单见 `bootstrap/OFFLINE-READINESS.md`，后续必须独立验证保护的 GitHub Environment、真正固定 Main SHA/计划及 State、权限和私网，且再次明确取得真实执行许可。**Task 3.3 checkbox 保持未勾选，直到精确 PR HEAD CI 成功并完成范围审计。无云端操作或新费用。**

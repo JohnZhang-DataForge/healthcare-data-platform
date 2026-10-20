@@ -230,3 +230,9 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 - 输入 `bootstrap`、`plan`、`apply` 目前**都是离线意图验证**，不会运行 Terraform 或 Azure/Entra/Fabric、不会调度 `dw-runner-set`，也不会获得 GitHub OIDC token。必要字段包括新环境名、独立 Root、固定 40 字符 Healthcare Commit SHA；`apply` 额外检查 64 字符 Plan Digest 语法，**不验证真实 Plan 或批准人**。
 - GitHub Workflow 必须人工在 Self-Runner 主分支选择 `workflow_dispatch`，但**合并代码没有授权触发**；当前无需调用它。真正使用 Self-Runner 执行任何 `init/plan/apply` 前，须先单独设计并取得用户授权：受保护 GitHub Environment/可信审批者、双租户 OIDC、可信 Source Main SHA、远程 State 空位、私网联通、保存的 Plan/成本授权以及独立最小权限执行 Job。
 - 旧 `azure-infra.yaml` 仍属旧 dev 环境，不得借它运行新 Fabric Bootstrap。
+
+## 7. Task 3.3 跨仓库离线就绪阻断器（2026-10-20）
+
+- 源码：`azure-fabric/infra-terraform/tools/fabric_execution_readiness.py`；详见 [离线验收 / Live 前置清单](../../../../azure-fabric/infra-terraform/bootstrap/OFFLINE-READINESS.md)。
+- 消费独立 Self-Runner `fabric-controlled-entry.yml` 的**未核实** Intent HOLD 值，以及 Bootstrap 的四份非秘密交接值。拒绝伪造已授权、用户名/Secrets、未匹配环境/Root/SHA/State 的输入，且即使静态合同满足也始终输出 `FABRIC_OFFLINE_INTEGRATION_HOLD`。
+- 全部检查都是本地逻辑和 synthetic test；**没有实时 Main 来源真实性检查**，也没有对真实 Saved Plan/Capacity UUID 的校验。不得使用结果作为 `init/plan/apply` 或付费创建的执行许可。申请真实测试前须根据同一 Runbook 逐项重新批准并提供受保护证据。
