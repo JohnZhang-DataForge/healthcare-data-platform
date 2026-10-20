@@ -124,6 +124,16 @@
 
 > **4.9 第七批 Processed/Writer 一次性安装器退役（2026-10-20，PARTIAL）**：以 Healthcare Main `61d393b31bd68b92af98908e2934762131842242`、Self-Runner Main `fb1be4292e295fd0824b1af255171a846f541fb2` 冻结 0 开放 PR 的起点，删除 6 个历史单次 Runtime Bundle、Reservation Acquire、Postlock Preflight、Write Permit、DQ Publisher 和 Reservation Release **源码安装器**。从 6 个 Shell 实际提取的正式源码/安全 Shell/Contract/Manifest 模板/Unit Tests 与当前 Main **12/12 完整字节一致且全部保留**。静态直接名称消费者扫描 Healthcare 高优先级 64/64、TASK003 75/75、相关 Self-Runner Workflow 16/16 未见外部调用；不声称动态路径或外部消费者已经完全排除。Landing CODE.md 39→33、TASK003 Shell 75→69。**本批额外发现并保留 `05g4c1-prepare-processed-manifest-publisher-source.sh` 为 E/HOLD**：两份现行 Manifest Publication Shell 的 `git diff --quiet` checkpoint source guard 直接列举它，必须独立改造/验证后才可能退役；`06c4e` 动态 Contract 继续 HOLD。文件 Blob、固定历史恢复 URL、正式产物与源审查见[第七批证据](evidence/LOCAL-DP-TASK003-BATCH7-SOURCE-INSTALLERS-20261020.md)。不触发旧 Batch、不修改活跃业务/Writer Fencing/PG Recovery。本 PR 最终 HEAD 真实适用 CI 全部 PASS 后才 Squash Merge。**4.1/4.8/4.9/4.10 与 5 保持 OPEN**。
 
+### 4B. 最新实施调整：集中清理一次完成（2026-10-20；计划已冻结、**实际未执行**）
+
+> **最新获准执行策略**：不再以每批 2–6 个 TASK003 Shell 重复 API 逐文件审计；采用 Runner 本地双仓 Checkout 一次性分类余下 26 个历史候选，只有证据完整的 C/D 被加入同一清理 PR 的明示 allowlist；A/B/E（含人工恢复、安全发布、动态 Contract）KEEP/HOLD。当前 frozen Main `f257ee32fede83250451d4bd6bfe2e592190adcb`：Local DP 371 文件、101 Shell、TASK003 69 Shell（原 94、已删除 25），余下 26 个只是**历史候选**并非授权删除。**两项不可删除 E/HOLD**：`05g4c1-prepare-processed-manifest-publisher-source.sh` 有 Manifest Git checkpoint 的真实引用，`06c4e-prepare-committed-cdm-visit-materialization.sh` 的动态 Contract 尚未证明可替代；真实执行器、恢复/Writer Fencing/Test 也不可按“无 grep 引用”删。权威 [集中清理方案与验收门](evidence/LOCAL-DP-CONSOLIDATED-CLEANUP-PLAN-20261020.md)，以它覆盖此前 4.9 的**小批次执行粒度**，不覆盖以前的七批事实或删除安全约束。
+
+- [ ] 4.9.1 冻结当前 Main/Runner SHA 和 open PR，基于真实新唯一 Batch 跑删前业务 E2E 基线，记录 Airflow 活动 DAG/GitSync、Spark/镜像真实来源、S3 READY、Writer PG 增量、独立读回及同 Batch SKIP；旧 2026-10-20 E2E 成功是历史证据，不冒充本 SHA 基线。
+- [ ] 4.9.2 一次性 Runner 双仓 Checkout，对全部 26 个旧候选做冻结 Git Blob/生成输出全字节/动态行为/外部消费者/现行测试/手工恢复入口分析，产出每个候选单行 KEEP/DELETE/HOLD 的可机读+可审阅决策矩阵；任一不确定项为 E/HOLD。
+- [ ] 4.9.3 在**一个清理 PR** 中只删除矩阵 DELETE allowlist 的 C/D，一并调整 CODE Map、历史恢复链接、负向检查；保留所有正式生成产物、测试、安全和维护入口；无高置信度删除则直接停止清理，转收尾。
+- [ ] 4.9.4 按最终 PR HEAD 运行全部适用 CI/Contracts/镜像 Clean Build/DagBag/来源证明，以及候选 HEAD 的隔离实际 NEW_ONLY E2E/独立 PG-S3 Readback/同 Batch SKIP。禁止以正在运行的旧 Main GitSync/旧容器冒充候选代码；不能可靠部署隔离候选版本则 HOLD、不合并未验证的有风险删除。
+- [ ] 4.9.5 合并前核对最终 HEAD、所有 CI 和 E2E、并行修改冲突；全部通过才 Squash Merge。更新 4.1/4.7/4.8/4.9/4.10 实测状态、KEEP/HOLD 表、5.1/5.2/5.3 关闭条件，**不提前 Archive**。
+
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
 ## 5. 结束条件（暂不归档）
