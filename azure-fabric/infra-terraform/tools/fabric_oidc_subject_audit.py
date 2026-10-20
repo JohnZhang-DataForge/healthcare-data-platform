@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
-"""Static-only GitHub OIDC subject compatibility audit (never cloud auth).
-
-Frozen metadata from GitHub repository API at 2026-10-20. Current credentials
-are NOT provisioned. No provider/oidc/GitHub API calls, secrets, or Terraform.
-"""
+"""Reviewed static identity topology: immutable Self-Runner OIDC; live state still HOLD."""
 from __future__ import annotations
-
 import json
 from pathlib import Path
 import re
@@ -16,53 +11,55 @@ HEALTHCARE = "healthcare-data-platform"
 HEALTHCARE_REPOSITORY_ID = 1404947726
 SELF_RUNNER = "Self-Runner"
 SELF_RUNNER_REPOSITORY_ID = 1413796156
-
-# Both repositories were created after the immutable default threshold
-# 2026-07-15 (Healthcare 2026-10-05 / Self-Runner 2026-10-11).
-CURRENT_OIDC_REPO = f"{OWNER}/{HEALTHCARE}"
-CONTROLLER_REPO = f"{OWNER}/{SELF_RUNNER}"
 ENV_TOKEN = "${var.environment}"
-
+IMMUTABLE_PREFIX = f"repo:{OWNER}@{OWNER_ID}/{SELF_RUNNER}@{SELF_RUNNER_REPOSITORY_ID}"
+BINDINGS = {
+    "backend_operator_plan": ("backend", "backend_operator", "plan-backend"),
+    "backend_operator_apply": ("backend", "backend_operator", "apply-backend"),
+    "fabric_deployer_plan": ("fabric", "fabric_deployer", "plan-deployer"),
+    "fabric_deployer_apply": ("fabric", "fabric_deployer", "apply-deployer"),
+}
 
 class OIDCSourceDrift(ValueError):
     pass
 
-
 def inspect_source(hcl: str) -> dict:
-    """Only the *present* legacy source is accepted; modifications require review."""
     if not isinstance(hcl, str):
-        raise OIDCSourceDrift("invalid Terraform source")
-    subjects = re.findall(r'(?m)^\s*subject\s*=\s*"([^"\r\n]+)"\s*$', hcl)
-    expected = {
-        f"repo:{CURRENT_OIDC_REPO}:environment:fabric-{ENV_TOKEN}-backend",
-        f"repo:{CURRENT_OIDC_REPO}:environment:fabric-{ENV_TOKEN}-deployer",
-    }
-    if len(subjects) != 2 or len(set(subjects)) != 2 or set(subjects) != expected:
-        raise OIDCSourceDrift("federation subjects changed; trusted topology needs review")
-    prefix = f"repo:{OWNER}@{OWNER_ID}/{HEALTHCARE}@{HEALTHCARE_REPOSITORY_ID}"
-    controller_prefix = f"repo:{OWNER}@{OWNER_ID}/{SELF_RUNNER}@{SELF_RUNNER_REPOSITORY_ID}"
-    immutable_expected = {
-        f"{prefix}:environment:fabric-{ENV_TOKEN}-backend",
-        f"{prefix}:environment:fabric-{ENV_TOKEN}-deployer",
-    }
-    if any(s.startswith(prefix) for s in subjects):
-        raise OIDCSourceDrift("immutable OIDC unexpectedly present in legacy contract")
+        raise OIDCSourceDrift("invalid source")
+    blocks = re.findall(
+        r'(?ms)^resource "azuread_application_federated_identity_credential" "([^"]+)"\s*\{(.*?)(?=^resource "|\Z)',
+        hcl)
+    if len(blocks) != len(BINDINGS) or set(n for n, _ in blocks) != set(BINDINGS):
+        raise OIDCSourceDrift("unexpected federated credential ownership")
+    subjects = {}
+    for name, body in blocks:
+        alias, app, suffix = BINDINGS[name]
+        expected = f"{IMMUTABLE_PREFIX}:environment:fabric-{ENV_TOKEN}-{suffix}"
+        if (not re.search(r'(?m)^\s*subject\s*=\s*"' + re.escape(expected) + r'"\s*$', body)
+                or f"provider       = azuread.{alias}" not in body
+                or f"application_id = azuread_application_registration.{app}[0].id" not in body
+                or "count          = var.identity_creation_approved ? 1 : 0" not in body
+                or "prevent_destroy = true" not in body
+                or body.count("subject") != 1):
+            raise OIDCSourceDrift("immutable subject/role/phase drift")
+        subjects[name] = expected
+    if re.search(r'(?m)^\s*subject\s*=\s*"repo:[^"@]+/', hcl):
+        raise OIDCSourceDrift("name-only federated subject")
     return {
-        "status": "FABRIC_OIDC_SUBJECT_ARCHITECTURE_HOLD",
-        "current_literal_subjects": sorted(subjects),
-        "expected_immutable_healthcare_subjects_FOR_DESIGN_ONLY": sorted(immutable_expected),
-        "example_immutable_self_runner_phase_subject_FOR_DESIGN_ONLY":
-            f"{controller_prefix}:environment:fabric-{ENV_TOKEN}-plan",
+        "status": "FABRIC_OIDC_SOURCE_ALIGNED_LIVE_HOLD",
+        "subject_bindings": subjects,
+        "immutable_executor_repository": f"{OWNER}/{SELF_RUNNER}",
+        "executor_repository_id": SELF_RUNNER_REPOSITORY_ID,
+        "source_repository": f"{OWNER}/{HEALTHCARE}",
         "github_repositories_created_after_immutable_default": True,
-        "self_runner_controller_repo_distinct_from_issuer_repo": True,
-        "role_env_names_different_from_plan_apply_env_names": True,
+        "separate_backend_and_fabric_tenants_required": True,
+        "protected_phase_environments_required": True,
         "blockers": [
-            "DECLARED_OIDC_IS_NAME_ONLY_BUT_REPOSITORIES_CREATED_AFTER_2026_07_15",
-            "SELF_RUNNER_CONTROLLER_REPOSITORY_DIFFERS_FROM_ENROLLED_HEALTHCARE_OIDC",
-            "ROLE_SPECIFIC_BACKEND_AND_DEPLOYER_SUBJECTS_DO_NOT_MATCH_PHASE_JOB_SUBJECT",
-            "REPOSITORY_OR_ENVIRONMENT_OIDC_TOKEN_PREVIEW_NOT_CHECKED",
-            "PROTECTED_GITHUB_ENVIRONMENT_BRANCH_AND_REVIEWER_RULES_NOT_CHECKED",
-            "NO_PRIVILEGED_EXECUTOR_OR_ACCOUNT_BILLING_AUTHORIZATION",
+            "GITHUB_ENVIRONMENT_BRANCH_AND_REVIEWER_RULES_NOT_LIVE_VERIFIED",
+            "GITHUB_OIDC_TOKEN_SUB_NOT_LIVE_PREVIEWED",
+            "ENTRA_APP_CREDENTIAL_AND_RBAC_NOT_CREATED_OR_VERIFIED",
+            "STATE_AND_FABRIC_TRIAL_INVENTORY_NOT_VERIFIED",
+            "NO_ISOLATED_TRUSTED_TERRAFORM_PLAN_YET",
         ],
         "token_issued": False,
         "github_environment_protection_verified": False,
@@ -71,20 +68,18 @@ def inspect_source(hcl: str) -> dict:
         "deployment_allowed": False,
     }
 
-
 def main() -> int:
     path = Path(__file__).resolve().parents[1] / "bootstrap/identity/main.tf"
     print("#### FABRIC_OIDC_SUBJECT_AUDIT_OUTPUT_BEGIN ####")
     try:
         status = inspect_source(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        print("STATUS=FAIL; OIDC topology requires reviewed update")
+        print("STATUS=FAIL; federation topology requires reviewed update")
         print("#### FABRIC_OIDC_SUBJECT_AUDIT_OUTPUT_END ####")
         return 2
     print(json.dumps(status, indent=2, sort_keys=True))
     print("#### FABRIC_OIDC_SUBJECT_AUDIT_OUTPUT_END ####")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

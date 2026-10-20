@@ -19,7 +19,7 @@ def profile(create=True):
         "schema_version": 1, "environment": "lab-b",
         "bootstrap_mode": "fresh-bootstrap",
         "tenants": {"backend_tenant_id": A, "fabric_tenant_id": B},
-        "github_oidc": {"repository": "JohnZhang-DataForge/healthcare-data-platform",
+        "github_oidc": {"repository": "JohnZhang-DataForge/Self-Runner",
                         "environment": "fabric-lab-b"},
         "storage": {"account": "hdplabbstorage", "subscription_id": SUB,
                     "resource_group": "rg-hdp-lab-b", "landing_container": "landing",

@@ -7,7 +7,7 @@
     "fabric_tenant_id": "00000000-0000-0000-0000-000000000000"
   },
   "github_oidc": {
-    "repository": "JohnZhang-DataForge/healthcare-data-platform",
+    "repository": "JohnZhang-DataForge/Self-Runner",
     "environment": "fabric-replace-me"
   },
   "storage": {
