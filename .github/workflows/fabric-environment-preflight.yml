@@ -7,6 +7,8 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py'
       - 'azure-fabric/infra-terraform/tools/fabric_seed_identity_inventory.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_seed_identity_plan.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_seed_identity_plan.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_seed_identity_inventory.py'
       - 'azure-fabric/infra-terraform/tools/fabric_oidc_subject_audit.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_oidc_subject_audit.py'
@@ -103,6 +105,13 @@ jobs:
           echo "SEED_IDENTITY_LIVE_INVENTORY_MOCK=PASS"
           echo "AZURE_SESSION_USED=NO"
 
+      - name: Test plan-only real Seed operator with mocked Git/Azure/Terraform
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_seed_identity_plan.py' -v
+          echo "SEED_TF_PLAN_OPERATOR_MOCK=PASS"
+          echo "AZURE_TERRAFORM_PLAN_APPLY_IN_CI=NO"
       - name: Detect unreviewed immutable OIDC and cross-repository phase trust
         run: |
           python3 -m unittest discover \
