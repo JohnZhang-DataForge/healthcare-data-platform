@@ -21,6 +21,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 全仓质量工具统一放在 `.github/quality/scripts/`，对应单元测试位于 [`.github/quality/tests/`](../../../.github/quality/tests)；这些不是 Local Data Platform 业务文件。
 
+| [`helm-gitsync-postmove-values.yaml`](../../../local-data-platform/config/airflow/helm-gitsync-postmove-values.yaml) | [DEPLOY CONFIG] 既存 `dw-airflow` Chart 1.22.0 的 GitSync 新源码子目录覆写。仅与现有 Helm Release 使用 `--reuse-values`；不是完整安装 Values，也不含 Secret。实际 Helm 修复：Self-Runner [Run #39422344924](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422344924) PASS。 |
+
 ## 开发环境示例配置
 
 | 真实源文件 | 主要职责与执行风险 |
