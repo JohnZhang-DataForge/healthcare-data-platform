@@ -29,6 +29,8 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
+> **2026-10-20 NEW_ONLY 随机 Batch 已知问题（待后续调查，不授权修复）**：历史 TASK004 已验收成功的能力保持原结论；但在九个历史安装器删除后的同一 Main 上，最新三次独立随机新 Batch 实测 **两次 Writer FAIL、一次完整 Writer/PG/幂等 SUCCESS**，表明尚有批次相关的未覆盖输入或实现行为。**根因未定位、尚未批准业务代码调整**；后续独立调查以 [Active Change 的 Writer 现象证据](../../../openspec/changes/relocate-local-data-platform/evidence/LOCAL-DP-NEW-ONLY-WRITER-INTERMITTENT-BATCH-FAILURE-20261020.md) 与原始 Run 为唯一事实来源，不在本项目状态页复制三次实验日志，也不视为所有随机数据已通过。
+
 ## 2. 本地业务：TASK004 已关闭
 
 **明确的最终验收范围**是 **NEW_ONLY + Person/Visit + 手工受控 Airflow 消费和原子 Writer**，并不等于 Healthcare 所有业务域或 UPDATE_ONLY / MIX_DATA 已实现。
