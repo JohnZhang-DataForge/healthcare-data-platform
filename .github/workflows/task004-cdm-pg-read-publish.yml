@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   validate-source:
-    name: CDM reader clean build and offline rollback-contract regression (no publish)
+    name: CDM reader clean build and complete historical offline contract regression (no publish)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -110,7 +110,9 @@ jobs:
             test_step04f_cdm_postgres_readonly.py \
             test_step04f_cdm_writer_runtime_rollback.py \
             test_step04f_dynamic_pg_writer.py \
-            test_step04f_s3_writer_rollback.py; do
+            test_step04f_s3_writer_rollback.py \
+            test_step04f_dynamic_row_adapters.py \
+            test_step04f_dynamic_source.py; do
             docker run --rm --network none --read-only \
               --security-opt no-new-privileges --cap-drop ALL \
               --tmpfs /tmp:rw,nosuid,nodev,size=64m \
