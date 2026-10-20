@@ -101,7 +101,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`06b-load-person-stage.sh`](../../../../local-data-platform/scripts/task002/06b-load-person-stage.sh) | [EXECUTE / review] 历史 TASK002 load person stage 脚本 |
 | [`07-upsert-person-cdm-idempotency.sh`](../../../../local-data-platform/scripts/task002/07-upsert-person-cdm-idempotency.sh) | [HIGH / review] 历史 TASK002 upsert person CDM idempotency 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
 
-## 历史 task003（32 个入口）
+## 历史 task003（30 个入口）
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
@@ -116,7 +116,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`06a1-visit-id-allocation-baseline-discovery.sh`](../../../../local-data-platform/scripts/task003/06a1-visit-id-allocation-baseline-discovery.sh) | [LEGACY / review] 历史 TASK003 visit id allocation baseline discovery 脚本 |
 | [`06a2-plan-visit-id-allocation.sh`](../../../../local-data-platform/scripts/task003/06a2-plan-visit-id-allocation.sh) | [CHECK / verify effects] 历史 TASK003 plan visit id allocation 脚本 |
 | [`06a3-reconcile-visit-business-keys.sh`](../../../../local-data-platform/scripts/task003/06a3-reconcile-visit-business-keys.sh) | [CHECK / verify effects] 历史 TASK003 reconcile visit business keys 脚本 |
-| [`06a4-prepare-visit-id-readonly-preflight-freeze.sh`](../../../../local-data-platform/scripts/task003/06a4-prepare-visit-id-readonly-preflight-freeze.sh) | [PREPARE / may write] 历史 TASK003 prepare visit id readonly preflight freeze 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`06a4-verify-visit-id-readonly-preflight.sh`](../../../../local-data-platform/scripts/task003/06a4-verify-visit-id-readonly-preflight.sh) | [CHECK / verify effects] 历史 TASK003 verify visit id readonly preflight 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
 | [`06a5-prepare-readonly-runner-snapshots.sh`](../../../../local-data-platform/scripts/task003/06a5-prepare-readonly-runner-snapshots.sh) | [PREPARE / may write] 历史 TASK003 prepare readonly runner snapshots 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`06b1-build-visit-id-mutation-contract.sh`](../../../../local-data-platform/scripts/task003/06b1-build-visit-id-mutation-contract.sh) | [PREPARE / may write] 历史 TASK003 build visit id mutation contract 脚本 |
@@ -126,7 +125,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`06b4a-prepare-visit-id-allocation-rehearsal.sh`](../../../../local-data-platform/scripts/task003/06b4a-prepare-visit-id-allocation-rehearsal.sh) | [PREPARE / may write] 历史 TASK003 prepare visit id allocation rehearsal 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
 | [`06b4a-rehearse-visit-id-allocation.sh`](../../../../local-data-platform/scripts/task003/06b4a-rehearse-visit-id-allocation.sh) | [EXECUTE / review] 历史 TASK003 rehearse visit id allocation 脚本 |
 | [`06b4a-verify-visit-id-allocation-rehearsal.sh`](../../../../local-data-platform/scripts/task003/06b4a-verify-visit-id-allocation-rehearsal.sh) | [CHECK / verify effects] 历史 TASK003 verify visit id allocation rehearsal 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
-| [`06b4b-r1-prepare-visit-id-allocation-recovery.sh`](../../../../local-data-platform/scripts/task003/06b4b-r1-prepare-visit-id-allocation-recovery.sh) | [PREPARE / may write] 历史 TASK003 r1 prepare visit id allocation recovery 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`06b4b-r1-reconcile-failed-visit-id-allocation.sh`](../../../../local-data-platform/scripts/task003/06b4b-r1-reconcile-failed-visit-id-allocation.sh) | [CHECK / verify effects] 历史 TASK003 r1 reconcile failed visit id allocation 脚本 |
 | [`06b4b-r1-verify-visit-id-allocation-recovery.sh`](../../../../local-data-platform/scripts/task003/06b4b-r1-verify-visit-id-allocation-recovery.sh) | [CHECK / verify effects] 历史 TASK003 r1 verify visit id allocation recovery 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
 | [`06b4b-r2-corrected-visit-id-allocation.sh`](../../../../local-data-platform/scripts/task003/06b4b-r2-corrected-visit-id-allocation.sh) | [HIGH / review] 历史 TASK003 r2 corrected visit id allocation 脚本；可能操作 PostgreSQL 业务持久化，禁止重放已提交批次 |
@@ -137,6 +135,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`06c3-verify-cdm-materialization-preflight.sh`](../../../../local-data-platform/scripts/task003/06c3-verify-cdm-materialization-preflight.sh) | [CHECK / verify effects] 历史 TASK003 verify CDM materialization preflight 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
 | [`06c4e-prepare-committed-cdm-visit-materialization.sh`](../../../../local-data-platform/scripts/task003/06c4e-prepare-committed-cdm-visit-materialization.sh) | [PREPARE / may write] 历史 TASK003 prepare committed CDM visit materialization 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`06c4e-verify-committed-cdm-visit-materialization.sh`](../../../../local-data-platform/scripts/task003/06c4e-verify-committed-cdm-visit-materialization.sh) | [CHECK / verify effects] 历史 TASK003 verify committed CDM visit materialization 脚本；可能仍产生报告/Pod，不能仅凭文件名判断副作用 |
+
+> **历史生成器退役（2026-10-20，OpenSpec Task 4.9）**：已从活动源码移除 STEP06A4 的冻结只读预检**源生成器**与 STEP06B4B-R1 的失败后恢复**源生成器**；二者仅生成固定历史批次产物，当前正式的 Python / Shell / JSON Contract / 单元测试 **9/9 与生成结果逐字节一致并完整保留**。冻结生成器原源码可从固定版本 [`06a4-prepare-visit-id-readonly-preflight-freeze.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/7897263d2e165f9b2519094440026dfd99109ac9/local-data-platform/scripts/task003/06a4-prepare-visit-id-readonly-preflight-freeze.sh)、[`06b4b-r1-prepare-visit-id-allocation-recovery.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/7897263d2e165f9b2519094440026dfd99109ac9/local-data-platform/scripts/task003/06b4b-r1-prepare-visit-id-allocation-recovery.sh) 只读恢复；Healthcare-Specs 独立备份亦保留相应 Git Blob。正式 `06a4-verify-visit-id-readonly-preflight.sh`、`06b4b-r1-reconcile-failed-visit-id-allocation.sh`、`06b4b-r1-verify-visit-id-allocation-recovery.sh` 继续保留在本页清单中，不能因为安装生成器退役而自动重跑固定历史数据。
 
 ## 源码维护约定
 
