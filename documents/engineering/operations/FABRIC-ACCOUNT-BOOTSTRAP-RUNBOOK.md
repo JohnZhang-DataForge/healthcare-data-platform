@@ -213,3 +213,8 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 ## Capacity 创建仍为人工付费审批 HOLD（OpenSpec 1.3）
 
 离线 [Capacity Billing Contract](../../systems/azure-fabric/infra-terraform/CODE.md#capacity-账单审批与-provider-官方合同openspec-13--21) 只检验配置是否包含估价、预算、SKU/Region/Subscription、来源 SHA 和独立审批者等字段；即使字段完整也**始终拒绝自动授权创建付费资源**。在受保护环境取得单独的、可核查的付款批准及 Terraform Init/Plan/Apply 授权之前，不能创建，也不实施自动暂停/恢复。Provider/ARM 的离线版本依据见 Terraform CODE 页面。
+
+
+## Bootstrap Storage/Backend/RBAC 的新环境执行前置（Task 2.3，仅离线）
+
+`bootstrap/storage/` 在 `reuse-existing` 模式不管理旧 `johnzhang/landing/tfstate`、不分配 IAM、不调用 Azure 数据源；`fresh-bootstrap` 仅在所有显式审批/库存/独立 State/私网准备开关满足时定义候选新 RG/Storage/Containers 和 Container-scoped 角色。严格区分 Blob Reader 的 Object ID、Backend Operator 的 Object ID、以及 Fabric Deployer 的 Client ID。**网络连通未实现**：新账号禁用公共网络/Shared Key，必须先有经批准的 Private Endpoint / DNS / Runner Path 方案；当前不应发起任何 Terraform Init/Plan/Apply。初始 Terraform State 必须保存在受保护的独立位置，不能迁移到尚不存在的 Backend，更不能碰旧 `dev/*.tfstate`。CODE.md 提供源码导航，审核后再建设任务执行入口。
