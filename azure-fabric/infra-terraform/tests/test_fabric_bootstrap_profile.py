@@ -26,8 +26,13 @@ def reuse():
             "environment": "fabric-lab-b",
         },
         "storage": {
-            "account": "johnzhang", "landing_container": "landing",
+            "account": "johnzhang", "subscription_id": SUB,
+            "resource_group": "existing-rg",
+            "landing_container": "landing",
             "state_container": "tfstate", "state_prefix": "fabric/lab-b",
+        },
+        "bootstrap_state": {
+            "strategy": "isolated-local", "custody_reference": "CUSTODY-OFFLINE-PLAN-01",
         },
         "capacity": {"mode": "reuse-existing", "capacity_id": CAP},
     }
@@ -38,6 +43,7 @@ def fresh():
     p["bootstrap_mode"] = "fresh-bootstrap"
     p["tenants"]["fabric_tenant_id"] = B
     p["storage"]["account"] = "hdplabbstorage"
+    p["storage"]["resource_group"] = "rg-hdp-lab-b"
     return p
 
 
@@ -82,6 +88,7 @@ class BootstrapProfileTests(unittest.TestCase):
         self.assertEqual(r["capacity_mode"], "create-new")
         self.assertIsNone(r["capacity_id"])
         self.assertTrue(r["paid_creation_requested"])
+        self.assertEqual(r["status"], "BOOTSTRAP_PROFILE_HOLD_PAID_APPROVAL")
         self.assertFalse(r["cost_review_verified"])
         self.assertFalse(r["paid_creation_authorized"])
 
@@ -91,6 +98,7 @@ class BootstrapProfileTests(unittest.TestCase):
             (("tenants",), {"token": "fake"}),
             (("github_oidc",), {"audience_secret": "fake"}),
             (("storage",), {"account_key": "fake"}),
+            (("bootstrap_state",), {"state_access_key": "fake"}),
             (("capacity",), {"secret": "fake"}),
         ]:
             with self.subTest(path=path):
@@ -200,6 +208,39 @@ class BootstrapProfileTests(unittest.TestCase):
                 p = create_capacity()
                 del p["capacity"][key]
                 self.reject(p)
+
+    def test_bootstrap_state_cannot_cycle_back_into_new_backend(self):
+        for strategy in ("new-remote", "azurerm", "tfstate", "migrate-state"):
+            candidate = fresh()
+            candidate["bootstrap_state"]["strategy"] = strategy
+            self.reject(candidate)
+        candidate = fresh()
+        candidate["bootstrap_state"]["custody_reference"] = "PENDING"
+        self.reject(candidate)
+
+    def test_new_resource_names_and_subscriptions_are_bound(self):
+        for field, value in (("resource_group", "johnzhang"),
+                             ("resource_group", "rg-hdp-other"),
+                             ("resource_group", "invalid space"),
+                             ("subscription_id", "not-a-uuid")):
+            candidate = fresh()
+            candidate["storage"][field] = value
+            self.reject(candidate)
+        candidate = create_capacity()
+        candidate["capacity"]["subscription_id"] = A
+        self.reject(candidate)
+
+    def test_fabric_sku_and_profile_determinism(self):
+        for invalid_sku in ("F3", "F9999", "P1", "F0"):
+            candidate = create_capacity()
+            candidate["capacity"]["sku"] = invalid_sku
+            self.reject(candidate)
+        candidate = fresh()
+        first = validate(candidate)
+        self.assertEqual(first, validate(deepcopy(candidate)))
+        self.assertFalse(first["verified"])
+        self.assertFalse(first["initial_bootstrap_state_verified"])
+        self.assertEqual(first["storage_subscription_id"], SUB)
 
     def test_sensitive_strings_not_echoed_by_cli(self):
         from contextlib import redirect_stdout

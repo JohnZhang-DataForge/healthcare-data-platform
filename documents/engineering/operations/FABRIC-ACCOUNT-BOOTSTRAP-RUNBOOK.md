@@ -203,3 +203,8 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 - [Microsoft Learn — Terraform + fabric-cicd end-to-end tutorial](https://learn.microsoft.com/en-us/fabric/cicd/tutorial-end-to-end-automation)
 - [Microsoft Learn — Azure Blob connector authentication](https://learn.microsoft.com/en-us/fabric/data-factory/connector-azure-blob-storage-overview)
 - [Microsoft Learn — Fabric Workspace retention and recovery](https://learn.microsoft.com/en-us/fabric/admin/portal-workspaces)
+
+
+## Bootstrap Profile v1 离线阶段（OpenSpec Task 1.1）
+
+新的 [严格配置合同](../../systems/azure-fabric/infra-terraform/CODE.md#fabric-infrastructure-bootstrap-profileopenspec-bootstrap-fabric-infrastructure仅离线) 将 `reuse-existing` 与 `fresh-bootstrap` 作为**显式互斥选择**；对未知 Storage、目标 Tenant、Capacity SKU、远程 State 是否空位均不作现场认定。Phase-0 必须使用独立托管的初始 Bootstrap State，保管/备份/恢复应由管理员核验后单独批准。Profile 成功只代表输入**格式合同**合法，所有验证布尔值为 false；若请求 `create-new` Capacity 则始终 `HOLD_PAID_APPROVAL`，即使填写成本评估编号。后续身份/OIDC/RBAC/Provider/真实部署均单独验收，旧 `johnzhang/landing`、`tfstate`、`dev/*.tfstate` 不变。

@@ -5,11 +5,11 @@
 ## 0. Approved boundary and Change creation
 
 - [x] 0.1 从 Main 核对已批准的 Fabric 多环境修订、现有独立 Root/旧 State 边界和开放 PR；创建专用 Bootstrap OpenSpec Change（仅设计/文档）。
-- [ ] 0.2 正式验证并合并此 Design/Proposal/Spec/Tasks PR；将原 `implement-fabric-multi-environment-terraform` Task 0.2 链接到本 Change。**设计通过不等于已实施**。
+- [x] 0.2 正式验证并合并此 Design/Proposal/Spec/Tasks PR（PR #278，Merge `f0290ca1bea87e054794576bc5803e8f1e060ac8`）；将原 `implement-fabric-multi-environment-terraform` Task 0.2 链接到本 Change。**设计通过不等于已实施**。
 
 ## 1. Offline Bootstrap contract
 
-- [ ] 1.1 固定 `reuse-existing` 与 `fresh-bootstrap` 配置 Schema；拒绝旧 Storage/State 的误创建、自动 Adopt、环境跨 Tenant 混淆、Secret 字段和非法命名。
+- [x] 1.1 固定 `reuse-existing` 与 `fresh-bootstrap` 配置 Schema（离线 Profile v1 + 负向测试 + CI；仅静态合同，未获得 Live 授权）；拒绝旧 Storage/State 的误创建、自动 Adopt、环境跨 Tenant 混淆、Secret 字段和非法命名。
 - [ ] 1.2 定义 Seed Operator、Backend Operator、Fabric Deployer、Blob Reader 应用与 GitHub OIDC Environment/Repo/Ref 映射的非敏感输入/输出合同；防止身份复用及跨租户错误。
 - [ ] 1.3 定义 Capacity `reuse-existing` 默认与 `create-new` 单独允许方案，必须携带 Subscription/Region/SKU、实际账单审核证明；缺失默认 HOLD。不得实现自动 Suspend/Resume。
 - [ ] 1.4 提交离线 Python 单测（合法、失败、重复/防碰撞、费用拒绝）和 GitHub-hosted *no-cloud* CI，更新 Azure Terraform `CODE.md` 与 Runbook。
@@ -34,3 +34,9 @@
 - 最多三轮同方向调试；停止后将失败原因、尝试、Commit SHA、Workflow Run 和下一步写在对应 Task/PR Evidence。
 - 当前 `johnzhang/landing`、`tfstate`、旧七 Root、`healthcare-omop`、Self-Runner 与 Local DP/PG 保持原样。
 - 身份凭据值不进 Git/Plan/State 输出；Terraform Provider/State 的真正访问验证要独立审批；批准设计不是费用授权。
+
+## Task 1.1 离线 Profile 合同实施记录（2026-10-19）
+
+- Git 正式源码：`azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py`；严格 JSON 字段，拒绝重复 Key/未知字段/Secrets，隔离的 State/Storage/Tenant/Cost/Capacity 目标输出；`bootstrap/PROFILE-CONTRACT.md` 和故意不可部署的样例冻结规则。
+- `test_fabric_bootstrap_profile.py` 与 GitHub-hosted `fabric-environment-preflight.yml` 负责静态正负向与样例 fail-closed；请以当前实现 PR 最终 HEAD/Run 为验收引用，绝不声称云端验证。
+- **仍未完成**：Task 1.2 身份/OIDC 手工保护与输出映射、Task 1.3 成本审批合同、Task 2 Terraform Provider/Module/Root，以及所有 Init/Plan/Apply/Destroy/Import 与费用授权。
