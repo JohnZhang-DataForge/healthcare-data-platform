@@ -73,3 +73,9 @@
 - 始终坚持**账单授权与代码审批分别独立**：成本审核字段不等于付款许可，付费授权必须外部核验，未得到许可不运行 Terraform。使用 `prevent_destroy`，不开发 Suspend/Resume。初始 State 仍为独立受控 Local State。
 - `created_azure_arm_id` 不是 Fabric Capacity UUID，`created_fabric_uuid=null`，待授权真实独立读回；Provider Init/Plan/Apply、SKU可用性、订阅权限与实际账单均未验证。Task 2.4 **继续未完成真实部署验收**。
 - 修订 Profile v1 的一处跨租户限制：Tenant A Storage Subscription 与 Tenant B Capacity Subscription 可以不同，均须真实单独核实；补离线单测。CI 新增 Capacity fmt/static tests。
+
+## Task 2.5 第一批：六 Root 横向离线门禁（2026-10-19）
+
+- 将三项 Bootstrap Root（Identity / Storage / Capacity）与三项新环境 Root（Workspace / Onelake / Connection）全部纳入 GitHub-hosted Terraform `fmt -check -diff`；不执行任何 Terraform init/validate/plan/apply/destroy/import，也不设置 GitHub OIDC token 写权限。
+- 新增 `tests/test_fabric_bootstrap_cross_root.py`：固定各 Root 的资源类型与数目、独立 State Backend、自举禁令、单一资源所有权、默认创建审批和 CI 无凭据规则。负向回归阻止跨 Root 重复管理、旧 Storage 接管或 Capacity 付费创建门禁绕过。
+- **离线源码/格式关卡，不是可部署证明**：真实 Provider Schema、租户与订阅、RBAC、网络、远端 State 及收费审批仍未验证。Task 2.5 checkbox 暂不勾选，下一批继续校验非敏感 Bootstrap → 新环境交接与 fresh 模式断点。此次变更不触碰旧七 Root、旧 `dev/*.tfstate`、Self-Runner 或真实云端。
