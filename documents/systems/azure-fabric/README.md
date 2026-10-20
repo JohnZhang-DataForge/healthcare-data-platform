@@ -9,6 +9,10 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 > **唯一系统总导航**：本文说明整体业务架构、组件分工和验收范围；总源码导航见 [CODE.md](CODE.md)，各组件的 README 解释职责，CODE 定位源码。全项目实时 CURRENT/NEXT 以 [Project Status](../../engineering/status/PROJECT-STATUS.md) 为准。
 
+## 当前部署固定基线（2026-10-20）
+
+用户已决定：**Tenant A = Tenant B**（`899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`，Azure Subscription `56107520-5920-4e96-9833-5441ded0a90c`），现有 `johnzhang/landing` 和 `johnzhang/tfstate` 保留，采用 `reuse-existing`，新环境独立 `fabric/<env>/*.tfstate`。旧 `johnzhang-fabric` 子账号/手工 Workspace 不作为重建依赖；新身份与 Fabric 环境用 Terraform/GitHub Actions/fabric-cicd 创建。**未来 A≠B 仍受支持，但当前开发不要求验证另一个 Tenant**。权威决策：[当前 Fabric 部署基线](../../architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)。以上是用户确认的部署输入，不代表已完成当前 Fabric API/远端 State 真实验收。
+
 ## 系统目标与真实边界
 
 > **新确认的目标设计（尚未实施）**：[Fabric 多环境可重建架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 已确定采用 Terraform + Self-Runner GitHub Actions + fabric-cicd，复用现有 Blob/Backend，Fabric 环境使用独立身份和 State Key；**这不会改变下文的 Plan-only、Workspace 手工建立与业务 Item 尚未完成的当前事实**。

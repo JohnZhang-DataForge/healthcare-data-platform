@@ -1,5 +1,8 @@
 # Tasks
 
+> **CURRENT DEPLOYMENT DECISION (2026-10-20): A=B / REUSE EXISTING STORAGE — MUST READ BEFORE WORK.** See [authoritative account/Storage baseline](../../../documents/architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md). 用户已定性：**Tenant A = Tenant B = `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`**，Azure Subscription `56107520-5920-4e96-9833-5441ded0a90c` 为 Enabled；主账号为 `guangbinzhang8888@gmail.com`，旧 `johnzhang-fabric` Fabric 管理员子账号、旧 Workspace、RBAC 均为**历史背景而非新部署依赖**。不再要求发现另一个 Tenant、尝试旧子账号 CLI 登录，或创建第二个人类用户/新 Tenant/新 Storage。当前 Profile **`reuse-existing`**，仅保留已有 `johnzhang/landing` + `johnzhang/tfstate`，后续 Terraform State 使用新的隔离 `fabric/<env>/*.tfstate` Keys；旧 `dev/*.tfstate` 原样保护。使用脚本/Terraform 创建三套新的 Entra App/SPN、OIDC、最小 RBAC 与新 Fabric 环境；GitHub Actions 在 Self-Runner private main，Plan/Apply 独立手动选择（默认 Plan）。未来 A≠B 只作为参数化扩展，**不阻塞当前 A=B 完成**。任何遗留旧文档中的“先确认是否 A=B”/“fresh-bootstrap 是当前默认”均被此决定覆盖；不将此决定等同真实云端 Apply PASS。
+
+
 > **Active / Incremental Live Testing Approved (2026-10-20)**：用户已明确允许隔离环境的 Terraform Init、Validate、真实只读库存与 Plan/OIDC 验证；计划进入真实测试而非只做静态源码。PR CI 仍必须 **无云凭据、无远端 State、无 Plan/Apply**；新增 `init -backend=false` + `validate` 进行真实 Provider Schema 检测。实际带云权限的 Plan 需经源 SHA、Identity/Subscription、隔离 State Key 和现有资源库存核验；可在确认 Plan 后对明确隔离的 Trial 资源进行 Apply。旧 `johnzhang`/历史 State、旧 Workspace 保留保护。新收费 F SKU Capacity、意外成本或破坏性操作需另行批准。开发以小 PR + 真实测试证据验收。
 
 ## 0. Approved boundary and Change creation
@@ -255,3 +258,18 @@
 - **真实执行未发生**：缺少用户的真实 Tenant A/B 配置和 Seed 管理员 Azure CLI 会话，当前工具连接不支持 Entra 写入、GitHub Actions Variables 或手动 Workflow Dispatch；**本轮不声称真实 Azure Plan / 新 App FIC / Token Exchange / Trial State PASS**。完成源码 CI 并合并后仍须用户在可访问 Azure 的机上运行一次，携真实输出继续。**Task 3.2 checkbox 继续 OPEN**；真实 Identity Apply 未获审核，收费 Capacity 均不创建。
 
 - **本批最终 Source/CI/Merge 证据**：Healthcare [PR #328](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/328)；经检查的最终 HEAD `406439a56cb30cb8125a46b52654c012259d0e0d`，**12/12 GitHub Checks SUCCESS**。其中包括 Fabric Offline [Run 39474801789](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39474801789) 对完整 mock 计划与旧身份拒绝回归；六个 Root Provider Init/Validate [Run 39474801929](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39474801929) PASS；OpenSpec Change Gate [Run 39474802028](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39474802028) PASS。PR #328 已 **SQUASH MERGED**，Healthcare Main `253602ec280853fdbbc02a1cdb169b40fcca0ce3`。该组 CI 无 Azure/Entra 登录或带云 Terraform；实际本地 Seed 计划仍须授权 Seed 用户的真实 Tenant A/B 环境运行，Plan/Apply 严格分开。**Task 3.2 继续 OPEN**。
+
+
+## 2026-10-20 冻结当前部署基线 / 任务后续优先级（覆盖历史探索性方向）
+
+- [x] **Decision fixed**：已确认目前主账号下 Tenant A=B=`899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`、Subscription `56107520-5920-4e96-9833-5441ded0a90c` Enabled。原主账号登录和同租户已有 Fabric 管理员子账号、历史 Workspace **无需重新发现、重登或被自动迁移**；后续同租户部署不得再为此反复询问用户。
+- [x] **Existing Blob preserved**：`johnzhang/landing` + `johnzhang/tfstate` 是用户确认必须保留的资产；`reuse-existing` 为当前实施模式。后续改造不准用 `fresh-bootstrap` 新建替代 Storage/Container；新环境仅规划隔离 Key，`dev/*.tfstate` 不动。
+- [x] **Documentation source-of-truth**：新增 [当前账号与 Storage 权威基线](../../../documents/architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)，同步 OpenSpec Design/Spec、总架构、系统组件导航和 Seed 操作 Runbook。
+- [x] **Code alignment**：`fabric_seed_identity_plan.py` 的初始 Identity 创建 Plan 可在 `reuse-existing` 模式工作（仍仅 local Bootstrap State、十项新身份 create-only Plan、**绝不访问或更新当前 Storage/State**），补独立 mock/CI 回归。双 Tenant Provider alias 仍可接受两个不同 ID，但不作为当前实际部署阻塞项。
+- [ ] **Current A=B live Seed**：用已授权的主账号或临时管理员身份获取同 Tenant 的 Graph 创建权限；读取重复应用名称的库存，准备针对**同一个 Tenant ID** 的三套应用、服务主体、Group、FIC 的真实 Plan 和独立审批后的 Apply，回读证明新应用/FIC 不依赖旧 `github-terraform`。
+- [ ] **Keep/land Identity State in existing Backend**：制定并验证当前 Identity 初次 local State 的安全持久化/迁移与恢复路径，目标 `johnzhang/tfstate/fabric/<env>/identity.tfstate`（先 inventory、验证空位、锁与 Backend Operator 最小 RBAC，严禁覆写旧 `dev/` Key），避免再次 Apply 创建重复 Entra Apps。普通 Root 的 Remote Backend 也固定复用现存容器的新隔离 Key。
+- [ ] **Role grants + Live OIDC**：同租户新 Backend Operator Blob Data Contributor 最小必要 State 容器访问、新 Blob Reader 的 `landing` 只读，Fabric Deployer 的 API/Tenant Settings/Capacity 权限；设置五个 Self-Runner repo Variables，真实 Token Exchange/Subscription GET/Capacity GET，并记录各 Job Run 与最小证据。
+- [ ] **New Fabric workspace/E2E**：只对隔离**新**的 Workspace/Lakehouse/Connection 通过独立 Plan 和保存二进制 artifact 审阅后 Apply；Fabric Item 用 fabric-cicd 发布。旧 Workspace 不作为依赖，也不自动删除；Capacity 先复用已有，收费 F SKU 需另外批准。
+- [ ] **Future optional**：A≠B 兼容场景继续保留设计测试，待当前 A=B 端到端通过后再按需要做跨租户真实测试。**不能让此项阻塞当前路径**。
+
+**真实性边界**：前述 `[x]` 是用户决策、文档与源码的验收，不等于已真实创建新 Entra Apps/授权 RBAC、Backend State/Blob 网络或 Fabric 资源。此前的 PR/CI PASS 仍仅证明代码与无云测试；本 Change Task 3.2 云端全链路仍 OPEN。

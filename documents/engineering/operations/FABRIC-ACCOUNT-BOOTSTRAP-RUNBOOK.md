@@ -7,6 +7,9 @@ implementation_status: offline-roots-and-validation-only
 
 # Fabric 新账号 / 新环境 Bootstrap Seed 与自动化 Runbook
 
+> **2026-10-20 当前执行基线（优先于本文历史“每次新账号”探索步骤）**：[固定同租户部署决定](../../architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)。本次环境 **A=B**，Tenant `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`，Subscription `56107520-5920-4e96-9833-5441ded0a90c`（Enabled），复用现存 `johnzhang/landing` + `johnzhang/tfstate`。已有 `johnzhang-fabric` 管理员子账号和旧手工 Fabric Workspace 只作为历史上下文，不作为新部署依赖；不得以“子账号无法 az login”为由要求重新发现 Tenant B。管理员可用主账号或其授权 Seed Operator；App/SPN/OIDC/RBAC 以 Terraform/脚本自动创建。新 Fabric 环境和独立 State Key 由代码管理，旧 `dev/*.tfstate` 与旧 Workspace 不导入、不改、不删除。A!=B 是后续可选参数化能力，非当前上线前置。下面遗留章节若写有先区分 A/B 或新建 Storage 的通用步骤，仅适用于**将来跨 Tenant/fresh-bootstrap 场景**。
+
+
 > **范围**：本 Runbook 区分**不可跳过的管理员/成本授权**与未来**由 Bootstrap Terraform 自动创建**的资源。2026-10-19 已批准将 Entra/SPN/OIDC/RBAC、可选 Storage/Backend 及 Capacity 新建纳入 IaC，**不实施自动暂停/恢复**。**当前已完成独立 Workspace、Lakehouse、Connection 资源声明与离线 Preflight/CI，但**从未对新环境进行 Terraform Init/Plan/Apply**，仍不是可运行的一键部署流程。** 后续 Terraform Provider/Backend 双身份、Connection、fabric-cicd、Self-Runner Workflow 仍需独立开发、授权与 E2E。长期目标见 [Fabric 多环境架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；原有 [Terraform 安全边界](../../systems/azure-fabric/infra-terraform/ARCHITECTURE.md) 仍有效。
 
 ## 已批准的新部署策略（目标；当前未实施）

@@ -9,6 +9,10 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 > **已完成组件文档收口（ACTIVE）**：本组件参照 [Data Platform 组件双入口](../../data-platform/README.md) 整理。**README 说明职责与边界， [CODE.md](CODE.md) 是 Terraform 唯一组件级源码导航**；深入的 IAM、OIDC、State 与历史 Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。源码区旧说明文件在完成引用修复后退役；本次没有修改 Terraform 执行入口。
 
+## 当前真实目标（2026-10-20 决策）
+
+默认开发目标是 `A=B`，`reuse-existing`：当前主账号对应的同一 Tenant、现存 `johnzhang/landing` 及 `johnzhang/tfstate`；旧 `dev/*.tfstate` 原封不动。新的 Bootstrap Identity 创建三独立 Entra App/SPN/OIDC；现有 Storage 不重新创建，旧 Fabric 子账号和手工 Workspace 不再被新流程引用。Identity 最初的临时 Local State 不是最终存储方案；最终须使用现有远端 Backend 的新 Key。未来跨 Tenant（A≠B）为**兼容选项**，不能阻塞现在的同租户交付。权威资源/账号/开发基线见 [当前部署决策](../../../architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)；当前真实执行进度见 [Bootstrap OpenSpec](../../../../openspec/changes/bootstrap-fabric-infrastructure/tasks.md)。
+
 ## 组件职责与系统位置
 
 Terraform 仅负责 Azure/Fabric 的基础设施资源定义、身份及权限边界，属于 [Azure/Fabric 云端分析子系统](../README.md)，而不是本地 OMOP PostgreSQL 数据导出器、Fabric PySpark 业务 Notebook 或完整的数据处理流水线。

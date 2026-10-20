@@ -69,3 +69,32 @@ Bootstrap outputs SHALL omit secrets and SHALL identify source Tenant/identity, 
 - **GIVEN** 完整且不含 Secret 的离线 Environment 配置
 - **WHEN** 纯本地测试成功
 - **THEN** 输出 `verified=false` 的非敏感目标摘要，明确 `remote_state_checked=false`、`terraform_executed=false`，不认证 Azure/Fabric
+
+
+### Requirement: Current same-Tenant deployment SHALL preserve user-provisioned Storage and State
+
+The CURRENT target SHALL use `reuse-existing`, with A=B and the approved subscription. It MUST preserve `johnzhang/landing`, `johnzhang/tfstate` and `dev/*.tfstate` while using only isolated new State keys. It MUST NOT depend on the old Fabric administrator account or manually provisioned Workspace. Local Seed State is transitional, with explicit recovery/migration before long-term use. Future A!=B SHALL remain configurable without blocking the current A=B deployment.
+
+#### Scenario: current known Tenant/Subscription reused
+
+- **GIVEN** 已确认同一 Tenant GUID `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`、Subscription `56107520-5920-4e96-9833-5441ded0a90c` 且 Enabled
+- **WHEN** 生成当前环境 Profile 和 Identity Terraform Plan
+- **THEN** Backend/Fabric 两个 Provider 可以使用相同 Tenant ID，但 App Client ID 必须不同；不得要求另一个 Tenant ID 或旧 Fabric 子账号 CLI 会话
+
+#### Scenario: existing storage remains external to Bootstrap
+
+- **GIVEN** 当前选择 `reuse-existing`、固定 `johnzhang/landing` 和 `johnzhang/tfstate`
+- **WHEN** 执行 Bootstrap Identity Plan / downstream Plan
+- **THEN** 不创建、更名、Import、Replace、删除既有 Storage/Container/Landing 数据，也不触碰旧 `dev/*.tfstate`；新组件只能指向单独经库存核查的 `fabric/<environment>/<component>.tfstate`
+
+#### Scenario: previous manually created Workspace is not a dependency
+
+- **GIVEN** 历史 Fabric Workspace、`johnzhang-fabric` 子账号和原先授权都存在或曾存在
+- **WHEN** 部署新 IaC Fabric 环境
+- **THEN** 通过新的 Entra 应用/OIDC/RBAC 和独立 Workspace 名创建，不把旧 Workspace/旧账号作为必需参数，亦不自动删除原对象
+
+#### Scenario: future A!=B configuration
+
+- **GIVEN** 将来 Fabric Tenant 与 Blob Tenant 不同
+- **WHEN** 使用已明确提供且经真实权限验证的 Tenant/Provider 配置
+- **THEN** 可以单独验证/扩展跨 Tenant 支持；不能以此要求当前 A=B 路径等待或重复做 Tenant 发现
