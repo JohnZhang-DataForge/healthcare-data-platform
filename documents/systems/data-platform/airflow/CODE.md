@@ -68,6 +68,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 > 实际运行证明：2026-10-20 [Self-Runner Helm Repair Run #39422344924](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422344924) 成功执行 `helm upgrade --atomic --wait`，Scheduler 和 DAG Processor 均读到迁移后 `dags_folder`。单独成功不表示 NEW_ONLY 完整业务 E2E 验收。
 
+恢复/重放此部署配置时只升级**当前** `dw-airflow` Release，示例：`helm upgrade dw-airflow apache-airflow/airflow -n dw-airflow --version 1.22.0 --reuse-values -f local-data-platform/kubernetes/helm/airflow-postmove-values.yaml --atomic --wait --timeout 10m`。升级后分别使用运行中 Scheduler、DAG Processor 的 `airflow config get-value core dags_folder` 核实结果；不得创建第二份 Release 或重新生成 Secret。
+
 ## 历史控制面与跨 Namespace RBAC
 
 | 源文件（直接链接） | 用途与运行边界 |
