@@ -43,3 +43,15 @@ Its `FABRIC_OFFLINE_INTEGRATION_HOLD` means the inputs are **internally consiste
 ## Evidence and next actions
 
 The GitHub-hosted `Fabric Environment Preflight (Offline)` PR workflow covers all six Terraform Roots' **format-only** validation, Python negative contracts, static ownership and the new integrated HOLD report. Preserve a PR HEAD, six relevant check names/conclusions, GitHub-hosted workflow run ID, merged Main SHA and exact root files in the OpenSpec task log; record **no real deployment**. After code-only acceptance, Task 3.3 may mark the *offline verification* slice as complete, but Task 3.4 Closeout/Archive must remain HOLD until independently authorized live proof exists.
+
+## Verified PR CI record (source-only; not runtime attestation)
+
+- PR #298 (source-only integration): <https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/298>
+- Reviewed exact Git source HEAD: `bfcd37d966654a16eb5ed63ef404496175c96c88`
+- Fabric Environment Preflight (Offline) GitHub-hosted run: <https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39403368850> — `success`, includes `test_fabric_execution_readiness.py` and all existing Root policy suites and `terraform fmt -check -diff` across six Root directories.
+- Other checked gates at same HEAD: Documentation Relative Links, Component Code Naming, OpenSpec Static Validation, OpenSpec Change Gate, OpenSpec Trusted Change Gate — all success.
+- Post-merge Healthcare Main at acceptance: `8388410313c863eaf9e4b199fb476d4ff8c00586`.
+- Self-Runner separate offline controller baseline: `a951cb5e8589815cc1adb2096252e2c221dd0184`; PR #150 GitHub-hosted safety policy run `39394922136` success.
+- GitHub PR #298 changed **only six** in-scope offline files; older Azure/Fabric resources, legacy seven Roots, Self-Runner `azure-infra.yaml` and State untouched. **Task 2.5 and Task 3.3 offline acceptance concluded; live deployment remains HOLD.**
+
+Acceptance record is **read-only historical CI evidence**, not a directive for a workflow_dispatch; Task 3.2's privileged execution design and Task 3.4's live acceptance remain independently blocked.

@@ -20,13 +20,13 @@
 - [ ] 2.2 实现隔离 Identity/SPN/Group/OIDC Root/Modules；不创建原 `github-terraform` 的重复同名 App、不自动接管旧 App；默认拒绝写操作。
 - [ ] 2.3 实现可选 fresh Storage/Containers、最小 RBAC 和独立的初始 Bootstrap State 策略；阻止 backend 自举循环、旧 `dev/*.tfstate` 和 `johnzhang` 资源接管。
 - [ ] 2.4 实现 Capacity 的 `reuse-existing` / `create-new` Resource/Output；使用经过验证的官方 ARM Schema，付费创建在 CI/Root 中默认拒绝，`prevent_destroy` 与预算/人工审批不互相代替。
-- [ ] 2.5 为所有 Terraform Root 增加纯离线 `fmt`/静态合同和负向测试；PR CI 禁止执行 `init/plan/apply/destroy/import` 或访问云端。
+- [x] 2.5 为所有 Terraform Root 增加纯离线 `fmt`/静态合同和负向测试；PR CI 禁止执行 `init/plan/apply/destroy/import` 或访问云端。
 
 ## 3. Integration and controlled operational readiness
 
 - [ ] 3.1 非敏感 Bootstrap 输出交接到 `implement-fabric-multi-environment-terraform` Task 0.3，确保已有 Workspace/Lakehouse/Connection 唯一所有权与 Capacity ID 来源可审核。
 - [ ] 3.2 单独设计受控 Self-Runner 新入口，区分 Bootstrap/Plan/Apply 权限环境；旧 `azure-infra.yaml` 不被替换，禁止 PR CI 拿云端写 Token。
-- [ ] 3.3 完成按精确 HEAD 的离线验收、变更范围安全核对、真实运行前置授权清单；**未获得单独授权不得验证 Live 环境**。
+- [x] 3.3 完成按精确 HEAD 的离线验收、变更范围安全核对、真实运行前置授权清单；**未获得单独授权不得验证 Live 环境**。
 - [ ] 3.4 只有受控真实证据到位且无开放阻塞后才审查 Closeout/Archive；不能用 Static PASS 冒充 Deployed。
 
 ## Acceptance rules
@@ -116,3 +116,11 @@
 - 对六个新 Root、独立 `fabric/<env>/<component>.tfstate`、Tenant A/B、fresh Storage Profile 绑定与付费 Capacity UUID 来源做交叉检查。全部实际云权限/支付/可信来源/State/Provider/网络布尔值必须为 false；即使输入 Claim 携带 SHA 和 Plan 摘要的语法，**绝不自动证明该 SHA 属于 Main 或 Plan Artifact 已批准**。
 - 增加 `tests/test_fabric_execution_readiness.py`，覆盖 Bootstrap/Plan/Apply、A→A′/A→B、旧/新 Storage、已存在/收费 Capacity、未知字段与 Secrets、伪造批准、错误 Root/State/SHA；CI 在 `ubuntu-latest` 上只使用 Python 和六 Root `terraform fmt`。
 - 运行前离线检查清单见 `bootstrap/OFFLINE-READINESS.md`，后续必须独立验证保护的 GitHub Environment、真正固定 Main SHA/计划及 State、权限和私网，且再次明确取得真实执行许可。**Task 3.3 checkbox 保持未勾选，直到精确 PR HEAD CI 成功并完成范围审计。无云端操作或新费用。**
+
+## Task 2.5 / 3.3 代码阶段独立验收记录（2026-10-20，正式范围审计）
+
+- 已完成的**仅为离线目标**：Task 2.5 六个 Root 的 `terraform fmt -check -diff` + Python 默认拒绝/所有权/Secret/防旧 State 静态测试；Task 3.3 Controller 意图和 Bootstrap 四份 value-only 文档的 Python 交叉校验、HOLD Matrix、真实运行前置清单。勾选这两项**绝非**验证 Azure/Fabric 资源，也不赋予 `init/validate/plan/apply/destroy/import` 权限。
+- 证据 PR：<https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/298>；**精确验证 HEAD** `bfcd37d966654a16eb5ed63ef404496175c96c88`，六个 Required/Relevant Checks 全部 `success`（Document Links、Component Naming、Fabric Environment Preflight、OpenSpec Validation、Change Gate、Trusted Change Gate）。Fabric GitHub-hosted 离线 Workflow Run **39403368850**：<https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39403368850>；已合并 `main` Commit `8388410313c863eaf9e4b199fb476d4ff8c00586`。该 commit 为 PR #298 代码验收基线，不代表后续并发 Main 永久不变。
+- 本 PR #298 的 GitHub Files API 确认 **仅 6 个源码范围文件**：`.github/workflows/fabric-environment-preflight.yml`、`tools/fabric_execution_readiness.py`、`tests/test_fabric_execution_readiness.py`、`bootstrap/OFFLINE-READINESS.md`、本 `tasks.md` 与人工 Runbook；没有修改旧七 Terraform Root、`azure-infra.yaml`、既有 Storage/Remote State、任何 `*.tfstate` 或付费 Capacity。
+- Self-Runner 对应离线 Intake PR：<https://github.com/JohnZhang-DataForge/Self-Runner/pull/150>，已合并 `a951cb5e8589815cc1adb2096252e2c221dd0184`，GitHub-hosted 受限 Controller CI Run `39394922136` success；没有实际调度该 Workflow，也未从不可信 PR 签发云 Token。
+- **仍须 HOLD**：Task 2.1–2.4 官方 Provider Runtime/真实 Azure 权限、Identity/Storage/Capacity 资源库存及私网、Task 3.1 的可信现场 provenance、Task 3.2 真正隔离权限的可执行受保护 Self-Runner Jobs、Task 3.4 部署后验收/Closeout；新 Capacity 的创建、真实 OIDC/RBAC、Plan 与 Apply 均需另行申请独立批准。
