@@ -53,3 +53,5 @@ The GitHub-hosted `Fabric Environment Preflight (Offline)` PR workflow covers al
 - Post-merge Healthcare Main at acceptance: `8388410313c863eaf9e4b199fb476d4ff8c00586`.
 - Self-Runner separate offline controller baseline: `a951cb5e8589815cc1adb2096252e2c221dd0184`; PR #150 GitHub-hosted safety policy run `39394922136` success.
 - GitHub PR #298 changed **only six** in-scope offline files; older Azure/Fabric resources, legacy seven Roots, Self-Runner `azure-infra.yaml` and State untouched. **Task 2.5 and Task 3.3 offline acceptance concluded; live deployment remains HOLD.**
+
+Acceptance record is **read-only historical CI evidence**, not a directive for a workflow_dispatch; Task 3.2's privileged execution design and Task 3.4's live acceptance remain independently blocked.
