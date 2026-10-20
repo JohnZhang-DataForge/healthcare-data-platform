@@ -109,3 +109,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [Capacity approval validator](../../../../azure-fabric/infra-terraform/tools/fabric_capacity_approval.py) · [负向单测](../../../../azure-fabric/infra-terraform/tests/test_fabric_capacity_approval.py)：请求与分离账单记录严格匹配，但无论是否填写完整审批字段都保持 `paid_creation_authorized=false`，**不授权支付**。
 - [Capacity Billing Contract](../../../../azure-fabric/infra-terraform/bootstrap/CAPACITY-APPROVAL-CONTRACT.md)：独立审查责任人、SHA/预算/时间限制、复用模式和受保护 Environment 成本控制。
 - [官方 Provider/ARM Freeze](../../../../azure-fabric/infra-terraform/bootstrap/PROVIDER-SCHEMA-REFERENCE.md)：版本选择、跨 Tenant provider alias、Blob container 范围 RBAC、Fabric Capacity ARM 2023-11-01 的准确字段与待核实项。
+
+## Bootstrap Identity Terraform Root (OpenSpec 2.2; code-only, NOT DEPLOYED)
+
+- [Identity Root entry and safety](../../../../azure-fabric/infra-terraform/bootstrap/identity/README.md), [pinned Terraform backend/provider](../../../../azure-fabric/infra-terraform/bootstrap/identity/versions.tf), [separate Tenant A/B providers](../../../../azure-fabric/infra-terraform/bootstrap/identity/providers.tf).
+- [Entra app/SPN/group/OIDC resources](../../../../azure-fabric/infra-terraform/bootstrap/identity/main.tf), [default-deny variables](../../../../azure-fabric/infra-terraform/bootstrap/identity/variables.tf), [unverified ID outputs](../../../../azure-fabric/infra-terraform/bootstrap/identity/outputs.tf). Never import or automatically adopt old apps.
+- [Identity Root source checks](../../../../azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity_root.py): source-only static gates and local HCL fmt. No Azure/Fabric/Graph/remote State or real credential check.
