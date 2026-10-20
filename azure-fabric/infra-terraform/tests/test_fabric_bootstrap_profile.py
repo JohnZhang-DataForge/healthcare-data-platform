@@ -22,7 +22,7 @@ def reuse():
         "bootstrap_mode": "reuse-existing",
         "tenants": {"backend_tenant_id": A, "fabric_tenant_id": A},
         "github_oidc": {
-            "repository": "JohnZhang-DataForge/healthcare-data-platform",
+            "repository": "JohnZhang-DataForge/Self-Runner",
             "environment": "fabric-lab-b",
         },
         "storage": {

@@ -14,18 +14,21 @@ from fabric_bootstrap_profile import (
     InvalidBootstrapProfile, _fields, _no_duplicate_keys, _uuid, validate,
 )
 
-REPOSITORY = "JohnZhang-DataForge/healthcare-data-platform"
+REPOSITORY = "JohnZhang-DataForge/Self-Runner"
+IMMUTABLE_PREFIX = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156"
 ISSUER = "https://token.actions.githubusercontent.com"
 AUDIENCE = "api://AzureADTokenExchange"
 MAIN_REF = "refs/heads/main"
 SEED_REF_RE = re.compile(r"^SEED-[A-Z0-9-]{8,72}$")
 ROLES = ("backend_operator", "fabric_deployer", "blob_reader")
-OIDC_ROLES = ("backend_operator", "fabric_deployer")
+OIDC_BINDINGS = {"plan_backend": ("backend_operator", "plan-backend"),
+                 "apply_backend": ("backend_operator", "apply-backend"),
+                 "plan_deployer": ("fabric_deployer", "plan-deployer"),
+                 "apply_deployer": ("fabric_deployer", "apply-deployer")}
 
 
-def _role_environment(profile: dict, role: str) -> str:
-    prefix = profile["environment"]
-    return f"fabric-{prefix}-{'backend' if role == 'backend_operator' else 'deployer'}"
+def _role_environment(profile: dict, binding: str) -> str:
+    return f"fabric-{profile['environment']}-{OIDC_BINDINGS[binding][1]}"
 
 
 def validate_identity_request(bootstrap_profile: object, request: object) -> dict:
@@ -33,7 +36,7 @@ def validate_identity_request(bootstrap_profile: object, request: object) -> dic
     p = validate(bootstrap_profile)
     r = _fields(request, {"schema_version", "environment", "seed_operator",
                           "applications", "oidc_bindings"}, "identity_request")
-    if type(r["schema_version"]) is not int or r["schema_version"] != 1:
+    if type(r["schema_version"]) is not int or r["schema_version"] != 2:
         raise InvalidBootstrapProfile("unsupported identity schema")
     if r["environment"] != p["environment"]:
         raise InvalidBootstrapProfile("identity environment differs from Bootstrap profile")
@@ -63,13 +66,13 @@ def validate_identity_request(bootstrap_profile: object, request: object) -> dic
             raise InvalidBootstrapProfile("role identity, ownership or tenant mismatch")
         names.add(app["display_name"])
 
-    bindings = _fields(r["oidc_bindings"], set(OIDC_ROLES), "oidc_bindings")
+    bindings = _fields(r["oidc_bindings"], set(OIDC_BINDINGS), "oidc_bindings")
     resolved_bindings = {}
-    for role in OIDC_ROLES:
-        binding = _fields(bindings[role],
+    for binding_name, (role, suffix) in OIDC_BINDINGS.items():
+        binding = _fields(bindings[binding_name],
                           {"repository", "environment", "ref", "issuer", "audience",
-                           "protected_environment_required"}, f"oidc_bindings.{role}")
-        environment = _role_environment(p, role)
+                           "protected_environment_required"}, f"oidc_bindings.{binding_name}")
+        environment = _role_environment(p, binding_name)
         if (binding["repository"] != REPOSITORY
                 or binding["environment"] != environment
                 or binding["ref"] != MAIN_REF
@@ -77,11 +80,12 @@ def validate_identity_request(bootstrap_profile: object, request: object) -> dic
                 or binding["audience"] != AUDIENCE
                 or binding["protected_environment_required"] is not True):
             raise InvalidBootstrapProfile("unsafe OIDC issuer, repo, ref or environment")
-        resolved_bindings[role] = {
+        resolved_bindings[binding_name] = {
             "tenant_id": apps[role]["tenant_id"],
+            "application_role": role,
             "issuer": ISSUER,
             "audience": AUDIENCE,
-            "subject": f"repo:{REPOSITORY}:environment:{environment}",
+            "subject": f"{IMMUTABLE_PREFIX}:environment:{environment}",
             "required_branch_ref": MAIN_REF,
         }
 

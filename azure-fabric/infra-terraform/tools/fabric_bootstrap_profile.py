@@ -21,7 +21,8 @@ ALLOWED_F_SKUS = {"F2", "F4", "F8", "F16", "F32", "F64",
 REGION_RE = re.compile(r"^[a-z][a-z0-9]{1,30}$")
 SKU_RE = re.compile(r"^F[1-9][0-9]{0,3}$")
 REVIEW_RE = re.compile(r"^[A-Z][A-Z0-9-]{6,80}$")
-REPOSITORY = "JohnZhang-DataForge/healthcare-data-platform"
+REPOSITORY = "JohnZhang-DataForge/Self-Runner"
+OIDC_IMMUTABLE_PREFIX = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156"
 LEGACY_ENVIRONMENTS = {"dev", "main", "default", "production"}
 
 
@@ -162,7 +163,7 @@ def validate(profile: object) -> dict:
         "identity_topology": "same-tenant" if backend_tenant == fabric_tenant else "cross-tenant",
         "backend_tenant_id": backend_tenant,
         "fabric_tenant_id": fabric_tenant,
-        "github_oidc_subject_target": f"repo:{REPOSITORY}:environment:fabric-{env}",
+        "github_oidc_subject_prefix_for_design_only": f"{OIDC_IMMUTABLE_PREFIX}:environment:fabric-{env}-",
         "storage_account": account,
         "storage_subscription_id": storage_subscription_id,
         "storage_resource_group": storage_rg,

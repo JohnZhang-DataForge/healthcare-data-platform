@@ -18,7 +18,7 @@ EXPECTED = {
         "azuread_application_registration": 3,
         "azuread_service_principal": 3,
         "azuread_group": 2,
-        "azuread_application_federated_identity_credential": 2,
+        "azuread_application_federated_identity_credential": 4,
     },
     ("bootstrap", "storage"): {
         "azurerm_resource_group": 1,

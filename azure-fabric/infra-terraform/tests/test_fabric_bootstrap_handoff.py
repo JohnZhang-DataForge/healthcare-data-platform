@@ -28,7 +28,7 @@ def fixtures(cross=False, fresh=False, paid=False):
         "environment": "lab-b",
         "bootstrap_mode": "fresh-bootstrap" if fresh else "reuse-existing",
         "tenants": {"backend_tenant_id": A, "fabric_tenant_id": B if cross else A},
-        "github_oidc": {"repository": "JohnZhang-DataForge/healthcare-data-platform",
+        "github_oidc": {"repository": "JohnZhang-DataForge/Self-Runner",
                         "environment": "fabric-lab-b"},
         "storage": {
             "account": "hdplabbstorage" if fresh else "johnzhang",
