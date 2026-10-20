@@ -53,4 +53,4 @@
 
 - [Run #39347778669](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39347778669) 针对文档+证据初始 PR HEAD `a86e030af3146cc0d7d9e234e717ed71fa4421fa` **FAIL**：`task004_processing_pipeline.py` 无法导入同目录的 `task004_cdm_preflight_contract`；`task004_cdm_dynamic_source.py` 无法导入同目录的 `task004_cdm_dynamic_adapters`。在相同业务源和 Workflow 的上一轮 [Run #39342425386](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39342425386) `DAGBAG_PARSE=PASS`（5 DAG），证明现有隔离环境的本地模块搜索路径不稳定；**不能抹去本轮 FAIL**。
 - 已在本 OpenSpec PR 范围内向 `.github/workflows/local-dp-airflow-dagbag-parse.yml` 的 Docker parse-only `docker run` 显式传入 `PYTHONPATH=/opt/airflow/dags`，确保 DAG 同目录辅助 Python 模块可发现。不修改任意业务 DAG、不扩大 K8s 权限、不启动调度或业务写入。
-- 必须依据**修复后的最新 PR HEAD** 的真实 DagBag Run 决定该 CI Gate 是否 PASS；此前 RUN 的成功不替代新 HEAD。3 轮内仍失败则 HOLD。
+- **修复的精确 PR HEAD** `865f1f7ba05815b6dc79edab59eff273c20aa7d4` 在 [DagBag Run #39348105771](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39348105771) 实际验证 **SUCCESS / DAGBAG_PARSE=PASS**；原始 FAIL Run #39347778669 仍保留。该修复只调整隔离测试容器 `PYTHONPATH`，未修改业务 DAG。之后的证据文档更新仅引起 SHA 前进；应以最终 HEAD 的适用 CI 再验收，不能复用旧 HEAD 全面 PASS。
