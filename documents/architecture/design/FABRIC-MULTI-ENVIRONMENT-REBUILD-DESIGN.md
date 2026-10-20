@@ -160,25 +160,34 @@ Azure Storage: johnzhang / tfstate   # reuse-existing example ONLY
 
 **Backend `terraform init` 使用 Tenant A 的身份**，Fabric Provider Terraform 操作使用 Tenant B 的身份。两种认证在受支持 Provider/Backend 版本下如何配置、GitHub OIDC 在新租户如何建立联合信任，必须先做隔离只读测试；不能认为把现有 `AZURE_TENANT_ID` 换成 B 就能继续读取 A 的 `tfstate`。
 
-### 5.2 目标环境参数（逻辑示例，不是现存 YAML）
+### 5.2 目标环境参数（**逻辑示例，不是现存 YAML**）
+
+此示例仅说明未来 Profile 应含的字段，不可作为当前工具有效输入；`create-new` Capacity 的新 ID 从经过授权的 Bootstrap 输出取得，不应同时提交 `capacity_id`。费用授权必须存在于受审计的批准记录，不能只凭 JSON 布尔值。
 
 ```yaml
-environment: fabric-lab-b
+environment: lab-b
 source_ref: main
+bootstrap:
+  mode: reuse-existing              # or fresh-bootstrap
+  capacity:
+    mode: reuse-existing            # or create-new
+    capacity_id: EXISTING_CAPACITY_UUID  # reuse-only
+    sku: null                       # create-new: separately approved F SKU
+    region: null                    # create-new: independently approved region
+    creation_approved: false        # default-deny; not a billing approval by itself
 backend:
-  storage_account: johnzhang
+  storage_account: johnzhang        # reuse-only, not fixed for fresh-bootstrap
   container: tfstate
-  state_prefix: fabric/lab-b        # 独立文件，不复制旧状态
+  state_prefix: fabric/lab-b
   tenant_id: TENANT_A
 fabric:
-  tenant_id: TENANT_B
-  capacity_id: EXISTING_OR_APPROVED_CREATED_CAPACITY_ID
-  workspace_name: healthcare-omop
+  tenant_id: TENANT_B               # same Tenant as A is also supported
+  workspace_name: HDP-lab-b
   principal_id: FABRIC_DEPLOYER_B
 landing:
-  storage_account: johnzhang
+  storage_account: johnzhang        # fresh-bootstrap derives new account from outputs
   container: landing
-  connection_name: healthcare-blob-reader
+  connection_name: HDP-lab-b-azureblobs
   reader_tenant_id: TENANT_A
   reader_client_id: BLOB_READER_A
 deployment:
@@ -208,7 +217,7 @@ deployment:
 - Self-Runner 的 `azure-infra.yaml` 目前只接受 `environment=dev`，使用 `johnzhang/tfstate/dev/<component>.tfstate`，且 `ARM_*` 与 `FABRIC_*` 共享身份；尚无跨 Tenant 的 Backend/Fabric Provider 分离实现。
 - 新环境 `workspace`、`onelake`、`connection` 已有受门禁的**离线 Root 声明**（历史 PR #273/#274），但均未真实部署；Bootstrap、Capacity 新建、完整 fabric-cicd、环境参数绑定、跨租户读回和统一部署入口仍未实现。
 - 已有 Terraform `notebook` / `data-factory` 定义的是**失败保护占位 Item**，不能把旧 Plan PASS 当作可运行业务 Item；部署设计必须先处理所有权，避免 Terraform 与 `fabric-cicd` 重复写同一资源。
-- Azure Blob `landing` / `tfstate` 与既有状态/权限不得被此次设计 PR 改动。本轮**仅文档**，没有运行 `terraform plan/apply`、Fabric API、Kubernetes 或 Azure 探针，跨租户 Blob 连接尚未 E2E 验收。
+- 现有 Azure Blob `johnzhang/landing`、`tfstate` 与既有状态/权限不得被此次设计 PR 改动；future fresh-bootstrap 必须使用新目标与独立审批。本轮**仅文档**，没有运行 `terraform plan/apply`、Fabric API、Kubernetes 或 Azure 探针，跨租户 Blob 连接尚未 E2E 验收。
 
 ## 8. 风险、兼容检查与回退
 
