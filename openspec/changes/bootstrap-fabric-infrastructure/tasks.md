@@ -202,3 +202,12 @@
 - Healthcare 此 PR #320：Bootstrap Identity Root 从 **4 条 Environment FIC** 精简为 **2 条新 App 的 Main-ref FIC**（Backend/Tenant A、Deployer/Tenant B）；Identity 离线合同升到 v3、Profile 指定 `refs/heads/main`；静态安全审计、跨 Root 单元测试以及示例同步修正。真正 Immutable Subject 来自实际 Self-Runner Issuer PASS Run <https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422174619>，两条 FIC 均为 `repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:ref:refs/heads/main`。
 - **用户接受的隔离边界**：两条 FIC 的 GitHub `sub` **完全相同**；不同 Entra Apps、Tenant、RBAC 是权限范围的区分，不是 workflow/phase 的 OIDC 身份隔离。现有 Self-Runner 其他 Main workflow 可能申请同一 JWT；不迁移旧 OIDC 配置，不复用现有 `github-terraform` App。任务执行限制 Main/手动、精确 Repo Commit、无生产/旧 State、Plan 审查、Apply 不自动启用；这些不会被称为独立审批。
 - **真实状态**：Main-ref GitHub OIDC Issuer = LIVE PASS；Self-Runner/Healthcare 源码及 CI = 按 PR 证据；新 Tenant A/B App/FIC 尚未创建，GitHub Actions 新 Role Variables 尚未配置，真实 Microsoft Entra Exchange、RBAC/Trial Capacity/State 核验及独立 Plan = **OPEN**。Terraform 默认 `identity_creation_approved=false`，任何付费 F SKU 或破坏旧资源的 Apply 仍需单独授权。Task 3.2 保持 OPEN。
+
+
+## Task 3.2 — 手动 Plan / Apply UI 必须分开（2026-10-20，执行器仍 OPEN）
+
+- 用户进一步明确：**GitHub Environment 审批已放弃，但必须在 Self-Runner Actions 用户界面手工选择 `plan` 或 `apply`，默认 `plan`**。取消 Environment 审批**绝不意味着**可以把 Plan 自动接到 Apply。
+- **实际 UI 源码已修改且合并**：Self-Runner PR [#163](https://github.com/JohnZhang-DataForge/Self-Runner/pull/163)，合并 Main `fb1be4292e295fd0824b1af255171a846f541fb2`；`fabric-controlled-entry.yml` 的 `workflow_dispatch.inputs.operation` 为 choice `plan|apply`，默认 `plan`，不再让旧 `bootstrap` 占用手动 UI 选项。内部 Python `bootstrap` offline phase 合同继续保留以兼容原测试。
+- **严格阶段语义**：Plan 是一次独立手动 Run，只生成/审查 Plan，不得执行 Apply、触发 Apply Workflow、或在完成后自动推进；Apply 必须重新手动选择，并作为另一个 Run 验证**原保存的准确二进制 Plan**、摘要、不可变源码 Commit、Tenant、Subscription、Root、State 和费用/破坏性操作边界。Plan 成功不等于 Apply 批准；不能在 Apply 中悄悄重新生成不同的 Plan 并直接执行。
+- **回归覆盖**：Self-Runner PR #163 的 `Fabric Controlled Entry Contract (Offline)` 必须 success，新增断言下拉框恰为 Plan/Apply 且默认 Plan、无 GitHub Environment 绑定、无 `needs:` 自动链和实际 Terraform Apply 命令。这个验证的是**入口 UI/合同**，不是 Terraform 真实执行。
+- **真实状态仍 HOLD**：当前两种入口均只有无云端凭据的离线语法检查；尚未实现受控 Terraform Plan / 保存 Artifact / 二次选择 Apply / Binary Plan 校验 / 真实 Azure/Fabric IAM/State。Task **3.2 checkbox 仍 OPEN**，不因为 UI 改善而标注部署成功。保留 Self-Runner、个人单人运维、不升级 GitHub Plan、不新增 Environment 或仓库；收费 Capacity、新云端资源和历史资源修改仍要独立确认相应安全及成本边界。
