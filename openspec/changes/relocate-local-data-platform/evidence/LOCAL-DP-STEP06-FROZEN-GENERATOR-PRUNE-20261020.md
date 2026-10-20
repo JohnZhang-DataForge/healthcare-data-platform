@@ -41,3 +41,8 @@ STEP06A4 生成器写入旧宿主根 `/data/spark/healthcare-data-platform`，�
 - **Gate**：PR 最终 HEAD 的 OpenSpec、CODE Map、Docs Links、Airflow DagBag/Source、isolated images、CDM reader、Writer 回归应全部成功；否则保留 PR，不合并到 Main。
 - 若某旧消费者仍直接使用此已退役生成器，可按上表从固定历史源码恢复，或把外部固定历史调用明确 Pin 在原 Commit；**不建议为了复活旧固定批次而在当前活跃 Main 重装原生成器**。本次不触发旧任务。
 - Task 4.1、4.2、4.3、4.4、4.8、4.9、4.10 和 5 仍按 OpenSpec 任务原有状态继续，不因本批清理改成“全部完成”。
+
+## 5. PR #315 元数据门禁修复历史
+
+- 初始 PR 描述误写 `OpenSpec-Task: 4.9 (PARTIAL)`，不是机器要求的严格 `OpenSpec-Task: 4.9`；初始 [OpenSpec Change Gate Run #39452768608](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39452768608) 因 `Invalid OpenSpec task number` FAIL，**不是业务源码回归**。
+- PR 描述已修正为独立一行 `OpenSpec-Task: 4.9`；直接 rerun 旧 Run 的失败 Job 仍使用原来的 `GITHUB_EVENT_PATH` 快照，故同样的 Invalid Task FAIL。此文档新提交将产生新的 `pull_request synchronize` Event，以正确 PR Body 与**新的最终 HEAD** 重新执行全套 CI；保留两次失败的诊断证据，不绕过 Gate。其余检查结果以新 HEAD 的最终 CI 为准。
