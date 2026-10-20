@@ -2,26 +2,65 @@
 status: approved-target-design
 scope: fabric-multi-environment-rebuild-mvp
 last_reviewed: 2026-10-19
-implementation_status: not-started
+implementation_status: offline-fabric-roots-partial-bootstrap-not-implemented
 ---
 
 # Healthcare V2 — Microsoft Fabric 多环境可重建部署设计
 
-> **APPROVED TARGET DESIGN / NOT IMPLEMENTED**：已确认采用 **Terraform + GitHub Actions（Self-Runner）+ fabric-cicd**；不要求 Fabric Workspace 原生连接 GitHub。本文件规定未来可交付目标、设计取舍与安全边界，**不是实际 Terraform Apply、Fabric 部署或云端 E2E 验收**。具体开发进度只能记录在未来相应 [OpenSpec Changes](../../../openspec/changes/) 与 PR/Run 中；[PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md) 是跨项目唯一状态入口。
+> **APPROVED TARGET DESIGN / IMPLEMENTATION PARTIAL**：2026-10-19 用户批准 **Bootstrap as Code + Terraform + GitHub Actions（Self-Runner）+ fabric-cicd** 的修订目标；Capacity 支持 IaC 创建或复用，**本期不实现自动 Suspend/Resume**。目前只有离线 Terraform Root / CI 的部分代码，尚未获得任何真实 Azure/Fabric 创建授权；不要求 Fabric Workspace 原生连接 GitHub。本文件规定未来可交付目标、设计取舍与安全边界，**不是实际 Terraform Apply、Fabric 部署或云端 E2E 验收**。具体开发进度只能记录在未来相应 [OpenSpec Changes](../../../openspec/changes/) 与 PR/Run 中；[PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md) 是跨项目唯一状态入口。
+
+## 0. 2026-10-19 已批准修订：Bootstrap as Code + Capacity IaC
+
+**决策状态：已批准设计、未批准实际云端部署/费用。** 以本节和更新后的第 1–9 节为后续开发方向，旧七 Root 和当前已提交的 `new-environments/` 保持为历史兼容或可复用实现，不因本次决策自动替换。
+
+### 0.1 两条环境路径
+
+| 模式 | 身份与资源初始化 | Storage / State | Capacity | 场景 |
+| --- | --- | --- | --- | --- |
+| `reuse-existing` | 核验已有资产，Bootstrap 可创建**新**独立身份/OIDC/RBAC，接管旧对象必须独立授权 | 引用已审核 `johnzhang/landing`、`johnzhang/tfstate`，用新的 `fabric/<env>/...` key | 引用经审核已有 Capacity | 当前同 Tenant A→A′ 的无破坏迁移 |
+| `fresh-bootstrap` | 由一次管理员种子授权启动 Terraform 创建独立 App/SPN/Groups/OIDC/RBAC | 首先用**单独本地/受控临时 Bootstrap State** 创建新 Backend，迁移 Bootstrap State 须备份、校验并专门审核，避免循环依赖 | 可选 Terraform 新建付费 F SKU，明确按需付费 | 未来全新订阅或新 Tenant A→B |
+
+- **Terraform 管理 Capacity 的生命周期，不实现按任务自动启动/暂停（Suspend/Resume）控制器。** `capacity.mode=reuse-existing|create-new` 为后续合同目标；`create-new` 必须默认禁用，预算审批、SKU、Region、订阅、预期持续费用和创建权限全部通过才可启用；正常状态可持续计费，即使没有作业。
+- Terraform Bootstrap 负责创建或输出凭据身份的**标识/引用**，不能在一个空 Tenant 中无授权自我提权。首次需要有权限的管理员登录/授权、订阅和账单资格，部分 Fabric Tenant 设置也可能需管理员确认。**不在源码、State 变量或 CI 中保存 Blob Reader Secret 值**。
+- 支持当前 **同租户不同应用主体 A→A′** 与未来 **跨租户 A→B**；Backend Operator、Fabric Deployer、Blob Reader 仍为独立应用身份。多 Tenant 的 App/OIDC/RBAC 分别在相应 Tenant 完成，不能假定跨租户信任可由一个 Provider 自动完成。
+- `bootstrap/identity/`、`bootstrap/state-backend/`、`bootstrap/storage/`、`bootstrap/access-control/`、`bootstrap/capacity/` 为**目标目录结构而非现有代码**；Workspace/Lakehouse/Connection 保留 `new-environments/`，业务 Item 仍由 fabric-cicd 单独管理。
+- 尽量把一次性门户操作缩减为授予 Bootstrap 足够且限时的权限、必要的 Fabric Tenant/Capacity 管理同意、创建付费资源的显式批准；绝不把「换账号跑一遍代码」解释为无条件可在任意新账号自动成功。
+
+### 0.2 最终执行拓扑（目标，非已实现）
+
+```text
+Authorized human seed / subscription / cost gate
+                     |
+             Bootstrap Terraform
+      Entra Apps/SPNs/OIDC/Groups/RBAC
+      existing-or-new Storage + Backend
+      existing-or-new paid Fabric Capacity
+                     |
+       separate backend / deployer identities
+                     |
+             GitHub Actions orchestration
+        preflight -> approved plan -> approved apply
+                     |
+        Terraform Workspace/Lakehouse/Connection
+                     |
+        fabric-cicd Notebook/DataPipeline -> E2E
+```
+
+**当前 `johnzhang` 与旧 State 不得被 `fresh-bootstrap` 模式自动选为 Destroy、Import、Adopt 或替换目标；新模式需要自己的明确命名、State 和库存验证。**
 
 ## 1. 目标、非目标与约束
 
 ### 1.1 目标
 
-1. 长期保留本地 Kubernetes、PostgreSQL OMOP、Synthea/OIE 和 **已有 Azure Storage Account `johnzhang`**；三个模拟来源的只读/原始数据经本地发布者进入现有 Blob `landing`。本地发布者**不感知 Fabric Tenant、Workspace、Capacity、Notebook 或 Pipeline ID**。
-2. 继续在相同 Storage Account 的 **`tfstate` Container** 保存 Terraform Backend，但将**每个新的 Fabric 部署环境隔离成独立 State Key**。绝不因为环境切换将旧 `dev/*.tfstate` 改名、清空或挪用。
+1. 长期保留本地 Kubernetes、PostgreSQL OMOP、Synthea/OIE 和**现有已落地的** `johnzhang/landing` 原始数据；**reuse-existing** 复用已审核的 Storage，**fresh-bootstrap** 可为新环境创建隔离的 Storage/Landing。任何模式均不得默认替换、接管、删除旧 `johnzhang` 与历史批次。本地发布者的目标 Storage 需显式配置，但不感知 Fabric Tenant、Workspace、Capacity、Notebook 或 Pipeline ID。
+2. **reuse-existing** 继续使用经审核的 `johnzhang/tfstate`，每环境隔离为 `fabric/<environment>/<component>.tfstate`；**fresh-bootstrap** 以独立 Bootstrap State 先建立新 Storage/Backend，再把新环境的下游 State 指向新 Backend。旧 `dev/*.tfstate` 永不自动改名、清空、迁移或挪用。
 3. 使用同一份 GitHub Terraform/Notebook/Pipeline 源码，经可控的环境配置支持**不同 Fabric Workspace / Capacity，必要时不同 Entra Tenant**。
-4. 给定已准备妥当的有效 Fabric 环境、身份与网络权限，经受控 Self-Runner 一次部署流程（含 Plan/明确授权的 Apply/部署/读回），重建 Workspace、Lakehouse、Blob Connection、真实 Notebooks 与 Pipelines，再从 Blob READY Batch 重新装载并验证。
+4. 在首次管理员启动授权/合法订阅及容量付费审批后，**首次 Bootstrap 最少人工步骤**，由代码创建 Entra App/SPN/Groups/OIDC、允许的 RBAC、可选 Storage/Backend、可选付费 Fabric Capacity；日常受控部署再创建 Workspace、Lakehouse、Blob Connection、Notebooks 与 Pipelines 并读回验收。必须有单独 Plan 和 Apply 授权，禁止无审批的一键云端写入。
 5. **MVP First**：已有代码/Workflow 优先复用；不新建独立 CI 系统，不为了可迁移性重构本地 OMOP Writer、引入 Kafka 或强制部署 Warehouse。
 
 ### 1.2 明确不保证的事情
 
-- 不保证新账号能重复领取 Fabric 60 天试用；不自动开新 Tenant、申请 Trial/购买 Capacity、授权管理员策略或跨租户权限。
+- 不保证新账号能重复领取 Fabric Trial；不自动创建新 Entra Tenant、申请 Trial、开通 Azure 订阅或自行提升管理员权限。**允许通过 Terraform 创建付费 Fabric Capacity，但须独立确认 SKU/Region/费用与 Apply 授权**；代码声明本身不批准任何账单支出。
 - 不把 Fabric Workspace、Fabric Lakehouse 的元数据和 OneLake 内的历史分析数据当作永久存储；**新环境的 Bronze/Silver/Gold 需要从源 Blob 重新生成**。
 - 不把 Fabric 原生 GitHub Integration 作为成功依赖；不要求自动把 Fabric Workspace 连接 GitHub。
 - 不因 Terraform Provider 存在资源而推断当前 Tenant、Trial、SPN、API 或跨租户连接已通过实测。
@@ -57,7 +96,7 @@ implementation_status: not-started
                        PySpark → Silver / small Gold
 ```
 
-**存储与计算生命周期分离**：`johnzhang/landing` 是稳定可重放的源数据 Landing，`johnzhang/tfstate` 是稳定 Backend 的容器；Fabric 环境独立部署、独立计算、独立 State。新旧 Fabric 在有合法权限时可读取相同原始 Blob。Terraform 的**远程 State Key**、Terraform CLI Workspace 与 **Fabric Workspace** 是三个不同概念；本设计采用显式 State Key，而非仅靠 `terraform workspace new`。
+**存储与计算生命周期分离**：在 reuse-existing 模式下，`johnzhang/landing` 与 `johnzhang/tfstate` 仍是受保护的稳定资产；在 fresh-bootstrap 模式下使用独立创建的 Storage 和 Backend，原有数据不会自动复制。Fabric 环境独立部署、独立计算、独立 State。新旧 Fabric 在有合法权限时可读取相同原始 Blob。Terraform 的**远程 State Key**、Terraform CLI Workspace 与 **Fabric Workspace** 是三个不同概念；本设计采用显式 State Key，而非仅靠 `terraform workspace new`。
 
 ## 3. 权限与跨 Tenant 身份模型
 
@@ -79,8 +118,10 @@ implementation_status: not-started
 
 | 对象 | 目标交付者 | 说明 |
 | --- | --- | --- |
-| Azure Storage `johnzhang`、`landing`、`tfstate` | 既有 Azure 稳定资源；必要 IAM 受控管理 | 不为新 Fabric 环境重新创建/导入/销毁；保留现有 Backend 与业务文件 |
-| Workspace、Capacity 绑定与 Workspace RBAC | **Terraform** | Capacity **已存在且有效**；新环境可创建 Workspace；旧手工建 Workspace 必须先核对并按需 Import |
+| 已有 `johnzhang/landing`、`tfstate` | 现有资产 Owner；Bootstrap **只读/显式复用** | 永不因 fresh-bootstrap 自动覆盖、导入、迁移或删除 |
+| 新环境 Storage/Backend/Entra/OIDC/RBAC | 独立 Bootstrap Terraform（待建） | fresh-bootstrap 可创建新资源；需临时 Bootstrap State、管理员种子授权、明确目标与审批 |
+| Fabric Capacity | Bootstrap Terraform（待建） | 可复用已存在的 Capacity 或新建付费 F SKU；新建需明确费用审批；不自动 Suspend/Resume |
+| Workspace、Capacity 绑定与 Workspace RBAC | **Terraform** | Capacity ID 来自 reuse-existing 或经批准的 Bootstrap Output；新环境可创建 Workspace；旧手工建 Workspace 仍先核对 State/Import |
 | Lakehouse（MVP） | **Terraform**（保留既有 `onelake` Root） | `fabric-cicd` 的 `item_type_in_scope` 明确排除 `Lakehouse`，避免重复管理同一对象 |
 | Azure Blob Fabric Connection | **Terraform**（实施前验证 Provider Schema） | 用 Reader 身份，Connection/GUID 以部署结果回填到环境参数；不在业务 Notebook 硬编码 |
 | Fabric PySpark Notebook | **fabric-cicd**（GitHub 为源码唯一事实源） | Git 原生 Fabric Item 目录/元数据由真实 Fabric Source Control 输出或验证后的兼容定义保存，首次项目不得凭空仿造 `.platform` |
@@ -99,7 +140,7 @@ implementation_status: not-started
 ### 5.1 稳定 Backend，环境隔离 State
 
 ```text
-Azure Storage: johnzhang / tfstate
+Azure Storage: johnzhang / tfstate   # reuse-existing example ONLY
 ├── dev/workspace.tfstate                    # legacy: 不动、不自动迁移
 ├── dev/onelake.tfstate                     # legacy: 不动、不自动迁移
 ├── dev/notebook.tfstate                    # legacy: 不动、不自动迁移
@@ -115,7 +156,7 @@ Azure Storage: johnzhang / tfstate
         └── connection.tfstate
 ```
 
-上方是 **State Key 目标示例**，不代表 Backend 中已经存在这些对象；原有 7 个 Root `dev/<component>.tfstate` 均予保护。Fabric 之外的 `storage` / `foundation-iam` Root 仍需明确长期资源所有者，**不为每个新的 Fabric 账号盲目重复 Apply**。分 Root 既有布局可以保留，若新增 `connection` Root 则另开功能 Change 审核。
+上方是 **reuse-existing 模式的 State Key 目标示例**，不代表 Backend 中已经存在这些对象。fresh-bootstrap 使用独立新 Backend，必须先以受控 Bootstrap State 创建它，再把新环境独立 State 指向其输出；不得把正在创建的 Backend 当作该 Bootstrap 阶段的初始 Backend。原有 7 个 Root `dev/<component>.tfstate` 均予保护。Fabric 之外的 `storage` / `foundation-iam` Root 仍需明确长期资源所有者，**不为每个新的 Fabric 账号盲目重复 Apply**。分 Root 既有布局可以保留，若新增 `connection` Root 则另开功能 Change 审核。
 
 **Backend `terraform init` 使用 Tenant A 的身份**，Fabric Provider Terraform 操作使用 Tenant B 的身份。两种认证在受支持 Provider/Backend 版本下如何配置、GitHub OIDC 在新租户如何建立联合信任，必须先做隔离只读测试；不能认为把现有 `AZURE_TENANT_ID` 换成 B 就能继续读取 A 的 `tfstate`。
 
@@ -131,7 +172,7 @@ backend:
   tenant_id: TENANT_A
 fabric:
   tenant_id: TENANT_B
-  capacity_id: EXISTING_CAPACITY_B
+  capacity_id: EXISTING_OR_APPROVED_CREATED_CAPACITY_ID
   workspace_name: healthcare-omop
   principal_id: FABRIC_DEPLOYER_B
 landing:
@@ -147,23 +188,25 @@ deployment:
 
 实际生效配置文件须在**实施 Change** 内定义：非敏感 ID 进 GitHub 环境变量/按环境输入，Secrets 进受保护密钥存储，不得提交示例中的假值当成实值。临时环境标识不是 Terraform `workspace new` 的硬依赖。
 
-## 6. 单次 Self-Runner 部署的目标阶段与闸门
+## 6. Bootstrap + Self-Runner 部署的目标阶段与闸门
+
+0. **Bootstrap（首次/环境身份更新）**：经过首次管理员种子授权与费用审批后，按独立的 Bootstrap State 分阶段创建 Entra/OIDC、RBAC、可选 Storage/Backend 与 Capacity；验证 Provider 权限、State 迁移边界和真实输出。此阶段不可隐含在普通 PR CI 或默认部署动作内；复用已有资源时先审查所有权。
 
 1. **Preflight（只读）**：固定 Healthcare Main 完整 SHA；核对目标环境名称/State Key 不等于旧环境，检查 Backend Tenant A 访问与 Terraform State 存在性、目标 Fabric Tenant B 的 API 设置、部署身份、Capacity、Workspace 实际是否存在；跨租户 Blob Reader/网络机制前提；检测重复或相互冲突的 Item 所有者。任何未知已有资源都 **HOLD**，不能把空 State 推导为资源不存在。
 2. **Plan**：采用精确 Git SHA、Provider 版本和环境配置，对需新建的 Fabric Control Plane 执行 `fmt/init/validate/plan`（Plan 自身会读取远端 State）；保存有权限限制的计划和读回摘要。**默认 Plan，不自动 Apply**。
-3. **Approved Apply**：在现有安全规则与用户批准后，针对同一来源 SHA/State/计划执行；阻止非预期 Delete/Replace。按依赖顺序创建 Workspace/RBAC → Lakehouse → Azure Blob Connection；Terraform Outputs 获取真实 GUID。对于已有旧手建 Workspace，走明确 Import/Adopt 决策，不通过名称猜测。
+3. **Approved Apply**：在现有安全规则与用户批准后，针对同一来源 SHA/State/计划执行；阻止非预期 Delete/Replace。按依赖顺序使用经过审核的 Capacity ID 创建 Workspace/RBAC → Lakehouse → Azure Blob Connection；Terraform Outputs 获取真实 GUID。对于已有旧手建 Workspace，走明确 Import/Adopt 决策，不通过名称猜测。
 4. **Deploy business Items**：Self-Runner checkout 同一 Git SHA；`fabric-cicd` 仅发布 `Notebook`、`DataPipeline`，用经验证的 `parameter.yml`/等价参数转换动态绑定 Workspace/Lakehouse/Connection ID；输出 Item IDs，确认 Notebook 与 Pipeline 均指向本环境。代码部署独立于数据加载。
 5. **Publish data / execute**：在 Blob 有可验证 READY Batch 的前提下，受控触发 Pipeline：Azure Blob Copy → OneLake Bronze → Notebook → Silver / 小规模 Gold。只在已获得相应云端操作授权时执行，不能用部署成功代表业务完成。
 6. **Readback / evidence**：核对 Workspace/Capacity/RBAC、Connection Blob 只读连通、Notebook/Pipeline definitions 和动态资源引用；PG Person/Visit、FHIR Patient/Encounter、HL7 ADT 的至少一批原文/哈希/行数/DQ/重复运行幂等；跨源 Patient Crosswalk/Timeline 按各自功能 Change 验证。报告绑定 Git SHA、Environment、Tenant **非敏感标识**、Terraform State Key、Workflow Run、Batch/Manifest 和校验结果。
 7. **Failure boundary**：Apply 成功、`fabric-cicd` 发布成功、Blob READY 和业务 E2E SUCCESS 是四个互不等价的验收层级。失败可从相应阶段重试，重试前先读回目标资源与状态；禁止盲目删除/重建已存在的 Workspace 或覆盖旧 State。
 
-**MVP success definition**：准备新 Fabric 环境和必需外部授权后，操作者只需设置环境变量/Secrets并在 Self-Runner 发起受控部署，**不需要人工逐个创建 Workspace/Notebook/Pipeline、抄 GUID 或通过 Portal 连接 GitHub**。仍然允许首次 Tenant 管理员开关/部署身份/Capacity 预备工作和必要的 Plan/Apply 人工批准。
+**MVP success definition（修订）**：一次管理员种子授权/费用审批后，可通过 Bootstrap 代码建立新环境所需身份和可选付费容量，随后从同一仓库对受控 Deployment 发起 Plan/独立批准的 Apply，**不需要手工逐项创建 Workspace/Notebook/Pipeline/OIDC/SPN**；不可自动创建新 Tenant、保证 Trial 或免除管理员同意/购买审批。
 
 ## 7. 与现有仓库的准确差距（截至 2026-10-19，静态核对）
 
 - 现有 `azure-fabric/infra-terraform/` 有七个独立 Root：`storage`、`workspace`、`onelake`、`notebook`、`data-factory`、`warehouse`、`foundation-iam`；Source/Provider/State 映射详见 [Terraform Architecture](../../systems/azure-fabric/infra-terraform/ARCHITECTURE.md)。既有 Workspace 原先通过 Portal 创建；Terraform Workspace Apply 前有 Import 防重复闸门。
 - Self-Runner 的 `azure-infra.yaml` 目前只接受 `environment=dev`，使用 `johnzhang/tfstate/dev/<component>.tfstate`，且 `ARM_*` 与 `FABRIC_*` 共享身份；尚无跨 Tenant 的 Backend/Fabric Provider 分离实现。
-- `workspace` Root 可描述资源及可选授权；`onelake` 可描述 Lakehouse。但 `connection` 部署、真实 Notebook/Pipeline 的 `fabric-cicd`、环境参数绑定、跨租户读回和单入口 Bootstrap 尚未实现。
+- 新环境 `workspace`、`onelake`、`connection` 已有受门禁的**离线 Root 声明**（历史 PR #273/#274），但均未真实部署；Bootstrap、Capacity 新建、完整 fabric-cicd、环境参数绑定、跨租户读回和统一部署入口仍未实现。
 - 已有 Terraform `notebook` / `data-factory` 定义的是**失败保护占位 Item**，不能把旧 Plan PASS 当作可运行业务 Item；部署设计必须先处理所有权，避免 Terraform 与 `fabric-cicd` 重复写同一资源。
 - Azure Blob `landing` / `tfstate` 与既有状态/权限不得被此次设计 PR 改动。本轮**仅文档**，没有运行 `terraform plan/apply`、Fabric API、Kubernetes 或 Azure 探针，跨租户 Blob 连接尚未 E2E 验收。
 
@@ -171,7 +214,8 @@ deployment:
 
 | 风险 | 最小控制与失败行为 |
 | --- | --- |
-| 新 Tenant 不允许 Service Principal API/Capacity 权限不足 | Preflight FAIL；用户手工准备 Tenant setting、Capacity 与部署主体，不能假装自动化 |
+| 新 Tenant 不允许 Service Principal API/Capacity 权限不足 | Bootstrap FAIL/HOLD；不得从无授权状态自动提权，必要 Tenant Setting/管理员同意仍需人工 |
+| 自动创建付费 Capacity 导致持续账单 | `create-new` 默认关闭；审批明确 SKU/区域/订阅/预计成本、没有自动暂停；费用未批准则只允许 `reuse-existing` |
 | 跨 Tenant Blob Connection 无法读取 | Service Principal/Tenant A 最小授权 + 真实 Copy/Read；失败 HOLD 并记录连接器/网络限制；必要时设计单独 SAS fallback |
 | Terraform 新环境误用旧 State | Backend Key 环境强校验；已占用 State/目标资源不符合预期即 HOLD；旧 `dev` State 不迁移、不覆盖 |
 | Terraform 控制平面与 fabric-cicd 双重所有者 | 按 Item 类型明确唯一所有者；每次部署前清点 Item；禁止默认 orphan unpublish |
@@ -182,7 +226,7 @@ deployment:
 
 ## 9. 实施边界与后续 Change
 
-本设计冻结的是**技术架构**，不在 `documents/` 维护可反复变化的实现任务状态。后续分别通过经用户批准的 OpenSpec Change 开展：Backend/Tenant 分离与环境隔离、Terraform Fabric Workspace/Lakehouse/Connection 管理、`fabric-cicd` 的真实 Item 定义与部署、受控 Self-Runner 一键编排、OMOP/FHIR/HL7 数据 E2E。可在第一条 OMOP → Fabric MVP 开发中逐步纳入，而**不是**先单独搭建一个庞大多租户平台。
+本设计冻结的是**技术架构**，不在 `documents/` 维护可反复变化的实现任务状态。后续按 OpenSpec 单独拆分并验证：**Bootstrap 身份/Storage/Backend/Capacity**（先行，独立 State 和人工种子授权）→ **现有 Control Plane Root 与参数衔接**（本 Change）→ **fabric-cicd Item** → **受控 Self-Runner 单入口** → **OMOP/FHIR/HL7 业务 E2E**。可在第一条 OMOP → Fabric MVP 开发中逐步纳入，而**不是**先单独搭建一个庞大多租户平台。
 
 设计相关：
 - [Healthcare V2 多来源总路线](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)
