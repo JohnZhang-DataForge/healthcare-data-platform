@@ -119,7 +119,11 @@ def verify_custody(repo: Path, custody: Path) -> None:
 
 def validate_cloud_access(tenant_a: str, tenant_b: str) -> None:
     """Only Azure CLI user login; no old app/SPN/OIDC credentials accepted."""
-    if any(os.environ.get(k) for k in FORBIDDEN_AUTH_ENV):
+    if (any(os.environ.get(k) for k in FORBIDDEN_AUTH_ENV)
+            or any(value for key, value in os.environ.items()
+                   if key.startswith(("ARM_", "AZUREAD_", "TF_VAR_", "TF_CLI_ARGS"))
+                   or (key.startswith("AZURE_") and key != "AZURE_CONFIG_DIR")
+                   or key in ("TF_LOG", "TF_LOG_PATH", "TF_DATA_DIR", "TF_WORKSPACE"))):
         raise SeedPlanHold("SEED_AUTH_OVERRIDE")
     _, raw = run(["az", "account", "show", "--output", "json"],
                  "SEED_CLI_LOGIN", stdout_limit=20000)
