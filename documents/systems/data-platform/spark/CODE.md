@@ -109,7 +109,9 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 > **历史源码安装器退役（2026-10-20，Task 4.9 第六批）**：移除 2 份已物化到正式 Git 源码的历史安装器；对应正式源码、Contract、运行脚本、单测 **4/4 全字节 MATCH** 且全部保留。原生成器可使用固定 Git 恢复地址：[`05g2c2b-prepare-visit-processed-writer-core.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/e3ce9f2e5adbfd22f25e3bfca1b2ae892f4f086a/local-data-platform/scripts/task003/05g2c2b-prepare-visit-processed-writer-core.sh)、[`05g2c2c1-prepare-visit-processed-spark-driver.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/e3ce9f2e5adbfd22f25e3bfca1b2ae892f4f086a/local-data-platform/scripts/task003/05g2c2c1-prepare-visit-processed-spark-driver.sh)。不可将历史链接当作现行入口，也不自动重放旧 Batch。
 
-## 历史 task003（9 个入口）
+> **2026-10-20 OpenSpec Task 4.9 集中清理**：一次性退役本组件 3 个仅用于安装/生成现有正式源码的历史 TASK003 Shell。基于 Main `db4242dcbc752a021456240e98210ba595161510`，两仓 818 个源码/配置文件扫描、19/19 生成产物完整字节匹配；正式执行器、测试、Contracts 和 Writer/Fencing/恢复脚本一律保留。全项目 26 个初始候选中另外 17 个因动态输出、实际消费引用、运维或测试职责保持 HOLD。历史源码固定恢复链接：[`05f-prepare-visit-candidate-mapping.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/db4242dcbc752a021456240e98210ba595161510/local-data-platform/scripts/task003/05f-prepare-visit-candidate-mapping.sh)、[`05f2a-prepare-visit-candidate-driver.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/db4242dcbc752a021456240e98210ba595161510/local-data-platform/scripts/task003/05f2a-prepare-visit-candidate-driver.sh)、[`05g2c2c3d2b1-prepare-persisted-validator-source.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/db4242dcbc752a021456240e98210ba595161510/local-data-platform/scripts/task003/05g2c2c3d2b1-prepare-persisted-validator-source.sh)。详情见 [集中清理证据](../../../../openspec/changes/relocate-local-data-platform/evidence/LOCAL-DP-TASK003-CONSOLIDATED-RETIREMENT-20261020.md)；本 CODE Map 更改不等于候选版本真实 E2E PASS。
+
+## 历史 task003（6 个入口）
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
@@ -117,11 +119,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`04-prepare-canonical-encounter-publish.sh`](../../../../local-data-platform/scripts/task003/04-prepare-canonical-encounter-publish.sh) | [PREPARE / may write] 历史 TASK003 prepare canonical encounter publish 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`04-publish-canonical-encounter.sh`](../../../../local-data-platform/scripts/task003/04-publish-canonical-encounter.sh) | [EXECUTE / review] 历史 TASK003 publish canonical encounter 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
 | [`04-resume-canonical-encounter-publish.sh`](../../../../local-data-platform/scripts/task003/04-resume-canonical-encounter-publish.sh) | [LEGACY / review] 历史 TASK003 resume canonical encounter publish 脚本 |
-| [`05f-prepare-visit-candidate-mapping.sh`](../../../../local-data-platform/scripts/task003/05f-prepare-visit-candidate-mapping.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate mapping 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`05f2a-prepare-visit-candidate-driver.sh`](../../../../local-data-platform/scripts/task003/05f2a-prepare-visit-candidate-driver.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate driver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05f2b-prepare-visit-candidate-runtime.sh`](../../../../local-data-platform/scripts/task003/05f2b-prepare-visit-candidate-runtime.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05f2c-validate-visit-candidate.sh`](../../../../local-data-platform/scripts/task003/05f2c-validate-visit-candidate.sh) | [CHECK / verify effects] 历史 TASK003 validate visit candidate 脚本 |
-| [`05g2c2c3d2b1-prepare-persisted-validator-source.sh`](../../../../local-data-platform/scripts/task003/05g2c2c3d2b1-prepare-persisted-validator-source.sh) | [PREPARE / may write] 历史 TASK003 prepare persisted validator source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 
 ## 历史 task004（3 个入口）
 
