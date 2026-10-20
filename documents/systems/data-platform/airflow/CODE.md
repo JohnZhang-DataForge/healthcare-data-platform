@@ -46,12 +46,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`platform_portal_openlineage_probe.py`](../../../../local-data-platform/airflow/dags/platform_portal_openlineage_probe.py) | opt-in Airflow OpenLineage A3 Probe，不执行 S3/Spark/OMOP 业务 |
 | [`airflow_smoke_test.py`](../../../../local-data-platform/airflow/dags/airflow_smoke_test.py) | 独立 Airflow 基础部署 Smoke DAG，非业务消费链路 |
 
-## Helm GitSync 部署配置（新根路径）
-
-| 真实文件 | 作用 / 使用边界 |
-| --- | --- |
-| [`helm-gitsync-postmove-values.yaml`](../../../../local-data-platform/config/airflow/helm-gitsync-postmove-values.yaml) | 既存 `dw-airflow` Chart 1.22.0 迁移后 DAG 子路径覆写；仅与现有 Release `--reuse-values` 一起使用，不能当完整 Helm 安装 Values。已确认 Scheduler/DAG Processor 读取 `local-data-platform/airflow/dags`（[真实修复 Run #39422344924](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422344924) PASS）。 |
-
 ## 相关测试、Contract 与构建入口
 
 - **DAG / 路由**：[Consumer tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_omop_airflow_consumer.py)、[Writer branch tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_airflow_writer_branch.py)、[Discovery DAG contract](../../../../local-data-platform/tests/landing_discovery/test_airflow_dag_contract.py)。
