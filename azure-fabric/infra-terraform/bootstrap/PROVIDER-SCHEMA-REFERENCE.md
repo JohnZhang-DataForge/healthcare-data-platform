@@ -32,3 +32,7 @@
 ## Live provider installation and schema verification (2026-10-20)
 
 New GitHub-hosted `.github/workflows/fabric-provider-init-validate.yml` will execute Terraform CLI **1.13.5** with `terraform init -backend=false` and `terraform validate` independently on all six isolated roots. Unlike previous `fmt` tests, this downloads the pinned AzureAD/AzureRM/AzAPI and Fabric provider plugins and checks actual provider configuration/resource argument schemas. Without Azure OIDC/login, remote backend, or explicit `plan`, it does **not** validate IAM/permissions, State, Fabric Capacity or cost, nor is it a deploy authorization. Document actual workflow Run and exact SHA once passed; leave provider RBAC/real-cloud parts of Task 2.1 open.
+
+## Verified source-to-provider run (2026-10-20; not Azure runtime proof)
+
+PR #303: <https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/303>. Exact validated HEAD `332cf88f3eed9dcd6e460d44f36f78476126be38`; workflow Run `39411572769` (<https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39411572769>), **six provider init/validate matrix jobs SUCCESS** with Terraform CLI `1.13.5`, `init -backend=false`, and `validate`. Six existing CI checks also SUCCESS. Squash merge `a5f96c17c64682669eee22519084d30dc550fc3e`. Validated Provider HCL schema but NOT live tenants/IAM/Capacity/remote State/Plan. No real cloud login, no paid Capacity, no backend migration. Task 2.1 remains open for actual cloud permission verification.
