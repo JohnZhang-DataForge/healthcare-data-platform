@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "environment": "lab-b",
+  "seed_operator": {
+    "backend_tenant_id": "899a04e8-8d3d-486c-88a1-7bdeb22d5f1a",
+    "fabric_tenant_id": "899a04e8-8d3d-486c-88a1-7bdeb22d5f1a",
+    "authorization_reference": "SEED-ADMIN-APPROVAL-0001"
+  },
+  "applications": {
+    "backend_operator": {
+      "operation": "create-new",
+      "tenant_id": "899a04e8-8d3d-486c-88a1-7bdeb22d5f1a",
+      "display_name": "hdp-lab-b-backend-operator"
+    },
+    "fabric_deployer": {
+      "operation": "create-new",
+      "tenant_id": "899a04e8-8d3d-486c-88a1-7bdeb22d5f1a",
+      "display_name": "hdp-lab-b-fabric-deployer"
+    },
+    "blob_reader": {
+      "operation": "create-new",
+      "tenant_id": "899a04e8-8d3d-486c-88a1-7bdeb22d5f1a",
+      "display_name": "hdp-lab-b-blob-reader"
+    }
+  },
+  "oidc_bindings": {
+    "backend_operator": {
+      "repository": "JohnZhang-DataForge/healthcare-data-platform",
+      "environment": "fabric-lab-b-backend",
+      "ref": "refs/heads/main",
+      "issuer": "https://token.actions.githubusercontent.com",
+      "audience": "api://AzureADTokenExchange",
+      "protected_environment_required": true
+    },
+    "fabric_deployer": {
+      "repository": "JohnZhang-DataForge/healthcare-data-platform",
+      "environment": "fabric-lab-b-deployer",
+      "ref": "refs/heads/main",
+      "issuer": "https://token.actions.githubusercontent.com",
+      "audience": "api://AzureADTokenExchange",
+      "protected_environment_required": true
+    }
+  }
+}

@@ -5,6 +5,8 @@ on:
     paths:
       - 'azure-fabric/infra-terraform/tools/fabric_environment_preflight.py'
       - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py'
+      - 'azure-fabric/infra-terraform/tools/fabric_bootstrap_identity.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/bootstrap/**'
       - 'azure-fabric/infra-terraform/tests/test_fabric_environment_preflight.py'
@@ -59,6 +61,11 @@ jobs:
             exit 1
           fi
           echo "BOOTSTRAP_EXAMPLE_FAIL_CLOSED=PASS"
+      - name: Validate Bootstrap identity/OIDC offline request contract
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_bootstrap_identity.py' -v
       - name: Validate preflight unit tests
         run: |
           python3 -m unittest discover \
