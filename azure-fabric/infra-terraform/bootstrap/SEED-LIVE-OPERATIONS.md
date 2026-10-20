@@ -165,3 +165,78 @@ Official command references:
 [Azure CLI Entra App](https://learn.microsoft.com/en-us/cli/azure/ad/app),
 [Azure CLI FIC list](https://learn.microsoft.com/en-us/cli/azure/ad/app/federated-credential),
 [GitHub CLI Variables](https://cli.github.com/manual/gh_variable_set).
+
+
+## 7. New 2026-10-20: real isolated Identity Terraform Plan-only command
+
+A **separately authenticated Seed Operator** can now run a real `terraform plan`
+locally using `tools/fabric_seed_identity_plan.py`. This is not the
+Self-Runner `fabric-controlled-entry.yml` (whose manually selected Plan currently
+performs source/provider validation only). The local Seed command cannot Apply
+and is limited to the three new Entra App registrations, three service
+principals, two groups and two immutable Main-ref FICs.
+
+**Preconditions:** Linux/WSL with Python 3.12+, Terraform 1.13.x,
+Azure CLI, Git and access to both target Entra tenants under an explicitly
+authorized interactive *user* Seed Operator. Ensure that the real Profile v1
+and Request v3 are saved outside Git and reflect the same `trial-lab` target.
+Run the previously documented per-tenant `before` inventory first; a
+name-collision or missing access is HOLD, not a reason to adopt old identities.
+
+For example, with a separate **encrypted, owner-only** local custody volume:
+
+```bash
+set -Eeuo pipefail
+umask 077
+REPO="$HOME/healthcare-data-platform"
+SHA="$(git -C "$REPO" rev-parse HEAD)"
+PROFILE="$HOME/private-fabric/trial-lab/profile.json"
+IDENTITIES="$HOME/private-fabric/trial-lab/identity-request.json"
+CUSTODY="$HOME/private-fabric/seed-plan-$(date +%Y%m%d-%H%M%S)"
+mkdir -m 700 "$CUSTODY"
+python3 "$REPO/azure-fabric/infra-terraform/tools/fabric_seed_identity_plan.py" \
+  --profile "$PROFILE" \
+  --identities "$IDENTITIES" \
+  --repo-root "$REPO" \
+  --healthcare-main-sha "$SHA" \
+  --custody-dir "$CUSTODY"
+```
+
+The command verifies that checkout is a clean tracked-only checkout at
+**the current remote Healthcare Main SHA** (including a post-plan recheck),
+rejects inherited `ARM_*`/`AZURE_*` identity overrides and any Azure CLI
+service principal login, and requests actual Microsoft Graph tokens in **both**
+target tenants. This proves only token acquisition, not adequate Graph App
+creation rights. AzureAD providers must still independently succeed.
+
+It refuses profiles that aren't `fresh-bootstrap`, that request new paid
+Capacity or whose Identity v3 contract differs. It copies only Git-tracked
+Terraform Root source files into the fresh private custody directory,
+initializes **only the Terraform local backend there**, validates and performs
+a **real live provider-authenticated Terraform Plan** with
+`identity_creation_approved=true` for *planning resource additions only*.
+The boolean does **not** independently authorize an Apply. This command has
+**no Apply path**, no remote Backend configuration and no access to the old
+`johnzhang` / `dev/*.tfstate`. It rejects the plan unless the actual
+`terraform show -json` review contains **exactly ten `create` actions**
+at expected addresses, with **zero** unknown, delete, update or replacement
+actions.
+
+The resulting `identity.tfplan`, `identity-plan-manifest.json` and any
+local Terraform metadata are retained **only in private local custody**.
+Do not commit, paste, email, upload as GitHub artifacts or expose the binary
+Plan or raw `terraform show -json` output; either may contain secrets. Its
+SHA256 is a local integrity reference, **not proof of separate review, State
+custody encryption, tenant privilege or Apply authorization**. Do not transfer
+this bootstrap local Plan to the Self-Runner remote-State Apply selector.
+Operator must arrange independently reviewed Source SHA, precreate inventories,
+Tenant A/B authorization and secure retained State before approving an
+explicit later Identity Apply.
+
+If anything fails, the tool returns `STATUS=HOLD` with all Azure/Terraform
+raw diagnostics suppressed. A failed run can leave partial local `.terraform`
+or a sensitive binary Plan in custody; secure or destroy it through the
+operator's private encrypted storage. **Do not reuse an existing custody
+directory**: the command requires a fresh empty 0700 directory every time.
+This script has not been executed against live Entra in repository CI; source
+tests mock Terraform/Git/Azure and CI cannot access cloud credentials.
