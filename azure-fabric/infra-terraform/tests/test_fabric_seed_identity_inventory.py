@@ -45,19 +45,19 @@ class LiveIdentityInventoryTests(unittest.TestCase):
         def empty(*cmd):
             return {"tenantId": A} if cmd[1] == "account" else []
         with patch("fabric_seed_identity_inventory.read_az", side_effect=empty):
-            outcome = inspect(validate(profile()), request(), "backend", "before")
+            outcome = inspect(profile(), request(), "backend", "before")
         self.assertEqual(outcome["checked"], 2)
         self.assertFalse(outcome["fic_verified"])
 
     def test_existing_application_fails_closed(self):
         with patch("fabric_seed_identity_inventory.read_az", side_effect=fake_az):
             with self.assertRaises(InventoryHold):
-                inspect(validate(profile()), request(), "backend", "before")
+                inspect(profile(), request(), "backend", "before")
 
     def test_postcreate_exact_apps_fics_and_sp(self):
         with patch("fabric_seed_identity_inventory.read_az", side_effect=fake_az):
             for role, expected in (("backend", 2), ("fabric", 1)):
-                result = inspect(validate(profile()), request(), role, "after", RESOLVED)
+                result = inspect(profile(), request(), role, "after", RESOLVED)
                 self.assertEqual(result["checked"], expected)
                 self.assertTrue(result["fic_verified"])
                 self.assertEqual(result["terraform_plan_apply"], "NO")
@@ -65,14 +65,14 @@ class LiveIdentityInventoryTests(unittest.TestCase):
     def test_cross_tenant_context_fails(self):
         with patch("fabric_seed_identity_inventory.read_az", side_effect=fake_az):
             with self.assertRaises(InventoryHold):
-                inspect(validate(profile(True)), request(True), "fabric", "before")
+                inspect(profile(True), request(True), "fabric", "before")
 
     def test_duplicate_role_id_rejected(self):
         bad = ids()
         bad["fabric_deployer"]["client_id"] = bad["backend_operator"]["client_id"]
         with patch("fabric_seed_identity_inventory.read_az", side_effect=fake_az):
             with self.assertRaises(ValueError):
-                inspect(validate(profile()), request(), "fabric", "after", bad)
+                inspect(profile(), request(), "fabric", "after", bad)
 
     def test_tampered_fic_rejected(self):
         record = {"name": "hdp-lab-b-backend-plan-github",
