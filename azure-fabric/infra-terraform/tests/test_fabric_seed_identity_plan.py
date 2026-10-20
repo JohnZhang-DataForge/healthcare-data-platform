@@ -196,6 +196,8 @@ class SeedIdentityRealPlanTests(unittest.TestCase):
     def test_reuse_existing_mode_real_plan_creates_only_new_identities(self):
         from test_fabric_bootstrap_identity import profile, request
         p, i = profile(), request()
+        p["bootstrap_mode"] = "reuse-existing"
+        p["storage"]["account"] = "johnzhang"
         self.assertEqual(p["bootstrap_mode"], "reuse-existing")
         self.assertEqual(p["storage"]["account"], "johnzhang")
         with tempfile.TemporaryDirectory() as base:
