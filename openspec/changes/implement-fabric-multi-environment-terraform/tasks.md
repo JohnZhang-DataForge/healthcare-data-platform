@@ -113,3 +113,9 @@
 - 先完成 Bootstrap 独立 Change 的设计和离线实现，后续再连接当前 `new-environments/` 的三 Root 与 Fabric Capacity Outputs。保留 Task 2.1–2.5 未勾选与 PR #273/#274 的历史静态验收事实；不得把方案批准等同实际部署成功。
 
 - **Task 0.2 引用**：独立 Bootstrap 设计已由 [PR #278](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/278) 合并；后续静态合同实施由 [Bootstrap Change](../bootstrap-fabric-infrastructure/tasks.md) 管理。设计冻结不代表任何 Terraform/云端实施或付费授权。
+
+## Task 0.3 第一批交接候选：来源合同（2026-10-19）
+
+- [Bootstrap Change Task 3.1](../bootstrap-fabric-infrastructure/tasks.md) 新增 `tools/fabric_bootstrap_handoff.py` 的非秘密 value-only 交接与 Fail-Closed 检查。现有 `reuse-existing` / existing Capacity 只产生未验证预览，**不是 Terraform 执行配置批准**。
+- `fresh-bootstrap` 与现有固定 `johnzhang` Preflight/Backend Config/Connection Root **不兼容**，在独立安全重构完成前必须 HOLD。付费新 Capacity 的 Azure ARM ID 不能用作 Workspace 需要的 Fabric Capacity UUID；缺真实独立核验继续 HOLD。
+- 本 Change Task 0.3 不勾选；禁止把未部署 Bootstrap 输出/手填 UUID 当成真实资源库存或批准。
