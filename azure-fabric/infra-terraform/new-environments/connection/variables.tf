@@ -16,12 +16,28 @@ variable "connection_name" {
   }
 }
 
-# Existing landing account, never provisioned by this Root.
+# Storage is always EXTERNAL to this Root. v1 legacy account is immutable;
+# fresh Storage must come from an independently reviewed Bootstrap target.
+variable "bootstrap_mode" {
+  type    = string
+  default = "reuse-existing"
+  validation {
+    condition     = contains(["reuse-existing", "fresh-bootstrap"], var.bootstrap_mode)
+    error_message = "Explicitly select an approved Bootstrap storage origin."
+  }
+}
+
+# Acknowledgement only; never a substitute for authoritative storage inventory.
+variable "fresh_storage_provenance_verified" {
+  type    = bool
+  default = false
+}
+
 variable "storage_account_name" {
   type = string
   validation {
-    condition     = var.storage_account_name == "johnzhang"
-    error_message = "Invalid storage_account_name; use only independently verified, non-secret values."
+    condition     = var.storage_account_name == "johnzhang" || (can(regex("^hdp[a-z0-9]{0,21}$", var.storage_account_name)) && length(var.storage_account_name) >= 3 && length(var.storage_account_name) <= 24)
+    error_message = "Only existing johnzhang or a separate hdp-prefixed fresh Storage name is allowed."
   }
 }
 

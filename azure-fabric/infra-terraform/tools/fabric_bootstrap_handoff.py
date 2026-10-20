@@ -138,6 +138,7 @@ def handoff(profile: object, resolved_clients: object, storage_target: object,
         "proposed_legacy_compatible_backend": None,
         "proposed_bootstrap_environment": None,
         "proposed_bootstrap_backend": None,
+        "proposed_connection_storage_variables": None,
         "blocked_roots": [],
         "verified": False,
         "external_inventory_verified": False,
@@ -175,10 +176,16 @@ def handoff(profile: object, resolved_clients: object, storage_target: object,
             p["backend_tenant_id"], p["fabric_tenant_id"])
         if bindings["backend"]["state_keys"] != p["state_keys"]:
             raise InvalidBootstrapProfile("State key handoff disagrees with approved profile")
+        # The Connection Root now supports either Storage origin but keeps
+        # fresh provenance and all deployment approvals DEFAULT FALSE.
+        result["proposed_connection_storage_variables"] = {
+            "bootstrap_mode": p["bootstrap_mode"],
+            "storage_account_name": account,
+            "fresh_storage_provenance_verified": False,
+            "connection_creation_approved": False,
+        }
         if is_fresh:
-            # Connection Root has not yet accepted fresh account. Keep HOLD.
-            result["status"] = "STATIC_HANDOFF_HOLD_FRESH_CONNECTION_ROOT_GAP"
-            result["blocked_roots"] = ["connection"]
+            result["status"] = "STATIC_HANDOFF_HOLD_FRESH_EXTERNAL_APPROVALS"
             result["proposed_bootstrap_environment"] = candidate
             result["proposed_bootstrap_backend"] = bindings["backend"]
         else:

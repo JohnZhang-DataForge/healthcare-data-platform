@@ -93,6 +93,10 @@ class HandoffTests(unittest.TestCase):
         self.assertEqual(result["proposed_legacy_compatible_environment"]["fabric"]["capacity_id"], CAP)
         self.assertEqual(result["state_keys"]["workspace"], "fabric/lab-b/workspace.tfstate")
         self.assertEqual(result["proposed_legacy_compatible_backend"]["storage_account_name"], "johnzhang")
+        self.assertEqual(result["proposed_connection_storage_variables"], {
+            "bootstrap_mode": "reuse-existing", "storage_account_name": "johnzhang",
+            "fresh_storage_provenance_verified": False, "connection_creation_approved": False,
+        })
         self.assertNotEqual(result["identity_client_ids"]["backend_operator"],
                             result["identity_client_ids"]["fabric_deployer"])
         for flag in ("verified", "external_inventory_verified", "capacity_id_verified",
@@ -110,9 +114,13 @@ class HandoffTests(unittest.TestCase):
     def test_fresh_cannot_reuse_legacy_connection_backend_builder(self):
         f = fixtures(cross=True, fresh=True)
         result = handoff(*f)
-        self.assertEqual(result["status"], "STATIC_HANDOFF_HOLD_FRESH_CONNECTION_ROOT_GAP")
+        self.assertEqual(result["status"], "STATIC_HANDOFF_HOLD_FRESH_EXTERNAL_APPROVALS")
         self.assertIsNone(result["proposed_legacy_compatible_environment"])
-        self.assertEqual(result["blocked_roots"], ["connection"])
+        self.assertEqual(result["blocked_roots"], [])
+        self.assertEqual(result["proposed_connection_storage_variables"]["bootstrap_mode"], "fresh-bootstrap")
+        self.assertEqual(result["proposed_connection_storage_variables"]["storage_account_name"], "hdplabbstorage")
+        self.assertIs(result["proposed_connection_storage_variables"]["fresh_storage_provenance_verified"], False)
+        self.assertIs(result["proposed_connection_storage_variables"]["connection_creation_approved"], False)
         self.assertEqual(result["proposed_bootstrap_environment"]["schema_version"], 2)
         self.assertEqual(result["proposed_bootstrap_backend"]["storage_account_name"], "hdplabbstorage")
         self.assertEqual(result["storage_account_name"], "hdplabbstorage")
