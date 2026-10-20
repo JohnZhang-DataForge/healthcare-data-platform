@@ -18,6 +18,16 @@
 
 Dockerfile、业务 Python/SQL、Airflow DAG ID、已部署容器、历史 Batch/Claim、现有发布镜像 Digest 均不变。只有这个指定 PR HEAD 的 CI Success 才能证明被测试的旧根/COPY/Build/Import/Mock 子门禁；不是 GitHub GHCR 发布、Kubernetes 运行时安装、PG/S3 真实恢复或 E2E。4.2/4.3 **PARTIAL**，4.9/4.10 HOLD，批准删除为 0。
 
-## 待记录真实验收
+## 已验证的单组件 CI（实施 HEAD）
 
-对最终 PR HEAD 要求至少 `CDM_SOURCE_GATE=PASS`、`CDM_COPY_COUNT=7`、`CDM_CLEAN_BUILD=PASS`、`CDM_IMAGE_IMPORT_GATE=PASS`、`CDM_OFFLINE_REGRESSION=PASS`，专用 GHCR 发布 Job 必须 `SKIPPED`，所有适用 Required Checks SUCCESS。记录实际 Run URL、来源 SHA、本地临时 Image ID 和单测数量；不能凭源码存在先写 PASS。
+- [Healthcare PR #299](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/299) 实施 HEAD `de282ee8324785e497945d3f066022fd69e46d39`、[真实 GitHub Actions Run #39403437040](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39403437040)：`CDM reader clean build and offline rollback-contract regression (no publish)` **SUCCESS**，单独 `Publish CDM Reader image` **SKIPPED**。这是**第一份绑定实施源 HEAD 的实测**；证据文本回填后仍须针对**最终 PR HEAD**复验全部适用 CI。
+- `CDM_COPY_COUNT=7`，7/7 Git 源树 `local-data-platform/` 文件存在、Python AST 验证，通过 `CDM_OLD_ROOT_FALLBACK=ABSENT`、`CDM_SOURCE_GATE=PASS`。
+- `docker build --pull --no-cache` 本地隔离构建 **PASS**，GitHub Runner 记录 `LOCAL_IMAGE_ID=sha256:0c0e16331a8762637dc5d654ab9718adbdf9e4fd6c8288fe87bc29752ccfeb9f`。这个 ID **不是发布到 GHCR 的 Digest**；CDM 基础镜像 `python:3.12-slim-bookworm` **CDM_BASE_IMAGE_DIGEST=NOT_PINNED**。
+- 离线容器真实 `module.__file__` 4/4 均为 `/opt/task004/`：`cdm_runtime_cli.py`、`task004_cdm_materialization_plan.py`、`task004_cdm_postgres_readonly.py`、`task004_cdm_postgres_rollback_executor.py`；`CDM_IMAGE_IMPORT_GATE=PASS`；未运行 CDM 业务入口。
+- 原有五组 Mock/Fixture/Source 测试分别 **5 + 3 + 5 + 8 + 2 = 23/23 PASS**，`CDM_OFFLINE_REGRESSION=PASS`。这些测试验证读取、SQL 文本生成、Rollback 与误用拒绝，不代表数据库已运行事务。
+- `GHCR_PUBLISH=NOT_PERFORMED`、`LIVE_POSTGRESQL_S3_AIRFLOW_K8S=NOT_PERFORMED`。不对历史 3 条 CDM Rollback Publish Workflow、基础镜像 Digest Pin、PG/S3/Helm/Runtime 状态进行无证类推。
+
+## 仍在等待的整体里程碑
+
+4.2/4.3 **PARTIAL**、4.9/4.10 **HOLD**、已获批准删除数 **0**。当前只解决 1 个现行源路径兼容入口；另三条历史受限 Workflow 继续逐一明确 Owner/消费/去留，不在此 PR 中批量修改或删除。
+
