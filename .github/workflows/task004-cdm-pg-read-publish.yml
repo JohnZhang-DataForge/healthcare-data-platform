@@ -1,24 +1,141 @@
-name: TASK004 STEP04F Publish CDM PostgreSQL Reader Runtime
+name: TASK004 CDM Reader Runtime Image
+
 on:
-  push:
-    branches: [feature/task004-step04f-cdm-pg-read-runtime]
-    paths: [.github/workflows/task004-cdm-pg-read-publish.yml]
+  workflow_dispatch:
+    inputs:
+      publish_approved:
+        description: "Explicit approval required for GHCR image publication"
+        type: boolean
+        required: true
+        default: false
+  pull_request:
+    paths:
+      - ".github/workflows/task004-cdm-pg-read-publish.yml"
+      - "local-data-platform/images/task004-cdm-runtime/**"
+      - "local-data-platform/apps/task004/cdm_runtime_cli.py"
+      - "local-data-platform/airflow/dags/task004_cdm_*.py"
+      - "local-data-platform/tests/task004/test_step04f_*.py"
+      - "openspec/changes/relocate-local-data-platform/**"
+
 permissions:
   contents: read
-  packages: write
+
 jobs:
-  publish:
+  validate-source:
+    name: CDM reader clean build and offline rollback-contract regression (no publish)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - name: Test read-only PostgreSQL contract
+      - name: Checkout immutable PR source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify seven canonical Docker COPY sources and no old-root fallback
+        shell: bash
         run: |
           set -Eeuo pipefail
-          python3 -m pip install --disable-pip-version-check 'psycopg[binary]==3.2.10'
-          python3 -m unittest discover -s tests/task004 -p 'test_step04f_cdm_postgres_readonly.py' -v
-          python3 -m unittest discover -s tests/task004 -p 'test_step04f_cdm_runtime_packaging.py' -v
-          python3 -m py_compile apps/task004/cdm_runtime_cli.py airflow/dags/task004_cdm_postgres_readonly.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import ast
+          root=Path("local-data-platform")
+          dockerfile=root/"images/task004-cdm-runtime/Dockerfile"
+          text=dockerfile.read_text(encoding="utf-8")
+          sources=[]
+          for line in text.splitlines():
+              if not line.startswith("COPY "):
+                  continue
+              assert "--from=" not in line,"EXTERNAL_COPY_NOT_ATTESTED"
+              items=[v for v in line.split()[1:] if not v.startswith("--")]
+              assert len(items)>=2,"MALFORMED_DOCKER_COPY"
+              sources.extend(items[:-1])
+          assert len(sources)==7,"UNEXPECTED_CDM_COPY_INPUTS"
+          for source in sources:
+              assert not source.startswith(("/", "$")) and "*" not in source and ".." not in Path(source).parts,"UNSAFE_COPY_SOURCE"
+              canonical=root/source
+              assert canonical.is_file(),"MISSING_CANONICAL_COPY_SOURCE="+source
+              assert not Path(source).exists(),"LEGACY_ROOT_FALLBACK="+source
+              assert canonical.suffix==".py","CDM_SOURCE_NOT_PYTHON"
+              ast.parse(canonical.read_text(encoding="utf-8"),filename=str(canonical))
+          assert "ENTRYPOINT [\"python\",\"/opt/task004/cdm_runtime_cli.py\"]" in text,"CDM_ENTRYPOINT_DRIFT"
+          assert "USER 10001:10001" in text,"CDM_NONROOT_DRIFT"
+          print("CDM_COPY_COUNT=7")
+          print("CDM_CANONICAL_ROOT=local-data-platform")
+          print("CDM_OLD_ROOT_FALLBACK=ABSENT")
+          print("CDM_BASE_IMAGE_DIGEST=NOT_PINNED")
+          print("CDM_SOURCE_GATE=PASS")
+          PY
+
+      - name: Local clean image build without publication or credentials
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+          docker build --pull --no-cache \
+            -f local-data-platform/images/task004-cdm-runtime/Dockerfile \
+            -t local-dp-cdm-reader:verification \
+            local-data-platform
+          docker image inspect local-dp-cdm-reader:verification --format 'LOCAL_IMAGE_ID={{.Id}}'
+          echo "CDM_CLEAN_BUILD=PASS"
+          echo "GHCR_LOGIN=NOT_PERFORMED"
+          echo "GHCR_PUBLISH=NOT_PERFORMED"
+
+      - name: Check installed modules without executing CDM runtime entrypoint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --network none --read-only \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --entrypoint python local-dp-cdm-reader:verification -c '
+          from pathlib import Path
+          import cdm_runtime_cli, task004_cdm_materialization_plan
+          import task004_cdm_postgres_readonly, task004_cdm_postgres_rollback_executor
+          modules=(cdm_runtime_cli,task004_cdm_materialization_plan,
+                   task004_cdm_postgres_readonly,task004_cdm_postgres_rollback_executor)
+          for mod in modules:
+              f=Path(mod.__file__).resolve()
+              assert f.parent==Path("/opt/task004"),"WRONG_IMAGE_IMPORT_PATH"
+              print("CDM_IMAGE_MODULE="+mod.__name__+" FILE="+str(f))
+          '
+          echo "CDM_IMAGE_IMPORT_GATE=PASS"
+          echo "CDM_ENTRYPOINT_NOT_EXECUTED=YES"
+
+      - name: Offline CDM reader and rollback contract tests (no DB or S3)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for suite in \
+            test_step04f_cdm_runtime_packaging.py \
+            test_step04f_cdm_postgres_readonly.py \
+            test_step04f_cdm_writer_runtime_rollback.py \
+            test_step04f_dynamic_pg_writer.py \
+            test_step04f_s3_writer_rollback.py; do
+            docker run --rm --network none --read-only \
+              --security-opt no-new-privileges --cap-drop ALL \
+              --tmpfs /tmp:rw,nosuid,nodev,size=64m \
+              -e PYTHONDONTWRITEBYTECODE=1 \
+              -v "$PWD/local-data-platform:/src:ro" \
+              --entrypoint python local-dp-cdm-reader:verification \
+              -m unittest discover -s /src/tests/task004 -p "$suite" -v
+          done
+          echo "CDM_OFFLINE_REGRESSION=PASS"
+          echo "LIVE_POSTGRESQL_S3_AIRFLOW_K8S=NOT_PERFORMED"
+
+  build-and-push:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_approved == true
+    needs: validate-source
+    name: Publish CDM Reader image (manual explicit approval only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout published source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -26,12 +143,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push immutable reader image
+      - name: Build and push CDM runtime tagged with immutable source commit
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: images/task004-cdm-runtime/Dockerfile
+          context: ./local-data-platform
+          file: ./local-data-platform/images/task004-cdm-runtime/Dockerfile
           platforms: linux/amd64
           push: true
           provenance: true
@@ -40,9 +157,10 @@ jobs:
       - name: Record digest
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
+        shell: bash
         run: |
           set -Eeuo pipefail
           [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
-          echo "CDM_PG_READER_IMAGE_BUILD=PASS"
           echo "CDM_PG_READER_IMAGE_REF=ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-cdm-runtime@$DIGEST"
-          echo "DB_MUTATION=NO"
+          echo "CDM_PG_READER_IMAGE_BUILD=PASS"
+          echo "DATABASE_MUTATION=NO"
