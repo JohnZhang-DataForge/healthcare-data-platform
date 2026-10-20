@@ -1,6 +1,6 @@
 # NO management or adoption of the existing github-terraform application.
 # Default count=0: no apps, SPNs, groups or OIDC credentials are created.
-# Manual inventory, protected environment and Seed consent are separate gates.
+# Manual inventory and Seed consent are separate gates; no GitHub Environment is used.
 
 resource "azuread_application_registration" "backend_operator" {
   provider     = azuread.backend
@@ -73,8 +73,10 @@ resource "azuread_group" "fabric_deployers" {
   }
 }
 
-# Exactly one protected Self-Runner Environment per role/phase.
-# Environments MUST restrict main and require independent deployment review.
+# GitHub Free/private has no Environment gate. This new app may trust
+# Self-Runner's immutable main-ref token (real issuer run 39422174619).
+# Role separation is by distinct Entra applications and constrained permissions,
+# NOT by GitHub JWT subject. Other Self-Runner main workflows share the subject.
 resource "azuread_application_federated_identity_credential" "backend_operator_plan" {
   provider       = azuread.backend
   count          = var.identity_creation_approved ? 1 : 0
@@ -82,29 +84,17 @@ resource "azuread_application_federated_identity_credential" "backend_operator_p
   display_name   = "hdp-${var.environment}-backend-plan-github"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-${var.environment}-plan-backend"
+  subject        = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:ref:refs/heads/main"
   lifecycle {
     prevent_destroy = true
   }
 }
 
-# Exactly one protected Self-Runner Environment per role/phase.
-# Environments MUST restrict main and require independent deployment review.
-resource "azuread_application_federated_identity_credential" "backend_operator_apply" {
-  provider       = azuread.backend
-  count          = var.identity_creation_approved ? 1 : 0
-  application_id = azuread_application_registration.backend_operator[0].id
-  display_name   = "hdp-${var.environment}-backend-apply-github"
-  audiences      = ["api://AzureADTokenExchange"]
-  issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-${var.environment}-apply-backend"
-  lifecycle {
-    prevent_destroy = true
-  }
-}
 
-# Exactly one protected Self-Runner Environment per role/phase.
-# Environments MUST restrict main and require independent deployment review.
+# GitHub Free/private has no Environment gate. This new app may trust
+# Self-Runner's immutable main-ref token (real issuer run 39422174619).
+# Role separation is by distinct Entra applications and constrained permissions,
+# NOT by GitHub JWT subject. Other Self-Runner main workflows share the subject.
 resource "azuread_application_federated_identity_credential" "fabric_deployer_plan" {
   provider       = azuread.fabric
   count          = var.identity_creation_approved ? 1 : 0
@@ -112,23 +102,9 @@ resource "azuread_application_federated_identity_credential" "fabric_deployer_pl
   display_name   = "hdp-${var.environment}-fabric-plan-github"
   audiences      = ["api://AzureADTokenExchange"]
   issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-${var.environment}-plan-deployer"
+  subject        = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:ref:refs/heads/main"
   lifecycle {
     prevent_destroy = true
   }
 }
 
-# Exactly one protected Self-Runner Environment per role/phase.
-# Environments MUST restrict main and require independent deployment review.
-resource "azuread_application_federated_identity_credential" "fabric_deployer_apply" {
-  provider       = azuread.fabric
-  count          = var.identity_creation_approved ? 1 : 0
-  application_id = azuread_application_registration.fabric_deployer[0].id
-  display_name   = "hdp-${var.environment}-fabric-apply-github"
-  audiences      = ["api://AzureADTokenExchange"]
-  issuer         = "https://token.actions.githubusercontent.com"
-  subject        = "repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:environment:fabric-${var.environment}-apply-deployer"
-  lifecycle {
-    prevent_destroy = true
-  }
-}

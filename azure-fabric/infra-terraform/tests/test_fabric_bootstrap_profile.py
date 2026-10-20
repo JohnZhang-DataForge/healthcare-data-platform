@@ -23,7 +23,7 @@ def reuse():
         "tenants": {"backend_tenant_id": A, "fabric_tenant_id": A},
         "github_oidc": {
             "repository": "JohnZhang-DataForge/Self-Runner",
-            "environment": "fabric-lab-b",
+            "ref": "refs/heads/main",
         },
         "storage": {
             "account": "johnzhang", "subscription_id": SUB,
@@ -160,9 +160,9 @@ class BootstrapProfileTests(unittest.TestCase):
 
     def test_oidc_repository_and_environment_scoping(self):
         for key, value in (("repository", "attacker/repo"),
-                           ("environment", "fabric-production"),
-                           ("environment", "pull_request"),
-                           ("environment", "fabric-lab-b:refs/heads/main")):
+                           ("ref", "refs/heads/production"),
+                           ("ref", "refs/pull/1/merge"),
+                           ("environment", "fabric-lab-b")):
             with self.subTest(key=key, value=value):
                 p = reuse()
                 p["github_oidc"][key] = value

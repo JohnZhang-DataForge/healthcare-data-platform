@@ -8,7 +8,7 @@
   },
   "github_oidc": {
     "repository": "JohnZhang-DataForge/Self-Runner",
-    "environment": "fabric-replace-me"
+    "ref": "refs/heads/main"
   },
   "storage": {
     "account": "hdpreplaceme",

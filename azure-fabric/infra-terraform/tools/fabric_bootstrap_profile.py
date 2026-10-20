@@ -84,9 +84,9 @@ def validate(profile: object) -> dict:
     backend_tenant = _uuid(tenants["backend_tenant_id"])
     fabric_tenant = _uuid(tenants["fabric_tenant_id"])
 
-    oidc = _fields(obj["github_oidc"], {"repository", "environment"}, "github_oidc")
-    if oidc["repository"] != REPOSITORY or oidc["environment"] != f"fabric-{env}":
-        raise InvalidBootstrapProfile("OIDC must bind this repo to protected environment")
+    oidc = _fields(obj["github_oidc"], {"repository", "ref"}, "github_oidc")
+    if oidc["repository"] != REPOSITORY or oidc["ref"] != "refs/heads/main":
+        raise InvalidBootstrapProfile("OIDC must bind Self-Runner immutable main ref")
 
     storage = _fields(obj["storage"], {"account", "subscription_id", "resource_group",
                                       "landing_container", "state_container",
@@ -163,7 +163,7 @@ def validate(profile: object) -> dict:
         "identity_topology": "same-tenant" if backend_tenant == fabric_tenant else "cross-tenant",
         "backend_tenant_id": backend_tenant,
         "fabric_tenant_id": fabric_tenant,
-        "github_oidc_subject_prefix_for_design_only": f"{OIDC_IMMUTABLE_PREFIX}:environment:fabric-{env}-",
+        "github_oidc_subject_prefix_for_design_only": f"{OIDC_IMMUTABLE_PREFIX}:ref:refs/heads/main",
         "storage_account": account,
         "storage_subscription_id": storage_subscription_id,
         "storage_resource_group": storage_rg,

@@ -15,10 +15,13 @@ class OIDCExecutionTopologyTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = (ROOT / "bootstrap/identity/main.tf").read_text(encoding="utf-8")
 
-    def test_exact_four_immutable_phase_subjects_are_statically_aligned(self):
+    def test_exact_two_immutable_main_subjects_are_statically_aligned(self):
         v = inspect_source(self.source)
         self.assertEqual(v["status"], "FABRIC_OIDC_SOURCE_ALIGNED_LIVE_HOLD")
         self.assertEqual(set(v["subject_bindings"]), set(BINDINGS))
+        self.assertEqual(len(set(v["subject_bindings"].values())), 1)
+        self.assertFalse(v["workflow_isolation_by_oidc_subject"])
+        self.assertFalse(v["protected_phase_environments_required"])
         self.assertIn("JohnZhang-DataForge@337895338", IMMUTABLE_PREFIX)
         self.assertIn("Self-Runner@1413796156", IMMUTABLE_PREFIX)
         self.assertNotEqual(SELF_RUNNER_REPOSITORY_ID, HEALTHCARE_REPOSITORY_ID)
@@ -31,7 +34,7 @@ class OIDCExecutionTopologyTests(unittest.TestCase):
         candidates = (
             ("Self-Runner@1413796156", "healthcare-data-platform@1404947726"),
             ("JohnZhang-DataForge@337895338/", "JohnZhang-DataForge/"),
-            ("-plan-backend", "-apply-backend"),
+            (":ref:refs/heads/main", ":ref:refs/heads/feature"),
             ("azuread.backend", "azuread.fabric"),
             ("azuread_application_registration.backend_operator[0].id",
              "azuread_application_registration.blob_reader[0].id"),

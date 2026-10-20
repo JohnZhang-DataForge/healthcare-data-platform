@@ -29,7 +29,7 @@ def fixtures(cross=False, fresh=False, paid=False):
         "bootstrap_mode": "fresh-bootstrap" if fresh else "reuse-existing",
         "tenants": {"backend_tenant_id": A, "fabric_tenant_id": B if cross else A},
         "github_oidc": {"repository": "JohnZhang-DataForge/Self-Runner",
-                        "environment": "fabric-lab-b"},
+                        "ref": "refs/heads/main"},
         "storage": {
             "account": "hdplabbstorage" if fresh else "johnzhang",
             "subscription_id": SUB,

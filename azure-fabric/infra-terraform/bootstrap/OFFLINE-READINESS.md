@@ -55,3 +55,7 @@ The GitHub-hosted `Fabric Environment Preflight (Offline)` PR workflow covers al
 - GitHub PR #298 changed **only six** in-scope offline files; older Azure/Fabric resources, legacy seven Roots, Self-Runner `azure-infra.yaml` and State untouched. **Task 2.5 and Task 3.3 offline acceptance concluded; live deployment remains HOLD.**
 
 Acceptance record is **read-only historical CI evidence**, not a directive for a workflow_dispatch; Task 3.2's privileged execution design and Task 3.4's live acceptance remain independently blocked.
+
+## 2026-10-20 superseding execution decision (single-operator Free/private)
+
+The earlier instruction above requiring **protected GitHub Environments** and independently assigned reviewers is **historical only**. The user explicitly selected existing **Self-Runner Private**, Main-ref immutable GitHub OIDC, `workflow_dispatch`, and **no GitHub Environment review**. See [Identity v3 contract](IDENTITY-CONTRACT.md), [Profile](PROFILE-CONTRACT.md) and OpenSpec Task 3.2. Backend/Tenant A and Fabric/Tenant B have distinct *new* Entra apps but identical immutable repository/ref Subject; no per-role JWT separation. Current manual Entra-only probe is Self-Runner PR #162. Cloud Entra Apps/FIC/RBAC/State/Plan remain NOT CREATED/NOT VERIFIED and paid F SKU still requires explicit approval. Do not modify legacy `azure-infra.yaml`, old State or existing IAM.
