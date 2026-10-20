@@ -37,7 +37,7 @@ def inspect_source(hcl: str) -> dict:
                 or f"application_id = azuread_application_registration.{app}[0].id" not in body
                 or "count          = var.identity_creation_approved ? 1 : 0" not in body
                 or "prevent_destroy = true" not in body
-                or body.count("subject") != 1):
+                or len(re.findall(r'(?m)^\s*subject\s*=', body)) != 1):
             raise OIDCSourceDrift("immutable main-ref subject/application drift")
         subjects[name] = expected
     if re.search(r'(?m)^\s*subject\s*=\s*"repo:[^"@]+/', hcl):
