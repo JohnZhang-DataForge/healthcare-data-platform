@@ -60,6 +60,14 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`Dockerfile`](../../../../local-data-platform/images/task004-runtime/Dockerfile) | 历史 Airflow/Spark 控制面容器：kubectl、生成/处理脚本与跨 namespace 编排，不是 Spark 执行器 |
 | [`entrypoint.sh`](../../../../local-data-platform/images/task004-runtime/entrypoint.sh) | 历史控制面 CLI：resolve / generate-publish / person / visit / reconcile；调用固定旧脚本 |
 
+## 现行 Helm GitSync 部署配置
+
+| 源文件（直接链接） | 作用 / 使用范围 |
+| --- | --- |
+| [`airflow-postmove-values.yaml`](../../../../local-data-platform/kubernetes/helm/airflow-postmove-values.yaml) | 现有 `dw-airflow` Helm 1.22.0 的 GitSync SubPath 迁移覆盖值；`local-data-platform/airflow/dags` 为唯一 DAG 子目录，`branch/rev` 空字符串兼容历史 Helm Release 的 Schema；保留 GitSync `ref=main`，必须配合当前 Release `--reuse-values`，不得直接当成全新部署的完整 Values |
+
+> 实际运行证明：2026-10-20 [Self-Runner Helm Repair Run #39422344924](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422344924) 成功执行 `helm upgrade --atomic --wait`，Scheduler 和 DAG Processor 均读到迁移后 `dags_folder`。单独成功不表示 NEW_ONLY 完整业务 E2E 验收。
+
 ## 历史控制面与跨 Namespace RBAC
 
 | 源文件（直接链接） | 用途与运行边界 |
