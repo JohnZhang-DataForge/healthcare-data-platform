@@ -52,3 +52,7 @@ Read each original Shell from the frozen Main, parse literal `cat > "$STAGE/<pat
 ## Merge gate / known limits
 
 Only merge after all applicable actual GitHub Actions checks on the **final PR head** are successful (Docs Links, Component Naming, OpenSpec, provenance/source tests, DagBag, isolated image builds and NEW_ONLY/CDM Writer tests as triggered). Do not substitute old CI from PR #319. No changes or commands on Kubernetes, PG, S3, Airflow deployment, Fabric, GHCR; no historic batch replay. Tasks 4.1, 4.8, 4.9, 4.10 and closure Section 5 stay OPEN.
+
+## PR Gate annotation correction
+
+Initial PR #322 OpenSpec Change Gate Run #39465947160 rejected PR metadata `OpenSpec-Task: 4.9 (PARTIAL)` with `Invalid OpenSpec task number`; this is an annotation-format failure, not a test failure or authorization to merge. The PR body was corrected to exactly `OpenSpec-Task: 4.9` and `PARTIAL` moved to an ordinary explanatory sentence. This evidence update triggers a new final-head PR CI evaluation. Only post-correction results on that final head are authoritative.
