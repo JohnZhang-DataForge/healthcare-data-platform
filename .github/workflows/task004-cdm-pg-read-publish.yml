@@ -81,7 +81,7 @@ jobs:
               root/"task004-s3-writer-rollback-image.yml",
               root/"task004-step04f-cdm-ghcr-publish.yml",
           )
-          pattern=r"test_step04f_[a-z0-9_]+\\.py"
+          pattern=r"test_step04f_[a-z0-9_]+[.]py"
           # This gate protects the test-name inventory, not all external
           # workflow consumers or the semantics of a historical publish.
           covered=set(re.findall(pattern,active.read_text(encoding="utf-8")))
