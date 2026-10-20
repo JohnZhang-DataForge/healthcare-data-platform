@@ -100,3 +100,12 @@
 - 新账户只接收严格 `hdp*` 账户名；仍由现有独立 Connection Inventory/Reader RBAC/Metadata/Key Vault/WorkspaceIdentity/域名审核标志共同限制，均默认 false，不新增 Storage/RBAC 管理资源。
 - `fabric_bootstrap_handoff.py` 为两类 Storage 输出源参数**不含批准**的 Connection 输入预览，fresh 状态为 `STATIC_HANDOFF_HOLD_FRESH_EXTERNAL_APPROVALS`，非 `DEPLOY_READY`；Python 静态负向测试、Terraform `fmt` 使用现有 no-cloud CI。
 - **Task 3.1、下游 Task 0.3 仍保持开放**：实际 Storage Network/State/权限和真实 Capacity 身份、Terraform Provider/Backend 连接与独立执行许可尚未确认。没有远端操作或费用。
+
+## Task 3.2 第一批：Self-Runner 手工控制入口（2026-10-20，仅离线，未授权执行）
+
+- **独立 Self-Runner PR #150**：`JohnZhang-DataForge/Self-Runner` 新建 `.github/workflows/fabric-controlled-entry.yml`、`src/ci/fabric_controlled_entry.py`、`tests/ci/test_fabric_controlled_entry.py`、GitHub-hosted PR 测试 `fabric-controlled-entry-ci.yml` 和 `docs/fabric-controlled-entry.md`。来源 PR：<https://github.com/JohnZhang-DataForge/Self-Runner/pull/150>；合并 SHA：`a951cb5e8589815cc1adb2096252e2c221dd0184`；CI Run `39394922136`，`static-intake-tests=success`。
+- 手动 `workflow_dispatch` 输入只有 `bootstrap|plan|apply` 意图、六个新 Root 中一个、禁止旧环境名、精确 Healthcare 40 位 SHA；`apply` 意图必须提供 64 位 Plan Digest **语法**，但不视为可信 Plan 审批。所有有效输入返回 `FABRIC_CONTROLLED_ENTRY_OFFLINE_INTAKE_HOLD`，所有权限/资源/执行证据均 false。
+- 安全特性：只在 Self-Runner `main` 手动入口接受请求；GitHub-hosted `ubuntu-latest`，最小 `contents:read`，无 `id-token:write`、无 Token/Secrets/Repo Vars、无 Azure/Fabric API、无目标代码 Checkout、无 `dw-runner-set`、无 Terraform Init/Plan/Apply/Destroy/Import。**PR #150 没有实际触发工作流 dispatch**，只由 GitHub 运行 PR 安全单测。
+- **保留 Task 3.2 未勾选**：计划中的 Bootstrap/Plan/Apply 受保护 GitHub Environment、实际受控 Self-Runner executor、可信 Main SHA/Plan artifact/State 回读、财务和人工二次审批均尚未实现/授权；此 PR 只是不会部署的安全控制器，绝不把 CI PASS 解释成运行批准。
+- 完全未修改旧 `Self-Runner/.github/workflows/azure-infra.yaml`，也没有触及旧 `johnzhang`、`dev/*.tfstate`、旧七 Root 或付费 Capacity。
+
