@@ -110,3 +110,37 @@ Official references:
 **Execution-location decision remains gated:** Route A runs privileged jobs inside Healthcare (issuer = Healthcare), with Self-Runner remaining an unprivileged trigger; Route B runs privileged jobs within Self-Runner (issuer = Self-Runner), requiring a deliberate new Entra OIDC subject/Environment model and updated Identity Root. Either route requires at least one reviewed cross-repo trust/dispatch design, phase-specific Env protection/identities, secured Plan artifact custody, and explicit authorization **before** any `id-token:write` or `dw-runner-set` privileged job is introduced. **Do not silently repoint** the existing application credentials; they are default-count-zero source and have not been deployed. No environment is created automatically from untrusted input.
 
 Phase review in Self-Runner PR #151 (<https://github.com/JohnZhang-DataForge/Self-Runner/pull/151>, merged `7f252b2c9eced200b73e23235be7eba466819418`) now reports the repository/Environment mismatch as `FABRIC_PHASE_TRUST_BOUNDARY_HOLD`, and a synthetic JSON Plan action/digest scanner always HOLDs. The Healthcare `tools/fabric_oidc_subject_audit.py` captures the additional immutable subject blocker and fails CI on unreviewed changes to the existing Terraform subjects. Neither tool verifies OIDC authentication, actual binary `.tfplan`, cloud IAM, GitHub Environment protections or real billing approval. Task 3.2 remains OPEN.
+
+
+## Task 3.2 deployment-gate redesign: GitHub Free organization + private repository (2026-10-20)
+
+**Live administrator inventory (read-only):** `JohnZhang-DataForge` plan = `free`; Self-Runner repository visibility = `private`; `GET /repos/JohnZhang-DataForge/Self-Runner/environments` returned `total=0`, `fabric_environments=[]`. GitHub's official availability documentation states that GitHub Free cannot configure Environments in private repositories, nor use private-repo Environment secrets/variables or native Required Reviewers. This is a **confirmed plan/platform incompatibility**, not a missing reviewer or a temporarily empty inventory.
+
+Sources:
+- <https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments>
+- <https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments>
+- <https://docs.github.com/en/actions/reference/security/oidc>
+- <https://docs.github.com/en/rest/actions/oidc>
+
+### Implications — explicitly fail closed
+
+1. The four original protected `fabric-<env>-(plan|apply)-(backend|deployer)` Environment trust subjects in `bootstrap/identity/main.tf` are **inapplicable to this Free/private execution topology**. Preserve them as a non-deployed alternative; keep `identity_creation_approved=false`. Do **not** set it true against those assumptions, dispatch the current `fabric-oidc-readonly-probe.yml`, create arbitrary insecure Environments, or treat an Environment ACK variable as reviewer evidence.
+2. Main-ref immutable OIDC signing **is proven** on Self-Runner by actual issuer Run 39422174619, but the main-ref subject `repo:JohnZhang-DataForge@337895338/Self-Runner@1413796156:ref:refs/heads/main` is common to multiple workflows in that repository. Using it for both Tenant A Backend and Tenant B Deployer would **not** enforce role/phase isolation: a GitHub workflow able to mint that JWT may be able to assert either Entra app. Never silently replace four Environment subjects with a shared ref subject.
+3. Self-Runner already contains unrelated privileged `azure-infra.yaml`, `azure-terraform-oidc-smoke.yml` and `azure-terraform-landing-blob-write.yml` workflows using Azure OIDC on main. A repository-wide GitHub OIDC customization (`use_default=false`) **changes subjects for all workflows** in the same repository, and could break their existing Entra FICs. Do not change the existing Self-Runner OIDC settings or legacy Azure FICs without an explicit migration/cutover plan.
+4. GitHub Free private repository Manual `workflow_dispatch` alone is an execution trigger, **not** a distinct GitHub Environment deployment-review approval. Never claim an automated Plan→Apply safety barrier exists unless a separately validated external approval and artifact-binding service enforces it.
+
+### Preferred zero-upgrade architecture (candidate, not yet deployed)
+
+Create a **dedicated private Fabric execution repository** only after an explicit repository-boundary approval. This avoids changing Self-Runner's already-successful main OIDC/legacy Azure trust. The proposed dedicated repository can be configured with a repository-scoped GitHub OIDC custom Subject claim list including `repo`, `context`, and `workflow_ref`. GitHub documents both customizable subjects and the `workflow_ref` claim. The immutable owner/repository IDs must remain in the resulting `repo` segment.
+
+Use distinct and versioned `main` Workflow files for `backend-plan`, `fabric-plan`, and later separately approved `backend-apply`/`fabric-apply`. With a verified `workflow_ref`-bound JWT Subject, each Tenant A/B Entra Federated Identity Credential can bind to its **own workflow** instead of to a nonfunctional Environment. FIC Subject strings must be derived from *actual dedicated repo OIDC preview and live token claims*, not synthesized from the Self-Runner owner/repository IDs or assumed colon escaping. Entra Apps, roles and State remain separate.
+
+Staged roll-out:
+- **Gate A (repo/trust preflight):** authorize dedicated repo creation; test whether custom `workflow_ref` issuer claims work with immutable subjects on GitHub Free/private; read back its custom settings; prove actual role-specific OIDC JWTs on `main`; verify the two subjects differ. No Entra resources yet.
+- **Gate B (new identity):** deploy fresh Tenant A/B Entra App/FIC via independently authorized Seed Operator/isolated Bootstrap State; begin with Plan-only, non-destructive token exchange. No legacy App adoption and no assumed Azure RBAC; maintain default-deny creation approvals until Seed authorization.
+- **Gate C (Plan):** run isolated new Workspace backend/trial-inventory readback, then approved `terraform plan` using immutable source SHA and verified non-paid Capacity policy. No old State or automatic Apply.
+- **Gate D (Apply):** separate, non-GitHub-Environment independent human authorization that binds reviewer/operator identity, approved source SHA, exact saved Plan digest, target tenant/subscription/state key and explicit financial approval. Keep Apply unimplemented/default-DENY until that gate is demonstrably enforceable. A GitHub actor input, dispatch click or repository variable does not count as independent approval.
+
+An alternative is to preserve Self-Runner and explicitly migrate **every** pre-existing default-subject cloud consumer to a custom-subject scheme before switching repo OIDC settings; this has broader regression/cutover risk and is **not** the preferred near-term path. A separately approved manual local Seed/Plan-only execution is also possible but must not be represented as workflow identity isolation or automatic end-to-end delivery.
+
+**Approval and billing boundary:** This OpenSpec change authorizes only the design revision and offline validations. No new repository, OIDC customization, Entra application, Azure resource, Fabric F SKU, GitHub plan upgrade, Terraform State/Plan/Apply or pre-existing IAM mutation is authorized by the discovery alone.
