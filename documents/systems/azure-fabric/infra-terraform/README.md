@@ -15,6 +15,13 @@ Terraform 仅负责 Azure/Fabric 的基础设施资源定义、身份及权限�
 
 既定目标数据流：**本地 PostgreSQL OMOP → 未来只读 Exporter/不可变 Manifest → 已有 Azure Blob Landing → Fabric Data Pipeline 编排 Notebook → OneLake Lakehouse/Delta**。本组件负责其中可由 IaC 管理的基础资源与可选权限，不代表业务链路已部署。
 
+## 已批准目标架构（2026-10-19，仍待实施）
+
+- [Fabric 多环境重建权威架构](../../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)：采用 **Bootstrap as Code + Terraform + GitHub Actions + fabric-cicd**；Backend/Storage 支持 `reuse-existing` 与 `fresh-bootstrap`；Capacity 可通过 Terraform 复用或经**单独费用审批**后创建付费 F SKU，**本期不实现自动 Suspend/Resume**。
+- 独立的 Bootstrap Terraform（Entra SPN、Groups、OIDC、RBAC、可选新 Storage/Backend/Capacity）仍是**待开发目标**。首次管理员种子授权、订阅/计费资格、Provider 实际权限和独立 Plan/Apply 审批仍不可省略。
+- 当前代码 `new-environments/` 仍面向受保护的旧 `johnzhang` `reuse-existing` 适配；**绝不直接对旧 Workspace/State 进行迁移或 Apply**。现有七 Root 为历史兼容，不随设计批准而删除或重构。
+- 当前实施状态及依赖见 [OpenSpec Change](../../../../openspec/changes/implement-fabric-multi-environment-terraform/tasks.md)，本 README 不另存开发进度。
+
 ## 七个独立 Terraform Root
 
 | Root | 职责 | 现有事实与执行限制 |
