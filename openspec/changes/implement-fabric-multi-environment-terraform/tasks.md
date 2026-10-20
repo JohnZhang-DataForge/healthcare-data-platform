@@ -5,7 +5,7 @@
 ## 0. Revised architecture approval (2026-10-19)
 
 - [x] 0.1 用户通过 **Bootstrap as Code + Terraform + GitHub Actions + fabric-cicd** 修订目标，支持 `reuse-existing` 与 `fresh-bootstrap`。容量支持 Terraform 引用或**显式授权后新建**；**本期不实现自动 Suspend/Resume**。
-- [ ] 0.2 以单独的 Bootstrap OpenSpec Change 冻结首次管理员 Seed、身份/Group/OIDC、RBAC、Backend State 初始化、Storage 两模式、Capacity 费用门禁与回滚/离线测试；此项属于后续独立实施，不使本 Change 的 Task 2.1–2.5 自动完成。
+- [x] 0.2 以单独的 Bootstrap OpenSpec Change 冻结首次管理员 Seed、身份/Group/OIDC、RBAC、Backend State 初始化、Storage 两模式、Capacity 费用门禁与回滚/离线测试；此项属于后续独立实施，不使本 Change 的 Task 2.1–2.5 自动完成。
 - [ ] 0.3 Bootstrap 和 Fabric Root 的**非敏感 Outputs/变量衔接合同**：来源 Tenant/身份与 Backend 真实库存确认、旧 `johnzhang`/State 拒绝接管、Capacity ID 与账单授权证明；须在后续离线源码 PR 实施。
 - **修订的权限边界**：本 Change 仅维护已声明 Workspace/Lakehouse/Connection 及静态校验，Bootstrap 新建需独立 OpenSpec 和单独的真实 Azure 写操作授权。设计通过≠允许付费 Capacity 创建/Apply。
 
@@ -111,3 +111,5 @@
 
 - 本轮为文档与 OpenSpec 目标修订，不运行 `terraform init/plan/apply/destroy`、云端资源写入或远端 State 修改，不移除原 7 Roots、不改 Self-Runner。
 - 先完成 Bootstrap 独立 Change 的设计和离线实现，后续再连接当前 `new-environments/` 的三 Root 与 Fabric Capacity Outputs。保留 Task 2.1–2.5 未勾选与 PR #273/#274 的历史静态验收事实；不得把方案批准等同实际部署成功。
+
+- **Task 0.2 引用**：独立 Bootstrap 设计已由 [PR #278](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/278) 合并；后续静态合同实施由 [Bootstrap Change](../bootstrap-fabric-infrastructure/tasks.md) 管理。设计冻结不代表任何 Terraform/云端实施或付费授权。

@@ -91,3 +91,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 - [离线 CI 防越权测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_ci_offline.py)：阻止在 Preflight Workflow 中加入带云端副作用的 Terraform/Azure/Fabric 操作。
 - [新账号 Bootstrap Runbook](../../../engineering/operations/FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md#2a-task-2425connection-凭据与上线前最小证据清单目前-hold)：整理三身份、AzureBlobs 参数、Key Vault 引用、State/Connection 库存、准入与停止条件，真实云端核验仍需独立授权。
 - **仅通过格式/静态检查不得把 OpenSpec 2.1–2.5 标记为已真正部署**；旧 Self-Runner `azure-infra.yaml` 完全不涉及本轮。
+
+## Fabric infrastructure Bootstrap Profile（OpenSpec `bootstrap-fabric-infrastructure`，仅离线）
+
+- [严格 Bootstrap Profile validator](../../../../azure-fabric/infra-terraform/tools/fabric_bootstrap_profile.py)：两模式、Tenant A/A′/B、Storage/State、OIDC 目标、付费 Capacity 全部 fail-closed；**不接触云端**。
+- [Bootstrap Profile 合同](../../../../azure-fabric/infra-terraform/bootstrap/PROFILE-CONTRACT.md) 与 [故意无效示例](../../../../azure-fabric/infra-terraform/bootstrap/bootstrap-profile.example.json)：新资源命名、独立 Bootstrap 初始 State、人工保管/费用/权限门槛。
+- [Bootstrap Profile 测试](../../../../azure-fabric/infra-terraform/tests/test_fabric_bootstrap_profile.py)：正常、非法、重复、跨租户、费用 HOLD 与 Secret 阻断；由 [现有 Fabric 离线 CI](../../../../.github/workflows/fabric-environment-preflight.yml) 运行。Task 1.1 的静态合同不等于 Task 1.2 身份/OIDC、Task 2 Terraform 或已部署。
