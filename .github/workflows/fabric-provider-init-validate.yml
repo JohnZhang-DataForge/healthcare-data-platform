@@ -1,0 +1,71 @@
+name: Fabric Provider Init and Validate (No Backend)
+
+# Source-only provider/schema execution on GitHub-hosted runners.
+# No Azure/Fabric login, OIDC permission, remote backend or Terraform plan/apply.
+# This deliberately expands previous fmt-only PR CI under 2026-10-20 approval.
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/infra-terraform/bootstrap/**'
+      - 'azure-fabric/infra-terraform/new-environments/**'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_provider_validation_workflow.py'
+      - '.github/workflows/fabric-provider-init-validate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fabric-provider-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provider-init-validate:
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    name: "provider validation / ${{ matrix.name }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: bootstrap-identity, root: azure-fabric/infra-terraform/bootstrap/identity}
+          - {name: bootstrap-storage, root: azure-fabric/infra-terraform/bootstrap/storage}
+          - {name: bootstrap-capacity, root: azure-fabric/infra-terraform/bootstrap/capacity}
+          - {name: new-workspace, root: azure-fabric/infra-terraform/new-environments/workspace}
+          - {name: new-onelake, root: azure-fabric/infra-terraform/new-environments/onelake}
+          - {name: new-connection, root: azure-fabric/infra-terraform/new-environments/connection}
+    env:
+      TF_INPUT: "0"
+      TF_IN_AUTOMATION: "true"
+      CHECK_ROOT: ${{ matrix.root }}
+    steps:
+      - name: Checkout exact reviewed source without token persistence
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup pinned Terraform binary
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+          terraform_wrapper: false
+      - name: Provider init without backend or cloud credentials
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "#### FABRIC_PROVIDER_INIT_OUTPUT_BEGIN ####"
+          printf 'SOURCE_SHA=%s ROOT=%s\n' "$GITHUB_SHA" "$CHECK_ROOT"
+          terraform -chdir="$CHECK_ROOT" init -backend=false -input=false -no-color
+          echo "BACKEND_INITIALIZED=NO"
+          echo "CLOUD_LOGIN=NO"
+          echo "PROVIDER_INSTALL=PASS"
+          echo "#### FABRIC_PROVIDER_INIT_OUTPUT_END ####"
+      - name: Validate HCL against installed providers without cloud calls
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "#### FABRIC_PROVIDER_VALIDATE_OUTPUT_BEGIN ####"
+          terraform -chdir="$CHECK_ROOT" validate -no-color
+          echo "PROVIDER_SCHEMA_VALIDATE=PASS"
+          echo "TERRAFORM_PLAN_APPLY=NO"
+          echo "#### FABRIC_PROVIDER_VALIDATE_OUTPUT_END ####"
