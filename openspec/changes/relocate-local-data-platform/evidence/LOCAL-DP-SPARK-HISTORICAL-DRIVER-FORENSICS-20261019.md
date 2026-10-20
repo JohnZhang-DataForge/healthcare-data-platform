@@ -15,19 +15,27 @@
 | `task003-encounter-raw-20261009t005128z-1681690` | `Succeeded` | `publish_canonical_entity.py` | `360f587e60af0875a70499fbff2e028fa73f1650c0fcd3e131bf59233f223e9a` MATCH | PASS |
 | `visit-proc-write-72858de1ee39bd1eeb3e` | `Succeeded` | `run_visit_processed_writer.py` | `8d2c855c364b2cec366f92236145109e2eb11a6c44c924c14bb192a51910f8a5` MATCH | PASS |
 
-每个 Application 均为 `COMPLETED`，`mainApplicationFile` 精确匹配 `local:///opt/spark/app/<basename>`。探针对 Driver mount 的判断是 **SparkApplication spec 声明**，本轮还未对历史 Driver Pod 的实际 `spec.volumes` 和 `container.volumeMounts` 建立独立匹配证据，故不能把声明升格为已执行路径。固定源码哈希出自已核对 [Run #39347241695](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39347241695) 与固定 Healthcare Git Commit `72c1c40c7faecb3c816a7ccb000c7b0595f8d897` 的比对，不代表新的 Spark Image 构建。
+每个 Application 均为 `COMPLETED`，`mainApplicationFile` 精确匹配 `local:///opt/spark/app/<basename>`。上述初轮探针对 Driver mount 的判断仅是 **SparkApplication spec 声明**；以下后续 Run #39354098106 已单独核对历史 Driver Pod 实际 `spec.volumes` 和 `container.volumeMounts`，不把初轮历史报告改写为当时已验。固定源码哈希出自已核对 [Run #39347241695](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39347241695) 与固定 Healthcare Git Commit `72c1c40c7faecb3c816a7ccb000c7b0595f8d897` 的比对，不代表新的 Spark Image 构建。
 
-## 证据等级 / 未通过范围
+## 后续新增：实际 Driver PodSpec 独立取证 PASS（美东 2026-10-19）
 
-**已证明**：三个历史 Driver 对应的 SparkApplication 声明在真实集群存在并标记为 `COMPLETED`；当前历史 Driver Pod 仍有 `Succeeded` 资源记录；ConfigMap 数据哈希与先前 Git 固定版本吻合；Application 的 main 脚本路径和 Driver 挂载声明符合预期。实际的 GET-only Probe 与 11 个离线测试通过。
+- **正式 Self-Runner 来源**：[PR #147](https://github.com/JohnZhang-DataForge/Self-Runner/pull/147) 已合并 Main `4c83fd269b147cb5459fd4f700b15090fb7ed35a`，新增 `src/ci/local_dp_spark_driver_podspec.py`、`tests/ci/test_local_dp_spark_driver_podspec.py`、`scripts/ci/tasks/task990/step06.sh` 和操作证据说明。正式 PR 仅包含与测试 HEAD 完全相同的三个代码 Git Blob；不包含 `requests/**`。
+- **实验真实执行**：[Generic Task Executor Run #39354098106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39354098106) / 实验 commit `babad9ce1f99d52f179a73a7726dd8041818e98c`，固定 `validate` + Self-Runner `dw-runner-set`，15/15 专项正负测试 + 4/4 SA tokenFile 安全测试（**19/19 PASS**），`PODSPEC_GATE=PASS`、`FINAL_STATUS=PASS`。实验 Draft [PR #146](https://github.com/JohnZhang-DataForge/Self-Runner/pull/146) 已关闭且**未合并**，一次性 Request 无法因 Main Push 再次触发。
+- **真实只读行为**：每个固定历史 Application、ConfigMap 和与 `status.driverInfo.podName` 绑定的 `<app>-driver` Pod 各一次 `kubectl get -o json`，只读检查 `dw-spark`。严格限制 Pod 命名、目标 Application、驱动容器身份；无 Pod exec/logs、无 Secrets、无 Spark Submit、Job、PG/S3、业务 Writer 或 GHCR 发布；不导出原始 PodSpec、Container args/env、ConfigMap 原始内容。
+- **结果范围**：三个历史 Driver Pod 均为 `Succeeded`；3/3 **实际 Pod** 的 ConfigMap 卷与驱动容器 `/opt/spark/app` 目录挂载（或安全支持的同文件 `subPath`）一致；3/3 Pod 容器镜像引用与 SparkApplication 指定的镜像引用相同；3/3 容器状态含不可变运行镜像身份 `sha256:8ca5526e00dbbe4b360245ced4ac2da6f60d195e05d9e088b9eb1426259d93a6`；3/3 Pod 启动参数中可见与 `mainApplicationFile` 对应的预期主程序路径。
+- **重要区别**：`IMAGE_PIN_GATE=NOT_PINNED`：当时声明使用镜像 Tag，并非 `@sha256` 不可变引用；运行时镜像 Digest 是独立的可追溯事实，不能倒推声明曾被 Digest 锁定。启动参数和挂载只证明 PodSpec 元数据，不等于历史 Driver 内 Python 进程实际导入；`HISTORICAL_DRIVER_MODULE_FILE=NOT_VERIFIED`，绝不宣称 Import Runtime PASS。
 
-**尚未证明**：
-- 这些已退出的 Python 进程当时实际 `module.__file__`；不能在退出后靠配置推断 Import 已发生。标记 `HISTORICAL_DRIVER_MODULE_FILE=NOT_VERIFIED`，不得声称历史 Driver Runtime Import PASS。
-- 历史 PodSpec 的真实 ConfigMap volumeMount 及当时镜像 digest 绑定、Container 启动参数（尚未独立 GET 比对）；全部 Spark 模块、图片打包、后续新业务运行兼容与 E2E。
-- Airflow 全集 DAG 唯一加载/实际 E2E、§4.2–4.7 完整闭包及 §4.1/4.8 动态消费者排除。
+## 更新后的证据等级 / 未通过范围
 
-## 下一小步与清理冻结
+**已经证实**：三个历史 SparkApplication `COMPLETED`、各 Driver Pod `Succeeded`；三份 ConfigMap 源码 SHA256 与冻结 Git Commit `72c1c40c7faecb3c816a7ccb000c7b0595f8d897` 字节比对一致；`mainApplicationFile` 来源与对应 ConfigMap、**实际 PodSpec** 挂载、启动参数均一致；三个观察到的运行镜像 Digest 相同。上述属于 **历史对象的声明/Pod 元数据核验 PASS**，并不是实时运行或业务 E2E。
 
-1. **首先选纯只读**：基于历史 Driver Pod 仍存在这一新证据，下一独立 Gate 可定向 GET 对应三 Pod 的 **实际** Volume/VolumeMount、容器启动参数与 Image ID（仅安全字段、脱敏报告），与 SparkApplication/ConfigMap/source 的现有来源链交叉核对；仍不可宣称模块 `__file__`。先检查并行工作及源码，保持固定白名单和无原始 PodSpec 导出。
-2. **Spark smoke 不是默认动作**：如果只读证据仍不能达到需要的 Runtime 证明，则先设计并审查 **独立非业务、无 Secret/PG/S3、无业务 Volume mount、禁止 Writer、固定 digest、隔离 namespace/ServiceAccount/资源上限** 的 Spark smoke，另行明确创建 Job/Pod 的授权；绝不为取证直接重跑历史 Batch。
-3. **状态保持**：OpenSpec **4.4 PARTIAL**、4.1/4.8 仍 OPEN、**4.9/4.10 HOLD、历史源码删除 0、获批准删除 0**。新 Gate 的 metadata PASS 只是 §4.4 的一部分，不释放清理条件。
+**仍未证明**：
+- 历史 Python 解释器真正的 `module.__file__`，因为 Driver 已结束；PodSpec、ConfigMap、哈希与镜像均不能事后重新构建 Interpreter 的在内存导入状态。
+- 原镜像声明的不可变 Digest Pin（明确 `NOT_PINNED`）、所有 Spark 模块完整调用链、其它历史消费者、全部 Airflow DAG 的实际业务 E2E、4.2–4.7 全部 Runtime/E2E 兼容以及 4.1/4.8 动态消费者完全排除。
+- 后续以新代码、新镜像、新 Batch 执行的业务兼容性；老 Driver 的 Pod 元数据不能代替未来新 Driver 的实时导入验证。
+
+## 下一安全动作及历史源码冻结
+
+当前不需要为了完善旧 Driver 元数据再部署新的 SparkApplication，也不能通过重跑历史 Driver 获取已丢失的解释器运行态。下一步先在已有静态+Runtime 兼容证据上审查 **4.4 是否仍有其它可只读闭合项**（Airflow DAG 唯一加载与其余 Spark manifests 消费者），并开展 4.1/4.8 的动态依赖/HOLD 分类。若确有新的 Driver `module.__file__` 实时验证需求，必须先另行审批独立的无业务 Secret、无 PG/S3、无 Writer、无业务 Volume mount 的隔离 smoke 设计；不得偷换为旧 Batch 重放。
+
+**OpenSpec 4.4 继续 PARTIAL；4.1/4.8 OPEN；4.9/4.10 HOLD；本次及累计已批准历史文件删除 = 0。**
