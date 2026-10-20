@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 from fabric_deployment_target import build, COMPONENTS
@@ -25,10 +26,31 @@ def backend_arguments(deployment: dict, component: str, backend_client_id: str) 
     expected = f"fabric/{deployment['environment']}/{component}.tfstate"
     if key != expected or key.startswith("dev/"):
         raise InvalidEnvironment("unsafe or mismatched backend key")
-    if backend["storage_account_name"] != "johnzhang" or backend["container_name"] != "tfstate":
-        raise InvalidEnvironment("backend storage target differs from protected baseline")
+    if backend["container_name"] != "tfstate":
+        raise InvalidEnvironment("backend container must remain tfstate")
+    account = backend["storage_account_name"]
+    mode = backend.get("bootstrap_mode")
+    if mode == "reuse-existing":
+        if account != "johnzhang" or backend.get("storage_account_arm_id") is not None:
+            raise InvalidEnvironment("reuse mode cannot change legacy account")
+    elif mode == "fresh-bootstrap":
+        if (deployment.get("bootstrap_mode") != mode
+                or not isinstance(account, str)
+                or not re.fullmatch(r"hdp[a-z0-9]{0,21}", account)
+                or not isinstance(backend.get("storage_account_arm_id"), str)):
+            raise InvalidEnvironment("fresh backend is not Bootstrap-derived")
+        source = backend["storage_account_arm_id"]
+        expected_tail = (
+            f"/resourceGroups/rg-hdp-{deployment['environment']}"
+            f"/providers/Microsoft.Storage/storageAccounts/{account}"
+        )
+        if (not re.fullmatch(r"/subscriptions/[0-9a-f-]{36}", source[:-len(expected_tail)])
+                or not source.endswith(expected_tail)):
+            raise InvalidEnvironment("fresh backend ARM origin mismatch")
+    else:
+        raise InvalidEnvironment("unsupported backend origin")
     return {
-        "storage_account_name": "johnzhang",
+        "storage_account_name": account,
         "container_name": "tfstate",
         "key": expected,
         "tenant_id": backend["tenant_id"],

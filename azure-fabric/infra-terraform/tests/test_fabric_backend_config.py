@@ -86,6 +86,29 @@ class BackendConfigTests(unittest.TestCase):
         with self.assertRaises(InvalidEnvironment):
             render_backend_config(args)
 
+    def test_fresh_backend_arguments_are_derived_not_legacy_fallback(self):
+        from fabric_bootstrap_handoff import handoff
+        from test_fabric_bootstrap_handoff import fixtures
+        h = handoff(*fixtures(cross=True, fresh=True))
+        fresh_backend = h["proposed_bootstrap_backend"]
+        deployment = {
+            "environment": h["environment"], "bootstrap_mode": "fresh-bootstrap",
+            "backend": fresh_backend,
+        }
+        args = backend_arguments(deployment, "workspace", fresh_backend["tenant_id"])
+        self.assertEqual(args["storage_account_name"], "hdplabbstorage")
+        self.assertIn("fabric/lab-b/workspace.tfstate", render_backend_config(args))
+        mutated = json.loads(json.dumps(deployment))
+        mutated["backend"]["storage_account_name"] = "johnzhang"
+        with self.assertRaises(InvalidEnvironment):
+            backend_arguments(mutated, "workspace", fresh_backend["tenant_id"])
+        mutated = json.loads(json.dumps(deployment))
+        mutated["backend"]["storage_account_arm_id"] = mutated["backend"]["storage_account_arm_id"].replace(
+            "hdplabbstorage", "johnzhang"
+        )
+        with self.assertRaises(InvalidEnvironment):
+            backend_arguments(mutated, "workspace", fresh_backend["tenant_id"])
+
     def test_reject_unknown_backend_field(self):
         args = backend_arguments(self.deployment(approved()), "workspace", TENANT_A)
         args["access_key"] = "forbidden"

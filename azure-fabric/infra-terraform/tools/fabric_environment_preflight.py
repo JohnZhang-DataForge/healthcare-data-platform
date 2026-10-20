@@ -62,13 +62,34 @@ def _uuid(value: object, location: str) -> None:
         raise InvalidEnvironment(f"{location} must not be a nil UUID")
 
 
-def validate(config: object) -> dict[str, object]:
+def validate(config: object, *, bootstrap_profile: object = None) -> dict[str, object]:
     """Return a safe summary, or raise InvalidEnvironment without any side effects."""
-    data = _fields(
-        config, "config", {"schema_version", "environment", "backend", "landing", "fabric"}
-    )
-    if type(data["schema_version"]) is not int or data["schema_version"] != 1:
-        raise InvalidEnvironment("schema_version must be integer 1")
+    # v1 is deliberately pinned to legacy johnzhang. Fresh Storage is accepted
+    # ONLY from the full Bootstrap Profile via the explicit v2 internal interface.
+    if not isinstance(config, dict) or type(config.get("schema_version")) is not int:
+        raise InvalidEnvironment("schema_version must be an integer")
+    version = config["schema_version"]
+    if version not in (1, 2):
+        raise InvalidEnvironment("unsupported schema_version")
+    if version == 1:
+        if bootstrap_profile is not None:
+            raise InvalidEnvironment("v1 cannot accept Bootstrap provenance")
+        mode, bootstrap = "reuse-existing", None
+        expected_fields = {"schema_version", "environment", "backend", "landing", "fabric"}
+    else:
+        if bootstrap_profile is None:
+            raise InvalidEnvironment("fresh schema requires full Bootstrap Profile")
+        from fabric_bootstrap_profile import validate as validate_bootstrap
+        bootstrap = validate_bootstrap(bootstrap_profile)
+        if (bootstrap["bootstrap_mode"] != "fresh-bootstrap"
+                or bootstrap["capacity_mode"] != "reuse-existing"):
+            raise InvalidEnvironment("fresh handoff cannot imply Capacity creation")
+        mode = "fresh-bootstrap"
+        expected_fields = {"schema_version", "bootstrap_mode", "environment",
+                           "backend", "landing", "fabric"}
+    data = _fields(config, "config", expected_fields)
+    if version == 2 and data["bootstrap_mode"] != mode:
+        raise InvalidEnvironment("fresh mode must explicitly match Bootstrap Profile")
 
     environment = data["environment"]
     if (
@@ -86,9 +107,17 @@ def validate(config: object) -> dict[str, object]:
     landing = _fields(data["landing"], "landing", {"storage_account", "container"})
     fabric = _fields(data["fabric"], "fabric", {"tenant_id", "capacity_id", "workspace_name"})
 
-    _literal(backend, "storage_account", "johnzhang", "backend")
+    account = "johnzhang" if bootstrap is None else bootstrap["storage_account"]
+    _literal(backend, "storage_account", account, "backend")
     _literal(backend, "container", "tfstate", "backend")
-    _literal(landing, "storage_account", "johnzhang", "landing")
+    _literal(landing, "storage_account", account, "landing")
+    if bootstrap is not None:
+        if (data["environment"] != bootstrap["environment"]
+                or backend["tenant_id"] != bootstrap["backend_tenant_id"]
+                or fabric["tenant_id"] != bootstrap["fabric_tenant_id"]
+                or fabric["capacity_id"] != bootstrap["capacity_id"]
+                or backend["state_prefix"] != f"fabric/{bootstrap['environment']}"):
+            raise InvalidEnvironment("fresh environment must bind exact Bootstrap Profile")
     _literal(landing, "container", "landing", "landing")
     _uuid(backend["tenant_id"], "backend.tenant_id")
     _uuid(fabric["tenant_id"], "fabric.tenant_id")
@@ -109,8 +138,17 @@ def validate(config: object) -> dict[str, object]:
         "environment": environment,
         "workspace_name": workspace,
         "identity_topology": identity_topology,
-        "backend_location": "johnzhang/tfstate",
-        "landing_location": "johnzhang/landing",
+        "backend_location": f"{account}/tfstate",
+        "landing_location": f"{account}/landing",
+        "storage_account_name": account,
+        "bootstrap_mode": mode,
+        "bootstrap_profile_bounded": bootstrap is not None,
+        "storage_account_arm_id": (
+            f"/subscriptions/{bootstrap['storage_subscription_id']}"
+            f"/resourceGroups/{bootstrap['storage_resource_group']}"
+            f"/providers/Microsoft.Storage/storageAccounts/{account}"
+            if bootstrap is not None else None
+        ),
         "state_keys": {
             component: f"{prefix}/{component}.tfstate" for component in STATE_COMPONENTS
         },

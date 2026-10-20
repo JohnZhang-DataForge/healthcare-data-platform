@@ -110,9 +110,11 @@ class HandoffTests(unittest.TestCase):
     def test_fresh_cannot_reuse_legacy_connection_backend_builder(self):
         f = fixtures(cross=True, fresh=True)
         result = handoff(*f)
-        self.assertEqual(result["status"], "STATIC_HANDOFF_HOLD_FRESH_STORAGE_ROOT_GAP")
+        self.assertEqual(result["status"], "STATIC_HANDOFF_HOLD_FRESH_CONNECTION_ROOT_GAP")
         self.assertIsNone(result["proposed_legacy_compatible_environment"])
-        self.assertEqual(result["blocked_roots"], ["workspace", "onelake", "connection"])
+        self.assertEqual(result["blocked_roots"], ["connection"])
+        self.assertEqual(result["proposed_bootstrap_environment"]["schema_version"], 2)
+        self.assertEqual(result["proposed_bootstrap_backend"]["storage_account_name"], "hdplabbstorage")
         self.assertEqual(result["storage_account_name"], "hdplabbstorage")
         self.assertFalse(result["external_inventory_verified"])
 
