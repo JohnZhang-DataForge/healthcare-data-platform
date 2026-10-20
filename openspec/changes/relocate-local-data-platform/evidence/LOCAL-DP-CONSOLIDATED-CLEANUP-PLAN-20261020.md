@@ -23,7 +23,7 @@
 **已识别强制 HOLD/KEEP：**
 - `05g4c1-prepare-processed-manifest-publisher-source.sh`：`05g4c2-prepare-processed-manifest-publication.sh` 与 `05g4c2-publish-processed-manifest.sh` 的 `git diff --quiet` checkpoint guard 明确引用其路径；即使两个 heredoc 产物匹配也不可未经变更、测试就删除。
 - `06c4e-prepare-committed-cdm-visit-materialization.sh`：动态 CDM Contract 生成内容、依赖和回放闭包未证实；原 E/HOLD 继续。
-- `05g2c2c3a-acquire-writer-reservation.sh`、`05g2c2c3c2-launch-visit-processed-writer.sh`、`05g2c2c3d1-observe-visit-processed-writer.sh`、`05g3a-build-processed-dq.sh`、`05g4a-build-processed-manifest.sh`、`05g3b2-prepare-processed-dq-publication.sh`、`05g4c2-prepare-processed-manifest-publication.sh` 等**行为执行/发布/安全相关**的脚本，不得仅依据 2026-10-19 粗分类“generator/history candidate”删除；没有额外实际替代和演练证据则 KEEP/HOLD。
+- `05g2c2c3a-acquire-writer-reservation.sh`、`05g2c2c3c2-launch-visit-processed-writer.sh`、`05g2c2c3d1-observe-visit-processed-writer.sh`、`05g3a-build-processed-dq.sh`、`05g4a-build-processed-manifest.sh`、`05g3b2-publish-processed-dq.sh`、`05g4c2-publish-processed-manifest.sh` 等**行为执行/发布/安全相关**的脚本，不得仅依据 2026-10-19 粗分类“generator/history candidate”删除；没有额外实际替代和演练证据则 KEEP/HOLD。
 - 43 个非候选 Task003 Shell、全部正式业务 DAG/Python/Spark/SQL/Contract、有效 tests、Helm/K8s/Secrets/RBAC、Task004 NEW_ONLY Runner 工作流及生产图像入口不在本轮批量删除范围。
 
 ## 3. 只做一次的批量分析：脚本实现与报告合同
@@ -42,15 +42,15 @@
 
 **B. 删除后的候选版本：**在**一个清理 PR** 中仅删除显式 allowlist 的 C/D 文件及修正 CODE.md/必要检查引用，随后完成：
 - `bash -n`、适用单测/Contract/负向已删源码路径检查、CODE Map/相对文档链接/OpenSpec Gate、Airflow 3.2.2 DagBag Parse、各受影响 Docker Clean Build + 模块 `__file__`/Entrypoint Smoke、Writer Fencing/rollback/Claim/recovery 模拟测试；CI 必须绑定 PR **最终** HEAD。
-- 对候选版本做全新唯一 Batch 的 **真实 E2E**。必须独立证明 Executor Checkout、实际 Airflow GitSync DAG 内容、Spark 使用的代码和镜像确实来自/匹配候选版本，不能拿 Main 上旧 GitSync、旧 GHCR Tag/旧 Image 或仅 PR CI 代替候选 E2E。
-- 如现有单实例 Airflow GitSync **只能跟随 Main**、不能安全地切换至 PR SHA，则不能声称已验证候选 PR。选用隔离测试 Helm/DAG/Namespace/带 digest 的镜像（与当前集群其他工作不冲突）进行候选验证；若不可建立这种隔离，标记 **CANDIDATE_RUNTIME=NOT_VERIFIED/HOLD**，不要为了让测试 PASS 临时切主系统 GitSync，也不以“上线 Main 再看看”冒充预合并安全验证。
+- **本次用户批准改为 Merge-first Runtime**：先对删减分支做静态、契约、镜像、DagBag、来源及恢复链接 CI，全部通过后合并 Main；然后在新 Main 运行全新唯一 Batch 的真实 E2E，验证 Executor Checkout、Airflow GitSync 的实际 HEAD/DAG 文件、Spark 运行源码与镜像的真实来源，绝不以合并前的旧 Main E2E 代表删除后 PASS。
+- 现有 GitSync 只跟随 Main，**无需为验证一次历史安装器删除而新建隔离 Airflow**；在合并 Main 后，必须等 Scheduler/DAG Processor 活动 Git checkout 同步到实际 Merge SHA，核对关键 DAG 文件哈希，随后用新的 Synthea Batch 执行一次完整消费和同 Batch SKIP。无法确认 Main 正在运行删除后代码则保持 `POST_MERGE_E2E=NOT_VERIFIED`、不 Archive。
 - 对不同 NEW_ONLY 随机 Batch 用**合同/维度不变量、计数核对、幂等和 Referential Integrity** 比较；不同随机人群的记录数本不应机械要求相等。禁止复用已提交 Batch 触发非幂等路径或重放历史成功批次。
 - 发生运行错误，只回滚 Git 的候选删除变更（PR revert/restore），记录失败文件和阻断。Git 恢复不等于 PG/S3/K8s/镜像快照；应避免任何非必要的数据库/存储清理。
 
 ## 5. 归并门、快速退出与不做事项
 
 - **文档设计 PR（本轮）**：仅将决策写入现有 `relocate-local-data-platform` 的 Proposal/Design/Tasks 和本 Evidence；运行真实 CI，全部适用检查 PASS 后 Squash Merge；**不删除任何业务文件、不触发 E2E**。
-- **实施 PR（下一步）**：一次 Runner 批量扫描 → 生成冻结决策矩阵 → 同一组件内尽可能一次删除全部高置信度 C/D → 真实 CI 和候选 E2E → **全部**通过后 Squash Merge；如果绝大多数都为 KEEP/HOLD 或仅 3–5 个 C/D，就停止反复寻找删除对象，直接完成文档/Closeout。最多一个主清理 PR + 必要的修复 PR，避免无限小批次。
+- **实施 PR（用户调整后的顺序）**：一次 Runner 批量扫描 → 冻结 KEEP/DELETE/HOLD 决策矩阵 → 在分支删除确定的 C/D → 所有适用 PR CI PASS → **Squash Merge Main** → 验证 Airflow GitSync 已同步 Merge SHA → 全新 Batch 真实 E2E + PostgreSQL/S3 Readback + 同 Batch SKIP → OpenSpec 收尾；失败时立刻停止新 Batch 写入，调查并用 Git revert 删除提交恢复，再次测试。保留明确 HOLD，而不为删除率继续反复折腾。
 - GitHub PR Body 必须有独立两行 `OpenSpec-Change: relocate-local-data-platform`、`OpenSpec-Task: 4.9`；所有 Runner workflow 的真正写动作必须和针对其参数的授权相匹配；Self-Runner 不作为额外备份源。
 - 不修改 NEW_ONLY Person/Visit/Writer 合同和 DDL、不改变正式 DAG ID/现行 GitSync 主路径、不删除 Fencing/PG Recovery、不对商业 Azure/Fabric 资源执行 Apply；不更改 `modernize-legacy-task-code` 的边界，不因删代码自动宣布支持 OLD_ONLY/MIXED。
 - 删除与 E2E 完成后，补齐 Task 4.1/4.7/4.8/4.9/4.10 实际结果和文档状态；若仍有 E/HOLD，提供明确清单、原因和未来 Owner，而不是假称 100% 清理。仅当 OpenSpec Task 5 真实满足时才 Archive。
@@ -65,3 +65,7 @@
 - `CHANGE_ARCHIVE=BLOCKED`
 
 本方案不能倒写为此前 7 批的实施记录；之前 PR/evidence 均保留为事实历史。
+
+## 7. 2026-10-20 用户确认的 Merge-first Runtime 验收调整（覆盖本文件旧次序）
+
+已有源码审计 818 个文件、26 候选、9 个历史安装器拟退役、19/19 正式产物字节一致；删除 PR #332 最新 HEAD 的适用 CI 必须全绿。**正式执行顺序为 PR 静态/镜像/DAG CI → Squash Merge → 同步新 Main 的 GitSync 来源证明 → 全新数据和真实 E2E/PG/S3/幂等验证 → 最终 OpenSpec 关闭。** 以当前本地合成数据开发环境和无独立 PR 测试集群为前提。合并前的不变性和完整产物校验是允许 Merge 的风险控制；合并后的 E2E 才是运行真实性证据。若 E2E 失败或身份来源不匹配，不标 PASS、不 Archive，停止进一步部署/回放，按固定前一 Main SHA revert 并保留诊断；Git 恢复并不回滚已经提交的数据。此前要求“PR candidate E2E 先于 Merge”的文本由本节及更新后的第 4 节取代。
