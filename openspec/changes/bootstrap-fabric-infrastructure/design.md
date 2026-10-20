@@ -144,3 +144,13 @@ Staged roll-out:
 An alternative is to preserve Self-Runner and explicitly migrate **every** pre-existing default-subject cloud consumer to a custom-subject scheme before switching repo OIDC settings; this has broader regression/cutover risk and is **not** the preferred near-term path. A separately approved manual local Seed/Plan-only execution is also possible but must not be represented as workflow identity isolation or automatic end-to-end delivery.
 
 **Approval and billing boundary:** This OpenSpec change authorizes only the design revision and offline validations. No new repository, OIDC customization, Entra application, Azure resource, Fabric F SKU, GitHub plan upgrade, Terraform State/Plan/Apply or pre-existing IAM mutation is authorized by the discovery alone.
+
+## Final solo-operator choice — Self-Runner Main-ref trust (supersedes earlier executor alternatives)
+
+The user explicitly selects **existing Private Self-Runner**, no Environment check or GitHub Environment reviewer, no new Fabric-Executor, and no Fabric executor in Healthcare Public. This replaces the previous Free/private dedicated-executor candidate. The only approved changes here are source/contracts and ordinary CI validation; cloud-environment creation, protected account credentials, RBAC, State/Apply and paid Capacity remain unperformed.
+
+Two distinct newly created Entra Apps (Tenant A Backend Operator, Tenant B Fabric Deployer) can each have a separate FIC entry bound to the **same** default immutable Self-Runner Main-ref `sub` from a real token. Default GitHub JWTs on a repository/branch are not bound to a workflow or to the intended role. This is an explicitly accepted one-person operational tradeoff, **not** cryptographic role separation: any allowed Main job with `id-token:write` can present the same assertion. Enforce truly least-privileged per-app permission assignment, no reuse of legacy privileged `AZURE_CLIENT_ID`, no unreviewed PR checkout in OIDC jobs, and no self-hosted token job with K8s secrets.
+
+Implement plan-only identity bindings in the new Identity v3 Bootstrap contract; Apply is not activated by creating additional duplicate subject credentials. Cloud Plan requires a fresh isolated State and inspected target; apply requires an explicit, reviewed exact Plan digest and no unapproved billed/destructive operations. Do not interpret `workflow_dispatch` itself as independent reviewer approval. The user intentionally waived GitHub Environment approval for this personal lab.
+
+Evidence: <https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422174619>; Self-Runner PR #162 and Healthcare PR #320. Previous dedicated executor/Public Healthcare suggestions remain historical, not executable requirements.
