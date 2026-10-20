@@ -55,7 +55,7 @@ Fresh Mode 的首次 Terraform Backend **不能放在它自己尚未创建的 St
 - 将 `capacity_creation_approved=false` 作为默认拒绝，不把单一 Bool 当作账单批准证明。受保护的 Environment 需与不可篡改的 PR SHA、批准者与批准时间/成本证据对应；Plan 出现未批准 Capacity 创建/替换/删除即 HOLD。
 - `prevent_destroy`、资源锁或不允许自动 Destroy 可作为纵深防护，但不能替代真实成本监控；**不实施 Suspend/Resume、空闲探测、自动缩容、定时停止、按任务删除 Capacity**。
 
-## Non-secret handoff contract (planned, not yet implemented)
+## Non-secret handoff contract (offline implementation; no live approval)
 
 目标输出仅包含已审查过的 `bootstrap_mode`、`backend_tenant_id`、`fabric_tenant_id`、互异 Client IDs、`storage_account`、`landing_container`、`backend_container`、`backend_state_prefix`、`capacity_id`、`capacity_origin`、`resource_ownership_status` 与执行证据（Source SHA/Run）。新环境 Workspace/Lakehouse/Connection 的现有离线 Root 不依赖尚未创建的 Outputs；后续在跨 Change 合同 PR 接入。
 
@@ -74,3 +74,7 @@ Fresh Mode 的首次 Terraform Backend **不能放在它自己尚未创建的 St
 - 在本 Change 中直接替换旧 Self-Runner `azure-infra.yaml` 或现有七 Root。
 - 新 Tenant/Subscription 开通、Trial 获取、自动 Fabric Tenant 管理员提权、无授权 Cloud/State 操作。
 - Capacity 动态启停或无审批付费创建，Notebook/Pipeline 的 fabric-cicd 正式交付和 OMOP/FHIR/HL7 数据 E2E。
+
+## Controlled Self-Runner intent (offline-only implementation, Task 3.2)
+
+Self-Runner now contains a **separate unprivileged manual intake** `fabric-controlled-entry.yml` (PR #150), independent of old `azure-infra.yaml`. Main-only workflow_dispatch validates target environment, root and exact Healthcare SHA syntax for `bootstrap`/`plan`/`apply`. The Apply intent also requires Plan digest syntax. It uses GitHub-hosted `ubuntu-latest`, never `dw-runner-set`, never OIDC tokens, Terraform, Azure/Fabric, cross-repo checkout or State. Successful input validation returns `HOLD`, **never execution approval**. Each future real phase requires its own explicitly verified protected Environment, SHA/source and saved Plan identity binding, isolated Tenant A/B roles and operator authorization; paid Capacity requires independent billing permission. No live executor is built or authorized yet. The authoritative Self-Runner runbook is <https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/docs/fabric-controlled-entry.md>.

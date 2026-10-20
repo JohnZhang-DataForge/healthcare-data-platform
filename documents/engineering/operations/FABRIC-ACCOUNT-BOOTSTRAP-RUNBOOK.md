@@ -54,7 +54,7 @@ implementation_status: offline-roots-and-validation-only
 4. 由 Bootstrap Terraform 为受保护的**确切 GitHub Repo/Ref 或 GitHub Environment** 配置对应的 OIDC federated credential，必要管理员同意保留人工步骤。GitHub OIDC token 的 issuer/subject/audience 必须和 Tenant B 的信任记录精确匹配；现有 Tenant A 的 OIDC 不会自动在 B 生效。
 5. Fabric **部署身份**优先使用 GitHub OIDC；若未来另行批准使用部署 Client Secret，必须将其隔离存入受保护的 GitHub Environment Secrets 并定义轮换周期。**Blob Reader 凭据不交给 GitHub Runner**：当前 Connection Root 只接受指向**现存 Fabric Key Vault Connection**的 Secret Reference（ID、名称、可选版本），不是 Secret 值。绝不放入 .tfvars、仓库 JSON、日志或 PR。
 
-**未实现部分**：目前没有 Bootstrap Terraform 和受控的新环境 Deploy Workflow。Self-Runner 旧 `azure-infra.yaml` 将 `ARM_*` 与 `FABRIC_*` 指向同一套 GitHub 变量，只支持 `dev`，本方案**不修改也不触发**该 Workflow；后续 Change 必须把认证流真正分离。此 Runbook 不授予直接运行旧 Workflow 针对新环境的权限。
+**未实现部分**：Bootstrap Terraform Root 源码已存在但未部署；Self-Runner 仅增加不会接触任何云端的 Fabric 手工意图接收入口（PR #150），尚没有可执行的新环境 Bootstrap/Plan/Apply Deploy Workflow。Self-Runner 旧 `azure-infra.yaml` 将 `ARM_*` 与 `FABRIC_*` 指向同一套 GitHub 变量，只支持 `dev`，本方案**不修改也不触发**该 Workflow；后续 Change 必须把认证流真正分离。此 Runbook 不授予直接运行旧 Workflow 针对新环境的权限。
 
 ### C. Tenant A 的 Backend 和业务 Landing
 
@@ -223,3 +223,10 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 ## Fabric Capacity AzAPI 付费创建门禁（Task 2.4，仅离线）
 
 `bootstrap/capacity/` 已声明 ARM 2023-11-01 的付费新建可选资源，但默认 `reuse-existing` 不创建任何资源。创建开关、收费证明、审批人、SKU/Region/Subscription、来源 Git SHA、受保护 GitHub Environment、管理员名单和 Capacity 所在 Tenant B 的 Resource Group 均需单独审查，**当前全部未授权**。对 A→B 场景 Capacity Tenant B 的订阅不应错误绑定 Tenant A Storage 订阅。 `prevent_destroy` 不能代替真实账单限制；不支持自动暂停/恢复。静态 Terraform 只可能输出 ARM Resource ID，Fabric UUID 需真实读回。禁止未经单独许可的任何 Terraform Init/Plan/Apply 或新建付费资源。
+
+## 6. Task 3.2：Self-Runner 新受控入口（仅意图，不执行，2026-10-20）
+
+- 新独立入口：<https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-controlled-entry.yml>；控制器说明：<https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/docs/fabric-controlled-entry.md>。来源 PR #150，合并 `a951cb5e8589815cc1adb2096252e2c221dd0184`，GitHub-hosted 安全测试 Run `39394922136` 通过。
+- 输入 `bootstrap`、`plan`、`apply` 目前**都是离线意图验证**，不会运行 Terraform 或 Azure/Entra/Fabric、不会调度 `dw-runner-set`，也不会获得 GitHub OIDC token。必要字段包括新环境名、独立 Root、固定 40 字符 Healthcare Commit SHA；`apply` 额外检查 64 字符 Plan Digest 语法，**不验证真实 Plan 或批准人**。
+- GitHub Workflow 必须人工在 Self-Runner 主分支选择 `workflow_dispatch`，但**合并代码没有授权触发**；当前无需调用它。真正使用 Self-Runner 执行任何 `init/plan/apply` 前，须先单独设计并取得用户授权：受保护 GitHub Environment/可信审批者、双租户 OIDC、可信 Source Main SHA、远程 State 空位、私网联通、保存的 Plan/成本授权以及独立最小权限执行 Job。
+- 旧 `azure-infra.yaml` 仍属旧 dev 环境，不得借它运行新 Fabric Bootstrap。
