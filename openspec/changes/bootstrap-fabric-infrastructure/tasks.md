@@ -211,3 +211,12 @@
 - **严格阶段语义**：Plan 是一次独立手动 Run，只生成/审查 Plan，不得执行 Apply、触发 Apply Workflow、或在完成后自动推进；Apply 必须重新手动选择，并作为另一个 Run 验证**原保存的准确二进制 Plan**、摘要、不可变源码 Commit、Tenant、Subscription、Root、State 和费用/破坏性操作边界。Plan 成功不等于 Apply 批准；不能在 Apply 中悄悄重新生成不同的 Plan 并直接执行。
 - **回归覆盖**：Self-Runner PR #163 的 `Fabric Controlled Entry Contract (Offline)` 必须 success，新增断言下拉框恰为 Plan/Apply 且默认 Plan、无 GitHub Environment 绑定、无 `needs:` 自动链和实际 Terraform Apply 命令。这个验证的是**入口 UI/合同**，不是 Terraform 真实执行。
 - **真实状态仍 HOLD**：当前两种入口均只有无云端凭据的离线语法检查；尚未实现受控 Terraform Plan / 保存 Artifact / 二次选择 Apply / Binary Plan 校验 / 真实 Azure/Fabric IAM/State。Task **3.2 checkbox 仍 OPEN**，不因为 UI 改善而标注部署成功。保留 Self-Runner、个人单人运维、不升级 GitHub Plan、不新增 Environment 或仓库；收费 Capacity、新云端资源和历史资源修改仍要独立确认相应安全及成本边界。
+
+
+## Task 3.2 — Tenant A/B Seed 只读库存、FIC 验证与真实执行交接（2026-10-20）
+
+- 最新开工 Main 核对：Healthcare `61d393b31bd68b92af98908e2934762131842242`，Self-Runner `fb1be4292e295fd0824b1af255171a846f541fb2`；两个仓库开始时均无开放 PR。Self-Runner #163 已将 Plan/Apply 手动选择解耦、默认 Plan、绝不自动 Apply。
+- 新增 `tools/fabric_seed_identity_inventory.py`：精确绑定本 Change Identity v3 和 Bootstrap Profile，支持 `before|after` × `backend|fabric` 独立 Azure CLI read-only inventory；三新 App、SPN、两条 Main-ref FIC 的 name/client ID、issuer/audience/subject 严格回读，Blob Reader 禁止任何 GitHub FIC；原有同名应用、租户登录错误、ID/FIC 漂移、Graph 无权限均 HOLD。不包含 Azure Graph 写入、Terraform、GitHub Variable 修改、Token 或 State。
+- 新增 `tests/test_fabric_seed_identity_inventory.py` 的 mock Tenant A/B/同名冲突/恶意 FIC/跨租户/只读命令白名单回归，接入 `fabric-environment-preflight.yml` GitHub-hosted 无凭据 CI；文档 `bootstrap/SEED-LIVE-OPERATIONS.md` 固定 Terraform 唯一身份所有权、初始独立 Local State 保管、两个 Tenant 各自认证、五个 Repository Variables 设置和真实手动 Entra Probe 流程。
+- **边界与真实性**：本次仅完成可执行只读工具源码和无云端凭据回归；Entra 新 Apps/FIC **未创建**，Azure 只读库存尚未实际执行，Self-Runner 五个 Variables **未设置**，真实 Microsoft Entra Exchange / Trial / State / Terraform Plan **未执行**；没有任何 Apply、旧 Azure 身份或 State 变更。GitHub Connector 不提供 Entra/App 管理、Actions Variable 写入和 Workflow Dispatch，因此这些操作保留在授权 Seed Operator/CLI 运行步骤，之后需记录真实 Run 和 Cloud 证据。
+- **Task 3.2 继续 OPEN**。本批精确 PR HEAD、无云端 CI Run 和最终 Merge 证据待 PR 校验后填写；不把静态测试冒充 Tenant A/B 实际部署。
