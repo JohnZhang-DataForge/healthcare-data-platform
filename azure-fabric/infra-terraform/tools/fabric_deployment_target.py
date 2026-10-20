@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from uuid import UUID
 
@@ -48,12 +49,34 @@ def target(profile: dict, backend_client_id: str, fabric_client_id: str,
     expected = {item: f"{prefix}{item}.tfstate" for item in COMPONENTS}
     if keys != expected:
         raise InvalidEnvironment("state keys are not isolated")
+    mode = profile.get("bootstrap_mode", "reuse-existing")
+    account = profile.get("storage_account_name", "johnzhang")
+    arm_id = profile.get("storage_account_arm_id")
+    if mode == "reuse-existing":
+        if account != "johnzhang" or arm_id is not None:
+            raise InvalidEnvironment("legacy account binding is immutable")
+    elif mode == "fresh-bootstrap":
+        if (profile.get("bootstrap_profile_bounded") is not True
+                or not isinstance(account, str)
+                or not re.fullmatch(r"hdp[a-z0-9]{0,21}", account)
+                or not isinstance(arm_id, str)
+                or not re.fullmatch(
+                    r"/subscriptions/[0-9a-f-]{36}/resourceGroups/"
+                    + re.escape("rg-hdp-" + profile["environment"])
+                    + r"/providers/Microsoft[.]Storage/storageAccounts/"
+                    + re.escape(account), arm_id)):
+            raise InvalidEnvironment("fresh backend must originate in Bootstrap Profile")
+    else:
+        raise InvalidEnvironment("unsupported storage origin")
     return {
         "status": "OFFLINE_TARGET_PASS",
         "environment": profile["environment"],
         "identity_topology": ("same-tenant" if btenant == ftenant else "cross-tenant"),
+        "bootstrap_mode": mode,
         "backend": {
-            "storage_account_name": "johnzhang",
+            "bootstrap_mode": mode,
+            "storage_account_name": account,
+            "storage_account_arm_id": arm_id,
             "container_name": "tfstate",
             "use_oidc": "true",
             "use_azuread_auth": "true",

@@ -118,6 +118,31 @@ class FabricEnvironmentPreflightTests(unittest.TestCase):
                 with self.assertRaises(InvalidEnvironment):
                     validate(candidate)
 
+    def test_fresh_requires_explicit_bound_profile_and_never_legacy_fallback(self):
+        from fabric_bootstrap_handoff import handoff
+        from test_fabric_bootstrap_handoff import fixtures
+        candidate = handoff(*fixtures(cross=True, fresh=True))["proposed_bootstrap_environment"]
+        self.assertEqual(candidate["schema_version"], 2)
+        with self.assertRaises(InvalidEnvironment):
+            validate(candidate)
+        p = fixtures(cross=True, fresh=True)[0]
+        out = validate(candidate, bootstrap_profile=p)
+        self.assertEqual(out["backend_location"], "hdplabbstorage/tfstate")
+        self.assertTrue(out["bootstrap_profile_bounded"])
+        for section, key, value in (
+            ("backend", "storage_account", "johnzhang"),
+            ("landing", "storage_account", "johnzhang"),
+            ("fabric", "tenant_id", p["tenants"]["backend_tenant_id"]),
+        ):
+            changed = deepcopy(candidate)
+            changed[section][key] = value
+            with self.subTest(section=section), self.assertRaises((InvalidEnvironment, ValueError)):
+                validate(changed, bootstrap_profile=p)
+        changed = deepcopy(candidate)
+        changed["bootstrap_mode"] = "reuse-existing"
+        with self.assertRaises(InvalidEnvironment):
+            validate(changed, bootstrap_profile=p)
+
     def test_missing_fields_fail(self):
         candidate = deepcopy(good())
         del candidate["fabric"]["capacity_id"]

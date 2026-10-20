@@ -136,6 +136,8 @@ def handoff(profile: object, resolved_clients: object, storage_target: object,
         "identity_client_ids": clients,
         "proposed_legacy_compatible_environment": None,
         "proposed_legacy_compatible_backend": None,
+        "proposed_bootstrap_environment": None,
+        "proposed_bootstrap_backend": None,
         "blocked_roots": [],
         "verified": False,
         "external_inventory_verified": False,
@@ -149,13 +151,11 @@ def handoff(profile: object, resolved_clients: object, storage_target: object,
         # Azure ARM ID cannot substitute for Fabric workspace Capacity UUID.
         result["status"] = "STATIC_HANDOFF_HOLD_PAID_CAPACITY_UUID"
         result["blocked_roots"] = ["workspace", "onelake", "connection"]
-    elif p["bootstrap_mode"] == "fresh-bootstrap":
-        # Old preflight/backend builder/Connection Root pin account johnzhang.
-        result["status"] = "STATIC_HANDOFF_HOLD_FRESH_STORAGE_ROOT_GAP"
-        result["blocked_roots"] = ["workspace", "onelake", "connection"]
     else:
+        is_fresh = p["bootstrap_mode"] == "fresh-bootstrap"
         candidate = {
-            "schema_version": 1,
+            "schema_version": 2 if is_fresh else 1,
+            **({"bootstrap_mode": "fresh-bootstrap"} if is_fresh else {}),
             "environment": p["environment"],
             "backend": {"storage_account": account, "container": "tfstate",
                         "tenant_id": p["backend_tenant_id"],
@@ -165,7 +165,9 @@ def handoff(profile: object, resolved_clients: object, storage_target: object,
                        "capacity_id": p["capacity_id"],
                        "workspace_name": f"HDP-{p['environment']}"},
         }
-        preview = validate_legacy_environment(candidate)
+        preview = validate_legacy_environment(
+            candidate, bootstrap_profile=profile if is_fresh else None
+        )
         bindings = target({
             **preview, "backend_tenant_id": p["backend_tenant_id"],
             "fabric_tenant_id": p["fabric_tenant_id"],
@@ -173,8 +175,15 @@ def handoff(profile: object, resolved_clients: object, storage_target: object,
             p["backend_tenant_id"], p["fabric_tenant_id"])
         if bindings["backend"]["state_keys"] != p["state_keys"]:
             raise InvalidBootstrapProfile("State key handoff disagrees with approved profile")
-        result["proposed_legacy_compatible_environment"] = candidate
-        result["proposed_legacy_compatible_backend"] = bindings["backend"]
+        if is_fresh:
+            # Connection Root has not yet accepted fresh account. Keep HOLD.
+            result["status"] = "STATIC_HANDOFF_HOLD_FRESH_CONNECTION_ROOT_GAP"
+            result["blocked_roots"] = ["connection"]
+            result["proposed_bootstrap_environment"] = candidate
+            result["proposed_bootstrap_backend"] = bindings["backend"]
+        else:
+            result["proposed_legacy_compatible_environment"] = candidate
+            result["proposed_legacy_compatible_backend"] = bindings["backend"]
     return result
 
 

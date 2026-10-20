@@ -86,3 +86,10 @@
 - `reuse-existing + reuse-existing` 仅提供现有 Preflight 可接受的**未验证**环境配置预览和 Backend 静态摘要；真实 State/Storage/Capacity 不做查询，绝不返回 approval=true。
 - `fresh-bootstrap` 默认阻断与旧 Root 自动衔接：当前 `fabric_environment_preflight.py` / `fabric_deployment_target.py` / `fabric_backend_config.py` / `new-environments/connection` 仍对 `johnzhang` 写死；下一 PR 必须单独泛化并防止旧 Storage 回退。付费 `create-new` 容量必须独立核验真实 Fabric Capacity UUID，ARM ID 不能转换代替。
 - 单独 Python 正/负/跨 Tenant/Secret/付费回归并接入 GitHub-hosted no-cloud CI。**Task 3.1、下游 Task 0.3 保持未完成**，直到代码与实际受控交接边界完成；本 PR 无 Terraform/云端操作/费用/旧资源变更。
+
+## Task 3.1 第二批：Bootstrap 衍生 fresh Backend 参数链（2026-10-20）
+
+- 为原 `fabric_environment_preflight.py` 增加**只接受携带完整 strict Bootstrap Profile 的 v2 内部校验**；已有 v1 CLI/legacy `johnzhang` 不放宽。未经完整 Profile 绑定的 v2 自由 JSON 一律拒绝。
+- `fabric_deployment_target.py` 与 `fabric_backend_config.py` 现在支持严格 Profile 来源的 fresh HDP Storage ARM ID、Tenant A/B、三个独立 State Key；拒绝回退到 `johnzhang`、替换资源组或错位存储账户。
+- `fabric_bootstrap_handoff.py` 为 fresh + 复用 Capacity 提供 v2 **非部署**参数预览；由于 Connection Terraform Root 尚锁死 `johnzhang`，返回 `STATIC_HANDOFF_HOLD_FRESH_CONNECTION_ROOT_GAP`，禁止将预览解释为已获部署许可。付费新 Capacity 继续 HOLD。
+- 代码及 Python 负向测试仅经 GitHub-hosted 离线 CI 验收；下一独立 PR 才更新 Connection Root 的双模式保护。Task 3.1/下游 0.3 仍未完成真实验收。
