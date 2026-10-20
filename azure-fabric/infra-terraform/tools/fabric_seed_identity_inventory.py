@@ -68,6 +68,8 @@ def inspect(profile: dict, request: dict, role: str, phase: str,
             resolved: dict | None = None) -> dict:
     if role not in ROLES or phase not in ("before", "after"):
         raise InventoryHold("unsupported phase or tenant role")
+    original_profile = profile
+    profile = validate(original_profile)
     tenant = profile["fabric_tenant_id"] if role == "fabric" else profile["backend_tenant_id"]
     active = read_az("az", "account", "show")
     if not isinstance(active, dict) or str(active.get("tenantId", "")).lower() != tenant:
@@ -76,7 +78,7 @@ def inspect(profile: dict, request: dict, role: str, phase: str,
     if phase == "after":
         if resolved is None:
             raise InventoryHold("missing resolved Client IDs")
-        ids = validate_resolved_client_ids(profile, resolved)["client_ids"]
+        ids = validate_resolved_client_ids(original_profile, resolved)["client_ids"]
     for app_role in ROLES[role]:
         name = request["applications"][app_role]["display_name"]
         result = read_az("az", "ad", "app", "list", "--display-name", name, "--all")
@@ -117,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     print("#### FABRIC_SEED_INVENTORY_OUTPUT_BEGIN ####")
     try:
         with args.profile.open(encoding="utf-8") as stream:
-            profile = validate(json.load(stream, object_pairs_hook=_no_duplicate_keys))
+            profile = json.load(stream, object_pairs_hook=_no_duplicate_keys)
         request = load(args.profile, args.identities)
         if args.phase == "after":
             if not args.resolved_ids:
