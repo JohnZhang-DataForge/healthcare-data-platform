@@ -1,5 +1,8 @@
 # Task 3.2 — Live Seed Identity Readiness (Tenant A/B, 2026-10-20)
 
+> **CURRENT BASELINE / DO NOT RE-DISCOVER**: [Fabric A=B + Existing Blob deployment decision](../../../documents/architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md). **Tenant A = Tenant B = `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`**; subscription `56107520-5920-4e96-9833-5441ded0a90c` is Enabled from the user's Azure CLI output. Use existing `johnzhang/landing` and `johnzhang/tfstate`, **`bootstrap_mode=reuse-existing`**. Historical `johnzhang-fabric` human account and its manually built Fabric Workspace are NOT required or managed by the new deployment. Seed may use existing authorized primary administrator; Terraform creates NEW application identities. Future A!=B remains parameterized but is not part of the current go-live prerequisites. New paid F SKU creation remains separately gated. Windows commands must be PowerShell (do not paste Linux shell backslashes into PowerShell).
+
+
 This runbook deliberately separates **cloud reading**, **initial identity creation**
 and **OIDC evidence**. The existing Identity Terraform Root owns all three new
 applications, their service principals, groups and the two main-ref FICs.
@@ -71,7 +74,7 @@ application-creation/Graph permissions.
 ## 3. Identity Root: Terraform is the only creator
 
 Root: `azure-fabric/infra-terraform/bootstrap/identity/`.
-Pinned AzureAD provider version 3.8.0; backend is isolated local State. Its
+Pinned AzureAD provider version 3.8.0; initial **Seed-only** backend is an isolated local State. This is NOT the final Storage State destination; the durable target is the **existing** `johnzhang/tfstate` container using an independent new `fabric/<environment>/identity.tfstate` key and a separately reviewed migration/ownership procedure. Its
 default `identity_creation_approved=false` means **count=0** for all resources.
 
 Before any mutation: review exact Healthcare source SHA, role-specific Tenant A/B
@@ -209,8 +212,8 @@ service principal login, and requests actual Microsoft Graph tokens in **both**
 target tenants. This proves only token acquisition, not adequate Graph App
 creation rights. AzureAD providers must still independently succeed.
 
-It refuses profiles that aren't `fresh-bootstrap`, that request new paid
-Capacity or whose Identity v3 contract differs. It copies only Git-tracked
+It accepts `reuse-existing` (**current default**) or `fresh-bootstrap` for Identity-only planning; it refuses profiles requesting new paid
+Capacity or whose Identity v3 contract differs. The initial Seed Plan does NOT create/read/change the existing Storage Account, Landing or remote State. It copies only Git-tracked
 Terraform Root source files into the fresh private custody directory,
 initializes **only the Terraform local backend there**, validates and performs
 a **real live provider-authenticated Terraform Plan** with
@@ -240,3 +243,14 @@ operator's private encrypted storage. **Do not reuse an existing custody
 directory**: the command requires a fresh empty 0700 directory every time.
 This script has not been executed against live Entra in repository CI; source
 tests mock Terraform/Git/Azure and CI cannot access cloud credentials.
+
+
+## 8. Current operator decisions — same-Tenant and existing Blob (2026-10-20)
+
+**No Tenant B discovery or `johnzhang-fabric` CLI login is needed.** The main account (`guangbinzhang8888@gmail.com`) exists within Tenant `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`, with an Enabled subscription `56107520-5920-4e96-9833-5441ded0a90c`; the user's Azure CLI has already confirmed Tenant A/subscription. The user confirmed Fabric also lives in that same Tenant. The old secondary admin account and old Workspace may remain but **must not be used as deployment prerequisites**. Do not ask the user to re-discover those tenancy facts.
+
+The **first live attempt** should use `reuse-existing` Bootstrap Profile, unchanged `johnzhang/landing` and `johnzhang/tfstate`. New Entra Backend/Reader/Deployer applications all belong to this **single** tenant, with two independent execution Client IDs. The `before` and `after` inventory tool still performs **separate role checks**, but one authorized admin sign-in to the same tenant can satisfy their tenant-routing checks (without creating another human user). Any missing Graph/Fabric admin role requires only scoped privilege consent, not a second Tenant.
+
+**Important implementation distinction:** section 7's temporary local Bootstrap State allows creation-only **Plan** without old State; it does not yet migrate or persist Identity State in the existing Azure Blob. The next implementation slice must explicitly use/verify a new `fabric/<environment>/identity.tfstate` key in `johnzhang/tfstate` and safe one-time State ownership. This is **not** permission to migrate/overwrite `dev/*.tfstate` or re-create Apps after an Apply. Normal Workspace/Lakehouse/Connection Roots likewise use new isolated keys under the existing Backend. Capacity can be reused only after its actual ID is known; identity-specific planning should not require unrelated old Workspace IDs.
+
+**Where to find next actions:** [OpenSpec current Task 3.2](../../../openspec/changes/bootstrap-fabric-infrastructure/tasks.md). Remaining real blockers concern admin Graph/Fabric API privileges, correct backend container RBAC, isolated State key availability, actual Capacity ID and new-App/OIDC readback—not A versus B.
