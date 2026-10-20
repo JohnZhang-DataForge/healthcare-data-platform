@@ -109,7 +109,9 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 > **历史源码安装器退役（2026-10-20，Task 4.9 第六批）**：移除 2 份已物化到正式 Git 源码的历史安装器；对应正式源码、Contract、运行脚本、单测 **4/4 全字节 MATCH** 且全部保留。原生成器可使用固定 Git 恢复地址：[`05g2c2b-prepare-visit-processed-writer-core.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/e3ce9f2e5adbfd22f25e3bfca1b2ae892f4f086a/local-data-platform/scripts/task003/05g2c2b-prepare-visit-processed-writer-core.sh)、[`05g2c2c1-prepare-visit-processed-spark-driver.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/e3ce9f2e5adbfd22f25e3bfca1b2ae892f4f086a/local-data-platform/scripts/task003/05g2c2c1-prepare-visit-processed-spark-driver.sh)。不可将历史链接当作现行入口，也不自动重放旧 Batch。
 
-## 历史 task003（9 个入口）
+> **历史源码安装器退役（2026-10-20，Task 4.9 第八批）**：移除 1 个仅用于历史源文件安装的 Shell，正式业务代码/执行器/测试内容 2/2 MATCH，全部保留。固定历史恢复链接：[`05g2c2c3d2b1-prepare-persisted-validator-source.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/81419fc96b8d60463c32910233b2bb2eb977c897/local-data-platform/scripts/task003/05g2c2c3d2b1-prepare-persisted-validator-source.sh)。现行的 Runtime/Writer/Fencing/DB Recovery 不受影响；不应重放冻结 Batch。见[第八批证据](../../../../openspec/changes/relocate-local-data-platform/evidence/LOCAL-DP-TASK003-BATCH8-WRITER-INSTALLERS-20261020.md)。
+
+## 历史 task003（8 个入口）
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
@@ -121,7 +123,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`05f2a-prepare-visit-candidate-driver.sh`](../../../../local-data-platform/scripts/task003/05f2a-prepare-visit-candidate-driver.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate driver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05f2b-prepare-visit-candidate-runtime.sh`](../../../../local-data-platform/scripts/task003/05f2b-prepare-visit-candidate-runtime.sh) | [PREPARE / may write] 历史 TASK003 prepare visit candidate runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05f2c-validate-visit-candidate.sh`](../../../../local-data-platform/scripts/task003/05f2c-validate-visit-candidate.sh) | [CHECK / verify effects] 历史 TASK003 validate visit candidate 脚本 |
-| [`05g2c2c3d2b1-prepare-persisted-validator-source.sh`](../../../../local-data-platform/scripts/task003/05g2c2c3d2b1-prepare-persisted-validator-source.sh) | [PREPARE / may write] 历史 TASK003 prepare persisted validator source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 
 ## 历史 task004（3 个入口）
 
