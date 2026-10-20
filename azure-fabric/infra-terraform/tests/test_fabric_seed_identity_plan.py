@@ -179,17 +179,58 @@ class SeedIdentityRealPlanTests(unittest.TestCase):
                              0o600)
             self.assertFalse((base / "checkout" / "terraform.tfstate").exists())
 
-    def test_non_fresh_profile_rejected_before_cloud(self):
+    def test_mismatched_identity_request_rejected_before_cloud(self):
         from test_fabric_bootstrap_identity import profile, request
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             pf, req = base / "profile.json", base / "request.json"
+            request_invalid = request()
+            request_invalid["environment"] = "wrong-environment"
             pf.write_text(json.dumps(profile()))
-            req.write_text(json.dumps(request()))
+            req.write_text(json.dumps(request_invalid))
             with patch("fabric_seed_identity_plan.validate_cloud_access") as cloud:
-                with self.assertRaises(SeedPlanHold):
+                with self.assertRaises(ValueError):
                     execute(pf, req, base, SHA, base / "state")
                 cloud.assert_not_called()
+
+    def test_reuse_existing_mode_real_plan_creates_only_new_identities(self):
+        from test_fabric_bootstrap_identity import profile, request
+        p, i = profile(), request()
+        self.assertEqual(p["bootstrap_mode"], "reuse-existing")
+        self.assertEqual(p["storage"]["account"], "johnzhang")
+        with tempfile.TemporaryDirectory() as base:
+            base = Path(base)
+            src = base / "checkout/azure-fabric/infra-terraform/bootstrap/identity"
+            src.mkdir(parents=True)
+            (src / "main.tf").write_text('terraform { backend "local" {} }')
+            (src / "versions.tf").write_text('terraform {}')
+            custody = base / "isolated"
+            custody.mkdir(mode=0o700)
+            pf, req = base / "profile.json", base / "identity.json"
+            pf.write_text(json.dumps(p))
+            req.write_text(json.dumps(i))
+            commands = []
+            def fake_run(args, stage, **kwargs):
+                commands.append((" ".join(args), stage))
+                if stage == "TF_PLAN":
+                    (custody / "identity.tfplan").write_bytes(b"PLAN" * 100)
+                    return 2, ""
+                if stage == "TF_SHOW":
+                    return 0, plan()
+                return 0, ""
+            with patch("fabric_seed_identity_plan.verify_source", return_value=src), \
+                 patch("fabric_seed_identity_plan.validate_cloud_access"), \
+                 patch("fabric_seed_identity_plan.run", side_effect=fake_run):
+                summary = execute(pf, req, base / "checkout", SHA, custody)
+            self.assertEqual(summary["bootstrap_mode"], "reuse-existing")
+            self.assertTrue(summary["existing_storage_unmodified"])
+            self.assertFalse(summary["final_identity_remote_state_verified"])
+            self.assertEqual(summary["planned_creates"], 10)
+            self.assertTrue(any(stage == "TF_PLAN" for _, stage in commands))
+            self.assertFalse(any("/johnzhang/" in command or
+                                 "azurerm" in command or "apply" in command
+                                 for command, _ in commands))
+            self.assertFalse((base / "checkout/terraform.tfstate").exists())
 
 
 if __name__ == "__main__":
