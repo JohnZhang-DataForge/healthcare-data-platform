@@ -15,3 +15,7 @@ Authentication boundary: ARM_* is for the existing Storage Tenant A backend;
 FABRIC_* is for the new Fabric Tenant B. These must not be aliased. Existing
 Self-Runner `azure-infra.yaml`, existing `dev/*.tfstate`, Workspaces and
 `johnzhang/landing` are untouched. Connection v1.13 schema has been verified **offline**, not against the live Fabric tenant. Notebook and Pipeline remain reserved for fabric-cicd. New `connection/SCHEMA.md` describes the secret-free Key Vault reference and gated Workspace Identity choices.
+
+## Bootstrap dual-Storage origin (offline-only)
+
+Existing v1 environment and standalone backend tools remain locked to `johnzhang`. New `fresh-bootstrap` Profile-bound v2 handoff can derive an HDP Storage ARM origin, the exact `fabric/<environment>/{workspace,onelake,connection}.tfstate` keys and non-secret Connection Root storage inputs. The Connection Root itself defaults to `reuse-existing`, demands an exact legacy account in that mode, and for fresh demands a distinct `hdp*` name and an independent `fresh_storage_provenance_verified` flag (default false). The handoff **never** sets that flag or `connection_creation_approved` true. Private network, existing-state inventory, verified Reader RBAC, SKU/capacity permissions and independent deployment authorization all remain HOLD. No `terraform init/plan/apply` is approved.

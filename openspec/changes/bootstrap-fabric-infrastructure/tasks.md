@@ -93,3 +93,10 @@
 - `fabric_deployment_target.py` 与 `fabric_backend_config.py` 现在支持严格 Profile 来源的 fresh HDP Storage ARM ID、Tenant A/B、三个独立 State Key；拒绝回退到 `johnzhang`、替换资源组或错位存储账户。
 - `fabric_bootstrap_handoff.py` 为 fresh + 复用 Capacity 提供 v2 **非部署**参数预览；由于 Connection Terraform Root 尚锁死 `johnzhang`，返回 `STATIC_HANDOFF_HOLD_FRESH_CONNECTION_ROOT_GAP`，禁止将预览解释为已获部署许可。付费新 Capacity 继续 HOLD。
 - 代码及 Python 负向测试仅经 GitHub-hosted 离线 CI 验收；下一独立 PR 才更新 Connection Root 的双模式保护。Task 3.1/下游 0.3 仍未完成真实验收。
+
+## Task 3.1 第三批：Connection Root 双 Storage 来源与默认拒绝（2026-10-20）
+
+- 解除新环境 `connection` Root 对 `johnzhang` 的无条件固定，显式增加 `bootstrap_mode`（默认 `reuse-existing`）和 `fresh_storage_provenance_verified`（默认 false）；相同 Resource Precondition 中明确阻止 legacy→fresh、fresh→legacy 账户错用。
+- 新账户只接收严格 `hdp*` 账户名；仍由现有独立 Connection Inventory/Reader RBAC/Metadata/Key Vault/WorkspaceIdentity/域名审核标志共同限制，均默认 false，不新增 Storage/RBAC 管理资源。
+- `fabric_bootstrap_handoff.py` 为两类 Storage 输出源参数**不含批准**的 Connection 输入预览，fresh 状态为 `STATIC_HANDOFF_HOLD_FRESH_EXTERNAL_APPROVALS`，非 `DEPLOY_READY`；Python 静态负向测试、Terraform `fmt` 使用现有 no-cloud CI。
+- **Task 3.1、下游 Task 0.3 仍保持开放**：实际 Storage Network/State/权限和真实 Capacity 身份、Terraform Provider/Backend 连接与独立执行许可尚未确认。没有远端操作或费用。

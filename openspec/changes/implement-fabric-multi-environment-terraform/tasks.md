@@ -119,3 +119,8 @@
 - [Bootstrap Change Task 3.1](../bootstrap-fabric-infrastructure/tasks.md) 新增 `tools/fabric_bootstrap_handoff.py` 的非秘密 value-only 交接与 Fail-Closed 检查。现有 `reuse-existing` / existing Capacity 只产生未验证预览，**不是 Terraform 执行配置批准**。
 - `fresh-bootstrap` 与现有固定 `johnzhang` Preflight/Backend Config/Connection Root **不兼容**，在独立安全重构完成前必须 HOLD。付费新 Capacity 的 Azure ARM ID 不能用作 Workspace 需要的 Fabric Capacity UUID；缺真实独立核验继续 HOLD。
 - 本 Change Task 0.3 不勾选；禁止把未部署 Bootstrap 输出/手填 UUID 当成真实资源库存或批准。
+
+## Task 0.3 第二批：fresh Backend/Connection 参数源代码衔接（2026-10-20）
+
+- 新 `fresh-bootstrap` 经过 strict Profile v2 内部校验输出新的 HDP Storage Backend 目标和 Connection Resource 输入；Root 只允许显式 fresh 模式＋非默认允许的来源核对标志，任何部署/创建标志仍为 false。
+- **交接尚未被真实授权**：State、Private Endpoint/ACL、Tenant B → Tenant A Reader 可达性、Capacity 实际 UUID、OIDC 和独立 Provider/Plan/Apply 证据欠缺，故 Task 0.3 保持未勾选。

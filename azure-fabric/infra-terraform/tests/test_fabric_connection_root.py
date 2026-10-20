@@ -13,6 +13,7 @@ DENIALS = (
     "connector_metadata_verified", "blob_domain_verified",
     "reader_access_verified", "key_vault_reference_verified",
     "workspace_identity_verified", "user_controlled_code_approved",
+    "fresh_storage_provenance_verified",
 )
 
 
@@ -37,7 +38,12 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         'var.workspace_identity_verified',
         'var.key_vault_reference_verified',
         'var.connection_name == "HDP-${var.environment}-azureblobs"',
+        'var.bootstrap_mode == "reuse-existing"',
+        'var.bootstrap_mode == "fresh-bootstrap"',
         'var.storage_account_name == "johnzhang"',
+        'var.storage_account_name != "johnzhang"',
+        'var.fresh_storage_provenance_verified',
+        'can(regex("^hdp[a-z0-9]{0,21}$", var.storage_account_name))',
         'prevent_destroy = true',
         'skip_test_connection = false',
         'allow_usage_in_user_controlled_code = var.user_controlled_code_approved',
@@ -58,6 +64,7 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         'variable "backend_tenant_id"', 'variable "backend_operator_client_id"',
         'variable "fabric_deployer_client_id"', 'variable "blob_reader_tenant_id"',
         'variable "blob_reader_client_id"', 'variable "reader_credential_type"',
+        'variable "bootstrap_mode"',
     )):
         raise ValueError("reader and deployment identity inputs must stay separate")
     # Shared precondition must apply BEFORE choosing either credential branch.
@@ -66,6 +73,10 @@ def audit_source(main: str, variables: str, outputs: str) -> None:
         raise ValueError("backend/deployer app identity separation must be common to both modes")
     if 'var.connection_creation_approved' not in common_gate:
         raise ValueError("creation approval must apply to both credential modes")
+    if 'contains(["reuse-existing", "fresh-bootstrap"], var.bootstrap_mode)' not in variables:
+        raise ValueError("Bootstrap origin must be one of two reviewed modes")
+    if not re.search(r'variable "bootstrap_mode"\s*{[^}]+default\s*=\s*"reuse-existing"', variables):
+        raise ValueError("Storage origin must default to legacy reuse, never fresh")
     if 'contains(["ServicePrincipal", "WorkspaceIdentity"], var.reader_credential_type)' not in variables:
         raise ValueError("only vetted credential modes are permitted")
     if 'var.blob_domain' not in main or 'variable "blob_domain"' not in variables:
@@ -108,6 +119,17 @@ class ConnectionRootTests(unittest.TestCase):
             with self.subTest(clause=clause), self.assertRaises(ValueError):
                 audit_source(self.main.replace(clause, "false"), self.variables, self.outputs)
 
+    def test_fresh_storage_origin_is_default_deny_and_no_legacy_fallback(self):
+        self.assertIn('default = "reuse-existing"', self.variables)
+        self.assertRegex(self.variables, r'variable "fresh_storage_provenance_verified"\s*{[^}]+default\s*=\s*false')
+        with self.assertRaises(ValueError):
+            audit_source(self.main.replace('var.bootstrap_mode == "reuse-existing"',
+                                           'true'), self.variables, self.outputs)
+        with self.assertRaises(ValueError):
+            audit_source(self.main.replace('!var.fresh_storage_provenance_verified',
+                                           'true'), self.variables, self.outputs)
+        self.assertNotIn('resource "azurerm_storage_account"', self.main)
+
     def test_secret_value_injection_is_rejected(self):
         with self.assertRaises(ValueError):
             audit_source(self.main + "\nclient_secret_wo = var.secret\n",
@@ -128,6 +150,9 @@ class ConnectionRootTests(unittest.TestCase):
             "var.blob_reader_client_id != var.fabric_deployer_client_id",
             "var.backend_operator_client_id != var.fabric_deployer_client_id",
             'var.storage_account_name == "johnzhang"',
+            'var.storage_account_name != "johnzhang"',
+            'var.bootstrap_mode == "fresh-bootstrap"',
+            'var.fresh_storage_provenance_verified',
             "var.workspace_identity_verified",
             "var.key_vault_reference_verified",
         ):
