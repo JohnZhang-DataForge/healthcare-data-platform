@@ -59,3 +59,10 @@
 - New isolated bootstrap/identity Terraform Root pins AzureAD 3.8.0 and uses separately configured Tenant A/B aliases. Three new independently named applications/service principals, two security groups without IAM assignments, and two tightly scoped GitHub OIDC environments are declared with resource count=0 unless creation is separately approved.
 - State uses a separately protected initial local backend and cannot depend on new yet-to-exist Storage. No current github-terraform adoption or old Storage/state access. Each resource has prevent_destroy; not a substitute for inventory or manual approval.
 - A GitHub-hosted CI step checks terraform fmt only and Python static guardrails (including default false, exact resource count and no credentials). No provider init/validate/plan/apply or remote side effects. Task 2.1 live/provider privileges, Task 2.2 tenant runtime/provider validation and Task 2.3/2.4 implementations still require separate gated steps. This code is NOT DEPLOYED.
+
+## Task 2.3 第一批：Storage / Backend / RBAC 仅源码实现（2026-10-19）
+
+- 新增 `azure-fabric/infra-terraform/bootstrap/storage/`，独立 `azurerm = 4.60.0` Provider、Tenant A/Subscription、`backend "local" {}`，消除新建 Storage 自举循环；复用模式资源数量固定为 0，目标仅为外部库存 ARM ID，禁止自动 Adopt/Import/Migrate/修改旧资源。
+- fresh 模式声明仅新环境 RG、新 HDP Storage 与两个 private Containers，关闭 Public Network/Shared Key，下一阶段需先解决私网连通；只有 Seed、库存、初始 State 保管、私网及创建授权全部明确标志才具备创建候选。全新目标名称仍需要真实 Inventory 验证。
+- RBAC 严格引用**刚由本 Root 声明**的 Container Resource Manager Scope；Backend Operator 获取新 `tfstate` 的 Data Contributor，Blob Reader 获取新 `landing` 的 Data Reader。三个服务主体不互借；角色使用 Object ID 且必须事前独立核验。变量布尔值不是运行授权。
+- 静态回归 `test_fabric_bootstrap_storage_root.py` + GitHub-hosted Terraform `fmt -check` 后可判定代码阶段 PASS；**Task 2.3 不打勾**，直到 Source/Provider 边界审查与独立授权的真实库存/网络/State/权限证据到位。任何 Init/Plan/Apply/Destroy/Import 继续 HOLD。

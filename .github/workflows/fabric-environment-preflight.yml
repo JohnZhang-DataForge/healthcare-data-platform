@@ -9,6 +9,7 @@ on:
       - 'azure-fabric/infra-terraform/tools/fabric_capacity_approval.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_capacity_approval.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity_root.py'
+      - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_storage_root.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_identity.py'
       - 'azure-fabric/infra-terraform/tests/test_fabric_bootstrap_profile.py'
       - 'azure-fabric/infra-terraform/bootstrap/**'
@@ -52,6 +53,9 @@ jobs:
       - name: Verify Bootstrap Identity Root HCL format only
         run: |
           terraform fmt -check -diff azure-fabric/infra-terraform/bootstrap/identity
+      - name: Verify Bootstrap Storage and RBAC HCL format without init
+        run: |
+          terraform fmt -check -diff azure-fabric/infra-terraform/bootstrap/storage
       - name: Set up Python for preflight tests
         uses: actions/setup-python@v5
         with:
@@ -82,6 +86,11 @@ jobs:
           python3 -m unittest discover \
             -s azure-fabric/infra-terraform/tests \
             -p 'test_fabric_bootstrap_identity_root.py' -v
+      - name: Verify fresh-only Storage ownership and container-level RBAC
+        run: |
+          python3 -m unittest discover \
+            -s azure-fabric/infra-terraform/tests \
+            -p 'test_fabric_bootstrap_storage_root.py' -v
       - name: Validate preflight unit tests
         run: |
           python3 -m unittest discover \
