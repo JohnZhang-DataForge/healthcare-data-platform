@@ -120,6 +120,8 @@
 
 > **4.9 第五批历史源码生成器退役（2026-10-20，仍 PARTIAL）**：按冻结 Healthcare Main `0177ee3b466215492254803d28dfa4de06eff244`，从 Task003 移除五个一次性源码安装生成器（Plan Validation、Writer Bundle Inventory、Writer Observer、Processed DQ、Processed Manifest）；五者生成的正式 Shell/Python/Unit Tests 与当前 Git **13/13 完整字节一致并全部保留**。固定 Main 的 66/66 当前高优先构建/编排入口、85/85 TASK003 Shell、Self-Runner 16/16 相关 Workflow 中仅发现生成器自身包含对应精确文件名，没有其他直接字面调用；不代表所有外部/动态路径闭包。Landing CODE.md 47→42，并附原始 Git SHA 的不可变恢复链接，不触发业务/历史 Batch 重放。详见 [第五批 13/13 证据](evidence/LOCAL-DP-TASK003-BATCH5-FIVE-GENERATORS-20261020.md)。**Task 4.9 继续 OPEN**；最终验收依赖本 PR 的所有适用 CI。
 
+> **4.9 第六批 Processed / Writer 安装器清理（2026-10-20，PARTIAL）**：固定源 Healthcare `e3ce9f2e5adbfd22f25e3bfca1b2ae892f4f086a`、Self-Runner `c9bb734517a0e809b2d6451eb84fa024ff88e917`。删除 5 个固定历史 TASK003 Processed Prefix/Remote、Write Intent、Writer Core、Spark Driver **源码安装器**；其正式 Python、Contract、实际运行 Shell 和单测均 **12/12 全字节匹配并保留**。有界直接消费者检查：Healthcare Workflow/DAG/Docker/Task004 **64/64**、TASK003 Shell **80/80**、Self-Runner 相关 Workflow **16/16**；仅 5 个安装器出现自身文件名，不能据此否认动态、外部或未扫描消费者。Landing CODE.md 42→39，Spark CODE.md 11→9；TASK003 Shell 80→75。固定 Git SHA/Blob、全部正式保留产物、恢复链接及 CI 门槛详见[第六批证据](evidence/LOCAL-DP-TASK003-BATCH6-PROCESSED-WRITER-INSTALLERS-20261020.md)。不运行冻结 Batch、不删除 Fencing/DB Recovery/单元测试，`06c4e` 保持 HOLD；以本 PR **最终 HEAD 的全部适用真实 CI PASS** 为合并门。**4.1/4.8/4.9/4.10 和 Section 5 仍 OPEN**。
+
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
 ## 5. 结束条件（暂不归档）
