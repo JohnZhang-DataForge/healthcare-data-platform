@@ -81,7 +81,7 @@ def verify_source(repo: Path, sha: str) -> Path:
     _, actual = run(["git", "-C", str(repo), "rev-parse", "HEAD"], "SOURCE_HEAD")
     if actual != sha:
         raise SeedPlanHold("SOURCE_HEAD")
-    _, dirty = run(["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=no"],
+    _, dirty = run(["git", "-C", str(repo), "status", "--porcelain"],
                    "SOURCE_DIRTY")
     if dirty:
         raise SeedPlanHold("SOURCE_DIRTY")
@@ -90,7 +90,13 @@ def verify_source(repo: Path, sha: str) -> Path:
     if remote != sha + "\trefs/heads/main":
         raise SeedPlanHold("SOURCE_MAIN")
     source = repo / SOURCE_REL
-    if not source.is_dir() or len(list(source.glob("*.tf"))) < 4:
+    if source.is_symlink() or not source.is_dir():
+        raise SeedPlanHold("SOURCE_ROOT")
+    files = sorted(item.name for item in source.glob("*.tf"))
+    _, tree = run(["git", "-C", str(repo), "ls-tree", "-r", "--name-only",
+                   "HEAD", str(SOURCE_REL)], "SOURCE_TRACKED")
+    tracked = sorted(Path(line).name for line in tree.splitlines() if line.endswith(".tf"))
+    if len(files) < 4 or files != tracked:
         raise SeedPlanHold("SOURCE_ROOT")
     return source
 
@@ -217,7 +223,8 @@ def execute(profile: Path, identities: Path, repo: Path, sha: str, custody: Path
     result = review_plan_json(raw)
     result["healthcare_source_sha"] = sha
     result["target_environment"] = summary["environment"]
-    result["plan_sha256"] = hashlib.file_digest(plan.open("rb"), "sha256").hexdigest()
+    with plan.open("rb") as stream:
+        result["plan_sha256"] = hashlib.file_digest(stream, "sha256").hexdigest()
     result["binary_plan_bytes"] = plan.stat().st_size
     result["plan_location"] = "PRIVATE_LOCAL_CUSTODY_ONLY"
     result["remote_backend_initialized"] = False
