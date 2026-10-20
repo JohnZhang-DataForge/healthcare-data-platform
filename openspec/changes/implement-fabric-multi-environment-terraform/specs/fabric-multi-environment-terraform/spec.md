@@ -32,6 +32,22 @@ Terraform SHALL own only new-environment Workspace, Lakehouse and Blob Connectio
 - **WHEN** 计划部署前检查资源所有权
 - **THEN** 阻断自动接管或销毁，并要求独立核实与批准
 
+### Requirement: Verified Bootstrap output handoff without legacy adoption
+
+New-environment Workspace/Lakehouse/Connection Terraform SHALL accept only independently validated Backend, identity and (existing or approved newly created) Capacity outputs from the appropriate Bootstrap mode. It MUST NOT treat a design approval or a guessed environment value as authorization to create a paid Capacity or adopt existing Storage, Workspace or remote State. Infrastructure Bootstrap provisioning belongs to a separately governed Change.
+
+#### Scenario: approved Capacity in a new account
+
+- **GIVEN** 新 Fabric Tenant 使用 fresh-bootstrap 且 Capacity 已通过独立 SKU/region/cost approval 与库存验证
+- **WHEN** 控制平面获取经过验证的 Capacity ID
+- **THEN** 允许后续受控 Workspace 资源规划；在未批准新 Capacity 创建前不会自动购买资源
+
+#### Scenario: legacy tenant reuse without ownership transfer
+
+- **GIVEN** 当前 Tenant A→A′ 的 reuse-existing 环境合同和旧 `johnzhang` Storage
+- **WHEN** 生成新环境 Terraform 输入
+- **THEN** 旧 `dev/*.tfstate`、Landing、历史 Workspace 原样保留，未被默认 Import/Destroy/Replace
+
 ### Requirement: No implicit live operation
 
 Static checks SHALL NOT invoke Terraform remote backend initialization, Terraform plan/apply/destroy, cloud API calls, or mutations of existing Storage, State and Fabric resources.
