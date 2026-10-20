@@ -103,6 +103,12 @@ class SeedIdentityRealPlanTests(unittest.TestCase):
         with patch.dict(os.environ, {"AZURE_CLIENT_ID": A}):
             with self.assertRaises(SeedPlanHold):
                 validate_cloud_access(A, B)
+        for key in ("ARM_OIDC_REQUEST_TOKEN", "AZUREAD_CLIENT_SECRET",
+                    "TF_VAR_unknown", "TF_CLI_ARGS_plan", "TF_DATA_DIR",
+                    "TF_LOG_PATH", "TF_WORKSPACE"):
+            with self.subTest(key=key), patch.dict(os.environ, {key: "UNSAFE"}):
+                with self.assertRaises(SeedPlanHold):
+                    validate_cloud_access(A, B)
 
     def test_user_login_and_both_tenant_tokens(self):
         calls = []
