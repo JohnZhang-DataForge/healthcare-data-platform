@@ -20,7 +20,7 @@
 - [ ] 2.2 实现隔离 Identity/SPN/Group/OIDC Root/Modules；不创建原 `github-terraform` 的重复同名 App、不自动接管旧 App；默认拒绝写操作。
 - [ ] 2.3 实现可选 fresh Storage/Containers、最小 RBAC 和独立的初始 Bootstrap State 策略；阻止 backend 自举循环、旧 `dev/*.tfstate` 和 `johnzhang` 资源接管。
 - [ ] 2.4 实现 Capacity 的 `reuse-existing` / `create-new` Resource/Output；使用经过验证的官方 ARM Schema，付费创建在 CI/Root 中默认拒绝，`prevent_destroy` 与预算/人工审批不互相代替。
-- [x] 2.5 为所有 Terraform Root 增加纯离线 `fmt`/静态合同和负向测试；PR CI 禁止执行 `init/plan/apply/destroy/import` 或访问云端。
+- [x] 2.5 为所有 Terraform Root 增加纯离线 `fmt`/静态合同和负向测试；原 `fabric-environment-preflight.yml` fmt-only PR CI 仍禁止 `init/plan/apply/destroy/import` 及云端访问。另有 2026-10-20 批准的独立无凭据 Provider CI，可执行 `init -backend=false` 和 `validate`，仍不得运行真实 Plan/Apply。
 
 ## 3. Integration and controlled operational readiness
 

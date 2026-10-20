@@ -49,6 +49,9 @@ jobs:
         with:
           terraform_version: '1.13.5'
           terraform_wrapper: false
+      - name: Self-test no-token provider workflow policy
+        if: matrix.name == 'bootstrap-identity'
+        run: python3 -m unittest discover -s azure-fabric/infra-terraform/tests -p test_fabric_provider_validation_workflow.py -v
       - name: Provider init without backend or cloud credentials
         shell: bash
         run: |
