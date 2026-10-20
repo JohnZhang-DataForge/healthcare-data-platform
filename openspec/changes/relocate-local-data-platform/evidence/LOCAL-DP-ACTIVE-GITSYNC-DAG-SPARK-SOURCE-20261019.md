@@ -48,3 +48,9 @@
 **§4.4 = PARTIAL，§4.9 = HOLD，批准历史文件删除数量 = 0。**
 
 本轮已从“只有 GitSync Pod/ConfigMap 名称”推进到 **活动 DAG 的固定 Git Commit 字节一致性证明 + 三份 Spark ConfigMap 的字节一致性证明**。未解决部分是旧 Driver 的实际 `module.__file__`（历史 Driver 可能已退出，不能为取证重跑业务）、所有 DAG 的单一加载路径/运行性、其它历史消费者及 4.5–4.7 的运行兼容与安全 E2E。若日后新建隔离 Spark smoke，必须新批准、选定非业务输入并防止 Writer 或共享状态变更，不能重播旧 Batch。本证据不会批准删除 `scripts/task003/{04-write-closeout-docs.sh,05-write-ae-freeze-doc.sh,05f2-write-freeze-doc.sh}`。
+
+## DagBag 隔离 CI 兼容性回归（同一 PR，另行判断）
+
+- [Run #39347778669](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39347778669) 针对文档+证据初始 PR HEAD `a86e030af3146cc0d7d9e234e717ed71fa4421fa` **FAIL**：`task004_processing_pipeline.py` 无法导入同目录的 `task004_cdm_preflight_contract`；`task004_cdm_dynamic_source.py` 无法导入同目录的 `task004_cdm_dynamic_adapters`。在相同业务源和 Workflow 的上一轮 [Run #39342425386](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39342425386) `DAGBAG_PARSE=PASS`（5 DAG），证明现有隔离环境的本地模块搜索路径不稳定；**不能抹去本轮 FAIL**。
+- 已在本 OpenSpec PR 范围内向 `.github/workflows/local-dp-airflow-dagbag-parse.yml` 的 Docker parse-only `docker run` 显式传入 `PYTHONPATH=/opt/airflow/dags`，确保 DAG 同目录辅助 Python 模块可发现。不修改任意业务 DAG、不扩大 K8s 权限、不启动调度或业务写入。
+- 必须依据**修复后的最新 PR HEAD** 的真实 DagBag Run 决定该 CI Gate 是否 PASS；此前 RUN 的成功不替代新 HEAD。3 轮内仍失败则 HOLD。
