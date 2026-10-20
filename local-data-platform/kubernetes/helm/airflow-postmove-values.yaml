@@ -1,0 +1,16 @@
+# Existing dev cluster: dw-airflow / Apache Airflow Helm chart 1.22.0.
+# Preserve all current values with helm upgrade --reuse-values -f this file.
+# Do not install a second Airflow release or regenerate credentials.
+#
+# Source moved from repository root airflow/dags to this platform root:
+#   local-data-platform/airflow/dags
+# GitSync still checks out the monorepo main; only its DAG subdirectory changed.
+dags:
+  gitSync:
+    enabled: true
+    subPath: local-data-platform/airflow/dags
+    # Legacy installed Helm v3 values held nulls for both keys; Airflow
+    # chart 1.22.0's schema requires strings during Helm upgrades.
+    # Keep these empty and retain existing gitSync.ref=main.
+    branch: ""
+    rev: ""
