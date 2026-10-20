@@ -1,5 +1,7 @@
 # Design
 
+> **HISTORICAL / SUPERSEDED**：保留旧 Provider/Schema/State 审计证据，但工程路线已纠正为 Root → Reusable Modules → Environment Config，详见 [新架构](../../../documents/architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 与 [新实施 Tasks](../simplify-fabric-environment-iac/tasks.md)。
+
 ## Context
 
 权威方案：[Fabric Multi-Environment Rebuild](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)；已有 Terraform：[ARCHITECTURE](../../../documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md)；Preflight 已由 PR #247 合并 Main，归档 PR #248 合并。本阶段仅实现**隔离的 Fabric Control Plane Root 离线开发**，旧环境与七 Root 原有 dev State 保持原状。**2026-10-19 用户已批准 Bootstrap as Code + Terraform Capacity 创建能力的上层修订设计**；Bootstrap 实施必须以独立 OpenSpec Change 切分，不把已完成的静态 Terraform Root 误认为已具备引导权限。

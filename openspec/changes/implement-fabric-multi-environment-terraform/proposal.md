@@ -1,5 +1,7 @@
 # Proposal
 
+> **SUPERSEDED FOR FUTURE IMPLEMENTATION（2026-10-20）**：旧 `new-environments/` 独立 Root/强制 Bootstrap 输出不再是新代码方向，保留旧讨论与实测范围。新权威为 [Module-first 架构](../../../documents/architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) · [新 Tasks](../simplify-fabric-environment-iac/tasks.md)。
+
 ## Why
 
 Fabric 多环境离线 Preflight 已由 PR #247 验收并于 PR #248 归档，但现有 Terraform 七 Root 和 Self-Runner `azure-infra.yaml` 仍面向旧 `dev` State/单租户身份，不能安全重建独立的新 Fabric 环境。需要基于已批准的 [Fabric Multi-Environment Rebuild Design](../../../documents/architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 实施新环境专用、可审查的 Terraform Control Plane。

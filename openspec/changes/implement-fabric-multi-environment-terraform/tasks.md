@@ -1,5 +1,7 @@
 # Tasks
 
+> **STOP — 被新 Change 取代**：此文件记录过去 `new-environments/` 和独立 Bootstrap 的历史开发；后续不要继续按本历史任务列表新增重复 Terraform Resource。按 [`simplify-fabric-environment-iac/tasks.md`](../simplify-fabric-environment-iac/tasks.md) 统一复用旧 Modules，源码/State/Workflow 迁移需实测证据。
+
 > **Active / Stage 0**：先冻结实现边界，再进行小步代码 PR；不得执行任何 Terraform init/plan/apply/destroy 或 Azure/Fabric 写操作。PR 必须绑定本 Change 并更新对应 Task。
 
 ## 0. Revised architecture approval (2026-10-19)

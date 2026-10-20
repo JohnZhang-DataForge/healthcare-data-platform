@@ -6,7 +6,7 @@
 
 - [x] 1.1 核对 Main：旧 `components → modules → environments`、新独立 Roots 的重叠资源、现有 Self-Runner 引用，保留事实与设计差别。
 - [x] 1.2 新建权威目标架构、Proposal、Design、Delta Spec，明确已授权部署账号、Landing、State、Capacity 是外部前置，统一组合 Root 可复用 Modules。
-- [ ] 1.3 更新旧文档/两个旧 OpenSpec Change 的失效标记、导航和项目状态，完成 PR CI 与 Main 合并。
+- [x] 1.3 更新旧文档/两个旧 OpenSpec Change 的失效标记、导航和项目状态，完成 PR CI 与 Main 合并。
 
 ## 2. Terraform refactor (not started)
 

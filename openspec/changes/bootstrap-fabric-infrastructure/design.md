@@ -1,5 +1,7 @@
 # Design
 
+> **SUPERSEDED / HISTORICAL DESIGN**：以下独立 Bootstrap、三套应用身份、A=B / A≠B、fresh Storage 流程不再是当前 Fabric Environment 代码实施要求。唯一目标为 [Module-first 架构](../../../documents/architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)，实施见 [`simplify-fabric-environment-iac`](../simplify-fabric-environment-iac/tasks.md)；已开发代码没有因此自动删除或执行 Apply。
+
 > **当前实施基线（2026-10-20；优先于以下历史双模式讨论）**：[A=B + existing Blob 决策](../../../documents/architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)。用户已明确确认 Tenant A = Tenant B = `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`；`Azure subscription 1` = `56107520-5920-4e96-9833-5441ded0a90c`，`Enabled`（CLI 输出）。当前 **`reuse-existing` `johnzhang/landing` + `johnzhang/tfstate`**，旧 `dev/*.tfstate` 不动；新环境独立 State Keys。旧 `johnzhang-fabric` 子账号、已创建 Workspace/权限只是历史背景，非自动化依赖；不再要求主账号重新证明 A=B、Fabric 子账号 CLI 登录或创建新 Tenant/Storage。人工管理员 Seed 用主账号或授权身份，新应用/SPN/OIDC/RBAC 用 Terraform/脚本创建。同 Tenant 的 Backend 和 Fabric 应用仍各自独立，不共用 Client ID。**A≠B 为未来可配置路径，不阻塞当前 A=B**。以下 `fresh-bootstrap` 是可选扩展，不是本次部署路线。初始 Seed Identity 临时 Local State 只是过渡；最终要核对后落到现有 `tfstate` 的新隔离 Key，不自动采用/迁移旧 State。
 
 

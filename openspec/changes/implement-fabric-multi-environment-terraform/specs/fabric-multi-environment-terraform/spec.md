@@ -1,5 +1,7 @@
 # Fabric Multi-Environment Terraform
 
+> **HISTORICAL / SUPERSEDED DELTA**：此前“必须独立 Backend/Fabric 身份及 Bootstrap 输出”的要求已被本轮前置授权和 Module-first 环境部署新设计取代。当前目标见 [Module-first Change](../../simplify-fabric-environment-iac/tasks.md)，旧文件保留为历史证据。
+
 ## ADDED Requirements
 
 ### Requirement: Isolated Fabric environment remote state
