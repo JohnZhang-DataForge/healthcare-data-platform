@@ -227,8 +227,11 @@ class BootstrapProfileTests(unittest.TestCase):
             candidate["storage"][field] = value
             self.reject(candidate)
         candidate = create_capacity()
-        candidate["capacity"]["subscription_id"] = A
-        self.reject(candidate)
+        candidate["capacity"]["subscription_id"] = "7cb66f5d-4c20-4c31-9bc1-0547e25b745f"
+        summary = validate(candidate)
+        self.assertEqual(summary["identity_topology"], "cross-tenant")
+        self.assertNotEqual(summary["capacity_subscription_id"], summary["storage_subscription_id"])
+        self.assertFalse(summary["paid_creation_authorized"])
 
     def test_fabric_sku_and_profile_determinism(self):
         for invalid_sku in ("F3", "F9999", "P1", "F0"):

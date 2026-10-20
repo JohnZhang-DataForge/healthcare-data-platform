@@ -218,3 +218,8 @@ Evidence: actual SHA / state prefix / environment / batch / Run
 ## Bootstrap Storage/Backend/RBAC 的新环境执行前置（Task 2.3，仅离线）
 
 `bootstrap/storage/` 在 `reuse-existing` 模式不管理旧 `johnzhang/landing/tfstate`、不分配 IAM、不调用 Azure 数据源；`fresh-bootstrap` 仅在所有显式审批/库存/独立 State/私网准备开关满足时定义候选新 RG/Storage/Containers 和 Container-scoped 角色。严格区分 Blob Reader 的 Object ID、Backend Operator 的 Object ID、以及 Fabric Deployer 的 Client ID。**网络连通未实现**：新账号禁用公共网络/Shared Key，必须先有经批准的 Private Endpoint / DNS / Runner Path 方案；当前不应发起任何 Terraform Init/Plan/Apply。初始 Terraform State 必须保存在受保护的独立位置，不能迁移到尚不存在的 Backend，更不能碰旧 `dev/*.tfstate`。CODE.md 提供源码导航，审核后再建设任务执行入口。
+
+
+## Fabric Capacity AzAPI 付费创建门禁（Task 2.4，仅离线）
+
+`bootstrap/capacity/` 已声明 ARM 2023-11-01 的付费新建可选资源，但默认 `reuse-existing` 不创建任何资源。创建开关、收费证明、审批人、SKU/Region/Subscription、来源 Git SHA、受保护 GitHub Environment、管理员名单和 Capacity 所在 Tenant B 的 Resource Group 均需单独审查，**当前全部未授权**。对 A→B 场景 Capacity Tenant B 的订阅不应错误绑定 Tenant A Storage 订阅。 `prevent_destroy` 不能代替真实账单限制；不支持自动暂停/恢复。静态 Terraform 只可能输出 ARM Resource ID，Fabric UUID 需真实读回。禁止未经单独许可的任何 Terraform Init/Plan/Apply 或新建付费资源。
