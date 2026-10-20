@@ -11,9 +11,9 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 > **已完成组件文档收口（ACTIVE）**：本组件参照 [Data Platform 组件双入口](../../data-platform/README.md) 整理。**README 说明职责与边界， [CODE.md](CODE.md) 是 Terraform 唯一组件级源码导航**；深入的 IAM、OIDC、State 与历史 Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。源码区旧说明文件在完成引用修复后退役；本次没有修改 Terraform 执行入口。
 
-## 当前真实目标（2026-10-20 决策）
+## 当前目标：基于现有 Components 和 Modules 开发
 
-默认开发目标是 `A=B`，`reuse-existing`：当前主账号对应的同一 Tenant、现存 `johnzhang/landing` 及 `johnzhang/tfstate`；旧 `dev/*.tfstate` 原封不动。新的 Bootstrap Identity 创建三独立 Entra App/SPN/OIDC；现有 Storage 不重新创建，旧 Fabric 子账号和手工 Workspace 不再被新流程引用。Identity 最初的临时 Local State 不是最终存储方案；最终须使用现有远端 Backend 的新 Key。未来跨 Tenant（A≠B）为**兼容选项**，不能阻塞现在的同租户交付。权威资源/账号/开发基线见 [当前部署决策](../../../architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)；当前真实执行进度见 [Bootstrap OpenSpec](../../../../openspec/changes/bootstrap-fabric-infrastructure/tasks.md)。
+> **2026-10-20 用户批准集中清理**：`bootstrap/`、`tests/`、`tools/`、`new-environments/` 及相关旧 Preflight 示例已经退出 Git 工作树。现有七个 `components/` 和全部 `modules/`、环境 `dev.tfvars`、原有 Self-Runner `azure-infra.yaml` 继续保留。真实源码见 [CODE.md](CODE.md)，新架构见 [Module-first](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)。这不是已执行云端 Apply 的证据。
 
 ## 组件职责与系统位置
 
@@ -21,12 +21,9 @@ Terraform 仅负责 Azure/Fabric 的基础设施资源定义、身份及权限�
 
 既定目标数据流：**本地 PostgreSQL OMOP → 未来只读 Exporter/不可变 Manifest → 已有 Azure Blob Landing → Fabric Data Pipeline 编排 Notebook → OneLake Lakehouse/Delta**。本组件负责其中可由 IaC 管理的基础资源与可选权限，不代表业务链路已部署。
 
-## 已批准目标架构（2026-10-19，仍待实施）
+## 当前架构边界
 
-- [Fabric 多环境重建权威架构](../../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)：采用 **Bootstrap as Code + Terraform + GitHub Actions + fabric-cicd**；Backend/Storage 支持 `reuse-existing` 与 `fresh-bootstrap`；Capacity 可通过 Terraform 复用或经**单独费用审批**后创建付费 F SKU，**本期不实现自动 Suspend/Resume**。
-- 独立的 Bootstrap Terraform（Entra SPN、Groups、OIDC、RBAC、可选新 Storage/Backend/Capacity）仍是**待开发目标**。首次管理员种子授权、订阅/计费资格、Provider 实际权限和独立 Plan/Apply 审批仍不可省略。
-- 当前代码 `new-environments/` 仍面向受保护的旧 `johnzhang` `reuse-existing` 适配；**绝不直接对旧 Workspace/State 进行迁移或 Apply**。现有七 Root 为历史兼容，不随设计批准而删除或重构。
-- 当前实施状态及依赖见 [OpenSpec Change](../../../../openspec/changes/implement-fabric-multi-environment-terraform/tasks.md)，本 README 不另存开发进度。
+已授权的 Fabric 部署身份、可用 Capacity、现成 Landing 访问和已有 Terraform State Backend 是外部前置条件。基于原有 `components → modules → environments/*.tfvars` 设计继续开发，避免再增加以 Bootstrap/Tenant 拓扑为中心的长期 Root 或测试脚手架。新增环境使用独立 State Key，资源由可复用 Modules 管理。实施和后续真正的 Plan/Apply 验收见 [OpenSpec](../../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。
 
 ## 七个独立 Terraform Root
 

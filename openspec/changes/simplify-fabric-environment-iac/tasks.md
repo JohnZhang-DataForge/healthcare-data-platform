@@ -22,9 +22,9 @@
 - [ ] 3.3 使用第二个 Fabric 账号或第二套环境配置和独立 State Key 部署，不改 Module 源码，验证互不影响。
 - [ ] 3.4 整合 Self-Runner 已有成熟的 Plan/Apply 逻辑、使用真实环境资源 Outputs 发布 Notebook/Pipeline，经 fabric-cicd 与数据 E2E 验证。
 
-## 4. Cleanup (only after real acceptance)
+## 4. Clean superseded scaffolds first (user-authorized 2026-10-20)
 
-- [ ] 4.1 审核并退役无用 `bootstrap/`、重复 `new-environments/` Root、废弃专用工具和测试/CI；确认不误删仍被引用的旧 `components/` 和 workflow。
-- [ ] 4.2 更新权威 CODE.md、原设计/Change 状态、运行验收 Run/PR 引用，核对所有链接，完成有证据的目录清理。
+- [x] 4.1 按用户明确授权，先删除从未真实部署的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/` 及仅服务于旧工具的 JSON 示例；移除失效 Preflight CI，将 Provider 静态校验重定向到原有七个 Components/Modules；不动远端 State 或 Fabric/Azure 云端资源。
+- [ ] 4.2 确认新 Provider 校验 CI 通过，并处理 Self-Runner 中仍指向已删除 Roots 的旧 `fabric-controlled-entry` / OIDC 试验入口；原 `azure-infra.yaml` 必须保留。更新权威 CODE.md、Runbook、架构目标与文档链接，记录已合并 PR/Run。
 
-**Status**：仅架构文档整理；没有 Terraform 源码重构、远程 State 改动、真实 Apply 或 Fabric E2E。
+**Status**：新方案源码脚手架清理已开展；保留既有七 Root/Modules。统一可复用 Environment 编排还未开发，未改远程 State、未执行真实 Apply 或 Fabric E2E。

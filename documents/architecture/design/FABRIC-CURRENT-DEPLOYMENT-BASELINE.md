@@ -49,5 +49,5 @@ implementation_status: partial; live Entra and Terraform Apply not yet proven
 
 - **OpenSpec 执行进度**：[`bootstrap-fabric-infrastructure/tasks.md`](../../../openspec/changes/bootstrap-fabric-infrastructure/tasks.md)。其中 Task 3.2 真实 Terraform Plan/State/Apply 尚未全部完成，不能因本文写了固定信息就标记为 PASS。
 - **方案约束**：[`bootstrap-fabric-infrastructure/design.md`](../../../openspec/changes/bootstrap-fabric-infrastructure/design.md) 及 [多环境总体设计](FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)。此前涉及 `fresh-bootstrap` 的讨论仍是未来可选路径，**不是当前模式**。
-- **真实操作**：[`bootstrap/SEED-LIVE-OPERATIONS.md`](../../../azure-fabric/infra-terraform/bootstrap/SEED-LIVE-OPERATIONS.md)。当前工具中 `fabric_seed_identity_plan.py` 仅为 Seed Plan、尚未触发云端真实执行；新身份 RBAC、GitHub Variables、隔离新 Remote State Key、Fabric Tenant Settings 和 Plan/Apply 都需要逐项真实验收。
+- **真实操作**：[`bootstrap/SEED-LIVE-OPERATIONS.md`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/d95da9f0e62c77b025d466e51f78ad9a48241158/azure-fabric/infra-terraform/bootstrap/SEED-LIVE-OPERATIONS.md)。当前工具中 `fabric_seed_identity_plan.py` 仅为 Seed Plan、尚未触发云端真实执行；新身份 RBAC、GitHub Variables、隔离新 Remote State Key、Fabric Tenant Settings 和 Plan/Apply 都需要逐项真实验收。
 - 后续对话无需再问“Tenant A 是否等于 Tenant B”“要不要重新建 Tenant”“原 `johnzhang-fabric` 为什么不能 CLI 登录”“要不要重建 Storage/Landing”；**只有真正执行时缺少的具体非敏感 ID、角色权限或容量证据才按单步询问**，并以本文件作为默认输入。

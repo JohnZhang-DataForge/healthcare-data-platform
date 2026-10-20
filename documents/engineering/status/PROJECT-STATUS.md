@@ -15,6 +15,8 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 > **Fabric 设计方向更新（2026-10-20，非运行验收）**：[Module-first Environment Architecture](../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 确定以已授权 Fabric 部署账号、现成 Landing/State/Capacity 为外部前置，并复用旧 `components → modules → environments` 模型。唯一新实施入口是 [`simplify-fabric-environment-iac`](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)；原 Bootstrap/Tenant 双模式计划改为历史方案。当前源码未重构，真实 Terraform Apply 与 Fabric E2E 尚未执行。
 
+> **Fabric 源码清理（2026-10-20）**：在 [Module-first Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md) 下，用户批准先删除过度设计的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/`。原有七个 `components/` / `modules/` 均保留，旧 Self-Runner Azure-Infra 入口继续使用；原 Fabric Bootstrap 方案按 Git 历史追溯。**此为 Git 源码清理，不意味着 Azure 资源/State 被删除、Root 重构或 Fabric Apply/E2E 已完成。**
+
 ## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |

@@ -39,12 +39,11 @@ azure-fabric/infra-terraform/
 ├── modules/
 │   ├── workspace/                # 复用现有定义及 Workspace IAM
 │   ├── lakehouse/                # 由 modules/onelake 整理
-│   └── connection/               # 从 new-environments/connection 提取
+│   └── connection/               # 按实际 Provider Schema 新建可复用 Module
 ├── environments/
 │   ├── dev.tfvars
 │   └── trial-lab.tfvars
-├── tests/
-└── tools/                       # 仅有实际用途的工具
+└── environments/               # 只放当前环境真实配置；不恢复旧 Bootstrap tools/tests
 ```
 
 - **Root** 负责 Provider 登录、Backend Key、环境输入、Modules 编排及 Outputs；Module 内**不**声明 Backend、登录主体和固定环境/账号/Blob 资源名。
@@ -84,9 +83,9 @@ GitHub Self-Runner 只是这些相同操作的自动化执行入口，先复用�
 
 ## 6. 现有源码判断与清理顺序
 
-- **保留复用**：`components/* → modules/*` 的正确分层，现有 `modules/workspace` 的 IAM、`modules/onelake` 的 Lakehouse 实现，以及有用的 Provider/State 测试。
-- **整合重写**：`new-environments/workspace`、`new-environments/onelake` 的重复 `resource` 定义不能长期与 Module 同时存在；`new-environments/connection` 要提取成可复用 Module。
+- **保留复用**：`components/* → modules/*` 的正确分层，现有 `modules/workspace` 的 IAM、`modules/onelake` 的 Lakehouse 实现，既有 Terraform 的 Provider/State 配置。
+- **旧新环境 Root 已清理**：`new-environments/` 曾重复定义 Workspace/Lakehouse/Connection，现已从工作树删除；将来依实际 Fabric Provider Schema 在原有 `modules/` 架构内实现缺少的 Connection Module。
 - **停止作为强制前置**：`bootstrap/identity` 的三 App/SPN/OIDC、`bootstrap/storage` 的新 Blob/Backend、复杂双 Tenant Profile/Seed/批准 Gate；付费 Capacity 创建是按需独立工作，不应被普通部署隐式触发。
-- **清理时间**：先实现单一 Root/Modules 和新环境真实验证，再审查并批量删除不再引用的 Bootstrap 工具、重复 Root、测试及 CI；旧 `components/` 可能由 Self-Runner 真实引用，**未经 Workflow/State 审计不能先删**。删除 Git 源码不等于删除云端资源；历史可通过 Git 和旧 OpenSpec 追溯。
+- **清理决定（2026-10-20）**：用户明确要求立即删除未实际部署的新 Bootstrap/Tests/Tools/独立新环境源码，已做 Git 源码层清理；旧 `components/` / `modules/` / `azure-infra.yaml` 保留。今后仍需真实资源/State 盘点和部署测试，但它们不是此次删除纯源码的阻塞前置。
 
 **长期架构在本文件；代码实现的任务/状态/验收只记在 [新 OpenSpec Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)，不在这里做第二份 Task 清单。**
