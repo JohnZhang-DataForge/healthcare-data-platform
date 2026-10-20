@@ -7,6 +7,9 @@ implementation_status: offline-fabric-roots-partial-bootstrap-not-implemented
 
 # Healthcare V2 — Microsoft Fabric 多环境可重建部署设计
 
+> **2026-10-20 最新部署决定（优先于本文 2026-10-19 的通用设计示例）**：[当前固定基线：A=B + reuse-existing Storage/State/Landing](FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)。Tenant A/B 同为 `899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`，Subscription `56107520-5920-4e96-9833-5441ded0a90c` 已启用；当前不新建人类管理员账号、不新建 Tenant/Storage/Landing，已有 `johnzhang/tfstate` 作为**最终**远端 Backend 的目标，只使用新的隔离 State Key。旧手工 Fabric Workspace/子账号不作为新环境依赖，旧 State 不动。所需应用身份/配置优先自动化。A≠B 的 Provider 参数仍保留为未来兼容，不作为本轮阻塞条件；收费 Capacity 无独立费用批准不创建。此处是设计更新，不是云端 Apply 已完成。
+
+
 > **APPROVED TARGET DESIGN / IMPLEMENTATION PARTIAL**：2026-10-19 用户批准 **Bootstrap as Code + Terraform + GitHub Actions（Self-Runner）+ fabric-cicd** 的修订目标；Capacity 支持 IaC 创建或复用，**本期不实现自动 Suspend/Resume**。目前只有离线 Terraform Root / CI 的部分代码，尚未获得任何真实 Azure/Fabric 创建授权；不要求 Fabric Workspace 原生连接 GitHub。本文件规定未来可交付目标、设计取舍与安全边界，**不是实际 Terraform Apply、Fabric 部署或云端 E2E 验收**。具体开发进度只能记录在未来相应 [OpenSpec Changes](../../../openspec/changes/) 与 PR/Run 中；[PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md) 是跨项目唯一状态入口。
 
 ## 0. 2026-10-19 已批准修订：Bootstrap as Code + Capacity IaC
