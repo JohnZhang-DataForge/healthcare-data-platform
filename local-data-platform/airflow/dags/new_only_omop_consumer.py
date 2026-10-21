@@ -215,7 +215,7 @@ with DAG(
         ],
     )
     WRITER_IMAGE=(
-        "ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer"
+        "ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-omop-writer"
         ":latest"
     )
     execute_new_only_writer=KubernetesPodOperator(
