@@ -1,3 +1,5 @@
+# Only an existing, reviewed data source may be configured.
+# Account selection belongs in the instance terraform.tfvars, not this reusable Root.
 variable "connection" {
   description = "Optional approved AzureBlobs connection. Null disables creation. Never put secrets here."
   type = object({
@@ -27,10 +29,10 @@ variable "connection" {
 
   validation {
     condition = var.connection == null ? true : (
-      var.connection.storage_account_name == "johnzhang" &&
+      can(regex("^[a-z0-9]{3,24}$", var.connection.storage_account_name)) &&
       length(trimspace(var.connection.name)) > 0 &&
       length(trimspace(var.connection.blob_domain)) > 0
     )
-    error_message = "Only reviewed existing johnzhang Azure Blob account and a nonempty Connection name/domain are permitted."
+    error_message = "A valid existing Storage account name, Connection name and Blob domain are required."
   }
 }
