@@ -15,7 +15,7 @@
 
 ## 3. Fabric native Item publishing
 
-- [ ] 3.1 添加 `johnzhang-test` 的真实 Fabric Git Native Notebook/Pipeline 源码与 logicalId，更新对应 CODE.md；先只做无数据写入的 Smoke。
+- [x] 3.1 添加 `johnzhang-test` 的真实 Fabric Git Native Notebook/Pipeline 源码与 logicalId，更新对应 CODE.md；先只做无数据写入的 Smoke。
 - [ ] 3.2 实现 `fabric-cicd` 受控入口和 Self-Runner 精确 SHA/Outputs/Item 白名单/OIDC、禁用 orphan 删除；测试负向/重复发布合同。
 - [ ] 3.3 Live 发布+读回 Notebook/Pipeline（而非 Terraform）、执行无数据写入的 Pipeline→Notebook Smoke；记录 Run/实际 GUID/重复部署证据。
 
@@ -35,4 +35,6 @@
 
 - 新增 `azure-fabric/workspaces/johnzhang-test/` 下 Notebook/Pipeline 原生源码，使用固定且不同的 Git `.platform` logicalId；Pipeline Notebook activity 使用 Notebook logicalId + 全零 Workspace ID（相同 Workspace Fabric 自动绑定候选）。
 - 提交静态反向约束：源码不得读/写 Blob/Delta，Pipeline 无 schedule、无隐式 workspace-specific GUID；只管理 Notebook/Pipeline，不管理 Workspace/Lakehouse。
-- **尚不标记 3.1 完成**：要等待 PR CI 全部通过并合并 Main；运行平台真实接受此 Git-native 定义、Item GUID 映射与发布/执行需要后续 3.2–3.3 的独立验证。
+- PR #374 的静态/门禁 **6/6 PASS**，Task 3.1 只表明 Git Native 源码和离线合同完成；真实 Fabric 发布、Item GUID 映射与运行仍属于 3.2–3.3，绝不在本任务宣称已云端创建。
+
+- [Healthcare PR #374](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/374) 对原生 Notebook/Pipeline 采用独立静态验收；精确 HEAD `ec168ecfe848b98fdf3d62e8e662f3c7ee441e29` **6/6 CI PASS**，没有云端副作用。后续源码如有新提交，以新 HEAD CI 为准。
