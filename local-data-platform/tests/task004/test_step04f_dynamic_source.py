@@ -36,9 +36,11 @@ class Source(unittest.TestCase):
  def test_manifest_modified_fails(self):
   c=context()
   with self.assertRaisesRegex(ValueError,"manifest_sha_mismatch"):read(FakeS3(c,b"altered"),c,"person",lambda raw:[row()])
- def test_multiple_parquet_files_fail_closed(self):
+ def test_multiple_parquet_files_still_enforce_global_row_count(self):
   c=context()
-  with self.assertRaisesRegex(ValueError,"parquet_cardinality"):read(FakeS3(c,nfiles=2),c,"person",lambda raw:[row()])
+  # The test decoder yields the same Person from each shard; a two-part
+  # dataset still fails the immutable one-row Batch count (not file count).
+  with self.assertRaisesRegex(ValueError,"BLOCKED=row_count"):read(FakeS3(c,nfiles=2),c,"person",lambda raw:[row()])
  def test_empty_prefix_fails_closed(self):
   c=context()
   with self.assertRaisesRegex(ValueError,"parquet_cardinality"):read(FakeS3(c,nfiles=0),c,"person",lambda raw:[row()])
