@@ -40,11 +40,11 @@ def prepare_spark_handoff_json(selected_json, claim_json, patient_json, encounte
 
 DISCOVERY_IMAGE=(
     "ghcr.io/johnzhang-dataforge/healthcare-landing-discovery"
-    "@sha256:059d94e4d1348c194956203fea6b19be23ec39595127eea397419e66fa4e5924"
+    ":latest"
 )
 CDM_RUNTIME_IMAGE=(
     "ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-cdm-runtime"
-    "@sha256:94979587aeee2f2ea13e2c27ffc5a8850b97381f3f126c72201fe2b2b3086f5e"
+    ":latest"
 )
 
 S3_SECRETS=[
@@ -108,7 +108,7 @@ with DAG(
     scan_ready_manifests=KubernetesPodOperator(
         task_id="scan_ready_manifests",name="new-only-consumer-discovery",
         namespace="dw-spark",service_account_name="task004-control-runtime",
-        image=DISCOVERY_IMAGE,image_pull_policy="IfNotPresent",
+        image=DISCOVERY_IMAGE,image_pull_policy="Always",
         in_cluster=True,get_logs=True,do_xcom_push=True,
         env_vars={"S3_ENDPOINT":"http://dw-seaweedfs-s3.dw-seaweedfs.svc.cluster.local:8333",
                   "S3_REGION":"us-east-1","AWS_EC2_METADATA_DISABLED":"true"},
@@ -130,7 +130,7 @@ with DAG(
     inspect_claim_readonly=KubernetesPodOperator(
         task_id="inspect_claim_readonly",name="new-only-consumer-pg-readonly",
         namespace="dw-spark",service_account_name="task004-control-runtime",
-        image=CDM_RUNTIME_IMAGE,image_pull_policy="IfNotPresent",
+        image=CDM_RUNTIME_IMAGE,image_pull_policy="Always",
         in_cluster=True,get_logs=True,do_xcom_push=True,
         cmds=["python","-c"],arguments=[CLAIM_STATUS_SCRIPT],
         env_vars={
@@ -216,12 +216,12 @@ with DAG(
     )
     WRITER_IMAGE=(
         "ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer"
-        "@sha256:1565a4481669520916a336e7ce5de52f3856333c43632078d03854b22bc28ae4"
+        ":latest"
     )
     execute_new_only_writer=KubernetesPodOperator(
         task_id="execute_new_only_writer",name="task004-new-only-atomic-writer",
         namespace="dw-spark",service_account_name="task004-control-runtime",
-        image=WRITER_IMAGE,image_pull_policy="IfNotPresent",
+        image=WRITER_IMAGE,image_pull_policy="Always",
         in_cluster=True,get_logs=True,do_xcom_push=False,
         env_vars={
             "TASK004_WRITER_MODE":"COMMIT",
