@@ -1,8 +1,5 @@
 # Fabric Module-first Environment Deployment
 
-> **SUPERSEDED historical delta:** requirements below record the abandoned composed Root design; latest target is [Workspace-scoped Change](../../../organize-fabric-terraform-by-workspace/specs/fabric-workspace-scoped-terraform/spec.md). Do not implement this former Change.
-
-
 ## ADDED Requirements
 
 ### Requirement: Externally prepared Fabric deployment prerequisites
