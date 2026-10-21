@@ -11,6 +11,13 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 该目录当前只有 `.gitkeep` 占位文件，**尚无真实 Data Pipeline Item 源码**。
 
+
+**2026-10-21：**新增 `johnzhang-test` Trial Smoke 原生 Pipeline 源码（Git 中已存在，**未通过 fabric-cicd 云端发布**）。`healthcare-omop` 原目录仍只有历史占位项。
+
+- [`pl_trial_smoke.DataPipeline/.platform`](../../../../azure-fabric/workspaces/johnzhang-test/pipelines/pl_trial_smoke.DataPipeline/.platform) — 稳定 logicalId / Pipeline Item 身份。
+- [`pl_trial_smoke.DataPipeline/pipeline-content.json`](../../../../azure-fabric/workspaces/johnzhang-test/pipelines/pl_trial_smoke.DataPipeline/pipeline-content.json) — 仅一个 `TridentNotebook` 活动，使用同 Workspace 的 Notebook logicalId，不含自动调度。
+- [工作空间级源码说明](../../../../azure-fabric/workspaces/johnzhang-test/README.md) · [静态测试](../../../../.github/quality/tests/test_fabric_native_smoke_source.py)。
+
 ## 实际拥有的 Fabric 原生源码文件
 
 | 原生源码文件 | 功能 |

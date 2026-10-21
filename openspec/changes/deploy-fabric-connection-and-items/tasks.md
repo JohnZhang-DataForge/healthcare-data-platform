@@ -30,3 +30,9 @@
 - [Healthcare PR #372](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/372) 增加可选共享 Connection Root、独立 `shared-infra/connection.tfstate`、默认 `connection=null`、Terraform 源码导航与离线测试。
 - 首次 CI Run [#39640775701](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39640775701) 的 Connection Job 仅因 `terraform fmt` 格式对齐失败；修正后 HEAD `696ab602dda498a5b2d120dd5c008e772c503836` 的 **21/21 CI Check PASS**，包含 `terraform validate / shared-infra / connection`、OpenSpec Trusted Gate 和 Documentation Links。
 - **只验证源码/静态**：未初始化 Remote Backend、未 Plan/Apply、没有创建 Connection、Notebook/Pipeline、Workspace/Lakehouse 或付费 Capacity。任务 2.2–4.3 不因本次通过而完成。
+
+## Task 3.1 — Git-native source candidate (2026-10-21)
+
+- 新增 `azure-fabric/workspaces/johnzhang-test/` 下 Notebook/Pipeline 原生源码，使用固定且不同的 Git `.platform` logicalId；Pipeline Notebook activity 使用 Notebook logicalId + 全零 Workspace ID（相同 Workspace Fabric 自动绑定候选）。
+- 提交静态反向约束：源码不得读/写 Blob/Delta，Pipeline 无 schedule、无隐式 workspace-specific GUID；只管理 Notebook/Pipeline，不管理 Workspace/Lakehouse。
+- **尚不标记 3.1 完成**：要等待 PR CI 全部通过并合并 Main；运行平台真实接受此 Git-native 定义、Item GUID 映射与发布/执行需要后续 3.2–3.3 的独立验证。

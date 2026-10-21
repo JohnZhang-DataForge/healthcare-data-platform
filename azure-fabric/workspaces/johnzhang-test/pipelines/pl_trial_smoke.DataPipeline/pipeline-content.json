@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "description": "Controlled Fabric Trial F4 smoke; do not schedule automatically",
+    "activities": [
+      {
+        "name": "Run_trial_smoke_notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "typeProperties": {
+          "notebookId": "a1899ac0-814e-5d12-b27b-8a4d24f079c6",
+          "workspaceId": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    ]
+  }
+}
