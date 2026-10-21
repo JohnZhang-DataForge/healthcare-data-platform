@@ -6,7 +6,9 @@
 
 - [x] 1.1 核对早晨成功 Batch [旧/新 Writer A/B #39534932448](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39534932448)、失败 Batch [A/B #39535834807](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39535834807) 的输入行数、固定 Digest、实际 Pod 和 `native` 唯一未映射值；保留其它随机失败 Batch 的不确定性。
 - [x] 1.2 建立本 Proposal、Design、Tasks、可测试 Delta Spec，并同步原迁移 Change 的 4.11.5/4.11.6/清理次序；方案 PR 不变更业务数据与镜像。
-- [ ] 1.3 在方案 PR 最终 HEAD 上验证 OpenSpec Strict、Change Gate、Trusted Gate、文档链接和适用 CI 后合并；文档合并不等于缺陷修复。
+- [x] 1.3 方案 [Healthcare PR #351](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/351) 已通过最终 HEAD 11/11 CI，Squash Merge Main `d880d041906cdbea1bec8508535ba441d1373243`；仅方案通过，非业务修复。
+
+> **2026-10-20 Bugfix 开发分支（IMPLEMENTED IN PR / NOT MERGED / NOT E2E VERIFIED）**：核对固定 Synthea v3.3.0 源码在非 Hawaii 州 `native` 对应 American Indian or Alaska Native；HL7 FHIR-to-OMOP Race 标准值给出 Concept **8657**。当前模拟数据范围为 Georgia，映射选择 `native → 8657`；最终需在部署的 `cdm.concept` 内只读核实 `concept_id=8657 AND domain_id='Race' AND standard_concept='S' AND invalid_reason IS NULL`。本 PR 修改 Mapper Race 字典、字段诊断以及历史动态 PG Renderer Concept 前置检查，并增加正负回归；暂不把 2.1/2.2/2.3/2.4/3.1 标为已验收。保留旧/新固定 Digest A/B 历史结果及实际新镜像 E2E HOLD。外部核验：Synthea `v3.3.0` [CDWExporter](https://github.com/synthetichealth/synthea/blob/v3.3.0/src/main/java/org/mitre/synthea/export/CDWExporter.java)，[HL7 FHIR-to-OMOP Race Concept](https://hl7.org/fhir/uv/omop/2.0.0-202609-ballot/en/RaceAndEthnicity.html)。
 
 ## 2. 修复映射与回归
 

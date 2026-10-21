@@ -74,7 +74,7 @@ BEGIN
  THEN RAISE EXCEPTION 'BLOCKED:LEDGER_DRIFT';END IF;
 END $$;
 """
-    concepts=([8507,8532,8515,8516,8557,8527,38003563,38003564] if entity=="person"
+    concepts=([8507,8532,8515,8516,8557,8657,8527,38003563,38003564] if entity=="person"
               else [9201,9202,9203,581476,722455,32827])
     sql+="""DO $$
 BEGIN

@@ -23,6 +23,28 @@ class DynamicAdapters(unittest.TestCase):
   self.assertEqual(v[0]["canonical_payload"]["visit_type_concept_id"],32827)
   self.assertEqual(v[0]["canonical_payload"]["visit_start_datetime"],"2026-01-01 01:00:00.000000")
   self.assertEqual(p,transform([person(2),person(1)],c,"person"))
+ def test_native_race_maps_to_omop_8657_and_preserves_source(self):
+  a=person(1);a["race_code"]="native"
+  b=person(2);b["race_code"]="white"
+  mapped=transform([a,b],context(),"person")
+  self.assertEqual(mapped[0]["canonical_payload"]["race_concept_id"],8657)
+  self.assertEqual(mapped[0]["canonical_payload"]["race_source_value"],"native")
+  self.assertEqual(mapped[1]["canonical_payload"]["race_concept_id"],8527)
+  self.assertEqual(mapped,transform([b,a],context(),"person"))
+  self.assertNotEqual(mapped[0]["row_fingerprint"],mapped[1]["row_fingerprint"])
+ def test_existing_supported_races_unchanged(self):
+  for code,expected in (("asian",8515),("black",8516),("hawaiian",8557),("white",8527),("other",0)):
+   with self.subTest(race=code):
+    a=person(1);a["race_code"]=code
+    result=transform([a,person(2)],context(),"person")[0]
+    self.assertEqual(result["canonical_payload"]["race_concept_id"],expected)
+    self.assertEqual(result["canonical_payload"]["race_source_value"],code)
+ def test_unknown_demographics_rejected_with_field_and_value(self):
+  for field,invalid in (("gender_code","X"),("race_code","alien"),("ethnicity_code","unknown")):
+   with self.subTest(field=field):
+    a=person(1);a[field]=invalid
+    with self.assertRaisesRegex(ValueError,"BLOCKED=unknown_demographic:"+field+"="+invalid):
+     transform([a,person(2)],context(),"person")
  def test_wrong_batch(self):
   a=[person(1),person(2)];a[0]["source_batch_id"]="wrong"
   with self.assertRaisesRegex(ValueError,"mixed_batch"):transform(a,context(),"person")

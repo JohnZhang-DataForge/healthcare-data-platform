@@ -23,6 +23,10 @@ class PgWriter(unittest.TestCase):
   self.assertNotIn("\nCOMMIT;",s)
   for phrase in ("INSERT INTO etl.person_id_map","INSERT INTO cdm.person","BLOCKED:STAGE_DRIFT","BLOCKED:EXISTING_TARGET_DRIFT","BLOCKED:CHECKPOINT_DRIFT","BLOCKED:TARGET_RECONCILIATION"):
    self.assertIn(phrase,s)
+ def test_native_omop_standard_race_is_vocabulary_checked(self):
+  sql=render(context(),rows("person"),"person")
+  self.assertIn("8657",sql)
+  self.assertIn("BLOCKED:VOCABULARY_INVALID",sql)
  def test_visit_parent_and_no_update(self):
   s=render(context(),rows("visit"),"visit")
   self.assertIn("BLOCKED:PERSON_COMMIT_MISSING",s)
