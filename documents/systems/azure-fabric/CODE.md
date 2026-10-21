@@ -29,3 +29,8 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 Fabric Notebook/Pipeline 新增、删除、移动或改名源码时，**同一 PR** 修改所属 [Notebooks CODE](notebooks/CODE.md) 或 [Pipelines CODE](pipelines/CODE.md)，使用现有 CODE-map CI 验证。Terraform Root/Module、Provider、权限和主要执行入口改变时同步更新 [Terraform CODE](infra-terraform/CODE.md) 并审查 IAM/State/Import；现有 CI **不保证逐一覆盖每个 .tf 文件**。
 
 Azure/Fabric 的 README/CODE/技术说明都在 `documents/systems/azure-fabric/`；源码区只保留真正的程序、Terraform 配置、模板以及 Fabric Item 生成的机器可读元数据，不维护第二份说明性文档。
+
+## Trial-only fabric-cicd publisher (2026-10-21)
+
+- [`azure-fabric/deployment/trial_smoke_publisher.py`](../../../azure-fabric/deployment/trial_smoke_publisher.py): scope-validated Fabric Trial Notebook/Pipeline Git-native publishing facade; `validate` no cloud calls; `publish` requires independently read live Workspace/Lakehouse Terraform outputs, exact confirmation, Fabric identity, fresh item inventory and post-publish API readback. Does not delete or orphan-cleanup Items; initial publish rejects pre-existing same-name Items until ownership resolution.
+- [offline tests](../../../.github/quality/tests/test_fabric_trial_smoke_publisher.py) and [static CI](../../../.github/workflows/fabric-trial-smoke-publisher-static.yml): no Fabric API nor Terraform Remote State access in CI. [Self-Runner workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-trial-native-item-publish.yml) was delivered by Self-Runner PR #204 (Main `4d31fcd17fba15f57f52bd08ad8ec4f9cfe9e01b`). Static CI PASSED; default mode validates source offline. Real Fabric publish and post-publish run acceptance have not been executed.
