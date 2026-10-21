@@ -1,5 +1,8 @@
 # Proposal
 
+> **SUPERSEDED / 历史方案（2026-10-20）**：本 Change 中的 `fabric-environment` 组合 Root、Apply-All、强制接管旧 Workspace 的设计已被用户明确取消。**请勿按本 Change 继续开发或部署。** 现行设计和新任务见 [`organize-fabric-terraform-by-workspace`](../organize-fabric-terraform-by-workspace/tasks.md)：`fabric-workspace/<name>/<type>/` + `shared-infra/<type>/`，单资源 Plan/Apply，Notebook/Pipeline 完全归 `fabric-cicd`。本目录保留作历史记录。
+
+
 ## Why
 
 2026-10-20 用户再次收敛 Microsoft Fabric Terraform 范围：**当前只部署现有 Fabric 账号，不开发多账号 Account Profile/自动切换**。当前账号下已有人工创建的 Fabric Workspace，准确名称为 `healthcare-omop`，当前作为 DEV 使用。未来可以在**同一账号**下增加其他 Fabric Workspaces。保持已有 `components → modules` 的可复用架构，优先实现并真实验证 Fabric 平台，而不是重新建设 Bootstrap。
