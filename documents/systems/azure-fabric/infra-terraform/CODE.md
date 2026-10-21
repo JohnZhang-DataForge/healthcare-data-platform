@@ -54,6 +54,14 @@ source_sha: null
 - [`Capacity REST 单测`](../../../../.github/quality/tests/test_fabric_capacity_lifecycle.py)：纯 Mock，不做云端写入；[Self-Runner Capacity Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-capacity-lifecycle.yml) 已上线，手动 `mode=trial|paid`、`operation=inspect|suspend|resume`，默认 `trial/inspect`。Paid 写入额外要求 `FABRIC_PAID_CAPACITY_ARM_ID`、`ENABLE_PAID_CAPACITY_OPERATIONS=true` 与匹配 `confirmation`，不自动操作。Workspace 永远只由 Terraform `workspace/` 管理。
 - [`OpenSpec Change`](../../../../openspec/changes/manage-fabric-capacity-lifecycle-api/tasks.md)：记录 Trial 与 Paid 两种 API 模式和运行验收，不与 Terraform Workspace/OneLake State 混用。
 
+### 2026-10-21 — 免费 Trial F4 Workspace + Lakehouse 真实验收
+
+- [Self-Runner Run #39635155333（Attempt 1 / 2）](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39635155333)：首次 Fabric Workspace Apply 返回 `Unauthorized`，Fabric Admin 将 `Service principals can create workspaces, connections, and deployment pipelines` 的 **Unapplied changes → Apply** 后，对**同一固定 Healthcare SHA `f2aa9fc601c42ca57537652f9a096144320f4a61`** 重跑 Attempt 2 **SUCCESS**。
+- Terraform `fabric_workspace` 真实创建 `johnzhang-test`，ID `d399f361-bc40-4f88-9615-df138ab8ee3b`，`capacity_id=3914ac8b-3375-498b-b3c0-1180a1902dd6` 引用**已存在免费 Trial F4**，不由 Terraform 创建新 Capacity。
+- Terraform `fabric_lakehouse` 真实创建 `lh_johnzhang_test`，ID `5a16b5a1-6274-4b37-8dad-19cb68b5139d`，`enable_schemas=true`；从上游 Workspace Remote State 读取 ID，OneLake Files/Tables 路径在输出中完成发布。
+- 独立 Backend Key `fabric-workspace/workspace.tfstate` 和 `fabric-workspace/onelake.tfstate`，CLI Workspace 同为 `johnzhang-test`；Workspace、OneLake 二次 `terraform plan -detailed-exitcode` 均返回 **0 / no drift**。日志 `TRIAL_F4_WORKSPACE_AND_ONELAKE_E2E=PASS`，`PAID_CAPACITY_CREATED=NO`。
+- **实际范围**：已验证 Terraform 创建 Workspace/Lakehouse 及两 Root 幂等性；未创建付费 Azure F2、未验证 Notebook/Pipeline/连接或临床 ETL，Trial 试用期结束与 OneLake 存储仍是后续独立运营/费用问题。[权威 OpenSpec](../../../../openspec/changes/validate-fabric-trial-free-infrastructure/tasks.md)。
+
 ## 免费 Fabric Trial F4 实测入口（Trial-only）
 
 - [`johnzhang-test/workspace/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/main.tf) → [`johnzhang-test/onelake/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/onelake/main.tf)：保留已有 Terraform Roots/共享 Modules 和独立 State，Workspace 的 `capacity_id` 在部署时引用已存在免费 Trial F4，**不会创建 Capacity**。
