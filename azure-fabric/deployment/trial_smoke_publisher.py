@@ -129,9 +129,16 @@ def publish(source, workspace_id, confirmation):
     if confirmation != CONFIRMATION or os.getenv("FABRIC_TRIAL_PUBLISH_ALLOWED") != "true":
         raise PermissionError("Reviewed publish authorization is required")
     # Import credential/deployment SDK only after all source/state safety checks.
-    from azure.identity import AzureCliCredential
+    from azure.identity import WorkloadIdentityCredential
     from fabric_cicd import FabricWorkspace, publish_all_items
-    credential = AzureCliCredential()
+    for key in ("FABRIC_CLIENT_ID", "FABRIC_TENANT_ID", "AZURE_FEDERATED_TOKEN_FILE"):
+        if not os.environ.get(key):
+            raise ValueError("Missing approved Fabric OIDC setting: " + key)
+    credential = WorkloadIdentityCredential(
+        client_id=os.environ["FABRIC_CLIENT_ID"],
+        tenant_id=os.environ["FABRIC_TENANT_ID"],
+        token_file_path=os.environ["AZURE_FEDERATED_TOKEN_FILE"],
+    )
     before = readback_items(credential, workspace_id)
     # Never mutate an unknown existing same-name Item; initial deployment is new-only.
     # Repeat/updates need an independently reviewed existing-item identity contract.
