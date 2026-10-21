@@ -19,7 +19,7 @@ Notebook **不重新执行**本地 Synthea、Canonical 或 OMOP 映射。Pipelin
 
 **当前状态：业务 Notebook 尚未开发。** `ingestion/` 目前只有 `.gitkeep`，没有真正的 `*.Notebook/` Item，且仓库目录本身不证明 Fabric Git Integration 已连接。
 
-现有 [Terraform Notebook Bootstrap](../../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) 会故意抛出 `RuntimeError`，属于基础设施的安全占位代码，**不属于此处未来的业务 Notebook 源码**。
+现有 [Terraform Notebook Bootstrap](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/20a6449000fe10eac642ab2dbcef37976339572b/azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) 会故意抛出 `RuntimeError`，属于基础设施的安全占位代码，**不属于此处未来的业务 Notebook 源码**。
 
 开始接入真实 Item 时，须保留 Fabric 生成的 `.platform`、`notebook-content.py` 等真实文件，核对现有 Notebook GUID、Runtime 和授权，并确定由 Fabric Git 还是 Terraform 负责部署，避免双重管理。不能为了补齐目录而手工伪造 Item 元数据。
 
