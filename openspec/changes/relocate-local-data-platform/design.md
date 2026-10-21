@@ -137,6 +137,24 @@ Clean Build 必须来自明确的 Healthcare SHA、唯一源码根和审定 Cont
 **规范状态**：此 PR 只修改 OpenSpec 计划，`skip_specs: true` 保持不变；实际部署行为改动后依据 5.2 判断是否需要另行形成可观察 Requirement/Delta Spec。历史 Digest、失败批次与旧 Clean Build 的证据原样保留，不再作为当前发布配置。
 
 
+
+### 4D. 新三阶段依赖及只读对照证据（2026-10-20 当前决议）
+
+两次 A/B 对照使用真实历史 Airflow Handoff/Processing S3 Parquet、旧固定 Writer `@sha256:1565a4481669520916a336e7ce5de52f3856333c43632078d03854b22bc28ae4` 与新固定 Writer `@sha256:f7904a5a5dd86c288bd369c7daddb8cb3d21c315c3e68e80ea2fe43dcd1c864f`，均没有 PG 连接或 COMMIT。
+
+| 输入 Batch | 旧 Writer | 新 Writer | 只读证据 |
+| --- | --- | --- | --- |
+| 早晨成功 `synthea-new-only-gh-39421910846`（16/4,259） | 映射 PASS | 映射 PASS，Person/Visit SHA 与旧完全一致 | [Run #39534932448](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39534932448) |
+| 后来失败 `synthea-new-only-gh-39524542198`（64/12,446） | `unknown_demographic` | 同样错误；唯一不受支持值 `race_code=native`（1 Person） | [Run #39535834807](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39535834807) |
+
+**先 Bugfix 再 E2E**：独立 [修复 Change](../fix-synthea-native-race-mapping/design.md) 核实 Synthea `native` 的语义和正确 OMOP 标准 Concept，不预猜数值、不静默映射为 `0`，完成 Mapper、前置诊断与回归。代码合并 Main 后由本迁移 Change 4.11.5 进行受影响镜像的构建/发布、实际 Pod `imageID`、全新唯一 Batch → Atomic Writer COMMIT → 独立 PG/S3 Readback → 同 Batch SKIP 验收；旧成功 Batch 不清理数据库也不执行重复提交。
+
+**再清文件**：既有 4.1/4.8 的 KEEP/DELETE/HOLD、代码消费者/恢复证据是前置；4.9/4.10 仅删除确认无活动消费者、无独有回归价值的 C/D 类历史文件。延续已批准的 CI PASS → Merge Main → 新 Batch 全链路 E2E 策略；E/HOLD 不删。
+
+**最后清镜像**：4.11.6 必须在上述新镜像 E2E 和清理后 E2E 都真实 PASS 之后执行。当次重新核对 8 个现用 GHCR Package 与 4 个历史候选的版本/引用、父子镜像依赖、实际 Pod、恢复 Digest，只有确认无消费者且无需回退才删除。不得碰基础镜像、PVC、PG/S3 或所有节点缓存。
+
+历史失败证据保持原貌；其它未调查随机 Batch 不自动归因于 `native`。本次仅方案文档 PR，不触发共享运行资源动作。
+
 ### 5. 回退边界
 
 - 源码：由独立 Git 备份与固定 SHA 恢复；不将历史源码重放到生产部署视为自动安全操作。

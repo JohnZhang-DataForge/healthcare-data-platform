@@ -158,11 +158,20 @@
 - [x] 4.11.4 使用已有 Actions/Self-Runner 向 GHCR 发布全部 8 个新镜像，记录不可变 `:git-<sha>`、实际 Digest、父镜像身份与构建来源；8/8 检查成功后更新 `:latest`，不增加新的发布管理系统。
 > **4.11.4 正式验收 PASS（美东 2026-10-20 / UTC 2026-10-21）**：[Healthcare PR #342](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/342) 将旧包权限阻断的三个子镜像更换为 Healthcare 所有的新包；Main `a65a15d304045eb3edd673c086c2d6eacb85cf9e` 的 [Run #39523510402](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39523510402) 实际 8/8 Clean Build、8/8 Smoke、8/8 `:git-<Main SHA>` GHCR Publish、8/8 `:latest` Promotion 均 PASS。8 个实际 GHCR Manifest Digest、所有新包名与两个运行 Pod 的 imageID 详见 [本轮证据](evidence/LOCAL-DP-IMAGE-REBUILD-PUBLISH-AND-E2E-20261020.md)。上方 GHCR 首次权限失败记录是**历史阶段性失败**，已被此 SUCCESS 取代。
 
-- [ ] 4.11.5 校验 Airflow GitSync 与实际新 K8s Pod `imageID`/Spark/Writer 来源后，运行全新 Synthea Batch 完整 E2E（18/18 S3 READY、Airflow、Spark Person/Visit/Reconciliation、Atomic Writer、独立 PG/S3 Readback、同 Batch SKIP 与 PG 零变化）。记录 Run/Batch/SHA/Digest；不在 DagRun 中途混用镜像版本；`unknown_demographic` 业务 Bug 暂缓修复并独立记证。
+- [ ] 4.11.5 **前置：独立 Bugfix Change `fix-synthea-native-race-mapping` 的映射修复完成、测试和 Main 合并并重建/发布受影响镜像。** 随后核实 Airflow GitSync、真实新 Pod `imageID`、Spark/Writer 来源，在全新唯一 Synthea Batch 上完成 18/18 S3 READY → Airflow/Spark Person/Visit/Reconciliation → Atomic Writer COMMIT → 独立 PG/S3 Readback → 同 Batch SKIP 与 PG 零变化。记录 Run/Batch/SHA/Digest；历史 Batch 的只读 A/B 不构成此项 E2E PASS。
 > **4.11.5 当前 HOLD/OPEN，不能勾选**：[Self-Runner 临时 E2E PR #171](https://github.com/JohnZhang-DataForge/Self-Runner/pull/171) 已关闭未合并。新发布镜像生成两个全新独立 Batch：[#39524542198](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39524542198)（64 Person、12,446 Encounter）及 [#39525509725](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39525509725)（49 Person、6,688 Encounter）；实际 S3 READY、双 Airflow 角色 DAG 同字节、Spark Person/Visit/Reconciliation 与 Handoff 均 PASS，两个 Writer 均 FAIL，故整链路 E2E、Repeat SKIP、PG 零变化**未验收**。前者的 [只读诊断 Run #39525509790](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39525509790) 已确认使用本轮新 Writer Digest，实际错误为先前已单独记录的 `ValueError: BLOCKED=unknown_demographic`，该 Batch Writer Ledger 0；后者 Writer 的精确堆栈未另行读取。详见 [本轮证据](evidence/LOCAL-DP-IMAGE-REBUILD-PUBLISH-AND-E2E-20261020.md)。不在本镜像改造中修改业务映射，不重放失败 Batch；**4.11.6 旧镜像清理保持 HOLD**。
 
-- [ ] 4.11.6 真实验收成功后，清理无活动/回滚消费者的旧**项目业务镜像**和相关缓存，保留必要恢复版本，不触碰平台基础镜像、PVC、PG/S3；更新 OpenSpec 与受影响 CODE.md/PROJECT-STATUS，然后再处理 Task 4.1/4.8/4.9/4.10 剩余历史文件与 Task 5 收尾。
+- [ ] 4.11.6 **最后执行**：4.11.5 新镜像完整 E2E PASS，且 4.1/4.8/4.9/4.10 历史源码/测试清理通过删除 PR CI、Merge Main 后的新 Batch E2E 后，重新盘点 GHCR 当时的 8 个现行/4 个遗留候选 Package 与全部 Version、父镜像/DAG/Workflow/Pod/回退引用。只清理确定无消费者的过时项目业务 Package/Version，保留需要的恢复 Digest 和历史证据，不清节点全部缓存、基础镜像、PVC、PG/S3；保存执行清单和结果后再归档。
 
+
+
+### 4D. 当前决议：Bugfix → 新镜像 E2E → 历史文件清理 → 旧 GHCR 清理（2026-10-20）
+
+> **只读 A/B 证据已确认，业务修复尚未实施。** [早晨成功 Batch #39534932448](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39534932448) 在旧、新 Writer 上 16 Person/4,259 Visit 映射与 SHA 完全一致；[失败 Batch #39535834807](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39535834807) 在旧、新 Writer 上 64 Person/12,446 Visit 均因同一 `race_code=native`（恰好 1 条）不在 Mapper 枚举内而报告 `unknown_demographic`。两次实验**没有数据库连接/提交**。GHCR 8/8 Build/Publish 已 PASS；完整 Writer E2E 仍 FAIL/HOLD。其它失败批次未验证原因，历史文档不得改写。
+>
+> **唯一责任**：业务映射修复和其回归归 [`fix-synthea-native-race-mapping`](../fix-synthea-native-race-mapping/tasks.md)；全新 Batch 业务 E2E 仍属本 Change **4.11.5**；旧文件 C/D 清理仍属 **4.1/4.8/4.9/4.10**；旧 GHCR Package/Version 退役仍属 **4.11.6**。执行次序为：**修映射 → 构建/发布受影响镜像并完整新 Batch E2E → 清理过时文件并在 Merge Main 后 E2E → 删除确认无引用的旧 GHCR 包/版本 → Task 5 收尾**。不重复建三个新 Change。
+>
+> **验收条件**：未经核实不填 `native` 的 OMOP Concept、不改安全 Writer/Fencing；4.11.5 直到真实 COMMIT/读回/幂等全 PASS 才打勾；4.9/4.10 直到删后 Main 真实回归才关闭；4.11.6 直到确有 GHCR 删除记录且核对保留的恢复版本才关闭。临时诊断 [PR #175](https://github.com/JohnZhang-DataForge/Self-Runner/pull/175)、[#176](https://github.com/JohnZhang-DataForge/Self-Runner/pull/176) 已关闭未合并。本次方案提交不做代码、Pod、数据库、S3 或 GHCR 修改。
 
 ## 5. 结束条件（暂不归档）
 
