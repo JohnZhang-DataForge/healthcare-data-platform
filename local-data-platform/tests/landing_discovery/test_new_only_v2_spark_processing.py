@@ -96,7 +96,7 @@ class SafeV2Probe(unittest.TestCase):
             with self.assertRaises(ValueError):validate_handoff(g,person,visit)
     def test_v2_image_is_release_tagged_and_legacy_route_preserved(self):
         h=HELPER.read_text()
-        self.assertIn("healthcare-landing-processing-v2",h)
+        self.assertIn("healthcare-data-platform-local-dp-landing-processing-v2",h)
         self.assertIn("healthcare-data-platform-task004-runtime",h)
         self.assertEqual(h.count('":latest"'),2)
         self.assertIn('image_pull_policy="Always"',h)
