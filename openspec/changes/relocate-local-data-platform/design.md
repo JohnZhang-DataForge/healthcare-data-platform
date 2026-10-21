@@ -74,6 +74,18 @@ healthcare-data-platform/
 
 **先跑后清**：先复用现有 DAG/镜像/Writer，用新唯一 Batch 执行并修复当前目录迁移造成的启动路径问题。4.1/4.8 的消费者/备份证明只在准备删除 C/D 候选时成为硬门槛；历史 393 文件已完成独立备份，不重复全量清点。若真实 E2E 已通，后续清理可以独立分批，不延误 Fabric 工作线。
 
+### 2026-10-21 实际验收与快速一批清理决策（覆盖下文小批次执行粒度）
+
+[Self-Runner #39679393354](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39679393354) 已通过两个旧 Batch（02、03）的真实 SKIP/PG 零变化及一个新 Batch `synthea-new-only-gh-39679393354-01` 100 Person/15,326 Visit 的 Synthea → S3 → Airflow/Spark → Writer Atomic COMMIT → 独立 PG Readback → 同 Batch SKIP；PG Person 694→794、Visit 96,133→111,459。旧三批 Batch 01/02/03 在此前也已全部 COMMIT。历史 [清理 PR #332](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/332) 已合并删除 9 个旧安装器，19/19 正式产物和 17/17 HOLD 保留。合并后 FAIL/FAIL/PASS 是真实历史现象；随后 Native Race、Multi-Parquet 和 Airflow Selection 问题分别修复；不能单凭失败把责任归给已删的 Shell。2026-10-21 新审阅的 Healthcare Main `3b94af541f3904a731622e51eece027bef4b818c` 有 Local DP 363 tracked 文件，包括 90 Shell、TASK003 60、107 Tests。
+
+**用户最新决定**：清理主要目标是减少长期遗留的非业务源码，时间优先。**不对各脚本逐个做 Live Runtime 验证、不以 2–6 文件为删除批次**，而是复用既有双仓审计+备份，对当前 SHA 做一次批量文件树、生产消费者、构建路径、动态生成与手工安全恢复核查，形成**显式 C/D DELETE allowlist**。可直接一次删除所有确认无现行独立作用的 C/D；A/B/E（尤其 Fencing、事务、恢复运维、动态未知、正式 Tests/Contracts）保留，避免把 NEW_ONLY E2E 覆盖不到的功能误判为无用。
+
+**实施**：一个 Cleanup PR 统一删除 allowlist，配套更新组件 CODE.md、引用和不可变恢复 SHA。**最终 PR HEAD** 的全部适用 CI、单元/Contracts、DagBag、Native Race / Multi-Part Parquet / Discovery exact-selection 正反回归、**8 个应用镜像无旧层 Clean Build + Import/Entrypoint/来源/Digest** PASS，便可按既有 Merge-first 决定先合并 Main；此时不宣称业务 E2E 已过。
+
+**强业务验收**：核对合并后 Scheduler/DAG Processor GitSync Main SHA、实际镜像 Pod digest 后，串行**至少三个全新随机 Synthea Batch**，每个独立验证 CSV/Manifest、S3 READY、Airflow exact Batch、Spark Person/Visit/Reconciliation、Atomic Writer COMMIT、独立 PG Person/Visit/FK/Stage/Ledger/Claim/Checkpoint/ID Map、同 Batch 第二次 SKIP 与 PG 零变化；另触发两个已 COMPLETED Batch 检查不运行 Spark/Writer 且 PG 不变。运行证据绑定 Healthcare SHA、Run、Batch、Manifest SHA、真实 imageID、增量。随机样本没有出现 native/多分片等情形时只通过对应专项正反 Contract 回归说明该分支被测试，绝不伪称随机命中。
+
+**故障处理**：任一 FAIL 或 Writer COMMIT 结果 UNKNOWN，立即停止后续新批次提交与旧 GHCR 清理，先只读验证 S3/PG 实际状态，保留原始 Run/异常，再做最小修复或 Git revert；不盲重试已可能 COMMIT 的 Batch，Git 撤销不代表数据库/S3 自动回滚。三批新 + 两批旧均通过后，才关闭本轮清理 Tasks，并在 4.11.6 最后决定旧 GHCR 退役。本次文档 PR 本身不删源码、不构建镜像、不运行 E2E。
+
 ### 4A. 后续扩展：源文件清点、历史清理和路径一致性（2026-10-18 已批准的实施目标；本方案 PR 尚未实施）
 
 **目标**：将 `local-data-platform/` 从历史 Task/Step 过程文件集合，整理为能从当前 Git 主线独立构建、测试和部署的本地业务平台。保留有效业务代码以及真实需要的 Contracts、SQL、镜像、K8s 模板、正式运维脚本与**有效自动化测试**；不建立仓库内第二个 `archive/` 或历史代码镜像目录。此项只清理经证据证明无用的文件，**不**包含业务逻辑改写、`task004` 业务模块统一重命名、公共接口抽取、PG 持久化接口或 DAG ID 改名，后者仍属 `modernize-legacy-task-code` 独立 Change。
