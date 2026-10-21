@@ -79,6 +79,9 @@ jobs:
           # Retained legacy-phase and packaging tests now follow the current 8-image parent contract.
           PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/synthea_new_only -p 'test_digest_runtime.py' -v
           echo "SYNTHEA_CURRENT_PARENT_AND_PHASE_TESTS=PASS"
+          # Writer must consume one logical dataset even when Spark emits multiple parts.
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/omop_writer -p 'test_task004_cdm_parquet_shards.py' -v
+          echo "WRITER_MULTI_PARQUET_CONTRACT=PASS"
           echo "IMAGE_SOURCE_TESTS=PASS"
 
       - name: Build five independent images without prior project image layers
