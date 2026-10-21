@@ -34,8 +34,7 @@ class FabricPaidE2ETest(unittest.TestCase):
         self.assertIn('data.fabric_capacity.created.id',(CAP/"outputs.tf").read_text())
         self.assertIn('key = "shared-infra/capacity.tfstate"',(CAP/"versions.tf").read_text())
         self.assertFalse(list(TEST.rglob("capacity*.tf")))
-        self.assertNotIn("3914ac8b", "
-".join(p.read_text() for p in CAP.glob("*.tf*")))
+        self.assertNotIn("3914ac8b", "\n".join(p.read_text() for p in CAP.glob("*.tf*")))
 
     def test_workspace_capacity_reference_remains_terraform_only(self):
         workspace=(TEST/"workspace/main.tf").read_text()

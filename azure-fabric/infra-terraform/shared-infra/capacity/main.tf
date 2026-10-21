@@ -2,11 +2,11 @@
 data "azurerm_client_config" "current" {}
 
 module "capacity" {
-  source = "../../modules/capacity"
-  name = var.capacity_name
-  resource_group_name = var.resource_group_name
-  location = var.location
-  sku_name = var.sku_name
+  source                 = "../../modules/capacity"
+  name                   = var.capacity_name
+  resource_group_name    = var.resource_group_name
+  location               = var.location
+  sku_name               = var.sku_name
   administration_members = distinct(concat([data.azurerm_client_config.current.object_id], var.additional_admins))
 }
 
