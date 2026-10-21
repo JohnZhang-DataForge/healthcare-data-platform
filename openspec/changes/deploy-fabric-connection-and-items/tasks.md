@@ -43,3 +43,10 @@
 
 - 加入 Trial-only `trial_smoke_publisher.py` 的 `validate`（完全离线）和 `publish`（严格确认、Workspace/OneLake Terraform 真实 Outputs、限定 Notebook/Pipeline 的 Git 源、拒绝不明已有同名 Item、使用 `fabric-cicd`、发布后 API 读回），绝不清理 orphan Items。更新 CODE.md、单元测试。
 - Self-Runner [PR #204](https://github.com/JohnZhang-DataForge/Self-Runner/pull/204) 已合并 Main `4d31fcd17fba15f57f52bd08ad8ec4f9cfe9e01b`，新增手工 Workflow `fabric-trial-native-item-publish.yml`，默认 `validate`；只有明确 `publish` 和固定确认字符串才允许云端创建。Self-Runner 静态 [Run #39642722530](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39642722530) **PASS**。Healthcare 侧 publisher 静态检查在 [PR #375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/375) 合并后与本 Task 一并纳管；真实 Runner `validate` 和 Fabric `publish` 尚待独立执行/验收。**Task 3.2 的勾选仅代表代码与静态接力已实现，不代表任何连接/Item 真实创建或运行。**
+
+## Self-Runner Validate-only 真实接力验收 — 2026-10-21
+
+- Self-Runner [PR #205](https://github.com/JohnZhang-DataForge/Self-Runner/pull/205) 合并 Main `767e6f79e5643de994e6d4bb192ab18e415ed0bc` 后，通过严格 JSON `requests/fabric-trial/native-item-validate.json` 触发受审查的 **validate-only** 模式；Push 无 `publish` 能力。
+- [Fabric Native Item Workflow Run #39643321246](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39643321246) **SUCCESS**，严格检出 Healthcare Main `23fa496c2ecf3c5255e77a505a497992a823e44e`；日志包含 `MODE=validate`、`SOURCE_CONTRACT=PASS`、`FABRIC_NOTEBOOK` logicalId、`OFFLINE_SOURCE_VALIDATION=PASS`、`REMOTE_STATE_READ=NO`、`FABRIC_ITEMS_WRITTEN=NO`。
+- 同一 Self-Runner 合并 Push 还触发了旧 Generic Task Workflow [Run #39643321189](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39643321189)，因缺少预期的 `requests/task*` 新请求而 Fail Gate（`Expected one newly committed task request; got []`），**与 Fabric native-item workflow 无关**。这是独立的旧通用触发器问题，不据此重跑、修改或宣称 Fabric CI 失败。
+- **边界**：这里只验证 Runner 接力和源码合同，不读取 Remote State、不调用 Fabric Publish、不启动 Notebook/Pipeline、不创建收费 Capacity。真正云端 Item Publish、重复部署、Notebook/Pipeline Activity、OMOP 双表 E2E 继续留在 Task 2.2–2.3 / 3.3 / 4.x 未完成栏。
