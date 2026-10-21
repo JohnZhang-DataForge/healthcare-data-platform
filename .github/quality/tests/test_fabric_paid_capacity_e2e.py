@@ -31,6 +31,7 @@ class FabricPaidE2ETest(unittest.TestCase):
         self.assertNotIn('resource "fabric_workspace"',module)
         self.assertNotIn('resource "azurerm_resource_group"',module)
         self.assertIn('display_name = module.capacity.capacity_name',(CAP/"main.tf").read_text())
+        self.assertIn('depends_on   = [module.capacity]',(CAP/"main.tf").read_text())
         self.assertIn('data.fabric_capacity.created.id',(CAP/"outputs.tf").read_text())
         self.assertIn('key = "shared-infra/capacity.tfstate"',(CAP/"versions.tf").read_text())
         self.assertFalse(list(TEST.rglob("capacity*.tf")))
