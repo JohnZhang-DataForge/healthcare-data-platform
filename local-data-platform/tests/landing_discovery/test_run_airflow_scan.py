@@ -25,6 +25,32 @@ class XcomBoundaryTests(unittest.TestCase):
         self.assertEqual(actual["ready_count"], 26)
         self.assertFalse(actual["processing_authorized"])
 
+    def test_exact_selection_works_outside_preview_and_is_read_only(self):
+        target={"batch_id":"synthea-new-only-gh-new","manifest_uri":"s3://health-landing/example/manifest.json",
+                "manifest_sha256":"a"*64,"source":"synthea","source_version":"v3.3.0",
+                "status":"INTAKE_VERIFIED","file_count":18}
+        inv={"database_mutation":False,"processing_authorized":False,
+             "ready_count":26,"quarantined_count":0,
+             "ready_batches":[{"batch_id":"synthea-new-only-gh-old-%02d"%i}
+                              for i in range(25)]+[target]}
+        kw=dict(batch_id=target["batch_id"],manifest_uri=target["manifest_uri"],
+                manifest_sha256=target["manifest_sha256"])
+        result=run_airflow_scan.xcom_preview(inv,**kw)
+        self.assertEqual(len(result["ready_batches_preview"]),25)
+        self.assertTrue(result["preview_truncated"])
+        self.assertEqual(result["verified_selected_batch"],target)
+        self.assertNotIn(target,result["ready_batches_preview"])
+        self.assertFalse(result["processing_authorized"])
+        self.assertFalse(result["database_mutation"])
+        for changes in ({"batch_id":"synthea-new-only-gh-missing"},
+                        {"manifest_uri":"s3://health-landing/other/manifest.json"},
+                        {"manifest_sha256":"f"*64},
+                        {"manifest_sha256":None}):
+            with self.subTest(changes=changes),self.assertRaises(run_airflow_scan.DiscoveryError):
+                run_airflow_scan.xcom_preview(inv,**(kw|changes))
+        # Existing preview-only users remain unaffected.
+        self.assertNotIn("verified_selected_batch",run_airflow_scan.xcom_preview(inv))
+
     def test_mutation_claim_is_not_accepted(self):
         with self.assertRaisesRegex(run_airflow_scan.DiscoveryError, "invariant"):
             run_airflow_scan.xcom_preview({
