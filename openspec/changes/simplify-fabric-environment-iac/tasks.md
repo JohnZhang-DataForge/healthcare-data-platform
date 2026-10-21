@@ -21,7 +21,7 @@
 - [ ] 3.1 在当前账号核对已有 `healthcare-omop`、Capacity、Landing、Backend 与历史 State 所有权，确定显式 Import/State Move（如需）；Plan 禁止非预期 Delete/Replace。
 - [ ] 3.2 使用 Terraform CLI Workspace `healthcare-omop`，真实 Init/Plan/Apply，读回现有 Workspace、Lakehouse、Connection，确认 Landing 可读，重复 Plan 稳定；不得重复创建 Workspace。
 - [ ] 3.3 在**同一当前 Fabric 账号**下选择第二个新的 Terraform/Fabric 同名 Workspace，复用同一 Root/Modules，确认相互隔离；**不要求第二个 Fabric 账号**。
-- [ ] 3.4 扩展保留的 Self-Runner `azure-infra.yaml`：选择 Terraform/Fabric Workspace、资源操作范围与 Plan/Apply，当前账号认证与安全的 State 选择；输出真实资源 IDs，随后通过 `fabric-cicd` 发布 Notebook/Pipeline 并完成业务 E2E。
+- [ ] 3.4 扩展保留的 Self-Runner `azure-infra.yaml`：选择 Terraform/Fabric Workspace、资源操作范围与 Plan/Apply，当前账号认证与安全的 State 选择；输出真实资源 IDs，随后通过 `fabric-cicd` 发布 Notebook/Pipeline 并完成业务 E2E。**源码部分已通过 Self-Runner [PR #170](https://github.com/JohnZhang-DataForge/Self-Runner/pull/170) 合并（Main `de2fda0f181e756cc9029640720631afa566d740`）：原 `azure-infra.yaml` 增加 `fabric-environment / healthcare-omop` 与组合 State 拥有权检查，沿用旧七个 Root 的 Backend Key；尚无真实 Workflow Run/Cloud 读回，故 3.4 保持未完成。**
 
 ## 4. Clean superseded scaffolds first (completed 2026-10-20)
 
