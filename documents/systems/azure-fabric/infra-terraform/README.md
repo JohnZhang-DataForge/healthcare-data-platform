@@ -7,6 +7,8 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Fabric Terraform — 基础设施组件
 
+> **最新批准目标架构（2026-10-20）**：按真实 Workspace/资源类型部署，详见 [Fabric Terraform Workspace-scoped Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 和 [当前 OpenSpec Change](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。旧 `components/` / `fabric-environment/` 仍是本文件所描述的**当前源码现状/历史记录**，不再是新实施目标；尚未迁移/改写源码、Workflow、State 或真实云端资源。Notebook/Pipeline 新资源由 `fabric-cicd` 独占创建和发布。
+
 > **当前实施目标已修订**：[Fabric Module-first Environment Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) · [新 Change Tasks](../../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。已有 `components → modules → environments` 是复用基础；已授权 Fabric 部署身份/Capacity、既有 Landing 与 Backend 为外部前置。下方“三身份 Bootstrap”“A=B”讨论小节是**旧方案与当前源码现状**，不得作为下一阶段必做任务；目前尚未实施统一 Root 或真实 Apply。
 
 > **已完成组件文档收口（ACTIVE）**：本组件参照 [Data Platform 组件双入口](../../data-platform/README.md) 整理。**README 说明职责与边界， [CODE.md](CODE.md) 是 Terraform 唯一组件级源码导航**；深入的 IAM、OIDC、State 与历史 Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。源码区旧说明文件在完成引用修复后退役；本次没有修改 Terraform 执行入口。

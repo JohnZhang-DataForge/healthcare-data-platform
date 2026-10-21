@@ -7,6 +7,8 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 # Azure / Fabric Terraform — 技术架构、安全约束及历史验收
 
+> **最新批准目标架构（2026-10-20）**：按真实 Workspace/资源类型部署，详见 [Fabric Terraform Workspace-scoped Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 和 [当前 OpenSpec Change](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。旧 `components/` / `fabric-environment/` 仍是本文件所描述的**当前源码现状/历史记录**，不再是新实施目标；尚未迁移/改写源码、Workflow、State 或真实云端资源。Notebook/Pipeline 新资源由 `fabric-cicd` 独占创建和发布。
+
 > **本页的旧 Root/Module、State、Plan 证据是现存实现事实。** 新目标架构沿用已存在的 `components → modules → environments` 分层，详见 [Module-first Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)；新的开发进度见 [Change Tasks](../../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。以下过时的 Bootstrap/Tenant 实施决策不覆盖新目标。
 
 > **已完成组件文档收口（ACTIVE）**。依据现存 Terraform `README.md` 与 `docs/ARCHITECTURE.md` 的长期有效技术内容、Git 源文件和历史 GitHub Actions Run 整理；本次仅为文档静态审查，**没有读取当前云端资源/Remote State，也没有运行 Plan/Apply**。功能概述见 [README.md](README.md)，实际文件入口见 [CODE.md](CODE.md)。

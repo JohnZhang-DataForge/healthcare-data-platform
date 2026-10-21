@@ -7,7 +7,7 @@ source_sha: f3b2d9e97d9afe4e7457a1d48fde9e655add47d7
 
 # 架构设计讨论稿
 
-- **[Fabric Terraform Module-first Environment Architecture（新权威设计）](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)**：以预授权 Fabric 账号、现成 Landing/Backend/Capacity 为外部前置；沿用旧 Root→Module→环境配置的一套代码部署多环境；实施见 [新 OpenSpec Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。旧多环境 Bootstrap 设计仅供历史追溯。
+- **[Fabric Terraform 按真实 Workspace/资源类型独立部署架构（最新有效目标）](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)**：`fabric-workspace/<name>/<type>/` 独立 Root/State，`shared-infra/` 同级，Modules 通用，Workspace ID 经 Remote State Output 获取；Notebook/Pipeline 完全由 `fabric-cicd` 管理。实施见 [当前 OpenSpec Change](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。
 
 本目录集中导航**讨论稿与已确认但尚未实施的目标架构设计**。每份设计以自身 status 为准；任何目标设计都不代表已经部署或运行验收，也不取代系统实际源码、项目唯一状态与 OpenSpec Change。
 

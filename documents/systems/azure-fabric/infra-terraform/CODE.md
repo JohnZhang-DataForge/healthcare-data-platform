@@ -7,6 +7,8 @@ source_sha: null
 
 # Azure / Fabric Terraform — CODE 源码导航
 
+> **最新批准目标架构（2026-10-20）**：按真实 Workspace/资源类型部署，详见 [Fabric Terraform Workspace-scoped Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 和 [当前 OpenSpec Change](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。旧 `components/` / `fabric-environment/` 仍是本文件所描述的**当前源码现状/历史记录**，不再是新实施目标；尚未迁移/改写源码、Workflow、State 或真实云端资源。Notebook/Pipeline 新资源由 `fabric-cicd` 独占创建和发布。
+
 > **CODE.md 保持已存在的源码位置地图（并不宣称已完成重构）**。将来基于 [Module-first 新架构](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 复用已有 Modules、建立统一环境 Root 的源码提交，必须在同 PR 更新本页和相关 CI/Workflow 导航。
 
 > **唯一 Terraform 组件源码导航（ACTIVE）**。只登记当前 Main 应有的 Root/Module；功能说明见 [README.md](README.md)，历史 State/Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。此处源码存在不代表云资源已部署或批准 Apply。
