@@ -40,3 +40,11 @@
 - [ ] 4.2 在用户可控的全新/已手工清理同名资源环境，逐项 `workspace`、`onelake`、按需 `warehouse` Plan/Apply，读回真实 Fabric IDs，重复 Plan 验证无漂移。
 - [ ] 4.3 验证故意缺失 Workspace State Output 时下游 Plan 失败；单资源 Apply 不触碰其他 Root/State，也不修改旧 `dev/*.tfstate`。
 - [ ] 4.4 通过 `fabric-cicd` 创建 Notebook/Pipeline，并完成 Azure Landing → OneLake 的真实业务 E2E；把结果与任务/Run 证据绑定。
+
+## 5. healthcare-omop first deployment readiness (2026-10-21)
+
+- [x] 5.1 对照已成功的 `johnzhang-test` 测试 Root 与 Self-Runner `azure-infra.yaml`，审核 `healthcare-omop/workspace`、`onelake` 的 Module、Trial Capacity 引用、Workspace Admin、CLI named State、OneLake Remote State 依赖、Lakehouse schema 配置及防付费边界，记录发现。
+- [x] 5.2 将用户提供的 Fabric Entra User Object ID `670194b1-b1ff-41af-971a-a61438061f39` 纳入 `healthcare-omop/workspace/terraform.tfvars`，与 `johnzhang-test` 相同，仅由现有 Terraform Workspace IAM Module 授予 User/Admin；增加首次部署离线合同检查、源码导航和删除前检查。
+- [ ] 5.3 **用户操作前的 HOLD**：人工确认当前 Portal 中手工 `healthcare-omop` 的真实 ID、Items/数据/依赖，确认无需保留；通过已批准只读 AzureRM Backend 检查 `healthcare-omop` CLI State 中是否存在 Workspace/Lakehouse 受管资源，核对 `johnzhang-test` State 未受影响。若旧 Workspace 已由 Terraform 管理，先讨论安全的 State 处理，不得直接手工删后重新 Apply。
+- [ ] 5.4 用户完成目标旧 Workspace 的手工删除（仅 `healthcare-omop`），在 Fabric 管理员视图确认软删除状态和同名重建可行后，通过现有 Self-Runner 分别运行 `workspace plan` → 授权的 `workspace apply`、读回 Admin/Workspace ID → `onelake plan` → 授权的 `onelake apply`、读回 Lakehouse ID 和无漂移证据。严禁创建收费 Capacity、修改 `johnzhang-test`、擅自执行 Terraform destroy。
+- [ ] 5.5 基础设施验收完成后，再接 `azure-fabric/workspaces/healthcare-omop` 的 `fabric-cicd` Notebook/Pipeline；Connection、Blob Reader IAM、OMOP ETL Live 由 `deploy-fabric-connection-and-items` 管理，不能把基础设施静态校验当成这些工作已完成。
