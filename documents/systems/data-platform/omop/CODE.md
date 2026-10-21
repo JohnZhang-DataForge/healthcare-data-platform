@@ -80,6 +80,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 **执行区别**：`person-upsert.sql` 是真实 DML，`step04c-batch-schema-v1-authorized.sql` 是有历史固定环境前提的 DDL，不允许不审查就重放。其它 SQL 也应核对角色与事务边界。现在受控 NEW_ONLY Writer 的核心事务 SQL 还由 Python 动态生成；这个静态 SQL 清单不能代表完整 Writer 行为。
 
+NEW_ONLY Writer 新 GHCR 包名：`ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-omop-writer`，由 Healthcare 统一 Workflow 发布；旧镜像仅作为历史回退，不再写死在 DAG。
+
 ## OMOP / CDM Writer 容器镜像
 
 | 源文件（直接链接） | 用途与运行边界 |
