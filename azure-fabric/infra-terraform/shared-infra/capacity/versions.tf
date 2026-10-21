@@ -6,7 +6,7 @@ terraform {
       version = "~> 4.0"
     }
     fabric = {
-      source = "microsoft/fabric"
+      source  = "microsoft/fabric"
       version = "~> 1.13.0"
     }
   }
