@@ -14,3 +14,6 @@
 # Keep per-environment JSON profiles out of Git unless intentionally a placeholder example.
 /environments/*.json
 !/environments/*.example.json
+
+# Local, operator-reviewed Fabric environment values; only .tfvars.example is versioned.
+/components/fabric-environment/environments/*.tfvars

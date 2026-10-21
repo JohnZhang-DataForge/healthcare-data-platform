@@ -28,6 +28,8 @@ commands executed in this PR:
 
 ```bash
 cd azure-fabric/infra-terraform/components/fabric-environment
+cp environments/healthcare-omop.tfvars.example environments/healthcare-omop.tfvars
+# Review/edit this local tfvars against the REAL workspace and capacity before deployment.
 terraform init -backend-config="storage_account_name=johnzhang" \
   -backend-config="container_name=tfstate" \
   -backend-config="key=fabric/platform.tfstate" \
