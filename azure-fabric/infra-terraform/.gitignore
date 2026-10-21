@@ -17,3 +17,6 @@
 
 # Local, operator-reviewed Fabric environment values; only .tfvars.example is versioned.
 /components/fabric-environment/environments/*.tfvars
+
+# Versioned, nonsecret configuration for the current actual Fabric Workspace.
+!/components/fabric-environment/environments/healthcare-omop.tfvars
