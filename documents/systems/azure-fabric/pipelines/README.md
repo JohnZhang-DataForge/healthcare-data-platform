@@ -19,7 +19,7 @@ Pipelines 组件属于现有的 `healthcare-omop` Fabric Workspace。未来 Fabr
 
 **当前状态：业务 Pipeline 尚未开发。** 本目录现在只有 `.gitkeep` 占位，没有 `*.DataPipeline/` Item，也没有通过目录操作建立 Fabric Git Integration。
 
-Terraform 目前保存了[默认 Fail Activity 定义](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/20a6449000fe10eac642ab2dbcef37976339572b/azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)和[未实际执行的 Notebook Activity 模板](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/20a6449000fe10eac642ab2dbcef37976339572b/azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json)。真实 Notebook GUID 与处理程序到位前，必须保留失败保护，不能改成空的成功执行。
+Terraform 目前保存了[默认 Fail Activity 定义](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)和[未实际执行的 Notebook Activity 模板](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json)。真实 Notebook GUID 与处理程序到位前，必须保留失败保护，不能改成空的成功执行。
 
 新增原生 Item 时，应保留 Fabric 实际生成的 `.platform`、`pipeline-content.json` 等文件，明确 Item 身份和由 Fabric Git / Terraform 哪一方负责交付，防止配置漂移或双重覆盖。
 
