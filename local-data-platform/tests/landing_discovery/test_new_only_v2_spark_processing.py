@@ -94,11 +94,13 @@ class SafeV2Probe(unittest.TestCase):
             (dict(x,manifest_uri=U.replace("2026-10-14","2026-10-15")),p,v)]
         for g,person,visit in cases:
             with self.assertRaises(ValueError):validate_handoff(g,person,visit)
-    def test_v2_image_is_pinned_and_legacy_image_preserved(self):
+    def test_v2_image_is_release_tagged_and_legacy_route_preserved(self):
         h=HELPER.read_text()
         self.assertIn("healthcare-landing-processing-v2",h)
-        self.assertIn("9af63252823bae0187b2517a013c147e2df8dfbe9a7c783ac31cd5dd7dbbb937",h)
-        self.assertIn("8d55a150e7fcd8ea9a1ed8e8c2c64d09bf4d19687822c0ec84857fdf429c05a7",h)
+        self.assertIn("healthcare-data-platform-task004-runtime",h)
+        self.assertEqual(h.count('":latest"'),2)
+        self.assertIn('image_pull_policy="Always"',h)
+        self.assertNotIn("@sha256:",h)
         self.assertIn("image=PROCESSING_IMAGE_SELECT",h)
         d=DAG.read_text()
         self.assertIn('"CLAIM_ENABLE": "NO"',d)
