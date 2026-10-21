@@ -46,21 +46,12 @@ class Task004AirflowProcessingSourceTests(
             )
 
 
-    def test_dag_pins_mainline_runtime_digest(self):
-        source = DAG.read_text(
-            encoding="utf-8"
-        )
-
-        self.assertIn(
-            "8d55a150e7fcd8ea9a1ed8e8c2c64d0"
-            "9bf4d19687822c0ec84857fdf429c05a7",
-            source,
-        )
-
-        self.assertNotIn(
-            ":latest",
-            source,
-        )
+    def test_dag_uses_current_development_runtime_image(self):
+        source = DAG.read_text(encoding="utf-8")
+        self.assertIn("healthcare-data-platform-task004-runtime",source)
+        self.assertIn('":latest"',source)
+        self.assertIn('image_pull_policy="Always"',source)
+        self.assertNotIn("@sha256:",source)
 
 
     def test_dag_uses_dynamic_processing_outputs(self):
