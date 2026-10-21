@@ -9,6 +9,7 @@ on:
       - '.github/workflows/fabric-provider-init-validate.yml'
       - '.github/quality/tests/test_fabric_environment_structure.py'
       - '.github/quality/tests/test_fabric_workspace_root.py'
+      - '.github/quality/tests/test_fabric_onelake_root.py'
   workflow_dispatch:
 
 permissions:
@@ -126,3 +127,41 @@ jobs:
           echo "REMOTE_BACKEND_USED=NO"
           echo "FABRIC_PLAN_APPLY=NO"
           echo "#### FABRIC_WORKSPACE_ROOT_VALIDATION_OUTPUT_END ####"
+
+  validate-fabric-onelake-root:
+    name: "terraform validate / healthcare-omop / onelake"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TF_INPUT: '0'
+      TF_IN_AUTOMATION: 'true'
+      ROOT: azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake
+      MODULE: azure-fabric/infra-terraform/modules/onelake
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+          terraform_wrapper: false
+      - name: Validate dependent OneLake Root without remote State
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "#### FABRIC_ONELAKE_ROOT_VALIDATION_OUTPUT_BEGIN ####"
+          terraform -chdir="$ROOT" fmt -check -diff
+          terraform -chdir="$MODULE" fmt -check -diff
+          terraform -chdir="$ROOT" init -backend=false -input=false -no-color
+          TF_WORKSPACE=healthcare-omop terraform -chdir="$ROOT" validate -no-color
+          if TF_WORKSPACE=default terraform -chdir="$ROOT" validate -no-color > "$RUNNER_TEMP/fabric-onelake-default-validation.log" 2>&1; then
+            echo "::error::Default Terraform CLI workspace unexpectedly validated"
+            exit 1
+          fi
+          grep -q "precondition failed" "$RUNNER_TEMP/fabric-onelake-default-validation.log"
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_onelake_root.py' -v
+          echo "UPSTREAM_STATE_READ=NO"
+          echo "CLOUD_RESOURCE_CREATED=NO"
+          echo "#### FABRIC_ONELAKE_ROOT_VALIDATION_OUTPUT_END ####"
