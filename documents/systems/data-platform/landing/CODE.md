@@ -134,11 +134,12 @@ NEW_ONLY Processing v2 镜像新 GHCR 包名：`ghcr.io/johnzhang-dataforge/heal
 | [`05g4c2-publish-processed-manifest.sh`](../../../../local-data-platform/scripts/task003/05g4c2-publish-processed-manifest.sh) | [EXECUTE / review] 历史 TASK003 publish processed manifest 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
 | [`05g5a-release-processed-publication-reservation.sh`](../../../../local-data-platform/scripts/task003/05g5a-release-processed-publication-reservation.sh) | [HIGH / review] 历史 TASK003 release processed publication reservation 脚本 |
 
-## 历史 task004（2 个入口）
+## 历史 task004（1 个入口）
+> **2026-10-21 Task 4.9 单轮清理**：旧一次性 [`05a-prepare-generic-landing-resolver.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/6ed31d9a0c3998a653eaf587cde64cb13281ffb8/local-data-platform/scripts/task004/05a-prepare-generic-landing-resolver.sh) 已退役；正式 `apps/task004/resolve_verified_landing_file.py` 和 `tests/task004/test_generic_landing_resolver.py` 保留。旧生成脚本的测试产物与当前测试逐字节相同，但 Resolver App 已演进，不能通过执行旧生成器覆盖正式应用源码。
+
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`05a-prepare-generic-landing-resolver.sh`](../../../../local-data-platform/scripts/task004/05a-prepare-generic-landing-resolver.sh) | [PREPARE / may write] 历史 TASK004 prepare generic landing resolver 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`05c-resolve-runtime-lineage.sh`](../../../../local-data-platform/scripts/task004/05c-resolve-runtime-lineage.sh) | [LEGACY / review] 历史 TASK004 resolve runtime lineage 脚本 |
 
 ## 源码维护约定
