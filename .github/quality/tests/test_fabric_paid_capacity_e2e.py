@@ -22,10 +22,10 @@ class FabricPaidE2ETest(unittest.TestCase):
 
     def test_minimal_paid_capacity_only_and_no_trial_mutation(self):
         vars = (CAP / "terraform.tfvars").read_text()
-        self.assertRegex(vars, r'sku_name\\s*=\\s*"F2"', vars)
-        self.assertRegex(vars, r'capacity_name\\s*=\\s*"fcjohnzhangtest"', vars)
-        self.assertRegex(vars, r'location\\s*=\\s*"eastus"', vars)
-        self.assertRegex(vars, r'resource_group_name\\s*=\\s*"OMOP"', vars)
+        self.assertRegex(vars, r'sku_name\s*=\s*"F2"', vars)
+        self.assertRegex(vars, r'capacity_name\s*=\s*"fcjohnzhangtest"', vars)
+        self.assertRegex(vars, r'location\s*=\s*"eastus"', vars)
+        self.assertRegex(vars, r'resource_group_name\s*=\s*"OMOP"', vars)
         module = (ROOT / "modules/capacity/main.tf").read_text()
         self.assertIn('resource "azurerm_fabric_capacity" "current"',module)
         self.assertNotIn('resource "fabric_workspace"',module)
