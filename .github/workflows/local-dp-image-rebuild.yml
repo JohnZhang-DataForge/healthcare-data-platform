@@ -13,6 +13,7 @@ on:
       - "local-data-platform/tests/landing_discovery/**"
       - "local-data-platform/tests/omop_writer/**"
       - "local-data-platform/tests/task004/**"
+      - "local-data-platform/tests/synthea_new_only/test_digest_runtime.py"
       - "openspec/changes/relocate-local-data-platform/**"
   push:
     branches: [main]
@@ -75,6 +76,9 @@ jobs:
           PY
           PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/landing_discovery -p 'test_*.py' -v
           PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/task004 -p 'test_airflow_task004_processing_source.py' -v
+          # Retained legacy-phase and packaging tests now follow the current 8-image parent contract.
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/synthea_new_only -p 'test_digest_runtime.py' -v
+          echo "SYNTHEA_CURRENT_PARENT_AND_PHASE_TESTS=PASS"
           echo "IMAGE_SOURCE_TESTS=PASS"
 
       - name: Build five independent images without prior project image layers
