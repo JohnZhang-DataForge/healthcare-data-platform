@@ -17,8 +17,12 @@ spec.loader.exec_module(entry)
 class StandaloneDigestRuntimeTests(unittest.TestCase):
     def test_runtime_contains_exact_proven_components(self):
         text=IMAGE.read_text()
-        base="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:2dc1e4283eb194e548b245842987ff403bf8e092a70f473fdf6fa5a1c547816d"
-        self.assertIn("FROM "+base,text)
+        parent="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+        self.assertIn("ARG BASE_IMAGE="+parent,text)
+        self.assertIn("FROM ${BASE_IMAGE}",text)
+        self.assertNotIn("@sha256:",text)
+        # The 8-image release injects this run's freshly built parent via BASE_IMAGE.
+        # Static sources must not depend on a previously published fixed digest.
         for script in ["entrypoint","generate_new_only","prepublish_gate","publish_v1_verified","verify_v1_ready"]:
             self.assertIn(f"apps/synthea/new_only/{script}.py",text)
         for script in ["publish_synthea_landing","validate_generated_synthea_batch","resolve_verified_landing_file"]:
