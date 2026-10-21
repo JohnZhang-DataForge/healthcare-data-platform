@@ -147,6 +147,8 @@
 - [x] 4.9.6 完整保留清理后 3 次**新随机** Synthea E2E 的原始 FAIL/FAIL/SUCCESS、Writer 首次异常、成功 PG Readback/幂等、冻结 SHA/Run/Batch，登记独立后续调查方向但不预设根因或实施修复（**仅现象建档完成**；不意味着缺陷解决或整个 Task 4.9 完成）。
   
   ### 4C. 当前实施计划：一次性集中清理 + 合并后多批业务强回归（2026-10-21）
+
+> **按此执行，不另开重复 Task 列表**：详细操作及每一道验收 Gate 见 [Local DP 一次性清理实施与 3+2 业务验收清单](evidence/LOCAL-DP-FAST-CLEANUP-EXECUTION-AND-ACCEPTANCE-20261021.md)。特别注意：只删除 `scripts/task003/**` 的合并提交**未必匹配** `local-dp-image-rebuild.yml` 的 Main `push.paths`；合并后需显式在 **Main** 执行 `workflow_dispatch`，核对 **8/8 新镜像的 GHCR Digest 与实际 Pod imageID**，再启动 2 个旧 Batch + 3 个新 Batch 测试。该文档只是执行合同，目前清理 PR 和本轮业务验收仍未执行。
   
 - [ ] 4.9.7 **当前基线/快速 DELETE 清单**：冻结 Healthcare/Self-Runner Main；复用原 818 文件审计、PR #332 已删九个/19 产物/17 HOLD 证据，对当前全部 363 tracked 路径及新变消费者一次性扫描并生成带 SHA 的 KEEP/DELETE/HOLD 清单。确定历史 C/D 真实无独立作用且有不可变 Git 恢复版本，**无需逐个脚本 Runtime 验证**；涉及仍有动态引用、当前业务、安全 Fencing、人工恢复、有效 Test/Contract 的 A/B/E 不删。
 - [ ] 4.9.8 **一个 PR 一次性删除所有确定 C/D**：删除 allowlist 全部项，不继续每 2–6 个一 PR；同步组件 CODE.md、导航、已移除旧路径的负向断言与不可变恢复链接，不改业务转换/数据库/Manifest/DAG 标识。PR 最终 HEAD 的适用 Docs/OpenSpec/Unit/Contract/Native Race、多 Parquet/Discovery exact-selection 正反测试、DagBag、**8/8 Clean Build**、容器模块来源/Entrypoint/Image Digest PASS 后才 Merge Main；Clean Build 成功不是业务验收。
