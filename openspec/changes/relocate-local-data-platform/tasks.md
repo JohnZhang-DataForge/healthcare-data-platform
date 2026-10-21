@@ -141,6 +141,8 @@
 - [x] 4.9.6 完整保留清理后 3 次**新随机** Synthea E2E 的原始 FAIL/FAIL/SUCCESS、Writer 首次异常、成功 PG Readback/幂等、冻结 SHA/Run/Batch，登记独立后续调查方向但不预设根因或实施修复（**仅现象建档完成**；不意味着缺陷解决或整个 Task 4.9 完成）。
 
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
+> **4.10 旧 Synthea 固定父 Digest 断言定向修复（2026-10-21，PARTIAL，不关闭全部测试清理）**：修复后新 Batch 原子 Writer/PG/SKIP 的[真实验收 Run #39589050872](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39589050872) 成功后，针对先前一次性 E2E 暂时跳过的 `tests/synthea_new_only/test_digest_runtime.py::StandaloneDigestRuntimeTests.test_runtime_contains_exact_proven_components` 开展定向 4.10 清理。该用例仍静态锁定旧 `synthea@sha256:2dc1...` 父镜像，已与 8 镜像 Clean Build 的 `ARG BASE_IMAGE=...:latest` + 本轮 parent injection 合同冲突；按**保留有价值的测试、不删除整份文件**原则，仅更新这个过时断言到当前动态父镜像和 `FROM ${BASE_IMAGE}`、拒绝 Dockerfile 固定 digest，保留 3 项现有 Phase/Request/worker01 安全回归；将整份 4 用例文件纳入既有 `local-dp-image-rebuild.yml` 的 PR 源码验收，禁止因旧断言而长期 SKIP。该测试与 Workflow 更改只影响离线 CI，不改变 Dockerfile、实际镜像、业务源码、Airflow 或数据库。本 PR 必须按**最终 HEAD**全部适用 CI PASS、合并 Main 后独立真实新 Batch E2E 才能接受此清理，不把单个过时用例修复冒充完整 4.10 测试矩阵完成。正式业务/安全测试和其它未判明的测试一律 KEEP/HOLD。
+
 
 ### 4C. 镜像重建优先（2026-10-20）——构建与发布完成，E2E HOLD
 
