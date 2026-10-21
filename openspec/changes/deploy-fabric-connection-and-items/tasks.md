@@ -16,7 +16,7 @@
 ## 3. Fabric native Item publishing
 
 - [x] 3.1 添加 `johnzhang-test` 的真实 Fabric Git Native Notebook/Pipeline 源码与 logicalId，更新对应 CODE.md；先只做无数据写入的 Smoke。
-- [ ] 3.2 实现 `fabric-cicd` 受控入口和 Self-Runner 精确 SHA/Outputs/Item 白名单/OIDC、禁用 orphan 删除；测试负向/重复发布合同。
+- [x] 3.2 实现 `fabric-cicd` 受控入口和 Self-Runner 精确 SHA/Outputs/Item 白名单/OIDC、禁用 orphan 删除；测试负向/重复发布合同。
 - [ ] 3.3 Live 发布+读回 Notebook/Pipeline（而非 Terraform）、执行无数据写入的 Pipeline→Notebook Smoke；记录 Run/实际 GUID/重复部署证据。
 
 ## 4. Business ETL follow-up
@@ -42,4 +42,4 @@
 ## Task 3.2 — Publisher source candidate (2026-10-21)
 
 - 加入 Trial-only `trial_smoke_publisher.py` 的 `validate`（完全离线）和 `publish`（严格确认、Workspace/OneLake Terraform 真实 Outputs、限定 Notebook/Pipeline 的 Git 源、拒绝不明已有同名 Item、使用 `fabric-cicd`、发布后 API 读回），绝不清理 orphan Items。更新 CODE.md、单元测试。
-- **Task 3.2 暂不完成**：尚需在 Self-Runner 仓库增加只允许已批准模式的固定 SHA、OIDC、Remote State 输出绑定 Workflow，并通过双仓静态 CI；云端发布及运行属于 3.3，仍未获准执行。
+- Self-Runner [PR #204](https://github.com/JohnZhang-DataForge/Self-Runner/pull/204) 已合并 Main `4d31fcd17fba15f57f52bd08ad8ec4f9cfe9e01b`，新增手工 Workflow `fabric-trial-native-item-publish.yml`，默认 `validate`；只有明确 `publish` 和固定确认字符串才允许云端创建。Self-Runner 静态 [Run #39642722530](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39642722530) **PASS**。Healthcare 侧 publisher 静态检查在 [PR #375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/375) 合并后与本 Task 一并纳管；真实 Runner `validate` 和 Fabric `publish` 尚待独立执行/验收。**Task 3.2 的勾选仅代表代码与静态接力已实现，不代表任何连接/Item 真实创建或运行。**
