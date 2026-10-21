@@ -7,3 +7,7 @@
 3. **执行**：Runner Main 仅在审查并合并固定 JSON 请求文件后触发；请求锁定 SHA、workspace、lakehouse、Trial GUID、模式和操作。先 `terraform plan` 检查无 update/delete/replace 后 Apply Workspace；验证真实输出后再 Apply OneLake；两 Root 再次 Plan 验证幂等。如 Workspace 失败，不碰 OneLake。
 4. **边界与状态**：不自动恢复/停止试用 Capacity；Trial 无对应 ARM 生命周期，既不创建也不管理。Provider 对 Trial 的支持仍属待实测；失败记 FAIL 并停止，禁止以 REST API 创建 Workspace。
 5. **验收证据**：双仓 Main SHA、PR/Run ID、Workspace/Lakehouse GUID、独立 State 和二次 Plan 结果；静态校验不等于创建完成。
+
+## Amendment — Capacity reference ownership (2026-10-21)
+
+上述 Decisions 1/3 记录首次 E2E 的**历史实现**，而非长期部署合同。现行规定：每个 `fabric-workspace/<name>/workspace/terraform.tfvars` 存放各自已存在 Capacity 的 `capacity_id`；`modules/workspace` 保持通用，Workflow 不注入 `TF_VAR_capacity_id`、不在 Self-Runner Git/Repo Variables 存放 Capacity GUID。不同租户只需更新该 Terraform 配置与 OIDC/Backend 身份设置。一次性历史 Self-Runner JSON 请求停止作为执行入口，专用复验采用明确手动确认，不在源码改动时自动 Apply；不触碰已有远程 State、不创建/修改付费 Capacity。
