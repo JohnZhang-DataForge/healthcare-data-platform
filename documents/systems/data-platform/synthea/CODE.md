@@ -47,6 +47,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 **Contract 治理**：这些机器可读协议不能为了文档整理而改写。冻结版本中如有旧的 `state`、`consumer_compatibility` 记录，代表该版本写入时的判断；现在的 Runtime 是否验收应以真实 Commit/Run/Readback 证据为准。修改身份、Headers 或 CSV 策略必须先做生产者和消费者兼容性评估，必要时创建新版本。
 
+独立 NEW_ONLY 镜像新 GHCR 包名：`ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-synthea-new-only`；旧 `healthcare-synthea-new-only` 作为历史回退，不再是当前源码自动发布目标。
+
 ## 镜像构建 / Entrypoint（Synthea）
 
 | 源文件（直接链接） | 用途与运行边界 |
