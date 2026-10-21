@@ -25,7 +25,7 @@ def _obj(value, label: str) -> dict:
 
 
 def select_verified_new_only(inventory, dag_conf, run_type: str) -> dict:
-    """Require manual exact manifest selection from complete REAL S3 discovery."""
+    """Require manual exact S3-verified Batch selection, independent of preview."""
     if str(run_type).lower() != "manual":
         raise ValueError("BLOCKED:NEW_ONLY_MANUAL_ONLY")
     conf = _obj(dag_conf, "CONF")
@@ -48,17 +48,21 @@ def select_verified_new_only(inventory, dag_conf, run_type: str) -> dict:
         raise ValueError("BLOCKED:NEW_ONLY_IDENTITY")
     discovery = _obj(inventory, "DISCOVERY")
     rows = discovery.get("ready_batches_preview")
+    count = discovery.get("ready_count")
+    truncated = discovery.get("preview_truncated")
     if (discovery.get("status")!="READ_ONLY_DISCOVERED"
         or discovery.get("processing_authorized") is not False
         or discovery.get("database_mutation") is not False
-        or discovery.get("preview_truncated") is not False
-        or not isinstance(rows,list) or len(rows)>25
-        or discovery.get("ready_count") != len(rows)):
+        or not isinstance(rows,list)
+        or type(count) is not int or count < len(rows)
+        or type(truncated) is not bool
+        or truncated != (count > len(rows))):
         raise ValueError("BLOCKED:NEW_ONLY_DISCOVERY_INCOMPLETE")
-    matched=[row for row in rows if isinstance(row,dict) and row.get("batch_id")==batch]
-    if len(matched)!=1:
+    # The preview is display-only. The discovery Pod attests the requested
+    # Batch against its complete S3-validated inventory before returning XCom.
+    row=discovery.get("verified_selected_batch")
+    if not isinstance(row,dict):
         raise ValueError("BLOCKED:NEW_ONLY_NOT_IN_DISCOVERY")
-    row=matched[0]
     if (row.get("manifest_uri")!=uri or row.get("manifest_sha256")!=sha
         or row.get("source")!="synthea" or row.get("source_version")!="v3.3.0"
         or row.get("status")!="INTAKE_VERIFIED" or row.get("file_count")!=18):
