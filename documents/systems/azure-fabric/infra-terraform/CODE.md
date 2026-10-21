@@ -54,6 +54,13 @@ source_sha: null
 - [`Capacity REST 单测`](../../../../.github/quality/tests/test_fabric_capacity_lifecycle.py)：纯 Mock，不做云端写入；[Self-Runner Capacity Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-capacity-lifecycle.yml) 已上线，手动 `mode=trial|paid`、`operation=inspect|suspend|resume`，默认 `trial/inspect`。Paid 写入额外要求 `FABRIC_PAID_CAPACITY_ARM_ID`、`ENABLE_PAID_CAPACITY_OPERATIONS=true` 与匹配 `confirmation`，不自动操作。Workspace 永远只由 Terraform `workspace/` 管理。
 - [`OpenSpec Change`](../../../../openspec/changes/manage-fabric-capacity-lifecycle-api/tasks.md)：记录 Trial 与 Paid 两种 API 模式和运行验收，不与 Terraform Workspace/OneLake State 混用。
 
+## johnzhang-test — 独立的真实收费容量 E2E 测试（源代码）
+
+- [`fabric-workspace/johnzhang-test/workspace/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/main.tf)：独立 CLI Workspace `johnzhang-test`，原 `modules/workspace`，由下游读取 Workspace ID；完全不涉及原 `healthcare-omop`。
+- [`fabric-workspace/johnzhang-test/onelake/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/onelake/main.tf)：独立 `fabric-workspace/onelake.tfstate` 派生 State，Lakehouse `lh_johnzhang_test`，来自 Workspace remote State Output。
+- [`shared-infra/capacity/`](../../../../azure-fabric/infra-terraform/shared-infra/capacity/main.tf) + [`modules/capacity/`](../../../../azure-fabric/infra-terraform/modules/capacity/main.tf)：**真实 Azure 收费 F2**（East US / OMOP / `fcjohnzhangtest`）资源；不复用 Trial ID，不会触碰 Trial Capacity。容量关联 GUID 从 `data.fabric_capacity` 读取，而非 ARM 资源 ID。
+- [`静态测试`](../../../../.github/quality/tests/test_fabric_paid_capacity_e2e.py)：只验证源码和 Backend 合同。真实 Apply 和成功/失败后的计费暂停证明单独记录于 [OpenSpec](../../../../openspec/changes/validate-fabric-johnzhang-test-apply/tasks.md)，不因 Git 提交而自动判成功。
+
 ## 七个 Root / Module 源码地图
 
 | Root | Root、环境与 Provider | Module 与 IAM | 职责和限制 |

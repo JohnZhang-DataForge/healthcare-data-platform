@@ -13,6 +13,7 @@ on:
       - '.github/quality/tests/test_fabric_onelake_root.py'
       - '.github/quality/tests/test_fabric_cross_root_contract.py'
       - '.github/quality/tests/test_fabric_capacity_lifecycle.py'
+      - '.github/quality/tests/test_fabric_paid_capacity_e2e.py'
   workflow_dispatch:
 
 permissions:
@@ -216,3 +217,53 @@ jobs:
           python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_capacity_lifecycle.py' -v
           echo "CAPACITY_HTTP_CALLED=NO"
           echo "CLOUD_MUTATION=NO"
+
+  validate-fabric-johnzhang-test-roots:
+    name: "terraform validate / johnzhang-test / ${{ matrix.root }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        root: [workspace, onelake]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+          terraform_wrapper: false
+      - name: Validate independent new Workspace roots without Cloud
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/${{ matrix.root }}"
+          terraform -chdir="$root" fmt -check -diff
+          terraform -chdir="$root" init -backend=false -input=false
+          TF_WORKSPACE=johnzhang-test terraform -chdir="$root" validate -no-color
+          echo "REMOTE_BACKEND_USED=NO CLOUD_APPLY=NO"
+
+  validate-fabric-paid-capacity-root:
+    name: "terraform validate / paid Capacity F2 (offline)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+          terraform_wrapper: false
+      - name: Validate new paid F2 Capacity and contracts without creating
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          terraform -chdir=azure-fabric/infra-terraform/modules/capacity fmt -check -diff
+          root=azure-fabric/infra-terraform/shared-infra/capacity
+          terraform -chdir="$root" fmt -check -diff
+          terraform -chdir="$root" init -backend=false -input=false
+          terraform -chdir="$root" validate -no-color
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_paid_capacity_e2e.py' -v
+          echo "REMOTE_BACKEND_USED=NO PAID_CAPACITY_CREATED=NO"
