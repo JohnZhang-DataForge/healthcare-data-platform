@@ -38,6 +38,14 @@ source_sha: null
 - [`outputs.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake/outputs.tf)：Lakehouse ID、Files/Tables 路径、角色 ID 和上游 Workspace ID。
 - [`OneLake Root 合同单测`](../../../../.github/quality/tests/test_fabric_onelake_root.py) · [`Terraform CI`](../../../../.github/workflows/fabric-provider-init-validate.yml)：仅离线静态检查；**上游缺失时的真实 Plan 失败验证**仍属于 OpenSpec Task 4.3。
 
+## Shared Infra 只读 Storage Root（Task 2.4）、跨 Root 合同（Task 2.5）
+
+- [`shared-infra/storage/main.tf`](../../../../azure-fabric/infra-terraform/shared-infra/storage/main.tf)：仅调用现有 `modules/storage` 查询 OMOP Resource Group 与 `johnzhang` Storage Account；新增 RBAC 默认 `{}`，不创建 Storage、Capacity 或 Connection。
+- [`versions.tf`](../../../../azure-fabric/infra-terraform/shared-infra/storage/versions.tf)：独立固定 AzureRM Backend Key `shared-infra/storage.tfstate`，Shared Infra 使用其自身 default CLI Workspace。
+- [`terraform.tfvars`](../../../../azure-fabric/infra-terraform/shared-infra/storage/terraform.tfvars)：当前已存在的 OMOP、johnzhang、landing；不存储秘密。
+- [`Shared Storage 静态 CI`](../../../../.github/workflows/fabric-provider-init-validate.yml) 和 [`跨 Root 合同测试`](../../../../.github/quality/tests/test_fabric_cross_root_contract.py)：静态验证独立 Key、Workspace 同名、Workspace→OneLake Remote State、不可回退硬编码 GUID、禁止新树管理 Notebook/Pipeline、无 Capacity 创建。远程读回与真实 Plan 由 Self-Runner Workflow 提供运行证据。
+- Connection / Capacity 创建 / Shared IAM 根目录按实际需要单独实施；**本次没有额外收费资源或角色分配**。
+
 ## 七个 Root / Module 源码地图
 
 | Root | Root、环境与 Provider | Module 与 IAM | 职责和限制 |
