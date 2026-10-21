@@ -12,6 +12,7 @@ on:
       - '.github/quality/tests/test_fabric_workspace_root.py'
       - '.github/quality/tests/test_fabric_onelake_root.py'
       - '.github/quality/tests/test_fabric_cross_root_contract.py'
+      - '.github/quality/tests/test_fabric_capacity_lifecycle.py'
   workflow_dispatch:
 
 permissions:
@@ -199,3 +200,19 @@ jobs:
           echo "REMOTE_BACKEND_USED=NO"
           echo "CLOUD_PLAN_APPLY=NO"
           echo "#### FABRIC_SHARED_STORAGE_STATIC_OUTPUT_END ####"
+
+  validate-capacity-lifecycle-api:
+    name: "unit / Fabric Capacity lifecycle REST boundaries"
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Capacity REST contract and mocked HTTP tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_capacity_lifecycle.py' -v
+          echo "CAPACITY_HTTP_CALLED=NO"
+          echo "CLOUD_MUTATION=NO"

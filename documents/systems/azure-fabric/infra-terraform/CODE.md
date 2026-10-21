@@ -47,6 +47,13 @@ source_sha: null
 - [`Shared Storage 静态 CI`](../../../../.github/workflows/fabric-provider-init-validate.yml) 和 [`跨 Root 合同测试`](../../../../.github/quality/tests/test_fabric_cross_root_contract.py)：静态验证独立 Key、Workspace 同名、Workspace→OneLake Remote State、不可回退硬编码 GUID、禁止新树管理 Notebook/Pipeline、无 Capacity 创建。远程读回与真实 Plan 由 Self-Runner Workflow 提供运行证据。
 - Connection / Capacity 创建 / Shared IAM 根目录按实际需要单独实施；**本次没有额外收费资源或角色分配**。
 
+## Fabric Capacity REST runtime controller（Trial 只读、Paid 暂停/恢复）
+
+- [`healthcare-omop/capacity-api/capacity_lifecycle.py`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/capacity_lifecycle.py)：与 `workspace/` 平级的**非 Terraform Root** Python REST 组件；Trial 仅 GET，Paid 仅检查/暂停/恢复现有 Azure F SKU，绝不创建 Workspace 或改变 Workspace Capacity 绑定。
+- [`capacity.json`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/capacity.json) / [`README.md`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/README.md)：非秘密 Trial ID 和权限、计费、OIDC/操作门禁合同。
+- [`Capacity REST 单测`](../../../../.github/quality/tests/test_fabric_capacity_lifecycle.py)：纯 Mock，不做云端写入。Self-Runner 专属 Workflow 独立发布；Workspace 永远只由 Terraform `workspace/` 管理。
+- [`OpenSpec Change`](../../../../openspec/changes/manage-fabric-capacity-lifecycle-api/tasks.md)：记录 Trial 与 Paid 两种 API 模式和运行验收，不与 Terraform Workspace/OneLake State 混用。
+
 ## 七个 Root / Module 源码地图
 
 | Root | Root、环境与 Provider | Module 与 IAM | 职责和限制 |
