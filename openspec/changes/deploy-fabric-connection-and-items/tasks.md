@@ -50,3 +50,9 @@
 - [Fabric Native Item Workflow Run #39643321246](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39643321246) **SUCCESS**，严格检出 Healthcare Main `23fa496c2ecf3c5255e77a505a497992a823e44e`；日志包含 `MODE=validate`、`SOURCE_CONTRACT=PASS`、`FABRIC_NOTEBOOK` logicalId、`OFFLINE_SOURCE_VALIDATION=PASS`、`REMOTE_STATE_READ=NO`、`FABRIC_ITEMS_WRITTEN=NO`。
 - 同一 Self-Runner 合并 Push 还触发了旧 Generic Task Workflow [Run #39643321189](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39643321189)，因缺少预期的 `requests/task*` 新请求而 Fail Gate（`Expected one newly committed task request; got []`），**与 Fabric native-item workflow 无关**。这是独立的旧通用触发器问题，不据此重跑、修改或宣称 Fabric CI 失败。
 - **边界**：这里只验证 Runner 接力和源码合同，不读取 Remote State、不调用 Fabric Publish、不启动 Notebook/Pipeline、不创建收费 Capacity。真正云端 Item Publish、重复部署、Notebook/Pipeline Activity、OMOP 双表 E2E 继续留在 Task 2.2–2.3 / 3.3 / 4.x 未完成栏。
+
+## 2026-10-21 — Storage/Connection 只读预检开发（未做 Live）
+
+- 核对 Healthcare Main `f83b46e830787ebcb4f3e37776e1b47c25913868`、Self-Runner Main `29094515eeb84f79a89c34061e55becd96e7d9ad`；Healthcare 无开放 PR，Self-Runner Local DP 其它 PR 不触碰。Connection Root `terraform.tfvars` 仍为 `connection = null`、Storage 仍只查询现有 Azure account/landing，不创建新资源。
+- Task 2.2 下增加 **read-only inspection**：通过 GitHub OIDC 对 ARM subscription tenant、现有 Storage、account-scope role assignments 和 Fabric `supportedConnectionTypes`/`connections` 做实时查询；如果两 Tenant 不同，WorkspaceIdentity 不支持跨租户，必须评估 ServicePrincipal 等经实际许可的路径。测试仅是 offline，不可将 inspection 等同于 Blob Reader 授权、Connection Apply 或 Notebook 读取。
+- 本阶段保持 Task 2.2/2.3/3.3 **未完成**；须先取得精确运行证据并复核既有连接名称、Reader identity、Notebook code credential support、Storage 网络限制后决定 `connection != null` 与未来受控 Apply。严禁从 read-only 检查推断存在数据通路。
