@@ -19,9 +19,11 @@ class ProcessingV2PackageTests(unittest.TestCase):
         self.assertEqual(sha,"d7118f4bc3306d74911e609b4f0a41b9340ba9a60acaa69174063d5025ad1249")
         self.assertEqual(len(contract["files"]),18)
         self.assertEqual(contract["required_nonempty_datasets"],["patients","encounters"])
-    def test_layer_preserves_frozen_base_digest_and_default_entrypoint(self):
+    def test_layer_uses_release_parent_and_preserves_entrypoint(self):
         docker=(ROOT/"images/landing-processing-runtime/Dockerfile").read_text()
-        self.assertIn("task004-runtime@sha256:8d55a150e7fcd8ea9a1ed8e8c2c64d09bf4d19687822c0ec84857fdf429c05a7",docker)
+        self.assertIn("ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime:latest",docker)
+        self.assertIn("FROM ${BASE_IMAGE}",docker)
+        self.assertNotIn("@sha256:",docker)
         for file in ("resolve_verified_landing_file.py","validate_new_only_v2_manifest.py","csv-contract-v2.json"):
             self.assertIn(file,docker)
         self.assertNotIn("ENTRYPOINT",docker.split("# Inherit the proven")[0])

@@ -51,7 +51,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件（直接链接） | 用途与运行边界 |
 | --- | --- |
-| [`Dockerfile`](../../../../local-data-platform/images/synthea-new-only/Dockerfile) | 独立 NEW_ONLY Generator/Publisher 镜像：固定历史 Synthea 基镜像 Digest、v1/v2 合同和 Readback |
+| [`Dockerfile`](../../../../local-data-platform/images/synthea-new-only/Dockerfile) | 独立 NEW_ONLY Generator/Publisher：BASE_IMAGE 注入本轮 Synthea 父镜像、v1/v2 合同和 Readback |
 | [`Dockerfile`](../../../../local-data-platform/images/synthea/Dockerfile) | 历史 Synthea v3.3.0 多阶段构建：固定上游 Commit + 本地 CSV Validator |
 | [`entrypoint.sh`](../../../../local-data-platform/images/synthea/entrypoint.sh) | 历史 Synthea Generator 入口：Seed、日期和 18 CSV 校验，只生成本地 Manifest |
 

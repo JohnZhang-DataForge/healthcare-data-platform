@@ -84,10 +84,10 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件（直接链接） | 用途与运行边界 |
 | --- | --- |
-| [`Dockerfile`](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile) | 已验收 NEW_ONLY Person/Visit 原子 Writer：固定基镜像 Digest + 对齐的 Airflow Legacy CDM 模块 |
+| [`Dockerfile`](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile) | NEW_ONLY Person/Visit 原子 Writer：本轮 CDM 基镜像 + 对齐的 Airflow Legacy CDM 模块 |
 | [`Dockerfile`](../../../../local-data-platform/images/task004-cdm-runtime/Dockerfile) | 历史 CDM Plan / S3 数据读取和 PG SQL 渲染基础镜像；默认只读 CLI，不等于原子业务 Commit |
 
-**关键风险**：已验收的 Writer 镜像使用固定的历史 CDM Base Digest，同时显式 COPY 与 NEW_ONLY Batch 身份匹配的 `task004_cdm_materialization_plan.py`、`task004_cdm_dynamic_source.py`、`task004_cdm_dynamic_adapters.py`、`task004_cdm_dynamic_pg_writer.py` 等模块。之前继承基镜像中的过期逻辑会导致 `BLOCKED=batch_id`；修改任何镜像 COPY/BuildContext/Entrypoint、Python 模块或 Base Digest 前须做契约测试、镜像 Smoke、不可变 Digest 发布、Consumer Pin 和实际运行后置证据。镜像 Build PASS 不等于 PostgreSQL COMMIT。
+**关键风险**：NEW_ONLY Writer 使用本轮重新构建的 CDM Base，同时显式 COPY 与 NEW_ONLY Batch 身份匹配的 `task004_cdm_materialization_plan.py`、`task004_cdm_dynamic_source.py`、`task004_cdm_dynamic_adapters.py`、`task004_cdm_dynamic_pg_writer.py` 等模块。之前继承基镜像中的过期逻辑会导致 `BLOCKED=batch_id`；修改任何镜像 COPY/BuildContext/Entrypoint、Python 模块或 Base Digest 前须做契约测试、镜像 Smoke、不可变 Digest 发布、Consumer Pin 和实际运行后置证据。镜像 Build PASS 不等于 PostgreSQL COMMIT。
 
 ## 历史 Shell / 脚本导航（由 omop 组件负责）
 

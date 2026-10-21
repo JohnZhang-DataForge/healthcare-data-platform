@@ -108,7 +108,9 @@ class WriterRuntime(unittest.TestCase):
         self.assertNotIn("\\set",sql)
     def test_runtime_packaging_and_manual_gate(self):
         docker=(ROOT/"images/new-only-omop-writer/Dockerfile").read_text()
-        self.assertIn("task004-cdm-runtime@sha256:",docker)
+        self.assertIn("ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-cdm-runtime:latest",docker)
+        self.assertIn("FROM ${BASE_IMAGE}",docker)
+        self.assertNotIn("@sha256:",docker)
         self.assertIn("new_only_airflow_writer.py",docker)
         self.assertIn("COPY --chown=10001:10001 airflow/dags/task004_cdm_materialization_plan.py /opt/task004/",docker)
         self.assertIn("COPY --chown=10001:10001 airflow/dags/task004_cdm_dynamic_adapters.py /opt/task004/",docker)

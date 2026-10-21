@@ -32,13 +32,13 @@ from landing_spark_processing import (
 
 CLAIM_IMAGE = (
     "ghcr.io/johnzhang-dataforge/healthcare-landing-claim"
-    "@sha256:cdc9666b0834d0af88cc60ce4b5da4f5b5161b09c12886e95f80342a1fcd5eea"
+    ":latest"
 )
 
 # V2-compatible read-only scanner; strict v1 behavior remains unchanged.
 DISCOVERY_IMAGE = (
     "ghcr.io/johnzhang-dataforge/healthcare-landing-discovery"
-    "@sha256:059d94e4d1348c194956203fea6b19be23ec39595127eea397419e66fa4e5924"
+    ":latest"
 )
 
 S3_ACCESS_KEY = Secret(
@@ -72,7 +72,7 @@ with DAG(
         namespace="dw-spark",
         service_account_name="task004-control-runtime",
         image=DISCOVERY_IMAGE,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         in_cluster=True,
         get_logs=True,
         log_events_on_failure=True,
@@ -104,7 +104,7 @@ with DAG(
         namespace="dw-spark",
         service_account_name="task004-control-runtime",
         image=CLAIM_IMAGE,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         in_cluster=True,
         get_logs=True,
         log_events_on_failure=True,

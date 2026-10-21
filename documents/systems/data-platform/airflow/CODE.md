@@ -51,7 +51,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 - **DAG / 路由**：[Consumer tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_omop_airflow_consumer.py)、[Writer branch tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_airflow_writer_branch.py)、[Discovery DAG contract](../../../../local-data-platform/tests/landing_discovery/test_airflow_dag_contract.py)。
 - **Processing / Handoff**：[Spark processing gate](../../../../local-data-platform/tests/landing_discovery/test_spark_processing_gate.py)、[Airflow handoff](../../../../local-data-platform/tests/task004/test_step04f_airflow_handoff.py)、[Writer runtime](../../../../local-data-platform/tests/omop_writer/test_new_only_airflow_writer_runtime.py)。
 - **契约**：[NEW_ONLY Batch identity](../../../../local-data-platform/contracts/synthea/producer-batch-identity-v1.json)、[Writer identity](../../../../local-data-platform/contracts/omop-writer/writer-batch-identity-v1.json)。
-- **镜像依赖**：[Writer Dockerfile](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile)、[Legacy 重构约束](../../../engineering/development/LEGACY-CODE-REFACTOR-PLAN.md)。历史 `task004_cdm_*.py` 的 Docker COPY、Import、镜像 Digest/数据库标识均需要迁移评审；README 整理不改变它们。
+- **镜像依赖**：[Writer Dockerfile](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile)、[Legacy 重构约束](../../../engineering/development/LEGACY-CODE-REFACTOR-PLAN.md)。历史 `task004_cdm_*.py` 的 Docker COPY、Import 和数据库标识仍需兼容；开发镜像使用 :latest，运行证据记录实际 Pod imageID/Digest；README 整理不改变它们。
 
 ## 历史控制面镜像（Airflow 调度及旧 TASK004）
 

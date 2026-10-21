@@ -39,12 +39,12 @@ class ScheduledDagTests(unittest.TestCase):
         self.assertNotIn("cdm.person", s)
         self.assertNotIn("PostgresOperator", s)
 
-    def test_both_images_are_digest_pinned(self):
-        self.assertRegex(self.source, r'@sha256:[a-f0-9]{64}')
+    def test_both_images_use_current_development_release(self):
         self.assertIn("healthcare-landing-discovery", self.source)
         self.assertIn("healthcare-landing-claim", self.source)
-        self.assertEqual(self.source.count("@sha256:"), 2)
-        self.assertNotIn("latest", self.source)
+        self.assertEqual(self.source.count('":latest"'), 2)
+        self.assertEqual(self.source.count('image_pull_policy="Always"'), 2)
+        self.assertNotIn("@sha256:", self.source)
 
 
 if __name__ == "__main__":

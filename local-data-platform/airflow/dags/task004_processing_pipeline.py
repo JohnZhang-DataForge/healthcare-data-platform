@@ -20,8 +20,7 @@ from airflow.providers.cncf.kubernetes.secret import Secret
 RUNTIME_IMAGE = (
     "ghcr.io/johnzhang-dataforge/"
     "healthcare-data-platform-task004-runtime"
-    "@sha256:"
-    "8d55a150e7fcd8ea9a1ed8e8c2c64d09bf4d19687822c0ec84857fdf429c05a7"
+    ":latest"
 )
 
 CONTROL_NAMESPACE = "dw-spark"
@@ -286,7 +285,7 @@ def control_pod(task_id, **kwargs):
         namespace=CONTROL_NAMESPACE,
         service_account_name=CONTROL_SERVICE_ACCOUNT,
         image=RUNTIME_IMAGE,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         in_cluster=True,
         get_logs=True,
         log_events_on_failure=True,

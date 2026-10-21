@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
-# Immutable, additive compatibility layer over the previously accepted TASK004
-# Spark control-plane runtime. Original digest is never rebuilt or replaced.
-FROM ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime@sha256:8d55a150e7fcd8ea9a1ed8e8c2c64d09bf4d19687822c0ec84857fdf429c05a7
+# V2 compatibility layer over this release's TASK004 control runtime.
+ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime:latest
+FROM ${BASE_IMAGE}
 
 LABEL io.healthcare-data-platform.runtime.role="landing-processing-v2-source-bridge"
 LABEL io.healthcare-data-platform.runtime.claim="disabled"
 LABEL io.healthcare-data-platform.runtime.postgres-commit="disabled"
 
-# The frozen legacy control image predates NEW_ONLY v2: its Resolver cannot
+# The TASK004 control image may contain a v1-only Resolver that cannot
 # import the v2 Validator, and does not contain the pinned CSV contract.
 # Package the modern resolver with its explicit v2-only helper and EXACT
 # immutable contract. Existing v1 code remains fail-closed and unchanged.

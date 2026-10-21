@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
-# Independent NEW_ONLY image; pinned and previously proven Synthea v3.3.0 base.
+# Independent NEW_ONLY image; build injects this release's Synthea parent.
 # No multi-mode generator and no Airflow / PostgreSQL client code in this image.
-FROM ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:2dc1e4283eb194e548b245842987ff403bf8e092a70f473fdf6fa5a1c547816d
+ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest
+FROM ${BASE_IMAGE}
 
 ARG PROJECT_GIT_SHA=unknown
 LABEL org.opencontainers.image.title="healthcare-synthea-new-only"
