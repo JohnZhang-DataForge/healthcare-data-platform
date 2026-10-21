@@ -9,7 +9,7 @@
 
 ## 2. Connection — first component
 
-- [ ] 2.1 复用 `modules/connection` 添加 `shared-infra/connection` Root、独立 State、默认禁用/无秘密示例、静态合同和 `init -backend=false`、`validate` CI；合并 Main 并记录准确 PR/Run。
+- [x] 2.1 复用 `modules/connection` 添加 `shared-infra/connection` Root、独立 State、默认禁用/无秘密示例、静态合同和 `init -backend=false`、`validate` CI；合并 Main 并记录准确 PR/Run。
 - [ ] 2.2 核实 Fabric 当前 Tenant `AzureBlobs` Connector、认证模式、Reader RBAC、已有 Connection Inventory/Key Vault Secret Reference；记录负向门禁。
 - [ ] 2.3 在明确的 Live 授权下仅对 Connection Root 执行受控 Plan/Apply/ID readback/重复 Plan；不得触碰 Workspace/OneLake/Capacity Roots。
 
@@ -24,3 +24,9 @@
 - [ ] 4.1 独立 OpenSpec 接管 PG OMOP snapshot Exporter/Manifest READY、Fabric Notebook Delta person/visit_occurrence 和 Pipeline 编排/参数合同。
 - [ ] 4.2 真实 Blob Reader→Notebook→Lakehouse E2E；PK/FK/count/DQ/Manifest Hash/重复 export 对账、失败重试；仅在真实证据后声明通过。
 - [ ] 4.3 更新 `organize-fabric-terraform-by-workspace` Tasks 3.4/4.4、长期架构和 `PROJECT-STATUS.md` 的实际完成范围；不要把旧 NO APPLY 当新事实。
+
+## 2026-10-21 Task 2.1 源码/静态验收
+
+- [Healthcare PR #372](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/372) 增加可选共享 Connection Root、独立 `shared-infra/connection.tfstate`、默认 `connection=null`、Terraform 源码导航与离线测试。
+- 首次 CI Run [#39640775701](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39640775701) 的 Connection Job 仅因 `terraform fmt` 格式对齐失败；修正后 HEAD `696ab602dda498a5b2d120dd5c008e772c503836` 的 **21/21 CI Check PASS**，包含 `terraform validate / shared-infra / connection`、OpenSpec Trusted Gate 和 Documentation Links。
+- **只验证源码/静态**：未初始化 Remote Backend、未 Plan/Apply、没有创建 Connection、Notebook/Pipeline、Workspace/Lakehouse 或付费 Capacity。任务 2.2–4.3 不因本次通过而完成。
