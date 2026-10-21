@@ -15,6 +15,11 @@
 > 受控 Plan-only 修复复验：[Healthcare PR #361](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/361) 的 20/20 CI PASS，合并 Main `033dd9c1c43929b8dac2390406d2c55268f7e267`；`depends_on = [module.capacity]` 修复了提前查询未来 Capacity 的数据源缺陷。Self-Runner [PR #189](https://github.com/JohnZhang-DataForge/Self-Runner/pull/189) 基于更新 SHA 触发 [Run #39603819808](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39603819808) **SUCCESS**：真实 AzureRM Backend/OIDC 初始化、现有 OMOP RG 读回和 F2 Capacity Plan **1 add / 0 change / 0 destroy**，`data.fabric_capacity.created` 已明确延后到 Apply 时读取，锁定/释放 State 成功。没有运行 Terraform Apply，没有新增付费 Capacity；Workspace/OneLake 尚未真实 Plan/Apply，正式容量付费批准、Apply 后暂停/账单审计仍待验证。此证据不能勾选 Tasks 2.2–2.6。
 
 - [ ] 2.2 在真实环境应用前核查 Azure 订阅/权限/配额、容量 SKU/费用、安全保护与无并行冲突。
+
+> **2026-10-21 真实 Apply 失败（前置条件，禁止盲重试）**：Self-Runner [PR #193](https://github.com/JohnZhang-DataForge/Self-Runner/pull/193) 的单次受控 [Run #39623814666](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39623814666) 已经以用户明确授权触发真实 F2 Terraform Apply，但 Azure 对 `fcjohnzhangtest` 的 `CreateOrUpdate` 返回 **HTTP 409 / MissingSubscriptionRegistration**：目标 Azure Subscription 尚未注册 `Microsoft.Fabric` Resource Provider。Capacity Root 的真实 Plan 为 1 add/0 change/0 destroy；创建阶段被拒，因而没有执行 Workspace 与 OneLake Apply。失败后 ALWAYS Suspend 调用 6 次 ARM GET 均 HTTP 404；独立 [Post-run Watchdog #39624113762](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39624113762) 又 6 次 ARM GET HTTP 404，均表明此目标 Capacity 不存在。两套暂停步骤标记失败是因为**无已创建容量可暂停**，不是已发现收费资源仍在运行。未验证任何 Capacity/Workspace/Lakehouse 创建成功，不应将 Task 2.3–2.6 标记完成。
+>
+> **HOLD / 下一步**：对准确的目标 Azure Subscription 注册 `Microsoft.Fabric` Resource Provider（订阅级变更，需用户批准或手工操作）并只读验证 `registrationState`；之后再使用新审查的请求/SHA进行真实 Apply。不要重复使用已合并的付费请求文件、不要自动扩大 SKU；现有 Trial 和 `healthcare-omop` 不受影响。失败现象/恢复策略见 [微软官方说明](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-providers-and-types)。
+
 - [ ] 2.3 Capacity Root 真实 Apply 并读回 ARM ID/Fabric GUID 和 State；如果 API 拒绝、阻断或结果不明必须记录。
 - [ ] 2.4 Workspace Root 真实 Plan/Apply `johnzhang-test`，证实与 `healthcare-omop` 分离。
 - [ ] 2.5 OneLake Root 真实 Plan/Apply `lh_johnzhang_test`、读回 GUID、重复 Plan 幂等。
