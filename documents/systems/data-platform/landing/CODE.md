@@ -72,9 +72,9 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | --- | --- |
 | [`Dockerfile`](../../../../local-data-platform/images/landing-claim-runtime/Dockerfile) | Landing Claim/Lease/Fencing 容器：复制 Claim Python，使用 psycopg/boto3；含 Claim 权限边界 |
 | [`Dockerfile`](../../../../local-data-platform/images/landing-discovery-runtime/Dockerfile) | 只读 S3 READY Inventory 扫描容器：复制 Discovery、Resolver 和 v2 合同 |
-| [`Dockerfile`](../../../../local-data-platform/images/landing-processing-runtime/Dockerfile) | 在历史 TASK004 控制镜像 Digest 上叠加 NEW_ONLY v2 Resolver/Contract；不授予 Claim/COMMIT |
+| [`Dockerfile`](../../../../local-data-platform/images/landing-processing-runtime/Dockerfile) | 在本轮 TASK004 控制镜像上叠加 NEW_ONLY v2 Resolver/Contract；不授予 Claim/COMMIT |
 
-**镜像兼容性**：`landing-processing-runtime` 继承固定 TASK004 控制面 Digest，只叠加新的 v2 Landing Resolver 与 JSON Contract；切勿因为 Builder 成功而假定运行中消费者已经升级，或把 `claim=disabled` 镜像等同于获得 Claim/Writer 权限。
+**镜像兼容性**：`landing-processing-runtime` 继承本轮构建的 TASK004 控制面镜像，只叠加新的 v2 Landing Resolver 与 JSON Contract；切勿因为 Builder 成功而假定运行中消费者已经升级，或把 `claim=disabled` 镜像等同于获得 Claim/Writer 权限。
 
 ## 历史 Shell / 脚本导航（由 landing 组件负责）
 
