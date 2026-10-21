@@ -21,8 +21,16 @@ def read(s3,context,entity,decode):
     keys=[]
     for page in s3.get_paginator("list_objects_v2").paginate(Bucket=bucket,Prefix=prefix):
         keys.extend(z["Key"] for z in page.get("Contents",[]) if z["Key"].endswith(".parquet"))
-    gate(len(keys)==1 and keys[0].startswith(prefix),"parquet_cardinality")
-    raw=s3.get_object(Bucket=bucket,Key=keys[0])["Body"].read()
-    gate(isinstance(raw,bytes) and len(raw)>0,"empty_parquet")
-    rows=decode(raw)
+    # Spark writes one Parquet part per output partition.  All parts belong
+    # to the single immutable Processing dataset bound by the validated plan.
+    gate(bool(keys) and len(keys)==len(set(keys)),"parquet_cardinality")
+    rows=[]
+    for key in sorted(keys):
+        gate(key.startswith(prefix),"parquet_prefix")
+        raw=s3.get_object(Bucket=bucket,Key=key)["Body"].read()
+        gate(isinstance(raw,bytes) and len(raw)>0,"empty_parquet")
+        part=decode(raw)
+        gate(isinstance(part,list),"parquet_decode")
+        rows.extend(part)
+    # Validate the complete dataset once (batch, exact total count, unique IDs).
     return transform(rows,context,entity)
