@@ -38,3 +38,8 @@
 - PR #374 的静态/门禁 **6/6 PASS**，Task 3.1 只表明 Git Native 源码和离线合同完成；真实 Fabric 发布、Item GUID 映射与运行仍属于 3.2–3.3，绝不在本任务宣称已云端创建。
 
 - [Healthcare PR #374](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/374) 对原生 Notebook/Pipeline 采用独立静态验收；精确 HEAD `ec168ecfe848b98fdf3d62e8e662f3c7ee441e29` **6/6 CI PASS**，没有云端副作用。后续源码如有新提交，以新 HEAD CI 为准。
+
+## Task 3.2 — Publisher source candidate (2026-10-21)
+
+- 加入 Trial-only `trial_smoke_publisher.py` 的 `validate`（完全离线）和 `publish`（严格确认、Workspace/OneLake Terraform 真实 Outputs、限定 Notebook/Pipeline 的 Git 源、拒绝不明已有同名 Item、使用 `fabric-cicd`、发布后 API 读回），绝不清理 orphan Items。更新 CODE.md、单元测试。
+- **Task 3.2 暂不完成**：尚需在 Self-Runner 仓库增加只允许已批准模式的固定 SHA、OIDC、Remote State 输出绑定 Workflow，并通过双仓静态 CI；云端发布及运行属于 3.3，仍未获准执行。
