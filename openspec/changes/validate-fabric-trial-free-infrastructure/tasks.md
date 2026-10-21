@@ -28,5 +28,8 @@
 ## 4. Fabric Portal user Workspace Admin via Terraform (2026-10-21)
 
 - [x] 4.1 因 Fabric Admin 账号可在管理员治理列表查见 `johnzhang-test`，但普通 Workspaces 列表看不见，确认源码 `role_assignments = {}` 不会添加业务用户。双 Workspace Root 增加 `portal_admin_user_object_id`（默认 null、UUID 校验）及通过现有 `modules/workspace` 的 `fabric_workspace_role_assignment` 合并授予 `principal_type=User`、`role=Admin`；当前用户 UPN 仅作为对象 ID 查询提示，不能冒充 GUID。补充离线测试、CODE 映射。此任务只证明可复用代码机制，**尚未授予真实权限**。
+- [x] 4.2a 用户提供拟授权的 Entra User Object ID `670194b1-b1ff-41af-971a-a61438061f39`；仅写入 `johnzhang-test/workspace/terraform.tfvars`，另一实例 `healthcare-omop` 保持 null。补充静态回归断言和 CI；ID 与目标用户身份的 Entra 目录关联、现有权限是否已存在，仍需在真实执行前核对。
 - [ ] 4.2 取得 `johnzhang-fabric@guangbinzhang8888gmail.onmicrosoft.com` 对应 Entra **User Object ID** 的可核实值（不同于 Tenant ID、Client ID、Service Principal Object ID）；写入 `johnzhang-test/workspace/terraform.tfvars`，并按实际目标决定是否写入 `healthcare-omop`。使用受控权限/State 检查确认不会导入重复已有成员；经批准执行现有 Workspace 单 Root Plan/Apply，独立 Fabric Workspace 成员读回及用户普通工作区列表可见性验证。若已存在手工同一用户授权，先按独立变更决定 import/ownership，避免重复创建。
 - [ ] 4.3 上述真实授权验收及无不相关资源漂移后，追加 PR/Run、实际 Workspace GUID、Member role 与用户 Portal 可见性证据；不得声称只凭静态通过就修复了 Portal 访问。
+
+> **2026-10-21 用户 Object ID 配置变更**：准备将用户提供的 `670194b1-b1ff-41af-971a-a61438061f39` 写入 Terraform 实例变量，仅影响 `johnzhang-test` 的目标成员配置。PR/静态 CI 与将来的真实 IAM Apply 分开记录；不得因用户提供 UUID 就断言其归属已由 Entra 目录读回验证，或断言已部署/已可在普通 Portal 列表查看。未触碰 `healthcare-omop`、容量、OneLake、State 或 Self-Runner。

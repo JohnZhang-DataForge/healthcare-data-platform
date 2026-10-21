@@ -97,11 +97,28 @@ class FabricWorkspaceRootTest(unittest.TestCase):
             self.assertIn('principal_type = "User"', main)
             self.assertIn('role           = "Admin"', main)
             self.assertIn('role_assignments = merge(var.role_assignments, local.portal_admin_role_assignments)', main)
-            self.assertIn('portal_admin_user_object_id = null', tfvars)
+            expected_id = (
+                '"670194b1-b1ff-41af-971a-a61438061f39"'
+                if name == "johnzhang-test"
+                else "null"
+            )
+            self.assertIn(f"portal_admin_user_object_id = {expected_id}", tfvars)
             self.assertIn('johnzhang-fabric@guangbinzhang8888gmail.onmicrosoft.com', tfvars)
             self.assertNotIn("azuread_user", main)
             self.assertNotIn("FABRIC_ADMIN_OBJECT_ID", main)
             self.assertNotIn("azurerm_fabric_capacity", main)
+
+    def test_johnzhang_test_only_has_explicit_portal_admin(self):
+        johnzhang = (INFRA / "fabric-workspace/johnzhang-test/workspace/terraform.tfvars").read_text()
+        omop = (INFRA / "fabric-workspace/healthcare-omop/workspace/terraform.tfvars").read_text()
+        self.assertIn(
+            'portal_admin_user_object_id = "670194b1-b1ff-41af-971a-a61438061f39"',
+            johnzhang,
+        )
+        self.assertIn('portal_admin_user_object_id = null', omop)
+        self.assertIn('role_assignments = {}', johnzhang)
+        self.assertNotIn('service_principal', johnzhang)
+        self.assertNotIn('client_secret', johnzhang)
 
     def test_no_notebook_or_pipeline_terraform_ownership(self):
         source = "\n".join(self.text(p.name) for p in WORKSPACE.glob("*.tf"))
