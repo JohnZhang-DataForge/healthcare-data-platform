@@ -81,7 +81,7 @@ class WriterBranchGates(unittest.TestCase):
         self.assertIn("task004-new-only-writer-commit",dag)
         self.assertIn("TASK004_WRITER_AIRFLOW_COMMIT_SELECTION",dag)
         self.assertIn("TASK004_WRITER_DEPLOY_ENABLE",dag)
-        self.assertIn("healthcare-data-platform-new-only-omop-writer",dag)
+        self.assertIn("healthcare-data-platform-local-dp-omop-writer",dag)
         self.assertIn('":latest"',dag)
         self.assertIn('image_pull_policy="Always"',dag)
         self.assertNotIn("@sha256:",dag)
