@@ -54,6 +54,11 @@ source_sha: null
 - [`Capacity REST 单测`](../../../../.github/quality/tests/test_fabric_capacity_lifecycle.py)：纯 Mock，不做云端写入；[Self-Runner Capacity Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-capacity-lifecycle.yml) 已上线，手动 `mode=trial|paid`、`operation=inspect|suspend|resume`，默认 `trial/inspect`。Paid 写入额外要求 `FABRIC_PAID_CAPACITY_ARM_ID`、`ENABLE_PAID_CAPACITY_OPERATIONS=true` 与匹配 `confirmation`，不自动操作。Workspace 永远只由 Terraform `workspace/` 管理。
 - [`OpenSpec Change`](../../../../openspec/changes/manage-fabric-capacity-lifecycle-api/tasks.md)：记录 Trial 与 Paid 两种 API 模式和运行验收，不与 Terraform Workspace/OneLake State 混用。
 
+## 免费 Fabric Trial F4 实测入口（Trial-only）
+
+- [`johnzhang-test/workspace/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/main.tf) → [`johnzhang-test/onelake/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/onelake/main.tf)：保留已有 Terraform Roots/共享 Modules 和独立 State，Workspace 的 `capacity_id` 在部署时引用已存在免费 Trial F4，**不会创建 Capacity**。
+- [`Trial-only OpenSpec`](../../../../openspec/changes/validate-fabric-trial-free-infrastructure/tasks.md)：追踪 Trial F4 Workspace/Lakehouse 真实 Plan/Apply 和失败边界，不把旧付费 F2 Apply 失败记录当作免费测试通过。执行入口由 Self-Runner 独立 Trial-only Workflow 管理，不使用 `Fabric F2 Controlled E2E Apply`；真实 Runner 结果加入该 Change 后方能宣称部署完成。
+
 ## johnzhang-test — 独立的真实收费容量 E2E 测试（源代码）
 
 - [`fabric-workspace/johnzhang-test/workspace/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/main.tf)：独立 CLI Workspace `johnzhang-test`，原 `modules/workspace`，由下游读取 Workspace ID；完全不涉及原 `healthcare-omop`。
