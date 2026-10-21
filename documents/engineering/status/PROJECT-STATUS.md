@@ -1,35 +1,39 @@
 ---
 status: active
 scope: project-status
-last_verified: 2026-10-16
-source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
+last_verified: 2026-10-21
+source_sha: 23fa496c2ecf3c5255e77a505a497992a823e44e
 ---
 
 # Healthcare Data Platform — 项目当前状态
 
-> **唯一项目级 CURRENT / NEXT 入口（OpenSpec PR 门禁已验证；本地源码物理搬迁完成、新根 NEW_ONLY Person/Visit 真实 E2E 已验收（其他组件兼容与历史清理未完成））** · 历史运行证据快照日期：2026-10-16 EDT；仓库目录事实已按 2026-10-18 PR #225–#227 核对，不代表重新执行 Live 复测。
+> **唯一项目级 CURRENT / NEXT 入口。2026-10-21 交接状态：Local DP NEW_ONLY Person/Visit 真实 E2E + 三项缺陷修复已验收，Discovery 100 预览线上通过；目录迁移历史清理与旧 GHCR 退役仍未完成。Fabric 免费 Trial F4 Workspace/Lakehouse 已真实 Apply；Connection 和 Notebook/Pipeline Live 发布尚未完成。** 下方保留的 2026-10-14～20 记录属于有日期的历史里程碑，不能覆盖本段的 CURRENT。
 >
 > **定义**：本文仅汇总 **项目/工作线进度、已批准的目标与证据边界**；[总体架构](../../architecture/SYSTEM-OVERVIEW.md) 负责系统设计；具体实现由源码、Contracts、运行记录及后续组件文档承担。`docs/tasks/TASK-STATUS.md` 和旧 Agent Handoff 仍用于历史追溯，但其过时的 `CURRENT/NEXT` **不再覆盖本文**。
 >
-> **核对基线**：Healthcare Main `c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed`；Self-Runner Main `8f8cb877887540cbed697260c3e8154e218a49c7`。本页根据当前仓库源码、用户确认的方向和已保存的最终真实验收整理，**不是本日重新执行的集群、PG 或 Azure Live 健康检查**。历史验证数值应附原运行日期；没有本轮探针时不写「此刻 Running」。
+> **最新核对基线（2026-10-21，本次文档 PR 建立前）**：Healthcare Main `23fa496c2ecf3c5255e77a505a497992a823e44e`（含 [Fabric publisher PR #375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/375)）；Self-Runner Main `767e6f79e5643de994e6d4bb192ab18e415ed0bc`。以下运行数值是标明 Run 的真实历史读回，**本次仅更新 Git 文档，没有重新执行 PG/K8s/Azure Live 采样**。
 
-> **Fabric 设计方向更新（2026-10-20，非运行验收）**：[Module-first Environment Architecture](../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 确定以已授权 Fabric 部署账号、现成 Landing/State/Capacity 为外部前置，并复用旧 `components → modules → environments` 模型。唯一新实施入口是 [`simplify-fabric-environment-iac`](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)；原 Bootstrap/Tenant 双模式计划改为历史方案。当前源码未重构，真实 Terraform Apply 与 Fabric E2E 尚未执行。
+> **Fabric 2026-10-20 历史设计记录**：旧 Module-first/Bootstrap 讨论与过渡期“未 Apply”说法均已被后续独立 Terraform Roots + 免费 Trial F4 真实验收取代。当前 Fabric 实施任务请以 [deploy-fabric-connection-and-items](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md) 为准。
 
-> **Fabric 源码清理（2026-10-20）**：在 [Module-first Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md) 下，用户批准先删除过度设计的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/`。原有七个 `components/` / `modules/` 均保留，旧 Self-Runner Azure-Infra 入口继续使用；原 Fabric Bootstrap 方案按 Git 历史追溯。**此为 Git 源码清理，不意味着 Azure 资源/State 被删除、Root 重构或 Fabric Apply/E2E 已完成。**
+> **Fabric 2026-10-20 源码清理历史记录**：移除过度设计的 Bootstrap 支路属于已完成的源码整理，不能用来推断当前 Azure Live 状态；现行按 Workspace / OneLake / Shared Infra 分 Root 管理。
 
-**2026-10-20 Fabric Terraform 新实施与真实 Plan 证据**：Workspace、OneLake、Shared Storage 独立 Terraform Roots 及静态跨 Root CI 已开发合并；正式 Self-Runner Workflow 已从旧 `components/` 切换到新目录（参见 [权威 OpenSpec Change](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)）。[Shared Storage 真实 Plan Run #39538288616](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538288616) **SUCCESS**：OIDC、AzureRM Backend、Existing OMOP/johnzhang Azure 资源读取 PASS；未执行 Apply/Destroy。[Workspace Plan Run #39538646279](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538646279) 在 `FABRIC_CAPACITY_ID` 未配置的预检阶段 **FAIL/BLOCKED**，没有访问 Fabric 或执行 Terraform；新的 Fabric Workspace/Lakehouse 尚未创建，具名 State 隔离仍待验证。此前 `simplify-fabric-environment-iac` 等历史指针不再是当前实施 NEXT。
+**Fabric 2026-10-20 Plan 历史证据**：Workspace / OneLake / Shared Storage 独立 Terraform Roots 曾完成早期 Plan 验证，期间遇到容量配置阻挡；详见 [organize-fabric-terraform-by-workspace](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。**这些早期失败和当时“尚未创建”的描述不代表 2026-10-21 的最终状态。**
 
-> **Fabric 最新事实覆盖旧阶段描述（2026-10-21）**：免费 Trial F4 Workspace `johnzhang-test`（ID `d399f361-bc40-4f88-9615-df138ab8ee3b`）与 Lakehouse `lh_johnzhang_test`（ID `5a16b5a1-6274-4b37-8dad-19cb68b5139d`）已经由独立 Terraform Roots **真实 Apply 且二次 Plan 无漂移**，证据 [Self-Runner #39635155333 Attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39635155333)；Capacity 复用免费 Trial F4（没有创建收费 F2）。因此，本页后文旧的 Fabric `NO APPLY`、`尚未创建` 及旧架构指针均为**历史记录，不能作为当前状态**。新增 `shared-infra/connection` 源码经 [PR #372](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/372) 合并，其默认禁用、只有静态验收；Notebook/Pipeline Git-native Smoke 源码正在按 [OpenSpec](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md) 开发，**尚未云端发布/运行**。下一步：Connection Reader 元数据/RBAC、`fabric-cicd` 独占部署、无数据写入 Smoke，然后才是 PG→Blob→OneLake 业务 E2E。
+> **Fabric 当前事实（2026-10-21）**：免费 Trial F4 Workspace `johnzhang-test`（ID `d399f361-bc40-4f88-9615-df138ab8ee3b`）和 Lakehouse `lh_johnzhang_test`（ID `5a16b5a1-6274-4b37-8dad-19cb68b5139d`）由独立 Terraform Roots **实际 Apply、二次 Plan 无漂移**，证据 [Self-Runner #39635155333 Attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39635155333)；复用免费 Trial F4，没有创建收费 F2。[PR #372](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/372) Connection Root（默认禁用）、[PR #374](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/374) 原生 Notebook/Pipeline Smoke 源码、[PR #375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/375) 受控 `fabric-cicd` Publisher **均已合并 Main 且属于源码/静态完成**；Self-Runner Trial-only Publisher Workflow [PR #204](https://github.com/JohnZhang-DataForge/Self-Runner/pull/204) 已合并。**Connection 真实授权/Apply，Fabric Notebook/Pipeline 云端发布、Smoke 和 PG→Blob→OneLake 业务 E2E 仍未验收**；切勿把 Git Native 源码存在视为已经部署。权威下一步：[Fabric Items Change](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md)。
 
 ## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |
 | --- | --- | --- | --- |
-| **TASK004 — Synthea NEW_ONLY → Local OMOP Person/Visit** | **COMPLETED / CLOSED** | 独立 Synthea、S3 READY → Airflow 手工 Consumer → Spark Person/Visit → 原子 OMOP COMMIT；独立 PG 对账及同批次 SKIP | 已验收范围冻结；不因后续任务而重放已完成批次 |
+| **TASK004 — Synthea NEW_ONLY → Local OMOP Person/Visit** | **核心 E2E PASS；仅当前约定的 Person/Visit NEW_ONLY 范围** | Native Race / multi-Parquet Writer / Airflow Preview-selection 缺陷已修复；最新真实 Batch 100 Person / 15,188 Visit 通过 COMMIT、独立 PG 读回和同 Batch SKIP；Discovery Live 29/29、预览上限 100 | 另两批 READY 仍待完整入库；Local DP 目录历史清理、旧 GHCR 清理和 Change 归档尚未完成 |
 | **TASK005 — Condition** | **PAUSED（优先级暂缓） / STEP00 READ-ONLY READY / IMPLEMENTATION NOT STARTED** | 已有部分可复用源码/合同；没有 Condition 业务写入的完成证据 | 保留 STEP00 只读预检准备与原计划；重新启动 Condition 开发需另行决定，任何业务 COMMIT 须单独批准 |
 | **Platform Portal — Marquez / OpenLineage** | **前期实施/验收完成；下一阶段 Spark 接入方案讨论中** | 独立 PG14、Marquez Web/API、A3 Airflow 事件已真实验证；A4 隔离 Spark Smoke 有实际运行和部分读回证据 | **下一步如何接入真实 Spark 业务链路尚未确定**；Job↔Run 名称挂接和 Dataset I/O 完整血缘待处理，不直接启动新 Spark/共享资源 |
-| **Azure/Fabric — OMOP → OneLake** | **目标方案已敲定；IaC/Runner 工程及三个目标资源 Plan 完成；NO APPLY** | 已有 Azure Blob Landing / Workspace；Terraform 各组件资源定义、IAM 边界和 `Azure-Infra-TF` Workflow 在 Git；Lakehouse、Notebook、Pipeline 三个独立 Plan PASS | Exporter、真实 Notebook ETL、Pipeline 与 Notebook 绑定、Fabric 资源部署和数据 E2E 尚未讨论完成/实现；下一阶段先明确细节与验收门槛 |
+| **Azure/Fabric — OMOP → OneLake** | **免费 Trial F4 Workspace/Lakehouse Terraform Apply PASS；Git Native Publisher 源码 Ready** | Workspace + Lakehouse 实际创建及无漂移；Connection Root、Notebook/Pipeline 定义、受控 `fabric-cicd` Publisher 和 Self-Runner Workflow 已合并、静态测试 PASS | 未完成 Connection 真实认证/RBAC/Apply、Notebook/Pipeline Live 发布与无写入 Smoke、PG→Blob→OneLake 业务 E2E |
 | **文档与 OpenSpec 治理** | **Bootstrap G0–G4 完成；Main Required Change Gate 已验证；治理收尾仍 Active** | [Ruleset #25365902](https://github.com/JohnZhang-DataForge/healthcare-data-platform/rules/25365902) 已设可信 Change Gate + OpenSpec Strict Required；负向 [PR #233](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/233) blocked/未合并，正向 [PR #234](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/234) 全绿合并、无需人工审批 | [enforce-openspec-change-gate](../../../openspec/changes/enforce-openspec-change-gate/tasks.md) 仍有 Current Spec/Archive 收尾；G0–G7 [历史计划](../migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 非当前实施账本 |
+
+**Local DP 2026-10-21 核心链路最终证据（仅已验证范围）**：[3 批新的 Synthea Landing 生成 #39630497311](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39630497311) 总计 **300 Person / 43,825 Encounter**，三批 S3 18/18 READY、Manifest 和重复发布 PASS。其中 `synthea-new-only-gh-39630497311-01` 经 [真正完整 E2E #39637787637](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39637787637) 完成 100 Person / 15,188 Visit，独立 PG Person **394→494**、Visit **52,308→67,496**，再次触发 SKIP、无 DB 变化；`-02`（100 / 15,400）只读 Airflow 选择 [#39640585101](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39640585101) PASS，但**未写 PG**；`-03`（100 / 13,237）仍仅 READY，**未写 PG**。Writer 多 Parquet 原失败 Batch 两分片 **只读**复测 [#39624499095](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39624499095) PASS；不能把这次只读复测当 Writer COMMIT。Discovery 预览显示 [#39640585101](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39640585101) **29 READY / 29 预览 / not truncated**；100 条显示上限源码与测试完成。详见 [Writer Tasks](../../../openspec/changes/fix-multi-parquet-omop-writer-read/tasks.md) 和 [Airflow Tasks](../../../openspec/changes/fix-airflow-exact-new-only-batch-selection/tasks.md)。
+
+**Local DP CURRENT/NEXT（顺序）**：① 优先选择已 READY 且未 COMMIT 的 `-02`/`-03` 做两次受控独立全链路 E2E（先读 PG Claim/活跃 DagRun，确认无并发和 Manifest Drift；不要重放已完成 `-01`），补足随机 Batch 回归；② 按 [relocate-local-data-platform](../../../openspec/changes/relocate-local-data-platform/tasks.md) 4.1/4.8 分析当前源码保留/删除/HOLD，4.9/4.10 仅删除确认 C/D 的历史文件，**删除 PR 合并 Main 后再以新 Batch 做 E2E**；③ 最后 4.11.6 审核旧 GHCR Package/Version 消费者和回退 Digest 并清理，无证据不删；④ 对齐项目状态与 OpenSpec 生命周期，完成 5.1–5.3 归档。暂不扩大架构、重新开发 Writer/Mapper 或启动 Condition。
 
 **具体变更进度统一来自 Active OpenSpec Changes**：[本地目录迁移](../../../openspec/changes/relocate-local-data-platform/tasks.md)（物理目录与 GitSync 已修复、新唯一 Batch E2E PASS；其余路径覆盖/历史清理未完成）、[PR 治理](../../../openspec/changes/enforce-openspec-change-gate/tasks.md)（Ruleset 已验证、归档待办）、[Engineering 整理（已完成、归档）](../../../openspec/changes/archive/2026-10-18-engineering-governance-cleanup/tasks.md)（只改文档）、[Legacy 重构](../../../openspec/changes/modernize-legacy-task-code/tasks.md)（仅作为尚未获运行授权的未来计划）。本页不复制这些 Change 的 Tasks。
 
@@ -37,7 +41,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
-> **2026-10-20 NEW_ONLY 随机 Batch 已知问题（待后续调查，不授权修复）**：历史 TASK004 已验收成功的能力保持原结论；但在九个历史安装器删除后的同一 Main 上，最新三次独立随机新 Batch 实测 **两次 Writer FAIL、一次完整 Writer/PG/幂等 SUCCESS**，表明尚有批次相关的未覆盖输入或实现行为。**根因未定位、尚未批准业务代码调整**；后续独立调查以 [Active Change 的 Writer 现象证据](../../../openspec/changes/relocate-local-data-platform/evidence/LOCAL-DP-NEW-ONLY-WRITER-INTERMITTENT-BATCH-FAILURE-20261020.md) 与原始 Run 为唯一事实来源，不在本项目状态页复制三次实验日志，也不视为所有随机数据已通过。
+> **2026-10-20 曾观察到的随机 Batch Writer 失败（历史问题，后续已分别修复）**：Native Race 映射在 [独立 Change](../../../openspec/changes/fix-synthea-native-race-mapping/tasks.md) 下完成修复；Spark 多 Parquet 部分写入也经 [Writer Change](../../../openspec/changes/fix-multi-parquet-omop-writer-read/tasks.md) 定向修复和真实两分片只读回归，并在后续新 Batch E2E 通过 COMMIT/SKIP。旧失败日志仍保留供追溯，不代表现在的未解决告警；也**不**声称所有可能的随机 Batch 都已覆盖。
 
 ## 2. 本地业务：TASK004 已关闭
 
@@ -71,7 +75,7 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 **证据**：[Portal 源码总地图](../../systems/platform-portal/CODE.md) · [Marquez 部署验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/validation.md) · [A3 Airflow Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md) · [A4 Spark Closeout](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md) · [多 Session 协调](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md)。
 
-## 4. Azure/Fabric：目标架构已确定；Terraform 资源定义与 Plan 完成，实际 ETL 未开始
+## 4. Azure/Fabric：当前 Terraform Trial F4 Apply 成功；下文 4.2 为 2026-10-15 历史 Plan 基线
 
 **现行组件知识入口**：[Azure/Fabric 组件说明](../../systems/azure-fabric/README.md)。
 
@@ -111,7 +115,7 @@ Local PostgreSQL OMOP (authoritative)
 3. **Pipeline 运行**：实际 Notebook GUID、`export_id`/`manifest_uri` 参数传递、失败/成功条件、调度方式；当前 `notebook_id=""` 对应一个明确的 **Fail activity**。
 4. **部署与验收**：Fabric Workspace/Capacity/权限/既有 Item 核实；分组件独立授权 Apply 与真正远端资源读回；PG → Blob → Notebook → OneLake 的端到端对账。
 
-**当前 NEXT**：继续讨论、冻结最小可实施范围与数据合同；按用户单独批准的步骤再实施。**没有自动触发 Apply 或创建云端资源的许可**。
+**此处为 2026-10-15 历史 NEXT**：以本文顶部的 2026-10-21 当前状态和 [Fabric 现行 OpenSpec](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md) 为准。下一步按既有认证边界核验 Connection Reader/RBAC、受控发布 Notebook/Pipeline 及无数据写入 Smoke；具体 Azure Live 操作仍须独立授权，不自动 Apply。
 
 **依据**：[OneLake-first 方案与真实 Plan 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/azure-fabric/AZURE-ONELAKE-INFRA-PLAN-ONLY-2026-10-15.md) · [Terraform 组件](../../systems/azure-fabric/infra-terraform/README.md) · [IaC 架构/IAM](../../systems/azure-fabric/infra-terraform/ARCHITECTURE.md) · [Notebook bootstrap](../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) · [Pipeline fail-closed definition](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)。
 
