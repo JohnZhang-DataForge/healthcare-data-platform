@@ -15,6 +15,8 @@
 > Task 2.1 源码/静态阶段：[`PR #349`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/349) 新增 Workspace Root、6 项合同单测、CODE.md 及独立 Terraform CI。[`Run 39536623425`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39536623425) 的 `terraform validate / healthcare-omop / workspace` 成功：`fmt`、`init -backend=false`、具名 CLI Workspace `validate`、default 负向保护、6/6 单测 PASS。仅代表源码/静态 CI 完成；远端 Backend/State、真实 Plan/Apply/Fabric Workspace ID 仍由 Tasks 3/4 实测，未执行云端操作。
 
 - [ ] 2.2 新建 `fabric-workspace/healthcare-omop/onelake/` 独立 Root，复用 `modules/onelake`；通过 `terraform_remote_state` 获取 Workspace ID；没有上游 ID 时明确失败。
+> Task 2.2 开发分支 `feat/fabric-onelake-root-healthcare-omop`：新 Root/Remote State/CI/合同测试候选提交，尚待 PR 验证。本阶段不读取 Azure Backend，不 Plan/Apply；缺失 State 的真实失败检查保留在 Task 4.3。
+
 - [ ] 2.3 按真实平台需要添加 `warehouse/` 等资源 Root；每个目录保存非秘密 `terraform.tfvars`、main/variables/outputs/providers/versions 和适用 IAM；资源 Root 独立 State，不重复管理。
 - [ ] 2.4 新建 `shared-infra/` 下必要的 `storage/`、`connection/`、`foundation-iam/` 等 Roots；仅在获明确成本批准时考虑 Capacity 创建，默认使用已有 Capacity。
 - [ ] 2.5 为新树增加静态单元/合同测试，验证目录命名、Root State Key 与 CLI Workspace 隔离、Remote State Output 依赖和 Notebook/Pipeline 禁止 Terraform 管理。

@@ -29,6 +29,15 @@ source_sha: null
 - [`Workspace Root 单测`](../../../../.github/quality/tests/test_fabric_workspace_root.py) · [`Terraform CI`](../../../../.github/workflows/fabric-provider-init-validate.yml)：仅 `fmt`、`init -backend=false`、`validate` 与静态合同，不连接 Azure，不执行 Plan/Apply。
 - **暂未切换** Self-Runner Workflow（[OpenSpec Task 3.1](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)）。现有旧 Root/State 原样保留；本 Root 尚未真实 Plan/Apply。
 
+## 新 OneLake/Lakehouse Root（Task 2.2）
+
+- [`healthcare-omop/onelake/main.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake/main.tf)：调用 [`modules/onelake`](../../../../azure-fabric/infra-terraform/modules/onelake/main.tf)，并通过 `terraform_remote_state.workspace.outputs.fabric_workspace_id` 取得上游真实 GUID；没有 State/Output 时禁止回退到静态 GUID。
+- [`versions.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake/versions.tf)：独立 Backend 基础 Key `fabric-workspace/onelake.tfstate`，使用 `healthcare-omop` CLI Workspace。
+- [`terraform.tfvars`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake/terraform.tfvars)：Lakehouse 名称 `lh_omop_analytics` 及现有 Backend Storage 配置，不包含 Workspace GUID/Secrets；后端配置更换账号时与 Workspace Root 同步。
+- [`iam.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake/iam.tf) · [`providers.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake/providers.tf)：OneLake IAM 默认 `{}`，保留现有 Module 的 Provider Preview 兼容设置。
+- [`outputs.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/onelake/outputs.tf)：Lakehouse ID、Files/Tables 路径、角色 ID 和上游 Workspace ID。
+- [`OneLake Root 合同单测`](../../../../.github/quality/tests/test_fabric_onelake_root.py) · [`Terraform CI`](../../../../.github/workflows/fabric-provider-init-validate.yml)：仅离线静态检查；**上游缺失时的真实 Plan 失败验证**仍属于 OpenSpec Task 4.3。
+
 ## 七个 Root / Module 源码地图
 
 | Root | Root、环境与 Provider | Module 与 IAM | 职责和限制 |
