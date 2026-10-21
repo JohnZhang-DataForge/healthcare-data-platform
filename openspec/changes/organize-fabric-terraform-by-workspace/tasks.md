@@ -1,6 +1,6 @@
 # Tasks
 
-> **本 Change 是当前有效的 Fabric Terraform 目标架构/开发任务入口。** 取代 `simplify-fabric-environment-iac` 的组合 Root/Apply-All 方案。本轮只做文档 PR，不执行 Terraform 源码变更、Workflow 变更、远端 State 迁移、云端操作。
+> **本 Change 是当前有效的 Fabric Terraform 架构和实施任务入口。** 取代旧组合 Root/Apply-All 方案。源码与独立静态 CI 按 Tasks 分批推进；云端运行取证必须另行记录，不将 Git 合并误作云资源已部署。
 
 ## 1. Freeze architecture and change governance
 
@@ -21,7 +21,7 @@
 - [x] 2.4 新建 `shared-infra/` 下必要的 `storage/`、`connection/`、`foundation-iam/` 等 Roots；仅在获明确成本批准时考虑 Capacity 创建，默认使用已有 Capacity。
 - [x] 2.5 为新树增加静态单元/合同测试，验证目录命名、Root State Key 与 CLI Workspace 隔离、Remote State Output 依赖和 Notebook/Pipeline 禁止 Terraform 管理。
 
-任务 2.4/2.5 已落实最小必要范围：仅 Shared Storage lookup Root（其它 Shared 资源不构成本次前置）与静态跨 Root 合同，CI/PR 证据见本轮实施 PR；这不代表真实 Azure 读回、State 隔离实测或 Fabric 部署完成。
+任务 2.4/2.5 的最小必要范围：仅 Shared Storage lookup Root（其它 Shared 资源不构成本次前置）与静态跨 Root 合同；[PR #352](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/352) 负责源码与独立 CI，不代表真实 Azure 读回、State 隔离实测或 Fabric 部署完成。
 
 ## 3. Switch workflows without migrating old source/state (not started)
 
