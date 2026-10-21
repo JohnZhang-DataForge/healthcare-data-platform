@@ -4,50 +4,62 @@
 
 ### Requirement: Externally prepared Fabric deployment prerequisites
 
-Fabric Environment Terraform SHALL accept an already-authorized Fabric deployment identity, accessible existing Terraform Backend, usable Fabric Capacity and pre-authorized Landing data access as external prerequisites. Normal deployment MUST NOT require three new Entra applications, Tenant A/B topology selection, subscription creation or Storage Bootstrap.
+Fabric Environment Terraform SHALL use the currently authorized Fabric deployment identity, existing accessible Terraform Backend, available Capacity and pre-authorized Landing access. The current delivery MUST NOT require multi-account Account Profiles, cross-tenant switching, three new Entra applications, subscription creation or Storage Bootstrap.
 
-#### Scenario: new authorized Fabric account
+#### Scenario: deploy using existing Fabric account
 
-- **GIVEN** 一个新的、已经具备目标 Fabric/Capacity 权限且已配置 Landing 与 Backend 访问的部署身份
-- **WHEN** 为其提供环境参数并执行 Terraform Plan
-- **THEN** 可以使用已有 Module 规划目标平台，不需先建立独立 Seed Bootstrap 或重建 Storage
+- **GIVEN** 当前已具备必要 Fabric、Capacity、Landing 和 Backend 权限的部署身份
+- **WHEN** 为当前账号选择 Fabric Workspace 并运行 Terraform
+- **THEN** 复用已有 Modules，无需额外初始化多账号/Seed Bootstrap
 
-### Requirement: Module-first composable Fabric environment root
+### Requirement: Terraform CLI Workspace and Fabric Workspace names match
 
-Terraform SHALL retain the `components → modules → environment configuration` model. One composable Fabric Environment Root SHALL reuse Workspace, Lakehouse and Connection modules, rather than duplicate resource definitions per account or environment.
+Each managed Fabric Workspace in the current account SHALL map to a dedicated non-default Terraform CLI Workspace with the **exact same name**. The existing first Fabric Workspace is named `healthcare-omop`; DEV is its environment label, not an alternative resource name. The composed Root SHALL pass `terraform.workspace` to the Workspace Module as the Fabric display name.
 
-#### Scenario: reuse modules for a second environment
+#### Scenario: select current existing workspace
 
-- **GIVEN** 两套独立 Fabric 部署参数与已授权身份
-- **WHEN** 分别选择其 Environment 运行相同的 Root
-- **THEN** 不需要修改 Module 资源定义，即可规划第二套 Workspace/Lakehouse/Connection
+- **GIVEN** 已有 Fabric Workspace `healthcare-omop`
+- **WHEN** 选择 Terraform CLI Workspace `healthcare-omop`
+- **THEN** Terraform 使用完全相同的 Fabric Workspace display name，而不生成 `dev` 或 `HDP-Dev` 名称
 
-### Requirement: Distinct Terraform state keys for environments
+#### Scenario: reject default workspace deployment
 
-Every Fabric Environment deployment SHALL use a distinct explicit Backend State Key. It MUST NOT automatically adopt, overwrite or migrate existing `dev/*.tfstate` or old Fabric Root resources.
+- **GIVEN** Terraform CLI Workspace 为 `default`
+- **WHEN** 尝试真实部署本项目 Fabric 环境
+- **THEN** 部署入口明确阻止在 `default` Workspace 创建目标 Fabric Workspace
 
-#### Scenario: sharing backend without state collision
+### Requirement: Module-first composable Fabric environment root with outputs
 
-- **GIVEN** 两个 Fabric 环境共享已有的 Terraform Backend Container
-- **WHEN** 初始化各自的环境组合 Root
-- **THEN** 分别使用 `fabric/<environment>/platform.tfstate` 且不改变另一个环境的 State
+Terraform SHALL retain `components → modules → configuration` and compose Workspace/IAM, Lakehouse and Connection from reusable Modules. The Root SHALL expose actual workspace name and resolved Fabric Workspace/Lakehouse/Connection IDs via outputs; dependent Modules SHALL use resolved IDs instead of hardcoded Workspace IDs.
 
-### Requirement: Exclusive owner of Fabric platform and business resources
+#### Scenario: deploy Lakehouse after workspace resolution
 
-Terraform SHALL own the agreed Fabric platform Resources including Workspace, its role assignments, Lakehouse and Connection. In this deployment path, `fabric-cicd` SHALL own Notebook and DataPipeline business definitions. Resources of unknown prior ownership MUST NOT be implicitly imported, replaced or destroyed.
+- **GIVEN** Terraform Workspace `healthcare-omop` 对应已被正确管理的 Fabric Workspace
+- **WHEN** 规划 Lakehouse/Connection
+- **THEN** Lakehouse 引用 Workspace Module 输出的真实 ID，Root Outputs 暴露真实资源标识供下游消费
 
-#### Scenario: deploy infrastructure and business items
+### Requirement: Terraform CLI Workspace state isolation and existing resource safety
 
-- **GIVEN** Terraform 已创建并读回目标环境的 Platform Resource IDs
-- **WHEN** 使用部署结果发布 Notebook 和 Pipeline
-- **THEN** 业务发布使用对应环境的真实 IDs，并不与 Terraform 同时管理相同 Fabric Item
+Each non-default Terraform CLI Workspace SHALL have isolated State under the pre-existing configured AzureRM Backend. The implementation MUST verify actual Backend key derivation; it MUST NOT silently rewrite or adopt legacy `dev/*.tfstate` or another Root's managed resources. Existing `healthcare-omop` MUST be inventoried and explicitly imported or state-migrated if required, never recreated merely because the new Root has empty State. Selecting a partial resource operation MUST NOT implicitly delete unrelated managed resources.
 
-### Requirement: Verified real deployment evidence
+#### Scenario: existing workspace not managed by new root state
 
-The project MUST distinguish architecture decisions, static CI, real Terraform Apply, Fabric API readback and business E2E evidence. A documents-only change SHALL NOT be reported as deployed infrastructure.
+- **GIVEN** Fabric Workspace `healthcare-omop` 已存在，但新组合 Root State 不包含它
+- **WHEN** 准备首次 Apply
+- **THEN** 先审查并执行明确的 Import/State Move 路径，不能直接重复创建该 Workspace
 
-#### Scenario: architecture PR complete without cloud tests
+#### Scenario: second workspace in current account
 
-- **GIVEN** 仅合并了新的设计和 OpenSpec Change
-- **WHEN** 汇报平台实施状态
-- **THEN** 明确表示架构已更新、代码未重构、真实 Apply 与 E2E 尚未执行
+- **GIVEN** 当前账号使用同一个 AzureRM Backend，已有 Terraform Workspace `healthcare-omop`
+- **WHEN** 创建另一个非 default Terraform CLI Workspace 并运行相同 Root/Modules
+- **THEN** 其目标 Fabric Workspace 与 State 独立，不影响 `healthcare-omop`
+
+### Requirement: Exclusive ownership and real deployment evidence
+
+Terraform SHALL own Workspace/IAM, Lakehouse and Connection. `fabric-cicd` SHALL own Notebook/DataPipeline business definitions; no two deployment systems may manage the same Item. Docs/static validation MUST NOT be reported as live Apply, Fabric API readback or business E2E.
+
+#### Scenario: architecture-only revision
+
+- **GIVEN** 仅更新当前 Active OpenSpec 和架构文档
+- **WHEN** 汇报进度
+- **THEN** 明确写为设计已定、Terraform 实施与真实部署未验证

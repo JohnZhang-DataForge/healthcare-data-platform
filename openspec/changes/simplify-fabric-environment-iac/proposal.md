@@ -2,26 +2,28 @@
 
 ## Why
 
-2026-10-20 用户已明确要求回归最初 Azure-Infra 的 `components → modules → environments` 可复用 Terraform 架构。已有 Fabric 管理员部署身份、现成 State Backend、已配置 Landing 数据权限和 Capacity 都应为外部前置，而非普通 Terraform Environment Apply 再开发完整 Bootstrap。当前 `new-environments/` 直接重复声明 Workspace/Lakehouse，三套 Entra App/Seed/双 Tenant 模式也被设计成强制依赖，使简单的多环境部署偏离原目标。
+2026-10-20 用户再次收敛 Microsoft Fabric Terraform 范围：**当前只部署现有 Fabric 账号，不开发多账号 Account Profile/自动切换**。当前账号下已有人工创建的 Fabric Workspace，准确名称为 `healthcare-omop`，当前作为 DEV 使用。未来可以在**同一账号**下增加其他 Fabric Workspaces。保持已有 `components → modules` 的可复用架构，优先实现并真实验证 Fabric 平台，而不是重新建设 Bootstrap。
 
 ## What Changes
 
-- 建立长期权威 [Fabric Module-first Environment Architecture](../../../documents/architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)：同一可组合 Root、复用 Modules、差异化环境变量及独立 Backend State Keys。
-- 已授权账号、Capacity、Landing 数据访问、State Backend 作为正常部署的**外部前置**；不再以 A=B、A≠B、三套新身份或 fresh Bootstrap 组织 Fabric 环境部署。
-- Terraform 管 Workspace、Lakehouse、Connection、权限；`fabric-cicd` 管 Notebook/Pipeline。规划统一 Root，把重复资源定义整合回现有 Module 模型。
-- 标注早期 Bootstrap 和多环境独立 Root Change 的未来实施路线被取代，历史实现/验收继续保留。
-- 本 PR 只做架构文档与 OpenSpec，后续代码、Workflow、云端验收、旧代码清理按本 Change 任务有序进行。
+- **账号范围**：仅当前已授权的 Fabric 管理/部署身份；可用 Capacity、已授权 Landing、Terraform Backend 仍为外部前置。Workflow 不提供多账号选择，不开发双 Tenant/三身份/Seed Bootstrap。将来换账号时手工修改认证和配置，使用隔离 Backend/State 后复用源码；不作为本 Change 验收。
+- **同名约定**：Terraform CLI Workspace 名称与目标 Fabric Workspace `display_name` 完全一致。首个目标固定为现有名称 `healthcare-omop`，DEV 仅为业务环境标签，并非另一 Workspace 名。必须使用非 `default` Terraform Workspace。
+- **单组合 Root**：复用现有 `modules/workspace`、`modules/onelake` 与 IAM，增加 `modules/connection`，使用 `terraform.workspace` 传入 Fabric Workspace 名称；输出真实 Workspace/Lakehouse/Connection IDs 供其他 Modules 和 `fabric-cicd` 使用。
+- **State 隔离**：当前账号使用同一个预先存在的 AzureRM Backend，按 Terraform CLI Workspace 维护各自 State；不得误认为只需更换 tfvars，也不得自动挪动历史 State 或接管已有云端 Workspace。
+- **执行**：在原 `Self-Runner/.github/workflows/azure-infra.yaml` 基础上支持选择目标 Workspace、已明确的资源操作范围和 Plan/Apply；首版优先完整组合 Root，禁止用关闭其他资源定义的方式实施部分部署。
+- **真实验收**：先核对 `healthcare-omop` 的已有 Terraform State 和云端资源所有权，按需显式 Import/State Move，不能重复创建；再真实 Plan/Apply、API 读回、Landing 可用性和幂等验证。同账号第二个 Workspace 的部署作为后续复用验收。
+- Notebook 与 Pipeline 业务定义继续由 `fabric-cicd` 发布，Terraform 不同时管理相同业务 Items。
 
 ## Capabilities
 
 ### New Capabilities
 
-- `fabric-module-first-environment-deployment`：给定预授权部署身份及外部基础设施，以相同 Terraform Modules 和环境/State 配置重建 Fabric 平台。
+- `fabric-module-first-environment-deployment`：当前 Fabric 账号中，以 Terraform CLI Workspace 名确定同名 Fabric Workspace、复用 Modules、隔离 State、输出真实资源 ID。
 
 ### Modified Capabilities
 
-- `fabric-multi-environment-terraform` 不再把三套 Backend/Fabric/Reader 身份、独立 Bootstrap Outputs 或特定 Tenant 拓扑当成普通环境部署的强制门槛。
+- 本 Change 不再要求多个 Fabric 账号/跨 Tenant 自动选择，也不恢复已删除的 Bootstrap、新独立 Roots 或对应 Tools/Tests。原旧 Change 仅作历史记录。
 
 ## Impact
 
-文档先行，不改任何 `.tf`、Python、GitHub Workflow、Remote State、Azure/Fabric 资源或计费。变更设计不是已经 Apply；原有资源的 Terraform State 所有权不得因未来重构而被默认替换或删除。
+本次仅修订架构文档和 **Active** OpenSpec，不修改 Terraform 源码、GitHub Workflow、Backend、State、现有 Fabric Workspace 或云端权限。架构定稿不代表真实 Apply 或 E2E 成功。
