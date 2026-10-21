@@ -20,5 +20,7 @@
 ## 3. Capacity configuration ownership correction (2026-10-21)
 
 - [x] 3.1 将当前既有 Trial F4 Capacity GUID 作为非秘密资源关联写入各 Workspace Terraform Root 的 `terraform.tfvars`（`johnzhang-test`、`healthcare-omop`）；保留通用 Module、独立 State 和原有真实验收证据，补充配置合同单测。本次仅代码/静态检查，**不运行 Cloud Plan/Apply**。
-- [ ] 3.2 Self-Runner 通用 `azure-infra.yaml` 删除 `vars.FABRIC_CAPACITY_ID` / `TF_VAR_capacity_id` 注入，Trial 专用 Workflow 删除固定 GUID 与自动 Push Apply 请求，改为显式手动授权且只从 Healthcare `terraform.tfvars` 读取，静态 CI PASS 后合并。保留历史 Run 证据，不再重跑 Trial 基础设施。
-- [ ] 3.3 双仓 Main 和 CI 复核后记录完整证据；此配置调整不代表更换租户已完成真实部署。
+- [x] 3.2 Self-Runner 通用 `azure-infra.yaml` 删除 `vars.FABRIC_CAPACITY_ID` / `TF_VAR_capacity_id` 注入，Trial 专用 Workflow 删除固定 GUID 与自动 Push Apply 请求，改为显式手动授权且只从 Healthcare `terraform.tfvars` 读取，静态 CI PASS 后合并。保留历史 Run 证据，不再重跑 Trial 基础设施。
+- [x] 3.3 双仓 Main 和 CI 复核后记录完整证据；此配置调整不代表更换租户已完成真实部署。
+
+> **代码合并与静态 CI 证据（2026-10-21）**：Healthcare [PR #378](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/378) 已合并 Main `3e1320562a24c5feec05be484bb43429ba73c646`，最终 PR HEAD `06923bfa8177484ff13a5f190e7a14f10c5d0591`，GitHub 21/21 Checks PASS（包含 Terraform `init -backend=false` / `validate`、静态合同、OpenSpec、文档检查）。Self-Runner [PR #207](https://github.com/JohnZhang-DataForge/Self-Runner/pull/207) 已合并 Main `29094515eeb84f79a89c34061e55becd96e7d9ad`，最终 PR HEAD `93534e08ecbe6b34308faef788804acf9a56054f`，`check-azure-infra-workflows` 与 `trial-only-contract` **2/2 SUCCESS**（[Workflow Run #39653016673](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39653016673)、[Run #39653016666](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39653016666)）。原 Self-Runner Trial JSON 文件已从 Main 删除，F4 E2E Workflow 不再响应 Git Push，专用重跑需手动 40 位 Healthcare SHA 与精确确认。**本轮 0 Cloud Plan/Apply、0 Capacity 创建/修改、0 Workspace/Lakehouse 重建；先前真实 E2E 结果保留。** 后续新租户仍需准备身份/OIDC、Backend 和已有免费 Trial Capacity 并更新相应 Workspace `terraform.tfvars`。
