@@ -18,6 +18,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "local-data-platform/scripts/task004/**"
       - ".github/workflows/local-dp-image-rebuild.yml"
       - "local-data-platform/images/**"
       - "local-data-platform/apps/**"
