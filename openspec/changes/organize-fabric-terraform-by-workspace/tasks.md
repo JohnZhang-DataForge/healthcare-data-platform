@@ -1,6 +1,6 @@
 # Tasks
 
-> **本 Change 是当前有效的 Fabric Terraform 目标架构/开发任务入口。** 取代 `simplify-fabric-environment-iac` 的组合 Root/Apply-All 方案。本轮只做文档 PR，不执行 Terraform 源码变更、Workflow 变更、远端 State 迁移、云端操作。
+> **本 Change 是当前有效的 Fabric Terraform 架构和实施任务入口。** 取代旧组合 Root/Apply-All 方案。源码与独立静态 CI 按 Tasks 分批推进；云端运行取证必须另行记录，不将 Git 合并误作云资源已部署。
 
 ## 1. Freeze architecture and change governance
 
@@ -18,8 +18,10 @@
 > Task 2.2 源码/静态阶段：[`PR #350`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/350) 新增独立 OneLake Root、`terraform_remote_state` 依赖、5 项静态合同测试及 CI。[`Run 39536947645`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39536947645) 的 `terraform validate / healthcare-omop / onelake` PASS（包含具名 CLI Workspace、default 负向测试、5/5 单测），不读取真实远端 State，不 Plan/Apply。上游缺失时的真实 Plan 失败测试仍属于 Task 4.3。
 
 - [ ] 2.3 按真实平台需要添加 `warehouse/` 等资源 Root；每个目录保存非秘密 `terraform.tfvars`、main/variables/outputs/providers/versions 和适用 IAM；资源 Root 独立 State，不重复管理。
-- [ ] 2.4 新建 `shared-infra/` 下必要的 `storage/`、`connection/`、`foundation-iam/` 等 Roots；仅在获明确成本批准时考虑 Capacity 创建，默认使用已有 Capacity。
-- [ ] 2.5 为新树增加静态单元/合同测试，验证目录命名、Root State Key 与 CLI Workspace 隔离、Remote State Output 依赖和 Notebook/Pipeline 禁止 Terraform 管理。
+- [x] 2.4 新建 `shared-infra/` 下必要的 `storage/`、`connection/`、`foundation-iam/` 等 Roots；仅在获明确成本批准时考虑 Capacity 创建，默认使用已有 Capacity。
+- [x] 2.5 为新树增加静态单元/合同测试，验证目录命名、Root State Key 与 CLI Workspace 隔离、Remote State Output 依赖和 Notebook/Pipeline 禁止 Terraform 管理。
+
+任务 2.4/2.5 的最小必要范围：仅 Shared Storage lookup Root（其它 Shared 资源不构成本次前置）与静态跨 Root 合同；[PR #352](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/352) 负责源码与独立 CI，不代表真实 Azure 读回、State 隔离实测或 Fabric 部署完成。
 
 ## 3. Switch workflows without migrating old source/state (not started)
 
