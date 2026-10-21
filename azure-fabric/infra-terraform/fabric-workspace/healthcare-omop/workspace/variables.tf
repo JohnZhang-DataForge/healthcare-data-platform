@@ -5,7 +5,7 @@ variable "description" {
 }
 
 variable "capacity_id" {
-  description = "Existing Fabric Capacity GUID. Supply at runtime with TF_VAR_capacity_id or -var; never creates a Capacity."
+  description = "Existing Fabric Capacity GUID. Set in this Workspace Root terraform.tfvars; runner does not inject it. Never creates a Capacity."
   type        = string
 
   validation {

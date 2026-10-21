@@ -13,6 +13,12 @@ source_sha: null
 
 > **唯一 Terraform 组件源码导航（ACTIVE）**。只登记当前 Main 应有的 Root/Module；功能说明见 [README.md](README.md)，历史 State/Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。此处源码存在不代表云资源已部署或批准 Apply。
 
+## Workspace Capacity 引用位置 — 2026-10-21
+
+- 免费 Trial F4 的 **已有 Capacity GUID** 归属 Healthcare Terraform Workspace 实例配置：[`johnzhang-test/workspace/terraform.tfvars`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/terraform.tfvars)；另一实例由 [`healthcare-omop/workspace/terraform.tfvars`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/terraform.tfvars) 独立配置。目前同租户都引用已有 Trial GUID；更换 Fabric 账号按实例更新，不改变通用 Module。
+- Self-Runner 不再固定/注入 Capacity ID，也不使用 `FABRIC_CAPACITY_ID` GitHub Repo Variable。身份参数、远程 Backend 存储是独立的部署前置配置；本次改动只调整 Capacity 引用，不声称跨租户认证/Backend 已自动解决。
+- 之前 [Trial F4 成功 Run](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39635155333) 仍是历史实测证据；本次配置归属调整只做静态 CI，不触发实际 Plan/Apply。见 [Trial Change](../../../../openspec/changes/validate-fabric-trial-free-infrastructure/tasks.md)。
+
 ## Terraform 根目录与工作流
 
 - [Terraform 源码根目录](../../../../azure-fabric/infra-terraform/) · [`.gitignore`](../../../../azure-fabric/infra-terraform/.gitignore)

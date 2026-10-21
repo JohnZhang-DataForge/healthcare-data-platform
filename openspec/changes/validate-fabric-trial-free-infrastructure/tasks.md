@@ -16,3 +16,9 @@
 - 不创建、购买、暂停或恢复任何付费 Fabric Capacity。
 - 不触发已保留的 F2 Capacity Apply Workflow；不修改其他 Terraform CLI Workspaces 或老 State。
 - 不通过 REST 创建 Workspace 或替换 Terraform 的 Capacity 关联所有权。
+
+## 3. Capacity configuration ownership correction (2026-10-21)
+
+- [x] 3.1 将当前既有 Trial F4 Capacity GUID 作为非秘密资源关联写入各 Workspace Terraform Root 的 `terraform.tfvars`（`johnzhang-test`、`healthcare-omop`）；保留通用 Module、独立 State 和原有真实验收证据，补充配置合同单测。本次仅代码/静态检查，**不运行 Cloud Plan/Apply**。
+- [ ] 3.2 Self-Runner 通用 `azure-infra.yaml` 删除 `vars.FABRIC_CAPACITY_ID` / `TF_VAR_capacity_id` 注入，Trial 专用 Workflow 删除固定 GUID 与自动 Push Apply 请求，改为显式手动授权且只从 Healthcare `terraform.tfvars` 读取，静态 CI PASS 后合并。保留历史 Run 证据，不再重跑 Trial 基础设施。
+- [ ] 3.3 双仓 Main 和 CI 复核后记录完整证据；此配置调整不代表更换租户已完成真实部署。

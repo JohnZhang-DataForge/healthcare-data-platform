@@ -67,9 +67,19 @@ class FabricWorkspaceRootTest(unittest.TestCase):
         self.assertNotRegex(variables, r'(?s)variable "capacity_id"\s*\{[^}]*default\s*=')
         self.assertIn('default = {}', iam)
         self.assertIn('role_assignments = {}', tfvars)
-        self.assertNotIn("capacity_id", tfvars)
+        self.assertIn('capacity_id      = "3914ac8b-3375-498b-b3c0-1180a1902dd6"', tfvars)
+        self.assertIn("runner does not inject it", variables)
         self.assertNotIn("client_secret", tfvars)
         self.assertIn("use_oidc = true", self.text("providers.tf"))
+
+    def test_each_workspace_owns_existing_capacity_reference(self):
+        for name in ("healthcare-omop", "johnzhang-test"):
+            root = INFRA / "fabric-workspace" / name / "workspace"
+            tfvars = (root / "terraform.tfvars").read_text(encoding="utf-8")
+            variables = (root / "variables.tf").read_text(encoding="utf-8")
+            self.assertIn('capacity_id      = "3914ac8b-3375-498b-b3c0-1180a1902dd6"', tfvars)
+            self.assertIn('variable "capacity_id"', variables)
+            self.assertNotIn("azurerm_fabric_capacity", (root / "main.tf").read_text())
 
     def test_no_notebook_or_pipeline_terraform_ownership(self):
         source = "\n".join(self.text(p.name) for p in WORKSPACE.glob("*.tf"))
