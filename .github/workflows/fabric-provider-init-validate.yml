@@ -113,7 +113,15 @@ jobs:
           terraform -chdir="$ROOT" fmt -check -diff
           terraform -chdir="$MODULE" fmt -check -diff
           terraform -chdir="$ROOT" init -backend=false -input=false -no-color
-          terraform -chdir="$ROOT" validate -no-color
+          # Offline validation must select the real non-default CLI Workspace.
+          TF_WORKSPACE=healthcare-omop terraform -chdir="$ROOT" validate -no-color
+          # Default Workspace must fail closed without touching any remote State.
+          if TF_WORKSPACE=default terraform -chdir="$ROOT" validate -no-color > "$RUNNER_TEMP/fabric-default-validate.log" 2>&1; then
+            echo "::error::Default Terraform CLI Workspace unexpectedly validated"
+            exit 1
+          fi
+          grep -q "precondition failed" "$RUNNER_TEMP/fabric-default-validate.log"
+          echo "DEFAULT_WORKSPACE_REJECTED=YES"
           python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_workspace_root.py' -v
           echo "REMOTE_BACKEND_USED=NO"
           echo "FABRIC_PLAN_APPLY=NO"
