@@ -29,6 +29,13 @@
 **本次 PR 只调整本 OpenSpec 的 Proposal/Design/Tasks**；没有实际修改 Dockerfile、DAG、Workflow、镜像、集群或数据，也不声称构建/发布/E2E 已成功。新顺序以 [Design 4C](design.md) 和 [Tasks 4.11](tasks.md) 为准，旧历史清理计划仍保留事实记录但在执行优先级上让位。
 
 
+
+### 当前三阶段实施计划（2026-10-20 更新；覆盖上文的旧执行顺序）
+
+8/8 GHCR 镜像已通过构建和发布，但新镜像完整 Writer COMMIT E2E 仍 HOLD。进一步的真实只读 A/B 证明：[早晨已成功 Batch #39534932448](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39534932448) 的 16 Person/4,259 Visit 在旧、新 Writer 上映射输出一致；[后来失败 Batch #39535834807](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39535834807) 的 64 Person/12,446 Visit 在两种固定 Digest Writer 中均复现 `BLOCKED=unknown_demographic`，查明其中**一条 `race_code=native` 不在现有 Race 字典内**，其它 Gender/Ethnicity 均符合现有字典。本结论针对该 Batch 的映射，不推断其它失败 Batch 根因，也不把只读成功视为已完成业务 COMMIT。
+
+用户决定按 **(1) Bugfix → 新镜像全链路 E2E；(2) 过时 Shell/生成器/测试清理 → 合并后新 Batch E2E；(3) 最后清理旧 GHCR Package/Version；(4) 最终归档** 的顺序执行。业务映射变更归新独立 [`fix-synthea-native-race-mapping`](../fix-synthea-native-race-mapping/proposal.md)；迁移 Change 保留 4.11.5、4.1/4.8/4.9/4.10、4.11.6 和 Task 5。早先“旧镜像清理先于旧文件清理”由此新决策取代。**本次 PR 只提交 OpenSpec 文档，不改代码、不部署、不删除 GHCR、不清空 PG。**
+
 ## Capabilities
 
 ### New Capabilities
