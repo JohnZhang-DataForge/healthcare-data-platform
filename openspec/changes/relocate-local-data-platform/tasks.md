@@ -142,7 +142,7 @@
 
 - [ ] 4.10 审核过期测试与当前有效回归保护：只删除无独有价值的历史测试，必要时将关键断言移入现行组件 Unit/Contract/Regression Test；对被移除源码确认无有效 Import/Build/DAG/CI 引用，持续保持功能安全门槛，提交清理前后测试矩阵和适用 Clean Build/DAG 验证。**不以删除所有 `tests/taskNNN` 为目标**。
 
-### 4C. 镜像重建优先（2026-10-20）——新优先级，尚未实施
+### 4C. 镜像重建优先（2026-10-20）——构建与发布完成，E2E HOLD
 
 > 用户确认：先完成 8 镜像可重建与真实 E2E，再处理剩余历史 Shell/测试。以下 Task 4.11 覆盖上文旧“先清理”实施顺序，不覆盖旧证据或有效安全要求；设计见 [Design 4C](design.md)。本 PR 仅变更 OpenSpec，不执行镜像或 Runtime。
 
@@ -155,8 +155,12 @@
 
 > **4.11.4 GHCR 权限阻断与直接修复（2026-10-20，PARTIAL）**：Main [发布 Run #39520825324](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39520825324) 真实 8/8 Build/Smoke PASS；前 5 个基础镜像 `:git-3b33ef43...` 已成功推入 GHCR；推第 6 个 `healthcare-synthea-new-only` 时 GHCR 返回 `denied: permission_denied: write_package`，因此第 7/8 个未发布、8/8 `:latest` 晋级未启动。推断是旧 GHCR package 的仓库写入授权边界，不冒充已确认的包 Owner 归属。为快速消除旧仓包权限耦合，改将三个子镜像发布为当前 Healthcare 仓库新包名：`healthcare-data-platform-local-dp-synthea-new-only`、`healthcare-data-platform-local-dp-landing-processing-v2`、`healthcare-data-platform-local-dp-omop-writer`，同步 DAG/CI 与 CODE Map。旧包保留供回退；须以本修复 PR 最终 HEAD 的实际 Build、Main 的 GHCR Push 和 Pod 真实 imageID 验收，**在成功前 4.11.4 保持 OPEN**。
 
-- [ ] 4.11.4 使用已有 Actions/Self-Runner 向 GHCR 发布全部 8 个新镜像，记录不可变 `:git-<sha>`、实际 Digest、父镜像身份与构建来源；8/8 检查成功后更新 `:latest`，不增加新的发布管理系统。
+- [x] 4.11.4 使用已有 Actions/Self-Runner 向 GHCR 发布全部 8 个新镜像，记录不可变 `:git-<sha>`、实际 Digest、父镜像身份与构建来源；8/8 检查成功后更新 `:latest`，不增加新的发布管理系统。
+> **4.11.4 正式验收 PASS（美东 2026-10-20 / UTC 2026-10-21）**：[Healthcare PR #342](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/342) 将旧包权限阻断的三个子镜像更换为 Healthcare 所有的新包；Main `a65a15d304045eb3edd673c086c2d6eacb85cf9e` 的 [Run #39523510402](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39523510402) 实际 8/8 Clean Build、8/8 Smoke、8/8 `:git-<Main SHA>` GHCR Publish、8/8 `:latest` Promotion 均 PASS。8 个实际 GHCR Manifest Digest、所有新包名与两个运行 Pod 的 imageID 详见 [本轮证据](evidence/LOCAL-DP-IMAGE-REBUILD-PUBLISH-AND-E2E-20261020.md)。上方 GHCR 首次权限失败记录是**历史阶段性失败**，已被此 SUCCESS 取代。
+
 - [ ] 4.11.5 校验 Airflow GitSync 与实际新 K8s Pod `imageID`/Spark/Writer 来源后，运行全新 Synthea Batch 完整 E2E（18/18 S3 READY、Airflow、Spark Person/Visit/Reconciliation、Atomic Writer、独立 PG/S3 Readback、同 Batch SKIP 与 PG 零变化）。记录 Run/Batch/SHA/Digest；不在 DagRun 中途混用镜像版本；`unknown_demographic` 业务 Bug 暂缓修复并独立记证。
+> **4.11.5 当前 HOLD/OPEN，不能勾选**：[Self-Runner 临时 E2E PR #171](https://github.com/JohnZhang-DataForge/Self-Runner/pull/171) 已关闭未合并。新发布镜像生成两个全新独立 Batch：[#39524542198](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39524542198)（64 Person、12,446 Encounter）及 [#39525509725](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39525509725)（49 Person、6,688 Encounter）；实际 S3 READY、双 Airflow 角色 DAG 同字节、Spark Person/Visit/Reconciliation 与 Handoff 均 PASS，两个 Writer 均 FAIL，故整链路 E2E、Repeat SKIP、PG 零变化**未验收**。前者的 [只读诊断 Run #39525509790](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39525509790) 已确认使用本轮新 Writer Digest，实际错误为先前已单独记录的 `ValueError: BLOCKED=unknown_demographic`，该 Batch Writer Ledger 0；后者 Writer 的精确堆栈未另行读取。详见 [本轮证据](evidence/LOCAL-DP-IMAGE-REBUILD-PUBLISH-AND-E2E-20261020.md)。不在本镜像改造中修改业务映射，不重放失败 Batch；**4.11.6 旧镜像清理保持 HOLD**。
+
 - [ ] 4.11.6 真实验收成功后，清理无活动/回滚消费者的旧**项目业务镜像**和相关缓存，保留必要恢复版本，不触碰平台基础镜像、PVC、PG/S3；更新 OpenSpec 与受影响 CODE.md/PROJECT-STATUS，然后再处理 Task 4.1/4.8/4.9/4.10 剩余历史文件与 Task 5 收尾。
 
 
