@@ -11,7 +11,7 @@
 
 ## 2. Terraform refactor (not started)
 
-- [ ] 2.1 定向盘点仍存七个 Root/Modules、实际 State 地址与资源所有权；核对已有 `healthcare-omop` Workspace GUID、旧 Root State 与 Self-Runner 依赖；不重复历史全量清理。
+- [ ] 2.1 定向盘点仍存七个 Root/Modules、实际 State 地址与资源所有权；核对已有 `healthcare-omop` Workspace GUID、旧 Root State 与 Self-Runner 依赖；不重复历史全量清理。**源码和 Workflow 边界已核对；真实 Backend State/Workspace GUID 尚未从云端读回，留在 3.1 前继续核对。**
 - [ ] 2.2 复用 `modules/workspace`、`modules/onelake` 及 IAM；按 Provider 实际 Schema 实现可复用 `modules/connection`，不因名称调整而无故迁移资源地址。
 - [ ] 2.3 创建 `components/fabric-environment` 组合 Root：非 default Terraform CLI Workspace 直接作为 Fabric Workspace 名称；同账号多 Workspace；共享 Backend 的各 Workspace State 隔离；输出 Workspace/Lakehouse/Connection ID；无账号切换代码。
 - [ ] 2.4 必要的 `fmt/init -backend=false/validate`、Modules/Outputs、Workspace 命名与 State 隔离测试；部分资源操作不能使其他已管理资源被销毁；同步 CODE.md 和 CI。
@@ -28,4 +28,4 @@
 - [x] 4.1 按用户授权删除从未真实部署的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/` 等旧实验目录、无效 CI；不动远端 State/云端资源。
 - [x] 4.2 Healthcare [PR #335](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/335) 合并、12/12 CI PASS；Self-Runner [PR #169](https://github.com/JohnZhang-DataForge/Self-Runner/pull/169) 合并。原七个 Root/Modules 和 `azure-infra.yaml` 保留。
 
-**Status**：需求与文档目标已再次收敛；已有 Workspace `healthcare-omop` 不等于已进入 Terraform 新组合 Root State。2.x/3.x 未实施，未修改 Remote State，未执行真实 Apply 或 Fabric E2E。
+**Status**：已开始 2.x Terraform 代码实施（当前账号组合 Root + Connection + 静态 CI）；`healthcare-omop` 未经远端 State 确认，未授权 Import/Plan/Apply。新组合 Root 的代码验证、PR/Merge 与 2.2–2.4 完成状态以本变更最终 CI 为准，3.x/Live 仍未执行。
