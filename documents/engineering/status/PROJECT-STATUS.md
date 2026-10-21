@@ -17,6 +17,8 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 > **Fabric 源码清理（2026-10-20）**：在 [Module-first Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md) 下，用户批准先删除过度设计的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/`。原有七个 `components/` / `modules/` 均保留，旧 Self-Runner Azure-Infra 入口继续使用；原 Fabric Bootstrap 方案按 Git 历史追溯。**此为 Git 源码清理，不意味着 Azure 资源/State 被删除、Root 重构或 Fabric Apply/E2E 已完成。**
 
+**2026-10-20 Fabric Terraform 新实施与真实 Plan 证据**：Workspace、OneLake、Shared Storage 独立 Terraform Roots 及静态跨 Root CI 已开发合并；正式 Self-Runner Workflow 已从旧 `components/` 切换到新目录（参见 [权威 OpenSpec Change](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)）。[Shared Storage 真实 Plan Run #39538288616](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538288616) **SUCCESS**：OIDC、AzureRM Backend、Existing OMOP/johnzhang Azure 资源读取 PASS；未执行 Apply/Destroy。[Workspace Plan Run #39538646279](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538646279) 在 `FABRIC_CAPACITY_ID` 未配置的预检阶段 **FAIL/BLOCKED**，没有访问 Fabric 或执行 Terraform；新的 Fabric Workspace/Lakehouse 尚未创建，具名 State 隔离仍待验证。此前 `simplify-fabric-environment-iac` 等历史指针不再是当前实施 NEXT。
+
 ## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |

@@ -19,7 +19,7 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 ## 跨组件依赖与源码边界
 
-- [Self-Runner Azure-Infra-TF Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 的正式源码执行入口是 `healthcare/azure-fabric/infra-terraform/components/$COMPONENT`。七个组件、`environment=dev`、`operation=plan|apply`（默认 Plan），能力不等于运行许可。
+- [Self-Runner Azure-Infra-TF Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 正式执行 `fabric-workspace/<workspace_name>/<resource_type>/`，而 [Azure-Infra-Shared-TF](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra-shared.yaml) 独立执行 `shared-infra/storage/`。旧 `components/` 路由已经停用；Storage Plan 真实成功，Workspace Plan 因 Runner 缺 Capacity GUID 在预检阶段阻断。
 - Terraform [Notebook 安全 Bootstrap](../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) 和 [Pipeline Fail Activity](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json) **归 Terraform 管理**；所有 Root/Module、Provider 和 IAM 文件请参阅 [Terraform CODE.md](infra-terraform/CODE.md)，此处不复制整张 Terraform 文件表。
 - 本地只读 OMOP Exporter、不可变 Manifest、云端 Delta Loader、独立对账尚待开发；过去空的 `exporter/` 和 `tests/` 占位已删除，未来源码归属须依据真实运行位置另行确定。
 - Terraform State、已有 Workspace/Blob/Entra 角色以及 Fabric Item GUID 应单独核验。历史七 Root Plan-only [验收记录](infra-terraform/ARCHITECTURE.md#verified-plan-evidence)不代表云端业务 E2E。
