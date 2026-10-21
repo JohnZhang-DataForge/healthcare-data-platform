@@ -17,9 +17,11 @@
 
 - [x] 3.1 Raise only display XCom `MAX_XCOM_PREVIEW` 25→100 and update boundary tests.
 - [x] 3.2 Validate 100-item display, truncation at 101, exact selection remains independent and legacy scheduled scanner contract.
-- [ ] 3.3 CI, merge and republish affected runtime; record evidence. No blanket S3/PG cleanup or business logic change.
+- [x] 3.3 CI, merge and republish affected runtime; record evidence. No blanket S3/PG cleanup or business logic change.
 
 ## 4. Actual first-phase acceptance and bounded display update (2026-10-21)
 
 - **Exact selection at 25-row preview, real E2E PASS**: [Writer/Discovery Main #67776c1](https://github.com/JohnZhang-DataForge/healthcare-data-platform/commit/67776c1dfdc2fc7a23919c36fcdc0437f021bdfb), [8-image publisher #39636935979](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39636935979), [Self-Runner full E2E #39637787637](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39637787637). Existing READY Batch `synthea-new-only-gh-39630497311-01`, 100 Person / 15,188 Visit; Airflow exact-selection, Spark, Writer COMMIT, independent PG readback **394→494 Person / 52,308→67,496 Visit**, and repeat SKIP with zero DB changes all **PASS**. Preview deliberately remained 25. Evidence: [real E2E acceptance](evidence/EXACT-BATCH-E2E-BEFORE-PREVIEW-100-20261021.md).
 - **Display preview 100 implementation**: `MAX_XCOM_PREVIEW` changed 25→100; no changes to Airflow exact selection, S3 validation, PostgreSQL, Spark or Writer. Tests cover fully visible 26, bounded 100/101 and exact target beyond preview. **Task 3.3 remains unchecked until second PR CI, Main merge and GHCR publication are confirmed.**
+
+- **Final display release PASS**: [PR #371](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/371), merged Main `7ff5d0a990e15c0ff9e2ca58b1d6b12fb9727ae6`, [eight-image publisher #39639881397](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39639881397) SUCCESS. Read-only [Self-Runner Run #39640585101](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39640585101) returned `READY_COUNT=29`, `XCOM_PREVIEW_COUNT=29`, `preview_truncated=False`, exact Batch `-02` verified, Spark/Writer skipped, no database mutation, DAG and pause restoration PASS. 101→100 bounded truncation covered by CI. [Final real-environment evidence](evidence/PREVIEW-100-FINAL-REAL-AIRFLOW-20261021.md). **All this Change's numbered Tasks are completed.**
