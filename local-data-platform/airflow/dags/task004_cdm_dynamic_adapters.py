@@ -10,7 +10,7 @@ from datetime import date, datetime, timezone
 from task004_cdm_materialization_plan import plan as validate_plan
 
 GENDER={"M":8507,"F":8532}
-RACE={"asian":8515,"black":8516,"hawaiian":8557,"white":8527,"other":0}
+RACE={"asian":8515,"black":8516,"hawaiian":8557,"native":8657,"white":8527,"other":0}
 ETHNICITY={"hispanic":38003563,"nonhispanic":38003564}
 VISIT_CLASS={"ambulatory":9202,"emergency":9203,"home":581476,
              "hospice":581476,"inpatient":9201,"outpatient":9202,
@@ -61,7 +61,13 @@ def transform(rows,context,entity):
         seen.add(key)
         if entity=="person":
             gender,race,eth=row.get("gender_code"),row.get("race_code"),row.get("ethnicity_code")
-            gate(gender in GENDER and race in RACE and eth in ETHNICITY,"unknown_demographic")
+            # Report only the offending source field/value, never patient identity.
+            for field, value, allowed in (
+                ("gender_code", gender, GENDER),
+                ("race_code", race, RACE),
+                ("ethnicity_code", eth, ETHNICITY),
+            ):
+                gate(value in allowed, "unknown_demographic:" + field + "=" + str(value)[:64])
             try:bd=date.fromisoformat(str(row.get("birth_date"))[:10])
             except ValueError:raise ValueError("BLOCKED=invalid_birth_date") from None
             p=dict.fromkeys(PERSON_COLUMNS)
