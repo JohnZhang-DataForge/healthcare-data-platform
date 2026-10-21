@@ -17,21 +17,18 @@ from airflow.providers.cncf.kubernetes.secret import Secret
 
 from task004_cdm_preflight_contract import validate_handoff
 
-# Frozen and previously validated Spark orchestration runtime. Rename the
-# image in a separate release; never rebuild the existing historical image.
+# Current development release of the Spark orchestration control runtime.
 PROCESSING_IMAGE = (
     "ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime"
-    "@sha256:8d55a150e7fcd8ea9a1ed8e8c2c64d09bf4d19687822c0ec84857fdf429c05a7"
+    ":latest"
 )
-# New image is an additive layer over the frozen historic image with the
-# deployed v2-only manifest resolver and the exact pinned CSV contract.
+# V2 processing layer packages the current resolver and contract.
 NEW_ONLY_PROCESSING_IMAGE = (
     "ghcr.io/johnzhang-dataforge/healthcare-landing-processing-v2"
-    "@sha256:9af63252823bae0187b2517a013c147e2df8dfbe9a7c783ac31cd5dd7dbbb937"
+    ":latest"
 )
-# KubernetesPodOperator.image is templated by Airflow; historic replays keep
-# their exact original digest. Only a manually authorized source probe selects
-# the new digest, never a scheduled scan or automatic Claim.
+# KPO selection stays manually gated; both image references are current
+# development releases. Actual Pod imageID is captured in runtime evidence.
 PROCESSING_IMAGE_SELECT = (
     "{{ '"
     + NEW_ONLY_PROCESSING_IMAGE
@@ -236,7 +233,7 @@ def make_processing_pod(task_id: str, *, process: str,
         namespace="dw-spark",
         service_account_name="task004-control-runtime",
         image=PROCESSING_IMAGE_SELECT,
-        image_pull_policy="IfNotPresent",
+        image_pull_policy="Always",
         in_cluster=True,
         cmds=["/bin/bash", "-lc"],
         arguments=[RECONCILE_COMMAND if process == "reconcile" else STATE_PUBLISH_COMMAND],
