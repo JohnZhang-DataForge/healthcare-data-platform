@@ -147,7 +147,9 @@
 > 用户确认：先完成 8 镜像可重建与真实 E2E，再处理剩余历史 Shell/测试。以下 Task 4.11 覆盖上文旧“先清理”实施顺序，不覆盖旧证据或有效安全要求；设计见 [Design 4C](design.md)。本 PR 仅变更 OpenSpec，不执行镜像或 Runtime。
 
 - [x] 4.11.1 冻结最新 Healthcare/Self-Runner SHA；定向核对 8 个 Dockerfile、父子依赖、有效 Build/Publish Workflow、DAG/K8s 引用、旧 Digest/固定 SHA 校验。确定镜像名称和最小修改清单，不重复 818 文件审计。
-> **4.11.1 定向清点完成（2026-10-20）**：Healthcare Main `224f6cc5f14b29b2a22df0034eb521ffaa40c22c`、Self-Runner Main `03548fd0e27ee9ce5d8e3387ae253b64129b41ed`；8 个 Dockerfile = 5 独立 + 3 子镜像，4 个 DAG 固定镜像 Digest、旧 Writer Source Gate 与影响测试已找到。此次实施 PR 只在 GitHub 分支改引用与新增 8 镜像统一 Workflow；8/8 Build、GHCR 发布、Live E2E **尚未通过**，4.11.2–4.11.6 继续 OPEN。历史 Self-Runner #166–#168 为审计/临时测试，不作为本轮新镜像构建入口。\n\n- [ ] 4.11.2 将三份子 Dockerfile 的固定历史父镜像 Digest 改为 `ARG BASE_IMAGE`，由本轮构建流程传入；DAG/K8s 业务镜像去硬编码 Digest，开发统一 `:latest` + `Always`；联动修改对应的 CI/镜像断言，维持 DAG ID、数据合同及 Writer/Fencing 行为。
+> **4.11.1 定向清点完成（2026-10-20）**：Healthcare Main `224f6cc5f14b29b2a22df0034eb521ffaa40c22c`、Self-Runner Main `03548fd0e27ee9ce5d8e3387ae253b64129b41ed`；8 个 Dockerfile = 5 独立 + 3 子镜像，4 个 DAG 固定镜像 Digest、旧 Writer Source Gate 与影响测试已找到。此次实施 PR 只在 GitHub 分支改引用与新增 8 镜像统一 Workflow；8/8 Build、GHCR 发布、Live E2E **尚未通过**，4.11.2–4.11.6 继续 OPEN。历史 Self-Runner #166–#168 为审计/临时测试，不作为本轮新镜像构建入口。
+
+- [ ] 4.11.2 将三份子 Dockerfile 的固定历史父镜像 Digest 改为 `ARG BASE_IMAGE`，由本轮构建流程传入；DAG/K8s 业务镜像去硬编码 Digest，开发统一 `:latest` + `Always`；联动修改对应的 CI/镜像断言，维持 DAG ID、数据合同及 Writer/Fencing 行为。
 - [ ] 4.11.3 使用当前 Git 新源码及 `local-data-platform/` Context，按**5 独立 → 3 子镜像**顺序完成 8/8 无历史项目镜像缓存的 Clean Build。第二批必须使用本轮构建的父镜像；Docker COPY、Import/`module.__file__`、Entrypoint、适用单测/合同通过，记录实际 HEAD 与错误修复。
 - [ ] 4.11.4 使用已有 Actions/Self-Runner 向 GHCR 发布全部 8 个新镜像，记录不可变 `:git-<sha>`、实际 Digest、父镜像身份与构建来源；8/8 检查成功后更新 `:latest`，不增加新的发布管理系统。
 - [ ] 4.11.5 校验 Airflow GitSync 与实际新 K8s Pod `imageID`/Spark/Writer 来源后，运行全新 Synthea Batch 完整 E2E（18/18 S3 READY、Airflow、Spark Person/Visit/Reconciliation、Atomic Writer、独立 PG/S3 Readback、同 Batch SKIP 与 PG 零变化）。记录 Run/Batch/SHA/Digest；不在 DagRun 中途混用镜像版本；`unknown_demographic` 业务 Bug 暂缓修复并独立记证。
