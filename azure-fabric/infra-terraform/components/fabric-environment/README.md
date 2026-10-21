@@ -28,8 +28,8 @@ commands executed in this PR:
 
 ```bash
 cd azure-fabric/infra-terraform/components/fabric-environment
-cp environments/healthcare-omop.tfvars.example environments/healthcare-omop.tfvars
-# Review/edit this local tfvars against the REAL workspace and capacity before deployment.
+# Review the versioned nonsecret healthcare-omop.tfvars against actual cloud values.
+# Supply the existing Workspace Capacity ID before Plan/Apply.
 terraform init -backend-config="storage_account_name=johnzhang" \
   -backend-config="container_name=tfstate" \
   -backend-config="key=fabric/platform.tfstate" \
@@ -48,7 +48,7 @@ Reader configuration, or an unimported existing Workspace. In particular,
 AzureRM derives a separate blob path for non-default CLI Workspaces; do
 not also vary the base Backend Key per Workspace. Secrets never enter Git.
 
-The Connection is optional until a supported, authorized existing Landing
+The Self-Runner workflow reads the versioned `environments/healthcare-omop.tfvars`\n(not `.tfvars.example`), obtains the actual Capacity ID from `FABRIC_CAPACITY_ID`,\nand optionally accepts a nonsecret `FABRIC_LANDING_CONNECTION_CONFIG` JSON\nobject. It must verify expected Workspace GUID from `FABRIC_WORKSPACE_ID` before\nPlan/Apply. `inspect` is read-only; `adopt` is an explicit State mutation and\nrequires separate review of legacy State ownership. No auto-adoption occurs\nfrom a normal `plan` or `apply`. These repository variables are not verified\nby code review, so runtime readiness remains pending.\n\nThe Connection is optional until a supported, authorized existing Landing
 Reader identity is configured. `WorkspaceIdentity` or a `ServicePrincipal`
 with an existing Key Vault connection can be used if supported by the actual
 tenant and connector. No anonymous connection fallback; no Storage creation.

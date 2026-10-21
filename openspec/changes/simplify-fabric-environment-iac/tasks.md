@@ -28,4 +28,4 @@
 - [x] 4.1 按用户授权删除从未真实部署的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/` 等旧实验目录、无效 CI；不动远端 State/云端资源。
 - [x] 4.2 Healthcare [PR #335](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/335) 合并、12/12 CI PASS；Self-Runner [PR #169](https://github.com/JohnZhang-DataForge/Self-Runner/pull/169) 合并。原七个 Root/Modules 和 `azure-infra.yaml` 保留。
 
-**Status**：2.2–2.4 **源码/静态验收完成**：新组合 Root、Connection Module、输出、默认 Workspace/既有 Workspace 防误部署检查、独立 Provider Init/Validate 和 4 项源码合同测试均由 PR #340 验证；七个历史 Root 保持原行为。2.1 的真实 Backend State / `healthcare-omop` GUID 盘点仍未完成；3.1–3.4 的真实认证、State 归属、Import、Plan/Apply、Landing 与 E2E 均未执行。不把静态 PASS 作为真实资源验收。
+**Status**：部署就绪修订正在实施：正式 `healthcare-omop.tfvars` 与 Runner 工作流接管/只读检查模式同步修正；实际 Workspace GUID/Capacity/Blob Reader/OIDC 与 Remote State 仍需真实核对。2.2–2.4 **源码/静态验收完成**：新组合 Root、Connection Module、输出、默认 Workspace/既有 Workspace 防误部署检查、独立 Provider Init/Validate 和 4 项源码合同测试均由 PR #340 验证；七个历史 Root 保持原行为。2.1 的真实 Backend State / `healthcare-omop` GUID 盘点仍未完成；3.1–3.4 的真实认证、State 归属、Import、Plan/Apply、Landing 与 E2E 均未执行。不把静态 PASS 作为真实资源验收。

@@ -64,3 +64,10 @@ source_sha: null
 - [`Fabric Provider CI`](../../../../.github/workflows/fabric-provider-init-validate.yml)：保留七个原 Root Init/Validate，另验证组合 Root 与 Connection Module。CI 只运行 `init -backend=false` 与 Validate，未触发远端 State、Fabric Apply 或联通性验证。
 
 **实际状态**：组合 Root/Connection 是新开发源码，不意味着任何 Live Fabric 资源已部署。旧七个 Roots 不动，旧 State 不迁移；Self-Runner 旧 `azure-infra.yaml` 尚未增加组合入口。
+
+## 部署就绪修订：当前 Workspace 参数来源
+
+- [正式非秘密配置 `healthcare-omop.tfvars`](../../../../azure-fabric/infra-terraform/components/fabric-environment/environments/healthcare-omop.tfvars)：当前已有 Workspace 的固定源码输入；不使用 `.tfvars.example` 作为正式计划。
+- 运行时从 Self-Runner 仓库变量传入 `FABRIC_CAPACITY_ID`（必须是当前真实分配的容量）和 `FABRIC_WORKSPACE_ID`（必须是已存在 Workspace 的真实 GUID）；可选 `FABRIC_LANDING_CONNECTION_CONFIG` 为非秘密 Connection JSON 元数据，凭据仍不得入 Git。
+- Self-Runner 原 `azure-infra.yaml` 改为仅展示 Component、Workspace、Operation 三个输入；旧 Root 的 `dev` State 命名只在 Workflow 内部兼容。
+- 实际的 Terraform Workspace State、Import、Connection/Capacity/权限都需要真实授权验证；本节仅是源码导航与配置合同。
