@@ -37,7 +37,7 @@ class FabricWorkspaceRootTest(unittest.TestCase):
         self.assertTrue((WORKSPACE / "../../../modules/workspace").resolve().is_dir())
         self.assertIn("basename(dirname(abspath(path.root)))", main)
         self.assertIn("workspace_name   = local.workspace_name", main)
-        self.assertIn("role_assignments = var.role_assignments", main)
+        self.assertIn("role_assignments = merge(var.role_assignments, local.portal_admin_role_assignments)", main)
         self.assertNotRegex(main, r'(?m)^\s*resource\s+"fabric_')
 
     def test_state_base_key_unique_to_resource_type(self):
@@ -80,6 +80,28 @@ class FabricWorkspaceRootTest(unittest.TestCase):
             self.assertIn('capacity_id      = "3914ac8b-3375-498b-b3c0-1180a1902dd6"', tfvars)
             self.assertIn('variable "capacity_id"', variables)
             self.assertNotIn("azurerm_fabric_capacity", (root / "main.tf").read_text())
+
+    def test_workspace_admin_is_root_owned_and_fails_closed_until_object_id_is_verified(self):
+        module_iam = (INFRA / "modules" / "workspace" / "iam.tf").read_text(encoding="utf-8")
+        self.assertIn('resource "fabric_workspace_role_assignment" "additional"', module_iam)
+        self.assertIn('workspace_id = fabric_workspace.current.id', module_iam)
+        for name in ("healthcare-omop", "johnzhang-test"):
+            root = INFRA / "fabric-workspace" / name / "workspace"
+            iam = (root / "iam.tf").read_text(encoding="utf-8")
+            main = (root / "main.tf").read_text(encoding="utf-8")
+            tfvars = (root / "terraform.tfvars").read_text(encoding="utf-8")
+            self.assertIn('variable "portal_admin_user_object_id"', iam)
+            self.assertIn('default     = null', iam)
+            self.assertIn('can(regex(', iam)
+            self.assertIn('portal_admin_role_assignments = var.portal_admin_user_object_id == null ? {} : {', main)
+            self.assertIn('principal_type = "User"', main)
+            self.assertIn('role           = "Admin"', main)
+            self.assertIn('role_assignments = merge(var.role_assignments, local.portal_admin_role_assignments)', main)
+            self.assertIn('portal_admin_user_object_id = null', tfvars)
+            self.assertIn('johnzhang-fabric@guangbinzhang8888gmail.onmicrosoft.com', tfvars)
+            self.assertNotIn("azuread_user", main)
+            self.assertNotIn("FABRIC_ADMIN_OBJECT_ID", main)
+            self.assertNotIn("azurerm_fabric_capacity", main)
 
     def test_no_notebook_or_pipeline_terraform_ownership(self):
         source = "\n".join(self.text(p.name) for p in WORKSPACE.glob("*.tf"))

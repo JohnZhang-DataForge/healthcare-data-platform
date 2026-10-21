@@ -11,3 +11,7 @@
 ## Amendment — Capacity reference ownership (2026-10-21)
 
 上述 Decisions 1/3 记录首次 E2E 的**历史实现**，而非长期部署合同。现行规定：每个 `fabric-workspace/<name>/workspace/terraform.tfvars` 存放各自已存在 Capacity 的 `capacity_id`；`modules/workspace` 保持通用，Workflow 不注入 `TF_VAR_capacity_id`、不在 Self-Runner Git/Repo Variables 存放 Capacity GUID。不同租户只需更新该 Terraform 配置与 OIDC/Backend 身份设置。一次性历史 Self-Runner JSON 请求停止作为执行入口，专用复验采用明确手动确认，不在源码改动时自动 Apply；不触碰已有远程 State、不创建/修改付费 Capacity。
+
+## Amendment — Workspace Portal administrator access (2026-10-21)
+
+Fabric Tenant Admin 身份不自动获得普通 Workspace 成员访问权限：已有 Workspace 经 Terraform Service Principal 创建，`role_assignments={}` 表示没有显式 Portal 用户成员。两个 Workspace Terraform Root 增加可选 `portal_admin_user_object_id`，只允许经核实 Entra User Object ID（GUID）或 null。设置后由现有 Module 的 `fabric_workspace_role_assignment.additional` 管理 `User/Admin`；不需要新增 Terraform Provider、Microsoft Graph `User.Read.All` 权限、Self-Runner Repo Variable 或在 Runner 保存对象 ID。null 明确不创建授权；如果目标身份已被其他 State 或 Portal 管理，禁止盲目重复管理/创建。先离线 CI，实际权限变更须批准的单 Root Plan/Apply 与读回。更换租户只变更相应 Workspace Root `terraform.tfvars`、OIDC/Backend 前置仍另行处理。
