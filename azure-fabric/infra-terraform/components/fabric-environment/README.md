@@ -1,58 +1,75 @@
-# Fabric Environment — Current Fabric account
+# Fabric Terraform Environment — Single Root
 
-This is the **composable Terraform Root**, not a new bootstrap system. It reuses
-`modules/workspace`, `modules/onelake` and `modules/connection`.
+This is the **only live Terraform Root** for Fabric infrastructure in the
+current account. It calls the existing reusable `modules/workspace`,
+`modules/onelake`, and `modules/connection` directly. Business Notebooks and
+Pipelines belong to `fabric-cicd`, not Terraform.
 
-The first, **already existing** Fabric Workspace is `healthcare-omop`.
-For this project the **non-default Terraform CLI Workspace name MUST match the
-Fabric Workspace display name exactly**. Do not create a second `healthcare-omop`.
+## Naming and State
 
-## Existing state handoff (NOT YET VERIFIED)
+A **non-default Terraform CLI Workspace** is named exactly like its target
+Microsoft Fabric Workspace. For example, `healthcare-omop` → `healthcare-omop`;
+`healthcare-qa` → `healthcare-qa`. The Root derives the Fabric
+`display_name` from `terraform.workspace` (not a duplicate input variable).
+The AzureRM Backend base key is `fabric/platform.tfstate`, and each named
+Terraform Workspace gets its **own State** under the same existing Backend.
 
-Before a real Init/Plan/Apply, inspect existing `dev/workspace.tfstate`,
-any other legacy Root state and the real Fabric Workspace GUID. Make a
-deliberate ownership decision. Only when it is confirmed that no other active
-state will manage the object, import the existing GUID to:
+The original seven independent Roots and unused Modules were retired from the
+current Git tree. Their historical Terraform State blobs, e.g.
+`dev/workspace.tfstate` and `dev/onelake.tfstate`, have NOT been removed,
+migrated, or edited. Their source can be audited via the previous Git commit:
+https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/20a6449000fe10eac642ab2dbcef37976339572b/azure-fabric/infra-terraform
 
-`module.workspace.fabric_workspace.current`
+## Existing `healthcare-omop` — Import is mandatory if not managed
 
-under this Root with CLI Workspace `healthcare-omop`. That import is a
-separate authenticated operation; **this repository does not import anything
-automatically**. The Boolean `existing_workspace_imported` is a safety
-acknowledgement, not a live State query. Verify with `terraform state list`
-and `terraform state show` before setting it true; do not use it as a bypass.
+1. Verify real Fabric Workspace GUID, Capacity and tenant identity.
+2. Inspect the legacy State blobs and this composed Root State. Do not allow
+   two active States to own the **same Fabric Workspace GUID**. A retired Root
+   may still have remote State even when its HCL source is deleted.
+3. Select `healthcare-omop` as Terraform CLI Workspace.
+4. Only when its GUID is not already owned by another State, use the
+   Workflow's explicit `adopt` action (Terraform Import) to record the
+   existing Workspace as `module.workspace.fabric_workspace.current`.
+5. Check `terraform state show` for exact GUID and display name, then
+   `plan`. Never directly create another `healthcare-omop`.
 
-An authenticated operator can use the following as a sequence **after**
-checking ownership and preparing access. These are reference commands, not
-commands executed in this PR:
+`existing_workspace_imported` defaults to false; a normal Plan for the
+existing `healthcare-omop` is guarded until imported. It is a safety
+acknowledgement, not an automatic State lookup.
 
-```bash
-cd azure-fabric/infra-terraform/components/fabric-environment
-# Review the versioned nonsecret healthcare-omop.tfvars against actual cloud values.
-# Supply the existing Workspace Capacity ID before Plan/Apply.
-terraform init -backend-config="storage_account_name=johnzhang" \
-  -backend-config="container_name=tfstate" \
-  -backend-config="key=fabric/platform.tfstate" \
-  -backend-config="use_azuread_auth=true"
-terraform workspace select healthcare-omop || terraform workspace new healthcare-omop
-# Authorized ONLY after checking old state ownership:
-# terraform import -var-file=environments/healthcare-omop.tfvars \
-#   -var=existing_workspace_imported=true \
-#   'module.workspace.fabric_workspace.current' '<REAL_WORKSPACE_GUID>'
-# Verify current State address before changing existing_workspace_imported=true.
-terraform plan -var-file=environments/healthcare-omop.tfvars
-```
+## Brand-new Workspace — No Import
 
-Do not execute the example plan while the example has unverified Capacity,
-Reader configuration, or an unimported existing Workspace. In particular,
-AzureRM derives a separate blob path for non-default CLI Workspaces; do
-not also vary the base Backend Key per Workspace. Secrets never enter Git.
+For a new name (e.g. `healthcare-qa`), the same Root can select/create its
+Terraform CLI Workspace and then plan/apply the matching Fabric Workspace,
+Workspace IAM and Lakehouse automatically. The Runner uses Terraform variable
+**defaults** when there is no exact `environments/<workspace>.tfvars` file,
+so new names don't require copied Terraform code or a `dev.tfvars`.
 
-The Self-Runner workflow reads the versioned `environments/healthcare-omop.tfvars`\n(not `.tfvars.example`), obtains the actual Capacity ID from `FABRIC_CAPACITY_ID`,\nand optionally accepts a nonsecret `FABRIC_LANDING_CONNECTION_CONFIG` JSON\nobject. It must verify expected Workspace GUID from `FABRIC_WORKSPACE_ID` before\nPlan/Apply. `inspect` is read-only; `adopt` is an explicit State mutation and\nrequires separate review of legacy State ownership. No auto-adoption occurs\nfrom a normal `plan` or `apply`. These repository variables are not verified\nby code review, so runtime readiness remains pending.\n\nThe Connection is optional until a supported, authorized existing Landing
-Reader identity is configured. `WorkspaceIdentity` or a `ServicePrincipal`
-with an existing Key Vault connection can be used if supported by the actual
-tenant and connector. No anonymous connection fallback; no Storage creation.
+You may add a version-controlled, **nonsecret** per-Workspace file
+`environments/healthcare-qa.tfvars` later to override description, Lakehouse
+name, role assignments or data access roles. A `connection` variable is opt-in
+until the correct authorized Azure Blob Reader identity is configured.
 
-The sole owners of Notebook/Pipeline business code are `fabric-cicd` and Git.
-A Module output is an actual Fabric ID after deployment; it is **not** proof
-of a successful connection read or a completed ETL run.
+## Runtime prerequisites and operations
+
+Use the existing Self-Runner `Azure-Infra-TF` Workflow and its single-account
+OIDC setup. It must have appropriate Fabric Provider/API, Capacity, Backend
+AzureAD Blob and existing Landing permissions.
+
+- `inspect`: read-only State/ownership diagnostics. Do this first for
+  `healthcare-omop` (already created in Fabric).
+- `adopt`: explicit State **write/import** for an existing Workspace GUID,
+  after auditing old State ownership. Not required for truly new Workspaces.
+- `plan`: inspect proposed changes (including the first creation for a
+  *new* Workspace). No Fabric resource creation.
+- `apply`: execute a fresh saved and checked Plan. Destruction/Replacement
+  is blocked; existing `healthcare-omop` identity must remain unchanged.
+
+The existing account's Capacity ID, Workspace GUID (for adoption), and
+optional nonsecret Landing Connection metadata come from the configured
+Runner environment. Do **not** commit credentials, secrets or actual backend
+State. Capacity isn't created/purchased here.
+
+**Status**: Static Terraform Init/Validate is not live Backend/Import/Plan/Apply
+verification. Real OIDC permissions, State ownership, current Capacity and
+connection access must be tested before declaring deployment success.

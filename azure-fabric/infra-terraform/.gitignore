@@ -7,16 +7,11 @@
 **/crash.log
 **/*_override.tf
 **/override.tf
-**/environments/*secret*.tfvars
-**/environments/*.auto.tfvars
+
+# Keep lock files if operators explicitly commit provider pins.
 !**/.terraform.lock.hcl
 
-# Keep per-environment JSON profiles out of Git unless intentionally a placeholder example.
-/environments/*.json
-!/environments/*.example.json
-
-# Local, operator-reviewed Fabric environment values; only .tfvars.example is versioned.
-/components/fabric-environment/environments/*.tfvars
-
-# Versioned, nonsecret configuration for the current actual Fabric Workspace.
-!/components/fabric-environment/environments/healthcare-omop.tfvars
+# Only non-secret, reviewed workspace configuration may be committed.
+**/environments/*secret*.tfvars
+**/environments/*.local.tfvars
+**/environments/*.auto.tfvars
