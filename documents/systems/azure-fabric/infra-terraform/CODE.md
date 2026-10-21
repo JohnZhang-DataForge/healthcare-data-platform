@@ -53,3 +53,14 @@ source_sha: null
 - **未来开发**：在保留旧 Root/Module 架构的前提下，为实际需要的 Connection 增加正式 Module；新增测试与配置跟随所管理的功能，不恢复失效 Bootstrap 合同。
 
 实施任务见 [`simplify-fabric-environment-iac`](../../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。
+
+## 当前账号组合 Root（开发中：静态校验，尚未 Apply）
+
+- [`components/fabric-environment/`](../../../../azure-fabric/infra-terraform/components/fabric-environment/README.md)：一个 Fabric/Terraform 同名 Workspace 的组合 Root；首个已有目标是 `healthcare-omop`。不重建现有 Workspace，首次真实部署前必须核对历史 State 并显式 Import。
+- [`main.tf`](../../../../azure-fabric/infra-terraform/components/fabric-environment/main.tf)：调用原 `modules/workspace`、`modules/onelake` 与新 Connection Module，且通过 `terraform.workspace` 命名。
+- [`outputs.tf`](../../../../azure-fabric/infra-terraform/components/fabric-environment/outputs.tf)：Workspace 名称、真实 Workspace/Lakehouse/Connection IDs 和 OneLake 路径。
+- [`healthcare-omop.tfvars.example`](../../../../azure-fabric/infra-terraform/components/fabric-environment/environments/healthcare-omop.tfvars.example)：**非可直接 Apply** 的示例。真实 Capacity、Reader 权限和既有 Workspace Import 均未验证。
+- [`modules/connection/`](../../../../azure-fabric/infra-terraform/modules/connection/main.tf)：可复用 Azure Blob Fabric Connection，支持 WorkspaceIdentity 或已有 Key Vault Secret Reference 的 ServicePrincipal；不创建 Storage/RBAC/Key Vault，默认禁用。
+- [`Fabric Provider CI`](../../../../.github/workflows/fabric-provider-init-validate.yml)：保留七个原 Root Init/Validate，另验证组合 Root 与 Connection Module。CI 只运行 `init -backend=false` 与 Validate，未触发远端 State、Fabric Apply 或联通性验证。
+
+**实际状态**：组合 Root/Connection 是新开发源码，不意味着任何 Live Fabric 资源已部署。旧七个 Roots 不动，旧 State 不迁移；Self-Runner 旧 `azure-infra.yaml` 尚未增加组合入口。
