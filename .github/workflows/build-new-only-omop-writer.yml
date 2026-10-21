@@ -41,7 +41,9 @@ jobs:
           root=Path("local-data-platform")
           dockerfile=root/"images/new-only-omop-writer/Dockerfile"
           text=dockerfile.read_text(encoding="utf-8")
-          assert "task004-cdm-runtime@sha256:94979587aeee2f2ea13e2c27ffc5a8850b97381f3f126c72201fe2b2b3086f5e" in text
+          assert "ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-cdm-runtime:latest" in text
+          assert "FROM ${BASE_IMAGE}" in text
+          assert "@sha256:" not in text
           source=[]
           for line in text.splitlines():
               if not line.startswith("COPY "):continue
@@ -66,6 +68,10 @@ jobs:
           set -Eeuo pipefail
           echo "SOURCE_SHA=$(git rev-parse HEAD)"
           docker build --pull --no-cache \
+            -f local-data-platform/images/task004-cdm-runtime/Dockerfile \
+            -t local-dp-cdm-reader:verification local-data-platform
+          docker build --no-cache \
+            --build-arg BASE_IMAGE=local-dp-cdm-reader:verification \
             -f local-data-platform/images/new-only-omop-writer/Dockerfile \
             -t local-dp-new-only-omop-writer:verify \
             local-data-platform
