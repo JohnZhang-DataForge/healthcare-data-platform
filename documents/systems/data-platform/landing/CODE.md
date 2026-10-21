@@ -66,6 +66,8 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 **执行区别**：Ledger/Fence Deploy 是能改变数据库 Schema 或权限的 DDL，绝不视为只读检查。Rollback-proof 虽在事务内回滚，也需要确认执行主体、对象状态和完整的审查与授权。Synthea READY 发布 Contract 属于 [Synthea CODE](../synthea/CODE.md)，Landing 只引用不复制权威协议。
 
+NEW_ONLY Processing v2 镜像新 GHCR 包名：`ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2`；保留原 `healthcare-landing-processing-v2` 历史镜像，直至验证新发布和消费者切换。
+
 ## Landing 容器镜像与构建边界
 
 | 源文件（直接链接） | 用途与运行边界 |
