@@ -97,28 +97,48 @@ class FabricWorkspaceRootTest(unittest.TestCase):
             self.assertIn('principal_type = "User"', main)
             self.assertIn('role           = "Admin"', main)
             self.assertIn('role_assignments = merge(var.role_assignments, local.portal_admin_role_assignments)', main)
-            expected_id = (
-                '"670194b1-b1ff-41af-971a-a61438061f39"'
-                if name == "johnzhang-test"
-                else "null"
+            self.assertIn(
+                'portal_admin_user_object_id = "670194b1-b1ff-41af-971a-a61438061f39"',
+                tfvars,
             )
-            self.assertIn(f"portal_admin_user_object_id = {expected_id}", tfvars)
             self.assertIn('johnzhang-fabric@guangbinzhang8888gmail.onmicrosoft.com', tfvars)
             self.assertNotIn("azuread_user", main)
             self.assertNotIn("FABRIC_ADMIN_OBJECT_ID", main)
             self.assertNotIn("azurerm_fabric_capacity", main)
 
-    def test_johnzhang_test_only_has_explicit_portal_admin(self):
+    def test_each_workspace_explicitly_configures_same_portal_admin(self):
         johnzhang = (INFRA / "fabric-workspace/johnzhang-test/workspace/terraform.tfvars").read_text()
         omop = (INFRA / "fabric-workspace/healthcare-omop/workspace/terraform.tfvars").read_text()
         self.assertIn(
             'portal_admin_user_object_id = "670194b1-b1ff-41af-971a-a61438061f39"',
             johnzhang,
         )
-        self.assertIn('portal_admin_user_object_id = null', omop)
+        self.assertIn('portal_admin_user_object_id = "670194b1-b1ff-41af-971a-a61438061f39"', omop)
         self.assertIn('role_assignments = {}', johnzhang)
         self.assertNotIn('service_principal', johnzhang)
         self.assertNotIn('client_secret', johnzhang)
+
+    def test_healthcare_omop_workspace_onelake_first_apply_contract(self):
+        root = INFRA / "fabric-workspace" / "healthcare-omop"
+        ws = root / "workspace"
+        lake = root / "onelake"
+        ws_main = (ws / "main.tf").read_text()
+        lake_main = (lake / "main.tf").read_text()
+        lake_vars = (lake / "terraform.tfvars").read_text()
+        self.assertIn("basename(dirname(abspath(path.root)))", ws_main)
+        self.assertIn('source = "../../../modules/workspace"', ws_main)
+        self.assertIn('source = "../../../modules/onelake"', lake_main)
+        self.assertIn('workspace = terraform.workspace', lake_main)
+        self.assertIn("data.terraform_remote_state.workspace.outputs.fabric_workspace_id", lake_main)
+        self.assertIn('key = "fabric-workspace/workspace.tfstate"', (ws / "versions.tf").read_text())
+        self.assertIn('key = "fabric-workspace/onelake.tfstate"', (lake / "versions.tf").read_text())
+        self.assertIn('key                  = "fabric-workspace/workspace.tfstate"', lake_main)
+        self.assertIn('lakehouse_name               = "lh_omop_analytics"', lake_vars)
+        self.assertIn('backend_storage_account_name = "johnzhang"', lake_vars)
+        self.assertIn('backend_container_name       = "tfstate"', lake_vars)
+        self.assertIn("enable_schemas = true", (INFRA / "modules/onelake/main.tf").read_text())
+        self.assertNotIn("azurerm_fabric_capacity", ws_main)
+        self.assertNotIn("azurerm_fabric_capacity", lake_main)
 
     def test_no_notebook_or_pipeline_terraform_ownership(self):
         source = "\n".join(self.text(p.name) for p in WORKSPACE.glob("*.tf"))
