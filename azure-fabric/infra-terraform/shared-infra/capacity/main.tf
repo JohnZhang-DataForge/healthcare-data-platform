@@ -16,5 +16,5 @@ data "fabric_capacity" "created" {
   display_name = module.capacity.capacity_name
   # Do not query a Capacity that this same plan has not created yet.
   # Force the read to be deferred until after successful resource creation.
-  depends_on   = [module.capacity]
+  depends_on = [module.capacity]
 }
