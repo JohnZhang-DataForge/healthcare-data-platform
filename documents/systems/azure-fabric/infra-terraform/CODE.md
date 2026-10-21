@@ -7,9 +7,9 @@ source_sha: null
 
 # Azure / Fabric Terraform — CODE 源码导航
 
-> **最新批准目标架构（2026-10-20）**：按真实 Workspace/资源类型部署，详见 [Fabric Terraform Workspace-scoped Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 和 [当前 OpenSpec Change](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。旧 `components/` / `fabric-environment/` 仍是本文件所描述的**当前源码现状/历史记录**，不再是新实施目标；尚未迁移/改写源码、Workflow、State 或真实云端资源。Notebook/Pipeline 新资源由 `fabric-cicd` 独占创建和发布。
+> **最新批准目标架构（2026-10-20）**：按真实 Workspace/资源类型部署，详见 [Fabric Terraform Workspace-scoped Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 和 [当前 OpenSpec Change](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。Task 2.1 新 `fabric-workspace/healthcare-omop/workspace/` Root 已加入源码（部署尚未开始）；旧 `components/` / `fabric-environment/` 仍保留作为历史入口。本轮不修改旧 Workflow/State 或真实云端资源。Notebook/Pipeline 新资源由 `fabric-cicd` 独占创建和发布。
 
-> **CODE.md 保持已存在的源码位置地图（并不宣称已完成重构）**。将来基于 [Module-first 新架构](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 复用已有 Modules、建立统一环境 Root 的源码提交，必须在同 PR 更新本页和相关 CI/Workflow 导航。
+> **CODE.md 按增量列出实际源码；Task 2.1 仅新增 Workspace Root，不代表整体重构完成。**将来基于 [Module-first 新架构](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 复用已有 Modules、建立统一环境 Root 的源码提交，必须在同 PR 更新本页和相关 CI/Workflow 导航。
 
 > **唯一 Terraform 组件源码导航（ACTIVE）**。只登记当前 Main 应有的 Root/Module；功能说明见 [README.md](README.md)，历史 State/Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。此处源码存在不代表云资源已部署或批准 Apply。
 
@@ -18,6 +18,16 @@ source_sha: null
 - [Terraform 源码根目录](../../../../azure-fabric/infra-terraform/) · [`.gitignore`](../../../../azure-fabric/infra-terraform/.gitignore)
 - [Self-Runner Azure-Infra-TF Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml)：从 Healthcare `main` 检出源代码，`root=healthcare/azure-fabric/infra-terraform/components/$COMPONENT`；手动选择 `environment=dev` 与 `operation=plan|apply`（默认 Plan）。
 - **Root/Module 关系**：每个 `components/<name>/modules.tf` 调用 `../../modules/<name>`，Root 保存 `versions.tf`、`providers.tf`、`variables.tf`、`outputs.tf`、`iam.tf` 和 `environments/dev.tfvars`。每个 Root 远程 State key 独立为 `dev/<component>.tfstate`。
+
+## 新 Workspace-scoped Terraform Root（Task 2.1）
+
+- [`healthcare-omop/workspace/main.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/main.tf)：直接调用 [`modules/workspace`](../../../../azure-fabric/infra-terraform/modules/workspace/main.tf)，从 Git 父目录获得 Workspace display_name。
+- [`versions.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/versions.tf)：独立 AzureRM Backend 基础 Key `fabric-workspace/workspace.tfstate`；实际 Terraform CLI Workspace 必须为 `healthcare-omop`（禁止 `default`）。
+- [`outputs.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/outputs.tf)：发布真实 `fabric_workspace_id`、`fabric_workspace_name`，且使用 Output Preconditions 阻断 CLI Workspace/目录不一致的 Plan。
+- [`variables.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/variables.tf) · [`iam.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/iam.tf) · [`terraform.tfvars`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/terraform.tfvars)：要求运行时显式传入已有 Capacity GUID（`TF_VAR_capacity_id` / `-var`）；额外 IAM 默认空；不保存凭据。
+- [`providers.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/providers.tf)：继承已使用的 Fabric OIDC。
+- [`Workspace Root 单测`](../../../../.github/quality/tests/test_fabric_workspace_root.py) · [`Terraform CI`](../../../../.github/workflows/fabric-provider-init-validate.yml)：仅 `fmt`、`init -backend=false`、`validate` 与静态合同，不连接 Azure，不执行 Plan/Apply。
+- **暂未切换** Self-Runner Workflow（[OpenSpec Task 3.1](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)）。现有旧 Root/State 原样保留；本 Root 尚未真实 Plan/Apply。
 
 ## 七个 Root / Module 源码地图
 
