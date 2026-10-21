@@ -16,7 +16,7 @@ from scan_ready_batches import (
     DEFAULT_PREFIX, DiscoveryError, discover_ready_batches,
 )
 
-MAX_XCOM_PREVIEW = 25
+MAX_XCOM_PREVIEW = 100
 
 
 def xcom_preview(
