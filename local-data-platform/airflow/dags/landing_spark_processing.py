@@ -24,7 +24,7 @@ PROCESSING_IMAGE = (
 )
 # V2 processing layer packages the current resolver and contract.
 NEW_ONLY_PROCESSING_IMAGE = (
-    "ghcr.io/johnzhang-dataforge/healthcare-landing-processing-v2"
+    "ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2"
     ":latest"
 )
 # KPO selection stays manually gated; both image references are current
