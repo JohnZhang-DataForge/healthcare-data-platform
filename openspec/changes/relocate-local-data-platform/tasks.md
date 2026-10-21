@@ -25,6 +25,15 @@
 
 ## 4. 待完成：新路径兼容与运行验证（后续独立 PR）
 
+> **CURRENT / NEXT — 2026-10-21 交接更新（覆盖本 Change 下方阶段性的旧 HOLD 描述，不改写历史日志）：** 本地源码已迁移至唯一 `local-data-platform/`；Airflow GitSync 已修复，8 个应用镜像由 Main 完整 Clean Build、GHCR 发布和 `:latest` 晋级。原有 Native Race 与多 Parquet Writer 缺陷已分别通过修复和真实回归。另独立修复 Airflow 对 Discovery 25 条预览的错误依赖，之后才把展示预览调为 100，并已在 Live XCom 观察到 **29 READY / 29 展示 / `preview_truncated=False`**。证据见 [Writer Task 5](../fix-multi-parquet-omop-writer-read/tasks.md) 与 [Airflow exact-selection Tasks](../fix-airflow-exact-new-only-batch-selection/tasks.md)。
+>
+> **最新 NEW_ONLY E2E**：[Self-Runner #39637787637](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39637787637) 在曾被 25 条预览截断的条件下，用已经生成的全新 Batch `synthea-new-only-gh-39630497311-01`（100 Person / 15,188 Visit）执行 **Airflow→Spark Person/Visit→Reconcile→Writer atomic COMMIT→独立 PG Readback→相同 Batch SKIP**，全程 PASS；PG Person **394→494**，Visit **52,308→67,496**，重跑零变动。镜像出版 [Main #39636935979](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39636935979) 与预览 100 [Main #39639881397](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39639881397) 都 SUCCESS。
+>
+> **尚未完成的真正迁移收尾**：4.1 当前 Main 逐文件 A/B/C/D/E 分类及恢复证据、4.8 保留/删除/HOLD 决策矩阵、4.2–4.5 适用路径/构建/运行覆盖剩余范围、4.7 结果总回归、4.9/4.10 高置信历史 Shell/重复源码/过期测试清理（**只删 C/D；保留必要 A/B，未知 E=HOLD**）、合并后的**新 Batch** E2E、4.11.6 最后核查并清理无消费者的旧 GHCR Package/Version、5.1–5.3 状态核查和归档。历史安装器已经删除一批；**不能因 8 镜像成功或本轮 E2E 就勾选这些未完成项**。
+>
+> **当前已有但未 COMMIT 的随机测试数据**：`synthea-new-only-gh-39630497311-02`（100 Person / 15,400 Visit；只读 Airflow 选择成功）、`synthea-new-only-gh-39630497311-03`（100 Person / 13,237 Visit；S3 READY）。可作为下一轮完整 E2E 候选，先核对 Claim/并行 DagRun/Manifest；不得当作已写库。为了尽快收尾，推荐先完成这两批的受控 E2E（不重新生成），然后按本 Tasks 的历史清理、Main 合并后新 Batch E2E、旧 GHCR 退役次序推进；别开新架构重构。
+
+
 > 本轮追溯完成后，下一阶段仍须建立单独实施 PR。不得将已关闭的追溯建档任务视为迁移最终验收。
 >
 > **2026-10-20 开发环境执行优先调整（用户最新授权；覆盖下列历史实施次序，不覆盖删除前的依赖门槛）**：本地 K8s、Airflow、Spark、SeaweedFS 和 PostgreSQL OMOP 是合成数据开发环境；现在以**尽快跑通一条真实 NEW_ONLY 新批次 Synthea → S3 → Airflow → Spark Person/Visit → 原子 OMOP Writer → 独立 PG 读回 → 同 Batch 幂等 SKIP**为第一优先级。允许按当前有效合同进行真实 Kubernetes Job/DAG 调度、生成新合成数据、写入/回滚实验批次，并在故障后修复再测；不再要求 4.1/4.8 全量审计、全部镜像/DAG 来源取证以及 4.9/4.10 的历史代码清理**先于**新批次真实验收。新执行顺序：**只修实际运行阻断的 4.2–4.4 → 4.5/4.6 真实 E2E（新唯一 Batch）→ 4.7 真实回归 → 4.1/4.8 针对仍需清理的消费者闭包 → 4.9/4.10 删除 → 5 收口**；4.1/4.8 仍是最终删除前门槛。仅保留密钥不泄露、不破坏集群基础设施/其他并行工作负载、不能盲目重放状态不明的已 COMMIT Batch、商业 Azure/Fabric 费用资源须独立确认的最低保护。第一次移植后 Live 探索 [Self-Runner Run #39419162734](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39419162734) 真实发现 Scheduler 配置 DAG Folder 仍指旧根，未开始 DagRun；实验修复 Runner 源路径验证后使用 [Run #39419382836](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39419382836) 接着检查，结果以各 Run 最终日志为准，未经证实不能标 E2E PASS。
