@@ -23,7 +23,7 @@ source_sha: null
 
 - [`johnzhang-test/workspace/iam.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/iam.tf) 与 [`healthcare-omop/workspace/iam.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/iam.tf)：`portal_admin_user_object_id` 是每个 Workspace Root 的独立可选非秘密参数，须填 Entra **User Object ID**，**不是用户邮箱/UPN/Client ID**；`null` 为严格零新增授权的安全默认值。
 - [`johnzhang-test/workspace/main.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/main.tf) 与 [`healthcare-omop/workspace/main.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/main.tf)：ID 经核实后，把 `portal_admin` (`User`/`Admin`) 合并入现有 `module.workspace.role_assignments`，由 [`modules/workspace/iam.tf`](../../../../azure-fabric/infra-terraform/modules/workspace/iam.tf) 创建成员关系。每个 Workspace 的实例值保存在上述各自的 `terraform.tfvars`，不放 Self-Runner。
-- **状态边界**：当前管理员 Object ID 尚未核实，`terraform.tfvars` 为 null；仅实现静态代码，**未执行真实授权/Apply，Portal 普通列表暂不会因为此次 PR 变化而自动可见**。继续条件与现有成员导入冲突保护见 [Trial Change Task 4](../../../../openspec/changes/validate-fabric-trial-free-infrastructure/tasks.md)。
+- **状态边界（2026-10-21 更新）**：`johnzhang-test/terraform.tfvars` 已记录用户提供的 Entra User Object ID `670194b1-b1ff-41af-971a-a61438061f39`，对应目标账号 `johnzhang-fabric@guangbinzhang8888gmail.onmicrosoft.com`；`healthcare-omop` 保持 null。Git 配置并非已授权，尚须核实该 Object ID 的身份关联、检查现有成员及执行经批准的 Workspace 单 Root Plan/Apply + 独立读回，**Portal 普通列表是否可见尚未验收**。详见 [Trial Change Task 4](../../../../openspec/changes/validate-fabric-trial-free-infrastructure/tasks.md)。
 
 ## Terraform 根目录与工作流
 

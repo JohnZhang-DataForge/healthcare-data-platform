@@ -5,7 +5,6 @@ capacity_id      = "3914ac8b-3375-498b-b3c0-1180a1902dd6"
 role_assignments = {}
 
 # Fabric Portal account: johnzhang-fabric@guangbinzhang8888gmail.onmicrosoft.com
-# Replace null with this *user's verified Entra Object ID* to grant Workspace Admin.
-# Entra admin center > Identity > Users > All users > selected user > Object ID.
-# Null intentionally causes NO grant until identity is verified; never guess a GUID.
-portal_admin_user_object_id = null
+# Object ID provided for the above user on 2026-10-21. Verify mapping before live Apply.
+# Workspace Admin is granted by modules/workspace/iam.tf, not by Self-Runner.
+portal_admin_user_object_id = "670194b1-b1ff-41af-971a-a61438061f39"
