@@ -82,12 +82,12 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | --- | --- |
 | [`01-validate-build-draft.sh`](../../../../local-data-platform/scripts/task001/01-validate-build-draft.sh) | [PREPARE / may write] 历史 TASK001 validate build draft 脚本 |
 
-## 历史 task004（7 个入口）
+## 历史 task004（5 个入口）
+> **2026-10-21 Task 4.9 单轮清理**：两个旧一次性生成器不再是活动源码入口；正式 `images/synthea/`、`apps/task004/`、`tests/task004/` 与 `.github/workflows/build-synthea-image.yml` 保留并由当前源码/CI 维护。历史可恢复：[`01-prepare-synthea-generator-image-source.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/6ed31d9a0c3998a653eaf587cde64cb13281ffb8/local-data-platform/scripts/task004/01-prepare-synthea-generator-image-source.sh)、[`02-prepare-synthea-ghcr-workflow.sh`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/6ed31d9a0c3998a653eaf587cde64cb13281ffb8/local-data-platform/scripts/task004/02-prepare-synthea-ghcr-workflow.sh)。这是历史生成脚本退役，不允许覆盖新源码来重放。
+
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`01-prepare-synthea-generator-image-source.sh`](../../../../local-data-platform/scripts/task004/01-prepare-synthea-generator-image-source.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generator image source 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
-| [`02-prepare-synthea-ghcr-workflow.sh`](../../../../local-data-platform/scripts/task004/02-prepare-synthea-ghcr-workflow.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea ghcr workflow 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`03a-prepare-synthea-generate-only-runtime.sh`](../../../../local-data-platform/scripts/task004/03a-prepare-synthea-generate-only-runtime.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea generate only runtime 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
 | [`03b-run-synthea-generate-only.sh`](../../../../local-data-platform/scripts/task004/03b-run-synthea-generate-only.sh) | [PREPARE / may write] 历史 TASK004 run synthea generate only 脚本；可能创建 Job/ConfigMap 或写入 S3/PG，需授权 |
 | [`04a-prepare-synthea-landing-publisher.sh`](../../../../local-data-platform/scripts/task004/04a-prepare-synthea-landing-publisher.sh) | [PREPARE / may write] 历史 TASK004 prepare synthea landing publisher 脚本；可能生成/覆盖仓库源码或报告，先检查目标路径 |
