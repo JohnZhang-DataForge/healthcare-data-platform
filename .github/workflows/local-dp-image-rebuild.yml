@@ -62,6 +62,10 @@ jobs:
               assert "ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/" + parent + ":latest" in text, child
               assert "FROM ${BASE_IMAGE}" in text, child
               assert "@sha256:" not in text, child
+          processing = (root / "airflow/dags/landing_spark_processing.py").read_text()
+          consumer = (root / "airflow/dags/new_only_omop_consumer.py").read_text()
+          assert "healthcare-data-platform-local-dp-landing-processing-v2" in processing
+          assert "healthcare-data-platform-local-dp-omop-writer" in consumer
           for name in ("landing_batch_discovery.py", "landing_spark_processing.py",
                        "new_only_omop_consumer.py", "task004_processing_pipeline.py"):
               text = (root / "airflow/dags" / name).read_text()
@@ -110,9 +114,9 @@ jobs:
             docker image inspect "${reg}/${package}:${tag}" >/dev/null
             echo "FRESH_CHILD_BUILT=${component} PARENT=${base}"
           }
-          build_child synthea-new-only healthcare-synthea-new-only healthcare-data-platform-synthea
-          build_child landing-processing-runtime healthcare-landing-processing-v2 healthcare-data-platform-task004-runtime
-          build_child new-only-omop-writer healthcare-data-platform-new-only-omop-writer healthcare-data-platform-task004-cdm-runtime
+          build_child synthea-new-only healthcare-data-platform-local-dp-synthea-new-only healthcare-data-platform-synthea
+          build_child landing-processing-runtime healthcare-data-platform-local-dp-landing-processing-v2 healthcare-data-platform-task004-runtime
+          build_child new-only-omop-writer healthcare-data-platform-local-dp-omop-writer healthcare-data-platform-task004-cdm-runtime
           echo "CHILD_CLEAN_BUILDS=3/3"
 
       - name: Eight no-network image smokes and writer imports
@@ -131,11 +135,11 @@ jobs:
           smoke healthcare-data-platform-task004-cdm-runtime 'test -s /opt/task004/cdm_runtime_cli.py'
           smoke healthcare-landing-discovery 'test -s /opt/healthcare/landing_discovery/run_airflow_scan.py'
           smoke healthcare-landing-claim 'test -s /opt/healthcare/landing_claim/claim_discovered_inventory.py'
-          smoke healthcare-synthea-new-only 'test -s /opt/synthea-new-only/entrypoint.py'
-          smoke healthcare-landing-processing-v2 'test -s /data/spark/healthcare-data-platform/apps/task004/csv-contract-v2.json'
-          smoke healthcare-data-platform-new-only-omop-writer 'test -s /opt/task004/new_only_airflow_writer.py'
+          smoke healthcare-data-platform-local-dp-synthea-new-only 'test -s /opt/synthea-new-only/entrypoint.py'
+          smoke healthcare-data-platform-local-dp-landing-processing-v2 'test -s /data/spark/healthcare-data-platform/apps/task004/csv-contract-v2.json'
+          smoke healthcare-data-platform-local-dp-omop-writer 'test -s /opt/task004/new_only_airflow_writer.py'
           docker run --rm --network none --entrypoint python \
-            "${reg}/healthcare-data-platform-new-only-omop-writer:${tag}" \
+            "${reg}/healthcare-data-platform-local-dp-omop-writer:${tag}" \
             -c 'import new_only_airflow_writer, task004_cdm_dynamic_pg_writer; print(new_only_airflow_writer.__file__, task004_cdm_dynamic_pg_writer.__file__)'
           echo "EIGHT_IMAGE_SOURCE_AND_SMOKE=PASS"
 
@@ -159,8 +163,8 @@ jobs:
           tag=git-${GITHUB_SHA}
           for img in healthcare-data-platform-synthea healthcare-data-platform-task004-runtime \
              healthcare-data-platform-task004-cdm-runtime healthcare-landing-discovery \
-             healthcare-landing-claim healthcare-synthea-new-only \
-             healthcare-landing-processing-v2 healthcare-data-platform-new-only-omop-writer; do
+             healthcare-landing-claim healthcare-data-platform-local-dp-synthea-new-only \
+             healthcare-data-platform-local-dp-landing-processing-v2 healthcare-data-platform-local-dp-omop-writer; do
             docker push "${reg}/${img}:${tag}"
             echo "PUBLISHED_IMMUTABLE=${img}:${tag}"
           done
@@ -176,8 +180,8 @@ jobs:
           tag=git-${GITHUB_SHA}
           for img in healthcare-data-platform-synthea healthcare-data-platform-task004-runtime \
              healthcare-data-platform-task004-cdm-runtime healthcare-landing-discovery \
-             healthcare-landing-claim healthcare-synthea-new-only \
-             healthcare-landing-processing-v2 healthcare-data-platform-new-only-omop-writer; do
+             healthcare-landing-claim healthcare-data-platform-local-dp-synthea-new-only \
+             healthcare-data-platform-local-dp-landing-processing-v2 healthcare-data-platform-local-dp-omop-writer; do
             docker tag "${reg}/${img}:${tag}" "${reg}/${img}:latest"
             docker push "${reg}/${img}:latest"
             echo "PROMOTED_LATEST=${img}"
