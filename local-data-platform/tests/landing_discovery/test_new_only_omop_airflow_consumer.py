@@ -14,11 +14,13 @@ URI=f"s3://health-landing/source=synthea/source_version=v3.3.0/ingest_date=2026-
 def conf():
     return {"batch_id":BATCH,"manifest_uri":URI,"manifest_sha256":SHA,"consumer_readonly":True}
 def inventory():
+    verified={"batch_id":BATCH,"manifest_sha256":SHA,
+        "manifest_uri":URI,"source":"synthea","source_version":"v3.3.0",
+        "status":"INTAKE_VERIFIED","file_count":18}
     return {"status":"READ_ONLY_DISCOVERED","processing_authorized":False,
         "database_mutation":False,"preview_truncated":False,"ready_count":1,
-        "ready_batches_preview":[{"batch_id":BATCH,"manifest_sha256":SHA,
-        "manifest_uri":URI,"source":"synthea","source_version":"v3.3.0",
-        "status":"INTAKE_VERIFIED","file_count":18}]}
+        "ready_batches_preview":[verified.copy()],
+        "verified_selected_batch":verified.copy()}
 def db_row(status="COMPLETED"):
     return {"source_system":"synthea","batch_id":BATCH,"manifest_sha256":SHA,
             "manifest_uri":URI,"role":"landing_claim_worker",
@@ -79,9 +81,33 @@ class NewOnlyAirflowConsumerRouting(unittest.TestCase):
         bad=inventory();bad["preview_truncated"]=True
         with self.assertRaisesRegex(ValueError,"INCOMPLETE"):
             select_verified_new_only(bad,conf(),"manual")
-        bad=inventory();bad["ready_batches_preview"][0]["manifest_sha256"]="a"*64
+        bad=inventory();bad["verified_selected_batch"]["manifest_sha256"]="a"*64
         with self.assertRaisesRegex(ValueError,"DISCOVERY_DRIFT"):
             select_verified_new_only(bad,conf(),"manual")
+        bad=inventory();bad.pop("verified_selected_batch")
+        with self.assertRaisesRegex(ValueError,"NOT_IN_DISCOVERY"):
+            select_verified_new_only(bad,conf(),"manual")
+
+    def test_verified_batch_outside_truncated_preview_is_valid(self):
+        broken=inventory()
+        broken["ready_count"]=26
+        broken["preview_truncated"]=True
+        broken["ready_batches_preview"]=[{"batch_id":"old-%d"%i} for i in range(25)]
+        got=select_verified_new_only(broken,conf(),"manual")
+        self.assertEqual(got["batch_id"],BATCH)
+        self.assertFalse(got["writer_commit"])
+        # Future UI increase to 100 items must not alter business semantics.
+        larger=inventory()
+        larger["ready_count"]=101
+        larger["preview_truncated"]=True
+        larger["ready_batches_preview"]=[{"batch_id":"old-%d"%i} for i in range(100)]
+        self.assertEqual(select_verified_new_only(larger,conf(),"manual")["batch_id"],BATCH)
+        for bad_count,bad_truncated in ((26,False),(1,True),(-1,False),("26",True)):
+            failed=inventory()
+            failed["ready_count"]=bad_count
+            failed["preview_truncated"]=bad_truncated
+            with self.subTest(count=bad_count,truncated=bad_truncated),self.assertRaisesRegex(ValueError,"INCOMPLETE"):
+                select_verified_new_only(failed,conf(),"manual")
     def test_db_safety_fails_closed(self):
         s=select_verified_new_only(inventory(),conf(),"manual")
         for changes in ({"manifest_sha256":"f"*64},{"role":"omop_admin"},

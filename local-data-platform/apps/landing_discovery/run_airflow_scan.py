@@ -19,12 +19,21 @@ from scan_ready_batches import (
 MAX_XCOM_PREVIEW = 25
 
 
-def xcom_preview(inventory: dict) -> dict:
-    """Return bounded, non-authoritative inventory preview, not a claim."""
+def xcom_preview(
+    inventory: dict, *,
+    batch_id: str | None = None,
+    manifest_uri: str | None = None,
+    manifest_sha256: str | None = None,
+) -> dict:
+    """Return bounded preview plus optional S3-verified exact Batch identity.
+
+    Match against the complete validated inventory, never the preview.
+    This is not an authorization to process or commit data.
+    """
     if inventory.get("database_mutation") is not False or inventory.get("processing_authorized") is not False:
         raise DiscoveryError("read-only discovery invariant violated")
     batches = inventory["ready_batches"]
-    return {
+    report = {
         "status": "READ_ONLY_DISCOVERED",
         "ready_count": inventory["ready_count"],
         "quarantined_count": inventory["quarantined_count"],
@@ -33,11 +42,36 @@ def xcom_preview(inventory: dict) -> dict:
         "processing_authorized": False,
         "database_mutation": False,
     }
+    target = (batch_id, manifest_uri, manifest_sha256)
+    if any(value is not None for value in target):
+        if not all(isinstance(value, str) and value for value in target):
+            raise DiscoveryError("exact Batch selection requires all three identifiers")
+        matched = [row for row in batches if row["batch_id"] == batch_id]
+        if len(matched) != 1:
+            raise DiscoveryError("requested Batch missing from verified S3 inventory")
+        row = matched[0]
+        if (row["manifest_uri"] != manifest_uri
+                or row["manifest_sha256"] != manifest_sha256
+                or row["source"] != "synthea"
+                or row["source_version"] != "v3.3.0"
+                or row["status"] != "INTAKE_VERIFIED"
+                or row["file_count"] != 18):
+            raise DiscoveryError("requested Batch immutable Manifest drift")
+        report["verified_selected_batch"] = row
+    return report
 
 
-def run(*, s3, bucket: str, prefix: str, xcom_path: Path) -> dict:
+def run(
+    *, s3, bucket: str, prefix: str, xcom_path: Path,
+    batch_id: str | None = None,
+    manifest_uri: str | None = None,
+    manifest_sha256: str | None = None,
+) -> dict:
     inventory = discover_ready_batches(s3, bucket=bucket, prefix=prefix)
-    report = xcom_preview(inventory)
+    report = xcom_preview(
+        inventory, batch_id=batch_id,
+        manifest_uri=manifest_uri, manifest_sha256=manifest_sha256,
+    )
     xcom_path.parent.mkdir(parents=True, exist_ok=True)
     # XCom volume is provided by Airflow KPO's xcom-sidecar, not a
     # persisted producer or consumer ledger.
@@ -54,6 +88,9 @@ def main() -> None:
         default="/airflow/xcom/return.json",
         help="Location writable by KubernetesPodOperator XCom sidecar",
     )
+    parser.add_argument("--batch-id", help="Exact manual Batch, independent of preview index")
+    parser.add_argument("--manifest-uri", help="Exact verified Landing manifest URI")
+    parser.add_argument("--manifest-sha256", help="Exact immutable manifest SHA256")
     args = parser.parse_args()
     endpoint = os.getenv("S3_ENDPOINT", "")
     if not endpoint.startswith(("http://", "https://")):
@@ -75,6 +112,8 @@ def main() -> None:
     report = run(
         s3=client, bucket=args.bucket, prefix=args.prefix,
         xcom_path=Path(args.xcom_path),
+        batch_id=args.batch_id, manifest_uri=args.manifest_uri,
+        manifest_sha256=args.manifest_sha256,
     )
     print("LANDING_BATCH_DISCOVERY_AIRFLOW_READONLY=PASS", flush=True)
     print("DISCOVERED_READY_BATCHES=" + str(report["ready_count"]), flush=True)

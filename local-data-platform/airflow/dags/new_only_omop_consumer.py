@@ -110,6 +110,13 @@ with DAG(
         namespace="dw-spark",service_account_name="task004-control-runtime",
         image=DISCOVERY_IMAGE,image_pull_policy="Always",
         in_cluster=True,get_logs=True,do_xcom_push=True,
+        # Target Batch selection is verified in the S3-credentialed discovery
+        # Pod against the full inventory; its 25-row XCom preview is display-only.
+        arguments=[
+            "--batch-id","{{ dag_run.conf.get('batch_id', '') }}",
+            "--manifest-uri","{{ dag_run.conf.get('manifest_uri', '') }}",
+            "--manifest-sha256","{{ dag_run.conf.get('manifest_sha256', '') }}",
+        ],
         env_vars={"S3_ENDPOINT":"http://dw-seaweedfs-s3.dw-seaweedfs.svc.cluster.local:8333",
                   "S3_REGION":"us-east-1","AWS_EC2_METADATA_DISABLED":"true"},
         secrets=S3_SECRETS,
