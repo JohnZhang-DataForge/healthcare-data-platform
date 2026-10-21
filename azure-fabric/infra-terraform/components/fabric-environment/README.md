@@ -37,6 +37,7 @@ terraform init -backend-config="storage_account_name=johnzhang" \
 terraform workspace select healthcare-omop || terraform workspace new healthcare-omop
 # Authorized ONLY after checking old state ownership:
 # terraform import -var-file=environments/healthcare-omop.tfvars \
+#   -var=existing_workspace_imported=true \
 #   'module.workspace.fabric_workspace.current' '<REAL_WORKSPACE_GUID>'
 # Verify current State address before changing existing_workspace_imported=true.
 terraform plan -var-file=environments/healthcare-omop.tfvars
