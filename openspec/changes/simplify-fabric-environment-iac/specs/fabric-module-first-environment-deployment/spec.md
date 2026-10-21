@@ -38,9 +38,19 @@ Terraform SHALL retain `components → modules → configuration` and compose Wo
 - **WHEN** 规划 Lakehouse/Connection
 - **THEN** Lakehouse 引用 Workspace Module 输出的真实 ID，Root Outputs 暴露真实资源标识供下游消费
 
-### Requirement: Terraform CLI Workspace state isolation and existing resource safety
+### Requirement: Terraform CLI Workspace state isolation
 
-Each non-default Terraform CLI Workspace SHALL have isolated State under the pre-existing configured AzureRM Backend. The implementation MUST verify actual Backend key derivation; it MUST NOT silently rewrite or adopt legacy `dev/*.tfstate` or another Root's managed resources. Existing `healthcare-omop` MUST be inventoried and explicitly imported or state-migrated if required, never recreated merely because the new Root has empty State. Selecting a partial resource operation MUST NOT implicitly delete unrelated managed resources.
+Each non-default Terraform CLI Workspace SHALL use isolated State in the configured AzureRM Backend. The deployment MUST verify real Backend key derivation and MUST NOT overwrite legacy State.
+
+#### Scenario: second workspace in current account
+
+- **GIVEN** 当前账号使用同一个 AzureRM Backend，已有 Terraform Workspace `healthcare-omop`
+- **WHEN** 创建另一个非 default Terraform CLI Workspace 并运行相同 Root/Modules
+- **THEN** 新 Workspace 与 State 独立，旧 `dev/*.tfstate` 和 `healthcare-omop` State 均不被覆盖
+
+### Requirement: Explicit adoption of existing Fabric resources
+
+The existing Fabric Workspace `healthcare-omop` MUST be inventoried before the first deployment. Its prior State owner MUST be reviewed, and Import or State Move MUST be explicit where needed. Partial resource operations MUST NOT implicitly remove unrelated managed resources.
 
 #### Scenario: existing workspace not managed by new root state
 
@@ -48,11 +58,11 @@ Each non-default Terraform CLI Workspace SHALL have isolated State under the pre
 - **WHEN** 准备首次 Apply
 - **THEN** 先审查并执行明确的 Import/State Move 路径，不能直接重复创建该 Workspace
 
-#### Scenario: second workspace in current account
+#### Scenario: select a subset of resources
 
-- **GIVEN** 当前账号使用同一个 AzureRM Backend，已有 Terraform Workspace `healthcare-omop`
-- **WHEN** 创建另一个非 default Terraform CLI Workspace 并运行相同 Root/Modules
-- **THEN** 其目标 Fabric Workspace 与 State 独立，不影响 `healthcare-omop`
+- **GIVEN** 当前 State 已管理 Workspace 和 Lakehouse
+- **WHEN** Workflow 只请求检查或部署 Connection
+- **THEN** 不得因资源选择参数从配置中移除已管理的 Workspace 或 Lakehouse
 
 ### Requirement: Exclusive ownership and real deployment evidence
 
