@@ -5,86 +5,105 @@ decision_date: 2026-10-20
 implementation_status: design-agreed-code-refactor-pending
 ---
 
-# Fabric Terraform 环境部署架构 — Module-first / Environment-driven
+# Fabric Terraform 环境部署架构 — 当前账号 / 同名 Workspace / Module-first
 
-> **当前目标设计，优先于旧 Bootstrap / A=B/A≠B 方案。** 本文记录 2026-10-20 用户最终确认的长期架构；设计已确认，但代码重构、真实 Terraform Apply 和 Fabric E2E **均未据此验收**。实施任务入口：[OpenSpec simplify-fabric-environment-iac](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。
+> **2026-10-20 最新正式决定（覆盖本项目此前的多账号自动化和独立 State Key 环境方案）。** 当前仅以一个已授权 Fabric 账号为实施目标。**该账号下已存在的 Fabric Workspace 准确名称是 `healthcare-omop`，目前作为 DEV 使用。** 方案已确定，但 Terraform Root/Connection/Workflow 尚未按此修改，未完成真实 Apply 或 Fabric E2E。实施任务入口：[OpenSpec simplify-fabric-environment-iac](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。
 
-## 1. 核心目标和前置条件
+## 1. 目标与范围
 
-**给一个已经能部署目标 Fabric 资源的账号、可用 Capacity、已有且可读写的 Terraform Remote State Backend、预先授权可读取的 Landing 数据源，选择一个环境配置，以同一套 Terraform 代码部署和管理一整套 Fabric 平台。** 来第二个已授权 Fabric 账号或第二套部署环境，只换 Provider/登录配置、环境参数和独立 State Key，不复制、不修改 Module 源码。
+一套现有的 Terraform `components → modules` 源码，在**当前**已授权 Fabric 账号下，利用不同的 **Terraform CLI Workspaces** 管理多个同名 **Fabric Workspaces**，从而创建/管理 Workspace、Workspace IAM、Lakehouse、Connection 等平台资源。第一阶段先让 `healthcare-omop` 真实可管理、可运行。
 
-前置条件由环境 Owner 提供，不归正常 Fabric Environment Terraform Apply 创建：Azure Subscription 和 Fabric 使用资格、初始管理员账号及授权、Capacity 的使用/分配资格、现有 Blob Landing 的访问身份/网络、Terraform Backend 的现存 Storage/Container 与运行身份的读写/锁定权限。**Fabric Administrator 角色本身不等于拥有 Azure Storage RBAC、所有 Capacity 分配权或 Backend 写入权**；要求的是已实际授权的部署主体，而不强制同一个账号持有所有外部权限。
+- 当前 Fabric 管理身份、订阅/Fabric 资格、可用 Capacity、现有 Terraform Remote Backend、已授权 Landing 均为部署前置条件；不在本项目普通 Apply 中创建/购买这些资源。
+- **不做**多账号选择、Account Profile、Tenant A/B 拓扑系统、三套身份 Bootstrap 或独立新 Azure Blob/State Backend 的创建系统。
+- 以后若换 Fabric 账号，人工调整 Provider/认证、Capacity、Landing 和**隔离的 Backend/State**，可复用同一套 Terraform 源码，也可以新建单独工作目录；不作为本轮自动化范围。
+- Fabric Administrator 身份本身不代表自动拥有 Backend 写入、Capacity 管理或 Landing Blob Reader 权限。
 
-- Azure/Fabric 订阅注册、Trial 开通、管理员首次授权和费用许可不属于此 Terraform 项目。
-- Landing 与 `tfstate` 只是外部配置；Terraform 不管理它们的创建、删除和业务数据。
-- `A=B`、`A≠B` 是部署参数可能出现的 Tenant 关系，**不是两个架构、两个 Bootstrap Mode，更不是需要分别开发的 Module**。任何支持的跨 Tenant 认证限制只在 Provider、Backend、Connection 的认证边界处理。
-- Fabric Capacity 默认引用已有可用 ID；可选购买付费 F SKU 不属于常规 Environment Apply，不得因缺 Capacity 自动计费。
+## 2. Workspace 的一一对应规则
 
-## 2. 必须沿用已有 Azure-Infra 的三层架构
+| 逻辑用途 | Terraform CLI Workspace | 真实 Fabric Workspace | 状态 |
+| --- | --- | --- | --- |
+| DEV（当前） | `healthcare-omop` | `healthcare-omop` | Fabric Workspace 已人工创建；Terraform 新 Root 接管尚未验证 |
+| QA（将来） | 与其 Fabric Workspace 同名 | 创建时再确定准确名称 | 仅规划 |
+| PROD（将来） | 与其 Fabric Workspace 同名 | 创建时再确定准确名称 | 仅规划 |
 
-旧项目中真实存在 `components/<component>/modules.tf` 调用 `../../modules/<component>`，Root 具有 Provider、版本、Backend、`variables.tf`、`outputs.tf`、`environments/dev.tfvars`；这个 **Root → Module → Environment Configuration** 结构是长期标准，不应被直接写资源的 `new-environments/` 取代。
+这里的 Terraform CLI Workspace 是通过 `terraform workspace select/new` 选择的 **State 命名空间**，Fabric Workspace 是 Microsoft Fabric 中的真实资源。两者是不同对象，但在**当前项目中强制使用相同的名称**，便于辨认。**禁止使用 Terraform 默认 `default` Workspace 部署。** 不要将 `healthcare-omop` 擅自改名为 `dev` 或 `HDP-Dev`。
 
-**目标目录（尚未实施）**：
+Root 将 Workspace 名称交给 Module，例如：
+
+```hcl
+module "workspace" {
+  source           = "../../modules/workspace"
+  workspace_name   = terraform.workspace
+  description      = var.description
+  capacity_id      = var.capacity_id
+  role_assignments = var.role_assignments
+}
+
+module "onelake" {
+  source         = "../../modules/onelake"
+  workspace_id   = module.workspace.workspace_id
+  lakehouse_name = var.lakehouse_name
+}
+```
+
+`terraform.workspace` 决定**名称**，而非自动导入已有 Fabric Workspace。Module Outputs 负责在 Terraform 图中传播真实 GUID；根级 Outputs 可提供 `fabric_workspace_name`、`fabric_workspace_id`、`lakehouse_id`、`connection_id`，供 Workflow 与 `fabric-cicd` 消费。**Outputs 不用于选择 CLI Workspace 或配置 Backend。**
+
+## 3. 模块与源码结构
+
+保留七个原有 `components/` Roots 及 `modules/`，新增一个组合 Root；不恢复已删除的旧 Bootstrap/New Roots。
 
 ```text
 azure-fabric/infra-terraform/
 ├── components/
-│   └── fabric-environment/       # 一个环境组合 Root
+│   ├── workspace/           # 原有 Root：继续保留，避免随意改变旧 State 地址
+│   ├── onelake/             # 原有 Root
+│   ├── ...                  # 其它旧 Root
+│   └── fabric-environment/ # 待开发：当前账号下的统一组合 Root
 │       ├── versions.tf
 │       ├── providers.tf
-│       ├── backend.tf
-│       ├── main.tf               # 只调用 modules，并处理资源依赖
+│       ├── main.tf
 │       ├── variables.tf
-│       └── outputs.tf
-├── modules/
-│   ├── workspace/                # 复用现有定义及 Workspace IAM
-│   ├── lakehouse/                # 由 modules/onelake 整理
-│   └── connection/               # 按实际 Provider Schema 新建可复用 Module
-└── environments/               # 环境参数；不恢复旧 Bootstrap tools/tests
-    ├── dev.tfvars
-    └── trial-lab.tfvars
+│       ├── outputs.tf
+│       └── environments/
+│           └── healthcare-omop.tfvars
+└── modules/
+    ├── workspace/           # 复用 Fabric Workspace、IAM
+    ├── onelake/             # 复用 Fabric Lakehouse
+    └── connection/          # 待开发的可复用 Fabric Blob Connection
 ```
 
-- **Root** 负责 Provider 登录、Backend Key、环境输入、Modules 编排及 Outputs；Module 内**不**声明 Backend、登录主体和固定环境/账号/Blob 资源名。
-- **Module** 负责可复用的真实 Fabric Resource、可选 IAM、变量验证及输出。现有 `modules/workspace` 的 Workspace + Role Assignment、`modules/onelake` 的 Lakehouse 实现是优先复用来源，连接功能需建正式可复用 Module。
-- **Environment** 仅声明非秘密差异，如 Workspace 名称、Lakehouse 名称、Capacity ID、Landing Connection 参数。用户凭据、Token、Secret 不写入 Git 或普通 tfvars。
-- **单组合 Root** 可一次 Apply 根据资源依赖创建 Workspace、角色、Lakehouse、Connection；不用为每个环境复制一组 Root。Terraform 不负责 Notebook/Pipeline 业务定义的发布。
+- **Components/Root**：Provider、AzureRM Backend、环境输入、Module 编排和 Outputs。
+- **Modules**：真实 Fabric Resources/IAM、输入验证与 Outputs；不包含账号与 Backend 配置，也不硬编码 `healthcare-omop`。
+- **配置**：当前账号下 Workspace 对应的 Capacity、Lakehouse、Landing Connection 等参数；非秘密参数可在 `tfvars`，Credential/Token/Secret 禁止写 Git。
+- **资源唯一所有权**：Terraform 管 Workspace/IAM、Lakehouse、Connection；`fabric-cicd` 管 Notebook/Pipeline 业务代码。Warehouse、复杂 OneLake 权限不是首个 MVP 的必要条件。
 
-## 3. Fabric 与业务资源唯一所有权
+## 4. Remote State 设计
 
-| 资源 | 最终所有者 | 说明 |
-| --- | --- | --- |
-| Fabric Workspace / Workspace Role Assignment | Terraform `module.workspace` | 复用旧 Module/IAM；不要重复资源地址 |
-| Fabric Lakehouse | Terraform `module.lakehouse` | 从原 `onelake` Module 整理职责 |
-| Fabric Azure Blob Connection | Terraform `module.connection` | 接收已获授权的 Landing Connection 配置，不创建 Landing |
-| Capacity | 外部可用资源 ID | 常规 Terraform Root 只引用，不创建付费 SKU |
-| Notebook / DataPipeline | `fabric-cicd` | GitHub 是业务定义来源；通过 Terraform Outputs 注入部署目标 GUID |
-| 现有 Landing、Remote State | 外部资源 Owner | 平台 Root 无 Create/Replace/Delete/Import 权限 |
-| 已有旧 Workspace/State/Notebook 占位 | 原资源/State Owner | 不静默接管；后续核对后明确迁移或保留 |
+沿用当前账号已经可用的 AzureRM Backend（例如现有 `johnzhang/tfstate`），给**组合 Root** 配置一个固定基础 Key（示例 `fabric/platform.tfstate`）。对于 Terraform CLI 的 **非 default Workspace**，AzureRM Backend 会维护对应 Workspace 的 State 命名空间；实际 Blob 名称由 Backend 的 Workspace Key 机制派生，必须在首次 Init/Plan 时读回确认。
 
-需要的 Fabric Workspace Identity、Blob Reader 或其他连接身份按**实际 Fabric Connector 认证方式**配置，不强制三套新 Entra Application 作为平台 Bootstrap。预授权 Landing 指的是新环境实际读数据时有合法可用凭据/访问路径，不能只凭 Fabric Administrator 名称推断权限。
+**不能把两个机制混为一谈**：不再要求 Workflow 按每次部署拼出 `fabric/<environment>/platform.tfstate` 并且同时切换 Terraform CLI Workspace；否则容易重复叠加命名、难以辨认。单纯切换 tfvars 也不代表切换 State。TF CLI Workspace 提供逻辑隔离，不提供独立 Azure RBAC/权限边界。
 
-## 4. 多环境 State 模型与重复部署
+现有 `dev/*.tfstate`、历史独立 Root State 和 Fabric 云端资源都不能自动迁移、覆盖或清理。尤其 `healthcare-omop` 已存在：
+1. 先核对 Fabric Workspace GUID、原 Terraform State 是否已经跟踪此对象。
+2. 新组合 Root 下若没有该资源，采取**显式 Import 或经审查的 State Move**，不能直接 Create 同名资源。
+3. 首次 Apply 前检验 Plan 无未知资源的 Delete/Replace；不能把空 State 误判为云端无资源。
 
-推荐未来一个组合 Root 对应一个环境 State：`fabric/<environment>/platform.tfstate`，保存在已有 Backend Container。比如 `fabric/lab-a/platform.tfstate` 和 `fabric/lab-b/platform.tfstate`。仅更换 `.tfvars` 却保持同一个 Key **不是**创建新环境，会导致对已有资源的更新/销毁。State Key 名称隔离不等于 Azure RBAC 隔离。
+## 5. GitHub Self-Runner Workflow
 
-现有旧 `dev/*.tfstate` 与已有/可能存在的 `fabric/<environment>/{workspace,onelake,connection}.tfstate` 都**不得被假设为空或自动迁移**。组合 Root 的新 State 与已有 Root 的 Terraform Resource Address 不同：先核对真正的 State/云端持有者，再选择**独立新环境**或单独审查 Import/State Move，不能直接 Apply 让 Terraform 创造重复资源，也不能因文件删除执行 Destroy。
+继续复用 `Self-Runner/.github/workflows/azure-infra.yaml`，不建立新的账号选择系统。
 
-## 5. 真正的部署流程
+- **选择 Workspace**：`healthcare-omop` 为现有目标，未来同账号新增后才增加对应选项；选择值用于 `terraform workspace select`，亦作为 Fabric Workspace display name。
+- **选择资源操作范围**：允许以 Full Platform 为默认目标；以后如支持 Workspace/Lakehouse/Connection 分别操作，必须保证不因切换开关而使同一 State 其他已管理资源被删除。不得以未经审查的常规 `-target` 作为长期部分部署架构。
+- **选择操作**：`plan` 或显式 `apply`；复用有效的 Plan/Apply、安全审查、实际 Source SHA 和运行记录。
+- **认证**：Runner 依当前授权身份配置；本地 CLI 认证与 OIDC Runner 认证差异由 Provider/Workflow 做最小兼容调整，不恢复 Bootstrap。
+- **输出**：调用 `terraform output` 提供真实 Fabric Workspace/Lakehouse/Connection IDs 给业务部署阶段。
 
-1. 使用有权限的 Fabric 部署账号（本地 `az login` 或经授权的 CI 身份）和环境参数准备 Provider；已有 Landing/Backend/Capacity 配置已满足前置条件。
-2. 为目标环境提供独立 State Key，实际运行 `terraform init`、`validate`、`plan`。在 Plan 中检查已有对象、删除或替换动作；未授权破坏性动作停止。
-3. 在批准后对**同一目标环境 State** `terraform apply`，从真实 Fabric API 读回 Workspace/Lakehouse/Connection 和所需访问权限。
-4. 使用 `fabric-cicd` 根据 Terraform Outputs 发布 Notebook 与 Pipeline；再做真实 Landing → OneLake 数据运行、对账和幂等检查。**离线 Provider Init/Validate 成功不等于真实 Apply 或 E2E 成功。**
-5. 增加第二个环境或账号时，配置新的认证与 `.tfvars` 和 State Key，再执行同一套代码，不改 Modules；验证不影响第一环境。
+## 6. 实施顺序和验收
 
-GitHub Self-Runner 只是这些相同操作的自动化执行入口，先复用旧 `azure-infra.yaml` 的有效设计，运行能力通过测试后再迁移。不把额外 OIDC Bootstrap 开发作为当前手动 Terraform 测试的阻塞前置。
+先核对当前 Main 的 Workspace/Onelake Modules、State 与 `healthcare-omop`；完成 Connection Module、组合 Root 和 Terraform CLI Workspace 配置；运行静态 CI，之后在明确的真实环境授权下进行 Plan/必要的 Import/Apply。
 
-## 6. 现有源码判断与清理顺序
+**第一次验收重点**：当前账号中 `healthcare-omop` 可由 Terraform 正确管理，Lakehouse/Connection 可读回并获得既有 Landing 数据的实际访问；重复 Plan 无意外变更。再用同一 Fabric 账号下另一个新 Workspace 验证复用，最后扩展原 Self-Runner Workflow，并接入 `fabric-cicd`、数据 E2E。
 
-- **保留复用**：`components/* → modules/*` 的正确分层，现有 `modules/workspace` 的 IAM、`modules/onelake` 的 Lakehouse 实现，既有 Terraform 的 Provider/State 配置。
-- **旧新环境 Root 已清理**：`new-environments/` 曾重复定义 Workspace/Lakehouse/Connection，现已从工作树删除；将来依实际 Fabric Provider Schema 在原有 `modules/` 架构内实现缺少的 Connection Module。
-- **停止作为强制前置**：`bootstrap/identity` 的三 App/SPN/OIDC、`bootstrap/storage` 的新 Blob/Backend、复杂双 Tenant Profile/Seed/批准 Gate；付费 Capacity 创建是按需独立工作，不应被普通部署隐式触发。
-- **清理决定（2026-10-20）**：用户明确要求立即删除未实际部署的新 Bootstrap/Tests/Tools/独立新环境源码，已做 Git 源码层清理；旧 `components/` / `modules/` / `azure-infra.yaml` 保留。今后仍需真实资源/State 盘点和部署测试，但它们不是此次删除纯源码的阻塞前置。
+已完成的 `bootstrap/`、`new-environments/`、`tests/`、`tools/` 源码清理仍是历史已完成事项，不重做；架构定稿不等于成功 Terraform Apply。
 
-**长期架构在本文件；代码实现的任务/状态/验收只记在 [新 OpenSpec Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)，不在这里做第二份 Task 清单。**
+**长期架构在本文件；实际实施进度、PR/Run 证据只由 [Active OpenSpec Change](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md) 管理。**
