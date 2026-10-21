@@ -73,3 +73,31 @@ Terraform SHALL own Workspace/IAM, Lakehouse and Connection. `fabric-cicd` SHALL
 - **GIVEN** 仅更新当前 Active OpenSpec 和架构文档
 - **WHEN** 汇报进度
 - **THEN** 明确写为设计已定、Terraform 实施与真实部署未验证
+
+### Requirement: Canonical single-root and retired legacy deployment sources
+
+The active Fabric IaC source SHALL contain exactly one deployable Root
+(`components/fabric-environment`) with exactly the reusable Workspace, OneLake
+and Connection Modules. Old standalone Roots, `dev.tfvars` and Terraform-owned
+Notebook/Pipeline placeholder modules SHALL NOT be invoked by the canonical
+runner. Historical remote State SHALL remain untouched during source cleanup.
+
+#### Scenario: no duplicate Fabric deployment entry
+
+- **GIVEN** 当前仓库 Main 的 Fabric Terraform 和 Self-Runner Workflow
+- **WHEN** 执行 Fabric 资源部署
+- **THEN** 只调用单组合 Root，不存在旧 workspace/onelake Root 的并行入口
+
+### Requirement: New same-name Fabric Workspace without duplicated Terraform roots
+
+The canonical runner SHALL accept a bounded, validated Workspace name; a new
+non-default Terraform CLI Workspace SHALL be created/selected with the same
+name, using common input defaults or a versioned per-Workspace nonsecret tfvars
+file. Existing `healthcare-omop` SHALL NOT be created again and requires
+explicit State adoption before Plan/Apply.
+
+#### Scenario: deploy a fresh workspace
+
+- **GIVEN** 用户选择当前 Fabric 账号内此前不存在的 `healthcare-qa`
+- **WHEN** 在唯一 Root 下执行 Plan 然后单独执行 Apply
+- **THEN** Terraform CLI Workspace、Fabric Workspace 名称相同且 State 独立

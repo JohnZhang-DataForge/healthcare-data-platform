@@ -1,10 +1,9 @@
-name: Azure Fabric Existing Components and Modules — Terraform Validation
+name: Fabric Environment — Terraform Validation
 
 on:
   pull_request:
     paths:
-      - 'azure-fabric/infra-terraform/components/**'
-      - 'azure-fabric/infra-terraform/modules/**'
+      - 'azure-fabric/infra-terraform/**'
       - '.github/workflows/fabric-provider-init-validate.yml'
       - '.github/quality/tests/test_fabric_environment_structure.py'
   workflow_dispatch:
@@ -13,44 +12,6 @@ permissions:
   contents: read
 
 jobs:
-  validate-existing-root:
-    name: "terraform validate / ${{ matrix.component }}"
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        component: [storage, workspace, onelake, notebook, data-factory, warehouse, foundation-iam]
-    env:
-      TF_INPUT: '0'
-      TF_IN_AUTOMATION: 'true'
-      TF_ROOT: azure-fabric/infra-terraform/components/${{ matrix.component }}
-      TF_MODULE: azure-fabric/infra-terraform/modules/${{ matrix.component }}
-    steps:
-      - name: Checkout reviewed source
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: '1.13.5'
-          terraform_wrapper: false
-      - name: Validate original Root and reusable Module
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          echo "#### FABRIC_LEGACY_ROOT_VALIDATION_OUTPUT_BEGIN ####"
-          echo "ROOT=$TF_ROOT"
-          echo "MODULE=$TF_MODULE"
-          terraform -chdir="$TF_ROOT" fmt -check -diff
-          terraform -chdir="$TF_MODULE" fmt -check -diff
-          terraform -chdir="$TF_ROOT" init -backend=false -input=false -no-color
-          terraform -chdir="$TF_ROOT" validate -no-color
-          echo "REMOTE_BACKEND_USED=NO"
-          echo "TERRAFORM_PLAN_APPLY=NO"
-          echo "#### FABRIC_LEGACY_ROOT_VALIDATION_OUTPUT_END ####"
-
   validate-fabric-environment:
     name: "terraform validate / fabric-environment"
     runs-on: ubuntu-latest
@@ -59,9 +20,8 @@ jobs:
       TF_INPUT: '0'
       TF_IN_AUTOMATION: 'true'
       ROOT: azure-fabric/infra-terraform/components/fabric-environment
-      MODULE: azure-fabric/infra-terraform/modules/connection
     steps:
-      - name: Checkout reviewed source
+      - name: Checkout exact reviewed source
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -70,16 +30,18 @@ jobs:
         with:
           terraform_version: '1.13.5'
           terraform_wrapper: false
-      - name: Validate composed Root and Connection Module without backend
+      - name: Validate canonical Root and three reusable Modules (no Backend)
         shell: bash
         run: |
           set -Eeuo pipefail
-          echo "#### FABRIC_COMPOSED_ROOT_VALIDATE_OUTPUT_BEGIN ####"
+          echo "#### FABRIC_SINGLE_ROOT_VALIDATE_OUTPUT_BEGIN ####"
           terraform -chdir="$ROOT" fmt -check -diff
-          terraform -chdir="$MODULE" fmt -check -diff
+          for module in workspace onelake connection; do
+            terraform -chdir="azure-fabric/infra-terraform/modules/$module" fmt -check -diff
+          done
           terraform -chdir="$ROOT" init -backend=false -input=false -no-color
           terraform -chdir="$ROOT" validate -no-color
           python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_environment_structure.py' -v
-          echo "BACKEND_REMOTE_ACCESSED=NO"
+          echo "REMOTE_BACKEND_ACCESSED=NO"
           echo "FABRIC_PLAN_APPLY=NO"
-          echo "#### FABRIC_COMPOSED_ROOT_VALIDATE_OUTPUT_END ####"
+          echo "#### FABRIC_SINGLE_ROOT_VALIDATE_OUTPUT_END ####"

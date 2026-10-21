@@ -9,9 +9,9 @@
 - [x] 1.3 更新旧文档/两个旧 OpenSpec Change 的失效标记、导航和项目状态，完成 PR CI 与 Main 合并。
 - [x] 1.4 按最新决定修订现有权威架构与 OpenSpec：只支持当前账号；已有 `healthcare-omop`；Terraform Workspace/Fabric Workspace 同名；CLI Workspace State 隔离；Outputs 与既有 Workspace 接管边界。**此项仅表示文档修改，代码和运行未完成。**
 
-## 2. Terraform refactor (not started)
+## 2. Terraform refactor (source validated)
 
-- [ ] 2.1 定向盘点仍存七个 Root/Modules、实际 State 地址与资源所有权；核对已有 `healthcare-omop` Workspace GUID、旧 Root State 与 Self-Runner 依赖；不重复历史全量清理。**源码和 Workflow 边界已核对；真实 Backend State/Workspace GUID 尚未从云端读回，留在 3.1 前继续核对。**
+- [ ] 2.1 定向盘点仍存七个 Root/Modules、实际 State 地址与资源所有权；核对已有 `healthcare-omop` Workspace GUID、旧 Root State 与 Self-Runner 依赖；不重复历史全量清理。**源码与历史 Key 边界已核对；真实 Backend State/Workspace GUID 尚未从云端读回，留在 3.1 前继续核对。**
 - [x] 2.2 复用 `modules/workspace`、`modules/onelake` 及 IAM；按 Provider 实际 Schema 实现可复用 `modules/connection`，不因名称调整而无故迁移资源地址。
 - [x] 2.3 创建 `components/fabric-environment` 组合 Root：非 default Terraform CLI Workspace 直接作为 Fabric Workspace 名称；同账号多 Workspace；共享 Backend 的各 Workspace State 隔离；输出 Workspace/Lakehouse/Connection ID；无账号切换代码。
 - [x] 2.4 必要的 `fmt/init -backend=false/validate`、Modules/Outputs、Workspace 命名与 State 隔离测试；部分资源操作不能使其他已管理资源被销毁；同步 CODE.md 和 CI。
@@ -26,6 +26,9 @@
 ## 4. Clean superseded scaffolds first (completed 2026-10-20)
 
 - [x] 4.1 按用户授权删除从未真实部署的新 `bootstrap/`、`tests/`、`tools/`、`new-environments/` 等旧实验目录、无效 CI；不动远端 State/云端资源。
-- [x] 4.2 Healthcare [PR #335](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/335) 合并、12/12 CI PASS；Self-Runner [PR #169](https://github.com/JohnZhang-DataForge/Self-Runner/pull/169) 合并。原七个 Root/Modules 和 `azure-infra.yaml` 保留。
+- [x] 4.2 Healthcare [PR #335](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/335) 合并、12/12 CI PASS；Self-Runner [PR #169](https://github.com/JohnZhang-DataForge/Self-Runner/pull/169) 合并。原七个 Root/Modules 当时保留，后续按 Task 4.3 清理；`azure-infra.yaml` 继续作为唯一 Workflow。
 
-**Status**：部署就绪修订正在实施：正式 `healthcare-omop.tfvars` 与 Runner 工作流接管/只读检查模式同步修正；实际 Workspace GUID/Capacity/Blob Reader/OIDC 与 Remote State 仍需真实核对。2.2–2.4 **源码/静态验收完成**：新组合 Root、Connection Module、输出、默认 Workspace/既有 Workspace 防误部署检查、独立 Provider Init/Validate 和 4 项源码合同测试均由 PR #340 验证；七个历史 Root 保持原行为。2.1 的真实 Backend State / `healthcare-omop` GUID 盘点仍未完成；3.1–3.4 的真实认证、State 归属、Import、Plan/Apply、Landing 与 E2E 均未执行。不把静态 PASS 作为真实资源验收。
+- [x] 4.3 当前单 Root 方案源代码收口：删除原七个独立 Component Roots、五组闲置 Modules 和旧 `dev.tfvars`、过时 `.tfvars.example`；仅保留 `fabric-environment` 以及 `workspace/onelake/connection` Modules；更新 CI、CODE/README/ARCHITECTURE。历史源码可按删除前 Commit 查看，远端 State 与云端资源未修改。
+- [x] 4.4 组合 Root 通用 Workspace 名称能力（源码）：已有 `healthcare-omop` 需要显式 Import，新输入名称使用默认变量或相应非秘密 tfvars 创建同名 Fabric Workspace；Self-Runner Workflow 统一单 Root，不暴露旧 Component 或 dev 环境选择；运行效果留待 3.x 实测。
+
+**Status**：部署源码已收敛到单 Root，尚未真实部署：正式 `healthcare-omop.tfvars` 与 Runner 工作流接管/只读检查模式同步修正；实际 Workspace GUID/Capacity/Blob Reader/OIDC 与 Remote State 仍需真实核对。2.2–2.4 **源码/静态验收完成**：新组合 Root、Connection Module、输出、默认 Workspace/既有 Workspace 防误部署检查、独立 Provider Init/Validate 和 4 项源码合同测试均由 PR #340 验证；七个历史 Root 已退役并从当前源码删除（旧 State 未改）。2.1 的真实 Backend State / `healthcare-omop` GUID 盘点仍未完成；3.1–3.4 的真实认证、State 归属、Import、Plan/Apply、Landing 与 E2E 均未执行。不把静态 PASS 作为真实资源验收。
