@@ -7,10 +7,10 @@ variable "connection" {
     reader_type          = string
     allow_user_code      = optional(bool, false)
     service_principal = optional(object({
-      client_id               = string
-      tenant_id               = string
-      key_vault_connection_id = string
-      key_vault_secret_name   = string
+      client_id                = string
+      tenant_id                = string
+      key_vault_connection_id  = string
+      key_vault_secret_name    = string
       key_vault_secret_version = optional(string)
     }))
   })
