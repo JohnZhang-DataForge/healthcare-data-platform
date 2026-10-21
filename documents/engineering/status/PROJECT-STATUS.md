@@ -19,6 +19,8 @@ source_sha: c4991d8fe1d4b6b9e65e024c2217f6c140eb17ed
 
 **2026-10-20 Fabric Terraform 新实施与真实 Plan 证据**：Workspace、OneLake、Shared Storage 独立 Terraform Roots 及静态跨 Root CI 已开发合并；正式 Self-Runner Workflow 已从旧 `components/` 切换到新目录（参见 [权威 OpenSpec Change](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)）。[Shared Storage 真实 Plan Run #39538288616](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538288616) **SUCCESS**：OIDC、AzureRM Backend、Existing OMOP/johnzhang Azure 资源读取 PASS；未执行 Apply/Destroy。[Workspace Plan Run #39538646279](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538646279) 在 `FABRIC_CAPACITY_ID` 未配置的预检阶段 **FAIL/BLOCKED**，没有访问 Fabric 或执行 Terraform；新的 Fabric Workspace/Lakehouse 尚未创建，具名 State 隔离仍待验证。此前 `simplify-fabric-environment-iac` 等历史指针不再是当前实施 NEXT。
 
+> **Fabric 最新事实覆盖旧阶段描述（2026-10-21）**：免费 Trial F4 Workspace `johnzhang-test`（ID `d399f361-bc40-4f88-9615-df138ab8ee3b`）与 Lakehouse `lh_johnzhang_test`（ID `5a16b5a1-6274-4b37-8dad-19cb68b5139d`）已经由独立 Terraform Roots **真实 Apply 且二次 Plan 无漂移**，证据 [Self-Runner #39635155333 Attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39635155333)；Capacity 复用免费 Trial F4（没有创建收费 F2）。因此，本页后文旧的 Fabric `NO APPLY`、`尚未创建` 及旧架构指针均为**历史记录，不能作为当前状态**。新增 `shared-infra/connection` 源码经 [PR #372](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/372) 合并，其默认禁用、只有静态验收；Notebook/Pipeline Git-native Smoke 源码正在按 [OpenSpec](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md) 开发，**尚未云端发布/运行**。下一步：Connection Reader 元数据/RBAC、`fabric-cicd` 独占部署、无数据写入 Smoke，然后才是 PG→Blob→OneLake 业务 E2E。
+
 ## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |

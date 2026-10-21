@@ -11,6 +11,13 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 当前 `ingestion/` 只有 `.gitkeep` 占位文件，**尚无真实 Notebook Item 源码**；此处的“未实现”不包括基础设施下现存的 Bootstrap。
 
+
+**2026-10-21：**新增 `johnzhang-test` Trial Smoke 原生 Notebook 源码（Git 中已存在，**未通过 fabric-cicd 云端发布**）。`healthcare-omop` 目录仍只有历史占位项。
+
+- [`nb_trial_smoke.Notebook/.platform`](../../../../azure-fabric/workspaces/johnzhang-test/notebooks/nb_trial_smoke.Notebook/.platform) — 稳定 logicalId / Notebook Item 身份。
+- [`nb_trial_smoke.Notebook/notebook-content.py`](../../../../azure-fabric/workspaces/johnzhang-test/notebooks/nb_trial_smoke.Notebook/notebook-content.py) — PySpark 无数据写入 Smoke，只有日志 PASS，不调用 Azure Blob 或 Delta。
+- [工作空间级源码说明](../../../../azure-fabric/workspaces/johnzhang-test/README.md) · [静态测试](../../../../.github/quality/tests/test_fabric_native_smoke_source.py)。
+
 ## 实际拥有的 Fabric 原生源码文件
 
 | 原生源码文件 | 功能 |
