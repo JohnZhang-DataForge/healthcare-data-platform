@@ -23,14 +23,18 @@
 
 任务 2.4/2.5 的最小必要范围：仅 Shared Storage lookup Root（其它 Shared 资源不构成本次前置）与静态跨 Root 合同；[PR #352](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/352) 负责源码与独立 CI，不代表真实 Azure 读回、State 隔离实测或 Fabric 部署完成。
 
-## 3. Switch workflows without migrating old source/state (not started)
+## 3. Switch workflows without migrating old source/state (partially complete)
 
-- [ ] 3.1 修改 Self-Runner Azure/Fabric 工作流：从 `fabric-workspace/<name>/<type>/` 执行 `plan|apply`，校验 Workspace/资源目录输入，记录源码 SHA、独立 State Key、Plan 和 Outputs，不提供 Apply-All。
-- [ ] 3.2 为 `shared-infra/<type>/` 配置适当的独立 Workflow；不把账户/租户级资源绑定 Fabric Workspace 名称。
-- [ ] 3.3 停止新 Workflow 对旧 `components/`、`components/fabric-environment/`、旧 Notebook/Pipeline Root 的路由；旧 Git 源码、旧 State 保留且不迁移，后续如需删除旧源码另行审批。
+- [x] 3.1 修改 Self-Runner Azure/Fabric 工作流：从 `fabric-workspace/<name>/<type>/` 执行 `plan|apply`，校验 Workspace/资源目录输入，记录源码 SHA、独立 State Key、Plan 和 Outputs，不提供 Apply-All。
+- [x] 3.2 为 `shared-infra/<type>/` 配置适当的独立 Workflow；不把账户/租户级资源绑定 Fabric Workspace 名称。
+- [x] 3.3 停止新 Workflow 对旧 `components/`、`components/fabric-environment/`、旧 Notebook/Pipeline Root 的路由；旧 Git 源码、旧 State 保留且不迁移，后续如需删除旧源码另行审批。
+> Tasks 3.1–3.3 源码及运行证据：Self-Runner [PR #177](https://github.com/JohnZhang-DataForge/Self-Runner/pull/177) 合并 Main `b9a343a12ae2c50a53e2f0e4a52ba99a75970aca`，静态 [Run #39538140248](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538140248) PASS，正式 Workflow 不再路由 `components/` 或旧 Notebook/Pipeline；Shared Infra 独立 Workflow。Plan-only [PR #178](https://github.com/JohnZhang-DataForge/Self-Runner/pull/178) 触发的真实 Storage [Run #39538288616](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538288616) SUCCESS：OIDC、AzureRM Backend、现有 OMOP Resource Group / johnzhang Storage 读回、Plan PASS；Apply/Destroy 未执行。Workspace [PR #179](https://github.com/JohnZhang-DataForge/Self-Runner/pull/179) 的 [Run #39538646279](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538646279) 在 Runner 缺少 `FABRIC_CAPACITY_ID` 时预检 FAIL（退出码 4），没有运行 Terraform init/Plan，也没有修改 Workspace State 或云端资源。
+
 - [ ] 3.4 为 `fabric-cicd` 明确 Notebook/Pipeline 的独占创建、更新、删除、发布接口及所需 Workspace/Lakehouse IDs，不再由 Terraform 同时管理相同 Items。
 
-## 4. Live validation and return to data-platform work (not started)
+## 4. Live validation and return to data-platform work (partial; no Fabric Apply)
+
+> Task 4.1 保持未完成：Shared Storage 的 default State/Backend 已经真实可用，但具名 `healthcare-omop` CLI Workspace 的 State 隔离、实际 Capacity GUID 和 Fabric Plan 尚未通过真实验证；先补齐 Runner `FABRIC_CAPACITY_ID` 才能进行下一次受控 Plan。不要推断现有 Workspace/Capacity GUID，更不能把 Plan 当成 Apply。
 
 - [ ] 4.1 以具备实际 Fabric/Backend/Capacity/Blob 权限的当前部署身份，真实验证 Backend 与 Terraform CLI Workspace 的 State 隔离；确认 Capacity 可用且不会新增未经授权的持续费用。
 - [ ] 4.2 在用户可控的全新/已手工清理同名资源环境，逐项 `workspace`、`onelake`、按需 `warehouse` Plan/Apply，读回真实 Fabric IDs，重复 Plan 验证无漂移。
