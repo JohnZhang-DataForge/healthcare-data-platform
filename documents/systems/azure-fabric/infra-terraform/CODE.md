@@ -20,6 +20,12 @@ source_sha: null
 - [Shared Infra Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra-shared.yaml)：独立 `shared-infra/storage/`；[真实 Storage Plan Run #39538288616](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39538288616) SUCCESS，OIDC/Backend/已有资源查询 PASS，未 Apply/Destroy。
 - **Root/Module 关系**：每个 `components/<name>/modules.tf` 调用 `../../modules/<name>`，Root 保存 `versions.tf`、`providers.tf`、`variables.tf`、`outputs.tf`、`iam.tf` 和 `environments/dev.tfvars`。每个 Root 远程 State key 独立为 `dev/<component>.tfstate`。
 
+## Shared account-level Connection — 2026-10-21 (source/static only)
+
+- [`shared-infra/connection/main.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/main.tf) calls existing [`modules/connection`](../../../../azure-fabric/infra-terraform/modules/connection/main.tf) with `connection=null` by default; no resource is created unless separately approved.
+- [`versions.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/versions.tf) owns independent `shared-infra/connection.tfstate`; [`variables.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/variables.tf), [`providers.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/providers.tf), [`outputs.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/outputs.tf), [`terraform.tfvars`](../../../../azure-fabric/infra-terraform/shared-infra/connection/terraform.tfvars) and [`README.md`](../../../../azure-fabric/infra-terraform/shared-infra/connection/README.md) document the fail-closed optional component.
+- [`test_fabric_shared_connection_contract.py`](../../../../.github/quality/tests/test_fabric_shared_connection_contract.py) checks independent State, Module-first ownership, disabled default, no paid Capacity/Notebook/Pipeline. [OpenSpec](../../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md). **This does not prove a live Connection was created or an Azure Blob Reader was granted.**
+
 ## 新 Workspace-scoped Terraform Root（Task 2.1）
 
 - [`healthcare-omop/workspace/main.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/main.tf)：直接调用 [`modules/workspace`](../../../../azure-fabric/infra-terraform/modules/workspace/main.tf)，从 Git 父目录获得 Workspace display_name。

@@ -14,6 +14,7 @@ on:
       - '.github/quality/tests/test_fabric_cross_root_contract.py'
       - '.github/quality/tests/test_fabric_capacity_lifecycle.py'
       - '.github/quality/tests/test_fabric_paid_capacity_e2e.py'
+      - '.github/quality/tests/test_fabric_shared_connection_contract.py'
   workflow_dispatch:
 
 permissions:
@@ -267,3 +268,36 @@ jobs:
           terraform -chdir="$root" validate -no-color
           python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_paid_capacity_e2e.py' -v
           echo "REMOTE_BACKEND_USED=NO PAID_CAPACITY_CREATED=NO"
+
+  validate-fabric-shared-connection:
+    name: "terraform validate / shared-infra / connection"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TF_INPUT: '0'
+      TF_IN_AUTOMATION: 'true'
+      ROOT: azure-fabric/infra-terraform/shared-infra/connection
+      MODULE: azure-fabric/infra-terraform/modules/connection
+    steps:
+      - name: Checkout reviewed source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.13.5'
+          terraform_wrapper: false
+      - name: Validate disabled shared Connection without remote Backend or Cloud writes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "#### FABRIC_SHARED_CONNECTION_STATIC_OUTPUT_BEGIN ####"
+          terraform -chdir="$ROOT" fmt -check -diff
+          terraform -chdir="$MODULE" fmt -check -diff
+          terraform -chdir="$ROOT" init -backend=false -input=false -no-color
+          TF_WORKSPACE=default terraform -chdir="$ROOT" validate -no-color
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_shared_connection_contract.py' -v
+          echo "CONNECTION_ENABLED=NO REMOTE_BACKEND_USED=NO"
+          echo "FABRIC_PLAN_APPLY=NO PAID_CAPACITY_CREATED=NO"
+          echo "#### FABRIC_SHARED_CONNECTION_STATIC_OUTPUT_END ####"
