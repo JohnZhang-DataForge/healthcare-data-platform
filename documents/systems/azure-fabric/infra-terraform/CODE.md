@@ -154,3 +154,8 @@ source_sha: null
 - 运行时从 Self-Runner 仓库变量传入 `FABRIC_CAPACITY_ID`（必须是当前真实分配的容量）和 `FABRIC_WORKSPACE_ID`（必须是已存在 Workspace 的真实 GUID）；可选 `FABRIC_LANDING_CONNECTION_CONFIG` 为非秘密 Connection JSON 元数据，凭据仍不得入 Git。
 - Self-Runner 正式 `azure-infra.yaml` 输入是 `workspace_name`、`resource_type`、`operation`，只选择新 Root 与新 State。Workspace 真实 Plan 需要 Runner 预先配置当前已有 Capacity 的 GUID（`FABRIC_CAPACITY_ID`），2026-10-20 首次预检因该变量为空而阻断。
 - 实际的 Terraform Workspace State、Import、Connection/Capacity/权限都需要真实授权验证；本节仅是源码导航与配置合同。
+
+## Blob Connection read-only discovery — 2026-10-21
+
+- [`connection_readiness.py`](../../../../azure-fabric/infra-terraform/shared-infra/connection/connection_readiness.py) — GitHub OIDC based, strictly read-only Fabric supported-connector and existing-connection inventory, Azure subscription tenant/Storage/IAM metadata check. It never provisions or accesses Terraform remote state; user identity, Blob Reader access, notebook and ETL remain unverified pending live run.
+- [`test_fabric_connection_readiness.py`](../../../../.github/quality/tests/test_fabric_connection_readiness.py) — offline positive/negative discovery logic tests. Live entry: Self-Runner [`azure-infra-shared.yaml`](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra-shared.yaml) (`connection`/`inspect` planned), SHA-pinned, no Apply. Existing Storage settings remain in the Storage Root instance `terraform.tfvars`; shared Connection Root does not hard-code the account.

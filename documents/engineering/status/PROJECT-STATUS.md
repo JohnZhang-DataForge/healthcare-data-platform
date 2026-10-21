@@ -21,6 +21,9 @@ source_sha: 3b94af541f3904a731622e51eece027bef4b818c
 
 > **Fabric 当前事实（2026-10-21）**：免费 Trial F4 Workspace `johnzhang-test`（ID `d399f361-bc40-4f88-9615-df138ab8ee3b`）和 Lakehouse `lh_johnzhang_test`（ID `5a16b5a1-6274-4b37-8dad-19cb68b5139d`）由独立 Terraform Roots **实际 Apply、二次 Plan 无漂移**，证据 [Self-Runner #39635155333 Attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39635155333)；复用免费 Trial F4，没有创建收费 F2。[PR #372](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/372) Connection Root（默认禁用）、[PR #374](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/374) 原生 Notebook/Pipeline Smoke 源码、[PR #375](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/375) 受控 `fabric-cicd` Publisher **均已合并 Main 且属于源码/静态完成**；Self-Runner Trial-only Publisher Workflow [PR #204](https://github.com/JohnZhang-DataForge/Self-Runner/pull/204) 已合并。**Connection 真实授权/Apply，Fabric Notebook/Pipeline 云端发布、Smoke 和 PG→Blob→OneLake 业务 E2E 仍未验收**；切勿把 Git Native 源码存在视为已经部署。权威下一步：[Fabric Items Change](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md)。
 
+
+> **2026-10-21 Fabric Storage 接入核查（证据边界）**：用户提供新的 healthcare-omop Terraform Apply 日志：Workspace ID `745ce03b-15b6-4870-b0e5-8c5750aa18dc`、Admin Role Assignment 完成、未 Destroy，复用既有免费 Trial F4；用户报告 Lakehouse `lh_omop_analytics` 已创建。此交接尚未含独立的 OneLake GUID/完整 Run ID/两个 Root 后续零漂移 Plan，需补读真实 Outputs 才算最终关闭基础设施 Task 5.4。当前 Fabric Connection `connection=null` 尚未 Apply；新增只读 OIDC Tenant/Connector/RBAC/Connection inventory 检查代码，实际运行尚未验证。Blob Reader、Notebook、Lakehouse 数据写入继续待办；不得把新代码静态验证视为 Blob E2E。
+
 ## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |

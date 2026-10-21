@@ -15,6 +15,7 @@ on:
       - '.github/quality/tests/test_fabric_capacity_lifecycle.py'
       - '.github/quality/tests/test_fabric_paid_capacity_e2e.py'
       - '.github/quality/tests/test_fabric_shared_connection_contract.py'
+      - '.github/quality/tests/test_fabric_connection_readiness.py'
   workflow_dispatch:
 
 permissions:
@@ -298,6 +299,7 @@ jobs:
           terraform -chdir="$ROOT" init -backend=false -input=false -no-color
           TF_WORKSPACE=default terraform -chdir="$ROOT" validate -no-color
           python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_shared_connection_contract.py' -v
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_connection_readiness.py' -v
           echo "CONNECTION_ENABLED=NO REMOTE_BACKEND_USED=NO"
           echo "FABRIC_PLAN_APPLY=NO PAID_CAPACITY_CREATED=NO"
           echo "#### FABRIC_SHARED_CONNECTION_STATIC_OUTPUT_END ####"
