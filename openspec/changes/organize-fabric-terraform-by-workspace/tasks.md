@@ -7,7 +7,7 @@
 - [x] 1.1 核对最新 Main 的 `components/`、`modules/`、`fabric-environment/`、旧 OpenSpec/架构和 Self-Runner 关联；旧源码仅记为现状，不再迁移。
 - [x] 1.2 将用户批准的两个顶层部署目录、Workspace 同名约定、每种资源独立 Root/State、Workspace ID Remote State Output、Notebook/Pipeline 全归 `fabric-cicd` 和无 Apply-All 固化为 Proposal、Design、Delta Spec。
 - [x] 1.3 更新长期架构、导航及历史 Change 的失效说明，明确文档目标与目前实际代码不同；本轮没有任何云端变更。
-- [ ] 1.4 PR 完成 OpenSpec/Change Gate/Links CI 并合并 Main，登记真实 PR 及最终 Commit；此项只能有合并证据后勾选。
+- [x] 1.4 文档 [PR #347](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/347) 的 OpenSpec Strict Validation / OpenSpec Change Gate / Trusted Gate / Documentation Links / Code Paths **5/5 PASS**，已合并 Main `4706c1996e8f84e83bb5786f42e9804ceb5d67ac`；合并后核对仅涉及 `documents/` 和 `openspec/` 13 个文件。未执行 Terraform/Workflow/State/云端操作。
 
 ## 2. Build new workspace-scoped source (not started)
 
