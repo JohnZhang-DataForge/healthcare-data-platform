@@ -57,6 +57,7 @@ class WriterBranchGates(unittest.TestCase):
             "ready_batches_preview":[{"batch_id":batch,"manifest_uri":uri,
             "manifest_sha256":p["manifest_sha256"],"source":"synthea",
             "source_version":"v3.3.0","file_count":18,"status":"INTAKE_VERIFIED"}]}
+        inventory["verified_selected_batch"]=inventory["ready_batches_preview"][0].copy()
         conf={"consumer_readonly":True,"batch_id":batch,"manifest_uri":uri,
               "manifest_sha256":p["manifest_sha256"]}
         for extras,accepted in (({},False),({"spark_processing":True},False),
