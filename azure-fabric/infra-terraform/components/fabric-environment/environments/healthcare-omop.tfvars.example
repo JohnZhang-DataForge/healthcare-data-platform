@@ -1,0 +1,21 @@
+# TEMPLATE ONLY: the existing healthcare-omop Workspace is NOT imported yet.
+# Select 'healthcare-omop' using terraform workspace; do not deploy 'default'.
+# The capacity must be checked against the actual existing Fabric Workspace.
+description = "Healthcare OMOP analytical platform"
+capacity_id = ""
+lakehouse_name = "lh_omop_analytics"
+role_assignments = {}
+data_access_roles = {}
+
+# Change to true only after inspecting old State ownership and explicitly
+# importing the existing healthcare-omop Workspace to this composition State.
+existing_workspace_imported = false
+
+# Enable after selecting a supported, pre-authorized Blob Reader method.
+# Fabric Workspace Identity needs compatible cross-tenant/storage access.
+# connection = {
+#   name                 = "healthcare-omop-landing"
+#   storage_account_name = "johnzhang"
+#   blob_domain          = "blob.core.windows.net"
+#   reader_type          = "WorkspaceIdentity"
+# }
