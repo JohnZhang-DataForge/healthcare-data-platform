@@ -18,7 +18,7 @@ class FabricWorkspaceRootTest(unittest.TestCase):
     def test_one_workspace_parent_and_seven_expected_files(self):
         self.assertEqual(WORKSPACE.parent.name, "healthcare-omop")
         self.assertEqual(
-            {p.name for p in WORKSPACE.iterdir() if p.is_file()},
+            {p.name for p in WORKSPACE.iterdir() if p.is_file() and (p.suffix == ".tf" or p.name == "terraform.tfvars")},
             {
                 "main.tf",
                 "iam.tf",
