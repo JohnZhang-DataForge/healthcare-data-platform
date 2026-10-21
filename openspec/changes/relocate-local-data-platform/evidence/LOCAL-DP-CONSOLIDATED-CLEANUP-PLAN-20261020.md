@@ -1,6 +1,20 @@
 # Local Data Platform 历史代码一次性集中清理方案（2026-10-20）
 
-> Change: `relocate-local-data-platform` · Tasks 4.1 / 4.7 / 4.8 / 4.9 / 4.10 / 5 · **DESIGN APPROVED FOR IMPLEMENTATION, NOT EXECUTED**。本文件是实施合同，不是已完成 E2E、删除批准清单或 Archive 证明。用于覆盖此前每 2–6 个文件一批的低效**实施粒度**；不覆盖 A/B/E 安全保护、恢复门、合并 Gate、行为不变性。
+> Change: `relocate-local-data-platform` · Tasks 4.1 / 4.7 / 4.8 / 4.9 / 4.10 / 5 · **2026-10-20 原九文件集中清理 PR #332 已合并；2026-10-21 新一轮一次性 C/D 清理尚未实施**。下文原始 2026-10-20 冻结数字、证据和阶段性判定作为历史保留；现在执行依据为紧接着的 2026-10-21 更新与 [OpenSpec 4C](../tasks.md)。
+
+## 2026-10-21 当前权威覆盖：已通过 E2E 与下一轮一次性清理/强业务测试
+
+**现实核对**：当前 Healthcare Main `3b94af541f3904a731622e51eece027bef4b818c`、Self-Runner Main `29094515eeb84f79a89c34061e55becd96e7d9ad`；Local DP **363 tracked 文件、90 Shell、TASK003 60 Shell、107 Tests**（未截断 Git Tree）。[PR #332](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/332) 已合并删除原 26 候选中的 9 个一次性安装器，当前 19/19 正式产物和 17/17 HOLD 完整保留。旧 371、69、26 是本文件建立时的历史快照，不是现况。清理后真实随机 E2E 原始 FAIL/FAIL/PASS 记录不得改写；后续 Native Race/多 Parquet/Selector 缺陷修复分别有证据。
+
+**新的业务通过证据**：[Run #39653021301](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39653021301) 验证旧 Batch 02/03 真正 COMMIT；[最终回归 #39679393354](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39679393354) 旧 02/03 SKIP、零 PG 变化，且独立生成全新 Batch 100 Person/15,326 Visit，PG Person 694→794、Visit 96,133→111,459，S3 READY/Writer COMMIT/PG Readback/同 Batch SKIP 全部 PASS。该 Run 测试的 Healthcare SHA `bfc843d5cbc5471ca31fbe7bd31d3cd0dbfb7b9f`，至上述新 Main 无 Local DP 差异。
+
+**用户决定及最小实施边界**：
+1. 复用过去两仓 818 个源/配置输入审计、固定 Git 恢复快照，只对当前 SHA 做**一次批量增量消费者/生成器/构建/安全恢复检查**；形成单一显式 C/D DELETE allowlist，**不逐个脚本做真实运行验证**。有真实独立安全、Writer/Fencing、人工恢复、仍需的 Regression/Contract 或动态依赖不确定均 A/B/E KEEP/HOLD，不因某个 NEW_ONLY 正常路径 PASS 就删。
+2. **一个 PR 一次性删除所有合格 C/D**，同步 CODE.md/导航、负向依赖断言与不可变历史恢复链接。最终 PR HEAD 的 Docs/OpenSpec/Unit/Contract/DagBag、Native Race/多 Parquet/Discovery Selection 正反回归以及 **8/8 镜像 Clean Build、镜像内 Import/Entrypoint/来源/Digest** 全部 PASS 后才先 Merge Main；编译/构建结果不冒充业务结果。
+3. **合并后进行强 E2E**：核对 Scheduler、DAG Processor GitSync 与新 Main 的对应关系及 Pod 真实 imageID。按串行生成、运行**至少三个独立随机 Synthea 新 Batch**，每个从 18 CSV、S3 READY/Manifest/零源键冲突→Airflow exact selection→Spark Person/Visit/Reconciliation→Writer Atomic COMMIT→独立 PG Person/Visit 增量、Claim/Ledger/Stage/ID Map/Checkpoint/FK→重复 SKIP 且 PG 零变化。再运行至少 **两个已 COMPLETED Batch**，验证 Airflow 无重播、Spark/Writer `skipped`、PG 零变化。若随机数据不命中 native/多 Parquet/Discovery 旧预览界限，必须额外依靠专项正反 Contract 测试，不虚构命中。
+4. 任一构建/数据写入失败或 Writer COMMIT UNKNOWN 时停止后续新写入和 GHCR 旧版本删除，独立读回 PG/S3 和原始日志分析来源；修复或 Git revert 源码删除前不继续验收。**Git revert 不会自动回滚 PG/S3**。全部 3 新 + 2 旧测试实际 PASS 后才能处理 4.11.6 GHCR 消费者/回退 Digest 审查和最终 OpenSpec 5.x 归档。
+
+> 本段覆盖下文“Design 尚未执行”“合并后 E2E 未做”“分批删 2–6 个”的**当前实施含义**，而不删除这些曾经真实存在的阶段记录；2026-10-21 文档 PR 本身尚未运行新一轮源码清理/构建/业务 E2E。
 
 ## 1. 决策和当前事实
 
