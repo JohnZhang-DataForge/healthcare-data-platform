@@ -1,6 +1,7 @@
-# Digest-pinned proven read-only CDM runtime; add only the Task004
+# Rebuilt CDM parent runtime; add only the Task004
 # NEW_ONLY atomic Writer modules and a narrowly scoped entrypoint.
-FROM ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-cdm-runtime@sha256:94979587aeee2f2ea13e2c27ffc5a8850b97381f3f126c72201fe2b2b3086f5e
+ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-cdm-runtime:latest
+FROM ${BASE_IMAGE}
 USER root
 WORKDIR /opt/task004
 COPY --chown=10001:10001 airflow/dags/new_only_omop_writer_handoff.py airflow/dags/new_only_omop_routing.py /opt/task004/
