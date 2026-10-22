@@ -62,3 +62,10 @@
 - [已核查 Read-only Run #39694852934](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39694852934) 表明本次部署配置 Storage/Fabric Tenant 相同，AzureBlobs 支持 WorkspaceIdentity 的 user-controlled-code 使用，现有匹配 Connection 名称列表为空。Storage account scope 有 2 项角色分配但尚未独立核准具体 Reader principal，**不可据此声明 Azure Blob 权限已生效**。
 - 沿 Task 2.2 增补 `modules/workspace` 可选 `SystemAssigned` Identity，默认关闭；只在 `fabric-workspace/healthcare-omop/workspace/terraform.tfvars` 启用，输出后续 RBAC 所需 Service Principal Object ID。不触碰 `johnzhang-test`，不创建/升级/购买 Capacity。
 - 该代码批次需先独立 PR/CI；合并后仅运行明确授权的 `healthcare-omop/workspace` Terraform Plan，核对原地 Update / 无 Delete/Replace 和当前 State ID 读取。**Plan 不等于 Apply**；Identity Apply 和 Storage Blob Data Reader 授权必须由独立安全检查及审批后执行。Task 2.2、2.3、3.3 保持未完成，直到真实 Connection/Notebook Blob read evidence 到位。
+
+## 2026-10-21 — Workspace Identity real Plan evidence (NO APPLY)
+
+- Healthcare PR #388 merged after 21/21 CI PASS: Main 5114dacff0318167582c0f08eb8fec6a8f453cdc. Module identity defaults disabled, only healthcare-omop opts in. johnzhang-test and Trial F4 untouched.
+- Self-Runner PR #214 merged as 46b87fd9b6be0820dfb989f920df34cbd6339107. Plan-only Run https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39698376237 SUCCESS. Reviewed Healthcare SHA pinned. Existing workspace state refreshed: 745ce03b-15b6-4870-b0e5-8c5750aa18dc; portal Admin role also refreshed.
+- Terraform Plan: 0 to add, 1 to change, 0 to destroy. Only resource module.workspace.fabric_workspace.current will update in-place (identity SystemAssigned); workspace_identity_principal_id remains known after apply. FABRIC_APPLY_EXECUTED=NO and DESTROY_EXECUTED=NO.
+- No identity exists from this operation, Blob RBAC remains ungranted/unverified, no Fabric Connection/Notebook/data E2E. Next: obtain separate authorization for healthcare-omop Workspace identity Apply and Object ID readback; plan/grant Storage Blob Data Reader on existing landing scope through reviewed storage Terraform; configure Connection and verify Notebook read. Keep Tasks 2.2, 2.3, 3.3, 4.2 unchecked.
