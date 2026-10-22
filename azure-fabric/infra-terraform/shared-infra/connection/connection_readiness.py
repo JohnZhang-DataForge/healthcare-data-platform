@@ -167,7 +167,37 @@ def summarize_scope_role_assignments(items):
     return sorted(results, key=lambda r: (r["principal_id"], r["role_definition_id"], r["scope"]))
 
 
-def inspect(subscription, group, account, workspace_name=None, landing_container=None):
+
+def verify_exact_connection(connection_id, account, token):
+    """Read one Fabric Connection by ID, not list entries that omit details."""
+    if not connection_id or not all(c in "0123456789abcdef-" for c in connection_id.lower()):
+        raise RuntimeError("Invalid expected Fabric Connection ID")
+    base = "https://api.fabric.microsoft.com/v1/connections/"
+    item = json_request(base + quote(connection_id, safe=""), bearer=token)
+    if item.get("id", "").lower() != connection_id.lower():
+        raise RuntimeError("Fabric Connection GET returned mismatched ID")
+    if item.get("displayName") != "healthcare-omop-landing-blob":
+        raise RuntimeError("Unexpected Fabric Connection display name")
+    details = item.get("connectionDetails") or {}
+    if details.get("type") != "AzureBlobs":
+        raise RuntimeError("Fabric Connection type is not AzureBlobs")
+    params = details.get("parameters") or []
+    if not isinstance(params, list):
+        raise RuntimeError("Fabric Connection parameters are not a list")
+    values = {p.get("name"): p.get("value") for p in params if isinstance(p, dict)}
+    if values.get("account") != account or values.get("domain") != "blob.core.windows.net":
+        raise RuntimeError("Fabric Connection account/domain did not match")
+    # No credentialDetails printed. Even if GET omits them, do not infer auth
+    # or successful data access from the connection's existence alone.
+    print("EXACT_FABRIC_CONNECTION_ID=" + connection_id)
+    print("EXACT_FABRIC_CONNECTION_NAME=" + item["displayName"])
+    print("EXACT_FABRIC_CONNECTION_TYPE=AzureBlobs")
+    print("EXACT_FABRIC_CONNECTION_ACCOUNT=" + account)
+    print("EXACT_FABRIC_CONNECTION_GET=PASS")
+    print("ACTUAL_BLOB_READ=NOT_TESTED")
+
+
+def inspect(subscription, group, account, workspace_name=None, landing_container=None, expected_connection_id=None):
     azure_tenant = require_env("ARM_TENANT_ID")
     fabric_tenant = require_env("FABRIC_TENANT_ID")
     azure_client = require_env("ARM_CLIENT_ID")
@@ -237,6 +267,8 @@ def inspect(subscription, group, account, workspace_name=None, landing_container
     connections = pages(base, fabric_token)
     names = storage_connection_names(connections, account)
     print("EXISTING_ACCOUNT_AZURE_BLOBS_CONNECTION_NAMES=" + json.dumps(names))
+    if expected_connection_id:
+        verify_exact_connection(expected_connection_id, account, fabric_token)
     print("FABRIC_CONNECTION_INVENTORY_COMPLETE=YES")
     print("FABRIC_CONNECTION_APPLIED=NO")
     print("AZURE_RBAC_CHANGED=NO")
@@ -252,9 +284,10 @@ def main():
     parser.add_argument("--storage-account", required=True)
     parser.add_argument("--workspace-name", required=False)
     parser.add_argument("--landing-container", required=False)
+    parser.add_argument("--expected-connection-id", required=False)
     args = parser.parse_args()
     try:
-        inspect(args.subscription, args.resource_group, args.storage_account, args.workspace_name, args.landing_container)
+        inspect(args.subscription, args.resource_group, args.storage_account, args.workspace_name, args.landing_container, args.expected_connection_id)
     except (RuntimeError, KeyError) as exc:
         print("READINESS_FAILURE=" + str(exc))
         print("STATUS=BLOCKED_NO_CLOUD_MUTATION")
