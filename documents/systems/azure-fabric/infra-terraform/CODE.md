@@ -164,3 +164,9 @@ source_sha: null
 
 - [`modules/workspace/main.tf`](../../../../azure-fabric/infra-terraform/modules/workspace/main.tf) 的 `identity` 配置为 **opt-in**，模块默认关闭；[`modules/workspace/outputs.tf`](../../../../azure-fabric/infra-terraform/modules/workspace/outputs.tf) 输出 Workspace Identity 的 Entra Service Principal **Object ID**（非 Application ID、并非密钥）。仅 [`healthcare-omop/workspace/terraform.tfvars`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/terraform.tfvars) 启用；`johnzhang-test` 不变。
 - [`healthcare-omop/workspace/outputs.tf`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/workspace/outputs.tf) 暴露 Object ID 以供后续现有 Storage `landing` Reader RBAC 单独使用；[`test_fabric_workspace_root.py`](../../../../.github/quality/tests/test_fabric_workspace_root.py) 审核默认隔离/Output/无付费资源。真实 Workspace Apply、RBAC、Connection/Notebook 使用须分别验收，源码与静态 CI 不构成云端证据。
+
+### 同租户 Landing Blob Reader — Workspace Identity 授权合同（2026-10-21）
+
+- 真实 Workspace Identity Apply 已在 Self-Runner [Run #39707407989](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39707407989) 成功（0 added / 1 changed / 0 destroyed），`workspace_identity_principal_id` 为 Entra **Object ID**，Workspace 未重建。
+- `shared-infra/storage/workspace_readers.tf` 使用 `terraform_remote_state` 从具名 CLI workspace `healthcare-omop` 的 Workspace Root Output 获取 Object ID，再将其加入既有 `modules/storage/iam.tf` 的 **`landing` 容器级** `Storage Blob Data Reader`；普通 `blob_role_assignments` 仍默认空，不接管 Portal 已有授权。可复用模块不包含 Workspace ID、容量创建或 Storage Account 创建。
+- 这只表示 Git 配置阶段；新的 Reader **未被 Azure RBAC 确认生效**。先做精确范围的现存角色盘点防重复，再执行 Shared Storage Root Plan，审查不含删除、替换/扩大授权，最后审批 Apply/验证。Fabric Connection/Notebook 独立验收，避免将 Terraform 数据源读取当作 Blob 文件权限验证。
