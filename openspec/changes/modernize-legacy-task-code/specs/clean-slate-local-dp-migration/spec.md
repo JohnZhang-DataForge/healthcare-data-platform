@@ -4,7 +4,7 @@
 
 ### Requirement: Maintained implementation identifiers follow component responsibilities
 
-After migration, active Local DP application modules, tests, Shell entry points, Docker image sources/packages, Kubernetes workload identities, Airflow DAG IDs, SQL business object names and automation consumers SHALL use functional component naming rather than implementation-phase identifiers `task001`–`task004` or `stepNNN`. Every active consumer in Healthcare and Self-Runner MUST reference the corresponding new identifier. Existing framework keys such as Airflow `task_id`, historic Git evidence and archived run logs SHALL remain valid and SHALL NOT be treated as forbidden legacy identifiers.
+After migration, active Local DP sources and runtime interfaces SHALL use functional component naming, not historical `task001`–`task004` or `stepNNN` stage identifiers. Active consumers in Healthcare and Self-Runner MUST use the corresponding new names. Airflow framework key `task_id` and archived historical evidence are explicitly excluded from this naming ban.
 
 #### Scenario: New image and DAG import only renamed modules
 
@@ -52,7 +52,7 @@ The system MUST ensure the old DAG/Writer and renamed DAG/Writer do not simultan
 
 ### Requirement: New E2E preserves current business and transaction semantics
 
-A newly generated unique Synthea Batch SHALL produce valid Landing Manifest and verified S3 payload, pass current exact-batch Airflow selection, Spark Person/Visit/reconciliation and atomic OMOP Writer, and be independently read back from the new business state. Repeating that same completed Batch MUST skip the Writer and cause zero database business-row changes. Existing immutable identity, Manifest SHA, failure guards, Native Race, Multi-Parquet, Claim and Fencing behavior MUST remain testable and must not be weakened by naming changes.
+Fresh Synthea Batches SHALL complete verified S3 Landing, exact-batch Airflow selection, Spark Person/Visit/reconciliation and atomic OMOP Writer COMMIT with independent readback. Replaying the same completed Batch MUST SKIP with zero business-row changes. Manifest identity, Writer Fencing, Claim guards, Native Race and multi-part Parquet semantics MUST remain protected.
 
 #### Scenario: Fresh batch commits and safely replays
 
@@ -68,7 +68,7 @@ A newly generated unique Synthea Batch SHALL produce valid Landing Manifest and 
 
 ### Requirement: Legacy business state retirement is scoped and conditional
 
-Legacy synthetic PostgreSQL business objects, old DAG metadata, S3 test objects, GitHub workflows, Kubernetes workload resources and GHCR packages MAY be removed only after new-state E2E acceptance, a fresh ownership/consumer audit and an exact deletion allowlist. The cleanup MUST NOT delete new business data, PostgreSQL instances, Airflow metadata database wholesale, SeaweedFS PVC/services, unrelated workloads, secrets, PG14/Marquez or Azure/Fabric/Portal resources. Historical Git/PR/Run evidence MUST remain retrievable.
+Legacy business resources MAY be deleted only after new-state E2E passes, active consumers are checked, and a per-resource allowlist is approved. Cleanup MUST NOT delete new data, shared infrastructure, Airflow Metadata DB wholesale, PG14/Marquez, unrelated workloads, secrets, PVC, or Azure/Fabric/Portal resources. Historical Git/PR/Run evidence MUST remain retrievable.
 
 #### Scenario: New system accepted and old state unused
 
