@@ -86,6 +86,26 @@ class ReadinessTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "missing required metadata"):
             module.summarize_scope_role_assignments([{"properties": {}}])
 
+    def test_exact_connection_get_proves_account_id_and_type_not_runtime_access(self):
+        from contextlib import redirect_stdout
+        from io import StringIO
+        connection_id = "92d67d9c-7a9d-4619-bcf3-2b48b5b93788"
+        source = {"id": connection_id, "displayName": "healthcare-omop-landing-blob",
+                  "connectionDetails": {"type": "AzureBlobs", "parameters": [
+                      {"name": "account", "value": "johnzhang"},
+                      {"name": "domain", "value": "blob.core.windows.net"}]},
+                  "credentialDetails": {"secret": "DO-NOT-PRINT"}}
+        output = StringIO()
+        with patch.object(module, "json_request", return_value=source) as get, redirect_stdout(output):
+            module.verify_exact_connection(connection_id, "johnzhang", "token")
+        self.assertEqual(get.call_count, 1)
+        self.assertIn("EXACT_FABRIC_CONNECTION_GET=PASS", output.getvalue())
+        self.assertIn("ACTUAL_BLOB_READ=NOT_TESTED", output.getvalue())
+        self.assertNotIn("DO-NOT-PRINT", output.getvalue())
+        with patch.object(module, "json_request", return_value=source):
+            with self.assertRaisesRegex(RuntimeError, "account/domain did not match"):
+                module.verify_exact_connection(connection_id, "other", "token")
+
     def test_oidc_fail_closed_without_actions_context(self):
         with patch.dict("os.environ", {}, clear=True):
             with self.assertRaisesRegex(RuntimeError, "ACTIONS_ID_TOKEN_REQUEST_URL"):
