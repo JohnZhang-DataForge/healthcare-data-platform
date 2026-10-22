@@ -19,9 +19,11 @@ resource "fabric_connection" "current" {
   credential_details = {
     credential_type     = var.reader_credential_type
     single_sign_on_type = "None"
-    # Fabric does not support test-connection for WorkspaceIdentity credentials.
-    # Verify data access with a separate real Notebook/Pipeline Blob read.
-    skip_test_connection = var.reader_credential_type == "WorkspaceIdentity"
+    # Fabric Provider 1.13.0 rejects skip_test_connection=true for
+    # WorkspaceIdentity during Plan. This FALSE is a provider constraint,
+    # not a claim that credential health is verifiable by connection status.
+    # Verify data access with a real Notebook/Pipeline Blob read.
+    skip_test_connection = false
     service_principal_credentials = var.reader_credential_type == "ServicePrincipal" ? {
       client_id = var.reader_client_id
       tenant_id = var.reader_tenant_id
