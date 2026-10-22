@@ -24,6 +24,8 @@ source_sha: 3b94af541f3904a731622e51eece027bef4b818c
 
 > **2026-10-21 Fabric Storage 接入核查（证据边界）**：用户提供新的 healthcare-omop Terraform Apply 日志：Workspace ID `745ce03b-15b6-4870-b0e5-8c5750aa18dc`、Admin Role Assignment 完成、未 Destroy，复用既有免费 Trial F4；用户报告 Lakehouse `lh_omop_analytics` 已创建。此交接尚未含独立的 OneLake GUID/完整 Run ID/两个 Root 后续零漂移 Plan，需补读真实 Outputs 才算最终关闭基础设施 Task 5.4。当前 Fabric Connection `connection=null` 尚未 Apply；新增只读 OIDC Tenant/Connector/RBAC/Connection inventory 检查代码，实际运行尚未验证。Blob Reader、Notebook、Lakehouse 数据写入继续待办；不得把新代码静态验证视为 Blob E2E。
 
+> **Fabric Identity Plan-only evidence, 2026-10-21 ET**: Healthcare PR #388 merged Main 5114dacff0318167582c0f08eb8fec6a8f453cdc (21/21 CI PASS). Self-Runner PR #214 merged 46b87fd9b6be0820dfb989f920df34cbd6339107. Real https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39698376237 refreshed existing healthcare-omop Workspace ID 745ce03b-15b6-4870-b0e5-8c5750aa18dc. Plan is identity SystemAssigned **in-place update: 0 add / 1 change / 0 destroy**; FABRIC_APPLY_EXECUTED=NO. Identity Object ID, Storage Blob Reader RBAC, Fabric Connection, Notebook and Blob E2E still pending. Next task: explicit Identity Apply authorization, then separate Reader RBAC/Connection/Notebook verification. See [active OpenSpec](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md).
+
 ## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |
