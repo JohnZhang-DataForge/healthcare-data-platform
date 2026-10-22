@@ -104,13 +104,51 @@ def pages(url, token, limit=20):
         if not next_url:
             return result
         if not next_url.startswith(("https://api.fabric.microsoft.com/v1/connections",
+                                    "https://api.fabric.microsoft.com/v1/workspaces",
                                     "https://management.azure.com/")):
             raise RuntimeError("Unexpected pagination host/path")
         url = next_url
     raise RuntimeError("Inventory pagination exceeds safety limit")
 
 
-def inspect(subscription, group, account):
+
+def inspect_workspace_identity(workspace_name, token, fabric_client):
+    """GET-only check after a failed Fabric provisionIdentity long-running operation.
+
+    Do not equate a missing workspaceIdentity field with a healthy provisioning
+    state: the failed/stuck state is only visible in Fabric's Workspace settings.
+    """
+    base = "https://api.fabric.microsoft.com/v1/workspaces"
+    workspaces = pages(base, token)
+    found = [w for w in workspaces if w.get("displayName") == workspace_name]
+    if len(found) != 1:
+        raise RuntimeError("Expected exactly one accessible named Fabric workspace")
+    workspace_id = found[0].get("id", "")
+    if not workspace_id or not all(x in "0123456789abcdef-" for x in workspace_id.lower()):
+        raise RuntimeError("Invalid Fabric workspace ID in discovery")
+    workspace = json_request(base + "/" + quote(workspace_id, safe=""), bearer=token)
+    if workspace.get("id") != workspace_id:
+        raise RuntimeError("Workspace GET returned a different ID")
+    identity = workspace.get("workspaceIdentity")
+    print("TARGET_WORKSPACE_ID=" + workspace_id)
+    print("WORKSPACE_IDENTITY_IN_FABRIC_API=" + ("PRESENT" if identity else "ABSENT"))
+    if identity:
+        print("WORKSPACE_IDENTITY_APPLICATION_ID=" + str(identity.get("applicationId", "UNAVAILABLE")))
+        print("WORKSPACE_IDENTITY_PRINCIPAL_ID=" + str(identity.get("servicePrincipalId", "UNAVAILABLE")))
+    print("WORKSPACE_CAPACITY_ID=" + str(workspace.get("capacityId", "UNAVAILABLE")))
+    roles = pages(base + "/" + quote(workspace_id, safe="") + "/roleAssignments", token)
+    assigned = [
+        a.get("role") for a in roles
+        if ((a.get("principal") or {}).get("servicePrincipalDetails") or {})
+        .get("aadAppId", "").lower() == fabric_client.lower()
+    ]
+    print("RUNNER_SERVICE_PRINCIPAL_EXPLICIT_WORKSPACE_ROLES=" +
+          json.dumps(sorted(set(assigned))))
+    print("WORKSPACE_IDENTITY_PROVISIONING_STATE=NOT_EXPOSED_BY_GET_WORKSPACE")
+    print("WORKSPACE_IDENTITY_CLOUD_WRITES=NO")
+
+
+def inspect(subscription, group, account, workspace_name=None):
     azure_tenant = require_env("ARM_TENANT_ID")
     fabric_tenant = require_env("FABRIC_TENANT_ID")
     azure_client = require_env("ARM_CLIENT_ID")
@@ -153,6 +191,8 @@ def inspect(subscription, group, account):
         print("ACCOUNT_SCOPE_RBAC_INVENTORY=UNVERIFIED")
         print("BLOB_READER_AUTHORIZED=UNVERIFIED")
     fabric_token = token_for(fabric_tenant, fabric_client, "https://api.fabric.microsoft.com/.default")
+    if workspace_name:
+        inspect_workspace_identity(workspace_name, fabric_token, fabric_client)
     base = "https://api.fabric.microsoft.com/v1/connections"
     types = pages(base + "/supportedConnectionTypes?showAllCreationMethods=true", fabric_token)
     matches = azure_blobs_metadata(types)
@@ -176,9 +216,10 @@ def main():
     parser.add_argument("--subscription", required=True)
     parser.add_argument("--resource-group", required=True)
     parser.add_argument("--storage-account", required=True)
+    parser.add_argument("--workspace-name", required=False)
     args = parser.parse_args()
     try:
-        inspect(args.subscription, args.resource_group, args.storage_account)
+        inspect(args.subscription, args.resource_group, args.storage_account, args.workspace_name)
     except (RuntimeError, KeyError) as exc:
         print("READINESS_FAILURE=" + str(exc))
         print("STATUS=BLOCKED_NO_CLOUD_MUTATION")
