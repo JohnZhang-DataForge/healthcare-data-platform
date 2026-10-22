@@ -300,6 +300,6 @@ jobs:
           TF_WORKSPACE=default terraform -chdir="$ROOT" validate -no-color
           python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_shared_connection_contract.py' -v
           python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_connection_readiness.py' -v
-          echo "CONNECTION_ENABLED=NO REMOTE_BACKEND_USED=NO"
+          echo "CONNECTION_APPLY_EXECUTED=NO REMOTE_BACKEND_USED=NO"
           echo "FABRIC_PLAN_APPLY=NO PAID_CAPACITY_CREATED=NO"
           echo "#### FABRIC_SHARED_CONNECTION_STATIC_OUTPUT_END ####"
