@@ -13,3 +13,10 @@ variable "capacity_id" {
     error_message = "capacity_id must be the GUID of an existing Fabric Capacity."
   }
 }
+
+# Opt-in on this workspace only; module defaults to disabled for other workspaces.
+variable "enable_workspace_identity" {
+  description = "Enable the existing Fabric Workspace system-assigned identity for same-tenant Azure Blob access."
+  type        = bool
+  default     = false
+}
