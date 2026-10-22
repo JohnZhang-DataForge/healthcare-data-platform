@@ -18,3 +18,13 @@ output "fabric_workspace_name" {
     error_message = "Terraform CLI workspace must match the Fabric workspace directory name."
   }
 }
+
+output "workspace_identity_principal_id" {
+  description = "The Workspace Identity Entra Object ID for Azure Blob Data Reader; null until it exists."
+  value       = module.workspace.workspace_identity_principal_id
+
+  precondition {
+    condition     = terraform.workspace != "default" && terraform.workspace == local.workspace_name
+    error_message = "Terraform CLI workspace must match the Fabric workspace directory name."
+  }
+}

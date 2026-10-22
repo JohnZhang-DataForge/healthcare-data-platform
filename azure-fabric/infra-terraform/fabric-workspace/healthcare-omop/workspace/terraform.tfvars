@@ -9,3 +9,7 @@ role_assignments = {}
 # Grant uses the Workspace IAM module; the runner never injects account-specific IDs.
 # Verify user/object mapping and existing members before the first cloud Apply.
 portal_admin_user_object_id = "670194b1-b1ff-41af-971a-a61438061f39"
+
+# System-assigned identity is enabled only for the healthcare-omop Workspace.
+# Requires an independently reviewed non-destructive Plan before any Apply.
+enable_workspace_identity = true

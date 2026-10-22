@@ -15,8 +15,9 @@ locals {
 module "workspace" {
   source = "../../../modules/workspace"
 
-  workspace_name   = local.workspace_name
-  description      = var.description
-  capacity_id      = var.capacity_id
-  role_assignments = merge(var.role_assignments, local.portal_admin_role_assignments)
+  workspace_name            = local.workspace_name
+  description               = var.description
+  capacity_id               = var.capacity_id
+  enable_workspace_identity = var.enable_workspace_identity
+  role_assignments          = merge(var.role_assignments, local.portal_admin_role_assignments)
 }
