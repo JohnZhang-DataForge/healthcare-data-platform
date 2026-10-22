@@ -1,7 +1,7 @@
 # One real Fabric Workspace per same-named Git parent directory.
 # The Terraform CLI workspace is validated in outputs.tf before apply.
 locals {
-  workspace_name            = basename(dirname(abspath(path.root)))
+  workspace_name = basename(dirname(abspath(path.root)))
   # Only Terraform-reviewed, explicitly resolved Entra user IDs receive Workspace Admin.
   portal_admin_role_assignments = var.portal_admin_user_object_id == null ? {} : {
     portal_admin = {
