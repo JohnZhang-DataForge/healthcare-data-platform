@@ -78,13 +78,13 @@ class ReadinessTest(unittest.TestCase):
             "roleDefinitionId": "/subscriptions/sub/providers/Microsoft.Authorization/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
             "scope": "/subscriptions/sub/resourceGroups/OMOP/providers/Microsoft.Storage/storageAccounts/johnzhang/blobServices/default/containers/landing",
         }, "irrelevantJwt": "NEVER-PRINT"}]
-        result = module.summarize_direct_role_assignments(source)
+        result = module.summarize_scope_role_assignments(source)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["principal_id"], "1ae64649-a7c3-497e-9fe3-69b37d27c453")
         self.assertEqual(result[0]["role_definition_id"], "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1")
         self.assertEqual(set(result[0]), {"principal_id", "role_definition_id", "scope"})
         with self.assertRaisesRegex(RuntimeError, "missing required metadata"):
-            module.summarize_direct_role_assignments([{"properties": {}}])
+            module.summarize_scope_role_assignments([{"properties": {}}])
 
     def test_oidc_fail_closed_without_actions_context(self):
         with patch.dict("os.environ", {}, clear=True):
