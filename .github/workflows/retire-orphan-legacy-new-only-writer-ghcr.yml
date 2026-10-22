@@ -1,0 +1,240 @@
+name: Retire legacy NEW_ONLY Writer GHCR package (Healthcare publisher permissions)
+on:
+  pull_request:
+    branches: [main]
+    paths: [.github/workflows/retire-orphan-legacy-new-only-writer-ghcr.yml]
+permissions:
+  contents: read
+  packages: write
+  actions: read
+  pull-requests: read
+concurrency:
+  group: local-dp-ghcr-two-package-retirement
+  cancel-in-progress: false
+jobs:
+  retire:
+    if: github.event.pull_request.head.repo.full_name == 'JohnZhang-DataForge/healthcare-data-platform'
+    runs-on: dw-runner-set
+    timeout-minutes: 16
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        repository: JohnZhang-DataForge/Self-Runner
+        ref: main
+        path: runner-main
+        persist-credentials: false
+    - uses: actions/checkout@v4
+      with:
+        repository: JohnZhang-DataForge/healthcare-data-platform
+        ref: main
+        path: healthcare-main
+        persist-credentials: false
+    - name: Exact current source check and empty live-consumer reference list
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+        mkdir -p "$RUNNER_TEMP/ghcr-delete-evidence"
+        python3 - <<'PY'
+        import os,subprocess,json
+        from pathlib import Path
+        targets=("healthcare-data-platform-new-only-omop-writer",)
+        out={}
+        for folder in ("runner-main","healthcare-main"):
+            sha=subprocess.check_output(["git","-C",folder,"rev-parse","HEAD"],text=True).strip()
+            tracked=subprocess.check_output(["git","-C",folder,"ls-files","-z"]).decode().split("\0")
+            matches=[]
+            for name in tracked:
+                if not name or name.endswith((".png",".jpg",".jar",".gif",".lock",".svg",".md",".pdf",".ipynb")):continue
+                if name.startswith(("docs/","documents/","openspec/")):continue
+                try: lines=(Path(folder)/name).read_text(errors="replace").splitlines()
+                except Exception:continue
+                for i,line in enumerate(lines,1):
+                    if any(n in line for n in targets):
+                        matches.append({"path":name,"line":i,"text":line.strip()[:120]})
+            out[folder]={"sha":sha,"matching_source_refs":matches}
+            print("CHECKED_MAIN_SOURCE",folder,sha,"LEGACY_IMAGE_REFERENCE_COUNT",len(matches))
+            for ref in matches[:20]:print("BLOCKING_SOURCE_IMAGE_REFERENCE",folder,ref)
+            assert not matches,("TRACKED_RUNTIME_IMAGE_REFERENCE_STILL_PRESENT",folder)
+        d=Path(os.environ["RUNNER_TEMP"])/"ghcr-delete-evidence"/"current-repository-refs.json"
+        d.write_text(json.dumps(out,indent=2)+"\n")
+        print("BOTH_CURRENT_MAIN_REPOSITORIES_NO_OLD_PACKAGE_REFS=PASS")
+        PY
+    - name: Kubernetes namespace-wide image consumer preflight (read only)
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+        if ! command -v kubectl >/dev/null 2>&1; then
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSLo "$RUNNER_TEMP/bin/kubectl" https://dl.k8s.io/release/v1.32.5/bin/linux/amd64/kubectl
+          curl -fsSLo "$RUNNER_TEMP/kubectl.sha256" https://dl.k8s.io/release/v1.32.5/bin/linux/amd64/kubectl.sha256
+          printf '%s  %s\n' "$(cat "$RUNNER_TEMP/kubectl.sha256")" "$RUNNER_TEMP/bin/kubectl" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/bin/kubectl"
+          export PATH="$RUNNER_TEMP/bin:$PATH"
+        fi
+        cfg="$(python3 runner-main/src/ci/local_dp_incluster_kubeconfig.py)"
+        echo "KUBECONFIG=$cfg" >> "$GITHUB_ENV"
+        export KUBECONFIG="$cfg"
+        kubectl get pods,deployments,statefulsets,daemonsets,cronjobs,jobs,replicasets -A -o json > "$RUNNER_TEMP/ghcr-delete-evidence/k8s-all.json"
+        python3 - <<'PY'
+        import os,json
+        from pathlib import Path
+        path=Path(os.environ["RUNNER_TEMP"])/"ghcr-delete-evidence"
+        objs=json.loads((path/"k8s-all.json").read_text())["items"]
+        targets=("ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer",)
+        found=[]
+        def walk(node,stack,kind,ns,name):
+            if isinstance(node,dict):
+                if any(k in node for k in ("containers","initContainers","ephemeralContainers","containerStatuses","initContainerStatuses")):
+                    for key in ("containers","initContainers","ephemeralContainers","containerStatuses","initContainerStatuses"):
+                        for c in node.get(key,[]) or []:
+                            if not isinstance(c,dict):continue
+                            for field in ("image","imageID"):
+                                value=c.get(field,"")
+                                if isinstance(value,str) and any(value==t or value.startswith(t+":") or value.startswith(t+"@") for t in targets):
+                                    found.append({"kind":kind,"ns":ns,"name":name,"container":c.get("name"),"field":field,"value":value})
+                for k,v in node.items():
+                    if k in ("containers","initContainers","ephemeralContainers","containerStatuses","initContainerStatuses"):continue
+                    walk(v,stack+[k],kind,ns,name)
+            elif isinstance(node,list):
+                for i,v in enumerate(node):walk(v,stack+[str(i)],kind,ns,name)
+        for obj in objs:
+            meta=obj.get("metadata",{})
+            walk(obj.get("spec",{}),["spec"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
+            walk(obj.get("status",{}),["status"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
+        report={"resources_inspected":len(objs),"blocking_image_refs":found}
+        (path/"k8s-active-image-refs.json").write_text(json.dumps(report,indent=2)+"\n")
+        (path/"k8s-all.json").unlink()
+        print("K8S_RESOURCES_INSPECTED",len(objs))
+        print("K8S_OLD_PACKAGE_REFERENCE_COUNT",len(found))
+        for row in found[:20]:print("K8S_BLOCKING_REF",row)
+        # All five old Writer Pods were discovered by prior no-mutation check Run
+        # #39744359408.  Do not delete any other Pods, Jobs or resources.
+        allowed={
+         "task004-new-only-atomic-writer-1x0pjone",
+         "task004-new-only-atomic-writer-357ejmwr",
+         "task004-new-only-atomic-writer-3975i0vn",
+         "task004-new-only-atomic-writer-4aic1yjo",
+         "task004-new-only-atomic-writer-fjrss38t",
+        }
+        refs={(x["kind"],x["ns"],x["name"]) for x in found}
+        assert all(kind=="Pod" and ns=="dw-spark" and name in allowed for kind,ns,name in refs),("UNKNOWN_OLD_WRITER_IMAGE_CONSUMER",refs)
+        matching={x["metadata"]["name"]:x for x in objs if x.get("kind")=="Pod" and x["metadata"].get("namespace")=="dw-spark" and x["metadata"]["name"] in allowed}
+        evidence=[]
+        for name,pod in sorted(matching.items()):
+            status=pod.get("status",{})
+            states=[{"name":s.get("name"),"state":s.get("state")} for s in status.get("containerStatuses",[])]
+            print("OLD_WRITER_POD_DIAGNOSTIC",name,pod["metadata"].get("creationTimestamp"),
+                  status.get("phase"),"ownerCount",len(pod["metadata"].get("ownerReferences",[])),
+                  "deleting",bool(pod["metadata"].get("deletionTimestamp")),
+                  "containers",states,flush=True)
+        for name in sorted({x[2] for x in refs}):
+            p=matching[name]
+            meta=p["metadata"];status=p["status"]
+            assert status.get("phase") in ("Succeeded","Failed"),("OLD_WRITER_POD_NOT_TERMINAL",name,status.get("phase"))
+            assert meta.get("creationTimestamp","")<"2026-10-21T00:00:00Z",("OLD_WRITER_POD_TOO_NEW",name)
+            assert meta.get("deletionTimestamp") is None and not meta.get("ownerReferences"),("OLD_WRITER_POD_HAS_OWNER_OR_DELETION",name)
+            states=status.get("containerStatuses",[])
+            assert states and all(isinstance(s.get("state",{}).get("terminated",{}).get("exitCode"),int) for s in states),("OLD_WRITER_POD_CONTAINER_STILL_RUNNING_OR_WAITING",name)
+            row={"name":name,"created":meta["creationTimestamp"],"phase":status["phase"],
+                 "uid":meta.get("uid"),"containers":[{"name":s["name"],"exitCode":s["state"]["terminated"]["exitCode"],"reason":s["state"]["terminated"].get("reason"),"finished":s["state"]["terminated"].get("finishedAt")} for s in states]}
+            evidence.append(row)
+            print("EXACT_TERMINAL_ORPHAN_WRITER_POD_PREDELETE=PASS",row,flush=True)
+        (path/"old-writer-pods-predelete.json").write_text(json.dumps(evidence,indent=2)+"\n")
+        # Any nonterminal Pod fails BEFORE first deletion. Remove only exact, old,
+        # ownerless Succeeded Pods that have passed all guards.
+        import subprocess
+        for row in evidence:
+            subprocess.run(["kubectl","delete","pod","-n","dw-spark",row["name"],
+                            "--wait=true","--timeout=80s"],check=True)
+            print("OLD_COMPLETED_WRITER_POD_DELETED",row["name"],flush=True)
+        # Repeat the entire K8s image inventory after the limited Pod cleanup.
+        newjson=subprocess.check_output(["kubectl","get","pods,deployments,statefulsets,daemonsets,cronjobs,jobs,replicasets","-A","-o","json"])
+        reread=json.loads(newjson)["items"]
+        found.clear()
+        for obj in reread:
+            meta=obj.get("metadata",{})
+            walk(obj.get("spec",{}),["spec"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
+            walk(obj.get("status",{}),["status"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
+        print("K8S_POST_CLEANUP_IMAGE_REFERENCE_COUNT",len(found))
+        for row in found[:20]:print("STILL_REFERENCED_K8S",row)
+        assert not found,"K8S_STILL_REFERENCES_LEGACY_PACKAGE_AFTER_TARGETED_POD_REMOVAL"
+        print("FIVE_EXACT_TERMINAL_OLD_WRITER_PODS_CLEANED_IF_PRESENT=PASS")
+        print("NO_OLD_PACKAGE_K8S_IMAGE_CONSUMERS=PASS")
+        PY
+    - name: Verify package version snapshot, rollback lineages, fresh Main and delete EXACTLY two eligible packages
+      shell: bash
+      env:
+        GHCR_TOKEN: ${{ github.token }}
+      run: |
+        set -Eeuo pipefail
+        python3 - <<'PY'
+        import os,json,subprocess,urllib.request,urllib.error
+        from pathlib import Path
+        from urllib.parse import quote
+        root=Path(os.environ["RUNNER_TEMP"])/"ghcr-delete-evidence"
+        current=json.loads((root/"current-repository-refs.json").read_text())
+        legacy={"healthcare-data-platform-new-only-omop-writer":18}
+        fallback=("healthcare-data-platform-local-dp-omop-writer",)
+        host="https://api.github.com"
+        head={"Authorization":"Bearer "+os.environ["GHCR_TOKEN"],
+              "Accept":"application/vnd.github+json",
+              "X-GitHub-Api-Version":"2022-11-28",
+              "User-Agent":"Healthcare-safe-legacy-ghcr-delete"}
+        def api(method,path,body=None):
+            payload=json.dumps(body).encode() if body is not None else None
+            request=urllib.request.Request(host+path,headers=head,data=payload,method=method)
+            with urllib.request.urlopen(request,timeout=20) as response:
+                data=response.read()
+                return json.loads(data) if data else None
+        def purl(name):
+            return "/orgs/JohnZhang-DataForge/packages/container/"+quote(name,safe="")
+        def versions(name):
+            return api("GET",purl(name)+"/versions?per_page=100")
+        # Stop if either repo Main moved after checkout; this handles concurrent changes.
+        for repo,folder in (("Self-Runner","runner-main"),("healthcare-data-platform","healthcare-main")):
+            live=api("GET","/repos/JohnZhang-DataForge/"+repo+"/branches/main")["commit"]["sha"]
+            assert live==current[folder]["sha"],("REPO_MAIN_MOVED_RECHECK_CONSUMERS",repo,live)
+        # Explicit current and rollback versions must remain usable before old lineage removal.
+        for name in fallback:
+            vs=versions(name)
+            tags={tag for v in vs for tag in v.get("metadata",{}).get("container",{}).get("tags",[])}
+            print("RETAINED_ACTIVE_PACKAGE",name,"VERSIONS",len(vs),"TAG_COUNT",len(tags))
+            assert "latest" in tags,("ACTIVE_LATEST_TAG_MISSING",name)
+            assert len([tag for tag in tags if tag.startswith("git-")])>=2,("NOT_ENOUGH_IMMUTABLE_ROLLBACK_TAGS",name)
+        inventory={}
+        for name,n in legacy.items():
+            metadata=api("GET",purl(name))
+            assert metadata.get("name")==name
+            entries=versions(name)
+            inventory[name]=entries
+            print("LEGACY_PACKAGE_PREDELETE",name,"VERSION_COUNT",len(entries))
+            assert len(entries)==n,("GHCR_VERSION_COUNT_MOVED",name,len(entries),n)
+            for v in entries:
+                tags=v.get("metadata",{}).get("container",{}).get("tags",[])
+                print("DELETE_CANDIDATE_VERSION",name,v["id"],v.get("name"),",".join(tags))
+                assert "latest" not in tags,("LEGACY_LATEST_TAG_PRESENT",name)
+        (root/"ghcr-delete-before-versions.json").write_text(json.dumps(inventory,indent=2)+"\n")
+        # Mandatory recrossing after saved predelete evidence, before first DELETE.
+        for repo,folder in (("Self-Runner","runner-main"),("healthcare-data-platform","healthcare-main")):
+            assert api("GET","/repos/JohnZhang-DataForge/"+repo+"/branches/main")["commit"]["sha"]==current[folder]["sha"],"MAIN_MOVED"
+        print("GHCR_PREDELETE_ALL_SAFETY_GATES=PASS")
+        for name in legacy:
+            # A package deletion removes its private OCI children as one aggregate, safely scoped
+            # because both live repo and K8s consumers are absent, and newer rollback retained.
+            api("DELETE",purl(name))
+            try:
+                api("GET",purl(name))
+                raise RuntimeError("GHCR_PACKAGE_DELETE_READBACK_FAILED "+name)
+            except urllib.error.HTTPError as e:
+                if e.code!=404:raise
+            print("LEGACY_GHCR_PACKAGE_DELETED_AND_VERIFIED=PASS",name)
+        print("LEGACY_WRITER_GHCR_PACKAGE_DELETED=PASS")
+        PY
+    - name: Upload immutable audit evidence and deletion outcome
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: local-dp-ghcr-two-package-retirement-evidence
+        path: ${{ runner.temp }}/ghcr-delete-evidence/
+        retention-days: 45
+        if-no-files-found: warn
