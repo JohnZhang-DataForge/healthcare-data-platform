@@ -170,3 +170,8 @@ source_sha: null
 - 真实 Workspace Identity Apply 已在 Self-Runner [Run #39707407989](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39707407989) 成功（0 added / 1 changed / 0 destroyed），`workspace_identity_principal_id` 为 Entra **Object ID**，Workspace 未重建。
 - `shared-infra/storage/workspace_readers.tf` 使用 `terraform_remote_state` 从具名 CLI workspace `healthcare-omop` 的 Workspace Root Output 获取 Object ID，再将其加入既有 `modules/storage/iam.tf` 的 **`landing` 容器级** `Storage Blob Data Reader`；普通 `blob_role_assignments` 仍默认空，不接管 Portal 已有授权。可复用模块不包含 Workspace ID、容量创建或 Storage Account 创建。
 - 这只表示 Git 配置阶段；新的 Reader **未被 Azure RBAC 确认生效**。先做精确范围的现存角色盘点防重复，再执行 Shared Storage Root Plan，审查不含删除、替换/扩大授权，最后审批 Apply/验证。Fabric Connection/Notebook 独立验收，避免将 Terraform 数据源读取当作 Blob 文件权限验证。
+
+### 2026-10-21 — Reader 403 与 Connection 预备配置
+
+- [Self-Runner Storage Apply #39710092180](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39710092180) 的资源 Plan 合同通过，仅有 `Storage Blob Data Reader` 容器级新增；云端实际授权被 HTTP 403 拒绝：Self-Runner SP Object ID `ed31f755-7526-4505-978f-0e72f0258e45` 无 `Microsoft.Authorization/roleAssignments/write`。**不能声明 Blob Reader 已生效。** 临时自动 Apply 入口随后收回，需 Azure IAM 管理员先授权 Runner 在限定的 Container Scope 上创建 Reader RBAC。
+- `shared-infra/connection/terraform.tfvars` 是待受控 Plan/Apply 的候选：`healthcare-omop-landing-blob` / `AzureBlobs` / `johnzhang` / `blob.core.windows.net` / `WorkspaceIdentity`，无密钥或 Service Principal Secret。模块在 WorkspaceIdentity 时设置 `skip_test_connection=true`，因为 Fabric 不能对此认证做标准 Connection Test；必须以后续真实 Blob read 验收。未获得 Reader 授权和实际 Connection Apply/GET 前，该 Connection **不存在**。
