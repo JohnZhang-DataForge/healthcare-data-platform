@@ -1,6 +1,27 @@
 # Local DP GHCR packages / versions: real inventory and safe-retirement gate — 2026-10-21
 
-> OpenSpec `relocate-local-data-platform`, Task **4.11.6**. **READ-ONLY AUDIT COMPLETED, GHCR PACKAGE/VERSION DELETION = 0, TASK 4.11.6 remains OPEN/HOLD**. This is a safe no-delete decision based on live references, not an assertion that package cleanup succeeded.
+> OpenSpec `relocate-local-data-platform`, Task **4.11.6**. The original **2026-10-21** 12-package/207-version read-only scan below is **HISTORICAL**: as of 2026-10-22, three orphan legacy packages and 25 old versions have been actually deleted and independently verified; one legacy manual Synthea image is intentionally KEEP. Task 4.11.6 remains OPEN solely for that still-pinned manual image and the broader dependency retirement/closeout gates. See newer status directly below.
+
+## Live registry closeout snapshot — 2026-10-22 (newest, supersedes original HOLD)
+
+**Verified DELETE of 3/4 eligible historical packages, total 25 original version records**:
+
+| Package | Previous version count | Execution proof | Current state |
+| --- | ---: | --- | --- |
+| `healthcare-landing-discovery-v2` | 3 | [Self-Runner Run #39743140034](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39743140034) | `LEGACY_GHCR_PACKAGE_DELETED_AND_VERIFIED=PASS` |
+| `healthcare-landing-processing-v2` | 4 | [Self-Runner Run #39743140034](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39743140034) | `LEGACY_GHCR_PACKAGE_DELETED_AND_VERIFIED=PASS` |
+| `healthcare-data-platform-new-only-omop-writer` | 18 | [Healthcare publishing-token Run #39746268760](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39746268760), after [Publisher PR #403](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/403) merged | `LEGACY_WRITER_GHCR_PACKAGE_DELETED=PASS` and independently GET 404 |
+| `healthcare-synthea-new-only` | 5 | [Self-Runner owner-token Run #39763467767](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39763467767) | **KEEP:** package exists and required manual Digest `sha256:36b69a26f25f9b627da693fc1aa70b8d0a37de0af755bcb7d95d140568efa909` is present |
+
+**Immutable branch/history safeguards**: [Self-Runner Run #39742520754](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39742520754) archived eight frozen 2026-10-13/14 feature branches to eight `archive/local-dp-ghcr/20261022/*` immutable tags with exact original commits and retired the eight mutable branch refs, without deleting image packages. [Self-Runner PR #229](https://github.com/JohnZhang-DataForge/Self-Runner/pull/229) removed ten inert frozen test/publisher workflows from Main. [PR #233](https://github.com/JohnZhang-DataForge/Self-Runner/pull/233) merged Main `79464c92cf244508d81c99fc25be9cd90820bad1` and removed an additional inert *push-only* READY recovery Workflow, whose trigger feature branch was archived; its Git Blob `4bd96b2a6716c693c6ace31ba924caa578bdbdbb` and archived branch Tag provide exact recovery. Crucially the real manually dispatchable `synthea-new-only-run-new-request.yml` remains present and **still uses legacy Synthea Digest**. No archive Tag was deleted, and no post-cleanup S3/PG data changes were made.
+
+**Post-delete readback**:
+- [Healthcare read-only Run #39763353277](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39763353277): all **8 canonical GHCR packages** exist with `latest`, aggregate **177** visible version records; all 3 deleted legacy package names return 404; all checks PASS. The Healthcare token also got 404 on `healthcare-synthea-new-only`, classified `UNRESOLVED` rather than falsely claiming it was deleted.
+- [Self-Runner owning-token Run #39763467767](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39763467767): the historical `healthcare-synthea-new-only` package exists with **5** versions, including the exact manual-request Digest. This proves the Healthcare-token 404 was a **visibility/authorization difference**.
+- Thus the original 12 known scoped packages now have **9 protected packages** (8 current + 1 required manual historic) with **177+5=182** observed version records across these separately authorized read-only snapshots; the **3 deleted packages' 25 previous records** are gone. Neither snapshot claims org-wide package-list enumeration is exhaustive.
+- Temporary destructive workflows [Self-Runner PR #232](https://github.com/JohnZhang-DataForge/Self-Runner/pull/232) (permission-denied predecessor) and [Healthcare PR #404](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/404) (successful publishing-token deletion), plus temporary read-only [#405](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/405) / [#234](https://github.com/JohnZhang-DataForge/Self-Runner/pull/234), were all **closed UNMERGED**. No one-shot package-delete workflow was merged into Main.
+
+**Decision**: The only remaining legacy Synthea package has a directly proven manual source consumer and actual pinned Version. **Do not delete its package/version or claim 4.11.6 fully complete** until that workflow is migrated to a verifiably working canonical 8-image generator+READY pipeline, its historical S3 recovery semantics are preserved, and rollback dependency guards pass. Broad file-audit Tasks 4.1/4.7/4.8 and Change Archive 5.x also remain separate. Earlier sections in this file are deliberately retained as their dated evidence snapshots, not current registry state.
 
 ## Phase A completed — retire 10 obsolete Self-Runner Main Workflows
 
