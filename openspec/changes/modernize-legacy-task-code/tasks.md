@@ -5,7 +5,7 @@
 ## 1. Specification and decision
 
 - [x] 1.1 基于 Healthcare Main `b99c5e8d4f3e5e4481facde3f7196569645125fb` 和 Self-Runner Main `79464c92cf244508d81c99fc25be9cd90820bad1` 只读审阅现有 Task 命名、迁移/E2E 历史证据、OpenSpec 治理；修订 Proposal / Design / Delta Specs / Tasks，明确 Clean Slate、风险与保留范围。本项仅表示方案**已形成**，不表示审查通过或实施。
-- [ ] 1.2 本规划 PR 的最终 HEAD 通过 OpenSpec Strict、Trusted Change Gate、文档链接等适用 CI 并合并 Main；记录 PR/HEAD/Run。**本阶段结束后才开展实施 PR。**
+- [x] 1.2 [规划 PR #407](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/407) 最终 HEAD `b6185c394c4b6c67e15668a74b1e54503d6ba0e0` 的 OpenSpec Strict [#39767802853](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39767802853)、Trusted Change Gate、Change Gate、文档链接等适用检查均 SUCCESS；2026-10-22 以 Squash Merge `f405360a28e876a226f662e3adc1214d78e26bcd` 进入 Main。**仅规划结束；实施 PR、运行迁移及旧业务资源删除均未开始。**
 
 ## 2. Exact dependency and rename inventory — implementation pending
 
