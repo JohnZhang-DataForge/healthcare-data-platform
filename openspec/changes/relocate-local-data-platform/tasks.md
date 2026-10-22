@@ -205,6 +205,8 @@
 
 - [ ] 4.11.6 **最后执行**：4.11.5 新镜像完整 E2E PASS，且 4.1/4.8/4.9/4.10 历史源码/测试清理通过删除 PR CI、Merge Main 后的新 Batch E2E 后，重新盘点 GHCR 当时的 8 个现行/4 个遗留候选 Package 与全部 Version、父镜像/DAG/Workflow/Pod/回退引用。只清理确定无消费者的过时项目业务 Package/Version，保留需要的恢复 Digest 和历史证据，不清节点全部缓存、基础镜像、PVC、PG/S3；保存执行清单和结果后再归档。
 
+> **4.11.6 真实 GHCR 包/版本审计（2026-10-21）— READ_ONLY_PASS / DELETION_HOLD，任务仍 OPEN**：[Self-Runner 只读 Run #39710406810](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39710406810) 对冻结 Healthcare `4379bfba19fc64ef0f069464ad6be560d0308073` 与 Self-Runner `d92f0fac1ded980ab7e68c017fe334a082b2eefa` 进行了双仓静态镜像引用（609 行）+ K8s 镜像快照（86 Pod 引用、2 个旧 Synthea Job 固定 Digest）+ GHCR 每包逐 Version ID/Tag/Digest 真实 GET：**12 个已知业务包、207 个 Version（8 个现行包 177 Version、4 个旧候选包 30 Version）**。因 GitHub 全 org 包列表 API 返回 HTTP 400，采用当前 8 镜像加两仓真实引用逐包读取，**不冒称发现了 org 里所有包**。四个历史候选包仍被 Self-Runner 当前 Workflow 的固定 Tag/Digest、Healthcare 历史 Publisher 引用；当前 8 包仍用于发布或运行，原两条 Synthea Job 引用旧 Digest，部分 untagged Version 可能是 OCI 子 Manifest。结果是**0 个已证实安全可删的包/版本，GHCR 删除请求=0**；严禁按包名、年代或 untagged 自动删除。完整逐包计数、参考 Workflow、阻断和再清理条件见 [GHCR 12包/207 Version 冻结审计](evidence/LOCAL-DP-GHCR-PACKAGE-VERSION-SAFETY-AUDIT-20261021.md)。4.9/4.10 源码清理仍 DONE；此项等待旧 Workflow/回退引用分离、OCI 依赖及管理员删除权限核对，**4.11.6 和 5.x 保持未勾选**。
+
 
 
 ### 4D. 当前决议：Bugfix → 新镜像 E2E → 历史文件清理 → 旧 GHCR 清理（2026-10-20）
