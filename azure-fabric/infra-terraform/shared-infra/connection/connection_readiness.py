@@ -149,7 +149,7 @@ def inspect_workspace_identity(workspace_name, token, fabric_client):
 
 
 
-def summarize_direct_role_assignments(items):
+def summarize_scope_role_assignments(items):
     """Account/container RBAC metadata only; credentials and token bodies excluded."""
     results = []
     for item in items:
@@ -214,16 +214,16 @@ def inspect(subscription, group, account, workspace_name=None, landing_container
         if not landing_container.replace("-", "").replace("_", "").isalnum():
             raise RuntimeError("Invalid Landing container name")
         container_scope = scope + "/blobServices/default/containers/" + quote(landing_container, safe="")
-        # atScope(): explicit grants at exactly this scope; inherited higher
-        # scopes still need separate inspection for effective access.
+        # atScope(): includes assignments at or above the requested scope,
+        # but not assignments at child scopes; output retains each true scope.
         container_roles = pages(arm + container_scope +
             "/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01&%24filter=atScope()",
             azure_token)
-        print("ACCOUNT_SCOPE_DIRECT_ROLE_ASSIGNMENTS=" +
-              json.dumps(summarize_direct_role_assignments(assignments), sort_keys=True))
-        print("LANDING_SCOPE_DIRECT_ROLE_ASSIGNMENTS=" +
-              json.dumps(summarize_direct_role_assignments(container_roles), sort_keys=True))
-        print("RBAC_HIGHER_LEVEL_INHERITANCE=NOT_EXHAUSTIVELY_CHECKED")
+        print("ACCOUNT_SCOPE_APPLICABLE_ROLE_ASSIGNMENTS=" +
+              json.dumps(summarize_scope_role_assignments(assignments), sort_keys=True))
+        print("LANDING_SCOPE_APPLICABLE_ROLE_ASSIGNMENTS=" +
+              json.dumps(summarize_scope_role_assignments(container_roles), sort_keys=True))
+        print("RBAC_SCOPE_ENUMERATION=AT_OR_ABOVE_SCOPE_EXCLUDES_CHILDREN")
     fabric_token = token_for(fabric_tenant, fabric_client, "https://api.fabric.microsoft.com/.default")
     if workspace_name:
         inspect_workspace_identity(workspace_name, fabric_token, fabric_client)
