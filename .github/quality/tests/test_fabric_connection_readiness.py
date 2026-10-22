@@ -31,13 +31,13 @@ class ReadinessTest(unittest.TestCase):
         entries = [
             {"displayName": "landing-omop",
              "connectionDetails": {"type": "AzureBlobs",
-               "parameters": [{"name": "account", "value": "johnzhang"}]}},
+               "path": "johnzhang;blob.core.windows.net"}},
             {"displayName": "unrelated",
              "connectionDetails": {"type": "AzureBlobs",
-               "parameters": [{"name": "account", "value": "other"}]}},
+               "path": "other;blob.core.windows.net"}},
             {"displayName": "not-a-blob",
              "connectionDetails": {"type": "SQL",
-               "parameters": [{"name": "account", "value": "johnzhang"}]}}
+               "path": "johnzhang;blob.core.windows.net"}}
         ]
         self.assertEqual(module.storage_connection_names(entries, "johnzhang"), ["landing-omop"])
 
@@ -91,9 +91,8 @@ class ReadinessTest(unittest.TestCase):
         from io import StringIO
         connection_id = "92d67d9c-7a9d-4619-bcf3-2b48b5b93788"
         source = {"id": connection_id, "displayName": "healthcare-omop-landing-blob",
-                  "connectionDetails": {"type": "AzureBlobs", "parameters": [
-                      {"name": "account", "value": "johnzhang"},
-                      {"name": "domain", "value": "blob.core.windows.net"}]},
+                  "connectionDetails": {"type": "AzureBlobs",
+                      "path": "johnzhang;blob.core.windows.net"},
                   "credentialDetails": {"secret": "DO-NOT-PRINT"}}
         output = StringIO()
         with patch.object(module, "json_request", return_value=source) as get, redirect_stdout(output):
@@ -103,7 +102,7 @@ class ReadinessTest(unittest.TestCase):
         self.assertIn("ACTUAL_BLOB_READ=NOT_TESTED", output.getvalue())
         self.assertNotIn("DO-NOT-PRINT", output.getvalue())
         with patch.object(module, "json_request", return_value=source):
-            with self.assertRaisesRegex(RuntimeError, "account/domain did not match"):
+            with self.assertRaisesRegex(RuntimeError, "path did not match"):
                 module.verify_exact_connection(connection_id, "other", "token")
 
     def test_oidc_fail_closed_without_actions_context(self):
