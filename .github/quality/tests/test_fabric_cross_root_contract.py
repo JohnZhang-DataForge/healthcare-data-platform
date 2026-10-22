@@ -62,7 +62,7 @@ class FabricCrossRootContract(unittest.TestCase):
         main = self.source(STORAGE, "main.tf")
         tfvars = self.source(STORAGE, "terraform.tfvars")
         self.assertNotIn("terraform.workspace", main)
-        self.assertNotIn("workspace_id", main)
+        self.assertNotRegex(main, r"(?m)^\\s*workspace_id\\s*=")
         self.assertNotIn("capacity_id", main)
         self.assertIn("module \"storage\"", main)
         self.assertIn("blob_role_assignments  = merge(var.blob_role_assignments, local.workspace_identity_role_assignments)", main)
