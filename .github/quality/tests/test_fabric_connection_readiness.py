@@ -41,6 +41,37 @@ class ReadinessTest(unittest.TestCase):
         ]
         self.assertEqual(module.storage_connection_names(entries, "johnzhang"), ["landing-omop"])
 
+    def test_workspace_identity_inspect_reads_only_metadata_and_explicit_roles(self):
+        workspace_id = "745ce03b-15b6-4870-b0e5-8c5750aa18dc"
+        def fake_json(url, *, bearer=None, form=None):
+            self.assertEqual(bearer, "test-bearer")
+            if url.endswith("/" + workspace_id):
+                return {"id": workspace_id, "capacityId": "existing-capacity",
+                        "workspaceIdentity": None}
+            if url.endswith("/roleAssignments"):
+                return {"value": [
+                    {"role": "Admin", "principal": {"type": "ServicePrincipal",
+                        "servicePrincipalDetails": {"aadAppId": "runner-app"}}},
+                    {"role": "Viewer", "principal": {"type": "User", "id": "other"}}]}
+            if url.endswith("/workspaces"):
+                return {"value": [{"id": workspace_id,
+                                   "displayName": "healthcare-omop"}]}
+            self.fail("Unexpected endpoint: " + url)
+        from contextlib import redirect_stdout
+        from io import StringIO
+        output = StringIO()
+        with patch.object(module, "json_request", side_effect=fake_json), redirect_stdout(output):
+            module.inspect_workspace_identity("healthcare-omop", "test-bearer", "runner-app")
+        self.assertIn("WORKSPACE_IDENTITY_IN_FABRIC_API=ABSENT", output.getvalue())
+        self.assertIn('RUNNER_SERVICE_PRINCIPAL_EXPLICIT_WORKSPACE_ROLES=["Admin"]',
+                      output.getvalue())
+        self.assertIn("WORKSPACE_IDENTITY_CLOUD_WRITES=NO", output.getvalue())
+
+    def test_workspace_identity_inspect_requires_unique_workspace(self):
+        with patch.object(module, "pages", return_value=[]):
+            with self.assertRaisesRegex(RuntimeError, "exactly one"):
+                module.inspect_workspace_identity("healthcare-omop", "fake", "app")
+
     def test_oidc_fail_closed_without_actions_context(self):
         with patch.dict("os.environ", {}, clear=True):
             with self.assertRaisesRegex(RuntimeError, "ACTIONS_ID_TOKEN_REQUEST_URL"):
