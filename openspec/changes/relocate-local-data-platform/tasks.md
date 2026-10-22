@@ -209,6 +209,8 @@
 
 
 
+> **4.11.6 Stage A：冻结旧 Workflow 在 Self-Runner Main 退役已合并，Registry 删除仍 HOLD**：[Self-Runner PR #229](https://github.com/JohnZhang-DataForge/Self-Runner/pull/229)，Main `ac850d4ac9c749ed5b6db6a4556b9062e0ec5425`，精确差异为 **10 个 2026-10-13/14 feature-push 冻结入口删除 + 1 份逐文件 Git Blob 恢复文档**。现行 8 镜像业务/DAG/测试不改；`synthea-new-only-run-new-request.yml` 手动 workflow_dispatch、`synthea-new-only-digest-ready-recovery.yml` 和 Healthcare `build-new-only-omop-writer.yml` 中的现行离线验证保留。**旧 feature 分支仍存在**，Main 删除并不解除分支上的旧 Digest 依赖；GHCR Package/Version **DELETE=0**，原 12 包/207 Version 是此前冻结清单，不冒称为本次实时版本数。4.11.6 保持 `[ ]`，具体保留/删除与下一阻断见 [GHCR audit + Stage A](evidence/LOCAL-DP-GHCR-PACKAGE-VERSION-SAFETY-AUDIT-20261021.md)。待分支与手工恢复消费者核对、OCI 上游 Manifest 和回退版本保护后才批准具体 Version ID 删除。
+
 ### 4D. 当前决议：Bugfix → 新镜像 E2E → 历史文件清理 → 旧 GHCR 清理（2026-10-20）
 
 > **2026-10-21 最新状态，覆盖下一段 2026-10-20 的历史阶段状态而不删除其记录**：Bugfix 已在 PR #353 修复并合并、8/8 重新发布；旧失败 Batch 只读回归和全新 Batch 原子 Writer/PG/同 Batch SKIP 均已真实 PASS，见 4.11.5。下一阶段聚焦 4.9/4.10 历史清理；旧 GHCR 继续 HOLD 至 4.11.6 的消费者与恢复核对。

@@ -2,6 +2,21 @@
 
 > OpenSpec `relocate-local-data-platform`, Task **4.11.6**. **READ-ONLY AUDIT COMPLETED, GHCR PACKAGE/VERSION DELETION = 0, TASK 4.11.6 remains OPEN/HOLD**. This is a safe no-delete decision based on live references, not an assertion that package cleanup succeeded.
 
+## Phase A completed — retire 10 obsolete Self-Runner Main Workflows
+
+**[Self-Runner PR #229](https://github.com/JohnZhang-DataForge/Self-Runner/pull/229) MERGED** into Self-Runner Main `ac850d4ac9c749ed5b6db6a4556b9062e0ec5425` on 2026-10-21 EDT. The 11-file exact reviewed patch removed **10 frozen old feature-branch-only Workflow entrypoints** from Self-Runner **Main**, retaining all modern business/CI definitions and tests. One new [restore evidence document](https://github.com/JohnZhang-DataForge/Self-Runner/blob/ac850d4ac9c749ed5b6db6a4556b9062e0ec5425/docs/checkpoints/migration/LOCAL-DP-GHCR-LEGACY-WORKFLOW-RETIREMENT-20261021.md) captures original Blob SHAs per deleted file. The original frozen Self-Runner Main was `6815369e8d6b5a25df3eec57f0d7ad59f3704c8f`; exact `compare_commits` verified 10 deleted Workflow files + 1 added immutable recovery note, no other code changes. PR had **no additional GitHub checks triggered**; validation is an exact Git diff and retained workflow tree, **not** a new runtime E2E.
+
+| Historical GHCR package | Previously pinned from Main | Main dependency after PR #229 |
+| --- | --- | --- |
+| `healthcare-landing-discovery-v2` | `landing-airflow-v2-reader-build.yml` | old frozen Workflow retired from Main |
+| `healthcare-landing-processing-v2` | `landing-processing-v2-source-acceptance.yml`, `task004-newonly-airflow-spark-handoff.yml` | both frozen Workflows retired from Main |
+| `healthcare-synthea-new-only` | 6 obsolete feature-push workflows | 6 frozen feature-push files retired; **manual `synthea-new-only-run-new-request.yml` and explicit `synthea-new-only-digest-ready-recovery.yml` remain KEEP** |
+| `healthcare-data-platform-new-only-omop-writer` | old `task004-new-only-airflow-writer-gate.yml` | frozen gated acceptance retired; **Healthcare `build-new-only-omop-writer.yml` still retains valid modern offline test and optional historical publishing target** |
+
+**Safety line**: Removing Workflow source **only on Main** does **not** delete copies on surviving `feature/*` branches or historical GHCR Digests, nor does it mean historic manual/rollback consumers have stopped needing the versions. The previous 12-package/207-version audit remains a *dated snapshot* (not a post-merge live package recount); **GHCR DELETE remains 0 and Task 4.11.6 is still [ ] OPEN/HOLD**. The retained Synthea Jobs pinning an old Digest also remain untouched. No Registry, K8s, Airflow, PG, S3 or Azure resources were changed in PR #229.
+
+**Next bound:** audit old `feature/*` branch recovery usefulness, migrate the two retained historic Synthea entrypoints if appropriate, preserve immutable Snapshot/rollback definitions and independently establish package Version dependencies. Requery the live GHCR versions and actual consumers before creating any version-ID DELETE allowlist; do not mistake this Main code cleanup for GHCR registry garbage collection.
+
 ## Source, mechanism, and access boundary
 
 - Healthcare Main at audit: `4379bfba19fc64ef0f069464ad6be560d0308073`; Self-Runner Main at audit: `d92f0fac1ded980ab7e68c017fe334a082b2eefa`. No Local DP application source changes were made.
