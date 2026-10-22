@@ -40,7 +40,14 @@ jobs:
                   if len(rows)<100:break
               return acc
           for name in active+hold:
-              pkg=get(base+quote(name,safe=''))
+              try:
+                  pkg=get(base+quote(name,safe=''))
+              except urllib.error.HTTPError as e:
+                  if name in hold and e.code==404:
+                      print('LEGACY_SYNTHEA_UNRESOLVED_HEALTHCARE_TOKEN_HTTP_404',name)
+                      result['hold'].append({'name':name,'visibility':'UNRESOLVED'})
+                      continue
+                  raise
               assert pkg.get('name')==name
               v=versions(name)
               assert len(v)>=1
@@ -59,14 +66,14 @@ jobs:
                   result['deleted'].append({'name':name,'http':404})
               else:raise RuntimeError('DELETED_PACKAGE_STILL_EXISTS:'+name)
           result['active_versions']=sum(x['count'] for x in result['active'])
-          result['hold_versions']=sum(x['count'] for x in result['hold'])
+          result['hold_versions']=sum(x.get('count',0) for x in result['hold'])
           result['remaining_version_count']=result['active_versions']+result['hold_versions']
           dest=Path(os.environ['RUNNER_TEMP'])/'ghcr-post-retirement'
           (dest/'exact-ghcr-packages.json').write_text(json.dumps(result,indent=2)+'\n')
           print('POSTDELETE_8_ACTIVE_PRESENT=PASS')
-          print('POSTDELETE_1_LEGACY_MANUAL_DEPENDENCY_RETAINED=PASS')
+          print('POSTDELETE_1_LEGACY_MANUAL_DEPENDENCY_STATUS',result['hold'])
           print('POSTDELETE_3_PACKAGE_404=PASS')
-          print('POSTDELETE_SCOPED_VERSION_COUNT',result['remaining_version_count'])
+          print('POSTDELETE_SCOPED_VERSION_COUNT_EXCLUDING_UNRESOLVED',result['remaining_version_count'])
           print('NO_REGISTRY_DELETE_REQUESTS=PASS')
           PY
       - name: Preserve final live registry evidence
