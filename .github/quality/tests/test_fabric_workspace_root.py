@@ -145,6 +145,28 @@ class FabricWorkspaceRootTest(unittest.TestCase):
         self.assertNotRegex(source, r'resource\s+"fabric_(notebook|data_pipeline)"')
         self.assertNotRegex(source, r'module\s+"(notebook|data-factory)"')
 
+    def test_workspace_identity_is_opt_in_and_omop_only(self):
+        module = INFRA / "modules/workspace"
+        module_main = (module / "main.tf").read_text(encoding="utf-8")
+        module_outputs = (module / "outputs.tf").read_text(encoding="utf-8")
+        self.assertIn('variable "enable_workspace_identity"', module_main)
+        self.assertIn("default = false", module_main)
+        self.assertIn('identity     = var.enable_workspace_identity ? { type = "SystemAssigned" } : null', module_main)
+        self.assertIn('fabric_workspace.current.identity.service_principal_id', module_outputs)
+        self.assertNotIn('resource "azurerm_fabric_capacity"', module_main)
+        for name in ("healthcare-omop", "johnzhang-test"):
+            root = INFRA / "fabric-workspace" / name / "workspace"
+            config = (root / "terraform.tfvars").read_text(encoding="utf-8")
+            main = (root / "main.tf").read_text(encoding="utf-8")
+            if name == "healthcare-omop":
+                self.assertIn("enable_workspace_identity = true", config)
+                self.assertIn("enable_workspace_identity = var.enable_workspace_identity", main)
+                self.assertIn('output "workspace_identity_principal_id"', (root / "outputs.tf").read_text())
+                self.assertIn("terraform.workspace != \"default\"", (root / "outputs.tf").read_text())
+            else:
+                self.assertNotIn("enable_workspace_identity = true", config)
+                self.assertNotIn("enable_workspace_identity = var.enable_workspace_identity", main)
+
 
 if __name__ == "__main__":
     unittest.main()
