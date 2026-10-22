@@ -14,7 +14,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | 实际源码文件 | 作用及使用边界 |
 | --- | --- |
 | [`batch_ledger.py`](../../../../local-data-platform/apps/landing_claim/batch_ledger.py) | PostgreSQL Claim 生命周期、身份与锁操作 |
-| [`claim_discovered_inventory.py`](../../../../local-data-platform/apps/landing_claim/claim_discovered_inventory.py) | Discovery 到 Claim 的权限及 Allowlist Gate |
+| [`claim_discovered_inventory.py`](../../../../local-data-platform/apps/landing_claim/claim_discovered_inventory.py) | Discovery→Claim 输入合同：最多 100 条 READY 预览；只读观察允许标明 `PREVIEW_ONLY` 的截断数据；**真实 Claim 仍拒绝截断清单**，依赖显式 Claim Enable/Allowlist/S3 重验 |
 | [`lease_fence.py`](../../../../local-data-platform/apps/landing_claim/lease_fence.py) | 事务内 Claim Owner / Lease Fencing |
 | [`verify_fencing_rollback.py`](../../../../local-data-platform/apps/landing_claim/verify_fencing_rollback.py) | 仅使用合成身份的 Fencing ROLLBACK 检验 |
 | [`verify_rollback.py`](../../../../local-data-platform/apps/landing_claim/verify_rollback.py) | 合成 Claim 状态流转 ROLLBACK 检验 |
