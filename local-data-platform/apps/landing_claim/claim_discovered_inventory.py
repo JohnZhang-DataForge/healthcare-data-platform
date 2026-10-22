@@ -18,10 +18,10 @@ from urllib.parse import urlsplit
 from batch_ledger import Candidate, ClaimError, claim
 
 MAX_INVENTORY_BYTES = 128 * 1024
-MAX_ITEMS = 25
+MAX_ITEMS = 100  # match the read-only Discovery XCom preview contract
 
 
-def parse_inventory(raw: str) -> list[Candidate]:
+def parse_inventory(raw: str, *, allow_truncated_readonly: bool = False) -> list[Candidate]:
     if not isinstance(raw, str) or len(raw.encode("utf-8")) > MAX_INVENTORY_BYTES:
         raise ClaimError("BLOCKED:XCOM_SIZE")
     try:
@@ -30,16 +30,26 @@ def parse_inventory(raw: str) -> list[Candidate]:
         raise ClaimError("BLOCKED:XCOM_JSON") from exc
     if not isinstance(obj, dict):
         raise ClaimError("BLOCKED:XCOM_OBJECT")
+    truncated = obj.get("preview_truncated")
     if (obj.get("status") != "READ_ONLY_DISCOVERED"
         or obj.get("processing_authorized") is not False
         or obj.get("database_mutation") is not False
-        or obj.get("preview_truncated") is not False):
+        or not isinstance(truncated, bool)):
         raise ClaimError("BLOCKED:DISCOVERY_SAFETY_GATE")
     rows = obj.get("ready_batches_preview")
+    ready_count = obj.get("ready_count")
+    quarantined_count = obj.get("quarantined_count")
     if (not isinstance(rows, list) or len(rows) > MAX_ITEMS
-        or obj.get("ready_count") != len(rows)
-        or not isinstance(obj.get("quarantined_count"), int)):
+        or type(ready_count) is not int or ready_count < len(rows)
+        or type(quarantined_count) is not int or quarantined_count < 0
+        or truncated != (ready_count > len(rows))
+        or (truncated and len(rows) != MAX_ITEMS)):
         raise ClaimError("BLOCKED:INCOMPLETE_INVENTORY")
+    # Scheduled observation is always read-only (CLAIM_ENABLE=NO).
+    # A bounded, truncated preview is sufficient to observe the first
+    # MAX_ITEMS; never permit atomic claims from an incomplete inventory.
+    if truncated and not allow_truncated_readonly:
+        raise ClaimError("BLOCKED:DISCOVERY_SAFETY_GATE")
     seen = set()
     results = []
     for r in rows:
@@ -138,10 +148,17 @@ def revalidate_manifest_sha(s3, c: Candidate) -> None:
 
 def run(raw: str, db, *, enabled: bool = False, allowlist: frozenset[str] = frozenset(),
         s3=None) -> dict:
-    candidates = parse_inventory(raw)
+    candidates = parse_inventory(raw, allow_truncated_readonly=not enabled)
     if enabled and not allowlist:
         raise ClaimError("BLOCKED:EMPTY_CLAIM_ALLOWLIST")
-    return build_report(candidates, db=db, enabled=enabled, allowlist=allowlist, s3=s3)
+    report = build_report(candidates, db=db, enabled=enabled, allowlist=allowlist, s3=s3)
+    inventory = json.loads(raw)
+    report["inventory_ready_count"] = inventory["ready_count"]
+    report["preview_truncated"] = inventory["preview_truncated"]
+    report["evaluation_scope"] = (
+        "PREVIEW_ONLY" if inventory["preview_truncated"] else "COMPLETE_INVENTORY"
+    )
+    return report
 
 
 def main() -> None:
@@ -189,6 +206,8 @@ def main() -> None:
     print("LANDING_DISCOVERY_CLAIM_INTEGRATION=PASS")
     print("CLAIM_ENABLED=" + ("YES" if enabled else "NO"))
     print("BATCHES_EVALUATED=" + str(report["input_count"]))
+    print("INVENTORY_READY_COUNT=" + str(report["inventory_ready_count"]))
+    print("INVENTORY_EVALUATION_SCOPE=" + report["evaluation_scope"])
     print("LEGACY_BATCHES_EXCLUDED=" + str(report["decision_counts"].get("SKIP_LEGACY_BATCH", 0)))
     print("CLAIMED_BATCHES=" + str(report["claim_count"]))
     print("PRODUCER_TRIGGER=NO")
