@@ -81,15 +81,14 @@ def azure_blobs_metadata(items):
 
 
 def storage_connection_names(items, account):
+    """Fabric LIST returns connectionDetails.path rather than create parameters."""
     names = []
     for item in items:
         details = item.get("connectionDetails") or {}
         if details.get("type") != "AzureBlobs":
             continue
-        params = details.get("parameters") or []
-        if isinstance(params, list) and any(
-            x.get("name") == "account" and x.get("value") == account for x in params
-        ):
+        path = details.get("path", "")
+        if isinstance(path, str) and account.lower() in path.lower():
             names.append(item.get("displayName", "<unnamed>"))
     return sorted(names)
 
@@ -181,12 +180,14 @@ def verify_exact_connection(connection_id, account, token):
     details = item.get("connectionDetails") or {}
     if details.get("type") != "AzureBlobs":
         raise RuntimeError("Fabric Connection type is not AzureBlobs")
-    params = details.get("parameters") or []
-    if not isinstance(params, list):
-        raise RuntimeError("Fabric Connection parameters are not a list")
-    values = {p.get("name"): p.get("value") for p in params if isinstance(p, dict)}
-    if values.get("account") != account or values.get("domain") != "blob.core.windows.net":
-        raise RuntimeError("Fabric Connection account/domain did not match")
+    # Fabric GET's ListConnectionDetails has {type, path}; create-parameters
+    # do not appear in the GET response. AzureBlobs path is non-credential
+    # datasource metadata, so match the account/domain without logging it.
+    path = details.get("path")
+    if not isinstance(path, str) or not path:
+        raise RuntimeError("Fabric Connection details.path was not returned")
+    if account.lower() not in path.lower() or "blob.core.windows.net" not in path.lower():
+        raise RuntimeError("Fabric Connection path did not match expected Blob account/domain")
     # No credentialDetails printed. Even if GET omits them, do not infer auth
     # or successful data access from the connection's existence alone.
     print("EXACT_FABRIC_CONNECTION_ID=" + connection_id)
