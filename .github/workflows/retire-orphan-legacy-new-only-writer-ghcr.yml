@@ -9,7 +9,7 @@ permissions:
   actions: read
   pull-requests: read
 concurrency:
-  group: local-dp-ghcr-two-package-retirement
+  group: local-dp-ghcr-healthcare-publisher-final-20261022
   cancel-in-progress: false
 jobs:
   retire:
