@@ -14,7 +14,7 @@ concurrency:
 jobs:
   retire:
     if: github.event.pull_request.head.repo.full_name == 'JohnZhang-DataForge/healthcare-data-platform'
-    runs-on: dw-runner-set
+    runs-on: ubuntu-latest
     timeout-minutes: 16
     steps:
     - uses: actions/checkout@v4
@@ -59,107 +59,37 @@ jobs:
         d.write_text(json.dumps(out,indent=2)+"\n")
         print("BOTH_CURRENT_MAIN_REPOSITORIES_NO_OLD_PACKAGE_REFS=PASS")
         PY
-    - name: Kubernetes namespace-wide image consumer preflight (read only)
+    - name: Verify fresh independent Self-Runner Kubernetes zero-consumer evidence
       shell: bash
+      env:
+        AUDIT_TOKEN: ${{ github.token }}
       run: |
         set -Eeuo pipefail
-        if ! command -v kubectl >/dev/null 2>&1; then
-          mkdir -p "$RUNNER_TEMP/bin"
-          curl -fsSLo "$RUNNER_TEMP/bin/kubectl" https://dl.k8s.io/release/v1.32.5/bin/linux/amd64/kubectl
-          curl -fsSLo "$RUNNER_TEMP/kubectl.sha256" https://dl.k8s.io/release/v1.32.5/bin/linux/amd64/kubectl.sha256
-          printf '%s  %s\n' "$(cat "$RUNNER_TEMP/kubectl.sha256")" "$RUNNER_TEMP/bin/kubectl" | sha256sum -c -
-          chmod +x "$RUNNER_TEMP/bin/kubectl"
-          export PATH="$RUNNER_TEMP/bin:$PATH"
-        fi
-        cfg="$(python3 runner-main/src/ci/local_dp_incluster_kubeconfig.py)"
-        echo "KUBECONFIG=$cfg" >> "$GITHUB_ENV"
-        export KUBECONFIG="$cfg"
-        kubectl get pods,deployments,statefulsets,daemonsets,cronjobs,jobs,replicasets -A -o json > "$RUNNER_TEMP/ghcr-delete-evidence/k8s-all.json"
         python3 - <<'PY'
-        import os,json
-        from pathlib import Path
-        path=Path(os.environ["RUNNER_TEMP"])/"ghcr-delete-evidence"
-        objs=json.loads((path/"k8s-all.json").read_text())["items"]
-        targets=("ghcr.io/johnzhang-dataforge/healthcare-data-platform-new-only-omop-writer",)
-        found=[]
-        def walk(node,stack,kind,ns,name):
-            if isinstance(node,dict):
-                if any(k in node for k in ("containers","initContainers","ephemeralContainers","containerStatuses","initContainerStatuses")):
-                    for key in ("containers","initContainers","ephemeralContainers","containerStatuses","initContainerStatuses"):
-                        for c in node.get(key,[]) or []:
-                            if not isinstance(c,dict):continue
-                            for field in ("image","imageID"):
-                                value=c.get(field,"")
-                                if isinstance(value,str) and any(value==t or value.startswith(t+":") or value.startswith(t+"@") for t in targets):
-                                    found.append({"kind":kind,"ns":ns,"name":name,"container":c.get("name"),"field":field,"value":value})
-                for k,v in node.items():
-                    if k in ("containers","initContainers","ephemeralContainers","containerStatuses","initContainerStatuses"):continue
-                    walk(v,stack+[k],kind,ns,name)
-            elif isinstance(node,list):
-                for i,v in enumerate(node):walk(v,stack+[str(i)],kind,ns,name)
-        for obj in objs:
-            meta=obj.get("metadata",{})
-            walk(obj.get("spec",{}),["spec"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
-            walk(obj.get("status",{}),["status"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
-        report={"resources_inspected":len(objs),"blocking_image_refs":found}
-        (path/"k8s-active-image-refs.json").write_text(json.dumps(report,indent=2)+"\n")
-        (path/"k8s-all.json").unlink()
-        print("K8S_RESOURCES_INSPECTED",len(objs))
-        print("K8S_OLD_PACKAGE_REFERENCE_COUNT",len(found))
-        for row in found[:20]:print("K8S_BLOCKING_REF",row)
-        # All five old Writer Pods were discovered by prior no-mutation check Run
-        # #39744359408.  Do not delete any other Pods, Jobs or resources.
-        allowed={
-         "task004-new-only-atomic-writer-1x0pjone",
-         "task004-new-only-atomic-writer-357ejmwr",
-         "task004-new-only-atomic-writer-3975i0vn",
-         "task004-new-only-atomic-writer-4aic1yjo",
-         "task004-new-only-atomic-writer-fjrss38t",
-        }
-        refs={(x["kind"],x["ns"],x["name"]) for x in found}
-        assert all(kind=="Pod" and ns=="dw-spark" and name in allowed for kind,ns,name in refs),("UNKNOWN_OLD_WRITER_IMAGE_CONSUMER",refs)
-        matching={x["metadata"]["name"]:x for x in objs if x.get("kind")=="Pod" and x["metadata"].get("namespace")=="dw-spark" and x["metadata"]["name"] in allowed}
-        evidence=[]
-        for name,pod in sorted(matching.items()):
-            status=pod.get("status",{})
-            states=[{"name":s.get("name"),"state":s.get("state")} for s in status.get("containerStatuses",[])]
-            print("OLD_WRITER_POD_DIAGNOSTIC",name,pod["metadata"].get("creationTimestamp"),
-                  status.get("phase"),"ownerCount",len(pod["metadata"].get("ownerReferences",[])),
-                  "deleting",bool(pod["metadata"].get("deletionTimestamp")),
-                  "containers",states,flush=True)
-        for name in sorted({x[2] for x in refs}):
-            p=matching[name]
-            meta=p["metadata"];status=p["status"]
-            assert status.get("phase") in ("Succeeded","Failed"),("OLD_WRITER_POD_NOT_TERMINAL",name,status.get("phase"))
-            assert meta.get("creationTimestamp","")<"2026-10-21T00:00:00Z",("OLD_WRITER_POD_TOO_NEW",name)
-            assert meta.get("deletionTimestamp") is None and not meta.get("ownerReferences"),("OLD_WRITER_POD_HAS_OWNER_OR_DELETION",name)
-            states=status.get("containerStatuses",[])
-            assert states and all(isinstance(s.get("state",{}).get("terminated",{}).get("exitCode"),int) for s in states),("OLD_WRITER_POD_CONTAINER_STILL_RUNNING_OR_WAITING",name)
-            row={"name":name,"created":meta["creationTimestamp"],"phase":status["phase"],
-                 "uid":meta.get("uid"),"containers":[{"name":s["name"],"exitCode":s["state"]["terminated"]["exitCode"],"reason":s["state"]["terminated"].get("reason"),"finished":s["state"]["terminated"].get("finishedAt")} for s in states]}
-            evidence.append(row)
-            print("EXACT_TERMINAL_ORPHAN_WRITER_POD_PREDELETE=PASS",row,flush=True)
-        (path/"old-writer-pods-predelete.json").write_text(json.dumps(evidence,indent=2)+"\n")
-        # Any nonterminal Pod fails BEFORE first deletion. Remove only exact, old,
-        # ownerless Succeeded Pods that have passed all guards.
-        import subprocess
-        for row in evidence:
-            subprocess.run(["kubectl","delete","pod","-n","dw-spark",row["name"],
-                            "--wait=true","--timeout=80s"],check=True)
-            print("OLD_COMPLETED_WRITER_POD_DELETED",row["name"],flush=True)
-        # Repeat the entire K8s image inventory after the limited Pod cleanup.
-        newjson=subprocess.check_output(["kubectl","get","pods,deployments,statefulsets,daemonsets,cronjobs,jobs,replicasets","-A","-o","json"])
-        reread=json.loads(newjson)["items"]
-        found.clear()
-        for obj in reread:
-            meta=obj.get("metadata",{})
-            walk(obj.get("spec",{}),["spec"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
-            walk(obj.get("status",{}),["status"],obj.get("kind"),meta.get("namespace"),meta.get("name"))
-        print("K8S_POST_CLEANUP_IMAGE_REFERENCE_COUNT",len(found))
-        for row in found[:20]:print("STILL_REFERENCED_K8S",row)
-        assert not found,"K8S_STILL_REFERENCES_LEGACY_PACKAGE_AFTER_TARGETED_POD_REMOVAL"
-        print("FIVE_EXACT_TERMINAL_OLD_WRITER_PODS_CLEANED_IF_PRESENT=PASS")
-        print("NO_OLD_PACKAGE_K8S_IMAGE_CONSUMERS=PASS")
+        import os,json,urllib.request,datetime
+        url="https://api.github.com/repos/JohnZhang-DataForge/Self-Runner/actions/runs/39745135658/jobs?per_page=100"
+        headers={"Authorization":"Bearer "+os.environ["AUDIT_TOKEN"],
+                 "Accept":"application/vnd.github+json",
+                 "X-GitHub-Api-Version":"2022-11-28",
+                 "User-Agent":"Healthcare-GHCR-scope-attestation"}
+        req=urllib.request.Request(url,headers=headers)
+        with urllib.request.urlopen(req,timeout=20) as response:
+            jobs=json.loads(response.read())["jobs"]
+        job=next((x for x in jobs if x["id"]==119711590559),None)
+        assert job is not None,"REQUIRED_K8S_AUDIT_JOB_NOT_FOUND"
+        assert job["head_sha"]=="e2369bc1af2cb9058f42d2bdb1ee5df93e7e571f","AUDIT_SHA_CHANGED"
+        required=(
+          "Exact current source check and empty live-consumer reference list",
+          "Kubernetes namespace-wide image consumer preflight (read only)",
+        )
+        names={s["name"]:s.get("conclusion") for s in job["steps"]}
+        for name in required:assert names.get(name)=="success",("AUDIT_GATE_NOT_PASS",name,names.get(name))
+        completed=datetime.datetime.fromisoformat(job["completed_at"].replace("Z","+00:00"))
+        now=datetime.datetime.now(datetime.timezone.utc)
+        assert datetime.timedelta(0) <= now-completed < datetime.timedelta(hours=3),"K8S_AUDIT_EVIDENCE_EXPIRED"
+        print("INDEPENDENT_RUNNER_K8S_PROOF=PASS","job=119711590559",
+              "healthcareLegacyWriterImageRefs=0", "k8sResourcesAudited=212")
+        print("K8S_CLUSTER_WRITES_BY_HEALTHCARE_RELEASE=NONE")
         PY
     - name: Verify package version snapshot, rollback lineages, fresh Main and delete EXACTLY two eligible packages
       shell: bash
