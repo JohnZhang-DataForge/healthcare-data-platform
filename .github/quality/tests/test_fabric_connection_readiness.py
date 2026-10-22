@@ -72,6 +72,20 @@ class ReadinessTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "exactly one"):
                 module.inspect_workspace_identity("healthcare-omop", "fake", "app")
 
+    def test_role_assignment_summary_reads_only_principal_role_and_scope(self):
+        source = [{"properties": {
+            "principalId": "1AE64649-A7C3-497E-9FE3-69B37D27C453",
+            "roleDefinitionId": "/subscriptions/sub/providers/Microsoft.Authorization/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
+            "scope": "/subscriptions/sub/resourceGroups/OMOP/providers/Microsoft.Storage/storageAccounts/johnzhang/blobServices/default/containers/landing",
+        }, "irrelevantJwt": "NEVER-PRINT"}]
+        result = module.summarize_direct_role_assignments(source)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["principal_id"], "1ae64649-a7c3-497e-9fe3-69b37d27c453")
+        self.assertEqual(result[0]["role_definition_id"], "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1")
+        self.assertEqual(set(result[0]), {"principal_id", "role_definition_id", "scope"})
+        with self.assertRaisesRegex(RuntimeError, "missing required metadata"):
+            module.summarize_direct_role_assignments([{"properties": {}}])
+
     def test_oidc_fail_closed_without_actions_context(self):
         with patch.dict("os.environ", {}, clear=True):
             with self.assertRaisesRegex(RuntimeError, "ACTIONS_ID_TOKEN_REQUEST_URL"):
