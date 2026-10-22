@@ -30,7 +30,7 @@ class SharedFabricConnectionContract(unittest.TestCase):
         self.assertIn('reader_type          = "WorkspaceIdentity"', candidate)
         self.assertIn('allow_user_code      = true', candidate)
         self.assertNotIn("service_principal =", candidate)
-        self.assertIn('skip_test_connection = var.reader_credential_type == "WorkspaceIdentity"',
+        self.assertIn('skip_test_connection = false',
                       (MODULE / "main.tf").read_text())
 
     def test_no_workspace_lakehouse_capacity_or_item_ownership(self):
