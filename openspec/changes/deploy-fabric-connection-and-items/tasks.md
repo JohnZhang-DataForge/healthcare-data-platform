@@ -10,8 +10,8 @@
 ## 2. Connection — first component
 
 - [x] 2.1 复用 `modules/connection` 添加 `shared-infra/connection` Root、独立 State、默认禁用/无秘密示例、静态合同和 `init -backend=false`、`validate` CI；合并 Main 并记录准确 PR/Run。
-- [ ] 2.2 核实 Fabric 当前 Tenant `AzureBlobs` Connector、认证模式、Reader RBAC、已有 Connection Inventory/Key Vault Secret Reference；记录负向门禁。
-- [ ] 2.3 在明确的 Live 授权下仅对 Connection Root 执行受控 Plan/Apply/ID readback/重复 Plan；不得触碰 Workspace/OneLake/Capacity Roots。
+- [x] 2.2 核实 Fabric 当前 Tenant `AzureBlobs` Connector、认证模式、Reader RBAC、已有 Connection Inventory/Key Vault Secret Reference；记录负向门禁。
+- [x] 2.3 在明确的 Live 授权下仅对 Connection Root 执行受控 Plan/Apply/ID readback/重复 Plan；不得触碰 Workspace/OneLake/Capacity Roots。
 
 ## 3. Fabric native Item publishing
 
@@ -129,3 +129,10 @@
 ## 2026-10-22 — Correct Fabric GET Connection response schema
 
 - Direct-ID GET-only [Run #39776890205](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39776890205) reached existing ID and expected name/type, but inspector failed `Fabric Connection account/domain did not match` because it incorrectly sought creation `connectionDetails.parameters` in a GET response. Microsoft's `GET /v1/connections/{id}` and LIST contracts return only `connectionDetails: {type, path}` (https://learn.microsoft.com/en-us/rest/api/fabric/core/connections/get-connection). Update exact-ID validation and inventory discovery to match `path` (with account and domain) rather than expecting `parameters`. No Cloud writes or new Connection. Re-run exact-ID GET to complete Control Plane readback. Data plane read remains unverified.
+
+
+## 2026-10-22 — Task 2.2 / 2.3 real acceptance (Azure RBAC + Fabric Connection)
+
+- User authorized follow-on after manually delegating container-level constrained RBAC Administrator to `github-terraform`. Self-Runner [PR #235](https://github.com/JohnZhang-DataForge/Self-Runner/pull/235), [Apply Run #39774912636](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39774912636): exact approved `Storage Blob Data Reader` for Workspace Identity Object ID `1ae64649-a7c3-497e-9fe3-69b37d27c453` on existing `OMOP/johnzhang/landing`; `Apply complete! Resources: 1 added, 0 changed, 0 destroyed`, role assignment `29d6147a-121a-e3b0-773a-cef63273b643`. GET-only [Run #39775311388](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39775311388) independently read back container-scoped role, role GUID `2a2b9908-6ea1-4ae2-8e65-a410df84e7d1`. Temporary Apply trigger removed by Self-Runner PR #236. Subsequent [Storage Plan #39777806327](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39777806327) **No changes**.
+- Self-Runner [PR #237](https://github.com/JohnZhang-DataForge/Self-Runner/pull/237), [Connection Apply Run #39775898394](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39775898394): Terraform approved exact one AzureBlobs/WorkspaceIdentity Connection `healthcare-omop-landing-blob` with `allow_usage_in_user_controlled_code=true` and account `johnzhang`; `Apply complete! Resources: 1 added, 0 changed, 0 destroyed`; Connection ID `92d67d9c-7a9d-4619-bcf3-2b48b5b93788`. Temporary Apply trigger removed by PR #238. First inspection incorrectly expected CREATE parameters in GET/LIST responses; corrected via Healthcare PRs #409/#410 to official Fabric `connectionDetails.path` schema. Final [GET-only Run #39777494344](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39777494344) **SUCCESS**: exact Connection ID, name, AzureBlobs type, account and path read back, and Fabric Workspace Identity unchanged. Subsequent [Connection Plan #39778085770](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39778085770) **No changes**.
+- These cloud operations satisfy Tasks **2.2 and 2.3** (Control Plane). No paid Capacity/Storage creation or Blob contents mutated. **Task 3.3 (Fabric Notebook/Pipeline native Item publish+smoke) and Task 4.2 (actual Blob Reader -> Fabric Notebook -> Lakehouse business E2E) remain unverified/unchecked.** Connection creation and the Provider's `skip_test_connection=false` are not proof of actual Blob read. Fabric Trial F4 remains unchanged.
