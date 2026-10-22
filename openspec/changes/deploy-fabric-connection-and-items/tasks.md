@@ -56,3 +56,9 @@
 - 核对 Healthcare Main `f83b46e830787ebcb4f3e37776e1b47c25913868`、Self-Runner Main `29094515eeb84f79a89c34061e55becd96e7d9ad`；Healthcare 无开放 PR，Self-Runner Local DP 其它 PR 不触碰。Connection Root `terraform.tfvars` 仍为 `connection = null`、Storage 仍只查询现有 Azure account/landing，不创建新资源。
 - Task 2.2 下增加 **read-only inspection**：通过 GitHub OIDC 对 ARM subscription tenant、现有 Storage、account-scope role assignments 和 Fabric `supportedConnectionTypes`/`connections` 做实时查询；如果两 Tenant 不同，WorkspaceIdentity 不支持跨租户，必须评估 ServicePrincipal 等经实际许可的路径。测试仅是 offline，不可将 inspection 等同于 Blob Reader 授权、Connection Apply 或 Notebook 读取。
 - 本阶段保持 Task 2.2/2.3/3.3 **未完成**；须先取得精确运行证据并复核既有连接名称、Reader identity、Notebook code credential support、Storage 网络限制后决定 `connection != null` 与未来受控 Apply。严禁从 read-only 检查推断存在数据通路。
+
+## 2026-10-21 — Workspace Identity Terraform 进入代码开发阶段
+
+- [已核查 Read-only Run #39694852934](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39694852934) 表明本次部署配置 Storage/Fabric Tenant 相同，AzureBlobs 支持 WorkspaceIdentity 的 user-controlled-code 使用，现有匹配 Connection 名称列表为空。Storage account scope 有 2 项角色分配但尚未独立核准具体 Reader principal，**不可据此声明 Azure Blob 权限已生效**。
+- 沿 Task 2.2 增补 `modules/workspace` 可选 `SystemAssigned` Identity，默认关闭；只在 `fabric-workspace/healthcare-omop/workspace/terraform.tfvars` 启用，输出后续 RBAC 所需 Service Principal Object ID。不触碰 `johnzhang-test`，不创建/升级/购买 Capacity。
+- 该代码批次需先独立 PR/CI；合并后仅运行明确授权的 `healthcare-omop/workspace` Terraform Plan，核对原地 Update / 无 Delete/Replace 和当前 State ID 读取。**Plan 不等于 Apply**；Identity Apply 和 Storage Blob Data Reader 授权必须由独立安全检查及审批后执行。Task 2.2、2.3、3.3 保持未完成，直到真实 Connection/Notebook Blob read evidence 到位。
