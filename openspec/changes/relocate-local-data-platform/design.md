@@ -1,5 +1,8 @@
 # Design
 
+> **2026-10-21 当前结果 — approved obsolete source-file cleanup COMPLETED**：本 Design 中的各阶段“拟执行/尚未运行”是当时的方案记录；实际已通过 [Task 4.9 closeout](evidence/LOCAL-DP-CURRENT-MAIN-ONE-PASS-DELETION-20261021.md)：Task003 9 个历史一次性安装器由 [PR #332](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/332) 退役，本轮 Task004 3 个旧源码生成器由 [PR #385](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/385) 一次性退役；8/8 Main 镜像完整发布 [#39689622324](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39689622324)，[2 旧+3 新 #39690143421](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39690143421) 和 [追加 2 新 #39696437220](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39696437220) 真实业务回归通过；现行 Git Tree **360 tracked、87 Shell、107 Tests、17 HOLD、19 正式输出完整**。此外 Discovery 100 预览修复后真实**自动调度** `scheduled__2026-10-22T00:45:00+00:00` [#39701693870](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39701693870) PASS。历史 Claim FAILED 的调度记录原样保留。**旧 GHCR 镜像包/版本退役 Task 4.11.6 和整个迁移 Change 归档仍是独立待办**；此次源码清理完成不授权无限制删除未知 A/B/E、测试或项目 GHCR 包。
+
+
 ## Context
 
 已归档的命名试点 `openspec/changes/archive/2026-10-18-adopt-local-data-platform-naming/` 在迁移前完成，只批准名称。用户随后改变执行顺序：不保留 Main 上双套业务代码，不等待非关键 DAG 完全调试，先独立备份并完成 Main 的物理目录归并，再逐项调试。
