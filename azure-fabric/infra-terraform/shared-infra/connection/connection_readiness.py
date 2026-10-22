@@ -148,7 +148,26 @@ def inspect_workspace_identity(workspace_name, token, fabric_client):
     print("WORKSPACE_IDENTITY_CLOUD_WRITES=NO")
 
 
-def inspect(subscription, group, account, workspace_name=None):
+
+def summarize_direct_role_assignments(items):
+    """Account/container RBAC metadata only; credentials and token bodies excluded."""
+    results = []
+    for item in items:
+        props = item.get("properties") or {}
+        principal = props.get("principalId")
+        role = props.get("roleDefinitionId")
+        scope = props.get("scope")
+        if not all(isinstance(v, str) and v for v in (principal, role, scope)):
+            raise RuntimeError("Role assignment inventory missing required metadata")
+        results.append({
+            "principal_id": principal.lower(),
+            "role_definition_id": role.rsplit("/", 1)[-1].lower(),
+            "scope": scope,
+        })
+    return sorted(results, key=lambda r: (r["principal_id"], r["role_definition_id"], r["scope"]))
+
+
+def inspect(subscription, group, account, workspace_name=None, landing_container=None):
     azure_tenant = require_env("ARM_TENANT_ID")
     fabric_tenant = require_env("FABRIC_TENANT_ID")
     azure_client = require_env("ARM_CLIENT_ID")
@@ -181,6 +200,7 @@ def inspect(subscription, group, account, workspace_name=None):
         (storage.get("properties") or {}).get("isHnsEnabled", False)).upper())
     print("PUBLIC_NETWORK_ACCESS=" + str(
         (storage.get("properties") or {}).get("publicNetworkAccess", "UNKNOWN")))
+    assignments = []
     try:
         assignments = pages(arm + scope +
             "/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01&%24filter=atScope()",
@@ -190,6 +210,20 @@ def inspect(subscription, group, account, workspace_name=None):
     except RuntimeError:
         print("ACCOUNT_SCOPE_RBAC_INVENTORY=UNVERIFIED")
         print("BLOB_READER_AUTHORIZED=UNVERIFIED")
+    if landing_container:
+        if not landing_container.replace("-", "").replace("_", "").isalnum():
+            raise RuntimeError("Invalid Landing container name")
+        container_scope = scope + "/blobServices/default/containers/" + quote(landing_container, safe="")
+        # atScope(): explicit grants at exactly this scope; inherited higher
+        # scopes still need separate inspection for effective access.
+        container_roles = pages(arm + container_scope +
+            "/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01&%24filter=atScope()",
+            azure_token)
+        print("ACCOUNT_SCOPE_DIRECT_ROLE_ASSIGNMENTS=" +
+              json.dumps(summarize_direct_role_assignments(assignments), sort_keys=True))
+        print("LANDING_SCOPE_DIRECT_ROLE_ASSIGNMENTS=" +
+              json.dumps(summarize_direct_role_assignments(container_roles), sort_keys=True))
+        print("RBAC_HIGHER_LEVEL_INHERITANCE=NOT_EXHAUSTIVELY_CHECKED")
     fabric_token = token_for(fabric_tenant, fabric_client, "https://api.fabric.microsoft.com/.default")
     if workspace_name:
         inspect_workspace_identity(workspace_name, fabric_token, fabric_client)
@@ -217,9 +251,10 @@ def main():
     parser.add_argument("--resource-group", required=True)
     parser.add_argument("--storage-account", required=True)
     parser.add_argument("--workspace-name", required=False)
+    parser.add_argument("--landing-container", required=False)
     args = parser.parse_args()
     try:
-        inspect(args.subscription, args.resource_group, args.storage_account, args.workspace_name)
+        inspect(args.subscription, args.resource_group, args.storage_account, args.workspace_name, args.landing_container)
     except (RuntimeError, KeyError) as exc:
         print("READINESS_FAILURE=" + str(exc))
         print("STATUS=BLOCKED_NO_CLOUD_MUTATION")
