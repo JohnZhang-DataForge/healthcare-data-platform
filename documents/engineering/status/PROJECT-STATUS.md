@@ -26,7 +26,7 @@ source_sha: 3b94af541f3904a731622e51eece027bef4b818c
 
 > **Fabric Identity Plan-only evidence, 2026-10-21 ET**: Healthcare PR #388 merged Main 5114dacff0318167582c0f08eb8fec6a8f453cdc (21/21 CI PASS). Self-Runner PR #214 merged 46b87fd9b6be0820dfb989f920df34cbd6339107. Real https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39698376237 refreshed existing healthcare-omop Workspace ID 745ce03b-15b6-4870-b0e5-8c5750aa18dc. Plan is identity SystemAssigned **in-place update: 0 add / 1 change / 0 destroy**; FABRIC_APPLY_EXECUTED=NO. Identity Object ID, Storage Blob Reader RBAC, Fabric Connection, Notebook and Blob E2E still pending. Next task: explicit Identity Apply authorization, then separate Reader RBAC/Connection/Notebook verification. See [active OpenSpec](../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md).
 
-## 1. 一屏总览
+> **Fabric Workspace Identity Apply 失败（2026-10-21 20:27 ET）**：Self-Runner [Run #39699719585](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39699719585) 在 Workspace identity 创建 LRO 报 `InternalError / Failed`，Fabric Request ID `075c45dc-a140-41a5-9476-d9f3bb7ae8df`。Plan 是 0 add / 1 change / 0 destroy，但 Terraform Apply 没有成功完成。不能认定 identity 已创建或已授权 Blob。下一步只读 GET Fabric Workspace identity 及 runner 显式 Workspace Role 取证，未查清前不重复 Apply、不删除失败 identity，RBAC / Connection / Notebook 仍待完成。\n\n## 1. 一屏总览
 
 | 工作线 | 决策/开发状态 | 已真实验证的范围 | 未完成或下一步 |
 | --- | --- | --- | --- |
