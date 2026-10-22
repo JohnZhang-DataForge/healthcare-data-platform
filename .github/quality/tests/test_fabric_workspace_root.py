@@ -36,8 +36,8 @@ class FabricWorkspaceRootTest(unittest.TestCase):
         self.assertIn('source = "../../../modules/workspace"', main)
         self.assertTrue((WORKSPACE / "../../../modules/workspace").resolve().is_dir())
         self.assertIn("basename(dirname(abspath(path.root)))", main)
-        self.assertIn("workspace_name   = local.workspace_name", main)
-        self.assertIn("role_assignments = merge(var.role_assignments, local.portal_admin_role_assignments)", main)
+        self.assertRegex(main, r'workspace_name\s+=\s+local\.workspace_name')
+        self.assertRegex(main, r'role_assignments\s+=\s+merge\(var\.role_assignments, local\.portal_admin_role_assignments\)')
         self.assertNotRegex(main, r'(?m)^\s*resource\s+"fabric_')
 
     def test_state_base_key_unique_to_resource_type(self):
@@ -55,7 +55,7 @@ class FabricWorkspaceRootTest(unittest.TestCase):
         self.assertIn('output "fabric_workspace_name"', outputs)
         self.assertEqual(
             outputs.count('terraform.workspace != "default" && terraform.workspace == local.workspace_name'),
-            2,
+            3,
         )
         self.assertNotIn('workspace_name = "healthcare-omop"', self.text("main.tf"))
 
@@ -96,7 +96,7 @@ class FabricWorkspaceRootTest(unittest.TestCase):
             self.assertIn('portal_admin_role_assignments = var.portal_admin_user_object_id == null ? {} : {', main)
             self.assertIn('principal_type = "User"', main)
             self.assertIn('role           = "Admin"', main)
-            self.assertIn('role_assignments = merge(var.role_assignments, local.portal_admin_role_assignments)', main)
+            self.assertRegex(main, r'role_assignments\s+=\s+merge\(var\.role_assignments, local\.portal_admin_role_assignments\)')
             self.assertIn(
                 'portal_admin_user_object_id = "670194b1-b1ff-41af-971a-a61438061f39"',
                 tfvars,
