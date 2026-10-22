@@ -1,6 +1,6 @@
 # Local DP 一次性清理实施及业务验收操作清单（2026-10-21）
 
-> OpenSpec Change: `relocate-local-data-platform` · Tasks **4.9.7–4.9.10**；本文件是**已经批准策略的具体执行清单，不是删除/构建/运行已经完成的证据**。规范事实与历史验收参见 [Tasks](../tasks.md)、[Design](../design.md) 和 [旧集中清理证据](LOCAL-DP-TASK003-CONSOLIDATED-RETIREMENT-20261020.md)。执行前必须以**实际最新 Main** 重取 SHA/消费者，不能机械套用本文冻结基线。
+> OpenSpec Change: `relocate-local-data-platform` · Tasks **4.9.7–4.9.10**；**本文件保留 2026-10-21 已经执行完毕的 E0–E4 操作清单作为历史执行合同，并非新待办**。实际执行证据、冻结 Blob/恢复与验收状态见 [2026-10-21 cleanup closeout](LOCAL-DP-CURRENT-MAIN-ONE-PASS-DELETION-20261021.md)、[权威 Tasks](../tasks.md) 和 [Design](../design.md)。本文下文的 `NOT_YET_RUN` 等措辞只描述制定方案时的冻结状态，不能覆盖最终结果；有新的删除 Change 必须重新取 Main SHA/依赖。
 
 ## 目标、范围和成功定义
 
