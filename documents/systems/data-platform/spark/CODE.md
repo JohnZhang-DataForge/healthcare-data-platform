@@ -83,6 +83,12 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`visit-raw-preflight.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/visit-raw-preflight.yaml.tpl) | SparkApplication 参数模板：visit raw preflight（需渲染参数与审批，不能直接 Apply） |
 | [`person-visit-reconciliation.yaml.tpl`](../../../../local-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl) | SparkApplication 参数模板：person visit reconciliation（P4 同批 Person/Visit 只读 Reconcile：仅 NEW_ONLY v2 子镜像覆盖，增加 per-job OpenLineage Listener 1.47.1 / Marquez private HTTP；保留原主程序和所有业务参数，不能直接 Apply） |
 
+### NEW_ONLY OpenLineage 父 Run 上下文（仅新 V2 子镜像）
+
+- [`openlineage_parent_context.py`](../../../../local-data-platform/spark/common/openlineage_parent_context.py)：通用渲染后、K8s Apply 前的 Spark 配置注入器，只接受真实 Airflow Provider 宏提供的 `namespace + job + UUID`；未 opt-in 的旧调用保持原样，不发事件、不查询或修改 Marquez/S3/PG。
+- [`test_openlineage_parent_context.py`](../../../../local-data-platform/tests/spark/test_openlineage_parent_context.py)：独立离线正向/负向验证，含错 Namespace、Job、UUID、错误 appName、部分上下文及旧调用兼容。
+- 既有 `05d/05e/05f` Shell 在原渲染后、`kubectl apply --dry-run` 前调用；由单个 `landing-processing-v2` 子镜像覆盖三脚本及注入器。**源码改动不表示镜像已发布**；Writer/Claim/Fencing 和 Spark 业务算法不变。
+
 ## 7. 相关测试与集成
 
 - **Person / Canonical**：[Canonical Gate Unit Tests](../../../../local-data-platform/tests/task002/test_canonical_gate_static.py)、[Person Mapper Static Tests](../../../../local-data-platform/tests/task002/test_person_omop_mapper_static.py)、[Canonical Publisher Tests](../../../../local-data-platform/tests/task003/test_generic_canonical_publisher.py)。
