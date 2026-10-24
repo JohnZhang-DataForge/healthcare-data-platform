@@ -58,7 +58,11 @@ spec:
               drop: ["ALL"]
           volumeMounts:
             - name: request
-              mountPath: /inputs
+              # ConfigMap directory projection uses symlinks; load_request intentionally
+              # rejects symlinks. A single-file subPath mount is an immutable regular
+              # file visible to strict request validation, not a mutable directory.
+              mountPath: /inputs/request.json
+              subPath: request.json
               readOnly: true
             - name: state
               mountPath: /synthea-new-generator-state

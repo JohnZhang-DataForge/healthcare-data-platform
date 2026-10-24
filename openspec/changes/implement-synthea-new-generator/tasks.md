@@ -67,3 +67,10 @@
 
 - 新增 [独立发布 Workflow](../../../.github/workflows/synthea-new-generator-ghcr-release.yml)：仅 Main、固定父镜像 Digest、独立生成 FHIR 并验证 SHA 后发布唯一 `git-<MainSHA>` GHCR 标签，绝不修改 `latest`。
 - **不在 Merge 前勾选 4.4**：成功发布还需要记录 GitHub Run、实际 Registry Digest；真正 K8s PVC/Job 及重试/读回必须由 Self-Runner 独立受控验证。
+
+### P3.4 实际 K8s 接入修正（2026-10-24）
+
+- GHCR Main-only Release [#40099221313](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40099221313) PASS：发布独立版本 `git-2209f350fcb3feb67969f2a5e34f1cd4b64b1100`，Registry Digest `sha256:7aeb7dab50611a39953e59eb8032446087208fed8d01fb4795580138bb040f7e`，未覆盖 `latest`。
+- 首次 Self-Runner Live Run [#40099579358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099579358) 集群安全预检 PASS，建立新的 10Gi PVC 后在 Job 模板渲染阶段阻断，未创建 Job；PVC 按 Retain 保留。
+- 第二次 Live Run [#40099715955](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099715955) 固定镜像已被 worker01 成功拉取、运行；但 ConfigMap 目录投影的 `request.json` 是符号链接，与 Generator 强制拒绝符号链接的合同冲突，报 `INVALID_REQUEST_FILE`，K8s Job FAIL。未生成本地 Patient、也未写 Azure/PG/S3。已确认旧 PVC 未动，新 PVC Bound。
+- 最小修复：Job 模板将只读 ConfigMap 的单个键使用 `mountPath: /inputs/request.json` + `subPath: request.json` 挂为普通文件；保持原 Generator 严格拒绝符号链接的安全规则不变。真实集群复验前任务 4.4 保持未完成。
