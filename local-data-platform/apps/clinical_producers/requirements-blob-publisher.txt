@@ -1,0 +1,4 @@
+# Runtime-only Azure client dependencies; never needed by offline fake tests.
+# Versioned to keep conditional-create/readback semantics reproducible.
+azure-storage-blob==12.24.0
+azure-identity==1.19.0
