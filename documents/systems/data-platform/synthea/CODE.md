@@ -226,3 +226,13 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 ## OIE 非持久化 Live 安装验收（2026-10-24）
 
 [Self-Runner Run #40120249619](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120249619) 已将 `dw-oie/oie-debug` 真正安装在 worker01。使用独立 GHCR OIE 4.7.0 固定镜像 Digest、嵌入式 Derby 和 `emptyDir`，Pod Ready、版本与临时存储独立读回 PASS；`dw-oie` PVC=0。后续 PVC 由用户在内网另行配置，切换前不得删除现有 PVC，也不得把临时环境测试当作 HL7 Channel 已验收。对应 [OIE OpenSpec](../../../../openspec/changes/implement-oie-fhir-to-hl7-adt-poc/tasks.md) 中 2.4/2.5/2.6.3 仍 OPEN。
+
+## OIE worker01 单目录持久化 /data/oie
+
+| 路径 | 作用 |
+| --- | --- |
+| [persistent/storageclass.yaml](../../../../local-data-platform/kubernetes/manifests/oie/persistent/storageclass.yaml) | 专用 `oie` StorageClass: local-path, worker01 路径 /data/oie, Retain, WaitForFirstConsumer |
+| [persistent/pvc.yaml](../../../../local-data-platform/kubernetes/manifests/oie/persistent/pvc.yaml) | 唯一 10Gi `dw-oie/oie-state`，挂 OIE `/opt/engine/appdata`，独立数据库/运行数据 |
+| [persistent/README.md](../../../../local-data-platform/kubernetes/manifests/oie/persistent/README.md) | 热加载事实、安全切换路径与一次性 PVC 验收原则；无需第二个文件存储卷 |
+| [persistent static test](../../../../local-data-platform/tests/clinical_producers/test_oie_persistent_static.py) | 专用 SC、PVC、安全切换静态校验 |
+| [persistent static CI](../../../../.github/workflows/oie-persistent-static.yml) | GitHub-hosted，无 K8s 副作用 |

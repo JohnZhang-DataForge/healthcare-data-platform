@@ -97,3 +97,21 @@ or admission events synthesized from an ambulatory visit.
 ## 2026-10-24 — First install uses disposable storage (supersedes initial PVC-first rollout)
 
 Per user instruction, do not create or mutate a PVC, PV or StorageClass in initial OIE testing. Deploy `dw-oie/oie-debug` single-replica **Deployment**, still pinned to `worker01`, with a bounded `emptyDir` mounted to OIE appdata/Derby and a separate ephemeral bootstrap Secret. The first acceptance is startup/Channel conversion and independent HL7 parse only; loss of state after Pod recreation is expected and does not count as data-loss recovery failure. The existing `oie-state` PVC + StatefulSet template remains a **future persistent option** for the user to provision on premises; it must not be rendered/applied in this debug phase. This change does not authorize cleaning old workloads or source PVCs.
+
+## 2026-10-24 — user-installed worker01 disk and automatic local-path reload
+
+The owner has added `storageClassConfigs.oie` to the existing
+`local-path-storage/local-path-config`; live [read-only preflight
+#40121142405](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121142405)
+confirms it maps **only `worker01` to `/data/oie`**, all other workers
+empty, provisioner one Ready replica and log `Applied config` containing
+the new OIE config without a restart. No `oie` StorageClass/PVC existed.
+The next authorized phase creates a dedicated `oie` StorageClass
+(`Retain`, `WaitForFirstConsumer`) and one `dw-oie/oie-state`
+RWO 10Gi claim; changes just the old debug Deployment's appdata volume.
+No need for a separate local long-lived HL7 file spool in the
+FHIR→OIE→Blob Publisher MVP; the embedded Derby and generated keystore
+and server ID live within `/opt/engine/appdata`. The initial admin
+property and other immutable server defaults remain injected via
+existing Kubernetes Secret/image outside appdata. Do not restart the
+shared provisioner. Persist the existing OIE server one writer at a time.
