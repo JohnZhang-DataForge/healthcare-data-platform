@@ -1,6 +1,6 @@
 # Tasks — Platform Portal Real Business Lineage MVP
 
-> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 SOURCE MERGED (LIVE OPEN) / P3 ISOLATED PARQUET SOURCE MERGED (LIVE OPEN) / P4+ OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 SCHEDULER / A3 PROBE LIVE PASS; NEW_ONLY BUSINESS PENDING / P3 ISOLATED SPARK JOB+INPUT+OUTPUT LIVE PASS / P4+ OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
 
 
 ### Current integration checkpoint — 2026-10-24 (supersedes historical pending-PR paragraphs)
@@ -27,7 +27,7 @@
 
 ## 3. P2 — Airflow real business opt-in
 
-- [ ] 3.1 只读核对 A3 Provider/Transport/Selective 现行生效位置，设计业务 DAG 的最小 opt-in 改动和负向防扩散测试。
+- [x] 3.1 只读核对 A3 Provider/Transport/Selective 现行生效位置，设计业务 DAG 的最小 opt-in 改动和负向防扩散测试。**Scheduler 配置/GitSync Live 已通过；其它角色不全配置，Task 级事件仍须真实业务 Run。**
 - [x] 3.2 仅修改真实 `new_only_omop_consumer` 所需最小配置，保留 DAG ID/Task ID/XCom/Claim/Fencing/Writer 许可；更新 Airflow CODE/测试并通过 PR CI。**仅 SOURCE / STATIC PASS，非 Main 部署或业务 Live。**
 - [ ] 3.3 受控验证真实 Airflow Job/Run 读回及其他 DAG 默认行为；明确 Proven vs Not Proven。
 
@@ -52,8 +52,8 @@
 ## 4. P3 — Spark A4 real I/O and Job/Run fix
 
 - [ ] 4.1 对现有 A4 `unknown`、Job latestRun 空、Dataset I/O 0 的事件/facets 做只读溯源，冻结根因证据；原 Workflow FAILURE 记录不覆写。
-- [ ] 4.2 在独立隔离 fixture 中定义实际输入与持久化输出 Dataset，修复 per-job Listener/Job/Run（依赖和测试固定），代码静态、负向测试通过。
-- [ ] 4.3 经授权进行隔离 SparkApplication Live Smoke，核对 Event job/run 名称和真实两个方向 Dataset API 图；保留失败 Run/资源归属。
+- [x] 4.2 在独立隔离 fixture 中定义实际输入与持久化输出 Dataset，修复 per-job Listener/Job/Run（依赖和测试固定），代码静态、负向测试通过。**P3 合成 PVC Parquet 与真实 Job/Run 正向验收通过，旧 unknown 的单独根因未 A/B 证明。**
+- [x] 4.3 经授权进行隔离 SparkApplication Live Smoke，核对 Event job/run 名称和真实两个方向 Dataset API 图；保留失败 Run/资源归属。**Run #40120840326：Spark COMPLETED / Parquet readback / Marquez non-unknown Job + 1 input + 1 output DatasetVersion PASS。**
 
 ## 5. P4 — Real Person / Visit / Reconcile integration
 
@@ -89,3 +89,15 @@
 - [x] 核对历史 [A4 真实失败 Run #38628542127](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38628542127) 与 [独立 facets 读回 #38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225)：Spark 计算成功、事件 COMPLETED 挂在 `unknown` Job；App Job 的 `latestRun` 为空，Input/Output DatasetVersions 均为 0。原历史 `probe.py` 未写出任何 Dataset，故**输出为零的根因至少包括没有 Output 操作**，不能据此认定 Listener 的 Parquet 输出采集有缺陷。Job 名字错位的完整根因仍未知，OpenSpec 4.1 保持 OPEN。
 - [ ] P3.2 代码候选：现行隔离 Probe 新增 `--output-uri` 严格路径白名单，数据通过唯一的 `local-path` PVC 持久化 Parquet、Spark 读回 2 行；Renderer 输出 ConfigMap + PVC + SparkApplication 三文档；Spark Listener 增加显式 `spark.openlineage.appName`，不假设能消除 `unknown`；负向合同与 PR CI 待跑。该项完成也只是静态通过，不代表真正申请到 PVC 或 Marquez Dataset 读回。
 - [ ] P3.3 Live 独立门：确认 worker02/StorageClass 与 Driver/Executor RWO 同节点挂载、运行 JAR、无冲突后，用**全新唯一 Token**创建且仅写本次测试 PVC；待 SparkApp COMPLETED 后核对真 Parquet 读回、Marquez 正确 Job+Run+Input/Output Dataset links。保留失败证据；只清理已标定为本次的隔离资源。当前没有执行 Live 或 GHCR 镜像更新。
+
+
+## 9. 2026-10-24 REAL P2/P3 Live 实验结果（当前证据；覆盖前文静态阶段旧结论）
+
+**正式证据**：[PORTAL-P2-P3-ISOLATED-LIVE-VERIFICATION-20261024.md](evidence/PORTAL-P2-P3-ISOLATED-LIVE-VERIFICATION-20261024.md)。下列是已经真实执行的 Run，不能与早前仅计划或 PR 静态检查混用。
+
+- P2 原 fail-closed 只读 [#40120573116](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120573116) 发现 API Server selective 未开，属于检查器错误地要求所有角色一致；未修改组件。
+- P2 只读角色分离 [#40120678131](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120678131) **SUCCESS**：Scheduler Airflow 3.2.2 + Provider 2.17.0、SELECTIVE/TRANSPORT/NAMESPACE PASS，Dag Processor 与 Scheduler 的 NEW_ONLY GitSync DAG SHA256=`b455c115f6b5468c698a2e9ce2c13cf37412e368742dcd654ee8a81eb8621144` 精确匹配 Healthcare Main `bcb18bc93e0372e4e78aa373c83768a143ab4b0d`。API Server/DAG Processor/Triggerer 未全部配置，不等于它们都必须发 Task Event。Self-Runner [PR #249](https://github.com/JohnZhang-DataForge/Self-Runner/pull/249) 已将正常手动 P2 预检改为 Scheduler 严格/其余角色据实报告。
+- P2 两任务真正 A3 Provider Probe [#40121352170](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121352170) **SUCCESS**：DagRun `portal-ol-40121352170`、两个 TaskInstance SUCCESS；Marquez 实际获得 DAG Job + `observe_runtime`/`confirm_runtime` 两个 Task Jobs。这仅验证 OpenLineage 基础 Producer/Collector 通路；**未触发 `new_only_omop_consumer`**，3.3 仍 OPEN。
+- P3 合成隔离 Spark+PVC Parquet [#40120840326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120840326) **SUCCESS**：真实 Parquet 写出/读回、Marquez `portal_a4_a440120840326.adaptive_spark_plan.a440120840326_summary_parquet` 下真实 COMPLETED Run `01a16f2d-0a34-7d81-b0f4-b07ffc3d6261`，1 Input + 1 Output DatasetVersion。对应 4.2/4.3 当前**隔离正向** Gate 完成，但不等于已接入 Person/Visit/Reconcile 或 S3/PG17。
+- 上述真实 Run 通过受限 Self-Runner 一次性 branch-push Workflow 获得（本次用户明确批准，手动入口保留 manual-only），全部先执行共享运行 Idle Gate。未触发 Writer COMMIT、未覆盖 `latest`、未清理其他 Session 的持久化数据；P3 本次 PVC 清理命令已尝试但无独立删除读回。
+- **下一步 P2 3.3 / P4 5.1–5.4**：先用受控 NEW_ONLY ReadOnly/SKIP 真业务 DagRun 证明 14 Task 子集实际 OpenLineage 事件，再将隔离验证的 per-job Listener 最小接入实际三个业务 SparkApplications（Person/Visit/Reconcile），仅在实际打包发生变化时按受影响镜像 `latest` 发布。P5 最后执行全新 Batch COMMIT/PG17 Readback/同批安全 SKIP/跨组件血缘对账。
