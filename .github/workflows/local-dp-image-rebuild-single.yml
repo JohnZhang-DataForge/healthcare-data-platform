@@ -185,7 +185,7 @@ jobs:
           set -Eeuo pipefail
           test "$GITHUB_REF" = "refs/heads/main"
           docker push "$IMAGE_TAG" | tee "$RUNNER_TEMP/single-image-push.txt"
-          DIGEST="$(sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*/\\1/p' "$RUNNER_TEMP/single-image-push.txt" | tail -n 1)"
+          DIGEST="$(sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/single-image-push.txt" | tail -n 1)"
           test -n "$DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
           echo "PUBLISHED_SINGLE_IMMUTABLE_TAG=$IMAGE_TAG"
