@@ -42,3 +42,5 @@
 - `oie_hl7_publisher.py` 从真实 Generator P4.1 源 Manifest 重新核验 FHIR/Encounter，严格要求每个 Encounter 有对应的 **新** OIE persisted message readback：Channel ID、Message ID、实际转换 bytes / SKIP marker，并执行 `verify_adt_against_fhir` 复核 A01 住院和 MSH-10 / 来源关联。
 - IMP 不得 SKIP；AMB 不可伪造 ADT A01；仅上传通过验证的 HL7 原始 Bytes，skip-only 禁止伪造成功 Manifest；复用已验收 `publish_immutable`。
 - 此处仅离线 Mock 结果，**未授权使用真实 OIE 的 Derby 消息或 Azure PUT**，3.2 / 4.2 保持 OPEN，后续经授权才实现受控 OIE 逐条 Fetcher 与 Live 新 Request E2E。
+
+- 分支中的离线 OIE readback 校验通过 [PR #455](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/455) 单独复核，验证独立 HL7 字节、A01/非住院 SKIP、源 SHA、同请求重试、错误医院/Channel/Message ID 拒绝。真实 OIE 消息来源仍需可信受控 Fetcher，故 3.2 未打勾；PR 测试 Run 以最终 HEAD 结论为准。
