@@ -10,10 +10,10 @@
 
 ## 2. P1 — Request and frozen-generation core
 
-- [ ] 2.1 定义 `contracts/synthea/new-generator/` 的 request-v1 / generation-manifest-v1 JSON Schema；验证 request_id、mode、人口、州/城市、日期/Seed、输出格式、路径、版本与 fingerprint。
-- [ ] 2.2 新增 `apps/synthea/synthea_new_generator/` 的统一 CLI、参数解析与 Synthea v3.3.0 CLI argument builder；仅 NEW_ONLY，CSV、FHIR 或两者可选。
-- [ ] 2.3 实现独立持久请求冻结、本地隔离临时输出、完整文件核验、Manifest-last 和失败/重试逻辑，禁止同请求参数漂移及静默覆盖。
-- [ ] 2.4 单元/合同负向测试：非法值、模式拒绝、重试、SHA 篡改、半成品、不同请求/并发隔离和无外部云/数据库调用。
+- [x] 2.1 定义 `contracts/synthea/new-generator/` 的 request-v1 / generation-manifest-v1 JSON Schema；验证 request_id、mode、人口、州/城市、日期/Seed、输出格式、路径、版本与 fingerprint。
+- [x] 2.2 新增 `apps/synthea/synthea_new_generator/` 的统一 CLI、参数解析与 Synthea v3.3.0 CLI argument builder；仅 NEW_ONLY，CSV、FHIR 或两者可选。
+- [x] 2.3 实现独立持久请求冻结、本地隔离临时输出、完整文件核验、Manifest-last 和失败/重试逻辑，禁止同请求参数漂移及静默覆盖。
+- [x] 2.4 单元/合同负向测试：非法值、模式拒绝、重试、SHA 篡改、半成品、不同请求/并发隔离和无外部云/数据库调用。
 
 ## 3. P2 — Real Synthea formats and hospital profiles
 
@@ -36,3 +36,10 @@
 - [ ] 5.4 全部代码、适用测试、实际运行证据和最终 Main 验证完成后，才考虑同步 Current Spec / Archive。
 
 **执行规范**：后续每个实施 PR 在 PR Body 单独声明 `OpenSpec-Change: implement-synthea-new-generator` 与真实 `OpenSpec-Task: n.n`，且同 PR 更新本 `tasks.md`。静态/本地测试无需写共享 K8s；对共享环境操作必须先读 Safe Operations / Session Coordination 并取得相应明确授权。
+
+
+### P1 实施记录（本 PR）
+
+- 已实现源文件：`apps/synthea/synthea_new_generator/{request,generator,entrypoint}.py`，v1 JSON Schemas、本地 Manifest/冻结/幂等安全检查及 Stub/负向单测。
+- 新增仅 CPU 的 PR 工作流 `.github/workflows/synthea-new-generator-unit.yml`；此处不依赖真实 Java Synthea、Kubernetes、Azure/OIE/Fabric。
+- P1 的 `2.1–2.4` 已覆盖源码、Mock/负向/并发单测；本 PR 最终 HEAD 的 CI 结论另以实际 Run 校验，不将 Stub 执行视作真实 Synthea/JAR、FHIR Bundle、州/城市匹配或镜像/K8s 的验证。P2/P3 仍保持未完成。
