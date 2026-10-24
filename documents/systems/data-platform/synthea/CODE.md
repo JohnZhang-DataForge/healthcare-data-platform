@@ -102,7 +102,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 ## 新的参数化生成器（独立于既有 OMOP NEW_ONLY）
 
-本组件位于新的 `apps/synthea/synthea_new_generator/`，只负责本地、参数化的 NEW_ONLY CSV/FHIR R4 数据生成、冻结与校验；不依赖旧 `new_only/` 的 18 CSV S3 Publisher/PG Writer，也不自行调用 OIE 或上传 Blob。当前阶段单元/合同验证；真实 Synthea 运行和 Kubernetes 部署仍待 OpenSpec P2/P3 验收。
+本组件位于新的 `apps/synthea/synthea_new_generator/`，只负责本地、参数化的 NEW_ONLY CSV/FHIR R4 数据生成、冻结与校验；不依赖旧 `new_only/` 的 18 CSV S3 Publisher/PG Writer，也不自行调用 OIE 或上传 Blob。P1 单元/合同测试与 P2 固定版本真实 Synthea FHIR/CSV 生成已通过；P3 独立镜像已在 GitHub-hosted CI 真实验证，**尚未发布 GHCR 或部署共享 Kubernetes**。
 
 | 源文件 | 说明 |
 | --- | --- |
@@ -129,3 +129,20 @@ Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE
 | [Hospital Profile Contract](../../../../local-data-platform/contracts/synthea/new-generator/hospital-profile-v1.schema.json) | 独立医院和交付类型合同 |
 | [Profile tests](../../../../local-data-platform/tests/synthea_new_generator/test_hospital_profiles.py) | 医院配置、隔离和异常路由离线测试 |
 | [Real source smoke](../../../../.github/workflows/synthea-new-generator-real-smoke.yml) | GitHub-hosted 真实 Synthea CSV/FHIR 测试；不写任何共享资源 |
+
+
+## P3 — 独立镜像与 K8s 部署模板（尚未部署）
+
+**安全边界**：新容器只复制 `synthea_new_generator`；基础 Synthea 镜像必须作为经过版本核对的 `@sha256:` 不可变构建参数传入。Job 模板里的镜像和请求 ConfigMap 均须由独立 Workflow 严格渲染。所有 Job 使用新 PVC `synthea-new-generator-state`；不会复用或清理旧 `synthea-new-only-state`。镜像编译/CI PASS 不代表共享集群已运行。
+
+| 文件 | 责任 |
+| --- | --- |
+| [`Dockerfile`](../../../../local-data-platform/images/synthea-new-generator/Dockerfile) | 独立镜像（仅生成器代码）、必须传入不可变 BASE_IMAGE |
+| [`pvc.yaml`](../../../../local-data-platform/kubernetes/manifests/synthea/new-generator/pvc.yaml) | 独立 Synthea 新生成器 PVC，部署前核实 StorageClass/节点容量 |
+| [`generate-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/synthea/new-generator/generate-job.yaml.tpl) | 带占位符的 Kubernetes Job，只读请求、受限资源与不可变镜像 |
+| [`test_p3_packaging.py`](../../../../local-data-platform/tests/synthea_new_generator/test_p3_packaging.py) | 镜像/模板隔离和基本安全策略静态单测 |
+| [`synthea-new-generator-image-smoke.yml`](../../../../.github/workflows/synthea-new-generator-image-smoke.yml) | GitHub-hosted 独立镜像 Clean Build，read-only root + network=none 真实 FHIR 生成、Manifest SHA 读回及重试；不会推镜像或 Apply K8s |
+
+准备实际部署时先核验 `dw-synthea`、`worker01`、`synthea-local`、旧 PVC、当前并行 Job、GHCR Release Image Digest 和本 Change 的 4.4 安全许可；未授权一律 HOLD。Job 所需的 ConfigMap 必须具有 `request.json` 键，按 Profile 创建不同 Request ID。生成状态 `SOURCE_GENERATED_VALIDATED` 不是 Blob READY，也不是完成 HL7。
+
+**P3 证据与边界（2026-10-24）**：[PR #420](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/420) 的 GitHub-hosted 独立 Docker Smoke 使用父镜像 `ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:2ef13ae77d476983ea88a5377570190859f253c9f98eb0652ebc793ef685b6b1`，实际验证 Atlanta 1 Patient/43 Encounter、Johns Creek 1/31、同请求重试与独立 Manifest SHA256 读回。镜像只在临时 Runner 本地构建，未推送 GHCR；模板也没有在 `dw-synthea` 应用。下一步的 4.4 K8s 操作必须完成 Session Coordination / Safe Operations 资源、授权和身份核对。

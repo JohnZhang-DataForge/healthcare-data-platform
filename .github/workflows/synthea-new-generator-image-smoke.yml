@@ -1,0 +1,128 @@
+name: Synthea New Generator P3 Isolated Image and K8s Source Gates
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/synthea-new-generator-image-smoke.yml"
+      - "local-data-platform/images/synthea-new-generator/**"
+      - "local-data-platform/kubernetes/manifests/synthea/new-generator/**"
+      - "local-data-platform/apps/synthea/synthea_new_generator/**"
+      - "local-data-platform/tests/synthea_new_generator/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  package-smoke:
+    name: P3 pinned-image clean build and real offline smoke (no publish)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Offline packaging unit and manifest source tests
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p 'test_*.py' -v
+          python3 -m compileall -q local-data-platform/apps/synthea/synthea_new_generator
+          test -f local-data-platform/kubernetes/manifests/synthea/new-generator/pvc.yaml
+          test -f local-data-platform/kubernetes/manifests/synthea/new-generator/generate-job.yaml.tpl
+
+      - name: Resolve immutable Synthea upstream parent
+        id: base
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          parent="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+          printf '%s' "${GH_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          docker pull "${parent}"
+          upstream="$(docker image inspect "${parent}" --format '{{index .Config.Labels "io.healthcare-data-platform.synthea.commit"}}')"
+          test "${upstream}" = "995cf2fd33e67918d4e33110d9f68ad248002221"
+          immutable="$(docker image inspect "${parent}" --format '{{index .RepoDigests 0}}')"
+          [[ "${immutable}" =~ ^ghcr\.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:[0-9a-f]{64}$ ]]
+          echo "parent=${immutable}" >> "${GITHUB_OUTPUT}"
+          echo "PINNED_PARENT=${immutable}"
+          echo "SYNTHEA_UPSTREAM_SHA=${upstream}"
+          echo "PARENT_PIN_CHECK=PASS"
+
+      - name: Build P3 image, strictly isolated, no registry push
+        shell: bash
+        env:
+          PINNED_PARENT: ${{ steps.base.outputs.parent }}
+        run: |
+          set -Eeuo pipefail
+          docker build --no-cache \
+            --build-arg "BASE_IMAGE=${PINNED_PARENT}" \
+            --build-arg "PROJECT_GIT_SHA=${GITHUB_SHA}" \
+            --file local-data-platform/images/synthea-new-generator/Dockerfile \
+            --tag synthea-new-generator:p3-check \
+            local-data-platform
+          docker image inspect synthea-new-generator:p3-check \
+            --format 'NEW_GENERATOR_IMAGE_ID={{.Id}} SYNTHEA_COMMIT={{index .Config.Labels "io.healthcare-data-platform.synthea.commit"}}'
+          docker run --rm --network none --read-only \
+            --tmpfs /tmp:rw,size=256m \
+            synthea-new-generator:p3-check --help | grep -F -- '--request'
+          echo "ISOLATED_IMAGE_BUILD=PASS"
+          echo "GHCR_PUBLISH=SKIPPED"
+
+      - name: Prepare two independent 1-patient FHIR requests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "${RUNNER_TEMP}/p3-inputs" "${RUNNER_TEMP}/p3-state"
+          sudo chown 10001:10001 "${RUNNER_TEMP}/p3-state"
+          cd local-data-platform
+          python3 -m apps.clinical_producers.hospital_profiles \
+            --profile config/synthea-new-generator/atlanta-fhir.json \
+            --request-id ci-p3-atlanta-0001 --population 1 \
+            --output "${RUNNER_TEMP}/p3-inputs/atlanta.json"
+          python3 -m apps.clinical_producers.hospital_profiles \
+            --profile config/synthea-new-generator/johns-creek-hl7.json \
+            --request-id ci-p3-johnscreek-0001 --population 1 \
+            --output "${RUNNER_TEMP}/p3-inputs/johns-creek.json"
+
+      - name: Run new image with read-only root and local durable data
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          for source in atlanta johns-creek atlanta; do
+            echo "OFFLINE_CONTAINER_SOURCE=${source}"
+            docker run --rm --network none --read-only \
+              --cpus 2 --memory 5g --tmpfs /tmp:rw,size=1g \
+              --env HOME=/tmp \
+              --mount "type=bind,source=${RUNNER_TEMP}/p3-inputs,target=/inputs,readonly" \
+              --mount "type=bind,source=${RUNNER_TEMP}/p3-state,target=/synthea-new-generator-state" \
+              synthea-new-generator:p3-check \
+              --request "/inputs/${source}.json"
+          done
+          # Manifests intentionally use UID 10001 / mode 0600. Read them through
+          # an independent read-only container, not as the GitHub Runner host UID.
+          docker run --rm -i --network none --read-only \
+            --mount "type=bind,source=${RUNNER_TEMP}/p3-state,target=/synthea-new-generator-state,readonly" \
+            --entrypoint python3 synthea-new-generator:p3-check - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          root=Path("/synthea-new-generator-state/requests")
+          for request in ("ci-p3-atlanta-0001","ci-p3-johnscreek-0001"):
+              folder=root/request
+              manifest=json.loads((folder/"generation-manifest.json").read_text())
+              assert manifest["status"]=="SOURCE_GENERATED_VALIDATED"
+              assert manifest["metrics"]["fhir_patients"]==1
+              assert manifest["metrics"]["fhir_bundles"]==1
+              assert manifest["files"]
+              for row in manifest["files"]:
+                  data=(folder/"payload"/row["path"]).read_bytes()
+                  assert hashlib.sha256(data).hexdigest()==row["sha256"]
+              print("DURABLE_LOCAL_READBACK=PASS",request,
+                    manifest["metrics"]["fhir_encounters"])
+          PY
+          echo "K8S_DEPLOYMENT=NOT_STARTED"
+          echo "AZURE_PUBLICATION=NOT_STARTED"
+          echo "OMOP_MUTATION=NO"

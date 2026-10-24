@@ -1,6 +1,6 @@
 # Tasks — Independent synthea_new_generator
 
-> **状态：ACTIVE / P1 已合并，P2 独立真实生成 Smoke 通过；P3/P4 待开发。** 不声明 Kubernetes、FHIR→OIE、Azure Blob 或 Fabric 已完成。原 `apps/synthea/new_only/` 及 OMOP 链路绝不因本 Change 改写。
+> **状态：ACTIVE / P1、P2 已合并，P3 4.1–4.3 镜像及离线验证 PASS；共享 K8s 4.4 和 P4 待执行。** 不声明 Kubernetes、FHIR→OIE、Azure Blob 或 Fabric 已完成。原 `apps/synthea/new_only/` 及 OMOP 链路绝不因本 Change 改写。
 
 ## 1. P0 — OpenSpec design and baseline
 
@@ -23,9 +23,9 @@
 
 ## 4. P3 — Package and isolated Kubernetes jobs
 
-- [ ] 4.1 建 `images/synthea-new-generator/`，引用固定 Synthea parent digest/commit；只安装最小 Runtime 依赖，无 OIE/Azure/PG 客户端或 Credential。
-- [ ] 4.2 建 `kubernetes/manifests/synthea/new-generator/` 独立 Job/存储配置、最小权限、资源限制、显式镜像 Digest；不动 `synthea-new-only-state` 和旧 NEW_ONLY 工作负载。
-- [ ] 4.3 按仓库强制源码地图规则同步 `documents/systems/data-platform/synthea/CODE.md`、相关组件文档和适用 CI；绑定真实 PR Head、镜像构建/测试证据。
+- [x] 4.1 建 `images/synthea-new-generator/`，引用固定 Synthea parent digest/commit；只安装最小 Runtime 依赖，无 OIE/Azure/PG 客户端或 Credential。
+- [x] 4.2 建 `kubernetes/manifests/synthea/new-generator/` 独立 Job/存储配置、最小权限、资源限制、显式镜像 Digest；不动 `synthea-new-only-state` 和旧 NEW_ONLY 工作负载。
+- [x] 4.3 按仓库强制源码地图规则同步 `documents/systems/data-platform/synthea/CODE.md`、相关组件文档和适用 CI；绑定真实 PR Head、镜像构建/测试证据。
 - [ ] 4.4 经授权和资源协调运行最小真实 K8s Job，核对输出 Manifest/Hash/Count、错误路径及同请求重跑零漂移；未做实机则保持未验证。
 
 ## 5. P4 — Handoff and finish
@@ -52,3 +52,13 @@
 - GitHub-hosted 真实 Synthea Smoke [Run #40095976490](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40095976490) 已在功能源码 SHA `a347454b16e6c93804e399543b46ce6dfcb4a4ac` PASS：pinned v3.3.0 upstream `995cf2fd33e67918d4e33110d9f68ad248002221`；Atlanta FHIR 1 Patient/43 Encounter/1 Bundle；Johns Creek FHIR 1/31/1 Bundle；Atlanta CSV 1/43/18 CSV；combined 1/43/18 CSV + 1 Bundle；同请求 FHIR readback/replay PASS。外部 Profile 单测和 CI 全部通过。该执行只发生在 GitHub-hosted 临时环境，未触发共享 Kubernetes/OIE/Azure/PG。后续提交后的 PR HEAD CI 需单独核实。
 
 **P0/P1 Merge 证据**：OpenSpec PR [#414](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/414) Main `0f808fca1a7ac80308859cde27cd5838082185bb`；P1 代码 PR [#417](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/417) Main `8e075bca130429c261a0f2cf245daef83ba8eebf`，受信任 OpenSpec / Component Map / Unit 测试通过。本 P2 对应 PR [#418](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/418)，完成合并后核对最新 Main。
+
+
+### P3 package/CI PR 记录（待证据复核）
+
+- 新增 `images/synthea-new-generator/Dockerfile`：父镜像使用经验证的 Synthea v3.3.0 不可变 `@sha256`，镜像内仅增加 Generator 源码，不引入旧 NEW_ONLY Writer 或 Azure/OIE 客户端。
+- 新增 `kubernetes/manifests/synthea/new-generator/{pvc.yaml,generate-job.yaml.tpl}`：独立 PVC、强制 Digest/ConfigMap 占位符、最小运行权限、非 root、readOnlyRootFilesystem、受限 CPU/内存/磁盘、无 ServiceAccount Token。
+- 新增 `synthea-new-generator-image-smoke.yml`：静态合同 → GitHub-hosted Docker 无缓存构建 → 新镜像真实 Atlanta 和 Johns Creek FHIR 生成 → 本地文件 SHA 读回与同请求重复执行；不触发共享集群、PG、S3、OIE、Azure 或 GHCR 写入。
+- 4.1–4.3 代码/CI 证据见 PR #420；`4.4` 必须另行授权共享 K8s、核对资源占用，并执行真实 Job 与独立持久化读回，目前保持未验证。
+
+**P3 独立镜像真实验证（PR #420）**：首次构建镜像/实际生成均成功，但宿主 Runner 尝试读取 UID 10001、0600 Manifest 被正确拒绝（CI FAIL），修复为独立无网络、只读挂载容器以同一非 root UID 读取后，最终测试 PASS。已观测父镜像 `ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:2ef13ae77d476983ea88a5377570190859f253c9f98eb0652ebc793ef685b6b1`，源固定 Synthea `995cf2fd33e67918d4e33110d9f68ad248002221`；新镜像本地 Image ID `sha256:01ffcc673bbccde5c0720ab5bdf11522beebfe8930f4a6d470fdcf351bbbced8`；Atlanta FHIR: 1 Patient/43 Encounter/1 Bundle；Johns Creek FHIR: 1/31/1 Bundle；重复请求 0 漂移；双 Manifest 独立 SHA 校验 PASS。以上镜像 **尚未推送 GHCR**，Kubernetes **尚未部署/读取**，Blob/OIE/Fabric **尚未执行**。本地 Docker Image ID 不可用作集群部署的 Registry Digest。
