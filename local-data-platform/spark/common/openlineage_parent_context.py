@@ -22,7 +22,7 @@ KEYS = (
     "OPENLINEAGE_PARENT_JOB",
     "OPENLINEAGE_PARENT_RUN_ID",
 )
-ANCHOR = re.compile(r"(?m)^    spark\.openlineage\.appName: ([a-z0-9-]+)$")
+ANCHOR = re.compile(r"(?m)^    spark\.openlineage\.appName: ([a-z0-9_-]+)$")
 JOB_PREFIX = "new_only_omop_consumer."
 
 
