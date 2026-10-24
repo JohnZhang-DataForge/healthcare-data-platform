@@ -102,16 +102,21 @@ class BusinessLineageTests(TestCase):
         self.assertFalse(lineage.evaluate(data, BATCH)[
             "reconcile_has_exact_two_produced_versions"])
 
-    def test_only_matching_real_airflow_run_proves_direct_parent(self):
+    def test_only_all_matching_airflow_task_runs_prove_direct_parent(self):
         data = fixture()
-        parent = {"parent": {
-            "job": {"namespace": lineage.AIRFLOW_NS,
-                    "name": "new_only_omop_consumer.spark_patient"},
-            "run": {"runId": "af-p"}}}
-        data["roles"]["person"][2]["detail"]["facets"] = parent
+        for role, task, run in (
+            ("person", "spark_patient", "af-p"),
+            ("encounter", "spark_encounter", "af-v"),
+            ("reconcile", "spark_reconcile", "af-r"),
+        ):
+            data["roles"][role][-1]["detail"]["facets"] = {"parent": {
+                "job": {"namespace": lineage.AIRFLOW_NS,
+                        "name": "new_only_omop_consumer." + task},
+                "run": {"runId": run},
+            }}
         self.assertEqual(lineage.evaluate(data, BATCH)[
             "airflow_spark_direct_parent"], "VERIFIED")
-        data["roles"]["person"][2]["detail"]["facets"]["parent"][
+        data["roles"]["person"][-1]["detail"]["facets"]["parent"][
             "run"]["runId"] = "not-the-real-run"
         self.assertEqual(lineage.evaluate(data, BATCH)[
             "airflow_spark_direct_parent"], "UNPROVEN")
