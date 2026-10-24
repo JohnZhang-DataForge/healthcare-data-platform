@@ -1,6 +1,6 @@
 # Tasks — Platform Portal Real Business Lineage MVP
 
-> **STATUS: ACTIVE / PLANNING & STATIC INVENTORY STARTED.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2+ NOT STARTED.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
 
 ## 1. P0 — Scope and plan
 
@@ -12,8 +12,8 @@
 
 - [x] 2.1 静态盘点既有 Helm/PG14/Marquez、A3 Provider/A4 Spark Listener 源码，标注 `deploy.sh`/`recover-web.sh`/`configure-scheduler.sh` 会修改资源，不能当作只读诊断。
 - [x] 2.2a 已编制仅执行固定 `kubectl get` 且要求精确 context 的 K8s 资源盘点脚本与纯离线测试；只检查 Namespaces、Deployments、Services、EndpointSlices、PG14 Pod/PVC，明确标记 HTTP / PG SQL / Job-Run-Dataset 未检查。尚未执行 Live 查询。
-- [ ] 2.2 核对共享环境占用与操作许可，使用受控只读命令检查 `dw-marquez` API/Web、Service/Endpoint、`dw-postgre14` PG14/PVC、健康/Namespace 及历史事件；记录时间、执行环境、实际源码 SHA。
-- [ ] 2.3 保存健康报告和异常矩阵；未证实则 `LIVE_STATUS=UNKNOWN`，不自行重启或重装。
+- [x] 2.2 通过既有 Runner ServiceAccount 临时 tokenFile kubeconfig 及固定 GET/HTTP/PG14 READ ONLY 检查完成当下 Live Baseline：[Self-Runner PR #244](https://github.com/JohnZhang-DataForge/Self-Runner/pull/244) 已合并，最终测试 HEAD `f6e59183f1b426d13049d2783cd14ffa026a34f3`、[Live Run #40093060512](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40093060512) SUCCESS；Healthcare 被测 SHA `26e2eb4f2bdc5835eb79ea0b6c96f2891a45c1ee`。K8s 10/10、Marquez Web/API/Proxy、PG14 只读 37 表 PASS。未重启/部署/写 SQL/触发 DAG/Spark，外部浏览器路径未验收。
+- [x] 2.3 正式保存 [P1 实机证据与异常矩阵](evidence/PORTAL-P1-READONLY-VERIFICATION-20261024.md)。**INFRA/API/PG14 HEALTH=PASS；HISTORICAL LINEAGE=EMPTY/BLOCKED**：Marquez 三个 Namespace（default/airflow/spark-probe）均 0 Job，A3 两个 Task 0 Completed Run；PG14 精确 COUNT：3 namespaces / 0 jobs / 0 runs / 0 lineage_events。没有把历史 A3/A4 原成功证明覆写，也没有猜测是谁清空数据。当前尚不能验收 Portal Job/Run/Dataset 业务链路；后续 P2/P3 必须用新产生的真实事件读回。
 
 ## 3. P2 — Airflow real business opt-in
 
