@@ -152,6 +152,7 @@ def publish_immutable(plan: dict, source_bytes: dict[str, bytes], *,
         except (ValueError, UnicodeError, TypeError):
             raise PublishBlocked("MANIFEST_PREFLIGHT_INVALID") from None
         if (not isinstance(recorded, dict)
+                or not isinstance(recorded.get("objects"), list)
                 or recorded.get("schema_version") != MANIFEST_VERSION
                 or any(recorded.get(k) != plan[k] for k in (
                     "hospital_id", "feed_id", "request_id",
@@ -166,8 +167,12 @@ def publish_immutable(plan: dict, source_bytes: dict[str, bytes], *,
     statuses = []
     content_type = (FHIR_CONTENT_TYPE if plan["target_format"] == "FHIR_R4"
                     else HL7_CONTENT_TYPE)
+    # Prefix segments may themselves equal the format name; never split on it.
+    data_root = request_root + "/" + plan["target_format"] + "/"
     for entry in entries:
-        name = entry["blob_key"].split("/" + plan["target_format"] + "/", 1)[1]
+        if not entry["blob_key"].startswith(data_root):
+            raise PublishBlocked("INVALID_VERIFIED_OBJECT_KEY")
+        name = entry["blob_key"][len(data_root):]
         raw = source_bytes[name]
         metadata = _metadata(plan, entry["sha256"], entry["size_bytes"],
                              kind="data", event_id=entry["source_event_id"])
