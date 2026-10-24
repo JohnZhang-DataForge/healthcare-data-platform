@@ -1,4 +1,4 @@
-# Versioned Johns Creek OIE 4.7.0 Channel — not yet deployed
+# Johns Creek OIE 4.7.0 clinical Channel — deployed and verified
 
 Use the upstream OIE 4.7.0 repository's **actual** Channel Reader + Channel
 Writer no-op fixture as an XStream-compatible base:
@@ -34,9 +34,9 @@ OIE error for malformed admission. The sender must check OIE message
 records and verify the returned bytes independently, never treat an HTTP
 2xx response alone as a delivered HL7/Blob message.
 
-**Current implementation only builds the XML and tests offline.**
-The static XML still has upstream Channel Writer `none` destination,
-whose runtime behavior and errors MUST be independently verified on OIE.
+**Clinical conversion accepted live on 2026-10-24** (see proof below). 
+The current Channel retains the upstream Channel Writer `none` destination;
+its **downstream delivery is NOT ACCEPTED** (although source-side 31 FHIR conversions and message readback passed on the live engine).
 A different destination connector may be needed before publication.
 Import/deploy messages can modify persistent OIE Derby; do not run
 on `dw-oie` until a coordinated, guarded Self-Runner workflow checks
@@ -46,3 +46,9 @@ database reset, PVC deletion or local-path restart permitted.
 When the real OIE Channel is accepted, a separately designed controlled
 transport will deliver completed HL7 messages to Azure Blob Landing.
 This PoC does not enable direct public ports or Blob writes.
+
+### Worker01 persisted OIE clinical acceptance (2026-10-24)
+
+- [Channel create/deploy #40127786353](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40127786353): canonical Johns Creek Channel ID `69ace705-a675-45f6-b126-a3b22a65212a` created once in existing `dw-oie` Derby PVC, independent GET readback, STARTED on worker01 OIE 4.7.0. No PVC reset.
+- [Real 31 FHIR event + replay acceptance #40128211780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40128211780): frozen generated Johns Creek source, 1 IMP A01 and 30 AMB skipped, same IMP retry identical HL7 bytes; independently parsed source records, verified 32 persistent OIE message records. Exact source artifact SHA256 `af41fd1c84001c9a11f721a0c0004bd12164997b5e243c7071257e38fca3c67d`.
+- Do not rerun the accepted batch: the `--existing-channel` preflight requires no prior Channel messages and now appropriately HOLDs. Later Producer integrations require a new immutable source request, immutable delivery metadata and separate idempotent publisher contract. Azure Blob publication has **not** occurred.
