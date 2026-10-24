@@ -55,7 +55,15 @@ IMAGES: dict[str, ImageSpec] = {
     "landing-processing-runtime": ImageSpec(
         "healthcare-data-platform-local-dp-landing-processing-v2",
         "landing-processing-runtime",
-        "test -s /data/spark/healthcare-data-platform/apps/task004/csv-contract-v2.json",
+        "test -s /data/spark/healthcare-data-platform/apps/task004/csv-contract-v2.json"
+        " && for file in"
+        " /data/spark/healthcare-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl"
+        " /data/spark/healthcare-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl"
+        " /data/spark/healthcare-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl;"
+        " do test -s \"$file\""
+        " && grep -Fq 'spark.extraListeners: io.openlineage.spark.agent.OpenLineageSparkListener' \"$file\""
+        " && grep -Fq 'spark.openlineage.namespace: healthcare-platform-spark-business' \"$file\""
+        " || exit 1; done",
         parent_package="healthcare-data-platform-task004-runtime",
     ),
     "new-only-omop-writer": ImageSpec(
