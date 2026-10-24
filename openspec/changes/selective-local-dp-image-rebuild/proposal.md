@@ -25,3 +25,7 @@
 ## Impact
 
 只修改 GitHub Actions、源码映射、离线构建选择器及测试；沿用既有 8 个 Dockerfile、镜像包名、legacy task004 标识。不改 Portal DAG PR #416、Writer 事务、RBAC/Secret、部署配置。构建与 GHCR 发布属于后续**独立人工 dispatch**，本 PR CI 不发布任何镜像。
+
+## Follow-up: portal-v1.0 staged candidate (2026-10-24)
+
+按用户新的发布策略，单镜像应先发布独立可测试的候选标签 `portal-v1.0`，保留真实 Digest；业务仍使用原 `:latest`。通过隔离验证后，再在一个独立、显式批准的 Workflow 中把**完全相同的 Digest** 设置为 `:latest`，不能在晋级时重新构建。现有一次性 `promote-latest` 将删除，以防未经验证的构建覆盖业务镜像。由于 Portal P2 Airflow DAG 属于 GitSync 而非 8 个镜像包，镜像候选发布和独立 DAG 版本测试属于不同验收对象；当前镜像目标未指定，不能推测并发布无关包。
