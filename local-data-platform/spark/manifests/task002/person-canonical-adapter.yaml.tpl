@@ -43,8 +43,19 @@ spec:
   deps:
     packages:
       - org.apache.hadoop:hadoop-aws:3.3.4
+      - io.openlineage:openlineage-spark_2.12:1.47.1
 
   sparkConf:
+    # P4: per-SparkApplication only; identical to the verified P3 listener path.
+    # The real batch/run mapping is retained by the control runtime, not
+    # inferred from a fabricated parent facet or the Spark app name.
+    spark.extraListeners: io.openlineage.spark.agent.OpenLineageSparkListener
+    spark.openlineage.transport.type: http
+    spark.openlineage.transport.url: http://marquez.dw-marquez.svc.cluster.local
+    spark.openlineage.transport.endpoint: /api/v1/lineage
+    spark.openlineage.transport.timeoutInMillis: "5000"
+    spark.openlineage.namespace: healthcare-platform-spark-business
+    spark.openlineage.appName: __APP_NAME__
     spark.jars.ivy: /tmp/.ivy2
 
     spark.hadoop.fs.s3a.endpoint: http://dw-seaweedfs-s3.dw-seaweedfs.svc.cluster.local:8333
