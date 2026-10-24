@@ -62,3 +62,8 @@
 - 4.1–4.3 代码/CI 证据见 PR #420；`4.4` 必须另行授权共享 K8s、核对资源占用，并执行真实 Job 与独立持久化读回，目前保持未验证。
 
 **P3 独立镜像真实验证（PR #420）**：首次构建镜像/实际生成均成功，但宿主 Runner 尝试读取 UID 10001、0600 Manifest 被正确拒绝（CI FAIL），修复为独立无网络、只读挂载容器以同一非 root UID 读取后，最终测试 PASS。已观测父镜像 `ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:2ef13ae77d476983ea88a5377570190859f253c9f98eb0652ebc793ef685b6b1`，源固定 Synthea `995cf2fd33e67918d4e33110d9f68ad248002221`；新镜像本地 Image ID `sha256:01ffcc673bbccde5c0720ab5bdf11522beebfe8930f4a6d470fdcf351bbbced8`；Atlanta FHIR: 1 Patient/43 Encounter/1 Bundle；Johns Creek FHIR: 1/31/1 Bundle；重复请求 0 漂移；双 Manifest 独立 SHA 校验 PASS。以上镜像 **尚未推送 GHCR**，Kubernetes **尚未部署/读取**，Blob/OIE/Fabric **尚未执行**。本地 Docker Image ID 不可用作集群部署的 Registry Digest。
+
+### P3.4 GHCR 发布（本次已获用户授权）
+
+- 新增 [独立发布 Workflow](../../../.github/workflows/synthea-new-generator-ghcr-release.yml)：仅 Main、固定父镜像 Digest、独立生成 FHIR 并验证 SHA 后发布唯一 `git-<MainSHA>` GHCR 标签，绝不修改 `latest`。
+- **不在 Merge 前勾选 4.4**：成功发布还需要记录 GitHub Run、实际 Registry Digest；真正 K8s PVC/Job 及重试/读回必须由 Self-Runner 独立受控验证。

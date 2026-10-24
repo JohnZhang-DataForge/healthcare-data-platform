@@ -1,0 +1,158 @@
+name: Synthea New Generator GHCR Release (Main Only)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/synthea-new-generator-ghcr-release.yml"
+      - "local-data-platform/images/synthea-new-generator/**"
+      - "local-data-platform/apps/synthea/synthea_new_generator/**"
+      - "local-data-platform/tests/synthea_new_generator/**"
+  push:
+    branches: [main]
+    paths:
+      # An explicitly reviewed workflow change is the one-time release activation;
+      # other routine source pushes cannot publish by accident.
+      - ".github/workflows/synthea-new-generator-ghcr-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: synthea-new-generator-ghcr-release
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Offline release policy and generator tests (no push)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Verify source, no legacy image or latest tag
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]
+          python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p 'test_*.py' -v
+          grep -Fq 'FROM ${BASE_IMAGE}' local-data-platform/images/synthea-new-generator/Dockerfile
+          test ! -e local-data-platform/images/synthea-new-generator/requirements.txt
+          echo NEW_GENERATOR_RELEASE_PREFLIGHT=PASS
+
+  publish:
+    name: Publish SHA-only new generator image after isolated live smoke
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PARENT_IMAGE: ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:2ef13ae77d476983ea88a5377570190859f253c9f98eb0652ebc793ef685b6b1
+      PACKAGE: ghcr.io/johnzhang-dataforge/healthcare-synthea-new-generator
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Confirm exact Main source and pinned parent
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          echo "RELEASE_HEALTHCARE_MAIN_SHA=$GITHUB_SHA"
+          echo "RELEASE_PARENT=$PARENT_IMAGE"
+          test ! -z "$PARENT_IMAGE"
+      - name: GHCR auth with short lived job token
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify Synthea version and clean build new package only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker pull "$PARENT_IMAGE"
+          actual="$(docker image inspect "$PARENT_IMAGE" --format '{{index .Config.Labels "io.healthcare-data-platform.synthea.commit"}}')"
+          test "$actual" = "995cf2fd33e67918d4e33110d9f68ad248002221"
+          tag="git-$GITHUB_SHA"
+          ref="$PACKAGE:$tag"
+          echo "IMAGE_TAG=$ref" >> "$GITHUB_ENV"
+          docker build --pull --no-cache \
+            --build-arg "BASE_IMAGE=$PARENT_IMAGE" \
+            --build-arg "PROJECT_GIT_SHA=$GITHUB_SHA" \
+            -f local-data-platform/images/synthea-new-generator/Dockerfile \
+            -t "$ref" local-data-platform
+          docker image inspect "$ref" >/dev/null
+          echo NEW_GENERATOR_CLEAN_BUILD=PASS
+      - name: Run new image offline with real FHIR and durable SHA readback
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/generator-requests" "$RUNNER_TEMP/generator-state"
+          sudo chown 10001:10001 "$RUNNER_TEMP/generator-state"
+          (
+            cd local-data-platform
+            python3 -m apps.clinical_producers.hospital_profiles \
+              --profile config/synthea-new-generator/atlanta-fhir.json \
+              --request-id release-atlanta-$GITHUB_RUN_ID --population 1 \
+              --output "$RUNNER_TEMP/generator-requests/atlanta.json"
+            python3 -m apps.clinical_producers.hospital_profiles \
+              --profile config/synthea-new-generator/johns-creek-hl7.json \
+              --request-id release-johnscreek-$GITHUB_RUN_ID --population 1 \
+              --output "$RUNNER_TEMP/generator-requests/johns-creek.json"
+          )
+          for profile in atlanta johns-creek atlanta; do
+            docker run --rm --network none --read-only \
+              --cpus 2 --memory 5g --tmpfs /tmp:rw,size=1g \
+              --env HOME=/tmp \
+              --mount "type=bind,source=$RUNNER_TEMP/generator-requests,target=/inputs,readonly" \
+              --mount "type=bind,source=$RUNNER_TEMP/generator-state,target=/synthea-new-generator-state" \
+              "$IMAGE_TAG" --request "/inputs/$profile.json"
+          done
+          docker run --rm -i --network none --read-only \
+            --mount "type=bind,source=$RUNNER_TEMP/generator-state,target=/synthea-new-generator-state,readonly" \
+            --entrypoint python3 "$IMAGE_TAG" - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          root=Path("/synthea-new-generator-state/requests")
+          folders=list(root.iterdir())
+          assert len(folders)==2,folders
+          for folder in folders:
+              manifest=json.loads((folder/"generation-manifest.json").read_text())
+              assert manifest["status"]=="SOURCE_GENERATED_VALIDATED"
+              assert manifest["metrics"]["fhir_patients"]==1
+              assert manifest["metrics"]["fhir_bundles"]==1
+              for item in manifest["files"]:
+                  contents=(folder/"payload"/item["path"]).read_bytes()
+                  assert hashlib.sha256(contents).hexdigest()==item["sha256"]
+              print("RELEASE_LOCAL_GENERATION_READBACK=PASS",folder.name,
+                    "encounters="+str(manifest["metrics"]["fhir_encounters"]))
+          PY
+      - name: Publish only immutable git-SHA tag, NEVER latest
+        id: push
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$IMAGE_TAG" = "$PACKAGE:git-$GITHUB_SHA" ]]
+          docker push "$IMAGE_TAG"
+          docker pull "$IMAGE_TAG"
+          full="$(docker image inspect "$IMAGE_TAG" --format '{{range .RepoDigests}}{{println .}}{{end}}' | grep -E '^ghcr.io/johnzhang-dataforge/healthcare-synthea-new-generator@sha256:[a-f0-9]{64}$' | head -n1)"
+          [[ "$full" =~ ^ghcr\.io/johnzhang-dataforge/healthcare-synthea-new-generator@sha256:[a-f0-9]{64}$ ]]
+          echo "IMAGE_DIGEST_REF=$full" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_IMAGE_DIGEST_REF=$full"
+          echo "GHCR_NEW_GENERATOR_PUBLISH=PASS"
+          echo "LATEST_TAG_PROMOTED=NO"
+          echo "SHARED_KUBERNETES_MUTATION=NO"
+          {
+            echo "## Synthea New Generator release"
+            echo "- Healthcare Main SHA: ${GITHUB_SHA}"
+            echo "- Image tag: ${IMAGE_TAG}"
+            echo "- Immutable image digest: ${full}"
+            echo "- Existing NEW_ONLY, K8s, S3, PG, OIE, Azure: unchanged"
+          } >> "$GITHUB_STEP_SUMMARY"
