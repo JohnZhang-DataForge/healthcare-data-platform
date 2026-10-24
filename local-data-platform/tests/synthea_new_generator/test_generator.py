@@ -1,5 +1,6 @@
 """Offline contract/negative tests; all Synthea runs are stubbed, no cloud/K8s."""
-import copy
+import concurrent.futures
+import time
 import json
 import subprocess
 import sys
@@ -212,6 +213,28 @@ class GenerationTests(unittest.TestCase):
         (folder / "payload").mkdir()
         with self.assertRaisesRegex(GenerationBlocked, "ORPHAN_PAYLOAD"):
             self.run_once()
+
+    def test_concurrent_same_request_executes_synthea_once(self):
+        class SlowStub(StubSynthea):
+            def __call__(self, argv, **kwargs):
+                time.sleep(0.05)
+                return super().__call__(argv, **kwargs)
+
+        runner = SlowStub()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(self.run_once, request(), runner) for _ in range(2)]
+            results = [f.result() for f in futures]
+        self.assertEqual(runner.calls, 1)
+        self.assertEqual(results[0], results[1])
+
+    def test_csv_unknown_patient_reference_is_rejected(self):
+        req = normalize(request(output_formats=["CSV"]))
+        fixture = self.root / "untrusted"
+        emit_fixture(build_command(req, self.jar, fixture))
+        (fixture / "csv/encounters.csv").write_text(
+            "Id,PATIENT\nenc1,unknown\n", encoding="utf-8")
+        with self.assertRaisesRegex(GenerationBlocked, "INVALID_CSV_ENCOUNTER_IDENTITIES"):
+            validate_payload(fixture, req)
 
     def test_separate_hospital_requests_do_not_share_state(self):
         atl = self.run_once(request(request_id="atlanta-00001", city="Atlanta"))

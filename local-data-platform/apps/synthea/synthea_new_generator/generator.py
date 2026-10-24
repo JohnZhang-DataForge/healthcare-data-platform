@@ -28,6 +28,8 @@ def sha256(path: Path) -> str:
 def atomic_once(path: Path, document: dict) -> dict:
     """Durably create a complete immutable JSON document without replacing existing bytes."""
     payload = canonical_bytes(document)
+    if path.is_symlink():
+        raise GenerationBlocked("UNSAFE_FROZEN_RECORD")
     tmp = path.with_name("." + path.name + "." + secrets.token_hex(12))
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     try:
