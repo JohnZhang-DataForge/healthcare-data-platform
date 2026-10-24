@@ -105,6 +105,14 @@ class RequestContractTests(unittest.TestCase):
         with self.assertRaises(GenerationBlocked):
             normalize({"schema_version": SCHEMA_VERSION})
 
+    def test_load_request_preserves_raw_contract_for_generator(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "req.json"
+            p.write_text(json.dumps(request()), encoding="utf-8")
+            parsed = load_request(p)
+            self.assertEqual(parsed, request())
+            self.assertEqual(normalize(parsed)["synthea_version"], "v3.3.0")
+
     def test_request_file_duplicate_keys_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "req.json"
@@ -155,7 +163,7 @@ class GenerationTests(unittest.TestCase):
     def test_csv_and_combined_generation(self):
         for selected in (["CSV"], ["CSV", "FHIR_R4"]):
             with self.subTest(formats=selected):
-                req = request(request_id="req-" + "-".join(selected).lower().replace("_", "-"),
+                req = request(request_id="req-gen-" + "-".join(selected).lower().replace("_", "-"),
                               output_formats=selected)
                 result = self.run_once(req)
                 self.assertEqual(result["metrics"]["csv_patient_rows"], 1)

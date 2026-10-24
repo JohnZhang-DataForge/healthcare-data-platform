@@ -9,7 +9,6 @@ import json
 import os
 from pathlib import Path
 import secrets
-import shutil
 import subprocess
 
 from .request import (GenerationBlocked, canonical_bytes, fingerprint, normalize)
@@ -201,7 +200,10 @@ def generate(root: Path, raw_request: dict, jar: Path, runner=subprocess.run) ->
         raise GenerationBlocked("SYNTHEA_JAR_MISSING")
     root = Path(root)
     with _lock(root):
-        folder = root / "requests" / req["request_id"]
+        requests_base = root / "requests"
+        if requests_base.is_symlink():
+            raise GenerationBlocked("UNSAFE_REQUESTS_DIRECTORY")
+        folder = requests_base / req["request_id"]
         if folder.is_symlink():
             raise GenerationBlocked("UNSAFE_REQUEST_DIRECTORY")
         folder.mkdir(parents=True, exist_ok=True)

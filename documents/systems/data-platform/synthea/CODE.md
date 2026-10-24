@@ -106,6 +106,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件 | 说明 |
 | --- | --- |
+| [`__init__.py`](../../../../local-data-platform/apps/synthea/synthea_new_generator/__init__.py) | 新生成器独立 Python package 的入口标识 |
 | [`request.py`](../../../../local-data-platform/apps/synthea/synthea_new_generator/request.py) | 请求参数校验、规范化、版本绑定与 fingerprint |
 | [`generator.py`](../../../../local-data-platform/apps/synthea/synthea_new_generator/generator.py) | Synthea CLI 参数、不可变请求、输出清单/Manifest、重试与本地数据检查 |
 | [`entrypoint.py`](../../../../local-data-platform/apps/synthea/synthea_new_generator/entrypoint.py) | 离线/容器均可复用的本地生成 CLI；不拥有云写权限 |

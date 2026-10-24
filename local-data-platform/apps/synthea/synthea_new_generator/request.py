@@ -51,8 +51,10 @@ def load_request(path: Path) -> dict:
     if not path.is_file() or path.is_symlink():
         raise GenerationBlocked("INVALID_REQUEST_FILE")
     try:
-        return normalize(json.loads(path.read_text(encoding="utf-8"),
-                                    object_pairs_hook=_reject_duplicates))
+        raw = json.loads(path.read_text(encoding="utf-8"),
+                         object_pairs_hook=_reject_duplicates)
+        normalize(raw)  # validate here; generator normalizes once more before freezing
+        return raw
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise GenerationBlocked("INVALID_REQUEST_JSON") from exc
 
