@@ -41,7 +41,7 @@ jobs:
           sudo chmod 400 "$conf"
           echo "$conf" >> "$RUNNER_TEMP/oie-isolated-secret-path.txt"
           docker run -d --name oie-isolated-import --cpus 2 --memory 4g \
-            -e JAVA_TOOL_OPTIONS="--add-opens=java.sql/java.sql=ALL-UNNAMED" \
+            -e VMOPTIONS="--add-opens=java.sql/java.sql=ALL-UNNAMED" \
             --mount "type=bind,source=$conf,target=/run/secrets/mirth_properties,readonly" \
             -p 127.0.0.1:18443:8443 "$image" >/dev/null
           ready=no
