@@ -1,0 +1,17 @@
+# Internal admin endpoint only; not a public receiver or HL7 feed.
+apiVersion: v1
+kind: Service
+metadata:
+  name: oie-debug
+  namespace: dw-oie
+  labels:
+    app.kubernetes.io/name: oie-debug
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: oie-debug
+  ports:
+    - name: admin-https
+      port: 8443
+      targetPort: admin-https
+      protocol: TCP

@@ -199,3 +199,13 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [service.yaml](../../../../local-data-platform/kubernetes/manifests/oie/service.yaml) | OIE 8443 ClusterIP 管理端口；不暴露公网 |
 | [OIE manifest tests](../../../../local-data-platform/tests/clinical_producers/test_oie_k8s_manifests.py) | 静态隔离与 YAML 解析测试 |
 | [OIE static workflow](../../../../.github/workflows/oie-manifest-static.yml) | GitHub-hosted 不访问 K8s 的 Worker01 模板 CI |
+
+## OIE 临时调试安装（持久化延后）
+
+| 入口 | 作用 |
+| --- | --- |
+| [debug/deployment.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/oie/debug/deployment.yaml.tpl) | `dw-oie`/worker01 非持久化 Deployment；`emptyDir` + 固定 Digest/UID/GID 占位符，不申请 PVC |
+| [debug/service.yaml](../../../../local-data-platform/kubernetes/manifests/oie/debug/service.yaml) | 临时 OIE 内网 HTTPS Service |
+| [debug/README.md](../../../../local-data-platform/kubernetes/manifests/oie/debug/README.md) | 安全调试步骤、失效数据边界以及持久化延后约束 |
+| [OIE debug template tests](../../../../local-data-platform/tests/clinical_producers/test_oie_debug_manifest.py) | 非持久化模式 YAML/节点/Secret 边界测试 |
+| [OIE debug static CI](../../../../.github/workflows/oie-debug-manifest-static.yml) | 无集群调用的 GitHub-hosted 静态门禁 |

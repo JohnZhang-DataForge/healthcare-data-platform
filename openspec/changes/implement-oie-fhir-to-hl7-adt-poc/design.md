@@ -93,3 +93,7 @@ or admission events synthesized from an ambulatory visit.
    namespace, PVC, secret, pod or OIE state mutation.
 4. Retain persistent OIE state on failure; only clean this run's independently
    identified ephemeral resources. Blob/HL7 delivery status remains pending.
+
+## 2026-10-24 — First install uses disposable storage (supersedes initial PVC-first rollout)
+
+Per user instruction, do not create or mutate a PVC, PV or StorageClass in initial OIE testing. Deploy `dw-oie/oie-debug` single-replica **Deployment**, still pinned to `worker01`, with a bounded `emptyDir` mounted to OIE appdata/Derby and a separate ephemeral bootstrap Secret. The first acceptance is startup/Channel conversion and independent HL7 parse only; loss of state after Pod recreation is expected and does not count as data-loss recovery failure. The existing `oie-state` PVC + StatefulSet template remains a **future persistent option** for the user to provision on premises; it must not be rendered/applied in this debug phase. This change does not authorize cleaning old workloads or source PVCs.

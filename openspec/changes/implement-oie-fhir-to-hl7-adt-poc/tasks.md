@@ -39,3 +39,10 @@ separate coordinated runtime authorization.
 ### P2.3 pre-runtime file permission hardening (2026-10-24)
 
 - Upstream `USER engine` is a named Linux account, so Kubernetes `runAsNonRoot` requires a numeric `runAsUser` known from the **actual image**. Static template updated with mandatory UID/GID placeholders; Secret `0440` and matching `fsGroup` prevents root-only initial bootstrap file from causing an unreadable configuration at startup. Still **no live K8s operations** and no claim of verified UID/GID.
+
+## 2.6 — Disposable first-install before durable storage (user-directed, 2026-10-24)
+- [x] 2.6.1 Add worker01-only OIE debug Deployment + ClusterIP service templates with ephemeral `emptyDir`, separate Secret and no PVC/StatefulSet creation; static CI and component map.
+- [ ] 2.6.2 After exact image verification/publishing and coordination, install a **disposable** OIE in `dw-oie` for real startup/Channel E2E. Record runtime evidence. Do not create PVC or move local data.
+- [ ] 2.6.3 After live Channel tests the user will provision durable on-premises storage separately; evaluate migration to persistent StatefulSet/PVC only after that explicit handoff.
+
+The previously authored durable manifests remain **later-phase source definitions only**; do not apply them during initial debugging. This scope change explicitly supersedes any earlier advice to create `oie-state` PVC before first debug install.
