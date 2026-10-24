@@ -6,6 +6,8 @@ source_sha: 26e2eb4f2bdc5835eb79ea0b6c96f2891a45c1ee
 ---
 
 # Platform Portal — OpenLineage + Marquez 可观测性子系统
+> **2026-10-24 P4 源码+镜像发布 PASS（业务 E2E OPEN）**：NEW_ONLY 三个实际 SparkApplication 模板已在 [Healthcare PR #441](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/441) 合并；仅 `landing-processing-v2:latest` 更新为 `sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`，[GHCR #40123946926](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40123946926) Build/Smoke/Registry Readback 成功。**实际 NEW_ONLY Person/Visit/Reconcile、Writer/PG17/同批 SKIP 尚未跑通**，不宣称端到端业务血缘通过。 [镜像证据](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P4-BUSINESS-IMAGE-LATEST-RELEASE-20261024.md)。
+
 
 > **2026-10-24 更新的 P2/P3 Live 结果（覆盖旧静态状态）**：Airflow 当前 Scheduler OpenLineage Provider/Transport 与 NEW_ONLY GitSync DAG SHA256 [Run #40120678131](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120678131) PASS；两任务真实 Airflow Probe 的 DAG/Task Jobs 在 Marquez [Run #40121352170](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121352170) PASS。隔离 Spark 在 PVC 上真实 Parquet 写出及读回、Marquez 非 unknown Job 下真实 Run、1 Input + 1 Output DatasetVersion [Run #40120840326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120840326) PASS。**尚未**核对真实 NEW_ONLY 业务 DagRun 或 Person/Visit/Reconcile S3 Dataset/Writer/PG17 E2E。详见 [P2/P3 实机 evidence](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P2-P3-ISOLATED-LIVE-VERIFICATION-20261024.md)。下文 P1 历史数据为空是该次只读检查时点，不是今天后来生成的新事件依然为空。
 

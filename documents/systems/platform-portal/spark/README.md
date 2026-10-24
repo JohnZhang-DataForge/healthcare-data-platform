@@ -6,6 +6,8 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 ---
 
 # Spark OpenLineage — A4 隔离 Smoke
+> **2026-10-24 P4 NEW_ONLY 真实业务模板现已打包发布（不是 E2E）**：[P4 单镜像 GHCR Release #40123946926](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40123946926) 对现有 `landing-processing-v2` 单一子镜像 Clean Build、三个 Listener 镜像内 Smoke、`:latest` Digest 读回均 PASS。新镜像 `sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`；旧 Digest/回退标签已记录。P4 Person/Visit/Reconcile **实际 NEW_ONLY DagRun/Pod/Marquez 业务 Dataset 仍待验证**。详见 [P4 Release Evidence](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P4-BUSINESS-IMAGE-LATEST-RELEASE-20261024.md)。
+
 
 **职责**：使用专属、隔离的 SparkApplication 和真实 Listener 发送 OpenLineage 事件到 Marquez；不是 Person/Visit 业务 ETL，不读取/修改 OMOP PostgreSQL、S3 生产批次、Writer Claim/Secret。实际源码与离线测试见 [CODE.md](CODE.md)。
 
