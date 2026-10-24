@@ -58,3 +58,15 @@ then import a tested OIE Channel and run a real Johns Creek source.
 Assert HL7 v2.5.1 readback, repeat-control-ID stability, skips and rejects.
 No Azure Blob, old Local DP/OMOP or Synthea state mutation is authorized
 by this template or these instructions.
+
+## Numeric UID/GID must be measured before runtime
+
+The official OIE upstream image declares `USER engine` (a **name**),
+not a numeric UID. Kubernetes `runAsNonRoot: true` can reject a named
+image user if `runAsUser` is absent. The StatefulSet therefore requires
+`__OIE_ENGINE_UID__` and `__OIE_ENGINE_GID__` to be filled from
+`docker run --rm --entrypoint id <exact-image> -u` / `-g` before
+any deployment, and sets `runAsUser`, `runAsGroup`, and `fsGroup`.
+The Secret uses `0440` mode, only accessible by its owner or matching
+group. The PVC's existing on-disk ownership must also be checked before
+first start; never chmod or chown unrelated retained volumes.

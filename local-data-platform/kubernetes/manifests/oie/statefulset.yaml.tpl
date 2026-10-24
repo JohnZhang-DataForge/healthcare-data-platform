@@ -30,6 +30,12 @@ spec:
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true
+        # Numeric UID/GID are REQUIRED from the exact pinned image inspect;
+        # upstream USER is named 'engine' and kubelet may reject runAsNonRoot
+        # without an explicitly verified numeric runAsUser.
+        runAsUser: __OIE_ENGINE_UID__
+        runAsGroup: __OIE_ENGINE_GID__
+        fsGroup: __OIE_ENGINE_GID__
         seccompProfile:
           type: RuntimeDefault
       terminationGracePeriodSeconds: 120
@@ -77,4 +83,5 @@ spec:
         - name: bootstrap-secret
           secret:
             secretName: oie-bootstrap-properties
-            defaultMode: 0400
+            # Group-readable only; kubelet applies fsGroup for mounted Secret files.
+            defaultMode: 0440

@@ -35,3 +35,7 @@ separate coordinated runtime authorization.
 
 - `local-data-platform/kubernetes/manifests/oie/`: proposed `dw-oie`, dedicated templated RWO PVC, one-replica StatefulSet **pinned to worker01**, and internal-only Service. OIE 4.7.0 secret config via `/run/secrets/mirth_properties` verified against real upstream source. Image Registry Digest and StorageClass are **required unresolved placeholders**, not unsafe defaults.
 - No namespace, PVC, pod, admin password, Service or other cluster resource has been created. Template-only CI tests are static, not OIE startup/runtime acceptance. Task 2.5 and Blob publisher remain OPEN.
+
+### P2.3 pre-runtime file permission hardening (2026-10-24)
+
+- Upstream `USER engine` is a named Linux account, so Kubernetes `runAsNonRoot` requires a numeric `runAsUser` known from the **actual image**. Static template updated with mandatory UID/GID placeholders; Secret `0440` and matching `fsGroup` prevents root-only initial bootstrap file from causing an unreadable configuration at startup. Still **no live K8s operations** and no claim of verified UID/GID.
