@@ -118,10 +118,8 @@ def get_record(api: OieApi, msgid: str) -> ET.Element:
     raise RuntimeError("OIE_MESSAGE_PROCESS_TIMEOUT")
 
 
-def validate_record(doc: ET.Element, kind: str, envelope: dict) -> None:
+def validate_record(doc: ET.Element, kind: str, envelope: dict) -> str:
     statuses = xml_text_nodes(doc, "status")
-    processed = xml_text_nodes(doc, "processedRaw")
-    encoded = xml_text_nodes(doc, "encoded")
     # OIE Content uses <processedRaw><content>VALUE</content></processedRaw>.
     # Use source connector's processed raw; never use original input as evidence.
     sources = [x for x in doc.iter() if local_tag(x.tag) == "connectorMessage"
@@ -134,11 +132,8 @@ def validate_record(doc: ET.Element, kind: str, envelope: dict) -> None:
                 content = elem.findtext("content") or ""
                 if content:
                     break
-    print(f"ISOLATED_{kind}_CONNECTOR_COUNT=" + str(len(sources)))
-    print(f"ISOLATED_{kind}_STATUS_VALUES=" + ",".join(sorted(set(statuses))[:8]))
-    print(f"ISOLATED_{kind}_SOURCE_CONTENT_PRESENT=" + str(bool(content)).upper())
-    print(f"ISOLATED_{kind}_RAW_TYPE=" + ("HL7" if content.startswith("MSH|") else
-          "SKIP" if content == SKIP else "OTHER"))
+    if len(sources) != 1 or "TRANSFORMED" not in statuses:
+        raise RuntimeError("ISOLATED_SOURCE_CONNECTOR_NOT_TRANSFORMED")
     if kind == "IMP":
         if not content.startswith("MSH|"):
             raise RuntimeError("ISOLATED_INPATIENT_NOT_PROCESSED_HL7")
@@ -147,13 +142,15 @@ def validate_record(doc: ET.Element, kind: str, envelope: dict) -> None:
             feed_id="demo-johns-creek-hl7-v2", assigning_authority="DEMOJC")
         if not matched["control_id"].endswith("-A01"):
             raise RuntimeError("ISOLATED_CONTROL_ID_WRONG")
-        print("ISOLATED_OIE_REAL_IMP_ADT_A01_READBACK=PASS")
+        # Test runner reports aggregate evidence below
     else:
         if "ADT^A01" in content or content.startswith("MSH|"):
             raise RuntimeError("ISOLATED_AMB_WRONGLY_EMITTED_HL7")
         if content != SKIP:
             raise RuntimeError("ISOLATED_AMB_SKIP_NOT_RECORDED")
-        print("ISOLATED_OIE_REAL_AMB_NO_ADT=PASS")
+        # No ADT; only a deterministic non-admission marker
+
+    return content
 
 
 def main() -> None:
@@ -174,14 +171,33 @@ def main() -> None:
     if "STARTED" not in channel_status.decode():
         raise RuntimeError("ISOLATED_CHANNEL_NOT_STARTED")
     print("ISOLATED_OIE_CHANNEL_DEPLOY=PASS")
-    for code in ("IMP", "AMB"):
-        envelope = next(x for x in entries
-                        if x["bundle"]["entry"][1]["resource"]["class"]["code"] == code)
+    actual = {"IMP": 0, "AMB": 0}
+    inpatient_event = None
+    inpatient_hl7 = None
+    def submit(envelope: dict, kind: str) -> str:
         payload = json.dumps(envelope, sort_keys=True, separators=(",", ":")).encode()
         _, body = api.call(f"/api/channels/{CHANNEL_ID}/messages", payload, "text/plain")
-        id_ = message_id(body)
-        doc = get_record(api, id_)
-        validate_record(doc, code, envelope)
+        doc = get_record(api, message_id(body))
+        return validate_record(doc, kind, envelope)
+
+    for envelope in entries:
+        cls = envelope["bundle"]["entry"][1]["resource"]["class"]["code"]
+        content = submit(envelope, cls)
+        actual[cls] += 1
+        if cls == "IMP":
+            inpatient_event = envelope
+            inpatient_hl7 = content
+    if actual != {"IMP": 1, "AMB": 30}:
+        raise RuntimeError("ISOLATED_OIE_CLINICAL_COUNTS_WRONG")
+    if inpatient_event is None or inpatient_hl7 is None:
+        raise RuntimeError("ISOLATED_OIE_NO_ADMISSION_MESSAGE")
+    retry_hl7 = submit(inpatient_event, "IMP")
+    if retry_hl7 != inpatient_hl7:
+        raise RuntimeError("ISOLATED_OIE_RETRY_HL7_NOT_STABLE")
+    print("ISOLATED_OIE_REAL_IMP_ADT_A01_READBACK=PASS")
+    print("ISOLATED_OIE_REAL_AMB_NO_ADT_COUNT=30")
+    print("ISOLATED_OIE_REAL_31_ENCOUNTER_READBACK=PASS")
+    print("ISOLATED_OIE_SAME_REQUEST_RETRY_IDENTICAL_HL7=PASS")
     print("ISOLATED_OIE_CLINICAL_MAPPING_RUNTIME=PASS")
     print("ISOLATED_OIE_BLOB_PUBLICATION=NO")
 
