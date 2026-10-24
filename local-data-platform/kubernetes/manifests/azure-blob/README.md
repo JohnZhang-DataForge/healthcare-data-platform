@@ -24,3 +24,9 @@
 - A successful GitHub PR/hosted static test is **NOT** evidence that `dw-az-blob` exists in Kubernetes.
 
 References: [Safe Operations](../../../../documents/engineering/operations/SAFE-OPERATIONS.md), [Session Coordination](../../../../documents/engineering/development/SESSION-COORDINATION.md), [active Publisher OpenSpec](../../../../openspec/changes/implement-multi-hospital-azure-blob-publisher/tasks.md).
+
+## Actual isolated Namespace acceptance — 2026-10-24
+
+`dw-az-blob` is **now live**, created from the exact Namespace YAML at Healthcare Main `f52138cbffcfe6b4049d0bbe0ccbf1022938829f` by [Self-Runner Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) after the [guarded one-shot workflow PR #259](https://github.com/JohnZhang-DataForge/Self-Runner/pull/259). Preflight and independent API readback were successful. Namespace UID: `879dc420-a9c0-4560-bdd7-4dbb72146fbd`.
+
+Exactly one Namespace was created. No workload, Pod, Secret, PVC, Policy or Azure resource was created. The optional `networkpolicy-default-deny.yaml` was **not applied**. This proof does not establish a Publisher runtime image, a trusted cross-namespace source handoff, scoped OIE readback credentials, a K8s Azure SP Secret or a successful Blob PUT/GET. Do not rerun the old OIE accepted messages or reuse unrelated Azure identity.
