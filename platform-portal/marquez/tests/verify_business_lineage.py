@@ -131,16 +131,92 @@ def select_writes(entries, batch, entity, source_name):
 
 
 def parent_matches_airflow(entry, airflow_runs, role):
+    """Only the Spark APPLICATION can prove a direct Airflow-to-Spark edge.
+
+    Spark action runs normally parent to the Spark application, not directly
+    to the Airflow task. Requiring the exact Airflow task run UUID prevents
+    a Spark-internal parent facet from becoming a false cross-system PASS.
+    """
     facet = (entry["detail"].get("facets") or {}).get("parent") or {}
     parent_job = facet.get("job") or {}
     parent_run = facet.get("run") or {}
     return (parent_job.get("namespace") == AIRFLOW_NS
-            and parent_job.get("name") == "new_only_omop_consumer." + AIRFLOW_TASK[role]
+            and parent_job.get("name") ==
+            "new_only_omop_consumer." + AIRFLOW_TASK[role]
             and parent_run.get("runId") in airflow_runs)
 
 
-def evaluate(data, batch):
+def spark_child_parent_matches(entry, app, application_run_ids):
+    """Verify a physical Spark action's exact parent application Run."""
+    facet = (entry["detail"].get("facets") or {}).get("parent") or {}
+    parent_job = facet.get("job") or {}
+    parent_run = facet.get("run") or {}
+    return (parent_job.get("namespace") == SPARK_NS
+            and parent_job.get("name") == app
+            and parent_run.get("runId") in application_run_ids)
+
+
+def run_hierarchy(entries, app):
+    """Summarize immutable run facts without pretending to fix a RUNNING run."""
+    completed_apps = {
+        e["id"] for e in entries
+        if e["job"] == app and e["state"] == "COMPLETED"
+    }
+    actions = [
+        e for e in entries if e["job"].startswith(app + ".")
+    ]
+    dataset_actions = [
+        e for e in actions
+        if identities(e["detail"], "input") or identities(e["detail"], "output")
+    ]
+    stale = [
+        {
+            "job": e["job"],
+            "run_id": e["id"],
+            "state": e["state"],
+            "started_at": e["detail"].get("startedAt"),
+            "updated_at": e["detail"].get("updatedAt"),
+            "ended_at": e["detail"].get("endedAt"),
+            "input_versions": len(identities(e["detail"], "input")),
+            "output_versions": len(identities(e["detail"], "output")),
+        }
+        for e in actions
+        if e["state"] == "RUNNING" and completed_apps
+    ]
+    return {
+        "application_completed": bool(completed_apps),
+        "dataset_action_runs": len(dataset_actions),
+        "spark_action_application_parent": (
+            "VERIFIED" if dataset_actions and completed_apps
+            and all(spark_child_parent_matches(
+                e, app, completed_apps) for e in dataset_actions)
+            else "UNPROVEN"
+        ),
+        "running_children_after_application_completed": len(stale),
+        "running_child_evidence": sorted(
+            stale, key=lambda item: (item["job"], item["run_id"]))[:20],
+        "action_terminal_gap": (
+            "OBSERVED" if stale else "NOT_OBSERVED_IN_THIS_SNAPSHOT"
+        ),
+    }
+
+
+def evaluate(data, batch, apps=None):
     roles = data["roles"]
+    # Exact app IDs are supplied by the caller in live mode. The offline
+    # fixtures can derive the application level (unqualified) Job name.
+    apps = apps or {
+        role: next((e["job"] for e in roles[role]
+                    if "." not in e["job"]), None)
+        for role in ROLES
+    }
+    if any(not apps.get(role) for role in ROLES):
+        raise ValueError("SPARK_APPLICATION_ID_MISSING")
+    hierarchy = {
+        role: run_hierarchy(roles[role], apps[role])
+        for role in ROLES
+    }
+
     patient = select_writes(roles["person"], batch, "patient", "patients.csv")
     encounter = select_writes(roles["encounter"], batch, "encounter", "encounters.csv")
     expected = {x for x in (patient, encounter) if x is not None}
@@ -153,12 +229,23 @@ def evaluate(data, batch):
     complete_input = len(expected) == 2 and expected <= observed
     terminal = complete_input and all(e["state"] == "COMPLETED"
                                       for e in matching)
+    # The *application* Run must carry the Airflow parent. Child action
+    # Spark parent facets alone can NEVER satisfy this cross-system check.
     parent_verified = all(
-        any(parent_matches_airflow(
-            e, {r["id"] for r in data["airflow"][role]
-                if r.get("state") == "COMPLETED"}, role
-        ) for e in roles[role])
+        any(
+            parent_matches_airflow(
+                e,
+                {r["id"] for r in data["airflow"][role]
+                 if r.get("state") == "COMPLETED"},
+                role,
+            )
+            for e in roles[role]
+            if e["job"] == apps[role] and e["state"] == "COMPLETED"
+        )
         for role in ROLES
+    )
+    all_applications_completed = all(
+        hierarchy[role]["application_completed"] for role in ROLES
     )
     return {
         "batch_id": batch,
@@ -173,13 +260,19 @@ def evaluate(data, batch):
             any(r.get("state") == "COMPLETED" for r in data["airflow"][role])
             for role in ROLES
         ),
+        "spark_hierarchy": hierarchy,
         "airflow_spark_direct_parent": (
             "VERIFIED" if parent_verified else "UNPROVEN"
         ),
         "business_dataset_gate": (
             "PASS" if patient is not None and encounter is not None
-            and complete_input and terminal else "INCOMPLETE"
+            and complete_input and terminal and all_applications_completed
+            else "INCOMPLETE"
         ),
+        # No Marquez Dataset or Spark Run can establish a durable PG17 COMMIT.
+        "writer_commit": "NOT_CHECKED",
+        "pg17_independent_readback": "NOT_CHECKED",
+        "same_batch_skip": "NOT_CHECKED",
     }
 
 
@@ -196,7 +289,7 @@ def main(argv=None):
            for app in apps.values()):
         parser.error("expected exact lower-case Spark Marquez application Job names")
     try:
-        report = evaluate(snapshot(apps), args.batch_id)
+        report = evaluate(snapshot(apps), args.batch_id, apps)
     except (ValueError, KeyError, TypeError, OSError, json.JSONDecodeError):
         print(json.dumps({"business_dataset_gate": "UNVERIFIED",
                           "reason": "MARQUEZ_GET_OR_SCHEMA_FAILED"}))
