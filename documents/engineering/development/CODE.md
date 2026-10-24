@@ -27,6 +27,9 @@ source_sha: 8e075bca130429c261a0f2cf245daef83ba8eebf
 
 | [`portal-a4-spark-static.yml`](../../../.github/workflows/portal-a4-spark-static.yml) | [OFFLINE CI ONLY] 复用原 A4 GitHub Hosted 检查，兼容 P3 的 ConfigMap + per-run PVC + SparkApplication 三份渲染文档、负向 Token/输出路径合同；PR 不创建 PVC/Pod、不会运行 Spark、不会推送 GHCR |
 
+| [`portal-p4-business-spark-static.yml`](../../../.github/workflows/portal-p4-business-spark-static.yml) | [HOSTED STATIC CI] P4 Person/Visit/Reconcile 真实 SparkApplication Listener 正向/负向合同、single `landing-processing-v2` 子镜像覆盖验证，不访问 GHCR/K8s/DB |
+| [`test_portal_p4_spark_listener.py`](../../../.github/quality/tests/test_portal_p4_spark_listener.py) | [STATIC POSITIVE+NEGATIVE] 业务 Spark mainApplicationFile、S3A 输入/输出、Listener/namespace/版本、Manifest/Secret 原合同、子镜像闭包；Reconcile 只读无输出 Dataset |
+
 全仓质量工具统一放在 `.github/quality/scripts/`，对应单元测试位于 [`.github/quality/tests/`](../../../.github/quality/tests)；这些不是 Local Data Platform 业务文件。
 
 | [`helm-gitsync-postmove-values.yaml`](../../../local-data-platform/config/airflow/helm-gitsync-postmove-values.yaml) | [DEPLOY CONFIG] 既存 `dw-airflow` Chart 1.22.0 的 GitSync 新源码子目录覆写。仅与现有 Helm Release 使用 `--reuse-values`；不是完整安装 Values，也不含 Secret。实际 Helm 修复：Self-Runner [Run #39422344924](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422344924) PASS。 |
