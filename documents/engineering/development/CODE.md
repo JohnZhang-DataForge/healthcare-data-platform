@@ -46,3 +46,13 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 - [CODE Map Sync Guard](../../../.github/quality/scripts/check_component_code_map.py) 通过 Git Tree/Diff 校验唯一所有者、路径完整性和增删时同 PR 同步；其作用是静态质量保护，非 Runtime/业务验收。
 
 **Canonical location (documentation hierarchy cutover):** this Developer CODE map is maintained at `documents/engineering/development/CODE.md` and checked by `Component Code Naming` CI. The previous `documents/development/CODE.md` is a retired historical copy, not a second owner.
+
+
+## Synthea 新 Generator 的模拟医院配置（P2）
+
+这些是仅包含模拟地理和批次默认参数的配置，不包含任何真实医疗数据或凭据。
+
+| 配置 | 说明 |
+| --- | --- |
+| [`atlanta-fhir.json`](../../../local-data-platform/config/synthea-new-generator/atlanta-fhir.json) | Atlanta FHIR R4 Profile |
+| [`johns-creek-hl7.json`](../../../local-data-platform/config/synthea-new-generator/johns-creek-hl7.json) | Johns Creek HL7 Profile；Synthea 的实际输出仍为 FHIR R4 |

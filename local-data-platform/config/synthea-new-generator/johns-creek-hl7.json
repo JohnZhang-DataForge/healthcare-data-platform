@@ -1,0 +1,19 @@
+{
+  "schema_version": "synthea-hospital-feed-profile-v1",
+  "hospital_id": "demo-johns-creek",
+  "feed_id": "demo-johns-creek-hl7-v2",
+  "location": {
+    "state": "Georgia",
+    "city": "Johns Creek"
+  },
+  "generation_defaults": {
+    "population": 5,
+    "seed": 67890,
+    "reference_date": "20261024"
+  },
+  "delivery": {
+    "source_format": "FHIR_R4",
+    "target_format": "HL7_V2",
+    "transformer": "OIE"
+  }
+}

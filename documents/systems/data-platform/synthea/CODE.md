@@ -116,3 +116,16 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [Unit workflow](../../../../.github/workflows/synthea-new-generator-unit.yml) | 无云、无集群、无 PostgreSQL 权限的 PR 单测 |
 
 实施入口：[`implement-synthea-new-generator`](../../../../openspec/changes/implement-synthea-new-generator/tasks.md)。
+
+
+## 医院/Feed 调用配置（P2，不属于 Generator 内部）
+
+Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE 转换和 Blob 发布是独立下游能力，本节不表示 OIE 已运行。
+
+| 入口 | 作用 |
+| --- | --- |
+| [`__init__.py`](../../../../local-data-platform/apps/clinical_producers/__init__.py) | 医院调用组件包 |
+| [`hospital_profiles.py`](../../../../local-data-platform/apps/clinical_producers/hospital_profiles.py) | 医院/Feed 配置 → Generator Request；不改变 Generator 内部 |
+| [Hospital Profile Contract](../../../../local-data-platform/contracts/synthea/new-generator/hospital-profile-v1.schema.json) | 独立医院和交付类型合同 |
+| [Profile tests](../../../../local-data-platform/tests/synthea_new_generator/test_hospital_profiles.py) | 医院配置、隔离和异常路由离线测试 |
+| [Real source smoke](../../../../.github/workflows/synthea-new-generator-real-smoke.yml) | GitHub-hosted 真实 Synthea CSV/FHIR 测试；不写任何共享资源 |

@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - "local-data-platform/apps/synthea/synthea_new_generator/**"
+      - "local-data-platform/apps/clinical_producers/**"
+      - "local-data-platform/config/synthea-new-generator/**"
       - "local-data-platform/tests/synthea_new_generator/**"
       - "local-data-platform/contracts/synthea/new-generator/**"
       - ".github/workflows/synthea-new-generator-unit.yml"
@@ -20,4 +22,4 @@ jobs:
       - name: Offline NEW_ONLY request, payload, and replay tests
         run: python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p "test_*.py" -v
       - name: Compile generator modules
-        run: python3 -m compileall -q local-data-platform/apps/synthea/synthea_new_generator
+        run: python3 -m compileall -q local-data-platform/apps/synthea/synthea_new_generator local-data-platform/apps/clinical_producers

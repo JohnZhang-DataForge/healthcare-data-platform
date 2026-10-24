@@ -1,0 +1,103 @@
+name: Synthea New Generator Real Source Smoke
+on:
+  pull_request:
+    paths:
+      - "local-data-platform/apps/synthea/synthea_new_generator/**"
+      - "local-data-platform/apps/clinical_producers/**"
+      - "local-data-platform/config/synthea-new-generator/**"
+      - "local-data-platform/contracts/synthea/new-generator/**"
+      - "local-data-platform/tests/synthea_new_generator/**"
+      - ".github/workflows/synthea-new-generator-real-smoke.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  synthea-source-smoke:
+    name: Real Synthea v3.3.0 CSV/FHIR source smoke (no publish)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Pull existing Synthea image with pinned upstream commit
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          image="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+          docker pull "${image}"
+          actual="$(docker image inspect "${image}" --format '{{index .Config.Labels "io.healthcare-data-platform.synthea.commit"}}')"
+          test "${actual}" = "995cf2fd33e67918d4e33110d9f68ad248002221"
+          docker image inspect "${image}" --format 'SMOKE_IMAGE_ID={{.Id}} SOURCE_COMMIT={{index .Config.Labels "io.healthcare-data-platform.synthea.commit"}}'
+          echo "PINNED_SYNTHEA_PARENT=PASS"
+
+      - name: Create independent FHIR and CSV source requests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "${RUNNER_TEMP}/new-generator-requests" "${RUNNER_TEMP}/new-generator-state"
+          sudo chown -R 10001:10001 "${RUNNER_TEMP}/new-generator-state"
+          cd local-data-platform
+          python3 -m apps.clinical_producers.hospital_profiles \
+            --profile config/synthea-new-generator/atlanta-fhir.json \
+            --request-id ci-atlanta-fhir-0001 --population 1 \
+            --output "${RUNNER_TEMP}/new-generator-requests/atlanta-fhir.json"
+          python3 -m apps.clinical_producers.hospital_profiles \
+            --profile config/synthea-new-generator/johns-creek-hl7.json \
+            --request-id ci-johnscreek-fhir-0001 --population 1 \
+            --output "${RUNNER_TEMP}/new-generator-requests/johns-creek-fhir.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from apps.clinical_producers.hospital_profiles import build_request, load_profile
+          profile = load_profile(Path("config/synthea-new-generator/atlanta-fhir.json"))
+          for mode, formats in (("csv", ["CSV"]), ("combined", ["CSV", "FHIR_R4"])):
+              request = build_request(profile, f"ci-atlanta-{mode}-0001", population=1)
+              request["output_formats"] = formats
+              Path(os.environ["RUNNER_TEMP"], "new-generator-requests",
+                   f"atlanta-{mode}.json").write_text(json.dumps(request, sort_keys=True))
+          PY
+
+      - name: Generate actual local Synthea CSV/FHIR resources
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          image="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+          for request in atlanta-fhir johns-creek-fhir atlanta-csv atlanta-combined; do
+            echo "#### REAL_SYNTHEA_${request}_BEGIN ####"
+            docker run --rm --network none --cpus 2 --memory 5g \
+              --mount "type=bind,source=${GITHUB_WORKSPACE}/local-data-platform,target=/workspace,readonly" \
+              --mount "type=bind,source=${RUNNER_TEMP}/new-generator-requests,target=/inputs,readonly" \
+              --mount "type=bind,source=${RUNNER_TEMP}/new-generator-state,target=/synthea-new-generator-state" \
+              --workdir /workspace \
+              --entrypoint python3 \
+              "${image}" -m apps.synthea.synthea_new_generator.entrypoint \
+              --request "/inputs/${request}.json"
+            echo "#### REAL_SYNTHEA_${request}_END ####"
+          done
+          echo "SYNTHEA_REAL_GENERATION=PASS"
+          echo "AZURE_BLOB_PUBLICATION=NOT_STARTED"
+          echo "OMOP_POSTGRES_MUTATION=NO"
+          echo "SHARED_KUBERNETES_MUTATION=NO"
+
+      - name: Verify same source request is reused without regeneration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          image="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+          docker run --rm --network none --cpus 2 --memory 5g \
+            --mount "type=bind,source=${GITHUB_WORKSPACE}/local-data-platform,target=/workspace,readonly" \
+            --mount "type=bind,source=${RUNNER_TEMP}/new-generator-requests,target=/inputs,readonly" \
+            --mount "type=bind,source=${RUNNER_TEMP}/new-generator-state,target=/synthea-new-generator-state" \
+            --workdir /workspace \
+            --entrypoint python3 \
+            "${image}" -m apps.synthea.synthea_new_generator.entrypoint \
+            --request "/inputs/atlanta-fhir.json"
+          echo "SAME_REQUEST_REPLAY_READBACK=PASS"
