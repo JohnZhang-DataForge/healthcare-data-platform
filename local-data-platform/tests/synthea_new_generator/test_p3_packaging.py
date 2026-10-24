@@ -47,7 +47,8 @@ class P3PackagingTests(unittest.TestCase):
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, body + pvc)
-        self.assertIn("mountPath: /inputs", body)
+        self.assertIn("mountPath: /inputs/request.json", body)
+        self.assertIn("subPath: request.json", body)
         self.assertIn("mountPath: /tmp", body)
         self.assertIn("mountPath: /synthea-new-generator-state", body)
         self.assertEqual(len(re.findall(r"^\s+name: __REQUEST_CONFIGMAP__$", body, re.M)), 1)

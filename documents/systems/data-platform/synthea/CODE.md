@@ -154,3 +154,5 @@ Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE
 | [`synthea-new-generator-ghcr-release.yml`](../../../../.github/workflows/synthea-new-generator-ghcr-release.yml) | 仅在 Main push/手动执行时构建新生成器镜像，真实独立 FHIR 生成与 SHA 读回成功后发布 `git-<SHA>`，禁止修改 `latest`；不自动部署 K8s |
 
 **分界**：GHCR 发布不代表已在 `dw-synthea` 运行；实际 PVC/Job 和持久化读回须走单独 Self-Runner 运行验收，前置安全门禁止占用时执行。
+
+**2026-10-24 ConfigMap 安全兼容性修正**：Kubernetes ConfigMap 按目录挂载时文件是符号链接，Generator 的 `load_request` 拒绝符号链接。新 Job 模板使用 `subPath: request.json` 单文件只读挂载，生成前即冻结输入。该改变不涉及旧 NEW_ONLY 目录或 PVC，真实 Job 验证参见 OpenSpec 4.4。
