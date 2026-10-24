@@ -167,7 +167,7 @@ def main() -> None:
     if not match:
         raise RuntimeError("ISOLATED_ADMIN_PASSWORD_NOT_SET")
     api = OieApi(match.group(1))
-    status, _ = api.call(f"/api/channels/{CHANNEL_ID}/_deploy?returnErrors=true", b"")
+    status, _ = api.call(f"/api/channels/{CHANNEL_ID}/_deploy?returnErrors=true", b"", "application/xml")
     if status not in (200, 204):
         raise RuntimeError("ISOLATED_CHANNEL_DEPLOY_FAILED")
     _, channel_status = api.call(f"/api/channels/{CHANNEL_ID}/status")
