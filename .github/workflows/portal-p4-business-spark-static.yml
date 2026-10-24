@@ -1,0 +1,46 @@
+name: Portal P4 Business Spark Listener Static Contracts
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/portal-p4-business-spark-static.yml"
+      - ".github/quality/tests/test_portal_p4_spark_listener.py"
+      - ".github/quality/scripts/local_dp_single_image_plan.py"
+      - "local-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl"
+      - "local-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl"
+      - "local-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl"
+      - "local-data-platform/images/landing-processing-runtime/Dockerfile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  p4-listener-static:
+    name: NEW_ONLY P4 Spark listener source and image closure (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install pinned YAML parser for source-only tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -r \
+            platform-portal/openlineage/spark/requirements-static.txt
+      - name: Verify three runtime Spark templates and fail-closed drift tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests -p 'test_portal_p4_spark_listener.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests -p 'test_local_dp_single_image_plan.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            .github/quality/scripts/check_spark_manifest_source_closure.py
+          echo P4_THREE_REAL_BUSINESS_SPARK_CONFIGS=STATIC_PASS
+          echo P4_SINGLE_CHILD_IMAGE_RELEASE_SCOPE=STATIC_PASS
+          echo K8S_SPARK_WRITER_GHCR_MUTATION=NONE
+          echo LIVE_S3_DATASET_EDGES=NOT_VERIFIED

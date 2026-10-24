@@ -57,7 +57,7 @@
 
 ## 5. P4 — Real Person / Visit / Reconcile integration
 
-- [ ] 5.1 对照实际 SparkApplication Renderer/Control Runtime/Image，设计不触碰业务算法的最小 Listener 接入；定义可核验的 Batch/DagRun/Spark Run/Dataset 身份映射。
+- [x] 5.1 对照实际 SparkApplication Renderer/Control Runtime/Image，设计不触碰业务算法的最小 Listener 接入；定义可核验的 Batch/DagRun/Spark Run/Dataset 身份映射。**确定 control-Pod 生成三个实际 SparkApplication、镜像仅 NEW_ONLY v2 子镜像、Batch/run_id/Processing URI 已由现有 State/XCom 保留；无伪造 parent。**
 - [ ] 5.2 业务模板/包装层及受影响镜像精确改动，补全 CODE/单测/负向回归；只重建受影响的镜像和其必要父子依赖，避免无关 8 镜像重建。
 - [ ] 5.3 对真实 Person、Visit、Reconcile 运行核对 Marquez events/edges；禁止人工伪造 parent/COMPLETED event 补洞。
 - [ ] 5.4 Writer 业务提交的可信状态关联方案：复用现有真实执行结果和 PG17 readonly Ledger/Checkpoint/CDM readback，不改变事务/Fencing，不凭 Spark COMPLETED 认定 Writer COMMIT。
@@ -101,3 +101,10 @@
 - P3 合成隔离 Spark+PVC Parquet [#40120840326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120840326) **SUCCESS**：真实 Parquet 写出/读回、Marquez `portal_a4_a440120840326.adaptive_spark_plan.a440120840326_summary_parquet` 下真实 COMPLETED Run `01a16f2d-0a34-7d81-b0f4-b07ffc3d6261`，1 Input + 1 Output DatasetVersion。对应 4.2/4.3 当前**隔离正向** Gate 完成，但不等于已接入 Person/Visit/Reconcile 或 S3/PG17。
 - 上述真实 Run 通过受限 Self-Runner 一次性 branch-push Workflow 获得（本次用户明确批准，手动入口保留 manual-only），全部先执行共享运行 Idle Gate。未触发 Writer COMMIT、未覆盖 `latest`、未清理其他 Session 的持久化数据；P3 本次 PVC 清理命令已尝试但无独立删除读回。
 - **下一步 P2 3.3 / P4 5.1–5.4**：先用受控 NEW_ONLY ReadOnly/SKIP 真业务 DagRun 证明 14 Task 子集实际 OpenLineage 事件，再将隔离验证的 per-job Listener 最小接入实际三个业务 SparkApplications（Person/Visit/Reconcile），仅在实际打包发生变化时按受影响镜像 `latest` 发布。P5 最后执行全新 Batch COMMIT/PG17 Readback/同批安全 SKIP/跨组件血缘对账。
+
+## 10. 2026-10-24 P4 NEW_ONLY Business Spark Listener code candidate
+
+- [x] P4.1 只读定位：`new_only_omop_consumer` 的 Spark 三阶段均以 KPO `landing-processing-runtime:latest` 调用 `task004-runtime person/visit/reconcile`，随后由各自 Shell 渲染 `task002/person-canonical-adapter`、`task003/encounter-canonical-adapter`、`task004/person-visit-reconciliation` SparkApplication。真正 S3A 操作在 `spark:3.5.7-python3` Driver/Executor 中，Airflow opt-in 不等于实际 Spark Listener。
+- [ ] P4.2 仅修改上述三个 SparkApplication 模板（P3 已验证 Listener 1.47.1、private HTTP、`spark.openlineage.appName=__APP_NAME__`、业务 namespace），`landing-processing-runtime` Dockerfile 覆盖父镜像的旧模板；**只需重建该一个现有 v2 child 镜像**。CI 加入静态 YAML schema、正/负 Listener 合同、镜像 COPY 及 smoke Gate；对应 CODE/Docs。当前在 PR 中代码候选，需最终 CI + Main 验证后才完成勾选。
+- [ ] P4.2b 单镜像 Clean Build/Smoke 后，针对 `landing-processing-runtime` 显式 `publish-latest`，记录旧/新镜像 Digest、backout tag；在业务 DagRun 中再核对 actual Pod imageID。**P4 改模板本身不会使现有 GHCR latest 或已运行 Pod 自动更新**。
+- [ ] P4.3 真实 NEW_ONLY 合成 Batch Person、Visit、Reconcile 各自独立 Run/Job/Dataset readback；Reconcile 只读**不期待输出 Dataset**。若与 Writer 同批 E2E，可复用 P5 的新 Batch，确保不伪造 PG COMMIT 或 Airflow parent。全部业务 Live 尚未执行。

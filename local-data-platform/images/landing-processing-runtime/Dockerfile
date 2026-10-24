@@ -21,5 +21,19 @@ COPY --chown=10001:10001 --chmod=0644 \
   contracts/synthea/new-only/csv-contract-v2.json \
   /data/spark/healthcare-data-platform/apps/task004/csv-contract-v2.json
 
+
+# P4 overlays ONLY the three NEW_ONLY SparkApplication configs onto the
+# existing parent. No TASK004 Spark business Python or legacy parent release
+# is changed; all three jobs use the original control scripts and Airflow DAG.
+COPY --chown=10001:10001 --chmod=0644 \
+  spark/manifests/task002/person-canonical-adapter.yaml.tpl \
+  /data/spark/healthcare-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl
+COPY --chown=10001:10001 --chmod=0644 \
+  spark/manifests/task003/encounter-canonical-adapter.yaml.tpl \
+  /data/spark/healthcare-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl
+COPY --chown=10001:10001 --chmod=0644 \
+  spark/manifests/task004/person-visit-reconciliation.yaml.tpl \
+  /data/spark/healthcare-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl
+
 USER 10001:10001
 # Inherit the proven /usr/local/bin/task004-runtime entrypoint.
