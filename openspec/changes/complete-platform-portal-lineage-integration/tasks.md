@@ -1,6 +1,6 @@
 # Tasks — Platform Portal Real Business Lineage MVP
 
-> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2+ NOT STARTED.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 STATIC CONTRACT PASS; LIVE VERIFICATION PENDING / P3+ OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
 
 ## 1. P0 — Scope and plan
 
@@ -18,8 +18,26 @@
 ## 3. P2 — Airflow real business opt-in
 
 - [ ] 3.1 只读核对 A3 Provider/Transport/Selective 现行生效位置，设计业务 DAG 的最小 opt-in 改动和负向防扩散测试。
-- [ ] 3.2 仅修改真实 `new_only_omop_consumer` 所需最小配置，保留 DAG ID/Task ID/XCom/Claim/Fencing/Writer 许可；更新 Airflow CODE/测试并通过 PR CI。
+- [x] 3.2 仅修改真实 `new_only_omop_consumer` 所需最小配置，保留 DAG ID/Task ID/XCom/Claim/Fencing/Writer 许可；更新 Airflow CODE/测试并通过 PR CI。**仅 SOURCE / STATIC PASS，非 Main 部署或业务 Live。**
 - [ ] 3.3 受控验证真实 Airflow Job/Run 读回及其他 DAG 默认行为；明确 Proven vs Not Proven。
+
+### P2 当前静态实施记录（2026-10-24，尚无业务 Live）
+
+- 双仓基线只读核对：Healthcare Main `460069e37d3ac38ec2f240f3105d023799340785`；Self-Runner Main `bd521563776d9fc7362e0a4d32c77b6b019ed1a9`。Healthcare 无开放 PR，Self-Runner 旧的 6 个开放 PR（#166–#168、#183–#185）未涉及本轮 Airflow P2；当时双仓 Actions running/queued 均为 0，**不代表集群内无活动资源**。
+- **3.1 部分只读源码核对**：A3 Probe 使用 `enable_lineage(DAG(...))`；既有 `configure-scheduler.sh` 设 `SELECTIVE_ENABLE=True`、HTTP Transport、Namespace 但仅触及 Scheduler Deployment。历史 A3 Provider 2.17.0 已验证；P1 没有读回当前实际 Airflow 执行组件上的 Provider/Transport/Selective。后者 **PENDING LIVE READONLY**，因此 3.1 不勾选。
+- **3.2 代码候选**：在原业务 `new_only_omop_consumer` DAG 外层使用 A3 相同的 selective wrapper；不调整 14 个 Task ID、DAG ID、XCom、S3/PG Claim、Spark、Writer/Fencing 或 Helm/K8s 配置。新增 AST 离线负向检查，核验 `landing_batch_discovery` 未 opt-in，A3 Probe 仍 opt-in；同步 Airflow CODE。PR CI 未完成前 **3.2 不勾选**。所有静态结论不代表部署。
+- **PR #416 初步 CI 证据（HEAD `1436d7460c333d387cd7dea9e076b0843d168c71`）**：Source Preflight [#40094681329](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094681329) SUCCESS（新增 5/5 离线负向/合同测试）、DagBag [#40094681298](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094681298) SUCCESS、Docs Links [#40094681327](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094681327) SUCCESS、Component Naming [#40094681326](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094681326) SUCCESS、OpenSpec Strict [#40094681294](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094681294) SUCCESS。首次 Change Gate [#40094681349](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094681349) 与 Trusted [#40094679895](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094679895) 因 PR Body **重复 `OpenSpec-Task` 声明**失败；已将 Body 调整为唯一 `OpenSpec-Task: 3.2`，Trusted [#40094744449](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094744449) SUCCESS，普通 Change Gate 的旧失败仍需新 HEAD 完成校验，不提前宣称整套 CI PASS。
+- **重要 Merge 副作用（HOLD）**：现有 `.github/workflows/local-dp-image-rebuild.yml` 的 Main `push` 触发路径包含 `local-data-platform/airflow/dags/**`，且成功后自动发布及晋级 8 个 GHCR `:latest` 镜像；合并此 DAG PR 会启动广于 P2 需求的 8 镜像构建/发布。未协调这项外部副作用及 GitSync 之前**不得合并**，不可仅凭 PR CI PASS 自动进入 Live。
+- **3.3 执行边界**：先让 PR 静态/单元/DagBag CI PASS；经审核合并并只读核对 GitSync SHA、执行进程 Provider/Transport、全局 Selective、Marquez 当前 0 Job/Run 基线及共享资源空闲/授权后，再用明确已完成且 Manifest 真实匹配的单个 Batch 做 `consumer_readonly=True`、不含 `spark_processing`/`writer_commit` 的受控手动 SKIP 路径；核对 Airflow 真实 Task state、Marquez namespace/Job/Run 和 PG14 持久化 COUNT 增量。不得触发新数据 Spark/Writer COMMIT，也不得因旧数据缺失伪造事件。任何一项未知则 HOLD，不把安全计划当运行成功。
+
+
+### P2 后续源代码/CI 复核（2026-10-24；优先以此节为当前发布边界）
+
+- **PR #416 静态通过**：最终已核对代码候选 HEAD `58a5e619e2167032c6e59b2b6bdbc477adc0fbb6`，源码仅增加 `enable_lineage(DAG(...))` 及离线合同，不更改 14 个任务、`schedule=None`、`max_active_runs=1`、`is_paused_upon_creation=True`、业务门槛、镜像引用、任务编排。DagBag [#40094848253](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094848253)、Source Preflight [#40094848324](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094848324)、OpenSpec Trusted [#40094982948](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40094982948) 等检查 SUCCESS。**3.2 的 SOURCE+CI 验证完成；这一行勾选不能视为 Main Merge 或真实 Marquez Events。**
+- **上面旧的 8 镜像合并阻断已排除**：[#419](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/419) 将旧 full-build 改为手工 `workflow_dispatch`，[#425](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/425) 将 Local 开发策略改为手工按需单镜像 `publish-latest`。Main `78e82637068c16488b7fc4f5b59a59834d2afc9a` 的八镜像发布不会因 P2 DAG 源码 Merge 自动执行；不需也不应该在此 PR 内发布任一业务 Image。
+- **仍待核实的真正 P2 阻断**：Helm `dags.gitSync.enabled=true` 且 subPath 指向 `local-data-platform/airflow/dags`；Merge 到 Main 可能使实际 Airflow 自动加载新 DAG。必须先读回当前 Scheduler/执行进程中真实的 Provider、`SELECTIVE_ENABLE`、Transport、GitSync SHA 及活跃业务状态，确认版本/回退策略，不能假设历史 A3 与现行运行态相同。缺失此范围的读回，**不进行共享 Airflow DagRun**、不触发 Spark/Writer。
+- **低风险源变更的边界**：这个 PR 只做选择性观测 wrapper，无新 DAG 或调度任务。P2 的 `3.1`（Runtime Provider/Transport）及 `3.3`（真实 Airflow/Marquez Job/Run 读回）仍 OPEN；P3/P4 仍须独立确认 Listener 的真实事件 Job 与 Dataset edges。
+- **Local 开发统一版本**：已有 KPO `:latest` 与 `image_pull_policy=Always` 不变；后续真改镜像源码才重建受影响的镜像。旧版本由 SHA/Run Tag + Digest/回退标签审计，不将已有 GHCR 版本直接当“完全无风险”。
 
 ## 4. P3 — Spark A4 real I/O and Job/Run fix
 
