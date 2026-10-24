@@ -23,4 +23,4 @@
 - Never commit or echo Azure SP client secrets, SAS tokens or OIE credentials; do not create secrets until their scope and delivery process are approved.
 - A successful GitHub PR/hosted static test is **NOT** evidence that `dw-az-blob` exists in Kubernetes.
 
-References: [Safe Operations](../../../../../documents/engineering/operations/SAFE-OPERATIONS.md), [Session Coordination](../../../../../documents/engineering/development/SESSION-COORDINATION.md), [active Publisher OpenSpec](../../../../../openspec/changes/implement-multi-hospital-azure-blob-publisher/tasks.md).
+References: [Safe Operations](../../../../documents/engineering/operations/SAFE-OPERATIONS.md), [Session Coordination](../../../../documents/engineering/development/SESSION-COORDINATION.md), [active Publisher OpenSpec](../../../../openspec/changes/implement-multi-hospital-azure-blob-publisher/tasks.md).
