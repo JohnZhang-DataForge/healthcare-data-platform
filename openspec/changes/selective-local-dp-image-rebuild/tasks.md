@@ -13,6 +13,13 @@
 - [ ] 2.2 调整原 8 镜像 Workflow 为 manual-only，阻止变更 Airflow DAG / Main push 自动发布全部 `:latest`；不删除原全量手动能力。
 - [ ] 2.3 补充纯离线正向/负向合同测试和组件 CODE 导航；PR CI 全绿、合并 Main 并记录 HEAD 与 Run。
 
+### 当前代码候选（尚未合并/未执行镜像）
+
+- Healthcare Main Base: `8e075bca130429c261a0f2cf245daef83ba8eebf`；并行 PR：Portal P2 #416、Synthea P2 #418；本轮使用独立分支。
+- 单镜像 Workflow 与固定镜像映射、离线正反测试已经提交候选；旧 full-build Workflow 候选改为手动触发。待绑定 PR HEAD 的 CI PASS 和合并 Main 后才算启用。
+- 不触碰 DAG、task004、Writer、K8s 或 PG；本 Change 尚未执行 workflow_dispatch，GHCR 发布与 latest 晋级均为 NONE。
+- Portal PR #416 需要待本次变更合并后再次确认 Main Push 不再自动启动 8 镜像发布；共享运行状态及并行 PR 仍需独立协调。
+
 ## 3. Manual runtime verification
 
 - [ ] 3.1 获得精确选中 image/operation/parent、当前 Main/并行 GHCR Writer 与消费者的协调授权后，先手动 `validate`，核对只产生目标镜像、无 Registry 更改。
