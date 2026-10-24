@@ -176,3 +176,14 @@ Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE
 | [SOURCE-HANDOFF.md](SOURCE-HANDOFF.md) | 交接布局、CLI 与接收方复验规则 |
 
 OIE/Blob 发布不属于 P4.1；其 Runtime 成功不能由离线校验测试推出。
+
+## OIE ADT 最小映射 — external Johns Creek Producer
+
+| 文件 | 责任 |
+| --- | --- |
+| [adt_a01.js](../../../../local-data-platform/apps/clinical_producers/oie/adt_a01.js) | 供 OIE Channel 使用的通用 FHIR Encounter IMP → HL7 ADT^A01 ES5 纯映射逻辑，当前仅离线测试 |
+| [test_oie_adt_a01.js](../../../../local-data-platform/tests/clinical_producers/test_oie_adt_a01.js) | Node.js HL7 字段、拒绝、跳过、稳定 ID 与 VM 兼容测试 |
+| [README.md](../../../../local-data-platform/apps/clinical_producers/oie/README.md) | 使用方式与尚未完成的 OIE Channel/运行态边界 |
+| [oie-adt-mapping-unit.yml](../../../../.github/workflows/oie-adt-mapping-unit.yml) | GitHub-hosted 离线 PoC 映射门禁，无 K8s/云连接 |
+
+OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/implement-oie-fhir-to-hl7-adt-poc/tasks.md)。

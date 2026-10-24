@@ -1,0 +1,28 @@
+name: OIE ADT Mapping Offline Unit
+on:
+  pull_request:
+    paths:
+      - "local-data-platform/apps/clinical_producers/oie/**"
+      - "local-data-platform/tests/clinical_producers/**"
+      - ".github/workflows/oie-adt-mapping-unit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oie-admission-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Offline patient-encounter mapping, HL7 fields and negative cases
+        run: node --test local-data-platform/tests/clinical_producers/test_oie_adt_a01.js
+      - name: State scope without real OIE engine
+        run: |
+          echo "OIE_ENGINE_RUNTIME_VERIFIED=NO"
+          echo "AZURE_BLOB_PUBLISHED=NO"
+          echo "KUBERNETES_MUTATION=NO"
