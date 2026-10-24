@@ -1,0 +1,31 @@
+name: Fabric Trial Scoped Git Item Publisher Static
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/deployment/**'
+      - '.github/quality/tests/test_fabric_trial_smoke_publisher.py'
+      - '.github/workflows/fabric-trial-smoke-publisher-static.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publisher-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate publisher and source with no Cloud writes
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "#### FABRIC_TRIAL_PUBLISHER_STATIC_OUTPUT_BEGIN ####"
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_trial_smoke_publisher.py' -v
+          python3 azure-fabric/deployment/trial_smoke_publisher.py \
+            --mode validate --source-root azure-fabric/workspaces/johnzhang-test
+          echo "OIDC_TOKEN_REQUESTED=NO TERRAFORM_PLAN_APPLY=NO FABRIC_PUBLISH=NO"
+          echo "#### FABRIC_TRIAL_PUBLISHER_STATIC_OUTPUT_END ####"

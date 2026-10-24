@@ -1,0 +1,51 @@
+name: Portal A4 - Spark OpenLineage Static Only (GitHub Hosted)
+on:
+  push:
+    branches: [feature/portal-a4-spark-agent-static-20261014]
+    paths:
+      - platform-portal/openlineage/spark/**
+      - .github/workflows/portal-a4-spark-static.yml
+  pull_request:
+    paths:
+      - platform-portal/openlineage/spark/**
+      - .github/workflows/portal-a4-spark-static.yml
+permissions:
+  contents: read
+jobs:
+  validate-offline-only:
+    # NEVER change to dw-runner-set. Must not access home cluster.
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test-only Python dependency
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check -r platform-portal/openlineage/spark/requirements-static.txt
+      - name: No Kubernetes or Spark runtime - source, YAML, run isolation tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m py_compile platform-portal/openlineage/spark/probe.py platform-portal/openlineage/spark/render.py
+          python -m unittest discover -s platform-portal/openlineage/spark/tests -p 'test_*.py' -v
+          python platform-portal/openlineage/spark/render.py --run-token gha01 > "$RUNNER_TEMP/portal-a4-gha01.yaml"
+          python - "$RUNNER_TEMP/portal-a4-gha01.yaml" <<'PY'
+          import pathlib,sys,yaml
+          p=pathlib.Path(sys.argv[1])
+          cm,app=list(yaml.safe_load_all(p.read_text()))
+          assert cm['kind']=='ConfigMap' and app['kind']=='SparkApplication'
+          assert cm['metadata']['namespace']==app['metadata']['namespace']=='dw-spark'
+          assert app['metadata']['name']=='portal-a4-gha01'
+          assert app['spec']['restartPolicy']['type']=='Never'
+          print("PORTAL_A4_GITHUB_HOSTED_OFFLINE_YAML_RENDER=PASS")
+          print("PORTAL_A4_STATIC_TEST_SUITE=PASS")
+          print("PORTAL_A4_REAL_SPARKAPPLICATION=NOT_RUN")
+          print("PORTAL_A4_GITHUB_SELF_RUNNER=NOT_USED")
+          print("PORTAL_A4_KUBERNETES_S3_OMOP_MUTATION=NO")
+          PY

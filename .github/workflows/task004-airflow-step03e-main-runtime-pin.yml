@@ -1,0 +1,42 @@
+name: TASK004 Airflow STEP03E Main Runtime Pin Gate
+
+on:
+  push:
+    branches:
+      - 'feature/task004-airflow-step03e-main-runtime-pin'
+    paths:
+      - 'airflow/dags/task004_processing_pipeline.py'
+      - 'tests/task004/test_airflow_task004_processing_source.py'
+      - 'tests/task004/test_airflow_step03c_upstream_source.py'
+      - 'tests/task004/test_airflow_step03e_manual_run_dates.py'
+      - '.github/workflows/task004-airflow-step03e-main-runtime-pin.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Validate main runtime pin
+        run: |
+          set -Eeuo pipefail
+
+          python3 -m py_compile             airflow/dags/task004_processing_pipeline.py
+
+          python3 -m unittest discover             -s tests/task004             -p 'test_airflow_task004_processing_source.py'             -v
+
+          python3 -m unittest discover             -s tests/task004             -p 'test_airflow_step03c_upstream_source.py'             -v
+
+          python3 -m unittest discover             -s tests/task004             -p 'test_airflow_step03e_manual_run_dates.py'             -v
+
+          grep -F             "8d55a150e7fcd8ea9a1ed8e8c2c64d09bf4d19687822c0ec84857fdf429c05a7"             airflow/dags/task004_processing_pipeline.py
+
+          echo "TASK004_AIRFLOW_STEP03E_MAIN_RUNTIME_PIN=PASS"
+          echo "RESULT=PASS"

@@ -1,0 +1,80 @@
+# Local DP GHCR packages / versions: real inventory and safe-retirement gate — 2026-10-21
+
+> OpenSpec `relocate-local-data-platform`, Task **4.11.6**. The original **2026-10-21** 12-package/207-version read-only scan below is **HISTORICAL**: as of 2026-10-22, three orphan legacy packages and 25 old versions have been actually deleted and independently verified; one legacy manual Synthea image is intentionally KEEP. Task 4.11.6 remains OPEN solely for that still-pinned manual image and the broader dependency retirement/closeout gates. See newer status directly below.
+
+## Live registry closeout snapshot — 2026-10-22 (newest, supersedes original HOLD)
+
+**Verified DELETE of 3/4 eligible historical packages, total 25 original version records**:
+
+| Package | Previous version count | Execution proof | Current state |
+| --- | ---: | --- | --- |
+| `healthcare-landing-discovery-v2` | 3 | [Self-Runner Run #39743140034](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39743140034) | `LEGACY_GHCR_PACKAGE_DELETED_AND_VERIFIED=PASS` |
+| `healthcare-landing-processing-v2` | 4 | [Self-Runner Run #39743140034](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39743140034) | `LEGACY_GHCR_PACKAGE_DELETED_AND_VERIFIED=PASS` |
+| `healthcare-data-platform-new-only-omop-writer` | 18 | [Healthcare publishing-token Run #39746268760](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39746268760), after [Publisher PR #403](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/403) merged | `LEGACY_WRITER_GHCR_PACKAGE_DELETED=PASS` and independently GET 404 |
+| `healthcare-synthea-new-only` | 5 | [Self-Runner owner-token Run #39763467767](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39763467767) | **KEEP:** package exists and required manual Digest `sha256:36b69a26f25f9b627da693fc1aa70b8d0a37de0af755bcb7d95d140568efa909` is present |
+
+**Immutable branch/history safeguards**: [Self-Runner Run #39742520754](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39742520754) archived eight frozen 2026-10-13/14 feature branches to eight `archive/local-dp-ghcr/20261022/*` immutable tags with exact original commits and retired the eight mutable branch refs, without deleting image packages. [Self-Runner PR #229](https://github.com/JohnZhang-DataForge/Self-Runner/pull/229) removed ten inert frozen test/publisher workflows from Main. [PR #233](https://github.com/JohnZhang-DataForge/Self-Runner/pull/233) merged Main `79464c92cf244508d81c99fc25be9cd90820bad1` and removed an additional inert *push-only* READY recovery Workflow, whose trigger feature branch was archived; its Git Blob `4bd96b2a6716c693c6ace31ba924caa578bdbdbb` and archived branch Tag provide exact recovery. Crucially the real manually dispatchable `synthea-new-only-run-new-request.yml` remains present and **still uses legacy Synthea Digest**. No archive Tag was deleted, and no post-cleanup S3/PG data changes were made.
+
+**Post-delete readback**:
+- [Healthcare read-only Run #39763353277](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/39763353277): all **8 canonical GHCR packages** exist with `latest`, aggregate **177** visible version records; all 3 deleted legacy package names return 404; all checks PASS. The Healthcare token also got 404 on `healthcare-synthea-new-only`, classified `UNRESOLVED` rather than falsely claiming it was deleted.
+- [Self-Runner owning-token Run #39763467767](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39763467767): the historical `healthcare-synthea-new-only` package exists with **5** versions, including the exact manual-request Digest. This proves the Healthcare-token 404 was a **visibility/authorization difference**.
+- Thus the original 12 known scoped packages now have **9 protected packages** (8 current + 1 required manual historic) with **177+5=182** observed version records across these separately authorized read-only snapshots; the **3 deleted packages' 25 previous records** are gone. Neither snapshot claims org-wide package-list enumeration is exhaustive.
+- Temporary destructive workflows [Self-Runner PR #232](https://github.com/JohnZhang-DataForge/Self-Runner/pull/232) (permission-denied predecessor) and [Healthcare PR #404](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/404) (successful publishing-token deletion), plus temporary read-only [#405](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/405) / [#234](https://github.com/JohnZhang-DataForge/Self-Runner/pull/234), were all **closed UNMERGED**. No one-shot package-delete workflow was merged into Main.
+
+**Decision**: The only remaining legacy Synthea package has a directly proven manual source consumer and actual pinned Version. **Do not delete its package/version or claim 4.11.6 fully complete** until that workflow is migrated to a verifiably working canonical 8-image generator+READY pipeline, its historical S3 recovery semantics are preserved, and rollback dependency guards pass. Broad file-audit Tasks 4.1/4.7/4.8 and Change Archive 5.x also remain separate. Earlier sections in this file are deliberately retained as their dated evidence snapshots, not current registry state.
+
+## Phase A completed — retire 10 obsolete Self-Runner Main Workflows
+
+**[Self-Runner PR #229](https://github.com/JohnZhang-DataForge/Self-Runner/pull/229) MERGED** into Self-Runner Main `ac850d4ac9c749ed5b6db6a4556b9062e0ec5425` on 2026-10-21 EDT. The 11-file exact reviewed patch removed **10 frozen old feature-branch-only Workflow entrypoints** from Self-Runner **Main**, retaining all modern business/CI definitions and tests. One new [restore evidence document](https://github.com/JohnZhang-DataForge/Self-Runner/blob/ac850d4ac9c749ed5b6db6a4556b9062e0ec5425/docs/checkpoints/migration/LOCAL-DP-GHCR-LEGACY-WORKFLOW-RETIREMENT-20261021.md) captures original Blob SHAs per deleted file. The original frozen Self-Runner Main was `6815369e8d6b5a25df3eec57f0d7ad59f3704c8f`; exact `compare_commits` verified 10 deleted Workflow files + 1 added immutable recovery note, no other code changes. PR had **no additional GitHub checks triggered**; validation is an exact Git diff and retained workflow tree, **not** a new runtime E2E.
+
+| Historical GHCR package | Previously pinned from Main | Main dependency after PR #229 |
+| --- | --- | --- |
+| `healthcare-landing-discovery-v2` | `landing-airflow-v2-reader-build.yml` | old frozen Workflow retired from Main |
+| `healthcare-landing-processing-v2` | `landing-processing-v2-source-acceptance.yml`, `task004-newonly-airflow-spark-handoff.yml` | both frozen Workflows retired from Main |
+| `healthcare-synthea-new-only` | 6 obsolete feature-push workflows | 6 frozen feature-push files retired; **manual `synthea-new-only-run-new-request.yml` and explicit `synthea-new-only-digest-ready-recovery.yml` remain KEEP** |
+| `healthcare-data-platform-new-only-omop-writer` | old `task004-new-only-airflow-writer-gate.yml` | frozen gated acceptance retired; **Healthcare `build-new-only-omop-writer.yml` still retains valid modern offline test and optional historical publishing target** |
+
+**Safety line**: Removing Workflow source **only on Main** does **not** delete copies on surviving `feature/*` branches or historical GHCR Digests, nor does it mean historic manual/rollback consumers have stopped needing the versions. The previous 12-package/207-version audit remains a *dated snapshot* (not a post-merge live package recount); **GHCR DELETE remains 0 and Task 4.11.6 is still [ ] OPEN/HOLD**. The retained Synthea Jobs pinning an old Digest also remain untouched. No Registry, K8s, Airflow, PG, S3 or Azure resources were changed in PR #229.
+
+**Next bound:** audit old `feature/*` branch recovery usefulness, migrate the two retained historic Synthea entrypoints if appropriate, preserve immutable Snapshot/rollback definitions and independently establish package Version dependencies. Requery the live GHCR versions and actual consumers before creating any version-ID DELETE allowlist; do not mistake this Main code cleanup for GHCR registry garbage collection.
+
+## Source, mechanism, and access boundary
+
+- Healthcare Main at audit: `4379bfba19fc64ef0f069464ad6be560d0308073`; Self-Runner Main at audit: `d92f0fac1ded980ab7e68c017fe334a082b2eefa`. No Local DP application source changes were made.
+- Temporary Self-Runner [PR #224](https://github.com/JohnZhang-DataForge/Self-Runner/pull/224), final [read-only Run #39710406810](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39710406810), completed `success`; PR **closed unmerged**. Machine-readable retained artifact `local-dp-ghcr-version-audit` contains `ghcr-packages-and-versions.json`, `ghcr-api-status.json`, `static-consumers.json` and `active-k8s-consumers.json`.
+- Scoped current two-repo tracked-source audit discovered **609 candidate image/name reference lines**; cluster snapshot **86** Healthcare Pod references (all phases, **not** all actively running), plus **two retained Kubernetes Synthea Jobs** with an explicit historical image Digest.
+- GitHub `GITHUB_TOKEN` with `packages: read` can **read individual organization package and version records**. Whole-organization `GET /orgs/JohnZhang-DataForge/packages?package_type=container` returned HTTP **400 Invalid argument**, while direct `GET /orgs/.../packages/container/<name>` and `.../versions` returned success. We therefore enumerate from **the eight canonical current image names plus current checked-in cross-repo references**, not from a verified complete org registry list. All **12** expected current/legacy Healthcare package names found; **do not claim no other packages exist**.
+- No `DELETE` HTTP calls, no changes to GHCR tags, S3/PG, Airflow, Kubernetes, Docker node caches, Azure/Fabric, or any live pipeline.
+
+## Exact GHCR inventory — 12 packages / 207 version records
+
+| Package | Version count | Classification | Evidence / decision |
+| --- | ---: | --- | --- |
+| `healthcare-data-platform-synthea` | 12 | ACTIVE — KEEP | Current 8-image publisher, Synthea parent; two old Kubernetes Jobs explicitly pin `sha256:2dc1e4283eb194e548b245842987ff403bf8e092a70f473fdf6fa5a1c547816d` (tag `git-9a0c3ad195ee657e485f5391e2a417870f441797`) |
+| `healthcare-data-platform-task004-runtime` | 51 | ACTIVE — KEEP | Current Landing Processing parent; includes older tagged and untagged OCI manifest versions |
+| `healthcare-data-platform-task004-cdm-runtime` | 21 | ACTIVE — KEEP | Current OMOP Writer parent; legacy CDM publishing Workflows / feature branches remain E/HOLD |
+| `healthcare-landing-discovery` | 51 | ACTIVE — KEEP | Production Discovery DAG latest/Always; new Pod exact digest already verified |
+| `healthcare-landing-claim` | 18 | ACTIVE — KEEP | Production Claim DAG latest/Always; 25→100 preview bugfix image published |
+| `healthcare-data-platform-local-dp-synthea-new-only` | 8 | ACTIVE — KEEP | Generator runtime with merged-Main E2E |
+| `healthcare-data-platform-local-dp-landing-processing-v2` | 8 | ACTIVE — KEEP | Current Spark Processing child |
+| `healthcare-data-platform-local-dp-omop-writer` | 8 | ACTIVE — KEEP | Current atomic OMOP Writer child |
+| `healthcare-data-platform-new-only-omop-writer` | 18 | LEGACY — **HOLD** | Main `.github/workflows/build-new-only-omop-writer.yml` still has an explicit `git-${{ github.sha }}` GHCR publish target; Self-Runner `task004-new-only-airflow-writer-gate.yml` pins legacy `sha256:dd0b0483ec01b05f1d072d65c9ab728b563cb063da0705564f3a03e23160fd6c` |
+| `healthcare-landing-discovery-v2` | 3 | LEGACY — **HOLD** | Self-Runner `landing-airflow-v2-reader-build.yml` pins tag `1d1bc862e211d9ce39c26996415ff0fcf6ee5e17` and verifies Digest |
+| `healthcare-landing-processing-v2` | 4 | LEGACY — **HOLD** | Self-Runner `landing-processing-v2-source-acceptance.yml` pins tag `72be44be9304c7549030951f5d25864075fed5cc`; `task004-newonly-airflow-spark-handoff.yml` pins its Digest `sha256:9af63252823bae0187b2517a013c147e2df8dfbe9a7c783ac31cd5dd7dbbb937` |
+| `healthcare-synthea-new-only` | 5 | LEGACY — **HOLD** | Several still-tracked Self-Runner workflows pin its five historical tags and/or Digests, including `new-only-v2-real-image-generate.yml`, `new-only-v2-real-publish.yml`, `synthea-new-only-digest-runtime.yml`, `synthea-new-only-digest-ready-recovery.yml` |
+
+**Totals:** 8 current packages **177** version records; 4 legacy candidates **30** version records; **207** scoped version records. These are GitHub Package Version objects, **not** a measurement of unique underlying Docker image layers or disk bytes.
+
+## Explicit no-delete decision
+
+- **Whole-package DELETE allowlist: empty (0).** All four historical package names have tracked Workflow consumers; the eight current packages are actively built and have runtime/parent dependencies. A workflow referenced in Main cannot be treated as decommissioned only because its name says `v2`, `task004` or `legacy`.
+- **Version DELETE allowlist: empty (0).** Many existing tagged Digests support verified historic E2E, rollbacks or frozen acceptance workflows. Numerous untagged package version entries may be OCI child manifests/layers of retained tagged multiarch manifests; an untagged entry is *not* proof of orphan status. The audit has not closed every parent manifest dependency or old feature-branch/manual rollback consumer. No deletion should be authorized from age or tag absence alone.
+- The pinned Job `task004-syn-pub-task004-airflow-task004-step03e-1ebef5e264` and Job `task004-syn-pub-task004-airflow-task004-step03e-f9c5cceee8` in `dw-synthea` still reference the historical Synthea Digest above. They are historical Job resources, not proof of an active producer, but they **are real retained image references**.
+- Historical classification [three CDM GHCR Workflows](LOCAL-DP-LEGACY-CDM-GHCR-WORKFLOW-CLASSIFICATION-20261020.md) is still **E/HOLD** because corresponding feature branches and recovery consumers were not exhaustively retired; do not change this classification without a separate validated cleanup decision.
+
+## Next bounded gates (not part of this completed read-only check)
+
+1. Before future GHCR cleanup, first retire or migrate the exact remaining *historical* Self-Runner / Healthcare publisher, reader and recovery Workflow references under reviewed changes, or explicitly designate required recovery snapshots to retain. Recheck old feature branches, Job refs, DAG/K8s runtime and Writer fencing/rollback requirements.
+2. For each proposed **version ID**, validate exact Git SHA tag, immutable Digest, OCI parent/child index, all refs in both repos and live cluster including runtime and stable recovery, then build a strict `DELETE` allowlist and keep at least a proven functional current+rollback image lineage.
+3. Requery package/version IDs immediately before any actual delete; require authenticated package admin access plus separate pre/post version readback. The current read-only job does not use admin/write credentials and cannot be evidence of delete authorization.
+4. Keep Task **4.11.6 [ ] HOLD** and Task 5 Archive [ ] OPEN until these conditions are satisfied. The **source-file cleanup 4.9/4.10 and Discovery restoration are fully DONE and unaffected by this registry retention decision**.

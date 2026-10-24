@@ -1,0 +1,22 @@
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/.terraform.tfstate.lock.info
+**/*.tfplan
+**/tfplan
+**/crash.log
+**/*_override.tf
+**/override.tf
+**/environments/*secret*.tfvars
+**/environments/*.auto.tfvars
+!**/.terraform.lock.hcl
+
+# Keep per-environment JSON profiles out of Git unless intentionally a placeholder example.
+/environments/*.json
+!/environments/*.example.json
+
+# Local, operator-reviewed Fabric environment values; only .tfvars.example is versioned.
+/components/fabric-environment/environments/*.tfvars
+
+# Versioned, nonsecret configuration for the current actual Fabric Workspace.
+!/components/fabric-environment/environments/healthcare-omop.tfvars

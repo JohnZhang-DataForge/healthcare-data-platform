@@ -1,0 +1,33 @@
+# Route A — Marquez 0.51.1 on existing dedicated PostgreSQL 14 in dw-postgre14.
+# This file intentionally contains NO password. Secret is created inside Kubernetes
+# from dw-postgre14/postgres-secret by the controlled Self-Runner deploy shell.
+# Both chart services remain ClusterIP; web-only NodePort is a separate Service.
+postgresql:
+  enabled: false
+marquez:
+  existingSecretName: marquez-db
+  migrateOnStartup: true
+  db:
+    host: dw-postgre14.dw-postgre14.svc.cluster.local
+    port: 5432
+    name: marquez
+    user: marquez
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1536Mi
+web:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+service:
+  type: ClusterIP
+  port: 80

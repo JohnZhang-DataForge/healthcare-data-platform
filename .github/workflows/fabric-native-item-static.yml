@@ -1,0 +1,32 @@
+name: Fabric Native Notebook and Pipeline Static Contract
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/workspaces/**'
+      - '.github/quality/tests/test_fabric_native_smoke_source.py'
+      - '.github/workflows/fabric-native-item-static.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout reviewed source only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python unit, source identity, negative ownership gates
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "#### FABRIC_NATIVE_ITEM_STATIC_OUTPUT_BEGIN ####"
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_native_smoke_source.py' -v
+          echo "FABRIC_CLOUD_WRITE=NO"
+          echo "NOTEBOOK_PIPELINE_PUBLISHED=NO"
+          echo "PAID_CAPACITY_CREATED=NO"
+          echo "#### FABRIC_NATIVE_ITEM_STATIC_OUTPUT_END ####"

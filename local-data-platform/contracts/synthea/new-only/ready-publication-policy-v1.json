@@ -1,0 +1,24 @@
+{
+  "policy_version": "new-only-v2-ready-release-v1",
+  "release_decision": "V2_RUNTIME_CONSUMER_DEPLOYED_READY",
+  "scope": {
+    "generation_mode": "NEW_ONLY",
+    "manifest_version": "2.0",
+    "publication": "S3_LANDING_IMMUTABLE_MANIFEST_LAST",
+    "airflow_claim": "NO",
+    "postgresql_mutation": "NO"
+  },
+  "consumer": {
+    "repository": "JohnZhang-DataForge/healthcare-data-platform",
+    "dag": "landing_batch_discovery",
+    "image": "ghcr.io/johnzhang-dataforge/healthcare-landing-discovery@sha256:059d94e4d1348c194956203fea6b19be23ec39595127eea397419e66fa4e5924",
+    "evidence_workflow": "https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38496119114",
+    "evidence_result": "success",
+    "reference_commit": "a6b87497497fb1b1367c0646e3410a24ed4f7ec3"
+  },
+  "immutable_contract": {
+    "path": "contracts/synthea/new-only/csv-contract-v2.json",
+    "sha256": "d7118f4bc3306d74911e609b4f0a41b9340ba9a60acaa69174063d5025ad1249"
+  },
+  "note": "This is a separately versioned, reviewed release decision. The old producer CSV contract bytes must not be edited: Airflow's deployed image pins those bytes and its SHA. NEW_ONLY S3 publish is permitted only after S3/PG source-ID readonly gates; no Airflow Claim or Postgres OMOP commit."
+}

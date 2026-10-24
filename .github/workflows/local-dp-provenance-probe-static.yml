@@ -1,0 +1,75 @@
+name: Local DP Provenance Static Gates
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/local-dp-provenance-probe-static.yml"
+      - "local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh"
+      - "local-data-platform/tests/quality/test_readonly_provenance_probe.py"
+      - "openspec/changes/relocate-local-data-platform/**"
+      - "local-data-platform/spark/manifests/**"
+      - "local-data-platform/spark/apps/**"
+      - ".github/quality/scripts/check_spark_manifest_source_closure.py"
+      - ".github/quality/tests/test_spark_manifest_source_closure.py"
+      - "documents/engineering/development/CODE.md"
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check probe syntax and protected API verbs (no Kubernetes access)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          script=local-data-platform/scripts/quality/read-only-gitsync-spark-provenance.sh
+          bash -n "$script"
+          python3 - "$script" <<'PY'
+          import pathlib, re, sys
+          text = pathlib.Path(sys.argv[1]).read_text()
+          commands = re.findall(r'^kubectl\b[^\n]+', text, flags=re.MULTILINE)
+          assert len(commands) == 2, commands
+          for command in commands:
+              assert re.search(r'\sget\s(?:pods|configmap)\b', command), command
+              assert '--context ' in command and '-n ' in command, command
+          for token in ['AIRFLOW_PODS_EMPTY=HOLD', 'REPORT_DIR_INSIDE_CHECKOUT_FORBIDDEN', 'SPARK_CONFIGMAP_IDENTITY_MISMATCH=HOLD']:
+              assert token in text, token
+          print('PROBE_SOURCE_GUARD=PASS')
+          print('KUBERNETES_ACCESS=NOT_PERFORMED')
+          PY
+
+      - name: Verify opt-in collector with fake kubectl (never reaches cluster)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s local-data-platform/tests/quality \
+            -p 'test_readonly_provenance_probe.py' -v
+
+  spark-template-source:
+    name: Spark manifests offline source-closure gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Offline closure unit and negative tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests \
+            -p 'test_spark_manifest_source_closure.py' -v
+      - name: Real tracked SparkApplication templates to canonical source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          echo "HEALTHCARE_TESTED_HEAD=$(git rev-parse HEAD)"
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            .github/quality/scripts/check_spark_manifest_source_closure.py

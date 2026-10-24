@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "contract": "omop-writer-batch-identity",
+  "purpose": "VERSIONED_COMPATIBILITY_NOT_WRITE_AUTHORIZATION",
+  "legacy": {
+    "writer_identity_version": null,
+    "batch_regex": "^task004-airflow-[A-Za-z0-9._-]+$",
+    "legacy_plan_sha_unchanged": true,
+    "legacy_implicit_version": true
+  },
+  "new_only": {
+    "writer_identity_version": "synthea-new-only-v1",
+    "batch_regex": "^synthea-new-only-[A-Za-z0-9][A-Za-z0-9._-]{1,127}$",
+    "source_version": "v3.3.0",
+    "source_prefix": "source=synthea/source_version=v3.3.0/ingest_date=",
+    "person_rows_min": 1,
+    "person_rows_max": 100,
+    "visit_rows_min": 1,
+    "visit_rows_max": 100000,
+    "explicit_version_required": true
+  },
+  "invariants": {
+    "manifest_and_processing_exact_batch_identity": true,
+    "manifest_sha_required": true,
+    "existing_target_drift_protection": "UNCHANGED",
+    "new_only_commit": "BLOCKED_UNTIL_TRANSACTION_FENCING",
+    "rollback_default": true,
+    "claim_enable": "NO",
+    "update_only": "DENY",
+    "mix_data": "DENY",
+    "s3_ready_mutations": "NONE"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "contract_name": "omop.visit_candidate.writer_safety",
+  "contract_version": "v1",
+  "input_preflight": "STEP-05G2B",
+  "snapshot_is_write_authorization": false,
+  "exclusive_writer_reservation_required": true,
+  "relist_s3_after_reservation_required": true,
+  "spark_save_mode": "errorifexists",
+  "never_overwrite_existing_data": true,
+  "data_readback_required": true,
+  "dq_and_manifest_deferred_to_publish_steps": true,
+  "database_write": false
+}

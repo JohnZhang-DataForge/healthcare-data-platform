@@ -1,0 +1,197 @@
+name: Local DP eight-image source rebuild
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/local-dp-image-rebuild.yml"
+      - "local-data-platform/images/**"
+      - "local-data-platform/apps/**"
+      - "local-data-platform/airflow/dags/**"
+      - "local-data-platform/contracts/**"
+      - "local-data-platform/spark/**"
+      - "local-data-platform/scripts/task004/**"
+      - "local-data-platform/tests/landing_discovery/**"
+      - "local-data-platform/tests/omop_writer/**"
+      - "local-data-platform/tests/task004/**"
+      - "local-data-platform/tests/synthea_new_only/test_digest_runtime.py"
+      - "openspec/changes/relocate-local-data-platform/**"
+  push:
+    branches: [main]
+    paths:
+      - "local-data-platform/scripts/task004/**"
+      - ".github/workflows/local-dp-image-rebuild.yml"
+      - "local-data-platform/images/**"
+      - "local-data-platform/apps/**"
+      - "local-data-platform/airflow/dags/**"
+      - "local-data-platform/contracts/**"
+      - "local-data-platform/spark/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: local-dp-eight-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    name: Eight-image clean build, smoke and Main-only publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 105
+    steps:
+      - name: Checkout current source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Check developer image references and run contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("local-data-platform")
+          parents = {
+              "synthea-new-only": "healthcare-data-platform-synthea",
+              "landing-processing-runtime": "healthcare-data-platform-task004-runtime",
+              "new-only-omop-writer": "healthcare-data-platform-task004-cdm-runtime",
+          }
+          for child, parent in parents.items():
+              text = (root / "images" / child / "Dockerfile").read_text()
+              assert "ARG BASE_IMAGE=ghcr.io/johnzhang-dataforge/" + parent + ":latest" in text, child
+              assert "FROM ${BASE_IMAGE}" in text, child
+              assert "@sha256:" not in text, child
+          processing = (root / "airflow/dags/landing_spark_processing.py").read_text()
+          consumer = (root / "airflow/dags/new_only_omop_consumer.py").read_text()
+          assert "healthcare-data-platform-local-dp-landing-processing-v2" in processing
+          assert "healthcare-data-platform-local-dp-omop-writer" in consumer
+          for name in ("landing_batch_discovery.py", "landing_spark_processing.py",
+                       "new_only_omop_consumer.py", "task004_processing_pipeline.py"):
+              text = (root / "airflow/dags" / name).read_text()
+              assert "@sha256:" not in text, name
+              assert 'image_pull_policy="Always"' in text, name
+          print("IMAGE_SOURCE_CONTRACT=PASS")
+          PY
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/landing_discovery -p 'test_*.py' -v
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/task004 -p 'test_airflow_task004_processing_source.py' -v
+          # Retained legacy-phase and packaging tests now follow the current 8-image parent contract.
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/synthea_new_only -p 'test_digest_runtime.py' -v
+          echo "SYNTHEA_CURRENT_PARENT_AND_PHASE_TESTS=PASS"
+          # Writer must consume one logical dataset even when Spark emits multiple parts.
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s local-data-platform/tests/omop_writer -p 'test_multi_parquet_reader.py' -v
+          echo "WRITER_MULTI_PARQUET_CONTRACT=PASS"
+          echo "IMAGE_SOURCE_TESTS=PASS"
+
+      - name: Build five independent images without prior project image layers
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          reg=ghcr.io/johnzhang-dataforge
+          tag=git-${GITHUB_SHA}
+          build_base() {
+            component="$1"; package="$2"
+            docker build --pull --no-cache --build-arg "PROJECT_GIT_SHA=${GITHUB_SHA}" \
+              -f "local-data-platform/images/${component}/Dockerfile" \
+              -t "${reg}/${package}:${tag}" local-data-platform
+            docker image inspect "${reg}/${package}:${tag}" >/dev/null
+            echo "FRESH_BASE_BUILT=${component}"
+          }
+          build_base synthea healthcare-data-platform-synthea
+          build_base task004-runtime healthcare-data-platform-task004-runtime
+          build_base task004-cdm-runtime healthcare-data-platform-task004-cdm-runtime
+          build_base landing-discovery-runtime healthcare-landing-discovery
+          build_base landing-claim-runtime healthcare-landing-claim
+          echo "INDEPENDENT_CLEAN_BUILDS=5/5"
+
+      - name: Build three child images using this run's new parent images
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          reg=ghcr.io/johnzhang-dataforge
+          tag=git-${GITHUB_SHA}
+          build_child() {
+            component="$1"; package="$2"; parent="$3"
+            base="${reg}/${parent}:${tag}"
+            docker image inspect "$base" >/dev/null
+            docker build --no-cache --build-arg "BASE_IMAGE=$base" \
+              -f "local-data-platform/images/${component}/Dockerfile" \
+              -t "${reg}/${package}:${tag}" local-data-platform
+            docker image inspect "${reg}/${package}:${tag}" >/dev/null
+            echo "FRESH_CHILD_BUILT=${component} PARENT=${base}"
+          }
+          build_child synthea-new-only healthcare-data-platform-local-dp-synthea-new-only healthcare-data-platform-synthea
+          build_child landing-processing-runtime healthcare-data-platform-local-dp-landing-processing-v2 healthcare-data-platform-task004-runtime
+          build_child new-only-omop-writer healthcare-data-platform-local-dp-omop-writer healthcare-data-platform-task004-cdm-runtime
+          echo "CHILD_CLEAN_BUILDS=3/3"
+
+      - name: Eight no-network image smokes and writer imports
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          reg=ghcr.io/johnzhang-dataforge
+          tag=git-${GITHUB_SHA}
+          smoke() {
+            package="$1"; shift
+            docker run --rm --network none --security-opt no-new-privileges --cap-drop ALL \
+              --entrypoint /bin/sh "${reg}/${package}:${tag}" -ec "$*"
+          }
+          smoke healthcare-data-platform-synthea 'test -s /opt/synthea/synthea-with-dependencies.jar'
+          smoke healthcare-data-platform-task004-runtime 'test -x /usr/local/bin/task004-runtime'
+          smoke healthcare-data-platform-task004-cdm-runtime 'test -s /opt/task004/cdm_runtime_cli.py'
+          smoke healthcare-landing-discovery 'test -s /opt/healthcare/landing_discovery/run_airflow_scan.py'
+          smoke healthcare-landing-claim 'test -s /opt/healthcare/landing_claim/claim_discovered_inventory.py'
+          smoke healthcare-data-platform-local-dp-synthea-new-only 'test -s /opt/synthea-new-only/entrypoint.py'
+          smoke healthcare-data-platform-local-dp-landing-processing-v2 'test -s /data/spark/healthcare-data-platform/apps/task004/csv-contract-v2.json'
+          smoke healthcare-data-platform-local-dp-omop-writer 'test -s /opt/task004/new_only_airflow_writer.py'
+          docker run --rm --network none --entrypoint python \
+            "${reg}/healthcare-data-platform-local-dp-omop-writer:${tag}" \
+            -c 'import new_only_airflow_writer, task004_cdm_dynamic_pg_writer; print(new_only_airflow_writer.__file__, task004_cdm_dynamic_pg_writer.__file__)'
+          echo "EIGHT_IMAGE_SOURCE_AND_SMOKE=PASS"
+
+      - name: GHCR login only on Main
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Publish all eight immutable SHA tags
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          reg=ghcr.io/johnzhang-dataforge
+          tag=git-${GITHUB_SHA}
+          for img in healthcare-data-platform-synthea healthcare-data-platform-task004-runtime \
+             healthcare-data-platform-task004-cdm-runtime healthcare-landing-discovery \
+             healthcare-landing-claim healthcare-data-platform-local-dp-synthea-new-only \
+             healthcare-data-platform-local-dp-landing-processing-v2 healthcare-data-platform-local-dp-omop-writer; do
+            docker push "${reg}/${img}:${tag}"
+            echo "PUBLISHED_IMMUTABLE=${img}:${tag}"
+          done
+          echo "IMMUTABLE_IMAGES_PUBLISHED=8/8"
+
+      - name: Promote latest tags after immutable push success
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "${GITHUB_REF}" = "refs/heads/main"
+          reg=ghcr.io/johnzhang-dataforge
+          tag=git-${GITHUB_SHA}
+          for img in healthcare-data-platform-synthea healthcare-data-platform-task004-runtime \
+             healthcare-data-platform-task004-cdm-runtime healthcare-landing-discovery \
+             healthcare-landing-claim healthcare-data-platform-local-dp-synthea-new-only \
+             healthcare-data-platform-local-dp-landing-processing-v2 healthcare-data-platform-local-dp-omop-writer; do
+            docker tag "${reg}/${img}:${tag}" "${reg}/${img}:latest"
+            docker push "${reg}/${img}:latest"
+            echo "PROMOTED_LATEST=${img}"
+          done
+          echo "LATEST_PROMOTION=8/8"

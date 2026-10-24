@@ -1,0 +1,29 @@
+name: OpenSpec Change Gate
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  require-change:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Policy unit tests (positive and negative)
+        run: python3 -m unittest discover -s .github/quality/tests -p 'test_openspec_change_gate.py' -v
+      - name: Enforce PR to OpenSpec Change and Task binding
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 .github/quality/scripts/check_openspec_change_gate.py \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --event "$GITHUB_EVENT_PATH"
