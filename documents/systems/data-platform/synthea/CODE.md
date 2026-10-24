@@ -98,3 +98,20 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 **新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/`、`kubernetes/` 或 `scripts/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../../../engineering/development/LEGACY-CODE-REFACTOR-PLAN.md)。
 
+
+
+## 新的参数化生成器（独立于既有 OMOP NEW_ONLY）
+
+本组件位于新的 `apps/synthea/synthea_new_generator/`，只负责本地、参数化的 NEW_ONLY CSV/FHIR R4 数据生成、冻结与校验；不依赖旧 `new_only/` 的 18 CSV S3 Publisher/PG Writer，也不自行调用 OIE 或上传 Blob。当前阶段单元/合同验证；真实 Synthea 运行和 Kubernetes 部署仍待 OpenSpec P2/P3 验收。
+
+| 源文件 | 说明 |
+| --- | --- |
+| [`request.py`](../../../../local-data-platform/apps/synthea/synthea_new_generator/request.py) | 请求参数校验、规范化、版本绑定与 fingerprint |
+| [`generator.py`](../../../../local-data-platform/apps/synthea/synthea_new_generator/generator.py) | Synthea CLI 参数、不可变请求、输出清单/Manifest、重试与本地数据检查 |
+| [`entrypoint.py`](../../../../local-data-platform/apps/synthea/synthea_new_generator/entrypoint.py) | 离线/容器均可复用的本地生成 CLI；不拥有云写权限 |
+| [Request Schema](../../../../local-data-platform/contracts/synthea/new-generator/request-v1.schema.json) | 参数化 NEW_ONLY v1 输入合同 |
+| [Manifest Schema](../../../../local-data-platform/contracts/synthea/new-generator/generation-manifest-v1.schema.json) | 本地生成成功标记、文件 SHA/数量/来源指纹 |
+| [Generator tests](../../../../local-data-platform/tests/synthea_new_generator/test_generator.py) | 纯离线/Stub Java 执行路径、错误请求、重复请求、数据损坏与 FHIR 关联测试 |
+| [Unit workflow](../../../../.github/workflows/synthea-new-generator-unit.yml) | 无云、无集群、无 PostgreSQL 权限的 PR 单测 |
+
+实施入口：[`implement-synthea-new-generator`](../../../../openspec/changes/implement-synthea-new-generator/tasks.md)。

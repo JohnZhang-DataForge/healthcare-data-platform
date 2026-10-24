@@ -36,3 +36,10 @@
 - [ ] 5.4 全部代码、适用测试、实际运行证据和最终 Main 验证完成后，才考虑同步 Current Spec / Archive。
 
 **执行规范**：后续每个实施 PR 在 PR Body 单独声明 `OpenSpec-Change: implement-synthea-new-generator` 与真实 `OpenSpec-Task: n.n`，且同 PR 更新本 `tasks.md`。静态/本地测试无需写共享 K8s；对共享环境操作必须先读 Safe Operations / Session Coordination 并取得相应明确授权。
+
+
+### P1 实施记录（本 PR）
+
+- 已实现源文件：`apps/synthea/synthea_new_generator/{request,generator,entrypoint}.py`，v1 JSON Schemas、本地 Manifest/冻结/幂等安全检查及 Stub/负向单测。
+- 新增仅 CPU 的 PR 工作流 `.github/workflows/synthea-new-generator-unit.yml`；此处不依赖真实 Java Synthea、Kubernetes、Azure/OIE/Fabric。
+- P1 的 `2.1–2.4` 仅在单测/合同与最终 PR HEAD CI 验证后才勾选；P2/P3 真正 Synthea/JAR/州与城市语义、镜像/K8s 一律保持未验收。
