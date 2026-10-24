@@ -95,5 +95,5 @@ The previously authored durable manifests remain **later-phase source definition
 
 
 ### 2.4.3 — Independent HL7 v2.5.1 server-message readback contract (2026-10-24)
-- [x] 2.4.3a Add `hl7_readback.py` strict MSH/EVN/PID/PV1 decoder + source identity/time/control ID correlation to verified Johns Creek Patient+Encounter envelope and negative tests. Designed to validate **actual OIE returned bytes** independently of JavaScript mapper; this unit gate is NOT live OIE conversion.
-- [ ] 2.4.3b Supply actual OIE message processed content after one-channel guarded import, assert 1 IMP A01 / 30 AMB never A01, retry stability, no Blob writes; retain failure records.
+- **Offline implementation complete:** Add `hl7_readback.py` strict MSH/EVN/PID/PV1 decoder + source identity/time/control ID correlation to verified Johns Creek Patient+Encounter envelope and negative tests. Designed to validate **actual OIE returned bytes** independently of JavaScript mapper; this unit gate is NOT live OIE conversion.
+- **Live readback remains pending:** Supply actual OIE message processed content after one-channel guarded import, assert 1 IMP A01 / 30 AMB never A01, retry stability, no Blob writes; retain failure records.
