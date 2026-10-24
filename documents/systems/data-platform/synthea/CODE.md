@@ -236,3 +236,8 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [persistent/README.md](../../../../local-data-platform/kubernetes/manifests/oie/persistent/README.md) | 热加载事实、安全切换路径与一次性 PVC 验收原则；无需第二个文件存储卷 |
 | [persistent static test](../../../../local-data-platform/tests/clinical_producers/test_oie_persistent_static.py) | 专用 SC、PVC、安全切换静态校验 |
 | [persistent static CI](../../../../.github/workflows/oie-persistent-static.yml) | GitHub-hosted，无 K8s 副作用 |
+
+## OIE appdata 持久化真实验收（2026-10-24）
+
+- [Live PV/PVC/Derby #40121734522](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121734522)：`oie` SC + `dw-oie/oie-state` 10Gi，`/data/oie` 实际 PV，Retain、worker01、Derby RW PASS；未重启 local-path。
+- [Pod 重建后的数据读回 #40122005828](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40122005828)：`oie-debug` 单次 Recreate 后读回 PVC 相同数据 PASS，测试文件已清理。一个卷同时承担 Derby 与 appdata，不需要第二个文件持久卷。OIE clinical Channel/FHIR→HL7 与 Azure Blob 路线尚待单独验收。
