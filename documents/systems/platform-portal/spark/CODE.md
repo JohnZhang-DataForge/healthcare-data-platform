@@ -1,7 +1,7 @@
 ---
 status: active
 scope: portal-spark-openlineage-source-map
-last_verified: 2026-10-18
+last_verified: 2026-10-24
 source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 ---
 
@@ -12,11 +12,11 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 | 源码文件 | 用途 |
 | --- | --- |
 | [`input.csv`](../../../../platform-portal/openlineage/spark/input.csv) | 3 行人工 CSV 测试数据；非真实 Synthea/OMOP 数据 |
-| [`probe.py`](../../../../platform-portal/openlineage/spark/probe.py) | Spark CSV 只读计算和验证，不执行业务 Writer/S3 提交 |
-| [`sparkapplication.yaml.tpl`](../../../../platform-portal/openlineage/spark/sparkapplication.yaml.tpl) | 隔离 SparkApplication v1beta2 模板、资源限额、per-job Listener / Marquez HTTP Collector |
-| [`render.py`](../../../../platform-portal/openlineage/spark/render.py) | **离线**渲染唯一名称 ConfigMap + SparkApplication YAML；自身不向集群 Apply |
+| [`probe.py`](../../../../platform-portal/openlineage/spark/probe.py) | 3 行合成 CSV 读取/分组计算 → 唯一 Token 的 PVC Parquet 实际写入 → Spark 再读回并校验；不执行业务 Writer/S3 提交 |
+| [`sparkapplication.yaml.tpl`](../../../../platform-portal/openlineage/spark/sparkapplication.yaml.tpl) | 隔离 SparkApplication v1beta2 模板、Driver/Executor 共享 PVC、per-job Listener、显式 Spark appName 及 Marquez HTTP Collector |
+| [`render.py`](../../../../platform-portal/openlineage/spark/render.py) | **离线**渲染唯一名称 ConfigMap + 1Gi local-path PVC + SparkApplication YAML（三文档）；自身不向集群 Apply |
 | [`requirements-static.txt`](../../../../platform-portal/openlineage/spark/requirements-static.txt) | 静态验证环境依赖 |
-| [`tests/test_static.py`](../../../../platform-portal/openlineage/spark/tests/test_static.py) | 离线 unit tests；未运行 Spark/K8s/API/数据库 |
+| [`tests/test_static.py`](../../../../platform-portal/openlineage/spark/tests/test_static.py) | 离线正向/非法 Token 与输出路径、PVC 读写挂载、安全合同测试；未运行 Spark/K8s/API/数据库 |
 
 **示例离线操作**（需在已审查的本地 Python 环境执行；最后仅写本地 YAML，不会 Apply）：
 
@@ -29,3 +29,5 @@ python platform-portal/openlineage/spark/render.py --run-token probe01 > /tmp/po
 任何真实 SparkApplication 创建、Self-Runner Live Smoke、S3/Parquet 写入和清理工作均需要另行授权。**不存在由本组件 CODE 赋予的自动部署许可**。
 
 [系统 CODE](../CODE.md) · [Marquez CODE](../marquez/CODE.md) · [Data Platform Spark CODE](../../data-platform/spark/CODE.md)。
+
+> **P3 变更边界**：此版本生成持久化 Parquet 的目标仅为测试 PVC，和业务 S3/PG 完全隔离；每次独立 token，使用 `errorifexists` 禁止无声覆盖。真实 Job/Run/Dataset 读回与 PVC 权限仍 PENDING，不能仅凭静态通过认定 `unknown` 已修复。旧 A4 未写输出的历史结论仍有效。

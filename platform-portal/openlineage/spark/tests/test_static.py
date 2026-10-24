@@ -20,15 +20,17 @@ class PortalA4StaticTests(unittest.TestCase):
     def setUp(self):
         self.raw = renderer.render("probe01")
         self.docs = list(yaml.safe_load_all(io.StringIO(self.raw)))
-        self.cm, self.app = self.docs
+        self.cm, self.pvc, self.app = self.docs
         self.spec = self.app["spec"]
 
     def test_namespaced_and_names_unique_per_run(self):
-        self.assertEqual([d["kind"] for d in self.docs], ["ConfigMap", "SparkApplication"])
+        self.assertEqual([d["kind"] for d in self.docs],
+                         ["ConfigMap", "PersistentVolumeClaim", "SparkApplication"])
         for doc in self.docs:
             self.assertEqual(doc["metadata"]["namespace"], "dw-spark")
         self.assertEqual(self.app["metadata"]["name"], "portal-a4-probe01")
         self.assertEqual(self.cm["metadata"]["name"], "portal-a4-probe01-source")
+        self.assertEqual(self.pvc["metadata"]["name"], "portal-a4-probe01-output")
         self.assertNotIn("portal-a4-probe01", renderer.render("probe02"))
 
     def test_token_is_strict_and_cannot_inject_yaml(self):
@@ -50,10 +52,19 @@ class PortalA4StaticTests(unittest.TestCase):
         self.assertEqual(self.spec["driver"]["memory"], "1g")
         self.assertEqual(self.spec["executor"]["memory"], "1g")
         self.assertEqual(self.spec["driver"]["serviceAccount"], "spark-job")
+        self.assertEqual(self.pvc["spec"]["accessModes"], ["ReadWriteOnce"])
+        self.assertEqual(self.pvc["spec"]["storageClassName"], "local-path")
+        self.assertEqual(self.pvc["spec"]["resources"]["requests"]["storage"], "1Gi")
+        self.assertEqual(self.spec["volumes"][1]["persistentVolumeClaim"]["claimName"],
+                         self.pvc["metadata"]["name"])
         for role in ("driver", "executor"):
             self.assertEqual(self.spec[role]["nodeSelector"], {"workload": "platform"})
             self.assertEqual(self.spec[role]["volumeMounts"][0]["readOnly"], True)
             self.assertNotIn("envFrom", self.spec[role])
+            self.assertEqual(self.spec[role]["volumeMounts"][1], {
+                "name": "probe-output", "mountPath": "/opt/spark/portal-a4-output",
+                "readOnly": False,
+            })
 
     def test_openlineage_is_per_job_not_global(self):
         c = self.spec["sparkConf"]
@@ -67,6 +78,7 @@ class PortalA4StaticTests(unittest.TestCase):
         self.assertEqual(c["spark.openlineage.transport.endpoint"], "/api/v1/lineage")
         self.assertEqual(c["spark.openlineage.namespace"],
                          "healthcare-platform-spark-probe")
+        self.assertEqual(c["spark.openlineage.appName"], "portal-a4-probe01")
         self.assertNotIn("parentRunId", " ".join(c))
 
     def test_only_mounted_fixture_not_s3_or_omop(self):
@@ -74,7 +86,9 @@ class PortalA4StaticTests(unittest.TestCase):
                          "local:///opt/spark/portal-a4/probe.py")
         self.assertEqual(self.spec["arguments"],
                          ["--run-token", "probe01", "--input-uri",
-                          "file:///opt/spark/portal-a4/input.csv"])
+                          "file:///opt/spark/portal-a4/input.csv",
+                          "--output-uri",
+                          "file:///opt/spark/portal-a4-output/probe01/summary.parquet"])
         self.assertEqual(self.spec["volumes"][0]["configMap"]["name"],
                          self.cm["metadata"]["name"])
         self.assertNotIn("Secret", self.raw)
@@ -82,6 +96,11 @@ class PortalA4StaticTests(unittest.TestCase):
         self.assertNotIn("health-processing", self.raw)
         self.assertNotIn("cdm.", self.raw)
         self.assertNotIn("kubectl", self.raw)
+        self.assertNotIn("secretKeyRef", self.raw)
+        self.assertNotIn("write.mode(\"overwrite\")", self.raw)
+        self.assertIn('write.mode("errorifexists").parquet(args.output_uri)',
+                      self.cm["data"]["probe.py"])
+        self.assertIn('spark.read.parquet(args.output_uri)', self.cm["data"]["probe.py"])
         self.assertEqual(self.cm["data"]["input.csv"].count("\n"), 4)
         compile(self.cm["data"]["probe.py"], "<rendered probe.py>", "exec")
         ast.parse((HERE / "probe.py").read_text())
@@ -90,14 +109,24 @@ class PortalA4StaticTests(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("portal_a4_probe", HERE / "probe.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        with self.assertRaises(SystemExit):
-            module.parse_args(["--run-token", "probe01", "--input-uri", "s3a://data"])
-        with self.assertRaises(SystemExit):
-            module.parse_args(["--run-token", "invalid/../", "--input-uri",
-                               "file:///opt/spark/portal-a4/input.csv"])
-        args = module.parse_args(["--run-token", "probe01", "--input-uri",
-                                  "file:///opt/spark/portal-a4/input.csv"])
+        required = ["--run-token", "probe01", "--input-uri",
+                    "file:///opt/spark/portal-a4/input.csv",
+                    "--output-uri",
+                    "file:///opt/spark/portal-a4-output/probe01/summary.parquet"]
+        args = module.parse_args(required)
         self.assertEqual(args.run_token, "probe01")
+        self.assertEqual(args.output_uri, required[-1])
+        for bad in (
+            required[:3] + ["s3a://private"] + required[4:],
+            required[:1] + ["../outside"] + required[2:],
+            required[:-1] + ["s3a://health-processing/other"],
+            required[:-1] + ["file:///opt/spark/portal-a4-output/other/summary.parquet"],
+            required[:-2],
+        ):
+            with self.subTest(bad=bad):
+                with self.assertRaises(SystemExit):
+                    module.parse_args(bad)
+
 
 
 if __name__ == "__main__":
