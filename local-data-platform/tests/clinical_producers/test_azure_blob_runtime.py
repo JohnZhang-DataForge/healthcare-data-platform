@@ -173,17 +173,36 @@ class RuntimeTests(unittest.TestCase):
         self.assertIn("BLOCKED_FAIL_CLOSED", stderr.getvalue())
         self.assertNotIn(SECRET, stderr.getvalue())
 
-    def test_manifest_templates_have_no_cross_ns_pvc_or_secret_data(self):
-        template = (ROOT / "kubernetes/manifests/azure-blob/"
+    def test_direct_readonly_pvc_mode_no_staging_marker(self):
+        self.marker.unlink()
+        receipt = self.run_once(ready_marker=None, direct_readonly_source=True)
+        self.assertEqual(receipt["status"], "BLOB_MANIFEST_COMMITTED")
+        self.assertEqual(len(self.backend.writes), 2)
+
+    def test_no_implicit_staging_bypass_or_conflicting_modes(self):
+        with self.assertRaisesRegex(PublisherRuntimeBlocked,
+                                    "HANDOFF_READY_MARKER_REQUIRED"):
+            self.run_once(ready_marker=None)
+        with self.assertRaisesRegex(PublisherRuntimeBlocked,
+                                    "CONFLICTING_SOURCE_MODES"):
+            self.run_once(direct_readonly_source=True)
+        self.assertEqual(self.backend.writes, [])
+
+    def test_job_template_mounts_existing_generator_pvc_readonly_same_namespace(self):
+        template = (ROOT / "kubernetes/manifests/synthea/blob-publisher/"
                     "publish-direct-fhir-job.yaml.tpl").read_text()
         image = (ROOT / "images/azure-blob-publisher/Dockerfile").read_text()
-        self.assertIn("namespace: dw-az-blob", template)
+        self.assertIn("namespace: dw-synthea", template)
         self.assertIn("automountServiceAccountToken: false", template)
         self.assertIn("readOnlyRootFilesystem: true", template)
-        self.assertIn("name: staging\n          emptyDir:", template)
+        self.assertIn("name: generator-source\n          persistentVolumeClaim:", template)
+        self.assertIn("claimName: synthea-new-generator-state", template)
+        self.assertIn("readOnly: true", template)
+        self.assertIn("direct-readonly-pvc", template)
         self.assertIn("name: azure-blob-publisher-identity", template)
         self.assertIn("__PUBLISHER_IMAGE_DIGEST__", template)
-        self.assertNotIn("persistentVolumeClaim:", template)
+        self.assertNotIn("namespace: dw-az-blob", template)
+        self.assertNotIn("name: staging", template)
         self.assertNotIn("hostPath:", template)
         self.assertNotIn(SECRET, template)
         self.assertIn("ARG BASE_IMAGE", image)
