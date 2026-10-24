@@ -63,6 +63,12 @@ IMAGES: dict[str, ImageSpec] = {
         " do test -s \"$file\""
         " && grep -Fq 'spark.extraListeners: io.openlineage.spark.agent.OpenLineageSparkListener' \"$file\""
         " && grep -Fq 'spark.openlineage.namespace: healthcare-platform-spark-business' \"$file\""
+        " || exit 1; done"
+        " && test -s /data/spark/healthcare-data-platform/spark/common/openlineage_parent_context.py"
+        " && for script in 05d-run-person-canonical.sh 05e-run-visit-canonical.sh 05f-reconcile-person-visit.sh;"
+        " do p=/data/spark/healthcare-data-platform/scripts/task004/$script;"
+        " test -x \"$p\""
+        " && grep -Fq 'openlineage_parent_context.py' \"$p\""
         " || exit 1; done",
         parent_package="healthcare-data-platform-task004-runtime",
     ),
