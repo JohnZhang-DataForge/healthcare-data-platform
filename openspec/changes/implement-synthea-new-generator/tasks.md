@@ -30,7 +30,7 @@
 
 ## 5. P4 — Handoff and finish
 
-- [ ] 5.1 定义 Producer 本地完成状态与 FHIR 下游读入合同；验证 FHIR Generator 本身不依赖 OIE、Blob Publisher、Fabric。
+- [x] 5.1 定义 Producer 本地完成状态与 FHIR 下游读入合同；验证 FHIR Generator 本身不依赖 OIE、Blob Publisher、Fabric。
 - [ ] 5.2 与后续 FHIR→OIE PoC Change 约定实际 FHIR Bundle 输入与 ADT 事件映射验收，真实转换未证实前不宣称 HL7 生成成功。
 - [ ] 5.3 由独立 Change 更新现有多来源总体设计中已过时的共享 Cohort/三医院叙述、建设 FHIR/HL7 Publisher/Fabric；在本 Change 仅记录其新生成器边界被覆盖，不伪造上下游运行状态。
 - [ ] 5.4 全部代码、适用测试、实际运行证据和最终 Main 验证完成后，才考虑同步 Current Spec / Archive。
@@ -81,3 +81,8 @@
 - **失败修复证据保留**：Self-Runner [Run #40099579358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099579358) 的 Job 模板渲染断言阻断；[#40099715955](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099715955) 的 ConfigMap 目录符号链接输入触发 `INVALID_REQUEST_FILE`。仅清理本轮创建的失败 Job/ConfigMap/临时拉取 Secret，持久 PVC 保留。修复标准模板 [Healthcare PR #423](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/423)，Main `45ae41dd364eb9771c7d22ab29030d40eb65ecb4`，通过 `subPath: request.json` 正常提供只读普通文件，Generator 安全逻辑未放宽。
 - **实际验收 PASS**：Self-Runner [Run #40100347980](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40100347980)，Self-Runner Workflow 源 SHA `6d1ce2975838d3a4bebfb3a890781c8050913abc`，固定 Healthcare `45ae41dd364eb9771c7d22ab29030d40eb65ecb4` 和上述 GHCR Digest；`dw-synthea/worker01` 的 Request `p34-atlanta-40100347980` 实测 1 Patient、43 Encounter、1 FHIR Bundle，`SOURCE_GENERATED_VALIDATED`、重复请求无重新生成、SHA256 独立读回全部 PASS。
 - **状态与安全边界**：`synthea-new-generator-state` (10Gi, `synthea-local`, Bound) 的新 PV `pvc-00a9270b-cf8d-44aa-8f46-f882c85d637b`，ReclaimPolicy=Retain；旧 `synthea-new-only-state` PVC UID/原 PV 前后不变。临时 Job、ConfigMap、GHCR 拉取 Secret 已清理，持久数据保留。未执行 OIE、Azure Blob、Fabric、S3 或 OMOP PG 写入；P4 和上游医院文件交付尚未实现。此 Live 验收**只覆盖 Atlanta 的 1 人 FHIR NEW_ONLY**，Johns Creek 有先前真实 Docker Smoke 证据但尚无单独 K8s Live 数据批次。
+
+### P4.1 source handoff implementation (2026-10-24)
+
+- 新增 `source-handoff-v1` 机器合同与独立只读 `apps/clinical_producers/source_handoff.py`：对已有 Request、Manifest、FHIR 内容做身份、版本、Hash、Patient/Encounter 与 Profile 路由复核；输出 `SOURCE_HANDOFF_VERIFIED`，不写 READY/Blob/HL7。
+- 新增离线正常/篡改/重复/错误医院/缺 Manifest/不安全符号链接测试；该测试 **不代表** OIE/Blob Runtime 验收。5.2–5.4 保持 OPEN；需另起独立 OIE/Publisher Change。

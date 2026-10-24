@@ -101,3 +101,24 @@ jobs:
             "${image}" -m apps.synthea.synthea_new_generator.entrypoint \
             --request "/inputs/atlanta-fhir.json"
           echo "SAME_REQUEST_REPLAY_READBACK=PASS"
+
+      - name: Verify actual generated FHIR source handoff (read-only, no cloud)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          image="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+          for pair in "atlanta-fhir:ci-atlanta-fhir-0001:atlanta-fhir.json" "johns-creek-fhir:ci-johnscreek-fhir-0001:johns-creek-hl7.json"; do
+            IFS=: read -r feed request profile <<< "$pair"
+            echo "#### FHIR_SOURCE_HANDOFF_${feed}_BEGIN ####"
+            docker run --rm --network none --read-only --user 10001:10001 \
+              --mount "type=bind,source=${GITHUB_WORKSPACE}/local-data-platform,target=/workspace,readonly" \
+              --mount "type=bind,source=${RUNNER_TEMP}/new-generator-state,target=/synthea-new-generator-state,readonly" \
+              --workdir /workspace --entrypoint python3 "${image}" \
+              -m apps.clinical_producers.source_handoff \
+              --state-root /synthea-new-generator-state \
+              --profile "config/synthea-new-generator/${profile}" \
+              --request-id "${request}"
+            echo "#### FHIR_SOURCE_HANDOFF_${feed}_PASS ####"
+          done
+          echo "AZURE_BLOB_PUBLICATION=NOT_STARTED"
+          echo "OIE_HL7_TRANSFORMATION=NOT_STARTED"

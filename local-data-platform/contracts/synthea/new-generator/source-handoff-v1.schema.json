@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Synthea FHIR verified source handoff (local only)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "hospital_id",
+    "feed_id",
+    "request_id",
+    "request_sha256",
+    "source_manifest_sha256",
+    "request_relative_path",
+    "source_format",
+    "target_format",
+    "transformer",
+    "files",
+    "metrics"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "synthea-fhir-source-handoff-v1"
+    },
+    "status": {
+      "const": "SOURCE_HANDOFF_VERIFIED"
+    },
+    "hospital_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{2,63}$"
+    },
+    "feed_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{2,63}$"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{7,65}$"
+    },
+    "request_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "request_relative_path": {
+      "type": "string",
+      "pattern": "^requests/[A-Za-z0-9][A-Za-z0-9-]{7,65}$"
+    },
+    "source_format": {
+      "const": "FHIR_R4"
+    },
+    "target_format": {
+      "enum": [
+        "FHIR_R4",
+        "HL7_V2"
+      ]
+    },
+    "transformer": {
+      "enum": [
+        "DIRECT",
+        "OIE"
+      ]
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "format",
+          "size_bytes",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^fhir/[A-Za-z0-9._/-]+[.]json$"
+          },
+          "format": {
+            "const": "FHIR_R4"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "csv_patient_rows",
+        "csv_encounter_rows",
+        "fhir_bundles",
+        "fhir_patients",
+        "fhir_encounters"
+      ],
+      "properties": {
+        "csv_patient_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "csv_encounter_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fhir_bundles": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fhir_patients": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fhir_encounters": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

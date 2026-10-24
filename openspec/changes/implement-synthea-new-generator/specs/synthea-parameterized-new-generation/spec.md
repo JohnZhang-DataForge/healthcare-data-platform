@@ -86,3 +86,22 @@ The platform SHALL allow separate external hospital/feed profiles to produce ind
 - **GIVEN** a valid third hospital/feed profile selecting a supported output format and geographic location
 - **WHEN** that profile is converted into a generator request
 - **THEN** no generator source-code modification is necessary to support the new hospital
+
+
+### Requirement: External FHIR consumer verifies frozen local source before handoff
+
+A downstream producer SHALL verify the independent generator's immutable request,
+completed generation manifest and actual FHIR R4 payload bytes against a versioned,
+hospital-profile-scoped handoff contract before further transport or transformation.
+The generator itself MUST remain unaware of the recipient and MUST NOT emit Blob
+READY, HL7 delivery or Fabric processing status.
+
+#### Scenario: Valid independent Johns Creek source
+- **GIVEN** a completed local FHIR R4 request with matching frozen manifest, source hashes and Johns Creek feed profile
+- **WHEN** a read-only downstream handoff is requested
+- **THEN** the caller receives FHIR inventory, immutable manifest checksum and route metadata with `SOURCE_HANDOFF_VERIFIED`, but no HL7 or Blob publication is claimed
+
+#### Scenario: Source drift or hospital mismatch
+- **GIVEN** a missing or corrupted file, changed hash, mismatched city/profile or unsafe symbolic-link asset
+- **WHEN** the downstream handoff is requested
+- **THEN** it fails without writing to source state or enabling downstream publication
