@@ -25,15 +25,16 @@ on:
           - landing-processing-runtime
           - new-only-omop-writer
       operation:
-        description: "validate: local only; publish: release candidate (never latest)"
+        description: "validate: build only; publish: candidate; publish-latest: one-image local latest"
         type: choice
         required: true
         default: validate
         options:
           - validate
           - publish
+          - publish-latest
       release_tag:
-        description: "Candidate label (defaults to portal-v1.0); not latest"
+        description: "Candidate label for publish mode; ignored when publish-latest"
         type: string
         required: true
         default: portal-v1.0
@@ -141,7 +142,7 @@ jobs:
           echo "RESOLVED_PARENT_IMAGE=$BASE_REF"
 
       - name: Avoid overwriting an existing candidate tag
-        if: steps.plan.outputs.publish == 'true'
+        if: steps.plan.outputs.publish_candidate == 'true'
         shell: bash
         env:
           PACKAGE: ${{ steps.plan.outputs.package }}
@@ -206,9 +207,9 @@ jobs:
           fi
           echo SINGLE_IMAGE_NO_NETWORK_SMOKE=PASS
 
-      - name: Publish SHA Run-tag plus named candidate (never latest)
+      - name: Publish SHA Run-tag plus named candidate (optional)
         id: publish
-        if: steps.plan.outputs.publish == 'true'
+        if: steps.plan.outputs.publish_candidate == 'true'
         shell: bash
         env:
           IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
@@ -229,6 +230,50 @@ jobs:
           echo "PUBLISHED_SINGLE_IMMUTABLE_TAG=$IMAGE_TAG"
           echo "PUBLISHED_SINGLE_DIGEST=$DIGEST"
 
+      - name: Explicit one-image latest release with rollback snapshot
+        if: steps.plan.outputs.promote == 'true'
+        id: latest
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
+          PACKAGE: ${{ steps.plan.outputs.package }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          # Unique immutable SHA/run tag for the exact newly built image.
+          docker push "$IMAGE_TAG" | tee "$RUNNER_TEMP/new-image-push.txt"
+          NEW_DIGEST="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/new-image-push.txt" | tail -n 1)"
+          [[ "$NEW_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 2
+          # Preserve the previous latest under a unique, auditable rollback tag.
+          docker pull "${PACKAGE}:latest"
+          PREVIOUS="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "${PACKAGE}:latest" | grep -E "^${PACKAGE}@sha256:[a-f0-9]{64}$" | head -n 1)"
+          test -n "$PREVIOUS"
+          PREVIOUS_DIGEST="${PREVIOUS##*@}"
+          BACKUP_TAG="pre-latest-run${GITHUB_RUN_ID}-a${GITHUB_RUN_ATTEMPT}"
+          docker tag "${PACKAGE}:latest" "${PACKAGE}:${BACKUP_TAG}"
+          docker push "${PACKAGE}:${BACKUP_TAG}" | tee "$RUNNER_TEMP/previous-latest-push.txt"
+          BACKUP_DIGEST="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/previous-latest-push.txt" | tail -n 1)"
+          test "$BACKUP_DIGEST" = "$PREVIOUS_DIGEST" || exit 3
+          # Change only this selected package, after successful smoke + rollback snapshot.
+          docker tag "$IMAGE_TAG" "${PACKAGE}:latest"
+          docker push "${PACKAGE}:latest" | tee "$RUNNER_TEMP/new-latest-push.txt"
+          PUSHED_DIGEST="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/new-latest-push.txt" | tail -n 1)"
+          test "$PUSHED_DIGEST" = "$NEW_DIGEST" || {
+            echo "BLOCKED:LATEST_PUSH_DIGEST_MISMATCH_VERIFY_REGISTRY"
+            exit 4
+          }
+          docker image rm "${PACKAGE}:latest"
+          docker pull "${PACKAGE}:latest"
+          docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "${PACKAGE}:latest" |
+            grep -Fx "${PACKAGE}@$NEW_DIGEST" >/dev/null || {
+              echo "BLOCKED:LATEST_REGISTRY_READBACK_MISMATCH"
+              exit 5
+            }
+          echo "previous_digest=$PREVIOUS_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "rollback_tag=$BACKUP_TAG" >> "$GITHUB_OUTPUT"
+          echo "new_digest=$NEW_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "SINGLE_LATEST=PASS previous=$PREVIOUS_DIGEST current=$NEW_DIGEST backup=$BACKUP_TAG"
+
       - name: Summarize exact target and mutation boundary
         if: always()
         shell: bash
@@ -239,6 +284,10 @@ jobs:
           PUBLISH: ${{ steps.plan.outputs.publish }}
           RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
           PUBLISHED_DIGEST: ${{ steps.publish.outputs.digest }}
+          LATEST_PROMOTE: ${{ steps.plan.outputs.promote }}
+          OLD_DIGEST: ${{ steps.latest.outputs.previous_digest }}
+          LATEST_DIGEST: ${{ steps.latest.outputs.new_digest }}
+          BACKUP_TAG: ${{ steps.latest.outputs.rollback_tag }}
         run: |
           {
             echo "### Local DP single-image build"
@@ -248,7 +297,10 @@ jobs:
             echo "- Parent digest ref: \`$BASE_REF\`"
             echo "- Requested publish: \`$PUBLISH\`"
             echo "- Candidate tag: \`$RELEASE_TAG\`"
-            echo "- Latest promotion: NEVER in this Workflow"
+            echo "- Direct latest requested: $LATEST_PROMOTE"
+            echo "- Previous latest digest: $OLD_DIGEST"
+            echo "- Previous latest rollback tag: $BACKUP_TAG"
+            echo "- Published latest digest: $LATEST_DIGEST"
             echo "- Published immutable digest: \`$PUBLISHED_DIGEST\`"
             echo "- Kubernetes/Airflow/S3/PostgreSQL operations: NONE"
             echo "- Actual publish/promotion success is determined by prior step status."
