@@ -148,11 +148,20 @@ jobs:
           RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
         run: |
           set -Eeuo pipefail
-          if docker manifest inspect "${PACKAGE}:${RELEASE_TAG}" >/dev/null 2>&1; then
+          # An auth/network failure is NOT proof that the candidate tag is unused.
+          set +e
+          RESULT="$(docker manifest inspect "${PACKAGE}:${RELEASE_TAG}" 2>&1)"
+          CODE=$?
+          set -e
+          if [[ "$CODE" -eq 0 ]]; then
             echo "BLOCKED:CANDIDATE_TAG_ALREADY_EXISTS"
             exit 2
           fi
-          echo "CANDIDATE_TAG_NOT_FOUND=PASS"
+          if ! grep -Eiq 'manifest unknown|no such manifest|not found|404' <<< "$RESULT"; then
+            echo "BLOCKED:CANDIDATE_TAG_LOOKUP_NOT_VERIFIED"
+            exit 3
+          fi
+          echo "CANDIDATE_TAG_CONFIRMED_ABSENT=PASS"
 
       - name: Clean build only the selected Dockerfile
         id: built
