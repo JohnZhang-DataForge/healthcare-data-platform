@@ -95,7 +95,7 @@ jobs:
           print('OIE_ISOLATED_CHANNEL_CREATE=PASS')
           code,body=request('/api/channels/69ace705-a675-45f6-b126-a3b22a65212a')
           root=ET.fromstring(body)
-          assert root.findtext('name')=='Healthcare Johns Creek FHIR to HL7 ADT PoC'
+          assert root.findtext('name')=='Johns Creek FHIR to HL7 ADT'
           print('OIE_ISOLATED_CHANNEL_READBACK=PASS')
           PY
       - name: Record bounded isolated OIE server error log if failure
