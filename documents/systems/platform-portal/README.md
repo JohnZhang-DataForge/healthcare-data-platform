@@ -6,6 +6,10 @@ source_sha: 26e2eb4f2bdc5835eb79ea0b6c96f2891a45c1ee
 ---
 
 # Platform Portal — OpenLineage + Marquez 可观测性子系统
+
+> **2026-10-24 实际业务更新（覆盖下方较早 P4 镜像阶段 / P2 仅 Probe 阶段结论）**：[NEW_ONLY Spark-only DagRun #40125211881](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125211881) 的真实 Airflow DagRun **success**，Person / Visit / Reconcile 三业务成功，三个 Pod 的 imageID 均为发布的新 Digest。Marquez [真实 Airflow DAG+Task #40126168286](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40126168286) 证实 **10 个完成的业务 Job/Run**；Spark [子 Job 数据集 #40125843864](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125843864) 证实 Person/Visit 各 **1 真实 S3 Input + 1 Output**。Reconcile 的两个输入已真实观测，但两个 Action 子 Run 仍为 RUNNING（[独立读回 #40125995864](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125995864)），**P4 未全通过**。原 Workflow 在错误地只查顶层 Spark Job Dataset 时失败，维持失败记录。Writer 按门槛跳过；**没有 COMMIT/PG17 E2E/SKIP**。完整 [当前真实业务验收 Evidence](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P4-REAL-NEWONLY-PERSON-VISIT-RECONCILE-20261024.md)。
+
+
 > **2026-10-24 P4 源码+镜像发布 PASS（业务 E2E OPEN）**：NEW_ONLY 三个实际 SparkApplication 模板已在 [Healthcare PR #441](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/441) 合并；仅 `landing-processing-v2:latest` 更新为 `sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`，[GHCR #40123946926](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40123946926) Build/Smoke/Registry Readback 成功。**实际 NEW_ONLY Person/Visit/Reconcile、Writer/PG17/同批 SKIP 尚未跑通**，不宣称端到端业务血缘通过。 [镜像证据](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P4-BUSINESS-IMAGE-LATEST-RELEASE-20261024.md)。
 
 

@@ -1,7 +1,18 @@
 # Tasks — Platform Portal Real Business Lineage MVP
 
-> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 SCHEDULER / A3 PROBE LIVE PASS; NEW_ONLY BUSINESS PENDING / P3 ISOLATED SPARK JOB+INPUT+OUTPUT LIVE PASS / P4+ OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 REAL NEW_ONLY AIRFLOW JOB/RUN LIVE PASS / P3 ISOLATED SPARK I/O LIVE PASS / P4 PERSON+VISIT I/O LIVE PASS, RECONCILE INPUTS PARTIAL / P5 WRITER OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
 
+
+### Latest verified business checkpoint — 2026-10-24 19:38 UTC (supersedes historical pending-Live prose below)
+
+- **Business DagRun PASS:** [Real Spark-only Run #40125211881](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125211881) had `new_only_omop_consumer` DagRun **success**; `spark_patient`, `spark_encounter`, `spark_reconcile`, `prepare_writer_handoff`, `writer_awaits_live_preflight` all success, while `execute_new_only_writer` and `writer_committed_verified` were skipped. The parent GitHub Workflow is **FAILURE** solely at an over-strict Dataset check on top-level Spark Jobs; preserve its original failure outcome.
+- **Exact image live readback PASS:** three KPO control Pods actually ran `healthcare-data-platform-local-dp-landing-processing-v2@sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`, corroborated in [snapshots #40125494267](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125494267) and [#40125675091](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125675091).
+- **Real P2 business Airflow lineage PASS:** Marquez has **10 recent completed** NEW_ONLY DAG/Task Jobs, including the three Spark KPO Task jobs, [independent GET-only #40126168286](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40126168286). This satisfies the actual business Job/Run objective of 3.3; other-DAG exclusion has a prior static negative gate, not a fresh live negative test, so 3.3 remains checkbox OPEN until that independent acceptance criterion is confirmed.
+- **P4 Person/Visit actual S3 I/O PASS:** Marquez Spark **child Jobs** carry one actual S3 Landing CSV input and one actual S3 Processing Parquet output DatasetVersion each, [#40125843864](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125843864). Application-level Spark Job Run alone has 0 DatasetVersions; never use only that level to judge data lineage.
+- **P4 Reconcile actual inputs PARTIAL:** two child Runs each have the exact same Processing Patient/Encounter DatasetVersion consumed by the real read-only reconcile, but both child Runs remain `RUNNING` while parent SparkApplication/DagRun completed, [#40125995864](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125995864). No output is expected; 5.3 remains OPEN for proper child Run terminal state / accepted documented gap.
+- **P5 remains OPEN**: No Writer COMMIT, PG17 independent readback or same-batch SKIP in this Spark-only validation. The actual input batch was `synthea-new-only-gh-39625216978`, S3 Manifest SHA256 `84562e5d0054b374f1c4d390f5c6604fc97a9aa5bd263b1df143651fb3e51fee`, selected from 35 READY manifests with PG Claim+Writer ledger both absent [#40124907392](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40124907392).
+
+[Primary evidence and exact Job/Run IDs](evidence/PORTAL-P4-REAL-NEWONLY-PERSON-VISIT-RECONCILE-20261024.md). Do not apply old "PENDING REAL DAG" notes below as current status.
 
 ### Current integration checkpoint — 2026-10-24 (supersedes historical pending-PR paragraphs)
 
@@ -29,7 +40,7 @@
 
 - [x] 3.1 只读核对 A3 Provider/Transport/Selective 现行生效位置，设计业务 DAG 的最小 opt-in 改动和负向防扩散测试。**Scheduler 配置/GitSync Live 已通过；其它角色不全配置，Task 级事件仍须真实业务 Run。**
 - [x] 3.2 仅修改真实 `new_only_omop_consumer` 所需最小配置，保留 DAG ID/Task ID/XCom/Claim/Fencing/Writer 许可；更新 Airflow CODE/测试并通过 PR CI。**仅 SOURCE / STATIC PASS，非 Main 部署或业务 Live。**
-- [ ] 3.3 受控验证真实 Airflow Job/Run 读回及其他 DAG 默认行为；明确 Proven vs Not Proven。
+- [ ] 3.3 受控验证真实 Airflow Job/Run 读回及其他 DAG 默认行为；明确 Proven vs Not Proven。**真实 NEW_ONLY DAG/10 Job+Run Live PASS（#40126168286）；其它 DAG 未意外开启 Lineage 的 Live Negative 仍待独立验收，故不提前勾全项。**
 
 ### P2 当前静态实施记录（2026-10-24，尚无业务 Live）
 
@@ -59,7 +70,7 @@
 
 - [x] 5.1 对照实际 SparkApplication Renderer/Control Runtime/Image，设计不触碰业务算法的最小 Listener 接入；定义可核验的 Batch/DagRun/Spark Run/Dataset 身份映射。**确定 control-Pod 生成三个实际 SparkApplication、镜像仅 NEW_ONLY v2 子镜像、Batch/run_id/Processing URI 已由现有 State/XCom 保留；无伪造 parent。**
 - [x] 5.2 业务模板/包装层及受影响镜像精确改动，补全 CODE/单测/负向回归；只重建受影响的镜像和其必要父子依赖，避免无关 8 镜像重建。**PR #441 静态 CI/Main 合并 PASS；单个 `landing-processing-v2` Child Clean Build/Smoke/GHCR Latest Digest PASS；真实 Pod/E2E 独立待验。**
-- [ ] 5.3 对真实 Person、Visit、Reconcile 运行核对 Marquez events/edges；禁止人工伪造 parent/COMPLETED event 补洞。
+- [ ] 5.3 对真实 Person、Visit、Reconcile 运行核对 Marquez events/edges；禁止人工伪造 parent/COMPLETED event 补洞。**Person/Visit 真正 S3A Input+Output Child-Run COMPLETED，Reconcile 两个真实 Input 均被采集但两个 child Run 仍 RUNNING；尚非全面 PASS。证据 #40125843864 / #40125995864。**
 - [ ] 5.4 Writer 业务提交的可信状态关联方案：复用现有真实执行结果和 PG17 readonly Ledger/Checkpoint/CDM readback，不改变事务/Fencing，不凭 Spark COMPLETED 认定 Writer COMMIT。
 
 ## 6. P5 — Fresh synthetic batch end-to-end acceptance

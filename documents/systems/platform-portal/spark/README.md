@@ -6,6 +6,10 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 ---
 
 # Spark OpenLineage — A4 隔离 Smoke
+
+> **2026-10-24 P4 实际业务上线读回（覆盖下方“尚未运行业务”历史备注）**：[真实 NEW_ONLY Spark-only 验收 #40125211881](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125211881) 中三个 Spark 业务 Task 成功，真实 KPO Container `imageID` 与新 `:latest` Digest 一致。Marquez **业务 Spark 子 Job**（非顶层应用 Job）已取得 Person/Visit 各 1 S3 Landing Input + 1 S3 Processing Output [#40125843864](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125843864)；Reconcile 的两条输入也存在，但对应 Child Runs 仍处于 RUNNING [#40125995864](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125995864)。**尚不能宣称 P4 完整终态通过；Writer COMMIT、PG17 和 SKIP 尚未执行。** [真实业务验收细节与 Run IDs](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P4-REAL-NEWONLY-PERSON-VISIT-RECONCILE-20261024.md)。
+
+
 > **2026-10-24 P4 NEW_ONLY 真实业务模板现已打包发布（不是 E2E）**：[P4 单镜像 GHCR Release #40123946926](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40123946926) 对现有 `landing-processing-v2` 单一子镜像 Clean Build、三个 Listener 镜像内 Smoke、`:latest` Digest 读回均 PASS。新镜像 `sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`；旧 Digest/回退标签已记录。P4 Person/Visit/Reconcile **实际 NEW_ONLY DagRun/Pod/Marquez 业务 Dataset 仍待验证**。详见 [P4 Release Evidence](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P4-BUSINESS-IMAGE-LATEST-RELEASE-20261024.md)。
 
 
