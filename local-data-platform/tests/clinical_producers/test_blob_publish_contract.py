@@ -56,12 +56,12 @@ class BlobPlanTests(unittest.TestCase):
         fields=["PV1","1","I"]+[""]*42
         fields[19]="enc-one^^^DEMOJC^VN"
         fields[44]=moment
-        wire="\\r".join((
-            "MSH|^~\\\\&|SYNTHEA_SIM|DEMOJC|LANDING|SYNTHETIC|"+moment+
+        wire="\r".join((
+            "MSH|^~\\&|SYNTHEA_SIM|DEMOJC|LANDING|SYNTHETIC|"+moment+
             "||ADT^A01^ADT_A01|"+control+"|P|2.5.1",
             "EVN|A01|"+moment,
             "PID|1||patient-one^^^DEMOJC^MR||Demo^Patient",
-            "|".join(fields)))+"\\r"
+            "|".join(fields)))+"\r"
         raw=wire.encode()
         name="hl7/enc-one.hl7"
         plan={"schema_version":VERSION,"hospital_id":"demo-johns-creek",
