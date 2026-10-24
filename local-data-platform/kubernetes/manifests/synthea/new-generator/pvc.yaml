@@ -1,0 +1,17 @@
+# Isolated 10GiB generator state, never reuse synthea-new-only-state.
+# Apply requires separate approval and verification of synthea-local provisioning.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: synthea-new-generator-state
+  namespace: dw-synthea
+  labels:
+    app.kubernetes.io/name: synthea-new-generator
+    app.kubernetes.io/part-of: healthcare-data-platform
+spec:
+  storageClassName: synthea-local
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

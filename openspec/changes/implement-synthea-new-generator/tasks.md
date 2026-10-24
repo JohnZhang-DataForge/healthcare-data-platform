@@ -52,3 +52,11 @@
 - GitHub-hosted 真实 Synthea Smoke [Run #40095976490](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40095976490) 已在功能源码 SHA `a347454b16e6c93804e399543b46ce6dfcb4a4ac` PASS：pinned v3.3.0 upstream `995cf2fd33e67918d4e33110d9f68ad248002221`；Atlanta FHIR 1 Patient/43 Encounter/1 Bundle；Johns Creek FHIR 1/31/1 Bundle；Atlanta CSV 1/43/18 CSV；combined 1/43/18 CSV + 1 Bundle；同请求 FHIR readback/replay PASS。外部 Profile 单测和 CI 全部通过。该执行只发生在 GitHub-hosted 临时环境，未触发共享 Kubernetes/OIE/Azure/PG。后续提交后的 PR HEAD CI 需单独核实。
 
 **P0/P1 Merge 证据**：OpenSpec PR [#414](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/414) Main `0f808fca1a7ac80308859cde27cd5838082185bb`；P1 代码 PR [#417](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/417) Main `8e075bca130429c261a0f2cf245daef83ba8eebf`，受信任 OpenSpec / Component Map / Unit 测试通过。本 P2 对应 PR [#418](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/418)，完成合并后核对最新 Main。
+
+
+### P3 package/CI PR 记录（待证据复核）
+
+- 新增 `images/synthea-new-generator/Dockerfile`：父镜像使用经验证的 Synthea v3.3.0 不可变 `@sha256`，镜像内仅增加 Generator 源码，不引入旧 NEW_ONLY Writer 或 Azure/OIE 客户端。
+- 新增 `kubernetes/manifests/synthea/new-generator/{pvc.yaml,generate-job.yaml.tpl}`：独立 PVC、强制 Digest/ConfigMap 占位符、最小运行权限、非 root、readOnlyRootFilesystem、受限 CPU/内存/磁盘、无 ServiceAccount Token。
+- 新增 `synthea-new-generator-image-smoke.yml`：静态合同 → GitHub-hosted Docker 无缓存构建 → 新镜像真实 Atlanta 和 Johns Creek FHIR 生成 → 本地文件 SHA 读回与同请求重复执行；不触发共享集群、PG、S3、OIE、Azure 或 GHCR 写入。
+- `4.1 / 4.2 / 4.3` 仅在本 PR 最终 Head CI 真实通过并合并 Main 后标记完成；`4.4` 需要显式共享 K8s 授权、资源占用核对及真实 Job/Manifest 读回，目前保持未验证。

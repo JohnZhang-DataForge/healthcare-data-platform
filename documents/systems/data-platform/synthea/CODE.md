@@ -129,3 +129,18 @@ Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE
 | [Hospital Profile Contract](../../../../local-data-platform/contracts/synthea/new-generator/hospital-profile-v1.schema.json) | 独立医院和交付类型合同 |
 | [Profile tests](../../../../local-data-platform/tests/synthea_new_generator/test_hospital_profiles.py) | 医院配置、隔离和异常路由离线测试 |
 | [Real source smoke](../../../../.github/workflows/synthea-new-generator-real-smoke.yml) | GitHub-hosted 真实 Synthea CSV/FHIR 测试；不写任何共享资源 |
+
+
+## P3 — 独立镜像与 K8s 部署模板（尚未部署）
+
+**安全边界**：新容器只复制 `synthea_new_generator`；基础 Synthea 镜像必须作为经过版本核对的 `@sha256:` 不可变构建参数传入。Job 模板里的镜像和请求 ConfigMap 均须由独立 Workflow 严格渲染。所有 Job 使用新 PVC `synthea-new-generator-state`；不会复用或清理旧 `synthea-new-only-state`。镜像编译/CI PASS 不代表共享集群已运行。
+
+| 文件 | 责任 |
+| --- | --- |
+| [`Dockerfile`](../../../../local-data-platform/images/synthea-new-generator/Dockerfile) | 独立镜像（仅生成器代码）、必须传入不可变 BASE_IMAGE |
+| [`pvc.yaml`](../../../../local-data-platform/kubernetes/manifests/synthea/new-generator/pvc.yaml) | 独立 Synthea 新生成器 PVC，部署前核实 StorageClass/节点容量 |
+| [`generate-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/synthea/new-generator/generate-job.yaml.tpl) | 带占位符的 Kubernetes Job，只读请求、受限资源与不可变镜像 |
+| [`test_p3_packaging.py`](../../../../local-data-platform/tests/synthea_new_generator/test_p3_packaging.py) | 镜像/模板隔离和基本安全策略静态单测 |
+| [`synthea-new-generator-image-smoke.yml`](../../../../.github/workflows/synthea-new-generator-image-smoke.yml) | GitHub-hosted 独立镜像 Clean Build，read-only root + network=none 真实 FHIR 生成、Manifest SHA 读回及重试；不会推镜像或 Apply K8s |
+
+准备实际部署时先核验 `dw-synthea`、`worker01`、`synthea-local`、旧 PVC、当前并行 Job、GHCR Release Image Digest 和本 Change 的 4.4 安全许可；未授权一律 HOLD。Job 所需的 ConfigMap 必须具有 `request.json` 键，按 Profile 创建不同 Request ID。生成状态 `SOURCE_GENERATED_VALIDATED` 不是 Blob READY，也不是完成 HL7。
