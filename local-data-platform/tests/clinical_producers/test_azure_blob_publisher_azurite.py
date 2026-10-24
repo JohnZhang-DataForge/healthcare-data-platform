@@ -21,7 +21,12 @@ class AzuritePublisherTests(unittest.TestCase):
     def setUp(self):
         from azure.storage.blob import BlobServiceClient
         self.service = BlobServiceClient.from_connection_string(
-            "UseDevelopmentStorage=true")
+            (
+            "DefaultEndpointsProtocol=http;"
+            "AccountName=devstoreaccount1;"
+            "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+            "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1"
+        ))
         self.container = "producer-test-" + uuid.uuid4().hex[:20]
         self.service.create_container(self.container)
         self.backend = AzureSDKBlobBackend(
