@@ -199,3 +199,10 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [service.yaml](../../../../local-data-platform/kubernetes/manifests/oie/service.yaml) | OIE 8443 ClusterIP 管理端口；不暴露公网 |
 | [OIE manifest tests](../../../../local-data-platform/tests/clinical_producers/test_oie_k8s_manifests.py) | 静态隔离与 YAML 解析测试 |
 | [OIE static workflow](../../../../.github/workflows/oie-manifest-static.yml) | GitHub-hosted 不访问 K8s 的 Worker01 模板 CI |
+
+## OIE 4.7.0 固定源码镜像隔离 Smoke
+
+| 文件 | 作用 |
+| --- | --- |
+| [OIE pinned build README](../../../../local-data-platform/images/oie/README.md) | 上游 v4.7.0 精确 Commit、原 Dockerfile target/依赖与 GHCR 交付边界 |
+| [OIE 4.7 isolated image smoke](../../../../.github/workflows/oie-470-isolated-image-smoke.yml) | GitHub-hosted 官方源 Clean Build 与启动测试，不推送镜像、不改共享环境 |
