@@ -1,4 +1,4 @@
-# A4 STATIC TEMPLATE ONLY. NEVER kubectl apply before TASK004 owner confirms idle.
+# P3 STATIC TEMPLATE ONLY. Never apply without live coordination and PVC review.
 # Render with render.py. ConfigMap will be generated alongside this resource.
 apiVersion: sparkoperator.k8s.io/v1beta2
 kind: SparkApplication
@@ -21,6 +21,8 @@ spec:
     - __RUN_TOKEN__
     - --input-uri
     - file:///opt/spark/portal-a4/input.csv
+    - --output-uri
+    - file:///opt/spark/portal-a4-output/__RUN_TOKEN__/summary.parquet
   restartPolicy:
     type: Never
   deps:
@@ -36,6 +38,8 @@ spec:
     spark.openlineage.transport.endpoint: /api/v1/lineage
     spark.openlineage.transport.timeoutInMillis: "5000"
     spark.openlineage.namespace: healthcare-platform-spark-probe
+    # A candidate explicit application identity; only live Marquez Job/Run readback verifies it.
+    spark.openlineage.appName: portal-a4-__RUN_TOKEN__
     spark.sql.shuffle.partitions: "1"
   driver:
     cores: 1
@@ -48,6 +52,9 @@ spec:
       - name: probe-src
         mountPath: /opt/spark/portal-a4
         readOnly: true
+      - name: probe-output
+        mountPath: /opt/spark/portal-a4-output
+        readOnly: false
   executor:
     instances: 1
     cores: 1
@@ -59,7 +66,13 @@ spec:
       - name: probe-src
         mountPath: /opt/spark/portal-a4
         readOnly: true
+      - name: probe-output
+        mountPath: /opt/spark/portal-a4-output
+        readOnly: false
   volumes:
     - name: probe-src
       configMap:
         name: portal-a4-__RUN_TOKEN__-source
+    - name: probe-output
+      persistentVolumeClaim:
+        claimName: portal-a4-__RUN_TOKEN__-output
