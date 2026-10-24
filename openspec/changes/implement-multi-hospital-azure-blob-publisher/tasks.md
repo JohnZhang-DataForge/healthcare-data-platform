@@ -18,6 +18,7 @@
 - [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
 
 ## 4. Guarded Live and Documentation
+- [x] 4.4 创建独立 `dw-az-blob` Namespace 的静态 Kubernetes YAML/边界文档/离线门禁，显式阻止跨 Namespace 挂载现有 Generator PVC；**仅代码级别完成**，真实 `kubectl` Create/Readback 及 Writer 工作负载不在此勾选范围。
 - [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，批准范围后才允许 Self-Runner 的真实外部写入。
 - [ ] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
 - [ ] 4.3 同步真实 PR/Run/Blob object receipt、相关 CODE.md，明确 Fabric/OMOP 不在本 Change；再判断 archive。
@@ -42,3 +43,8 @@
 - `oie_hl7_publisher.py` 从真实 Generator P4.1 源 Manifest 重新核验 FHIR/Encounter，严格要求每个 Encounter 有对应的 **新** OIE persisted message readback：Channel ID、Message ID、实际转换 bytes / SKIP marker，并执行 `verify_adt_against_fhir` 复核 A01 住院和 MSH-10 / 来源关联。
 - IMP 不得 SKIP；AMB 不可伪造 ADT A01；仅上传通过验证的 HL7 原始 Bytes，skip-only 禁止伪造成功 Manifest；复用已验收 `publish_immutable`。
 - 此处仅离线 Mock 结果，**未授权使用真实 OIE 的 Derby 消息或 Azure PUT**，3.2 / 4.2 保持 OPEN，后续经授权才实现受控 OIE 逐条 Fetcher 与 Live 新 Request E2E。
+ 
+### P4.4 — 独立 Publisher Namespace（仅静态设计）
+- 用户将 Publisher 目标 Namespace 指定为 `dw-az-blob`，而 Generator/OIE 分别保持 `dw-synthea`、`dw-oie`。Namespace/Default-Deny NetworkPolicy 作为独立文件，默认不执行；NetworkPolicy 可能阻断 DNS、OIE 和 Azure，必须先制定并验证允许规则。
+- 提供 Hosted-only `test_blob_namespace_contract.py` 和新 Namespace README；严格禁止把 `dw-synthea` 的 PVC 直接挂载到 `dw-az-blob`。未来跨 Namespace 的源文件交接和真实 OIE 凭证 Fetcher 仍未开发/验收。
+- 此项不代表 Namespace 已在 Kubernetes 创建；4.1/4.2 等真实环境 Gate 保持 OPEN。
