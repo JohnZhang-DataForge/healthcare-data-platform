@@ -53,8 +53,7 @@ def render(text: str, *, task_id: str, env: dict[str, str]) -> tuple[str, str]:
         raise ValueError("BLOCKED:SPARK_NAMESPACE_MISMATCH")
     if "spark.openlineage.transport.url: " + MARQUEZ_ENDPOINT not in text:
         raise ValueError("BLOCKED:MARQUEZ_ENDPOINT_MISMATCH")
-    if any(re.search(r"(?m)^\s+spark\.openlineage\.(?:parent|rootParent)", text)
-           for _ in (0,)):
+    if re.search(r"(?m)^\s+spark\.openlineage\.(?:parent|rootParent)", text):
         raise ValueError("BLOCKED:PARENT_ALREADY_CONFIGURED")
     anchors = list(ANCHOR.finditer(text))
     if len(anchors) != 1:
