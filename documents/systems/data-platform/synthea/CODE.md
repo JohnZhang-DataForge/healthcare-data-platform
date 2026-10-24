@@ -264,3 +264,6 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [HL7 source readback](../../../../local-data-platform/apps/clinical_producers/oie/hl7_readback.py) | Strict segment and source identity/control/time match for **actual OIE returned** ADT^A01 messages; no cloud code |
 | [HL7 readback tests](../../../../local-data-platform/tests/clinical_producers/test_oie_hl7_readback.py) | Rejects wrong class, timestamp, version, control IDs, malformed segments |
 | [HL7 readback CI](../../../../.github/workflows/oie-hl7-readback-unit.yml) | Isolated unit/contract tests; not OIE runtime acceptance |
+
+## Disposable OIE real FHIR→HL7 runtime probe
+[Runtime probe](../../../../local-data-platform/tests/clinical_producers/oie_channel_runtime_probe.py) reads only the SHA-pinned synthetic Johns Creek source artifact, sends one real IMP and one AMB FHIR event through the temporary OIE Channel Reader using local loopback API, and independently verifies returned message content using `hl7_readback.py`. [Isolated CI](../../../../.github/workflows/oie-channel-isolated-import.yml) runs on GitHub-hosted runner only, never on shared Kubernetes/PVC.

@@ -4,10 +4,12 @@ on:
     paths:
       - ".github/workflows/oie-channel-isolated-import.yml"
       - "local-data-platform/apps/clinical_producers/oie/**"
+      - "local-data-platform/tests/clinical_producers/oie_channel_runtime_probe.py"
   workflow_dispatch:
 permissions:
   contents: read
   packages: read
+  actions: read
 jobs:
   disposable-import:
     runs-on: ubuntu-latest
@@ -98,6 +100,22 @@ jobs:
           assert root.findtext('name')=='Johns Creek FHIR to HL7 ADT'
           print('OIE_ISOLATED_CHANNEL_READBACK=PASS')
           PY
+      - name: Fetch frozen real Johns Creek source from passing Synthea run
+        uses: actions/download-artifact@v4
+        with:
+          repository: JohnZhang-DataForge/healthcare-data-platform
+          run-id: 40123989893
+          name: oie-real-johns-creek-fhir-events-40123989893
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/oie-real-johns-creek
+      - name: Exercise real FHIR IMP and AMB through isolated OIE and independently read messages
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd local-data-platform
+          python3 tests/clinical_producers/oie_channel_runtime_probe.py \
+            --artifact "$RUNNER_TEMP/oie-real-johns-creek" \
+            --admin-conf "$RUNNER_TEMP/oie-isolated-admin-client"
       - name: Record bounded isolated OIE server error log if failure
         if: failure()
         shell: bash

@@ -97,3 +97,6 @@ The previously authored durable manifests remain **later-phase source definition
 ### 2.4.3 — Independent HL7 v2.5.1 server-message readback contract (2026-10-24)
 - **Offline implementation complete:** Add `hl7_readback.py` strict MSH/EVN/PID/PV1 decoder + source identity/time/control ID correlation to verified Johns Creek Patient+Encounter envelope and negative tests. Designed to validate **actual OIE returned bytes** independently of JavaScript mapper; this unit gate is NOT live OIE conversion.
 - **Live readback remains pending:** Supply actual OIE message processed content after one-channel guarded import, assert 1 IMP A01 / 30 AMB never A01, retry stability, no Blob writes; retain failure records.
+
+### 2.4.3 — Disposable real FHIR→OIE runtime gate (2026-10-24)
+- [ ] Isolated CI uses exact immutable Johns Creek real Synthea Run 40123989893 artifact (31 Encounters: 1 IMP, 30 AMB), verifies SHA256 and frozen handoff, deploys the existing canonical Channel in one disposable OIE 4.7.0 and sends one real IMP plus one real AMB. Reads actual processed message contents and independently validates ADT^A01 via `hl7_readback.py`, records failures without shared-namespace writes. This is **not** a live worker01 acceptance; it is a safety gate before any authorized real import.
