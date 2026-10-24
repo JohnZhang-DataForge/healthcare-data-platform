@@ -12,7 +12,7 @@ from xml.sax.saxutils import escape
 import xml.etree.ElementTree as ET
 
 CHANNEL_ID = "69ace705-a675-45f6-b126-a3b22a65212a"
-CHANNEL_NAME = "Healthcare Johns Creek FHIR to HL7 ADT PoC"
+CHANNEL_NAME = "Johns Creek FHIR to HL7 ADT"
 SKIP_MARKER = "OIE_ADT_NON_INPATIENT_SKIPPED"
 SOURCE_ROOT = Path(__file__).resolve().parent
 UPSTREAM = SOURCE_ROOT / "upstream-raw-reader.xml"

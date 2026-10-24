@@ -1,0 +1,116 @@
+name: OIE 4.7 Isolated Channel Import (No Shared Kubernetes)
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/oie-channel-isolated-import.yml"
+      - "local-data-platform/apps/clinical_producers/oie/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  disposable-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Verify and render one dedicated Johns Creek Channel
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd local-data-platform
+          python3 -m unittest discover -s tests/clinical_producers -p test_oie_channel_build.py -v
+          python3 -m apps.clinical_producers.oie.build_channel --output "$RUNNER_TEMP/oie-jc-channel.xml"
+      - name: Pull only known OIE 4.7.0 release digest
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker pull ghcr.io/johnzhang-dataforge/healthcare-oie@sha256:6716fb6210f9dc029c801b13cc152ff3fcb1ad4df05c1dbe5a9d438a482ba84b
+      - name: Start isolated Derby OIE with diagnostic java.sql module access
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          image=ghcr.io/johnzhang-dataforge/healthcare-oie@sha256:6716fb6210f9dc029c801b13cc152ff3fcb1ad4df05c1dbe5a9d438a482ba84b
+          conf="$RUNNER_TEMP/oie-isolated-admin"
+          python3 -c 'import secrets,sys; open(sys.argv[1],"w").write("server.initialadminpassword = " + secrets.token_urlsafe(32) + "\n")' "$conf"
+          sudo chown 100:65533 "$conf"
+          sudo chmod 400 "$conf"
+          sudo cat "$conf" > "$RUNNER_TEMP/oie-isolated-admin-client"
+          chmod 600 "$RUNNER_TEMP/oie-isolated-admin-client"
+          echo "$conf" >> "$RUNNER_TEMP/oie-isolated-secret-path.txt"
+          docker run -d --name oie-isolated-import --cpus 2 --memory 4g \
+            -e VMOPTIONS="--add-opens=java.sql/java.sql=ALL-UNNAMED" \
+            --mount "type=bind,source=$conf,target=/run/secrets/mirth_properties,readonly" \
+            -p 127.0.0.1:18443:8443 "$image" >/dev/null
+          ready=no
+          for n in $(seq 1 85); do
+            if test "$(docker inspect oie-isolated-import --format '{{.State.Running}}')" != true; then
+              echo OIE_DISPOSABLE_CONTAINER_EXITED; exit 1
+            fi
+            code="$(curl -ksS -o /dev/null --write-out '%{http_code}' --connect-timeout 3 --max-time 4 https://127.0.0.1:18443/ || true)"
+            if [[ "$code" =~ ^[234][0-9][0-9]$ ]]; then ready=yes; break; fi
+            sleep 5
+          done
+          test "$ready" = yes
+          echo OIE_ISOLATED_ENGINE_470_READY=PASS
+      - name: Import actual OIE 4.7 upstream-base Johns Creek Channel and read back
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          conf="$RUNNER_TEMP/oie-isolated-admin-client"
+          python3 - "$conf" "$RUNNER_TEMP/oie-jc-channel.xml" <<'PY'
+          import http.cookiejar,re,ssl,sys,urllib.parse,urllib.request,urllib.error,xml.etree.ElementTree as ET
+          content=open(sys.argv[1]).read()
+          m=re.search(r'^\s*server\.initialadminpassword\s*=\s*(\S.+?)\s*$',content,re.M)
+          assert m
+          jar=http.cookiejar.CookieJar()
+          opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar),
+                                           urllib.request.HTTPSHandler(context=ssl._create_unverified_context()))
+          base='https://127.0.0.1:18443'
+          def request(path,data=None,mime=None,accept='application/xml'):
+              headers={'Accept':accept,'X-Requested-With':'XMLHttpRequest'}
+              if mime:headers['Content-Type']=mime
+              req=urllib.request.Request(base+path,data=data,headers=headers)
+              try:
+                  with opener.open(req,timeout=45) as resp:
+                      return resp.status,resp.read(1500000)
+              except urllib.error.HTTPError as e:
+                  raw=e.read(2500).decode('utf-8','replace')
+                  print('OIE_ISOLATED_CREATE_HTTP='+str(e.code))
+                  print('OIE_ISOLATED_RESPONSE_SNIPPET='+re.sub(r'(?i)(password|token)[^<\\s]{0,100}', '[REDACTED]', raw[:2000]))
+                  raise
+          payload=urllib.parse.urlencode({'username':'admin','password':m.group(1)}).encode()
+          code,body=request('/api/users/_login',payload,'application/x-www-form-urlencoded')
+          assert code==200 and b'SUCCESS' in body.upper()
+          code,body=request('/api/channels')
+          assert ET.fromstring(body).findall('.//channel/id')==[]
+          xml=open(sys.argv[2],'rb').read()
+          code,body=request('/api/channels/',xml,'application/xml','text/plain')
+          if code not in (200,201) or b'true' not in body.lower():
+              raise SystemExit('OIE_ISOLATED_CHANNEL_CREATE_NOT_CONFIRMED')
+          print('OIE_ISOLATED_CHANNEL_CREATE=PASS')
+          code,body=request('/api/channels/69ace705-a675-45f6-b126-a3b22a65212a')
+          root=ET.fromstring(body)
+          assert root.findtext('name')=='Johns Creek FHIR to HL7 ADT'
+          print('OIE_ISOLATED_CHANNEL_READBACK=PASS')
+          PY
+      - name: Record bounded isolated OIE server error log if failure
+        if: failure()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker logs oie-isolated-import --tail=160 2>&1 \
+            | sed -E 's/(password|passwd|token)[=: ]+[^ ]+/[REDACTED]/Ig' \
+            | cut -c1-300 | tail -85 || true
+      - name: Dispose all isolated state and credentials
+        if: always()
+        shell: bash
+        run: |
+          docker rm -fv oie-isolated-import >/dev/null 2>&1 || true
+          rm -f "$RUNNER_TEMP/oie-isolated-admin" "$RUNNER_TEMP/oie-isolated-admin-client" "$RUNNER_TEMP/oie-isolated-secret-path.txt" || true
+          echo SHARED_K8S_OIE_DERBY_MUTATION=NO
+          echo PERSISTENT_OIE_PVC_MUTATION=NO

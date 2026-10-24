@@ -81,3 +81,14 @@ The previously authored durable manifests remain **later-phase source definition
 - [x] 2.4.1 Fetch exact official upstream OIE v4.7.0 Channel Reader test fixture; render versioned Johns Creek OIE Channel XML using existing `adt_a01.js` in preprocessor. `fhir_events.py` splits read-only verified source FHIR by Encounter without clinical mapping. Add channel XML/offline behavior tests and canonical source map.
 - [ ] 2.4.2 Import into actual persistent `dw-oie` only under separately coordinated workflow and ensure channel ID does not conflict; verify source/target connector runtime using OIE v4.7.0 API and independent message readback.
 - [ ] 2.4.3 Submit **actual** Johns Creek Generator FHIR inputs into live Channel; independently parse ADT^A01 output, ensure non-IMP skipped, malformed candidates fail and retries stable. Never claim Azure Blob success.
+
+
+### 2.4.2 — OIE import HTTP 500 isolation (2026-10-24)
+- Live attempt [Self-Runner #40124412640](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40124412640) passed auth, worker01 PVC and Channel render but **FAILED** at first `POST /api/channels/` (HTTP 500). Do not replay until cause identified and channel existence checked; no Blob processing occurred.
+- Read-only [#40124515326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40124515326) found OIE Ready, Derby Bound, no Pod restart; server error `InaccessibleObjectException` while serializing an internal SQLException, which hides the underlying import cause.
+- Add GitHub-hosted **throwaway OIE 4.7.0 Derby container** with diagnostic `--add-opens=java.sql/java.sql=ALL-UNNAMED` solely for this test, reusing same canonical Channel render; no shared cluster/real PVC/Blob mutations. Need distinguish this temporary CI diagnosis from accepting a live Channel.
+
+
+### Confirmed original OIE Channel 500 root cause (2026-10-24)
+- [GitHub-hosted isolated OIE import diagnostic](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40124952205) with temporary `VMOPTIONS=--add-opens=java.sql/java.sql=ALL-UNNAMED` unmasked Derby `SQLDataException`: inserting Channel name `Healthcare Johns Creek FHIR to HL7 ADT PoC` exceeded `CHANNEL.NAME VARCHAR(40)`. **This is not an OIE database/PVC corruption or a broken engine image.** Live Channel was not verified imported.
+- Change canonical Channel name to `Johns Creek FHIR to HL7 ADT` (<=40 characters), preserve fixed Channel ID and mappings, rerun isolated import; only if success, update controlled Self-Runner live workflow expectation and recheck channel list before a new POST. No shared Derby/PG migration.
