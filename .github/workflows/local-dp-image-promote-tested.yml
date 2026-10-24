@@ -1,0 +1,210 @@
+name: Local DP Promote Tested Candidate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/local-dp-image-promote-tested.yml"
+      - ".github/workflows/local-dp-image-rebuild-single.yml"
+      - ".github/quality/scripts/local_dp_single_image_plan.py"
+      - ".github/quality/tests/test_local_dp_single_image_plan.py"
+      - "openspec/changes/selective-local-dp-image-rebuild/**"
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Existing candidate package (one of eight)"
+        type: choice
+        required: true
+        options:
+          - synthea
+          - task004-runtime
+          - task004-cdm-runtime
+          - landing-discovery-runtime
+          - landing-claim-runtime
+          - synthea-new-only
+          - landing-processing-runtime
+          - new-only-omop-writer
+      mode:
+        description: "Verify a published candidate by digest, or explicitly promote it to latest"
+        type: choice
+        required: true
+        default: verify-candidate
+        options:
+          - verify-candidate
+          - promote-tested
+      release_tag:
+        description: "Existing candidate tag (default portal-v1.0)"
+        required: true
+        type: string
+        default: portal-v1.0
+      expected_digest:
+        description: "REQUIRED: exact sha256 digest from candidate publish and independent test"
+        required: true
+        type: string
+      acceptance_evidence:
+        description: "For promote-tested: test Run/PR URL proving independent acceptance (review manually)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-dp-image-ghcr-release
+  cancel-in-progress: false
+
+jobs:
+  policy:
+    name: Offline candidate promotion policy tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate exact tag, digest and independent promotion inputs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests -p test_local_dp_single_image_plan.py -v
+          echo "CANDIDATE_PROMOTION_POLICY=PASS"
+
+  verify:
+    name: Verify candidate tag, digest and no-network image smoke
+    if: github.event_name == 'workflow_dispatch'
+    needs: policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      package: ${{ steps.plan.outputs.package }}
+      expected_digest: ${{ steps.plan.outputs.expected_digest }}
+      release_tag: ${{ steps.plan.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Verify promotion parameters without GHCR mutation
+        id: plan
+        shell: bash
+        env:
+          IMAGE: ${{ inputs.image }}
+          MODE: ${{ inputs.mode }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          EXPECTED_DIGEST: ${{ inputs.expected_digest }}
+          ACCEPTANCE_EVIDENCE: ${{ inputs.acceptance_evidence }}
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 .github/quality/scripts/local_dp_single_image_plan.py \
+            --image "$IMAGE" \
+            --promotion-mode "$MODE" \
+            --git-ref "$GITHUB_REF" \
+            --release-tag "$RELEASE_TAG" \
+            --expected-digest "$EXPECTED_DIGEST" \
+            --acceptance-evidence "$ACCEPTANCE_EVIDENCE" >> "$GITHUB_OUTPUT"
+          echo "CANDIDATE_READONLY_VERIFY=$MODE"
+
+      - name: Authenticate read-only GHCR
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Verify existing candidate matches exact independently tested digest
+        shell: bash
+        env:
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+          EXPECTED_DIGEST: ${{ steps.plan.outputs.expected_digest }}
+          SMOKE: ${{ steps.plan.outputs.smoke }}
+          WRITER_IMPORT: ${{ steps.plan.outputs.writer_import }}
+        run: |
+          set -Eeuo pipefail
+          CANDIDATE="${PACKAGE}:${RELEASE_TAG}"
+          PINNED="${PACKAGE}@${EXPECTED_DIGEST}"
+          docker pull "$CANDIDATE"
+          docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$CANDIDATE" \
+            | grep -Fx "$PINNED" >/dev/null || {
+              echo "BLOCKED:CANDIDATE_TAG_DIGEST_DRIFT"
+              exit 3
+            }
+          docker pull "$PINNED"
+          docker run --rm --network none --security-opt no-new-privileges \
+            --cap-drop ALL --entrypoint /bin/sh "$PINNED" -ec "$SMOKE"
+          if [[ "$WRITER_IMPORT" == "true" ]]; then
+            docker run --rm --network none --security-opt no-new-privileges \
+              --cap-drop ALL --entrypoint python "$PINNED" \
+              -c 'import new_only_airflow_writer, task004_cdm_dynamic_pg_writer'
+          fi
+          echo "CANDIDATE_TAG_AND_DIGEST_MATCH=PASS"
+          echo "CANDIDATE_NO_NETWORK_SMOKE=PASS"
+          {
+            echo "### Candidate digest verification"
+            echo "- Package: \`$PACKAGE\`"
+            echo "- Release tag: \`$RELEASE_TAG\`"
+            echo "- Tested digest: \`$EXPECTED_DIGEST\`"
+            echo "- Latest promotion: NOT PERFORMED in this job"
+            echo "- This is NOT a real Airflow/Marquez/Kubernetes/Writer E2E"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  promote:
+    name: Promote same verified candidate digest to latest, without rebuild
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'promote-tested'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Authenticate GHCR for explicitly requested promotion
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Final candidate digest drift gate and latest promotion
+        shell: bash
+        env:
+          PACKAGE: ${{ needs.verify.outputs.package }}
+          RELEASE_TAG: ${{ needs.verify.outputs.release_tag }}
+          EXPECTED_DIGEST: ${{ needs.verify.outputs.expected_digest }}
+          ACCEPTANCE_EVIDENCE: ${{ inputs.acceptance_evidence }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$ACCEPTANCE_EVIDENCE"
+          PINNED="${PACKAGE}@${EXPECTED_DIGEST}"
+          CANDIDATE="${PACKAGE}:${RELEASE_TAG}"
+          docker pull "$CANDIDATE"
+          docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$CANDIDATE" \
+            | grep -Fx "$PINNED" >/dev/null || {
+              echo "BLOCKED:CANDIDATE_CHANGED_AFTER_TEST"
+              exit 3
+            }
+          docker pull "$PINNED"
+          docker tag "$PINNED" "${PACKAGE}:latest"
+          docker push "${PACKAGE}:latest" | tee "$RUNNER_TEMP/latest-promote.txt"
+          ACTUAL="$(sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/latest-promote.txt" | tail -n 1)"
+          test -n "$ACTUAL"
+          if [[ "$ACTUAL" != "$EXPECTED_DIGEST" ]]; then
+            echo "BLOCKED:PROMOTED_DIGEST_DIFFERENT_VERIFY_REGISTRY_MANUALLY"
+            exit 4
+          fi
+          echo "LATEST_PROMOTION_SAME_DIGEST=PASS"
+          {
+            echo "### Promoted verified candidate, without rebuilding"
+            echo "- Package: \`$PACKAGE\`"
+            echo "- Candidate tag: \`$RELEASE_TAG\`"
+            echo "- Promoted digest: \`$ACTUAL\`"
+            echo "- Acceptance evidence (operator supplied; review separately): $ACCEPTANCE_EVIDENCE"
+            echo "- No K8s rollout or Airflow deployment performed"
+          } >> "$GITHUB_STEP_SUMMARY"

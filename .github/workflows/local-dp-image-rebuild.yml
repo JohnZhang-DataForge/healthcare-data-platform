@@ -11,7 +11,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: local-dp-eight-images-${{ github.ref }}
+  group: local-dp-image-ghcr-release
   cancel-in-progress: false
 
 jobs:

@@ -21,3 +21,12 @@
 1. PR 静态检查覆盖 8 个正向选择、未知镜像、发布非 Main、非法 Digest、base 不允许父 Digest、子镜像 parent 映射、旧 full-build 无自动触发。
 2. GH Actions YAML Parse/Trusted Change Gate、Docs Links 等必需检查成功；PR 不触发镜像构建或 GHCR 写。
 3. 仅合并后用户手工分开验证 `validate`、`publish`、`promote-latest`；没有真实 dispatch 之前状态仅 STATIC PASS，不能写入 Runtime PASS。
+
+## Addendum: independently tested candidate before latest promotion
+
+- 单镜像 Workflow 允许 `validate|publish`，默认 Release Tag `portal-v1.0`，只接受保守的 `<component>-v<major>.<minor>[.<patch>]` 格式。构建与 Smoke 后，如明确 `publish`，分别推唯一 Run tag 和候选 Tag，**永不推 `latest`**。存在候选 Tag 时拒绝覆盖（并发构建由 release 并发组协调，但仍需独立 GHCR 读回以识别 registry 竞态）。
+- 新 Workflow `local-dp-image-promote-tested.yml` 为单独人工入口；默认 `verify-candidate`，必须传候选 Tag + 已测试 `sha256` Digest，下载候选并匹配 RepoDigest、使用 Digest 做 no-network Smoke，不推 Tag。
+- `promote-tested` 需额外提供 Review/Run 证据 URL（记录引用不等于自动证明已通过 E2E），再次执行上述校验，再次核对候选 Tag 未变化，才 `docker pull PACKAGE@sha256` 并对**同一个 Digest** 赋予 `:latest`；全程不运行 `docker build`。最终记录 GHCR Push Digest 并要求与测试 Digest 完全一致，否则标记为需要 Registry 人工取证的失败，不自动重试。
+- 两个单镜像 Workflow 与旧手工 8 镜像 Workflow 使用同一 GitHub Actions 并发组 `local-dp-image-ghcr-release` 串行执行；未涵盖其它仓库/手工 Docker CLI 的并行写，因此执行前仍必须遵守 Session Coordination。
+- 仅现有 8 镜像允许候选构建/晋级。`new_only_omop_consumer.py` Airflow 实际经 GitSync 读取，`portal-v1.0` 镜像标签不会替换或隔离 DAG，不能把它当作 Portal P2 OpenLineage Runtime/E2E 测试。这个差异必须在门户上线步骤单独验证。
+- 默认不执行任何手动 GHCR 发行或业务部署。`publish` 和 `promote-tested` 是不同有副作用操作；当前用户只请求先发布 candidate，未批准晋级 `:latest`。
