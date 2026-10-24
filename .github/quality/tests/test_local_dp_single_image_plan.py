@@ -68,6 +68,12 @@ class SelectiveImagePlanTests(unittest.TestCase):
         self.assertIn("PREVIOUS_DIGEST", single)
         self.assertIn('docker push "${PACKAGE}:latest"', single)
         self.assertIn("LATEST_REGISTRY_READBACK_MISMATCH", single)
+        self.assertLess(single.index("Selected image no-network smoke before any publication"),
+                        single.index("Explicit one-image latest release with rollback snapshot"))
+        self.assertLess(single.index("docker push \"${PACKAGE}:${BACKUP_TAG}\""),
+                        single.index("docker push \"${PACKAGE}:latest\""))
+        self.assertLess(single.index("test \"$BACKUP_DIGEST\" = \"$PREVIOUS_DIGEST\""),
+                        single.index("docker push \"${PACKAGE}:latest\""))
         self.assertIn("image_pull_policy", (ROOT / "local-data-platform/airflow/dags/new_only_omop_consumer.py").read_text())
         self.assertNotIn("push:", single.split("permissions:", 1)[0])
 
