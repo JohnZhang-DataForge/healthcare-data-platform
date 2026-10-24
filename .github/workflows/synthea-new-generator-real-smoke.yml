@@ -127,18 +127,19 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          cd local-data-platform
-          python3 - <<'PY'
+          mkdir -p "$RUNNER_TEMP/oie-real-johns-creek"
+          sudo chown 10001:10001 "$RUNNER_TEMP/oie-real-johns-creek"
+          program="$(cat <<'PY'
           import hashlib,json,os
           from pathlib import Path
           from apps.clinical_producers.source_handoff import verify_handoff
           from apps.clinical_producers.oie.fhir_events import events_from_bundle
-          root=Path(os.environ["RUNNER_TEMP"])/"new-generator-state"
+          root=Path("/synthea-new-generator-state")
           source=verify_handoff(root,Path("config/synthea-new-generator/johns-creek-hl7.json"),
                                 "ci-johnscreek-fhir-0001")
           assert source["status"]=="SOURCE_HANDOFF_VERIFIED"
-          out=Path(os.environ["RUNNER_TEMP"])/"oie-real-johns-creek"
-          out.mkdir()
+          out=Path("/oie-verified")
+          out.mkdir(exist_ok=True)
           envelopes=[]
           for f in source["files"]:
               path=root/source["request_relative_path"]/"payload"/f["path"]
@@ -157,6 +158,14 @@ jobs:
           print("REAL_OIE_EVENT_ARTIFACT_SHA256="+hashlib.sha256(payload.encode()).hexdigest())
           print("OIE_CHANNEL_LIVE_RUNTIME=NOT_TESTED")
           PY
+          )"
+          image="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+          docker run --rm --network none --read-only --user 10001:10001 \
+            --mount "type=bind,source=${GITHUB_WORKSPACE}/local-data-platform,target=/workspace,readonly" \
+            --mount "type=bind,source=${RUNNER_TEMP}/new-generator-state,target=/synthea-new-generator-state,readonly" \
+            --mount "type=bind,source=${RUNNER_TEMP}/oie-real-johns-creek,target=/oie-verified" \
+            --workdir /workspace --entrypoint python3 "$image" -c "$program"
+          sudo chmod -R a+rX "$RUNNER_TEMP/oie-real-johns-creek"
       - name: Upload immutable synthetic FHIR event proof (short retention)
         uses: actions/upload-artifact@v4
         with:
