@@ -147,11 +147,11 @@ jobs:
               assert len(raw)==f["size_bytes"]
               envelopes += events_from_bundle(json.loads(raw),"ci-johnscreek-fhir-0001")
           assert len(envelopes)==source["metrics"]["fhir_encounters"] and envelopes
-          payload="".join(json.dumps(e,sort_keys=True,separators=(",",":"))+"\\n"
+          payload="".join(json.dumps(e,sort_keys=True,separators=(",",":"))+"\n"
                           for e in envelopes)
           (out/"encounter-events.ndjson").write_text(payload,encoding="utf-8")
           (out/"source-handoff.json").write_text(json.dumps(source,sort_keys=True),encoding="utf-8")
-          (out/"events-sha256.txt").write_text(hashlib.sha256(payload.encode()).hexdigest()+"\\n")
+          (out/"events-sha256.txt").write_text(hashlib.sha256(payload.encode()).hexdigest()+"\n")
           print("REAL_JOHNS_CREEK_SOURCE_VERIFIED=PASS")
           print("REAL_JOHNS_CREEK_ENCOUNTER_EVENTS="+str(len(envelopes)))
           print("REAL_OIE_EVENT_ARTIFACT_SHA256="+hashlib.sha256(payload.encode()).hexdigest())
