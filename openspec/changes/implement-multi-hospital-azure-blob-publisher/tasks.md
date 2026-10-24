@@ -11,6 +11,8 @@
 - [x] 2.1 在 Healthcare `local-data-platform/apps/clinical_producers/` 实现医院无关 Azure Blob immutable Publisher（SDK 锁定版本、条件创建、已存在读回对比、拒绝覆盖、最终 Manifest commit）。
 - [x] 2.2 增加 Mock/Azurite 单元/集成与 Fault Injection：SHA tamper、已存在不同内容、权限失败、部分写入重入、Manifest-only success 禁止、secret redaction。
 - [x] 2.3 建立 Generator verified handoff 到 Publisher 交付输入适配，任何医院/格式由 Profile 选择，禁止耦合 Generator 核心源码。
+- [x] 2.4 实现 `dw-az-blob` 独立 DIRECT FHIR runtime CLI、不可变 Base Image 的 Dockerfile 和受控 `emptyDir` Stage Job 模板，Host-only 离线失败/重试/身份脱敏测试（**不包含真正部署、镜像发布或跨 Namespace Stage**）。
+- [ ] 2.5 受控源侧只读读取与跨 Namespace 完整性保持的 ephemeral Stage 协议/Workflow，以及 OIE 的 authenticated persisted readback Fetcher；均须运行前独立审查与授权。
 
 ## 3. Hospital Routes
 - [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
@@ -54,3 +56,8 @@
 - [Self-Runner Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) **SUCCESS**，预检 active Kubernetes Jobs=0、worker01 Ready、dw-synthea/Generator PVC Bound、dw-oie Deployment Ready。原 Namespace 不存在，`kubectl create` 只创建 `dw-az-blob`，独立读回 `PASS`；UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`，Restricted Pod Security 标签匹配。
 - 本次新 Namespace 内 Pods/Jobs/PVC/Secrets=0；NetworkPolicy **未应用**、Publisher Image/Pod/Secret/实际 Azure RBAC 均未配置，OIE Derby 和 Generator PVC 未修改、Azure Storage 写入=0。
 - 4.4 的 **Namespace 创建** 可以判为 `LIVE_VERIFIED`，但 4.1（Azure Account/身份/安全联检）、4.2（双医院真实发布）及跨 Namespace 受控 handoff **仍 OPEN**。不能以 Namespace SUCCESS 推断数据能发布。
+
+### P2.4 — `dw-az-blob` staged runtime 代码候选（2026-10-24）
+- 源码 `azure_blob_runtime.py` 仅接受已 Stage 的 `DIRECT FHIR` 请求。使用外部给定的 Manifest SHA256 与 ready marker 双重门控；复用既有 `prepare_direct_fhir` 和 `publish_immutable`，先验证所有源 bytes/Blob Key，后初始化 SDK SP 身份。访问凭证仅从运行时注入的 Secret 环境变量读取，异常统一脱敏。
+- 单独 Dockerfile 必须由未来 Builder 注入 digest-pinned Python Base Image；`publish-direct-fhir-job.yaml.tpl` 固定 `dw-az-blob`、Restricted Pod、Job 单次运行、`emptyDir` 临时 Stage、Profile ConfigMap/同 Namespace scoped SP Secret，不使用 `dw-synthea` 的 PVC。
+- 此阶段只纳入 GitHub-hosted offline tests；**尚无** 实际 Stage producer/transport、实际 Publisher GHCR 镜像、`azure-blob-publisher-identity` Secret、Azure Container RBAC，亦没有授权/运行任何新的 Publisher Job。2.5/3.1/3.2/4.1/4.2 保持 OPEN。
