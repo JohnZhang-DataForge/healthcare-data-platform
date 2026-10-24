@@ -15,7 +15,7 @@ The maintained single-image Workflow SHALL accept a fixed allowlist of the eight
 
 ### Requirement: Publication SHALL be separately and explicitly authorized by operation
 
-The Workflow MUST default to `operation=validate` (build and isolated smoke, no GHCR mutation). `publish` SHALL push a unique SHA/Run/Attempt tag AND a separately named release candidate tag (default `portal-v1.0`) for the selected package, but SHALL NOT modify `:latest`. A separate manual `promote-tested` workflow SHALL verify the candidate tag matches the independently tested immutable Digest before promoting the same Digest to `:latest`, WITHOUT rebuilding. Both GHCR mutations MUST require Main.
+The single-image Workflow SHALL default to `validate` without GHCR mutation. Explicit `publish` on Main SHALL push one unique Run tag and a named candidate tag (default `portal-v1.0`), never `:latest`. A distinct manual `promote-tested` workflow SHALL promote the **same tested Digest**, without rebuilding.
 
 #### Scenario: A DAG-only change is merged
 
