@@ -282,3 +282,16 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [blob-publish-plan-v1.schema.json](../../../../local-data-platform/contracts/clinical_producers/blob-publish-plan-v1.schema.json) | 共享 Azure Blob 输入计划 JSON Schema，医院无关 |
 | [test_blob_publish_contract.py](../../../../local-data-platform/tests/clinical_producers/test_blob_publish_contract.py) | 错医院、路径穿越、篡改、状态不匹配的 fail-closed 合同测试 |
 | [azure-blob-publish-contract-unit.yml](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only static/unit，无 Azure/PVC 写入 |
+
+
+## Shared Azure Blob Publisher（Mock/Azurite CI 已通过；尚未执行真实 Azure）
+
+| 路径 | 职责与运行边界 |
+| --- | --- |
+| [azure_blob_publisher.py](../../../../local-data-platform/apps/clinical_producers/azure_blob_publisher.py) | 通用 immutable conditional create、精确 metadata/SHA256、独立 Azure GET/HEAD、最终 `landing-manifest.json` 提交；导入无网络副作用，真实执行必须单独授权 |
+| [requirements-blob-publisher.txt](../../../../local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt) | 固定 Azure Blob/Identity SDK 版本，SP 凭证仅由运行时 Secret 提供 |
+| [test_azure_blob_publisher.py](../../../../local-data-platform/tests/clinical_producers/test_azure_blob_publisher.py) | 纯离线 Fake Backend：幂等、冲突、部分失败/未知 ACK、远端独立读回和日志脱敏 |
+| [test_azure_blob_publisher_azurite.py](../../../../local-data-platform/tests/clinical_producers/test_azure_blob_publisher_azurite.py) | 本地 Azurite SDK 测试：严格 `overwrite=False`、GET、Manifest 重试、冲突，无真实 Azure 存储 |
+| [azure-blob-publish-contract-unit.yml](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only Mock + Azurite CI；不会创建真实 Azure Blob/PVC |
+
+这只实现 shared publisher 传输层，**不是** Atlanta/Johns Creek live adapter 或 K8s→Azure E2E；`SOURCE_HANDOFF_VERIFIED` 和 `OIE_HL7_READBACK_VERIFIED` 必须由调用方独立认证、并提供已验证原始 bytes。无真实 Azure Account/Container/RBAC/Secret、工作负载身份和 Session Coordination Gate 时不得运行真实 PUT。

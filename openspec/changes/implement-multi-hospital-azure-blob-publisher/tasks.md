@@ -8,8 +8,8 @@
 - [x] 1.3 细化标准 Publisher input JSON Schema、Blob path 安全与源字节校验、严格负向条件，离线 Contract Tests；`receipt` / 远端 idempotency 细节在 2.1–2.2 实现。
 
 ## 2. Shared Publisher
-- [ ] 2.1 在 Healthcare `local-data-platform/apps/clinical_producers/` 实现医院无关 Azure Blob immutable Publisher（SDK 锁定版本、条件创建、已存在读回对比、拒绝覆盖、最终 Manifest commit）。
-- [ ] 2.2 增加 Mock/Azurite 单元/集成与 Fault Injection：SHA tamper、已存在不同内容、权限失败、部分写入重入、Manifest-only success 禁止、secret redaction。
+- [x] 2.1 在 Healthcare `local-data-platform/apps/clinical_producers/` 实现医院无关 Azure Blob immutable Publisher（SDK 锁定版本、条件创建、已存在读回对比、拒绝覆盖、最终 Manifest commit）。
+- [x] 2.2 增加 Mock/Azurite 单元/集成与 Fault Injection：SHA tamper、已存在不同内容、权限失败、部分写入重入、Manifest-only success 禁止、secret redaction。
 - [ ] 2.3 建立 Generator verified handoff 到 Publisher 交付输入适配，任何医院/格式由 Profile 选择，禁止耦合 Generator 核心源码。
 
 ## 3. Hospital Routes
@@ -25,3 +25,9 @@
 ### P1.3 — 实际初始 Blob 发布计划输入合同
 - `blob_publish_contract.py` 仅接受冻结 Hospital/Feed/Request 与 `SOURCE_HANDOFF_VERIFIED` FHIR、`OIE_HL7_READBACK_VERIFIED` HL7；不可变对象逻辑以实际源 bytes / SHA256、严格相对路径与事件 Control ID 为起点；禁止含未声明源 bytes、跨医院前缀及模板路径穿越。
 - 本轮新增标准 input Schema 和离线单测；**尚无 Azure SDK、PUT、GET、最终 Manifest 或 Blob 发布**，不因此将任务 2.1/3.1/3.2 标为完成。
+
+
+### P2.1/P2.2 — 隔离开发验收（2026-10-24）
+- Healthcare feature branch `feat/clinical-immutable-blob-publisher-20261024`：新增 SDK 隔离后端 `azure_blob_publisher.py`，复用 P1.3 `verified_plan`；`overwrite=False` 实现不可变创建，实际 GET/HEAD 校验 SHA256、metadata、Content-Type 与 ETag，Manifest 最后创建并 GET，失败不返回提交收据。
+- Fake 后端覆盖正常、同请求重试、已有不同内容、源清单 SHA 改变、部分故障、未知写入 ACK、GET 失败、metadata 变化和脱敏；隔离 Azurite 测试真实 Azure SDK wire path。当前状态 **UNIT / AZURITE CI PASS，NOT LIVE AZURE VERIFIED**。PR [#451](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/451) 分支源码 SHA `a934a3895e276031a38c593ebaf74a550569a843`：Hosted [Azure Blob workflow](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40131051459) 中 Fake/Fault + 独立 Azurite SDK 两项 PASS；两项 Job 的最终结论均为 `success`；仅证实离线模拟环境。
+- 真实 Azure / K8s 验证、两院医院适配器以及对已有 OIE 验收 Request 的任何重放均未授权、未实施。
