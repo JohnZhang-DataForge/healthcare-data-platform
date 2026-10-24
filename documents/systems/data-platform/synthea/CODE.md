@@ -102,7 +102,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 ## 新的参数化生成器（独立于既有 OMOP NEW_ONLY）
 
-本组件位于新的 `apps/synthea/synthea_new_generator/`，只负责本地、参数化的 NEW_ONLY CSV/FHIR R4 数据生成、冻结与校验；不依赖旧 `new_only/` 的 18 CSV S3 Publisher/PG Writer，也不自行调用 OIE 或上传 Blob。当前阶段单元/合同验证；真实 Synthea 运行和 Kubernetes 部署仍待 OpenSpec P2/P3 验收。
+本组件位于新的 `apps/synthea/synthea_new_generator/`，只负责本地、参数化的 NEW_ONLY CSV/FHIR R4 数据生成、冻结与校验；不依赖旧 `new_only/` 的 18 CSV S3 Publisher/PG Writer，也不自行调用 OIE 或上传 Blob。P1 单元/合同测试与 P2 固定版本真实 Synthea FHIR/CSV 生成已通过；P3 独立镜像已在 GitHub-hosted CI 真实验证，**尚未发布 GHCR 或部署共享 Kubernetes**。
 
 | 源文件 | 说明 |
 | --- | --- |
@@ -144,3 +144,5 @@ Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE
 | [`synthea-new-generator-image-smoke.yml`](../../../../.github/workflows/synthea-new-generator-image-smoke.yml) | GitHub-hosted 独立镜像 Clean Build，read-only root + network=none 真实 FHIR 生成、Manifest SHA 读回及重试；不会推镜像或 Apply K8s |
 
 准备实际部署时先核验 `dw-synthea`、`worker01`、`synthea-local`、旧 PVC、当前并行 Job、GHCR Release Image Digest 和本 Change 的 4.4 安全许可；未授权一律 HOLD。Job 所需的 ConfigMap 必须具有 `request.json` 键，按 Profile 创建不同 Request ID。生成状态 `SOURCE_GENERATED_VALIDATED` 不是 Blob READY，也不是完成 HL7。
+
+**P3 证据与边界（2026-10-24）**：[PR #420](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/420) 的 GitHub-hosted 独立 Docker Smoke 使用父镜像 `ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea@sha256:2ef13ae77d476983ea88a5377570190859f253c9f98eb0652ebc793ef685b6b1`，实际验证 Atlanta 1 Patient/43 Encounter、Johns Creek 1/31、同请求重试与独立 Manifest SHA256 读回。镜像只在临时 Runner 本地构建，未推送 GHCR；模板也没有在 `dw-synthea` 应用。下一步的 4.4 K8s 操作必须完成 Session Coordination / Safe Operations 资源、授权和身份核对。
