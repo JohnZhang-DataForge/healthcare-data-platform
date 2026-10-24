@@ -1,0 +1,23 @@
+# Design
+
+## Implementation boundary
+
+- `workflow_dispatch.image` 是静态枚举的 8 个现有镜像组件（5 base + 3 child）；**不接受用户提供的 Dockerfile 路径、package、命令或任意 Shell**。来源和正式 GHCR package 通过测试覆盖的 `local_dp_single_image_plan.py` 固定映射。
+- `workflow_dispatch.operation` 固定为 `validate`（默认，仅 Docker build/no-network smoke）、`publish`（仅推送含 Git SHA/Run/Attempt 的不可复用 tag）、`promote-latest`（先推唯一 tag，再明确覆盖选中镜像的 `:latest`）。
+- Publish/Promote 仅在 `refs/heads/main` 且用户明确选择时允许；PR 事件只有 offline unit/static job，不执行 Docker build、GHCR login 或任何发布。
+- 子镜像父依赖：`synthea-new-only -> healthcare-data-platform-synthea`；`landing-processing-runtime -> healthcare-data-platform-task004-runtime`；`new-only-omop-writer -> healthcare-data-platform-task004-cdm-runtime`。允许仅对这 3 个子镜像输入精确格式的 Digest；若省略，则将当前 parent `:latest` 的 RepoDigest 固定后作为 Docker `BASE_IMAGE` 注入。父镜像更新不自动传播给子镜像，需手动分别构建。
+- 8 个现有 Dockerfile、BUILD context `local-data-platform` 与原 GHCR 包名均不变。单镜像构建 `--pull --no-cache` 并使用已绑定的 SOURCE SHA；成功的固定路径无网络 smoke 才允许 publish。Writer 额外做离线 Python import。使用 `docker push` 得到实际 Digest，GitHub Job Summary 记录选中包、SHA、父 Digest、Run ID、运行模式与是否发布。
+- 保留旧 full-build Workflow 主体，只让其 `on: workflow_dispatch`；它是显式全量发布途径，不再因 Main push/PR 自动触发。因 PR #416 的 DAG 变更不应引发全 8 :latest 晋级，其 Merge 需等待本变更已合并且明确审查 workflow 触发行为。
+
+## Safety / gate
+
+- 无任何 K8s/Airflow/S3/PG 实时操作；单镜像手动发布或 `:latest` 晋级仍需按 Safe Operations 和 Session Coordination 核对并行镜像发布/运行消费者。
+- GHCR token 仅来自 Actions `GITHUB_TOKEN`，不得显示凭据；只有手动构建 Job 拥有 packages write，PR 静态 Job contents read。
+- 保留 Parent Digest 记录。新增唯一 tag 名 `git-<40sha>-run<runid>-a<attempt>` 以避免覆盖以前 run；`:latest` 仅在显式 promote 时更新。无法删除/自动清理既存 package；不重启 Pod、不刷新 Airflow 发布环境。
+- Failure fail-closed：参数不符、错误 Ref、父 Digest 不存在、Smoke 失败均不推送 `:latest`；如果 `:latest` 更新失败须以 Registry/实际 Pod imageID 只读确认，不盲重试。
+
+## Acceptance
+
+1. PR 静态检查覆盖 8 个正向选择、未知镜像、发布非 Main、非法 Digest、base 不允许父 Digest、子镜像 parent 映射、旧 full-build 无自动触发。
+2. GH Actions YAML Parse/Trusted Change Gate、Docs Links 等必需检查成功；PR 不触发镜像构建或 GHCR 写。
+3. 仅合并后用户手工分开验证 `validate`、`publish`、`promote-latest`；没有真实 dispatch 之前状态仅 STATIC PASS，不能写入 Runtime PASS。

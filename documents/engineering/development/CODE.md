@@ -1,8 +1,8 @@
 ---
 status: active
 scope: developer-tooling-source-map
-last_verified: 2026-10-16
-source_sha: d019429332e794e412426cf9c5053bafa043c05e
+last_verified: 2026-10-24
+source_sha: 8e075bca130429c261a0f2cf245daef83ba8eebf
 ---
 
 # Developer Tooling — CODE / 开发工具与环境示例导航
@@ -18,6 +18,11 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`check_new_code_names.py`](../../../.github/quality/scripts/check_new_code_names.py) | [STATIC CI] 阻止新增正式源码采用 Task/Step 命名；历史文件豁免 |
 | [`check_spark_manifest_source_closure.py`](../../../.github/quality/scripts/check_spark_manifest_source_closure.py) | [STATIC CI] 对现存 SparkApplication YAML 模板逐个检查 mainApplicationFile 的唯一 Python 源码、路径、Driver/Executor ConfigMap 只读挂载；辅助 Pod 分类排除。不渲染模板、不部署或运行 Spark；单测 [test_spark_manifest_source_closure.py](../../../.github/quality/tests/test_spark_manifest_source_closure.py) 和现有 [Local DP Provenance Static Gates](../../../.github/workflows/local-dp-provenance-probe-static.yml) 执行。 |
 | [`check_openspec_change_gate.py`](../../../.github/quality/scripts/check_openspec_change_gate.py) | [STATIC CI] 将所有实质性 PR 与 Active OpenSpec Change/Task 绑定，并限制 docs-only 例外；Main Ruleset #25365902 的可信 Job 已 Required 且通过 #233/#234 正反 PR；仍非业务运行验收 |
+
+| [`local_dp_single_image_plan.py`](../../../.github/quality/scripts/local_dp_single_image_plan.py) | [STATIC + MANUAL DISPATCH POLICY] 固定 8 个 Local DP 镜像的 Dockerfile/GHCR Package/父镜像/Smoke，拒绝非法组件、非法 Digest 和非 Main 发布；自身不运行 Docker/网络 |
+| [`test_local_dp_single_image_plan.py`](../../../.github/quality/tests/test_local_dp_single_image_plan.py) | [OFFLINE TESTS] 8 镜像选择、3 子镜像父 Digest、publish 许可、恶意输入及全量 Workflow 自动触发退役等正反校验 |
+| [`local-dp-image-rebuild-single.yml`](../../../.github/workflows/local-dp-image-rebuild-single.yml) | [MANUAL ONLY BUILD; PR TEST ONLY] `workflow_dispatch` 指定唯一镜像与 `validate/publish/promote-latest`；子镜像父 Digest 锁定，构建后无网络 Smoke；只有手动 Main Publish 才写 GHCR，`promote-latest` 仅影响选中包 |
+| [`local-dp-image-rebuild.yml`](../../../.github/workflows/local-dp-image-rebuild.yml) | [FULL EIGHT-IMAGE RELEASE / MANUAL ONLY] 历史完整 8 镜像链式 clean build / Main GHCR :latest 全量晋级继续可手工触发；**移除 PR/Main Push 自动触发**，合并 Airflow DAG 不再自动覆盖 8 镜像。高副作用，请在 Shared Operations 协调后单独使用 |
 
 全仓质量工具统一放在 `.github/quality/scripts/`，对应单元测试位于 [`.github/quality/tests/`](../../../.github/quality/tests)；这些不是 Local Data Platform 业务文件。
 
