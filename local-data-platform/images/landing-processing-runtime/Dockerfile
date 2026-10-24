@@ -35,5 +35,21 @@ COPY --chown=10001:10001 --chmod=0644 \
   spark/manifests/task004/person-visit-reconciliation.yaml.tpl \
   /data/spark/healthcare-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl
 
+# P4 Airflow-to-Spark parent identity propagation. Change ONLY the V2 child:
+# these existing control scripts inject provider-produced job/run context after
+# rendering and before SparkApplication dry-run/apply. Parent base stays intact.
+COPY --chown=10001:10001 --chmod=0644 \
+  spark/common/openlineage_parent_context.py \
+  /data/spark/healthcare-data-platform/spark/common/openlineage_parent_context.py
+COPY --chown=10001:10001 --chmod=0755 \
+  scripts/task004/05d-run-person-canonical.sh \
+  /data/spark/healthcare-data-platform/scripts/task004/05d-run-person-canonical.sh
+COPY --chown=10001:10001 --chmod=0755 \
+  scripts/task004/05e-run-visit-canonical.sh \
+  /data/spark/healthcare-data-platform/scripts/task004/05e-run-visit-canonical.sh
+COPY --chown=10001:10001 --chmod=0755 \
+  scripts/task004/05f-reconcile-person-visit.sh \
+  /data/spark/healthcare-data-platform/scripts/task004/05f-reconcile-person-visit.sh
+
 USER 10001:10001
 # Inherit the proven /usr/local/bin/task004-runtime entrypoint.
