@@ -1,11 +1,13 @@
 ---
 status: active
 scope: platform-portal-system
-last_verified: 2026-10-18
-source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
+last_verified: 2026-10-24
+source_sha: 26e2eb4f2bdc5835eb79ea0b6c96f2891a45c1ee
 ---
 
 # Platform Portal — OpenLineage + Marquez 可观测性子系统
+
+> **2026-10-24 P1 真实只读验收（新于下方历史验收）**：Marquez API/Web、Web proxy、PG14 数据库、Kubernetes Deployment/Service/Endpoint/PVC **当前健康检查 PASS**；PG14 `marquez` 保留 37 张 Metadata 表。**关键异常**：三个 Namespace 均无 Jobs；PG14 独立精确查询 `namespaces=3, jobs=0, runs=0, lineage_events=0`，历史 A3/A4 事件**当前不存在**。详见 [本次 P1 Evidence](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P1-READONLY-VERIFICATION-20261024.md) 和 [Self-Runner #40093060512](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40093060512)。**基础服务健康不等于真实业务 Lineage 验收**，且此次无写操作、未恢复历史事件；P2/P3 尚未开始。
 
 > **本系统唯一 README 总入口。** Portal 是**旁路数据血缘/运行观测系统**，不是业务 ETL、OMOP 数据库 Writer 或自研前端；实际展示界面是 Marquez 官方 Web。组件代码定位见 [CODE.md](CODE.md)；全项目 CURRENT/NEXT 以 [PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md) 为准。以下运行结论来自 **2026-10-13/14 历史验收**，不是本次部署或当前在线探针。
 
