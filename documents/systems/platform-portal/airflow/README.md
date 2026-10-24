@@ -9,7 +9,7 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 
 **职责**：向 Marquez 发送真实 Airflow DAG/Task/Run OpenLineage 事件，并验证 Provider 和 Marquez 读取；**不**处理 S3、Spark/OMOP Writer 或业务数据库写入。Portal Airflow 观测源码由 [CODE.md](CODE.md) 维护，业务 Airflow DAG/路由由 [Data Platform Airflow CODE](../../data-platform/airflow/CODE.md) 管理。
 
-> **最新 P2 真实验证（2026-10-24）**：Scheduler 与 DAG Processor 上现有 NEW_ONLY DAG 的 GitSync SHA256 对上源码、Scheduler OpenLineage 2.17.0/Transport/Selective 配置 [#40120678131](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120678131) PASS；真实运行两任务 `platform_portal_openlineage_probe`（DagRun `portal-ol-40121352170`）及其 Marquez DAG/Task Jobs [#40121352170](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121352170) PASS。**仍待业务 `new_only_omop_consumer` 的真实 DagRun Job/Run 读回**；DAG Processor/API Server/Triggerer 配置不全，需按事件实际发送进程判定影响。完整 [P2/P3 evidence](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P2-P3-ISOLATED-LIVE-VERIFICATION-20261024.md)。
+> **最新 P2 真实验证（2026-10-24）**：Scheduler 与 DAG Processor 上现有 NEW_ONLY DAG 的 GitSync SHA256 对上源码、Scheduler OpenLineage 2.17.0/Transport/Selective 配置 [#40120678131](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120678131) PASS；真实运行两任务 `platform_portal_openlineage_probe`（DagRun `portal-ol-40121352170`）及其 Marquez DAG/Task Jobs [#40121352170](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121352170) PASS。**仍待业务 `new_only_omop_consumer` 的真实 DagRun Job/Run 读回**；DAG Processor/API Server/Triggerer 配置不全，需按事件实际发送进程判定影响。完整 [P2/P3 evidence](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P2-P3-ISOLATED-LIVE-VERIFICATION-20261024.md)。
 
 ## 历史实现与验收范围
 
