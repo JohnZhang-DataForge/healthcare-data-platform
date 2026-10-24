@@ -113,17 +113,73 @@ class BusinessLineageTests(TestCase):
             ("encounter", "spark_encounter", "af-v"),
             ("reconcile", "spark_reconcile", "af-r"),
         ):
-            data["roles"][role][-1]["detail"]["facets"] = {"parent": {
+            data["roles"][role][0]["detail"]["facets"] = {"parent": {
                 "job": {"namespace": lineage.AIRFLOW_NS,
                         "name": "new_only_omop_consumer." + task},
                 "run": {"runId": run},
             }}
         self.assertEqual(lineage.evaluate(data, BATCH)[
             "airflow_spark_direct_parent"], "VERIFIED")
-        data["roles"]["person"][-1]["detail"]["facets"]["parent"][
+        data["roles"]["person"][0]["detail"]["facets"]["parent"][
             "run"]["runId"] = "not-the-real-run"
         self.assertEqual(lineage.evaluate(data, BATCH)[
             "airflow_spark_direct_parent"], "UNPROVEN")
+
+    def test_child_parent_spark_does_not_impersonate_airflow_parent(self):
+        data = fixture()
+        app_runs = {"person": "p-app", "encounter": "v-app",
+                    "reconcile": "r-app"}
+        for role, app in (("person", "person-app"),
+                          ("encounter", "visit-app"),
+                          ("reconcile", "reconcile-app")):
+            for row in data["roles"][role]:
+                if row["job"] == app:
+                    continue
+                if (row["detail"]["inputDatasetVersions"]
+                        or row["detail"]["outputDatasetVersions"]):
+                    row["detail"]["facets"] = {"parent": {
+                        "job": {"namespace": lineage.SPARK_NS, "name": app},
+                        "run": {"runId": app_runs[role]},
+                    }}
+        report = lineage.evaluate(data, BATCH)
+        for role in lineage.ROLES:
+            self.assertEqual(report["spark_hierarchy"][role][
+                "spark_action_application_parent"], "VERIFIED")
+        self.assertEqual(report["airflow_spark_direct_parent"], "UNPROVEN")
+        self.assertEqual(report["spark_hierarchy"]["reconcile"][
+            "running_children_after_application_completed"], 2)
+        self.assertEqual(report["spark_hierarchy"]["reconcile"][
+            "action_terminal_gap"], "OBSERVED")
+
+    def test_wrong_spark_application_parent_is_not_verified(self):
+        data = fixture()
+        for e in data["roles"]["person"]:
+            if e["detail"]["inputDatasetVersions"]:
+                e["detail"]["facets"] = {"parent": {
+                    "job": {"namespace": lineage.SPARK_NS,
+                            "name": "other-application"},
+                    "run": {"runId": "p-app"},
+                }}
+        report = lineage.evaluate(data, BATCH)
+        self.assertEqual(report["spark_hierarchy"]["person"][
+            "spark_action_application_parent"], "UNPROVEN")
+
+    def test_completed_child_without_completed_application_is_not_full_pass(self):
+        data = fixture()
+        for row in data["roles"]["reconcile"]:
+            row["state"] = row["detail"]["state"] = "COMPLETED"
+        data["roles"]["person"][0]["state"] = "RUNNING"
+        data["roles"]["person"][0]["detail"]["state"] = "RUNNING"
+        report = lineage.evaluate(data, BATCH)
+        self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+        self.assertFalse(report["spark_hierarchy"]["person"][
+            "application_completed"])
+
+    def test_p5_has_explicit_unverified_durable_writes(self):
+        report = lineage.evaluate(fixture(), BATCH)
+        self.assertEqual(report["writer_commit"], "NOT_CHECKED")
+        self.assertEqual(report["pg17_independent_readback"], "NOT_CHECKED")
+        self.assertEqual(report["same_batch_skip"], "NOT_CHECKED")
 
     def test_no_cross_host_http_or_non_get(self):
         with patch.object(lineage.urllib.request, "urlopen") as call:
