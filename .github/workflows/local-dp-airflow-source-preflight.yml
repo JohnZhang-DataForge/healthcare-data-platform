@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/local-dp-airflow-source-preflight.yml"
       - "local-data-platform/airflow/dags/**"
+      - "local-data-platform/tests/landing_discovery/test_new_only_openlineage_opt_in.py"
       - "openspec/changes/relocate-local-data-platform/**"
   workflow_dispatch:
 
@@ -54,3 +55,11 @@ jobs:
           print("DAG_SOURCE_SYNTAX=PASS")
           print("DAG_PARSE_RUNTIME=NOT_VERIFIED")
           PY
+      - name: Enforce Airflow business OpenLineage selective boundary (offline)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s local-data-platform/tests/landing_discovery \
+            -p test_new_only_openlineage_opt_in.py -v
+          echo PORTAL_P2_AIRFLOW_SELECTIVE_OFFLINE=PASS
