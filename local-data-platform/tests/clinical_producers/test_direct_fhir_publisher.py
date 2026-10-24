@@ -130,7 +130,9 @@ class DirectFHIRTests(unittest.TestCase):
         self.assertEqual(backend.reads, [])
 
     def test_changed_manifest_fail_closed_no_network_effect(self):
-        self.manifest.write_bytes(self.manifest.read_bytes() + b" ")
+        changed = json.loads(self.manifest.read_text(encoding="utf-8"))
+        changed["metrics"]["fhir_encounters"] += 1
+        self.manifest.write_text(json.dumps(changed), encoding="utf-8")
         backend = MemoryBackend()
         with self.assertRaises(GenerationBlocked):
             publish_direct_fhir(self.root, self.profile, self.request_id,
