@@ -329,7 +329,8 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | 文件 | 职责 |
 | --- | --- |
 | [azure_blob_runtime.py](../../../../local-data-platform/apps/clinical_producers/azure_blob_runtime.py) | 支持已有 staged-ready marker 兼容模式和 `--source-mode direct-readonly-pvc` 新模式，外部固定 Manifest SHA、Profile 与 FHIR bytes 验证、最小权限 SP 环境注入及 Azure SDK immutable Writer 的一次性入口；错误只输出脱敏状态。当前 **仅 DIRECT FHIR**。 |
-| [Publisher Dockerfile](../../../../local-data-platform/images/azure-blob-publisher/Dockerfile) | 独立 Non-root Python 镜像构建定义，强制调用方传入不可变 Base Image；未构建 GHCR Release Image |
+| [Publisher Dockerfile](../../../../local-data-platform/images/azure-blob-publisher/Dockerfile) | 独立 Non-root Python 镜像构建定义，强制调用方传入不可变 Base Image；尚待 Main GHCR Release 验证 |
+| [Publisher SHA-only GHCR release](../../../../.github/workflows/azure-blob-publisher-ghcr-release.yml) | Hosted-only PR Clean Build/无网络容器 Smoke，Main-only 发布 git-SHA/Digest，不触碰 K8s、Secret 或 Azure，不覆盖 latest |
 | [DIRECT FHIR Job template](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl) | `dw-synthea` 内 Job，同 Namespace 只读挂载既有 Generator PVC；引用受控 ConfigMap Profile 和本 Namespace 专用 `azure-blob-publisher-identity` Secret，所有参数/镜像 Digest 必须经 Runner 审核后渲染 |
 | [Same-namespace Job guide](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/README.md) | 现有 Generator PVC 的只读挂载、OIE API 隔离和真实 Azure 操作门槛 |
 | [runtime offline tests](../../../../local-data-platform/tests/clinical_producers/test_azure_blob_runtime.py) | 缺失 ready、旧 staged 模式拒绝隐式绕过、新 readonly PVC 模式、错误来源 SHA、缺失 Secret、数据篡改、不可变重试、脱敏和 Job 模板路径的离线断言 |
