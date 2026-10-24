@@ -63,3 +63,15 @@ G. **P6 LAN showcase**：官方 Marquez Web 展示，形成可重复的只读演
 ## 6. Known unknowns
 
 当前 Kubernetes/PG14 服务是否在线；Spark A4 `unknown` 的真实原因；Spark 3.5.7/Scala 2.12/JAR 1.47.1 当前网络和兼容情况；Listener 对真实 S3A Parquet Dataset 的自动采集质量；Airflow-initiated Spark parent facets 的兼容传递方式。全部必须用对应读取/测试而不是文档推断。
+
+## 7. 2026-10-24 Local-dev versioning simplification (current decision)
+
+用户确认当前先优化迭代速度：Portal P2 的 Airflow OpenLineage 是 **GitSync DAG + Provider/Transport 的选择性接入**，不用新建第九个镜像，也不为 `portal-v1.0` 单设另一套 DAG 镜像引用。已有业务 KPO 控制容器主要使用 `:latest` 与 `image_pull_policy=Always`，GitSync 更新与镜像重构是两种不同操作，不能混同。
+
+P2：维护未合并 PR #416 的源代码和独立验证，避免意外触发 Writer；从代码变更传播到共享 DAG 解析有独立部署和运行 Gate，不依赖镜像 Build。
+
+P3：先在隔离 Spark Probe 修复 Listener Job/Run/Dataset 真正血缘；只有 Listener JAR/渲染代码需要打包进某个镜像时，才识别精确受影响的 Dockerfile/父子依赖。不能为了演示把全部 8 镜像重构。
+
+P4：若 Spark 控制/Writer 应用变更影响现有镜像，则手动单镜像 `validate` → 明确批准 `publish-latest`，保存唯一 SHA/Run tag、上个 Latest Digest 的回退 Tag、新 Digest、来源 SHA/Run。保留原 DAG `:latest` 引用，不增设候选标签切换参数。历史候选 `portal-v1.0` 可以为未来稳定发布保留，但不是当前 Local 测试依赖。
+
+P5：开始真实 Batch 前确认无其它 Session 的冲突 Run、GitSync 版本、各新建 Pod 真实 imageID/Digest、Marquez 事件与 PG17 Readback；单独批准业务副作用。发布 `:latest` 会影响**未来**新建 Pod，已运行 Pod 不自动换镜像；GHCR 保留历史版本也不代表回滚自动发生。镜像发布和共享 Airflow/Writer Live 操作仍互不默认授权。
