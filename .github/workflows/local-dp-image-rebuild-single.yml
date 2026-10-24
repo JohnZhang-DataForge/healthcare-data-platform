@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/local-dp-image-rebuild-single.yml"
       - ".github/workflows/local-dp-image-rebuild.yml"
+      - ".github/workflows/local-dp-image-promote-tested.yml"
       - ".github/quality/scripts/local_dp_single_image_plan.py"
       - ".github/quality/tests/test_local_dp_single_image_plan.py"
       - "openspec/changes/selective-local-dp-image-rebuild/**"
@@ -24,14 +25,18 @@ on:
           - landing-processing-runtime
           - new-only-omop-writer
       operation:
-        description: "validate: no publish; publish: unique tag; promote-latest: also replace selected latest"
+        description: "validate: local only; publish: release candidate (never latest)"
         type: choice
         required: true
         default: validate
         options:
           - validate
           - publish
-          - promote-latest
+      release_tag:
+        description: "Candidate label (defaults to portal-v1.0); not latest"
+        type: string
+        required: true
+        default: portal-v1.0
       parent_digest:
         description: "Optional child-parent sha256:64hex; blank pins current parent latest to immutable digest"
         type: string
@@ -42,7 +47,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: local-dp-image-rebuild-${{ github.event_name == 'workflow_dispatch' && inputs.image || github.ref }}
+  group: local-dp-image-ghcr-release
   cancel-in-progress: false
 
 jobs:
@@ -85,6 +90,7 @@ jobs:
           SELECTED_IMAGE: ${{ inputs.image }}
           SELECTED_OPERATION: ${{ inputs.operation }}
           REQUESTED_PARENT_DIGEST: ${{ inputs.parent_digest }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -Eeuo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
@@ -92,10 +98,12 @@ jobs:
             --image "$SELECTED_IMAGE" \
             --operation "$SELECTED_OPERATION" \
             --git-ref "$GITHUB_REF" \
-            --parent-digest "$REQUESTED_PARENT_DIGEST" >> "$GITHUB_OUTPUT"
+            --parent-digest "$REQUESTED_PARENT_DIGEST" \
+            --release-tag "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "EXACT_HEALTHCARE_SHA=$GITHUB_SHA"
           echo "SINGLE_IMAGE_SELECTED=$SELECTED_IMAGE"
           echo "IMAGE_OPERATION=$SELECTED_OPERATION"
+          echo "CANDIDATE_RELEASE_TAG=$RELEASE_TAG"
 
       - name: Authenticate GHCR only when reading a parent or publishing
         if: steps.plan.outputs.parent_repo != '' || steps.plan.outputs.publish == 'true'
@@ -131,6 +139,20 @@ jobs:
           esac
           echo "base_ref=$BASE_REF" >> "$GITHUB_OUTPUT"
           echo "RESOLVED_PARENT_IMAGE=$BASE_REF"
+
+      - name: Avoid overwriting an existing candidate tag
+        if: steps.plan.outputs.publish == 'true'
+        shell: bash
+        env:
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
+        run: |
+          set -Eeuo pipefail
+          if docker manifest inspect "${PACKAGE}:${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "BLOCKED:CANDIDATE_TAG_ALREADY_EXISTS"
+            exit 2
+          fi
+          echo "CANDIDATE_TAG_NOT_FOUND=PASS"
 
       - name: Clean build only the selected Dockerfile
         id: built
@@ -175,34 +197,28 @@ jobs:
           fi
           echo SINGLE_IMAGE_NO_NETWORK_SMOKE=PASS
 
-      - name: Publish unique SHA and Run-tag for selected package only
+      - name: Publish SHA Run-tag plus named candidate (never latest)
         id: publish
         if: steps.plan.outputs.publish == 'true'
         shell: bash
         env:
           IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
         run: |
           set -Eeuo pipefail
           test "$GITHUB_REF" = "refs/heads/main"
-          docker push "$IMAGE_TAG" | tee "$RUNNER_TEMP/single-image-push.txt"
+          docker push "$IMAGE_TAG"
+          CANDIDATE_IMAGE="${PACKAGE}:${RELEASE_TAG}"
+          docker tag "$IMAGE_TAG" "$CANDIDATE_IMAGE"
+          docker push "$CANDIDATE_IMAGE" | tee "$RUNNER_TEMP/single-image-push.txt"
           DIGEST="$(sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/single-image-push.txt" | tail -n 1)"
           test -n "$DIGEST"
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "PUBLISHED_CANDIDATE=$CANDIDATE_IMAGE"
+          echo "LATEST_PROMOTION=NOT_REQUESTED"
           echo "PUBLISHED_SINGLE_IMMUTABLE_TAG=$IMAGE_TAG"
           echo "PUBLISHED_SINGLE_DIGEST=$DIGEST"
-
-      - name: Explicitly promote only the selected package to latest
-        if: steps.plan.outputs.promote == 'true'
-        shell: bash
-        env:
-          IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
-          PACKAGE: ${{ steps.plan.outputs.package }}
-        run: |
-          set -Eeuo pipefail
-          test "$GITHUB_REF" = "refs/heads/main"
-          docker tag "$IMAGE_TAG" "${PACKAGE}:latest"
-          docker push "${PACKAGE}:latest"
-          echo "PROMOTED_SINGLE_LATEST=${PACKAGE}:latest"
 
       - name: Summarize exact target and mutation boundary
         if: always()
@@ -212,7 +228,7 @@ jobs:
           IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
           BASE_REF: ${{ steps.parent.outputs.base_ref }}
           PUBLISH: ${{ steps.plan.outputs.publish }}
-          PROMOTE: ${{ steps.plan.outputs.promote }}
+          RELEASE_TAG: ${{ steps.plan.outputs.release_tag }}
           PUBLISHED_DIGEST: ${{ steps.publish.outputs.digest }}
         run: |
           {
@@ -222,7 +238,8 @@ jobs:
             echo "- Built tag: \`$IMAGE_TAG\`"
             echo "- Parent digest ref: \`$BASE_REF\`"
             echo "- Requested publish: \`$PUBLISH\`"
-            echo "- Requested latest promotion: \`$PROMOTE\`"
+            echo "- Candidate tag: \`$RELEASE_TAG\`"
+            echo "- Latest promotion: NEVER in this Workflow"
             echo "- Published immutable digest: \`$PUBLISHED_DIGEST\`"
             echo "- Kubernetes/Airflow/S3/PostgreSQL operations: NONE"
             echo "- Actual publish/promotion success is determined by prior step status."
