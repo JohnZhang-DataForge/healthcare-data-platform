@@ -18,7 +18,7 @@ a pinned packaged release, but are **not yet used** by this smoke.
 ## Source-build gate
 
 The Healthcare GitHub-hosted workflow
-[`oie-470-isolated-image-smoke.yml`](../../../../.github/workflows/oie-470-isolated-image-smoke.yml)
+[`oie-470-isolated-image-smoke.yml`](../../../.github/workflows/oie-470-isolated-image-smoke.yml)
 checks out the exact commit and runs the *upstream*
 `docker build --target jre-run`, without modifying upstream source
 or pushing any image. It separately verifies the built image's
