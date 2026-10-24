@@ -49,6 +49,41 @@ class BlobPlanTests(unittest.TestCase):
         p,d=fhir_plan()
         with self.assertRaisesRegex(BlobPlanRejected,"INVALID_LANDING_PREFIX"):
             verified_plan(p,d,landing_prefix="../../unsafe")
+
+    def test_hl7_a01_strict_positive_and_control_id_conflict(self):
+        control="demo-johns-creek-demo-johns-creek-hl7-v2-johnscreek-20261024-0001-enc-one-A01"
+        moment="20261024131530+0000"
+        fields=["PV1","1","I"]+[""]*42
+        fields[19]="enc-one^^^DEMOJC^VN"
+        fields[44]=moment
+        wire="\\r".join((
+            "MSH|^~\\\\&|SYNTHEA_SIM|DEMOJC|LANDING|SYNTHETIC|"+moment+
+            "||ADT^A01^ADT_A01|"+control+"|P|2.5.1",
+            "EVN|A01|"+moment,
+            "PID|1||patient-one^^^DEMOJC^MR||Demo^Patient",
+            "|".join(fields)))+"\\r"
+        raw=wire.encode()
+        name="hl7/enc-one.hl7"
+        plan={"schema_version":VERSION,"hospital_id":"demo-johns-creek",
+              "feed_id":"demo-johns-creek-hl7-v2",
+              "request_id":"johnscreek-20261024-0001",
+              "source_manifest_sha256":"b"*64,"target_format":"HL7_V2",
+              "verification_state":"OIE_HL7_READBACK_VERIFIED","skipped_non_admissions":30,
+              "objects":[{"name":name,"sha256":hashlib.sha256(raw).hexdigest(),
+                          "size_bytes":len(raw),"source_event_id":control}]}
+        result=verified_plan(plan,{name:raw},landing_prefix="healthcare")
+        self.assertTrue(result[0]["blob_key"].endswith("/HL7_V2/hl7/enc-one.hl7"))
+        plan["objects"][0]["source_event_id"]="another"
+        with self.assertRaisesRegex(BlobPlanRejected,"HL7_CONTROL_ID_MISMATCH"):
+            verified_plan(plan,{name:raw},landing_prefix="healthcare")
+
+    def test_noncanonical_alias_paths_fail_closed(self):
+        for alias in ("fhir//patient-one.json","fhir/./patient-one.json"):
+            plan,data=fhir_plan()
+            plan["objects"][0]["name"]=alias
+            with self.assertRaisesRegex(BlobPlanRejected,"UNSAFE_OR_DUPLICATE_OBJECT_NAME"):
+                verified_plan(plan,data,landing_prefix="healthcare")
+
     def test_duplicate_json_keys_rejected(self):
         with self.assertRaisesRegex(BlobPlanRejected,"DUPLICATE_JSON_KEY"):
             load_plan_json('{"schema_version":"a","schema_version":"b"}')
