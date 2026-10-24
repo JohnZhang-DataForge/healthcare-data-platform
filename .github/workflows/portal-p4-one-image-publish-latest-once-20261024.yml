@@ -1,0 +1,183 @@
+name: Portal P4 Authorized Single V2 Processing Latest Release 20261024
+on:
+  push:
+    branches: [feature/portal-p4-one-image-release-once-20261024]
+    paths: [.github/workflows/portal-p4-one-image-publish-latest-once-20261024.yml]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: local-dp-image-ghcr-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Fixed-main-SHA single v2 child image clean build and guarded latest
+    if: github.ref == 'refs/heads/feature/portal-p4-one-image-release-once-20261024'
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: 9199710bf5f43d506628fa31f81cb2b107a55c11
+
+      - name: Fail closed on exactly approved Main SHA and package
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "9199710bf5f43d506628fa31f81cb2b107a55c11"
+          test "$GITHUB_REF" = "refs/heads/feature/portal-p4-one-image-release-once-20261024"
+          MAIN="$(git ls-remote https://github.com/JohnZhang-DataForge/healthcare-data-platform.git refs/heads/main | awk '{print $1}')"
+          test "$MAIN" = "9199710bf5f43d506628fa31f81cb2b107a55c11" || {
+            echo BLOCKED:MAIN_ADVANCED_REAPPROVE_SOURCE_SHA
+            exit 3
+          }
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests -p test_local_dp_single_image_plan.py -v
+          echo P4_RELEASE_SOURCE_MAIN_PIN=PASS
+
+      - name: Install strict pinned YAML parser and verify P4 business contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m pip install --disable-pip-version-check -r \
+            platform-portal/openlineage/spark/requirements-static.txt
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests -p test_portal_p4_spark_listener.py -v
+          echo P4_SOURCE_STATIC_GATE=PASS
+
+      - name: Authenticate GHCR for selected V2 child and unchanged parent
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Pull parent by digest and independently snapshot preexisting child latest
+        id: before
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PARENT="ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime"
+          PACKAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2"
+          docker pull "$PARENT:latest"
+          PARENT_REF="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$PARENT:latest" | grep -E "^$PARENT@sha256:[a-f0-9]{64}$" | head -n 1)"
+          [[ "$PARENT_REF" =~ ^$PARENT@sha256:[a-f0-9]{64}$ ]] || exit 3
+          docker pull "$PACKAGE:latest"
+          PREV_REF="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$PACKAGE:latest" | grep -E "^$PACKAGE@sha256:[a-f0-9]{64}$" | head -n 1)"
+          [[ "$PREV_REF" =~ ^$PACKAGE@sha256:[a-f0-9]{64}$ ]] || exit 3
+          echo "parent_ref=$PARENT_REF" >> "$GITHUB_OUTPUT"
+          echo "prev_digest=${PREV_REF##*@}" >> "$GITHUB_OUTPUT"
+          echo P4_PARENT_PINNED_BY_IMMUTABLE_DIGEST=PASS
+
+      - name: Clean build only the V2 child (no original parent or siblings)
+        id: built
+        shell: bash
+        env:
+          PARENT_REF: ${{ steps.before.outputs.parent_ref }}
+        run: |
+          set -Eeuo pipefail
+          PACKAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2"
+          NEW_TAG="git-9199710bf5f43d506628fa31f81cb2b107a55c11-run${GITHUB_RUN_ID}-a${GITHUB_RUN_ATTEMPT}"
+          IMAGE="$PACKAGE:$NEW_TAG"
+          docker build --pull --no-cache \
+            --build-arg "PROJECT_GIT_SHA=9199710bf5f43d506628fa31f81cb2b107a55c11" \
+            --build-arg "BASE_IMAGE=$PARENT_REF" \
+            -f local-data-platform/images/landing-processing-runtime/Dockerfile \
+            -t "$IMAGE" local-data-platform
+          test "$(docker image inspect --format '{{.Id}}' "$IMAGE" | wc -l)" = 1
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo P4_ONE_EXISTING_CHILD_IMAGE_CLEAN_BUILD=PASS
+
+      - name: No-network actual packaged triple-listener and base contract smoke
+        shell: bash
+        env:
+          IMAGE: ${{ steps.built.outputs.image }}
+        run: |
+          set -Eeuo pipefail
+          SMOKE="$(python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          f=Path(".github/quality/scripts/local_dp_single_image_plan.py")
+          sp=importlib.util.spec_from_file_location("p4_plan",f)
+          m=importlib.util.module_from_spec(sp)
+          import sys
+          sys.modules[sp.name]=m
+          sp.loader.exec_module(m)
+          print(m.IMAGES["landing-processing-runtime"].smoke)
+          PY
+          )"
+          docker run --rm --network none \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --entrypoint /bin/sh "$IMAGE" -ec "$SMOKE"
+          echo P4_ACTUAL_PACKAGED_THREE_SPARK_LISTENERS=PASS
+
+      - name: Publish unique immutable image run tag only after smoke
+        id: immutable
+        shell: bash
+        env:
+          IMAGE: ${{ steps.built.outputs.image }}
+        run: |
+          set -Eeuo pipefail
+          docker push "$IMAGE" | tee "$RUNNER_TEMP/p4-push-immutable.txt"
+          DIGEST="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/p4-push-immutable.txt" | tail -n 1)"
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 6
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo P4_IMMUTABLE_NEW_IMAGE_PUBLISHED=PASS
+
+      - name: Backup old latest digest and confirm before changing latest
+        id: backup
+        shell: bash
+        env:
+          PREV_DIGEST: ${{ steps.before.outputs.prev_digest }}
+        run: |
+          set -Eeuo pipefail
+          PACKAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2"
+          [[ "$PREV_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 6
+          ROLLBACK_TAG="pre-latest-run${GITHUB_RUN_ID}-a${GITHUB_RUN_ATTEMPT}"
+          docker tag "$PACKAGE:latest" "$PACKAGE:$ROLLBACK_TAG"
+          docker push "$PACKAGE:$ROLLBACK_TAG" | tee "$RUNNER_TEMP/p4-push-rollback.txt"
+          BACKUP_DIGEST="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/p4-push-rollback.txt" | tail -n 1)"
+          test "$BACKUP_DIGEST" = "$PREV_DIGEST" || {
+            echo BLOCKED:PREVIOUS_LATEST_ROLLBACK_DIGEST_MISMATCH
+            exit 7
+          }
+          echo "rollback_tag=$ROLLBACK_TAG" >> "$GITHUB_OUTPUT"
+          echo P4_PREVIOUS_LATEST_IMMUTABLE_BACKUP=PASS
+
+      - name: Update only child latest and verify fresh GHCR registry readback
+        shell: bash
+        env:
+          IMAGE: ${{ steps.built.outputs.image }}
+          NEW_DIGEST: ${{ steps.immutable.outputs.digest }}
+          OLD_DIGEST: ${{ steps.before.outputs.prev_digest }}
+          ROLLBACK_TAG: ${{ steps.backup.outputs.rollback_tag }}
+          PARENT_REF: ${{ steps.before.outputs.parent_ref }}
+        run: |
+          set -Eeuo pipefail
+          PACKAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2"
+          test -n "$ROLLBACK_TAG" && test -n "$PARENT_REF"
+          docker tag "$IMAGE" "$PACKAGE:latest"
+          docker push "$PACKAGE:latest" | tee "$RUNNER_TEMP/p4-push-new-latest.txt"
+          ACTUAL="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' "$RUNNER_TEMP/p4-push-new-latest.txt" | tail -n 1)"
+          test "$ACTUAL" = "$NEW_DIGEST" || exit 8
+          docker image rm "$PACKAGE:latest"
+          docker pull "$PACKAGE:latest"
+          docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$PACKAGE:latest" |
+            grep -Fx "$PACKAGE@$NEW_DIGEST" >/dev/null
+          echo P4_SINGLE_IMAGE_LATEST_REGISTRY_READBACK=PASS
+          {
+            echo "### P4 local single-image latest release"
+            echo "- Source Healthcare Main: \`9199710bf5f43d506628fa31f81cb2b107a55c11\`"
+            echo "- Package: \`$PACKAGE\`"
+            echo "- Pinned parent: \`$PARENT_REF\`"
+            echo "- New image: \`$IMAGE\`"
+            echo "- New latest digest: \`$NEW_DIGEST\`"
+            echo "- Previous latest digest: \`$OLD_DIGEST\`"
+            echo "- Rollback tag: \`$PACKAGE:$ROLLBACK_TAG\`"
+            echo "- No Airflow/K8s/PG/S3 action in this job"
+          } >> "$GITHUB_STEP_SUMMARY"
