@@ -1,7 +1,7 @@
 ---
 status: active
 scope: spark-source-code-map
-last_verified: 2026-10-16
+last_verified: 2026-10-24
 source_sha: d019429332e794e412426cf9c5053bafa043c05e
 ---
 
@@ -71,17 +71,17 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | 源文件（直接链接） | 职责 / 使用边界 |
 | --- | --- |
 | [`canonical-raw-publish.yaml.tpl`](../../../../local-data-platform/spark/manifests/common/canonical-raw-publish.yaml.tpl) | SparkApplication 参数模板：canonical raw publish（需渲染参数与审批，不能直接 Apply） |
-| [`person-canonical-adapter.yaml.tpl`](../../../../local-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl) | SparkApplication 参数模板：person canonical adapter（需渲染参数与审批，不能直接 Apply） |
+| [`person-canonical-adapter.yaml.tpl`](../../../../local-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl) | SparkApplication 参数模板：person canonical adapter（P4 Person Canonical Adapter：仅 NEW_ONLY v2 子镜像覆盖，增加 per-job OpenLineage Listener 1.47.1 / Marquez private HTTP；保留原主程序和所有业务参数，不能直接 Apply） |
 | [`person-canonical-raw-publish.yaml.tpl`](../../../../local-data-platform/spark/manifests/task002/person-canonical-raw-publish.yaml.tpl) | SparkApplication 参数模板：person canonical raw publish（需渲染参数与审批，不能直接 Apply） |
 | [`person-omop-map.yaml.tpl`](../../../../local-data-platform/spark/manifests/task002/person-omop-map.yaml.tpl) | SparkApplication 参数模板：person omop map（需渲染参数与审批，不能直接 Apply） |
 | [`person-stage-load.yaml.tpl`](../../../../local-data-platform/spark/manifests/task002/person-stage-load.yaml.tpl) | SparkApplication 参数模板：person stage load（需渲染参数与审批，不能直接 Apply） |
-| [`encounter-canonical-adapter.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl) | SparkApplication 参数模板：encounter canonical adapter（需渲染参数与审批，不能直接 Apply） |
+| [`encounter-canonical-adapter.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl) | SparkApplication 参数模板：encounter canonical adapter（P4 Visit Encounter Canonical Adapter：仅 NEW_ONLY v2 子镜像覆盖，增加 per-job OpenLineage Listener 1.47.1 / Marquez private HTTP；保留原主程序和所有业务参数，不能直接 Apply） |
 | [`visit-candidate-preflight.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/visit-candidate-preflight.yaml.tpl) | SparkApplication 参数模板：visit candidate preflight（需渲染参数与审批，不能直接 Apply） |
 | [`visit-processed-prefix-reader.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/visit-processed-prefix-reader.yaml.tpl) | SparkApplication 参数模板：visit processed prefix reader（需渲染参数与审批，不能直接 Apply） |
 | [`visit-processed-writer.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/visit-processed-writer.yaml.tpl) | SparkApplication 参数模板：visit processed writer（需渲染参数与审批，不能直接 Apply） |
 | [`visit-raw-metadata-reader.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/visit-raw-metadata-reader.yaml.tpl) | SparkApplication 参数模板：visit raw metadata reader（需渲染参数与审批，不能直接 Apply） |
 | [`visit-raw-preflight.yaml.tpl`](../../../../local-data-platform/spark/manifests/task003/visit-raw-preflight.yaml.tpl) | SparkApplication 参数模板：visit raw preflight（需渲染参数与审批，不能直接 Apply） |
-| [`person-visit-reconciliation.yaml.tpl`](../../../../local-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl) | SparkApplication 参数模板：person visit reconciliation（需渲染参数与审批，不能直接 Apply） |
+| [`person-visit-reconciliation.yaml.tpl`](../../../../local-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl) | SparkApplication 参数模板：person visit reconciliation（P4 同批 Person/Visit 只读 Reconcile：仅 NEW_ONLY v2 子镜像覆盖，增加 per-job OpenLineage Listener 1.47.1 / Marquez private HTTP；保留原主程序和所有业务参数，不能直接 Apply） |
 
 ## 7. 相关测试与集成
 
@@ -137,3 +137,5 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 [CODE Map CI](../../../../.github/quality/scripts/check_component_code_map.py) 除 Airflow / Apps 外，对 Spark 的源码清单完整性、缺失/失效/重复链接及同 PR 同步作静态校验。当前收录 **44 个文件：18 Python、14 JSON、12 YAML 模板**；以后以 Git Tree 为准，不把这个统计当永久常量。
 
 历史 `task002`、`task003`、`task004` 模板/代码/合同仍可能用于兼容，不能因导航整理而修改、重新运行或批量 Rename。所有 `*.yaml.tpl` 必须先检查镜像 Digest、Namespace、ServiceAccount、S3 Batch Prefix 和共享 Spark 资源并发；新源码按 [组件命名规范](../../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md) 管理。
+
+> **P4 版本边界**：三个源模板 Git 中已加 Listener，但基础 `task004-runtime` 的旧 GHCR 镜像不会因为源码修改自动变化。本轮仅在 `landing-processing-runtime` 子镜像 Dockerfile 显式覆盖三个模板，供 `new_only_omop_consumer` 的 `spark_patient` / `spark_encounter` / `spark_reconcile` 使用。后续需对该一个镜像执行手动 Clean Build/Smoke/`publish-latest` 并真实验证，未完成前不得宣称正在运行的 Pod 已带 Listener。
