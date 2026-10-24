@@ -73,3 +73,9 @@
 - [x] 8.2 调整发布设计：Local 开发优先手工 `publish-latest` 单镜像；旧镜像回退 Tag/旧 Digest 与新 SHA/Run Digest 均可追溯；8 镜像全量更新仍仅供显式人工使用；保留候选晋级作为非默认方式。
 - [ ] 8.3 检查 PR/CI 及 Main 启用结果，PR #416 保持独立；仅在真实 P3/P4 代码封装依赖改变时识别目标镜像并重建。**不在本 Change 内启动实际 GHCR 发布/业务 DAG**。
 - [ ] 8.4 P2 本体需完成 PR #416 与 GitSync 同步及 Provider/Transport 实机行为验证；P3/P4/P5 按既有验收 Gate，不能因 latest 方案简化而跳过业务 E2E 或血缘验证。
+
+### P3 2026-10-24 隔离真实 Dataset 输出实现（本节是当前候选，仍需 CI 和 Live）
+
+- [x] 核对历史 [A4 真实失败 Run #38628542127](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38628542127) 与 [独立 facets 读回 #38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225)：Spark 计算成功、事件 COMPLETED 挂在 `unknown` Job；App Job 的 `latestRun` 为空，Input/Output DatasetVersions 均为 0。原历史 `probe.py` 未写出任何 Dataset，故**输出为零的根因至少包括没有 Output 操作**，不能据此认定 Listener 的 Parquet 输出采集有缺陷。Job 名字错位的完整根因仍未知，OpenSpec 4.1 保持 OPEN。
+- [ ] P3.2 代码候选：现行隔离 Probe 新增 `--output-uri` 严格路径白名单，数据通过唯一的 `local-path` PVC 持久化 Parquet、Spark 读回 2 行；Renderer 输出 ConfigMap + PVC + SparkApplication 三文档；Spark Listener 增加显式 `spark.openlineage.appName`，不假设能消除 `unknown`；负向合同与 PR CI 待跑。该项完成也只是静态通过，不代表真正申请到 PVC 或 Marquez Dataset 读回。
+- [ ] P3.3 Live 独立门：确认 worker02/StorageClass 与 Driver/Executor RWO 同节点挂载、运行 JAR、无冲突后，用**全新唯一 Token**创建且仅写本次测试 PVC；待 SparkApp COMPLETED 后核对真 Parquet 读回、Marquez 正确 Job+Run+Input/Output Dataset links。保留失败证据；只清理已标定为本次的隔离资源。当前没有执行 Live 或 GHCR 镜像更新。
