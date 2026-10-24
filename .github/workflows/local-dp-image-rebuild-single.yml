@@ -122,7 +122,7 @@ jobs:
             docker pull "${PARENT_REPO}:latest"
             BASE_REF="$(docker image inspect \
               --format '{{range .RepoDigests}}{{println .}}{{end}}' "${PARENT_REPO}:latest" \
-              | grep -E "^\${PARENT_REPO}@sha256:[a-f0-9]{64}$" | head -n 1)"
+              | grep -E "^${PARENT_REPO}@sha256:[a-f0-9]{64}$" | head -n 1)"
           fi
           test -n "$BASE_REF"
           case "$BASE_REF" in
@@ -176,6 +176,7 @@ jobs:
           echo SINGLE_IMAGE_NO_NETWORK_SMOKE=PASS
 
       - name: Publish unique SHA and Run-tag for selected package only
+        id: publish
         if: steps.plan.outputs.publish == 'true'
         shell: bash
         env:
@@ -183,8 +184,12 @@ jobs:
         run: |
           set -Eeuo pipefail
           test "$GITHUB_REF" = "refs/heads/main"
-          docker push "$IMAGE_TAG"
+          docker push "$IMAGE_TAG" | tee "$RUNNER_TEMP/single-image-push.txt"
+          DIGEST="$(sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*/\\1/p' "$RUNNER_TEMP/single-image-push.txt" | tail -n 1)"
+          test -n "$DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
           echo "PUBLISHED_SINGLE_IMMUTABLE_TAG=$IMAGE_TAG"
+          echo "PUBLISHED_SINGLE_DIGEST=$DIGEST"
 
       - name: Explicitly promote only the selected package to latest
         if: steps.plan.outputs.promote == 'true'
@@ -208,6 +213,7 @@ jobs:
           BASE_REF: ${{ steps.parent.outputs.base_ref }}
           PUBLISH: ${{ steps.plan.outputs.publish }}
           PROMOTE: ${{ steps.plan.outputs.promote }}
+          PUBLISHED_DIGEST: ${{ steps.publish.outputs.digest }}
         run: |
           {
             echo "### Local DP single-image build"
@@ -217,6 +223,7 @@ jobs:
             echo "- Parent digest ref: \`$BASE_REF\`"
             echo "- Requested publish: \`$PUBLISH\`"
             echo "- Requested latest promotion: \`$PROMOTE\`"
+            echo "- Published immutable digest: \`$PUBLISHED_DIGEST\`"
             echo "- Kubernetes/Airflow/S3/PostgreSQL operations: NONE"
             echo "- Actual publish/promotion success is determined by prior step status."
           } >> "$GITHUB_STEP_SUMMARY"
