@@ -1,30 +1,9 @@
 name: Local DP eight-image source rebuild
 
+# Historical full-release escape hatch. No automatic PR or Main push builds.
+# Use local-dp-image-rebuild-single.yml for one manually selected image.
+# Main-only publishing of all eight retains its existing explicit semantics.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/local-dp-image-rebuild.yml"
-      - "local-data-platform/images/**"
-      - "local-data-platform/apps/**"
-      - "local-data-platform/airflow/dags/**"
-      - "local-data-platform/contracts/**"
-      - "local-data-platform/spark/**"
-      - "local-data-platform/scripts/task004/**"
-      - "local-data-platform/tests/landing_discovery/**"
-      - "local-data-platform/tests/omop_writer/**"
-      - "local-data-platform/tests/task004/**"
-      - "local-data-platform/tests/synthea_new_only/test_digest_runtime.py"
-      - "openspec/changes/relocate-local-data-platform/**"
-  push:
-    branches: [main]
-    paths:
-      - "local-data-platform/scripts/task004/**"
-      - ".github/workflows/local-dp-image-rebuild.yml"
-      - "local-data-platform/images/**"
-      - "local-data-platform/apps/**"
-      - "local-data-platform/airflow/dags/**"
-      - "local-data-platform/contracts/**"
-      - "local-data-platform/spark/**"
   workflow_dispatch:
 
 permissions:
@@ -152,7 +131,7 @@ jobs:
           echo "EIGHT_IMAGE_SOURCE_AND_SMOKE=PASS"
 
       - name: GHCR login only on Main
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -162,7 +141,7 @@ jobs:
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Publish all eight immutable SHA tags
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -179,7 +158,7 @@ jobs:
           echo "IMMUTABLE_IMAGES_PUBLISHED=8/8"
 
       - name: Promote latest tags after immutable push success
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         run: |
           set -Eeuo pipefail
