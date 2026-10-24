@@ -12,7 +12,7 @@
 ## 2. Implementation (new bounded PRs after this change is merged)
 - [x] 2.1 Implement isolated OIE ADT Channel source mapping and offline positive/negative deterministic tests.
 - [ ] 2.2 Build own pinned OIE 4.7.0 container from verified official artifact; CI test image/Java/OIE startup in disposable environment.
-- [ ] 2.3 Add `dw-oie` namespace, single worker01-pinned OIE workload, isolated PVC, ClusterIP and minimal Secret/permissions templates; only static validation until authorized.
+- [x] 2.3 Add `dw-oie` namespace, single worker01-pinned OIE workload, isolated PVC, ClusterIP and minimal Secret/permissions templates; only static validation until authorized.
 - [ ] 2.4 Run real OIE 4.7.0 conversion on actual Johns Creek Synthea FHIR Bundle, independently HL7 v2.5.1 parse/readback; record skips, rejects, retries and exact SHA/Digest/Run.
 - [ ] 2.5 With separate user approval and session coordination, validate live `dw-oie` placement/PVC and isolated OIE Channel; preserve durable state and inspect other live work before write.
 
@@ -30,3 +30,8 @@ separate coordinated runtime authorization.
 - `apps/clinical_producers/oie/adt_a01.js`: OIE-compatible ES5 candidate mapping function, actual HL7 2.5.1 MSH/EVN/PID/PV1 field construction, deterministic MSH-10, explicit non-admission skip / malformed candidate reject.
 - `tests/clinical_producers/test_oie_adt_a01.js`: Node offline positive/negative and no-Node-global VM smoke, tested by isolated GitHub-hosted CI. `MAPPING_VERIFIED_ONLY` is not OIE engine conversion; 2.2–2.5 remain OPEN.
 - Planning PR #427 merged as Healthcare Main `9d818c3fae27a828b72bdad5392407bdbca04a8d`; for this implementation the exact CI/head and merge evidence must be independently confirmed.
+
+### P2.3 worker01 manifests — static only (2026-10-24)
+
+- `local-data-platform/kubernetes/manifests/oie/`: proposed `dw-oie`, dedicated templated RWO PVC, one-replica StatefulSet **pinned to worker01**, and internal-only Service. OIE 4.7.0 secret config via `/run/secrets/mirth_properties` verified against real upstream source. Image Registry Digest and StorageClass are **required unresolved placeholders**, not unsafe defaults.
+- No namespace, PVC, pod, admin password, Service or other cluster resource has been created. Template-only CI tests are static, not OIE startup/runtime acceptance. Task 2.5 and Blob publisher remain OPEN.

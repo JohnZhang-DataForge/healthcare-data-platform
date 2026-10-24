@@ -187,3 +187,15 @@ OIE/Blob 发布不属于 P4.1；其 Runtime 成功不能由离线校验测试推
 | [oie-adt-mapping-unit.yml](../../../../.github/workflows/oie-adt-mapping-unit.yml) | GitHub-hosted 离线 PoC 映射门禁，无 K8s/云连接 |
 
 OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/implement-oie-fhir-to-hl7-adt-poc/tasks.md)。
+
+## OIE / worker01 独立部署候选（静态）
+
+| 文件 | 作用及边界 |
+| --- | --- |
+| [OIE Kubernetes README](../../../../local-data-platform/kubernetes/manifests/oie/README.md) | `dw-oie` 前置审批、独立 PVC/Secret/镜像与真实安全门 |
+| [namespace.yaml](../../../../local-data-platform/kubernetes/manifests/oie/namespace.yaml) | 拟建 `dw-oie`，尚未 Apply |
+| [pvc.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/oie/pvc.yaml.tpl) | 独立 `oie-state`，需确认 worker01 StorageClass Retain |
+| [statefulset.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/oie/statefulset.yaml.tpl) | 单副本、固定 `worker01`、Digest/Secret 占位符，不可直接 Apply |
+| [service.yaml](../../../../local-data-platform/kubernetes/manifests/oie/service.yaml) | OIE 8443 ClusterIP 管理端口；不暴露公网 |
+| [OIE manifest tests](../../../../local-data-platform/tests/clinical_producers/test_oie_k8s_manifests.py) | 静态隔离与 YAML 解析测试 |
+| [OIE static workflow](../../../../.github/workflows/oie-manifest-static.yml) | GitHub-hosted 不访问 K8s 的 Worker01 模板 CI |

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oie
+  namespace: dw-oie
+  labels:
+    app.kubernetes.io/name: oie
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: oie
+  ports:
+    - name: https-admin
+      port: 8443
+      targetPort: https-admin
+      protocol: TCP

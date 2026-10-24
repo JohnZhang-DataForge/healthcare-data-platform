@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dw-oie
+  labels:
+    app.kubernetes.io/part-of: healthcare-clinical-producers
+    app.kubernetes.io/name: oie
