@@ -156,3 +156,12 @@ Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE
 **分界**：GHCR 发布不代表已在 `dw-synthea` 运行；实际 PVC/Job 和持久化读回须走单独 Self-Runner 运行验收，前置安全门禁止占用时执行。
 
 **2026-10-24 ConfigMap 安全兼容性修正**：Kubernetes ConfigMap 按目录挂载时文件是符号链接，Generator 的 `load_request` 拒绝符号链接。新 Job 模板使用 `subPath: request.json` 单文件只读挂载，生成前即冻结输入。该改变不涉及旧 NEW_ONLY 目录或 PVC，真实 Job 验证参见 OpenSpec 4.4。
+
+## 新生成器 P3.4 实际部署验收（2026-10-24）
+
+原 P3 镜像在 CI 的状态描述属于当时历史边界，**当前新生成器已发布并在共享集群受控验证**。源码保留旧 `apps/synthea/new_only/` 不动。
+
+- [Healthcare PR #421](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/421) 发布 `ghcr.io/johnzhang-dataforge/healthcare-synthea-new-generator@sha256:7aeb7dab50611a39953e59eb8032446087208fed8d01fb4795580138bb040f7e`，只发布 SHA 标签，不覆盖 `latest`。
+- [Healthcare PR #423](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/423) 修复新 K8s Job 的 ConfigMap 单文件 `subPath` 挂载，以匹配 Generator 严格的拒绝符号链接策略。
+- [Self-Runner Run #40100347980](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40100347980) 验证 `worker01` 生成 1 Patient / 43 Encounter / 1 FHIR Bundle，同请求重试以及新 PVC 内文件 SHA 读回 PASS。独立新 PVC `synthea-new-generator-state` 保留、Bound / Retain；临时 Job、ConfigMap 和 Pull Secret 清理完毕；旧 NEW_ONLY PVC 身份不变。
+- **未完成**：OIE 将 FHIR 转为 HL7、Blob Landing Publisher、Fabric 消费者；本 Run 不构成这些环节的通过证据。
