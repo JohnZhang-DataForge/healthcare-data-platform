@@ -75,3 +75,11 @@ P3：先在隔离 Spark Probe 修复 Listener Job/Run/Dataset 真正血缘；只
 P4：若 Spark 控制/Writer 应用变更影响现有镜像，则手动单镜像 `validate` → 明确批准 `publish-latest`，保存唯一 SHA/Run tag、上个 Latest Digest 的回退 Tag、新 Digest、来源 SHA/Run。保留原 DAG `:latest` 引用，不增设候选标签切换参数。历史候选 `portal-v1.0` 可以为未来稳定发布保留，但不是当前 Local 测试依赖。
 
 P5：开始真实 Batch 前确认无其它 Session 的冲突 Run、GitSync 版本、各新建 Pod 真实 imageID/Digest、Marquez 事件与 PG17 Readback；单独批准业务副作用。发布 `:latest` 会影响**未来**新建 Pod，已运行 Pod 不自动换镜像；GHCR 保留历史版本也不代表回滚自动发生。镜像发布和共享 Airflow/Writer Live 操作仍互不默认授权。
+
+## 8. P3 isolated persistent dataset smoke — 2026-10-24
+
+旧 A4 测试只读取 ConfigMap CSV 并聚合，没有任何写 Dataset 操作；输出血缘 0 不能单独证明 Listener 失败。新 P3 先用最小隔离路径验证物理输入与真实 Parquet 输出：唯一 Token 渲染 ConfigMap + `local-path` 1Gi `ReadWriteOnce` PVC + SparkApplication，Spark Driver/单 Executor 同节点挂载 PVC，在 `file:///opt/spark/portal-a4-output/<token>/summary.parquet` 以 `errorifexists` 写出并再读回。业务 S3/PG17/Writer/Claim 不参与。源文件与 Render 单测完全离线。
+
+Spark `spark.openlineage.appName` 显式设为 `portal-a4-<token>`，用于尝试修复历史 Job 名字关联；不能提前把它当成 `unknown` 已修复。P3 Live 严格通过真实 Marquez API 的 Job/Run、输入和输出 Dataset 链接及事件源日志确定 Listener 是否记录成功；如果文件 URI 无法被当下监听器捕获，基于真实证据另行调整最小试验（可能选已有独立 S3 scratch 位置），绝不手写假的 COMPLETE/Dataset 事件。
+
+PVC 创建、RWO 挂载权限及 per-job JAR 下载仍是实机未证前置，低成本隔离 Test 也需要作业窗口及仅本次 Token 资源标识，不会自动清理其它资源。P3 成功后才把 Listener 放入实际 Person/Visit/Reconcile 配置，按 Local `:latest` 手动单镜像按需发布。
