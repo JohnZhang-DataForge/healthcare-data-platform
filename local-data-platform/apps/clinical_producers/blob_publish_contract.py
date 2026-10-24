@@ -55,7 +55,7 @@ def _valid_path(value: object, fmt_dir: str, suffix: str) -> bool:
     if "\\" in value or "%" in value or "?" in value or "#" in value:
         return False
     p = PurePosixPath(value)
-    return (len(p.parts) == 2 and not p.is_absolute()
+    return (str(p) == value and len(p.parts) == 2 and not p.is_absolute()
             and p.parts[0] == fmt_dir and
             p.parts[1] not in (".", "..") and
             bool(COMPONENT.fullmatch(p.parts[1])) and
