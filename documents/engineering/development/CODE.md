@@ -25,6 +25,8 @@ source_sha: 8e075bca130429c261a0f2cf245daef83ba8eebf
 | [`local-dp-image-promote-tested.yml`](../../../.github/workflows/local-dp-image-promote-tested.yml) | [MANUAL VERIFY/PROMOTE; NO BUILD] 默认 `verify-candidate` 检验已发布 Tag/Digest 并离线 Smoke，显式 `promote-tested` 携带验收引用且再次核对 Digest 后才把同一个镜像晋级 `latest`；**并非 Portal DAG GitSync/E2E** |
 | [`local-dp-image-rebuild.yml`](../../../.github/workflows/local-dp-image-rebuild.yml) | [FULL EIGHT-IMAGE RELEASE / MANUAL ONLY] 历史完整 8 镜像链式 clean build / Main GHCR :latest 全量晋级继续可手工触发；**移除 PR/Main Push 自动触发**，合并 Airflow DAG 不再自动覆盖 8 镜像。高副作用，请在 Shared Operations 协调后单独使用 |
 
+| [`portal-spark-dataset-static.yml`](../../../.github/workflows/portal-spark-dataset-static.yml) | [OFFLINE CI ONLY] P3 Spark 3 行合成 CSV → per-run PVC Parquet 输出，渲染器 Token/挂载/负向合同；PR 不创建 PVC/Pod、不会运行 Spark、不会推送 GHCR |
+
 全仓质量工具统一放在 `.github/quality/scripts/`，对应单元测试位于 [`.github/quality/tests/`](../../../.github/quality/tests)；这些不是 Local Data Platform 业务文件。
 
 | [`helm-gitsync-postmove-values.yaml`](../../../local-data-platform/config/airflow/helm-gitsync-postmove-values.yaml) | [DEPLOY CONFIG] 既存 `dw-airflow` Chart 1.22.0 的 GitSync 新源码子目录覆写。仅与现有 Helm Release 使用 `--reuse-values`；不是完整安装 Values，也不含 Secret。实际 Helm 修复：Self-Runner [Run #39422344924](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/39422344924) PASS。 |
