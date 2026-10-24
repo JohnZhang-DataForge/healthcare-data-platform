@@ -267,3 +267,6 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 
 ## Disposable OIE real FHIR→HL7 runtime probe
 [Runtime probe](../../../../local-data-platform/tests/clinical_producers/oie_channel_runtime_probe.py) reads only the SHA-pinned synthetic Johns Creek source artifact, sends one real IMP and one AMB FHIR event through the temporary OIE Channel Reader using local loopback API, and independently verifies returned message content using `hl7_readback.py`. [Isolated CI](../../../../.github/workflows/oie-channel-isolated-import.yml) runs on GitHub-hosted runner only, never on shared Kubernetes/PVC.
+
+## OIE existing worker01 Channel live test mode
+After confirming safety and permissions with the scoped Self-Runner runtime Workflow, run the existing probe with `--existing-channel`: it never calls Channel create/deploy, verifies exact persisted ID/name/script, rejects any preexisting Channel messages, and only then writes this verified Johns Creek synthetic test dataset (31 Encounters + 1 repeat), independently parses HL7 A01 and validates 32 message records. Do **not** point it at other Channels, actual patient data or unrelated namespaces. Exact operation remains pending shared coordination until a real Run succeeds; no Azure Blob delivery in this gate.

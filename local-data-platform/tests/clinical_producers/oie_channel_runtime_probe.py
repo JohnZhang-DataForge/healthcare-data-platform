@@ -157,6 +157,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifact", type=Path, required=True)
     parser.add_argument("--admin-conf", type=Path, required=True)
+    parser.add_argument("--existing-channel", action="store_true",
+                        help="Read back existing persistent Channel only; never deploy or overwrite")
     args = parser.parse_args()
     entries = read_events(args.artifact)
     secret = args.admin_conf.read_text()
@@ -164,13 +166,27 @@ def main() -> None:
     if not match:
         raise RuntimeError("ISOLATED_ADMIN_PASSWORD_NOT_SET")
     api = OieApi(match.group(1))
-    status, _ = api.call(f"/api/channels/{CHANNEL_ID}/_deploy?returnErrors=true", b"", "application/xml")
-    if status not in (200, 204):
-        raise RuntimeError("ISOLATED_CHANNEL_DEPLOY_FAILED")
+    if args.existing_channel:
+        from apps.clinical_producers.oie.build_channel import render_channel
+        _, xml = api.call(f"/api/channels/{CHANNEL_ID}")
+        observed = ET.fromstring(xml)
+        expected = ET.fromstring(render_channel())
+        if (observed.findtext("id") != CHANNEL_ID
+                or observed.findtext("name") != expected.findtext("name")
+                or observed.findtext("preprocessingScript") != expected.findtext("preprocessingScript")):
+            raise RuntimeError("OIE_LIVE_CHANNEL_CONFIG_MISMATCH")
+        _, count_body = api.call(f"/api/channels/{CHANNEL_ID}/messages/count")
+        if message_id(count_body) != "0":
+            raise RuntimeError("HOLD_LIVE_CHANNEL_PREEXISTING_MESSAGES")
+        print("OIE_LIVE_EXISTING_CHANNEL_UNCHANGED_AND_EMPTY=PASS")
+    else:
+        status, _ = api.call(f"/api/channels/{CHANNEL_ID}/_deploy?returnErrors=true", b"", "application/xml")
+        if status not in (200, 204):
+            raise RuntimeError("ISOLATED_CHANNEL_DEPLOY_FAILED")
     _, channel_status = api.call(f"/api/channels/{CHANNEL_ID}/status")
     if "STARTED" not in channel_status.decode():
-        raise RuntimeError("ISOLATED_CHANNEL_NOT_STARTED")
-    print("ISOLATED_OIE_CHANNEL_DEPLOY=PASS")
+        raise RuntimeError("OIE_CHANNEL_NOT_STARTED")
+    print("OIE_CHANNEL_STARTED_READBACK=PASS")
     actual = {"IMP": 0, "AMB": 0}
     inpatient_event = None
     inpatient_hl7 = None
@@ -198,8 +214,15 @@ def main() -> None:
     print("ISOLATED_OIE_REAL_AMB_NO_ADT_COUNT=30")
     print("ISOLATED_OIE_REAL_31_ENCOUNTER_READBACK=PASS")
     print("ISOLATED_OIE_SAME_REQUEST_RETRY_IDENTICAL_HL7=PASS")
-    print("ISOLATED_OIE_CLINICAL_MAPPING_RUNTIME=PASS")
-    print("ISOLATED_OIE_BLOB_PUBLICATION=NO")
+    print("ISOLATED_OIE_CLINICAL_MAPPING_RUNTIME=PASS" if not args.existing_channel
+          else "OIE_LIVE_WORKER01_CLINICAL_MAPPING_RUNTIME=PASS")
+    if args.existing_channel:
+        _, after_count = api.call(f"/api/channels/{CHANNEL_ID}/messages/count")
+        if message_id(after_count) != "32":
+            raise RuntimeError("OIE_LIVE_EXPECTED_32_MESSAGE_RECORDS")
+        print("OIE_LIVE_32_MESSAGE_RECORDS_READBACK=PASS")
+        print("OIE_LIVE_PERSISTENT_DERBY_MESSAGE_WRITES=YES")
+    print("AZURE_BLOB_PUBLICATION=NOT_STARTED")
 
 
 if __name__ == "__main__":
