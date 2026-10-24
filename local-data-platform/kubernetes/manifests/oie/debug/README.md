@@ -44,3 +44,13 @@ Do not automatically promote temporary Derby data to persistent storage.
 
 No StatefulSet, PVC, StorageClass or persistent local host path
 belongs to this debug phase.
+
+## 2026-10-24 actual ephemeral installation evidence
+
+- **RUN PASS**: [Self-Runner #40120249619](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120249619).
+- Healthcare deployed source SHA: `bcb18bc93e0372e4e78aa373c83768a143ab4b0d`.
+- Pinned OIE image: `ghcr.io/johnzhang-dataforge/healthcare-oie@sha256:6716fb6210f9dc029c801b13cc152ff3fcb1ad4df05c1dbe5a9d438a482ba84b`.
+- K8s Namespace `dw-oie`; Deployment `oie-debug`; Pod `oie-debug-f8f5d9c89-44vd2` pinned and actually scheduled on `worker01`.
+- Observed READY, correct image Digest, OIE 4.7.0 config, internal Derby path, ClusterIP and `emptyDir`-only Pod volumes: PASS. `dw-oie` had **zero PVCs** after installation. User deliberately deferred persistent storage; Pod recreation erases Derby/Channel state.
+- This is **engine-install validation**, NOT OIE clinical Channel conversion, HL7 message readback or Blob publication.
+- **Future on-premises handoff**: coordinate before replacing debug Deployment; provision appropriately owned worker01 storage and test new installation before deleting existing debug objects. Never assume `emptyDir` data is a backup or automatically migrate it into a PVC.
