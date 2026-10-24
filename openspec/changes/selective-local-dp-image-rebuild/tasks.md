@@ -30,3 +30,16 @@
 - [ ] 3.1 获得精确选中 image/operation/parent、当前 Main/并行 GHCR Writer 与消费者的协调授权后，先手动 `validate`，核对只产生目标镜像、无 Registry 更改。
 - [ ] 3.2 如果用户独立批准 publish/promote，精确记录 GHCR target package/唯一 tag/digest、其他 7 包无覆盖、受影响运行 Pod imageID 及必要发布后读回；任何步骤结果不明 HOLD。
 - [ ] 3.3 更新真实 Run/Artifact/证据，确认 Portal PR #416 Merge 不再触发自动全 8 build/promote；满足范围后再决定 Archive。
+
+## 4. Candidate tag release / digest-bound promotion — portal-v1.0
+
+> 本轮用户确认：先构建并仅发布 `portal-v1.0`，在不改变业务 `:latest` 的情况下测试；只有确认合格以后再将**完全相同 Digest** 的已测试候选晋级为 `:latest`。这是两个不同的操作，不允许构建即晋级或在晋级时重构；本 OpenSpec Change 保持 Active。
+
+- [x] 4.1 再核对 Main 与当前 Portal P2 PR #416 的源码承载方式：Airflow `new_only_omop_consumer.py` 由 GitSync 加载，**不是**上述 8 个镜像之一。因此为镜像增加 `portal-v1.0` 不能隔离验证 OpenLineage DAG 本身；还需独立隔离 GitSync/DAG 或受控运行环境。任何一个镜像的候选发布都不构成 Portal E2E 验收。
+- [x] 4.2 扩展原单镜像 Workflow：手动 `image` + `validate/publish`，候选标签 `release_tag=portal-v1.0`（可扩展按组件版本号）；删除一次性 `promote-latest` 构建+晋级路径；仅 `publish` 推唯一 Run tag + 候选标签，不能覆盖 `:latest`。
+- [x] 4.3 新增 `local-dp-image-promote-tested.yml`：`verify-candidate`（默认，只读下载固定 Digest 并独立离线 Smoke）与 `promote-tested`（显式验收证据引用，候选 Tag/Digest 一致、无 Docker build 才晋级同一个 Digest 的 `:latest`）。手工 Workflow 的统一并发组与正/反向离线 CI；更新 Developer CODE 与 Delta Spec。
+- [ ] 4.4 PR 最终 HEAD CI、合并/Main 读回；注明候选运行和 Registry 发布是否真的发生，不把静态测试标为真实发布。
+- [ ] 4.5 核对具体 `image`/PACKAGE 后才进行带有副作用的 `portal-v1.0` GHCR 发布；绑定 exact Main SHA、Run、推送的真实 Digest。事前读取其他活跃 Build/Session，未协调者 HOLD。**禁止**在此步骤触碰 `:latest`、共享 K8s/Airflow/S3/PG。
+- [ ] 4.6 以候选 Digest 在隔离环境完成实际业务/Portal 验收，保留可审计验收证据；仅在用户批准的后续独立 `promote-tested` 行为中将同一个 Digest 晋级 `:latest`。晋级之后还需检查业务实际使用的 imageID，不能将 Tag 变化当作 Pod 已自动使用新版本。
+
+**当前风险/待协调**：`portal-v1.0` 只是一份候选镜像 Tag，不代表 Portal DAG GitSync 已隔离；用户未选中具体 8 镜像中的哪一个，因此不会猜测目标 GHCR Package 或推送任意镜像。上述实现变更可以走源代码 PR/CI，实际 publish/promote 分别需精确目标和资源预检。
