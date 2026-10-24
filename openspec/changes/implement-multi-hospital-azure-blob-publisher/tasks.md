@@ -31,3 +31,8 @@
 - Healthcare feature branch `feat/clinical-immutable-blob-publisher-20261024`：新增 SDK 隔离后端 `azure_blob_publisher.py`，复用 P1.3 `verified_plan`；`overwrite=False` 实现不可变创建，实际 GET/HEAD 校验 SHA256、metadata、Content-Type 与 ETag，Manifest 最后创建并 GET，失败不返回提交收据。
 - Fake 后端覆盖正常、同请求重试、已有不同内容、源清单 SHA 改变、部分故障、未知写入 ACK、GET 失败、metadata 变化和脱敏；隔离 Azurite 测试真实 Azure SDK wire path。当前状态 **UNIT / AZURITE CI PASS，NOT LIVE AZURE VERIFIED**。PR [#451](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/451) 分支源码 SHA `a934a3895e276031a38c593ebaf74a550569a843`：Hosted [Azure Blob workflow](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40131051459) 中 Fake/Fault + 独立 Azurite SDK 两项 PASS；两项 Job 的最终结论均为 `success`；仅证实离线模拟环境。
 - 真实 Azure / K8s 验证、两院医院适配器以及对已有 OIE 验收 Request 的任何重放均未授权、未实施。
+
+
+### P2.3/P3.1 — FHIR DIRECT adapter 候选（2026-10-24；CI 待验）
+- [PR 待创建] 新增 `direct_fhir_publisher.py`（不含硬编码医院身份），调用已验收 P4.1 `verify_handoff` → 校验外部 Profile 为 `FHIR_R4/DIRECT` → 从只读冻结请求路径读取实际 FHIR bytes → `publish_immutable`。只使用共享 Publisher，不改 Generator、OIE、Local DP；不运行真实 Azure。
+- 离线 Fake Blob 测试覆盖 Atlanta Profile、Manifest SHA、逐字节读回、同请求重试、篡改和错路线拒绝。CI/PR 通过前保持 2.3、3.1 **OPEN**；即使 PASS，也仅关闭这两项的 adapter 实现部分，真实 Azure Landing E2E 继续由 4.2 验收。
