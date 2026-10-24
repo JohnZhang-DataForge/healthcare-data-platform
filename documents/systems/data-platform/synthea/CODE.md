@@ -284,7 +284,7 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [azure-blob-publish-contract-unit.yml](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only static/unit，无 Azure/PVC 写入 |
 
 
-## Shared Azure Blob Publisher（实现待 CI 验证；尚未执行真实 Azure）
+## Shared Azure Blob Publisher（Mock/Azurite CI 已通过；尚未执行真实 Azure）
 
 | 路径 | 职责与运行边界 |
 | --- | --- |
