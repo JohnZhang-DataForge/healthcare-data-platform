@@ -1,0 +1,29 @@
+name: OIE Johns Creek Importable Channel Static Gate
+on:
+  pull_request:
+    paths:
+      - "local-data-platform/apps/clinical_producers/oie/**"
+      - "local-data-platform/tests/clinical_producers/test_oie_channel_build.py"
+      - ".github/workflows/oie-channel-static.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  verify-channel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_channel_build.py -v
+      - run: |
+          set -Eeuo pipefail
+          cd local-data-platform
+          python -m apps.clinical_producers.oie.build_channel --output "$RUNNER_TEMP/johns-creek.xml"
+          test -s "$RUNNER_TEMP/johns-creek.xml"
+          echo OIE_IMPORTABLE_XML_RENDER=PASS
+          echo OIE_CHANNEL_LIVE_DEPLOY=NOT_PERFORMED
+          echo OIE_PVC_CHANGES=NO
