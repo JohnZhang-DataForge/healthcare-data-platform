@@ -274,3 +274,11 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 ## Johns Creek OIE persistent Channel live proof
 - [Self-Runner #40127786353](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40127786353): Channel create/readback/STARTED PASS on worker01, Retain PVC kept.
 - [Self-Runner #40128211780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40128211780): true 31 real synthetic FHIR Encounter clinical mappings + IMP repeat, independent HL7 source readback and 32 Derby messages PASS; still no HL7-to-Blob delivery receipt. Do not replay this accepted source request without an explicit new strategy.
+
+## Azure Landing immutable publish-plan contract（未发布）
+| Path | Role |
+| --- | --- |
+| [blob_publish_contract.py](../../../../local-data-platform/apps/clinical_producers/blob_publish_contract.py) | 只校验 P4.1/OIE 验证状态、医院、Request、对象路径、原始 Bytes SHA256 与确定性 Blob key；**不上传** |
+| [blob-publish-plan-v1.schema.json](../../../../local-data-platform/contracts/clinical_producers/blob-publish-plan-v1.schema.json) | 共享 Azure Blob 输入计划 JSON Schema，医院无关 |
+| [test_blob_publish_contract.py](../../../../local-data-platform/tests/clinical_producers/test_blob_publish_contract.py) | 错医院、路径穿越、篡改、状态不匹配的 fail-closed 合同测试 |
+| [azure-blob-publish-contract-unit.yml](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only static/unit，无 Azure/PVC 写入 |
