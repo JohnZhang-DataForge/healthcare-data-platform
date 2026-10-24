@@ -1,7 +1,7 @@
 """One-shot, fail-closed FHIR DIRECT publisher runtime for staged inputs.
 
-Runs ONLY in an authorized, isolated dw-az-blob Job. This module does not
-stage source data, mint Azure credentials, create namespaces/secrets, submit
+Runs ONLY in an authorized dw-synthea Job with a read-only Generator PVC.
+This module does not mint Azure credentials, create namespaces/secrets, submit
 OIE messages or deploy itself. OIE HL7 runtime remains disabled until an
 independently authenticated persisted-message fetcher is implemented.
 """
@@ -60,8 +60,9 @@ def await_ready(marker: Path, timeout_seconds: int) -> None:
 
 def publish_direct_from_stage(
     state_root: Path, profile_path: Path, request_id: str, *,
-    ready_marker: Path, expected_source_manifest_sha256: str,
-    landing_prefix: str, env: Mapping[str, str] | None = None,
+    ready_marker: Path | None, expected_source_manifest_sha256: str,
+    landing_prefix: str, direct_readonly_source: bool = False,
+    env: Mapping[str, str] | None = None,
     backend_factory: Callable[..., BlobBackend] | None = None,
 ) -> dict:
     """Verify fully staged bytes and trusted out-of-band SHA before any Azure I/O.
@@ -69,7 +70,13 @@ def publish_direct_from_stage(
     The expected manifest SHA MUST come from the source-side audited preflight,
     never be derived from the staged payload by this process.
     """
-    ensure_ready(ready_marker)
+    if direct_readonly_source:
+        if ready_marker is not None:
+            raise PublisherRuntimeBlocked("CONFLICTING_SOURCE_MODES")
+    else:
+        if ready_marker is None:
+            raise PublisherRuntimeBlocked("HANDOFF_READY_MARKER_REQUIRED")
+        ensure_ready(ready_marker)
     if (not isinstance(expected_source_manifest_sha256, str)
             or not HEX64.fullmatch(expected_source_manifest_sha256)):
         raise PublisherRuntimeBlocked("INVALID_PINNED_SOURCE_MANIFEST_SHA")
@@ -102,16 +109,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--state-root", type=Path, required=True)
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--request-id", required=True)
-    parser.add_argument("--ready-marker", type=Path, required=True)
+    parser.add_argument("--source-mode", choices=("staged", "direct-readonly-pvc"),
+                        default="staged")
+    parser.add_argument("--ready-marker", type=Path)
     parser.add_argument("--expected-source-manifest-sha256", required=True)
     parser.add_argument("--landing-prefix", required=True)
     parser.add_argument("--ready-timeout-seconds", type=int, default=900)
     args = parser.parse_args(argv)
     try:
-        await_ready(args.ready_marker, args.ready_timeout_seconds)
+        if args.source_mode == "staged":
+            if args.ready_marker is None:
+                raise PublisherRuntimeBlocked("HANDOFF_READY_MARKER_REQUIRED")
+            await_ready(args.ready_marker, args.ready_timeout_seconds)
+        elif args.ready_marker is not None:
+            raise PublisherRuntimeBlocked("CONFLICTING_SOURCE_MODES")
         receipt = publish_direct_from_stage(
             args.state_root, args.profile, args.request_id,
             ready_marker=args.ready_marker,
+            direct_readonly_source=(args.source_mode == "direct-readonly-pvc"),
             expected_source_manifest_sha256=args.expected_source_manifest_sha256,
             landing_prefix=args.landing_prefix)
     except Exception:
