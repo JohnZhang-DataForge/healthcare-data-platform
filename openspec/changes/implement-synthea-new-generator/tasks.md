@@ -1,6 +1,6 @@
 # Tasks — Independent synthea_new_generator
 
-> **状态：ACTIVE / P1、P2 已合并，P3 4.1–4.3 镜像及离线验证 PASS；共享 K8s 4.4 和 P4 待执行。** 不声明 Kubernetes、FHIR→OIE、Azure Blob 或 Fabric 已完成。原 `apps/synthea/new_only/` 及 OMOP 链路绝不因本 Change 改写。
+> **状态：ACTIVE / P1、P2 已合并，P3 4.1–4.4 已通过 GHCR 发布与受控 K8s Live 验收；P4 待开发。** K8s 新生成器已经独立运行，**不声明 FHIR→OIE、Azure Blob 或 Fabric 已完成**。原 `apps/synthea/new_only/` 及 OMOP 链路绝不因本 Change 改写。
 
 ## 1. P0 — OpenSpec design and baseline
 
@@ -26,7 +26,7 @@
 - [x] 4.1 建 `images/synthea-new-generator/`，引用固定 Synthea parent digest/commit；只安装最小 Runtime 依赖，无 OIE/Azure/PG 客户端或 Credential。
 - [x] 4.2 建 `kubernetes/manifests/synthea/new-generator/` 独立 Job/存储配置、最小权限、资源限制、显式镜像 Digest；不动 `synthea-new-only-state` 和旧 NEW_ONLY 工作负载。
 - [x] 4.3 按仓库强制源码地图规则同步 `documents/systems/data-platform/synthea/CODE.md`、相关组件文档和适用 CI；绑定真实 PR Head、镜像构建/测试证据。
-- [ ] 4.4 经授权和资源协调运行最小真实 K8s Job，核对输出 Manifest/Hash/Count、错误路径及同请求重跑零漂移；未做实机则保持未验证。
+- [x] 4.4 经授权和资源协调运行真实 K8s Job；已在 worker01 验证状态、FHIR Bundle/Patient/Encounter 数量、持久 Manifest 文件 SHA256、同请求幂等、独立 Retain PVC 及旧 PVC 身份未变。证据见 Run #40100347980。
 
 ## 5. P4 — Handoff and finish
 
@@ -73,4 +73,11 @@
 - GHCR Main-only Release [#40099221313](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40099221313) PASS：发布独立版本 `git-2209f350fcb3feb67969f2a5e34f1cd4b64b1100`，Registry Digest `sha256:7aeb7dab50611a39953e59eb8032446087208fed8d01fb4795580138bb040f7e`，未覆盖 `latest`。
 - 首次 Self-Runner Live Run [#40099579358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099579358) 集群安全预检 PASS，建立新的 10Gi PVC 后在 Job 模板渲染阶段阻断，未创建 Job；PVC 按 Retain 保留。
 - 第二次 Live Run [#40099715955](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099715955) 固定镜像已被 worker01 成功拉取、运行；但 ConfigMap 目录投影的 `request.json` 是符号链接，与 Generator 强制拒绝符号链接的合同冲突，报 `INVALID_REQUEST_FILE`，K8s Job FAIL。未生成本地 Patient、也未写 Azure/PG/S3。已确认旧 PVC 未动，新 PVC Bound。
-- 最小修复：Job 模板将只读 ConfigMap 的单个键使用 `mountPath: /inputs/request.json` + `subPath: request.json` 挂为普通文件；保持原 Generator 严格拒绝符号链接的安全规则不变。真实集群复验前任务 4.4 保持未完成。
+- 最小修复：Job 模板将只读 ConfigMap 的单个键使用 `mountPath: /inputs/request.json` + `subPath: request.json` 挂为普通文件；保持原 Generator 严格拒绝符号链接的安全规则不变。经 PR #423 修复和 Main SHA 固定后由 Live Run #40100347980 复验通过；该句所述失败过程保留为历史。
+
+### P3.4 生产前隔离部署验收闭环 — 已通过
+
+- **GHCR 正式发布**：Healthcare [PR #421](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/421)、[Run #40099221313](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40099221313)，源 Main `2209f350fcb3feb67969f2a5e34f1cd4b64b1100`。唯一标签 `ghcr.io/johnzhang-dataforge/healthcare-synthea-new-generator:git-2209f350fcb3feb67969f2a5e34f1cd4b64b1100`，Digest `sha256:7aeb7dab50611a39953e59eb8032446087208fed8d01fb4795580138bb040f7e`，未更新 `latest`。
+- **失败修复证据保留**：Self-Runner [Run #40099579358](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099579358) 的 Job 模板渲染断言阻断；[#40099715955](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40099715955) 的 ConfigMap 目录符号链接输入触发 `INVALID_REQUEST_FILE`。仅清理本轮创建的失败 Job/ConfigMap/临时拉取 Secret，持久 PVC 保留。修复标准模板 [Healthcare PR #423](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/423)，Main `45ae41dd364eb9771c7d22ab29030d40eb65ecb4`，通过 `subPath: request.json` 正常提供只读普通文件，Generator 安全逻辑未放宽。
+- **实际验收 PASS**：Self-Runner [Run #40100347980](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40100347980)，Self-Runner Workflow 源 SHA `6d1ce2975838d3a4bebfb3a890781c8050913abc`，固定 Healthcare `45ae41dd364eb9771c7d22ab29030d40eb65ecb4` 和上述 GHCR Digest；`dw-synthea/worker01` 的 Request `p34-atlanta-40100347980` 实测 1 Patient、43 Encounter、1 FHIR Bundle，`SOURCE_GENERATED_VALIDATED`、重复请求无重新生成、SHA256 独立读回全部 PASS。
+- **状态与安全边界**：`synthea-new-generator-state` (10Gi, `synthea-local`, Bound) 的新 PV `pvc-00a9270b-cf8d-44aa-8f46-f882c85d637b`，ReclaimPolicy=Retain；旧 `synthea-new-only-state` PVC UID/原 PV 前后不变。临时 Job、ConfigMap、GHCR 拉取 Secret 已清理，持久数据保留。未执行 OIE、Azure Blob、Fabric、S3 或 OMOP PG 写入；P4 和上游医院文件交付尚未实现。此 Live 验收**只覆盖 Atlanta 的 1 人 FHIR NEW_ONLY**，Johns Creek 有先前真实 Docker Smoke 证据但尚无单独 K8s Live 数据批次。
