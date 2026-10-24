@@ -1,0 +1,93 @@
+name: Eclipse OIE 4.7.0 Source-pinned Image Isolated Smoke
+on:
+  pull_request:
+    paths:
+      - "local-data-platform/images/oie/**"
+      - ".github/workflows/oie-470-isolated-image-smoke.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oie-470-source-image-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - name: Checkout Healthcare without retained credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout exact upstream official OIE v4.7.0 source commit
+        uses: actions/checkout@v4
+        with:
+          repository: OpenIntegrationEngine/engine
+          ref: f9ba73e28de151b041b97e7383e0ab9d2c4f1799
+          path: _oie-upstream
+          persist-credentials: false
+      - name: Assert upstream immutable revision and explicit image-build target
+        run: |
+          set -Eeuo pipefail
+          test "$(git -C _oie-upstream rev-parse HEAD)" = "f9ba73e28de151b041b97e7383e0ab9d2c4f1799"
+          grep -F 'version = 4.7.0' _oie-upstream/server/conf/mirth.properties
+          grep -F 'AS jre-run' _oie-upstream/Dockerfile
+          grep -F 'USER engine' _oie-upstream/Dockerfile
+          echo "UPSTREAM_OIE_470_SOURCE_PIN=PASS"
+      - name: Build original official OIE Dockerfile jre-run target (no push)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build --pull --target jre-run --progress=plain \
+            --build-arg GRADLE_BUILD_ARGS="-PdisableSigning=true" \
+            -t local-oie-470-smoke:git-f9ba73e \
+            _oie-upstream
+          docker image inspect local-oie-470-smoke:git-f9ba73e \
+            --format 'OIE_LOCAL_IMAGE_ID={{.Id}} USER={{.Config.User}}'
+      - name: Independently inspect built version, nonroot and image content
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(docker image inspect local-oie-470-smoke:git-f9ba73e --format '{{.Config.User}}')" = "engine"
+          docker run --rm --entrypoint /bin/sh local-oie-470-smoke:git-f9ba73e \
+            -c "grep -Eq '^version = 4[.]7[.]0$' /opt/engine/conf/mirth.properties && test -x /opt/engine/oieserver"
+          echo "OIE_LOCAL_IMAGE_VERSION_470=PASS"
+      - name: Disposable OIE startup on isolated loopback HTTPS (no channel)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          oie="oie470-build-smoke"
+          conf="${RUNNER_TEMP}/oie470-bootstrap.properties"
+          cleanup() {
+            docker rm -fv "$oie" >/dev/null 2>&1 || true
+            rm -f "$conf"
+          }
+          trap cleanup EXIT
+          python3 -c 'import secrets,sys; open(sys.argv[1],"w").write("server.initialadminpassword = " + secrets.token_urlsafe(32) + "\n")' "$conf"
+          engine_uid="$(docker run --rm --entrypoint id local-oie-470-smoke:git-f9ba73e -u)"
+          engine_gid="$(docker run --rm --entrypoint id local-oie-470-smoke:git-f9ba73e -g)"
+          [[ "$engine_uid" =~ ^[0-9]+$ ]] && [[ "$engine_gid" =~ ^[0-9]+$ ]]
+          sudo chown "$engine_uid:$engine_gid" "$conf"
+          chmod 400 "$conf"
+          docker run -d --name "$oie" --cpus 2 --memory 4g \
+            -p 127.0.0.1:18443:8443 \
+            --mount "type=bind,source=$conf,target=/run/secrets/mirth_properties,readonly" \
+            local-oie-470-smoke:git-f9ba73e >/dev/null
+          ok=no
+          for n in $(seq 1 90); do
+            if test "$(docker inspect "$oie" --format '{{.State.Running}}')" != true; then
+              echo "OIE_EXITED_UNEXPECTEDLY"
+              docker logs "$oie" --tail 40 | sed -E 's/(password|passwd)[^ ]*/[REDACTED]/Ig'
+              exit 1
+            fi
+            code="$(curl --insecure --silent --output /dev/null --write-out '%{http_code}' \
+              --connect-timeout 2 --max-time 4 https://127.0.0.1:18443/ || true)"
+            if [[ "$code" =~ ^[234][0-9][0-9]$ ]]; then
+              ok=yes
+              echo "OIE_470_HTTPS_STARTUP_STATUS=$code"
+              break
+            fi
+            sleep 10
+          done
+          test "$ok" = yes
+          echo "OIE_470_IMAGE_STARTUP_SMOKE=PASS"
+          echo "OIE_CHANNEL_IMPORT_AND_TRANSFORMATION=NOT_TESTED"
+          echo "DW_OIE_KUBERNETES_DEPLOYED=NO"
+          echo "GHCR_IMAGE_PUBLISHED=NO"
