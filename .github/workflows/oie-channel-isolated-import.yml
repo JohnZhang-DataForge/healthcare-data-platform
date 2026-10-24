@@ -113,7 +113,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd local-data-platform
-          python3 tests/clinical_producers/oie_channel_runtime_probe.py \
+          PYTHONPATH=. python3 tests/clinical_producers/oie_channel_runtime_probe.py \
             --artifact "$RUNNER_TEMP/oie-real-johns-creek" \
             --admin-conf "$RUNNER_TEMP/oie-isolated-admin-client"
       - name: Record bounded isolated OIE server error log if failure
