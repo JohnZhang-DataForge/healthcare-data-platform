@@ -1,7 +1,7 @@
 ---
 status: active
 scope: portal-spark-openlineage
-last_verified: 2026-10-18
+last_verified: 2026-10-24
 source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 ---
 
@@ -11,9 +11,10 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 
 ## 独立静态源码及运行边界
 
-- `render.py` 仅离线读取 `probe.py`、`input.csv` 与 `sparkapplication.yaml.tpl`，为唯一 Token 生成 ConfigMap + SparkApplication YAML，**不连接 Kubernetes、不执行 Apply**。
-- `probe.py` 使用 3 行 CSV 做读取与分组统计；ConfigMap 通过只读挂载供 Driver/Executor 使用，未写入真实 Parquet/S3，因此**不能宣称输出 Dataset 血缘通过**。
+- `render.py` 仅离线读取 `probe.py`、`input.csv` 与 `sparkapplication.yaml.tpl`，为唯一 Token 生成 ConfigMap + 本次独占的 1Gi `local-path` PVC + SparkApplication YAML，**不连接 Kubernetes、不执行 Apply**。
+- P3 更新后的 `probe.py` 使用 3 行 CSV 做读取与分组统计；ConfigMap 只读挂载输入，Driver/Executor 将 Parquet 真正写到其专属 PVC，并再次通过 Spark 读回验证（2 行）。不写 S3/OMOP。**尚未有实机 Spark/Marquez Run 证明新的输出血缘被成功采集**；旧 A4 没有实际输出的历史测试仍不可冒充。
 - 模板设定 `dw-spark`、`spark:3.5.7-python3`、`spark-job` ServiceAccount，Spark Operator API `v1beta2`，单个 executor、`restartPolicy Never`；仅 per-job 配置 `io.openlineage:openlineage-spark_2.12:1.47.1` 和 `io.openlineage.spark.agent.OpenLineageSparkListener`。Scala binary、JAR 可访问性及真实环境兼容须在**另行授权 Live 操作前**核实，不把候选坐标说成生产全局配置。
+- P3 增加 `spark.openlineage.appName=portal-a4-<run-token>` 作为 `unknown` Job 关联的候选改进；是否解决必须通过真实 Run+Dataset 读回，不在离线阶段宣称修复。
 - Marquez 目标为 `http://marquez.dw-marquez.svc.cluster.local/api/v1/lineage`；OpenLineage Namespace `healthcare-platform-spark-probe`，不伪造 Airflow parent run、业务关联或人工 POST JSON。
 
 ## A4 的真实验收与限制
@@ -26,6 +27,12 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 
 离线开发依赖 `requirements-static.txt` 的 PyYAML 和 `tests/test_static.py`；静态检查验证 Token、生成 YAML、镜像/资源限制、Listener 属性和 Probe 逻辑，不触发集群。历史 README 中的 `TASK1_STATIC=PASS` / `A4_LIVE=NOT_RUN` 表示**任务 1 刚完成时的时点**；后续已有独立 Live Smoke，因此不应再将这两个时间点混为一谈。
 
-再次执行真实 Smoke、添加 S3/Parquet Dataset、修改 Operator/JAR、调度新 Pod 或清理 Job 必须遵守 [Session Coordination](../../../engineering/development/SESSION-COORDINATION.md) 与 [Safe Operations](../../../engineering/operations/SAFE-OPERATIONS.md)。未来 Person/Visit 集成方案**尚未批准**，不通过本次文档迁移落地。
+再次执行真实 Smoke、创建 PVC/写测试 Parquet、修改 Operator/JAR、调度新 Pod 或清理 Job 必须遵守 [Session Coordination](../../../engineering/development/SESSION-COORDINATION.md) 与 [Safe Operations](../../../engineering/operations/SAFE-OPERATIONS.md)。未来 Person/Visit 集成方案**尚未批准**，不通过本次文档迁移落地。
 
 [CODE](CODE.md) · [系统 README](../README.md) · [Marquez](../marquez/README.md)。
+
+### P3 新版隔离输出与清理边界
+
+- 生成资源：`portal-a4-<token>` SparkApplication、`portal-a4-<token>-source` ConfigMap、`portal-a4-<token>-output` PVC；全部仅用于隔离测试。两个 Pod 均在 `workload=platform`，共用单节点 `ReadWriteOnce` PVC；需在 Live 之前确认 Operator 挂载支持、存储卷权限、空闲资源和 JAR 下载。
+- 输出 `file:///opt/spark/portal-a4-output/<token>/summary.parquet`；`errorifexists` 确保不覆盖。测试 PVC 后续只允许针对**已确认本次 token**的资源清理，不会清理已有业务 S3/PG。
+- 实验的输入和输出 Dataset 边仍是待证事实；如文件 URI 被 OpenLineage 过滤，应保留原始日志与 Marquez GET 结果，不能通过人工 POST 假事件凑数。
