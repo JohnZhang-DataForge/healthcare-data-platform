@@ -20,6 +20,7 @@
 - [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
 
 ## 4. Guarded Live and Documentation
+- [x] 4.5 用户撤销独立 Publisher Namespace，集群严格核对后删除 `dw-az-blob`，Publisher 改为 `dw-synthea` 只读使用 Generator 现有 PVC，并迁移最近合并的 DIRECT FHIR Runtime Job 模板/回归；OIE 独立不变。
 - [x] 4.4 创建独立 `dw-az-blob` Namespace 的静态 Kubernetes YAML/边界文档/离线门禁，显式阻止跨 Namespace 挂载现有 Generator PVC；**仅代码级别完成**，真实 `kubectl` Create/Readback 及 Writer 工作负载不在此勾选范围。
 - [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，批准范围后才允许 Self-Runner 的真实外部写入。
 - [ ] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
@@ -57,7 +58,14 @@
 - 本次新 Namespace 内 Pods/Jobs/PVC/Secrets=0；NetworkPolicy **未应用**、Publisher Image/Pod/Secret/实际 Azure RBAC 均未配置，OIE Derby 和 Generator PVC 未修改、Azure Storage 写入=0。
 - 4.4 的 **Namespace 创建** 可以判为 `LIVE_VERIFIED`，但 4.1（Azure Account/身份/安全联检）、4.2（双医院真实发布）及跨 Namespace 受控 handoff **仍 OPEN**。不能以 Namespace SUCCESS 推断数据能发布。
 
-### P2.4 — `dw-az-blob` staged runtime 代码候选（2026-10-24）
+### P2.4 — DIRECT FHIR runtime 代码候选（原 dw-az-blob staging 方案已退役）（2026-10-24）
 - 源码 `azure_blob_runtime.py` 仅接受已 Stage 的 `DIRECT FHIR` 请求。使用外部给定的 Manifest SHA256 与 ready marker 双重门控；复用既有 `prepare_direct_fhir` 和 `publish_immutable`，先验证所有源 bytes/Blob Key，后初始化 SDK SP 身份。访问凭证仅从运行时注入的 Secret 环境变量读取，异常统一脱敏。
-- 单独 Dockerfile 必须由未来 Builder 注入 digest-pinned Python Base Image；`publish-direct-fhir-job.yaml.tpl` 固定 `dw-az-blob`、Restricted Pod、Job 单次运行、`emptyDir` 临时 Stage、Profile ConfigMap/同 Namespace scoped SP Secret，不使用 `dw-synthea` 的 PVC。
-- 此阶段只纳入 GitHub-hosted offline tests；**尚无** 实际 Stage producer/transport、实际 Publisher GHCR 镜像、`azure-blob-publisher-identity` Secret、Azure Container RBAC，亦没有授权/运行任何新的 Publisher Job。2.5/3.1/3.2/4.1/4.2 保持 OPEN。
+- 单独 Dockerfile 必须由未来 Builder 注入 digest-pinned Python Base Image；原 `dw-az-blob` 临时 Stage Job 已随用户决定撤销。**当前** `publish-direct-fhir-job.yaml.tpl` 已迁移到 `local-data-platform/kubernetes/manifests/synthea/blob-publisher/`，固定 `dw-synthea`、worker01，同 Namespace **只读挂载现有 Generator PVC**，引用 Profile ConfigMap/同 Namespace scoped SP Secret，不需要新 PVC；runtime 新增 `--source-mode direct-readonly-pvc`，继续校验源 Manifest 的 out-of-band pinned SHA 和原始 FHIR bytes，旧 staged marker 模式保持兼容。
+- 此阶段只纳入 GitHub-hosted offline tests；不再需要跨 Namespace Stage producer/transport，**尚无** 实际 Publisher GHCR 镜像、`azure-blob-publisher-identity` Secret、Azure Container RBAC，亦没有授权/运行任何新的 Publisher Job。2.5/3.1/3.2/4.1/4.2 保持 OPEN。
+
+### P4.5 — 用户决定恢复 Publisher 于 dw-synthea，真实回退证据（2026-10-24）
+
+- 用户撤销 `dw-az-blob` 独立隔离方案，选择 Publisher 与 Generator 共用 `dw-synthea`，避免跨 Namespace 的 PVC 文件复制与临时阶段握手。`dw-oie` 无需迁移：FHIR 通过现有 OIE API 提交、HL7 经未来 scoped fetcher 独立读回；保留原 OIE Derby/PVC 和历史验收。
+- `dw-az-blob` 曾由 [Self-Runner #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 创建（UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`）。受控删除 [Self-Runner PR #261](https://github.com/JohnZhang-DataForge/Self-Runner/pull/261)、[Run #40133855773](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133855773) **SUCCESS**：严格核对原 UID、所属标签、无额外 Namespaced 资源、全局活动 Job=0，DELETE 后独立 API 读回 **ABSENT PASS**；`dw-synthea`/`dw-oie` 原 Namespace 与 PVC UID 未变，原 PVC 仍 Bound，无 Azure/OIE 消息写入。
+- 此源码 PR 将 [新 DIRECT FHIR Runtime PR #460](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/460) 的 Job 模板迁移至 `local-data-platform/kubernetes/manifests/synthea/blob-publisher/`，使用既有 Generator PVC readOnly（volumeMount + PVC volume）、`--source-mode direct-readonly-pvc`；保留 Runtime、Dockerfile 与原 Blob 模拟/Azurite 安全契约。删除旧独立 Namespace YAML、NetworkPolicy、README、staging Job 和静态测试，更新 CODE.md/CI/Design。
+- 只读挂载必须在真正部署前核实 PVC accessModes、worker01、已有 Generator 并发作业、证书/网络/Secret Scope 与远端 Azure Account/Container/RBAC。Publisher 镜像未发布 GHCR、Secret 和运行 Job 未创建、Azure Blob PUT/GET 未执行，两医院 E2E 仍 OPEN；OpenSpec 4.1/4.2 **不打勾**。

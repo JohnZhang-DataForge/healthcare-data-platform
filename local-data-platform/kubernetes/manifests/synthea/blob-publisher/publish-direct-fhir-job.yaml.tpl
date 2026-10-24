@@ -1,14 +1,14 @@
-# STATIC DIRECT FHIR TEMPLATE ONLY; no Pod, Secret or Azure writes on merge.
-# Runtime must render/validate all __PLACEHOLDERS__ from a fresh approved
-# source SHA and exact immutable published image digest. OIE HL7 NOT wired.
-# The dw-az-blob Publisher cannot directly mount the dw-synthea Generator PVC.
-# A separate authorized Runner transfers checked bytes into emptyDir and
-# writes /handoff/.ready as exactly BLOB_HANDOFF_READY_V1 followed by LF.
+# STATIC DIRECT FHIR Job template, intended ONLY for dw-synthea on worker01.
+# Source is the EXISTING Generator PVC, read-only in the same Namespace.
+# No extra Publisher PVC and no source transfer between Namespaces.
+# Template requires an authorized Runner: image digest, source Request/Manifest SHA,
+# scoped Azure identity Secret, vetted Profile, Account URL/Container/Prefix.
+# No cluster or Azure writes on merge.
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: __PUBLISHER_JOB_NAME__
-  namespace: dw-az-blob
+  namespace: dw-synthea
   labels:
     app.kubernetes.io/name: azure-blob-publisher
     app.kubernetes.io/part-of: healthcare-clinical-producers
@@ -37,19 +37,17 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "--state-root"
-            - "/handoff"
+            - "/synthea-new-generator-state"
             - "--profile"
             - "/config/profile.json"
             - "--request-id"
             - "__SOURCE_REQUEST_ID__"
-            - "--ready-marker"
-            - "/handoff/.ready"
+            - "--source-mode"
+            - "direct-readonly-pvc"
             - "--expected-source-manifest-sha256"
             - "__PINNED_SOURCE_MANIFEST_SHA256__"
             - "--landing-prefix"
             - "__APPROVED_LANDING_PREFIX__"
-            - "--ready-timeout-seconds"
-            - "900"
           env:
             - name: AZURE_BLOB_ACCOUNT_URL
               value: __APPROVED_AZURE_ACCOUNT_URL__
@@ -85,8 +83,9 @@ spec:
             capabilities:
               drop: ["ALL"]
           volumeMounts:
-            - name: staging
-              mountPath: /handoff
+            - name: generator-source
+              mountPath: /synthea-new-generator-state
+              readOnly: true
             - name: profile
               mountPath: /config/profile.json
               subPath: profile.json
@@ -94,9 +93,10 @@ spec:
             - name: tmp
               mountPath: /tmp
       volumes:
-        - name: staging
-          emptyDir:
-            sizeLimit: 2Gi
+        - name: generator-source
+          persistentVolumeClaim:
+            claimName: synthea-new-generator-state
+            readOnly: true
         - name: profile
           configMap:
             name: __VERIFIED_HOSPITAL_PROFILE_CONFIGMAP__
