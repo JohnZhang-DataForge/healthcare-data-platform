@@ -3,7 +3,7 @@
 ## 1. 已验收的入口与未验收的出口
 
 ```text
-dw-synthea / worker01  (同 namespace 只读挂载已有 Generator PVC)
+dw-synthea / worker01  (只读验证已有 Generator PVC 的源 Job)
  existing generator frozen FHIR Bundle + Manifest
      │
      ├─ source_handoff.verify_handoff(profile=Atlanta) ── FHIR object ──┐
@@ -17,6 +17,7 @@ dw-synthea / worker01  (同 namespace 只读挂载已有 Generator PVC)
                                                       │                 │
                                           HL7 independent readback    │
                                                       ▼                 ▼
+                                    dw-az-blob / isolated ephemeral input
                                            Common immutable Blob Publisher
                                                       │
                                             existing Azure Blob Landing
@@ -24,7 +25,7 @@ dw-synthea / worker01  (同 namespace 只读挂载已有 Generator PVC)
                                                      → commit manifest LAST
 ```
 
-- Generator PVC 是 `dw-synthea` namespaced，不跨 Namespace 挂到 `dw-oie`。需要读源数据的 Producer Job 在 `dw-synthea`、worker01 上运行，明确 `readOnly: true` 访问现有 PVC；由受控 ClusterIP HTTPS 访问 `dw-oie`。未获批准不得修改 Generator PVC、创建新的持久存储或扩大网络端口。
+- **目标 Publisher Namespace 采用 `dw-az-blob`，不再放在 `dw-synthea`。** Generator PVC 是 `dw-synthea` namespaced，不能从 `dw-az-blob` 或 `dw-oie` 直接引用该 PVC。需要读源数据的受控源 Job 仍在 `dw-synthea`/worker01，只读访问现有 PVC；随后通过单独审查、实现和测试的认证数据交接将冻结且核对 SHA 的输入送至 `dw-az-blob` 的 ephemeral 空间。**该跨 Namespace 传输尚未实现**；禁止通过 HostPath、PV 重新绑定、未审查 NodePort 或日志输出病人数据来绕过。OIE 读回由后续 scoped API Fetcher 执行，现有 `dw-oie` PVC 不变。
 - FHIR 验证仍使用 `apps.clinical_producers.source_handoff.verify_handoff()`，验证冻结请求、Manifest、profile、每个 FHIR 文件大小及 SHA256；不重新生成 P0–P3 或伪造 READY。
 - Johns Creek 使用既有 OIE Channel 定义和 `hl7_readback.verify_adt_against_fhir()`；生产前应配置仅能处理/读取该 Channel 消息的 OIE 用户，**不复用 PoC 管理员凭证**作为长期 Producer 凭证。已经验收的 32 条 Derby 消息属于历史证据，**不重放**；正式发布使用新冻结 Request。
 - OIE 的原 `Channel Writer none` 是转换 PoC，不是发布目标。Publisher 作为显式下游步骤负责上传，并单独记录 HL7 byte payload/Message Control ID 与源 FHIR ID，不以 OIE HTTP 2xx 或 Derby Source TRANSFORMED 状态宣称 Azure 已交付。
@@ -47,7 +48,7 @@ Publisher 的操作顺序：
 
 ## 3. 认证/权限/Secrets 与成本
 
-- MVP 优先使用单独的 Azure Entra Service Principal，分配**目标 Landing 容器所需的最小** Storage Blob Data Contributor 权限；K8s Secret（`dw-synthea`）以只读方式供 Publisher 使用。能建立安全托管工作负载身份时可替换，但必须在设计外单独评审。不要将 Azure client secret/SAS、Bearer token、真实 Patient Data 写到 GitHub 或日志。
+- MVP 优先使用单独的 Azure Entra Service Principal，分配**目标 Landing 容器所需的最小** Storage Blob Data Contributor 权限；K8s Secret（`dw-az-blob`）以只读方式供 Publisher Job 使用。能建立安全托管工作负载身份时可替换，但必须在设计外单独评审。不要将 Azure client secret/SAS、Bearer token、真实 Patient Data 写到 GitHub 或日志。
 - 复用现有 Azure Landing Storage Account/Container；不创建新 Storage、Fabric Capacity 或新收费资源。真实出网、API 次数和对象存储可能有成本，运行前需明确授权。
 - Self-Runner 执行仅批准范围。每次操作先核对 Health/Self-Runner Main、并行 Session、活动 Jobs/DagRuns、worker01/OIE/Generator PVC 与 Azure 目标，绝不清空任何已有 Blob。
 - 初期代码 CI 使用 mock Azure Blob client 与离线模拟服务（例如 Azurite，前提是镜像/许可证审过）；任何 Azure Live Test 必须是可唯一识别的合成新 Request，证明 GET 读回、冲突和 retry 路径，并保留 Run/receipt。失败保存现场，不盲目重跑。
@@ -58,3 +59,10 @@ Publisher 的操作顺序：
 - Johns Creek 必须对新 FHIR Request 经过真实 OIE Channel 的可审计消息记录和独立 HL7 读回，只发布合法 A01；门诊跳过计数不等于发送了 HL7。实际 Blob 中 HL7 内容与 MSH-10/源 Encounter 校验一致。
 - 两条路线分别验证错误凭据、缺失数据、错医院 Profile、SHA 冲突、重复请求、部分上传失败、远端目标内容不同，以及不调用 Fabric/OMOP/旧 Local DP 的保护边界。
 - Fabric Notebook/Pipeline 消费 Landing 是后续 Change；不在本 Change 实施。
+
+## 5. 独立 Publisher Namespace 静态隔离决策（2026-10-24）
+
+- 已选定 `dw-az-blob`，独立于已验收 Generator 的 `dw-synthea` 和 OIE 的 `dw-oie`。
+- `local-data-platform/kubernetes/manifests/azure-blob/namespace.yaml` 声明 Restricted Pod Security；可选 `networkpolicy-default-deny.yaml` 是 **fail-closed** 模板，若没有 DNS、受控 OIE API 和 HTTPS Azure egress allow，不能执行发布。静态文件并非 live 集群状态。
+- 不把已有 Generator PVC 迁走、复制 Claim 或挂到新 Namespace；后续 source-side read-only Job→受控传输→ephemeral Publisher Job 需要独立交接 Contract、运行镜像、凭证及网络预检。
+- Live 仅能在用户授权具体动作、检查 dw-az-blob 是否已存在和所有并行工作、绑定 Main SHA 后执行；Namespace 创建不得隐式创建 Storage/Secret/Pod、修改 PV 或发起 Azure 写入。

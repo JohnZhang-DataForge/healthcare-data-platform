@@ -2,12 +2,14 @@ name: Healthcare Immutable Azure Blob Publisher Offline Tests
 on:
   pull_request:
     paths:
+      - "local-data-platform/kubernetes/manifests/azure-blob/**"
       - "local-data-platform/apps/clinical_producers/blob_publish_contract.py"
       - "local-data-platform/apps/clinical_producers/azure_blob_publisher.py"
       - "local-data-platform/apps/clinical_producers/direct_fhir_publisher.py"
       - "local-data-platform/apps/clinical_producers/oie_hl7_publisher.py"
       - "local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt"
       - "local-data-platform/contracts/clinical_producers/**"
+      - "local-data-platform/tests/clinical_producers/test_blob_namespace_contract.py"
       - "local-data-platform/tests/clinical_producers/test_blob_publish_contract.py"
       - "local-data-platform/tests/clinical_producers/test_azure_blob_publisher*.py"
       - "local-data-platform/tests/clinical_producers/test_direct_fhir_publisher.py"
@@ -24,6 +26,8 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
+      - name: Dedicated Azure Blob Namespace static safety contract
+        run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_namespace_contract.py -v
       - name: Pure offline contract tests
         run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
       - name: Pure offline immutable publisher and fault-injection tests

@@ -1,0 +1,14 @@
+# Apply only together with an audited network policy rollout: this blocks
+# outbound DNS, the internal OIE endpoint and Azure HTTPS until explicitly
+# allowed by separate scoped egress policy. Never claim this alone is a
+# working deployment. No cluster changes are performed by this file.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: azure-blob-publisher-default-deny
+  namespace: dw-az-blob
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

@@ -317,3 +317,14 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [Azure Blob offline CI](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only Fake/Azurite + OIE adapter；没有真实 OIE/K8s/Azure I/O |
 
 **重要**：`OIEReadback` 是 Live OIE 消息 Fetcher 的输入合同，本身不能证明其来自真实 Derby；生产执行必须由经授权的 OIE scoped-account 读取新 Request 消息 ID 并证实返回的 message bytes。旧 #40128211780 的 32 条消息不可重放，真实 Blob 交付须独立做 K8s→Azure 双医院 E2E。
+
+## Azure Blob Publisher 独立 Namespace（静态，尚未部署）
+
+| 文件 | 职责与状态 |
+| --- | --- |
+| [dw-az-blob namespace](../../../../local-data-platform/kubernetes/manifests/azure-blob/namespace.yaml) | 声明 Publisher 独立 `dw-az-blob` Namespace 和 Restricted Pod Security；不是实际集群创建证据 |
+| [default-deny NetworkPolicy](../../../../local-data-platform/kubernetes/manifests/azure-blob/networkpolicy-default-deny.yaml) | 仅静态隔离候选，应用后将同时阻断 DNS/OIE/Azure，必须有独立经审查的出站白名单方案才可启用 |
+| [isolated Publisher boundary](../../../../local-data-platform/kubernetes/manifests/azure-blob/README.md) | 声明 `dw-synthea` PVC 不可跨 Namespace 挂载，未来需独立只读源到 ephemeral 输入的授权交接，不修改 OIE/PVC |
+| [namespace isolation tests](../../../../local-data-platform/tests/clinical_producers/test_blob_namespace_contract.py) | Hosted-only 静态边界断言；不调用 kubectl、不创建 Namespace/Secret、无 Azure 操作 |
+
+`dw-az-blob` 是目标运行隔离方案；实际 Namespace 创建、Publisher Pod/Job、OIE Fetcher、Azure 最小权限 Secret 均未获本静态 PR 的 Runtime 验收。
