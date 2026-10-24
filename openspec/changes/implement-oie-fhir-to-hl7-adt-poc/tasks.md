@@ -51,3 +51,8 @@ The previously authored durable manifests remain **later-phase source definition
 
 - 官方 OIE 4.7.0 tag 已核实解析为 immutable upstream `f9ba73e28de151b041b97e7383e0ab9d2c4f1799`；该 release 不提供已打包的 4.7.0 Docker image。新增只在 GitHub-hosted runner 构建官方源 `jre-run` target、只读版本/用户检查以及临时 loopback HTTPS 启动的 CI；不会写入 GHCR、K8s、Blob、OMOP。
 - Task 2.2 **保持 OPEN**，直到该工作流在确切 Head 上构建/启动 PASS，记录测试 image ID、依赖 Digest 并由独立流程发布可部署 registry Digest；只有 workflow 定义不等于已经成功构建。2.4 OIE Channel 真实转换仍 OPEN。
+
+### GHCR immutable OIE 4.7.0 publication gate (2026-10-24)
+
+- 添加仅 Main 触发的独立 SHA 标签 GHCR Release Workflow，锁定官方 OIE 4.7.0 源码 Commit，必须通过临时 Docker HTTPS 启动测试才能推送镜像；输出 registry Digest 与实际非 root UID/GID，不覆盖 `latest`。
+- **仅此代码 PR 不等于 Publish**：2.2 保持 OPEN，直到 Main 后发布 Run 实际 PASS、Registry Digest 独立核对。任何在 `dw-oie` 创建 K8s 资源仍需额外资源检查与协调。

@@ -216,3 +216,9 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | --- | --- |
 | [OIE pinned build README](../../../../local-data-platform/images/oie/README.md) | 上游 v4.7.0 精确 Commit、原 Dockerfile target/依赖与 GHCR 交付边界 |
 | [OIE 4.7 isolated image smoke](../../../../.github/workflows/oie-470-isolated-image-smoke.yml) | GitHub-hosted 官方源 Clean Build 与启动测试，不推送镜像、不改共享环境 |
+
+## OIE 4.7 GHCR 固定镜像发布
+
+| 文件 | 作用 |
+| --- | --- |
+| [oie-470-ghcr-release.yml](../../../../.github/workflows/oie-470-ghcr-release.yml) | 仅 Main、正式 4.7.0 上游精确源码及临时容器启动 PASS 后推送 `healthcare-oie:git-<MainSHA>`，独立 Digest 读回，不改 `latest` 或共享 K8s |

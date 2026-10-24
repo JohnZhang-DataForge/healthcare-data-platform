@@ -1,0 +1,142 @@
+name: Eclipse OIE 4.7.0 GHCR Immutable Release
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/oie-470-ghcr-release.yml"
+      - "local-data-platform/images/oie/**"
+  push:
+    branches: [main]
+    paths:
+      # Release only after explicit review of the workflow itself.
+      - ".github/workflows/oie-470-ghcr-release.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: oie-470-ghcr-release
+  cancel-in-progress: false
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify source and publication boundaries
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -Fq 'f9ba73e28de151b041b97e7383e0ab9d2c4f1799' .github/workflows/oie-470-ghcr-release.yml
+          grep -Fq 'ghcr.io/johnzhang-dataforge/healthcare-oie' .github/workflows/oie-470-ghcr-release.yml
+          test -f local-data-platform/kubernetes/manifests/oie/debug/deployment.yaml.tpl
+          grep -Fq 'emptyDir:' local-data-platform/kubernetes/manifests/oie/debug/deployment.yaml.tpl
+          echo OIE_RELEASE_STATIC_PREFLIGHT=PASS
+          echo SHARED_KUBERNETES_MUTATION=NO
+
+  publish:
+    name: Build and publish official-source OIE 4.7.0 to immutable GHCR digest
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/johnzhang-dataforge/healthcare-oie
+      UPSTREAM_SHA: f9ba73e28de151b041b97e7383e0ab9d2c4f1799
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: OpenIntegrationEngine/engine
+          ref: f9ba73e28de151b041b97e7383e0ab9d2c4f1799
+          path: _oie-upstream
+          persist-credentials: false
+      - name: Verify immutable official upstream revision
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          test "$(git -C _oie-upstream rev-parse HEAD)" = "$UPSTREAM_SHA"
+          grep -Fxq 'version = 4.7.0' _oie-upstream/server/conf/mirth.properties
+          echo "SOURCE_OIE_VERSION=4.7.0"
+          echo "SOURCE_OIE_SHA=$UPSTREAM_SHA"
+      - name: Build OIE official Dockerfile jre-run (no latest)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ref="$IMAGE:git-$GITHUB_SHA"
+          echo "RELEASE_IMAGE=$ref" >> "$GITHUB_ENV"
+          docker build --pull --target jre-run --progress=plain \
+            --build-arg GRADLE_BUILD_ARGS="-PdisableSigning=true" \
+            -t "$ref" _oie-upstream
+          test "$(docker image inspect "$ref" --format '{{.Config.User}}')" = engine
+          docker run --rm --entrypoint /bin/sh "$ref" \
+            -c "grep -Fxq 'version = 4.7.0' /opt/engine/conf/mirth.properties"
+          echo OIE_470_SOURCE_IMAGE_BUILD=PASS
+      - name: Disposable HTTPS startup gate with no PVC/Blob
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          container="oie-ghcr-release-$GITHUB_RUN_ID"
+          conf="$RUNNER_TEMP/oie-$GITHUB_RUN_ID-bootstrap.properties"
+          cleanup() {
+            docker rm -fv "$container" >/dev/null 2>&1 || true
+            rm -f "$conf" || true
+          }
+          trap cleanup EXIT
+          python3 -c 'import secrets,sys; open(sys.argv[1],"w").write("server.initialadminpassword = " + secrets.token_urlsafe(32) + "\n")' "$conf"
+          engine_uid="$(docker run --rm --entrypoint id "$RELEASE_IMAGE" -u)"
+          engine_gid="$(docker run --rm --entrypoint id "$RELEASE_IMAGE" -g)"
+          [[ "$engine_uid" =~ ^[0-9]+$ && "$engine_gid" =~ ^[0-9]+$ ]]
+          sudo chown "$engine_uid:$engine_gid" "$conf"
+          sudo chmod 400 "$conf"
+          docker run -d --name "$container" --cpus 2 --memory 4g \
+            -p 127.0.0.1:18443:8443 \
+            --mount "type=bind,source=$conf,target=/run/secrets/mirth_properties,readonly" \
+            "$RELEASE_IMAGE" >/dev/null
+          healthy=no
+          for attempt in $(seq 1 90); do
+            test "$(docker inspect "$container" --format '{{.State.Running}}')" = true || {
+              echo OIE_SERVER_EXITED; exit 1;
+            }
+            status="$(curl --insecure --silent --output /dev/null --write-out '%{http_code}' \
+              --connect-timeout 2 --max-time 4 https://127.0.0.1:18443/ || true)"
+            if [[ "$status" =~ ^[234][0-9][0-9]$ ]]; then healthy=yes; break; fi
+            sleep 10
+          done
+          test "$healthy" = yes
+          echo OIE_470_ISOLATED_HTTPS_STARTUP=PASS
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push SHA-tagged image and read back immutable digest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$RELEASE_IMAGE" = "$IMAGE:git-$GITHUB_SHA"
+          docker push "$RELEASE_IMAGE"
+          docker pull "$RELEASE_IMAGE"
+          digest="$(docker image inspect "$RELEASE_IMAGE" --format '{{range .RepoDigests}}{{println .}}{{end}}' | grep -E '^ghcr.io/johnzhang-dataforge/healthcare-oie@sha256:[a-f0-9]{64}$' | head -n 1)"
+          [[ "$digest" =~ ^ghcr\.io/johnzhang-dataforge/healthcare-oie@sha256:[a-f0-9]{64}$ ]]
+          user_id="$(docker run --rm --entrypoint id "$RELEASE_IMAGE" -u)"
+          group_id="$(docker run --rm --entrypoint id "$RELEASE_IMAGE" -g)"
+          echo "OIE_REGISTRY_DIGEST=$digest"
+          echo "OIE_ENGINE_UID=$user_id"
+          echo "OIE_ENGINE_GID=$group_id"
+          echo "OIE_GHCR_PUBLISH=PASS"
+          echo "LATEST_TAG_UPDATED=NO"
+          echo "OIE_K8S_DEPLOYED=NO"
+          {
+            echo '## OIE v4.7.0 Immutable Release'
+            echo "- Healthcare Main SHA: $GITHUB_SHA"
+            echo "- Upstream commit: $UPSTREAM_SHA"
+            echo "- Digest: $digest"
+            echo "- Numeric UID/GID: $user_id / $group_id"
+            echo '- No shared Kubernetes, PVC, OMOP, Azure Blob or Fabric mutation.'
+          } >> "$GITHUB_STEP_SUMMARY"
