@@ -241,3 +241,14 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 
 - [Live PV/PVC/Derby #40121734522](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121734522)：`oie` SC + `dw-oie/oie-state` 10Gi，`/data/oie` 实际 PV，Retain、worker01、Derby RW PASS；未重启 local-path。
 - [Pod 重建后的数据读回 #40122005828](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40122005828)：`oie-debug` 单次 Recreate 后读回 PVC 相同数据 PASS，测试文件已清理。一个卷同时承担 Derby 与 appdata，不需要第二个文件持久卷。OIE clinical Channel/FHIR→HL7 与 Azure Blob 路线尚待单独验收。
+
+
+## Johns Creek OIE importable Channel MVP (not live yet)
+| Path | Role |
+| --- | --- |
+| [OIE bundled upstream raw reader](../../../../local-data-platform/apps/clinical_producers/oie/upstream-raw-reader.xml) | OIE v4.7.0 official test-export Channel XML, preserves XStream structure |
+| [OIE Channel builder](../../../../local-data-platform/apps/clinical_producers/oie/build_channel.py) | Replaces only channel identity and preprocessor JS using canonical ADT mapping |
+| [FHIR event splitter](../../../../local-data-platform/apps/clinical_producers/oie/fhir_events.py) | Pure read-only Patient+Encounter per event, clinical classification is done inside OIE |
+| [OIE import PoC notes](../../../../local-data-platform/apps/clinical_producers/oie/CHANNEL-POC.md) | Message API and runtime gates, no public listener |
+| [OIE import static tests](../../../../local-data-platform/tests/clinical_producers/test_oie_channel_build.py) | XML parse and event slicing contract tests |
+| [OIE channel static CI](../../../../.github/workflows/oie-channel-static.yml) | Hosted-only Channel build test; does not import/deploy |
