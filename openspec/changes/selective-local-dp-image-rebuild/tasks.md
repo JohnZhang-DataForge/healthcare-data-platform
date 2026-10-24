@@ -43,3 +43,13 @@
 - [ ] 4.6 以候选 Digest 在隔离环境完成实际业务/Portal 验收，保留可审计验收证据；仅在用户批准的后续独立 `promote-tested` 行为中将同一个 Digest 晋级 `:latest`。晋级之后还需检查业务实际使用的 imageID，不能将 Tag 变化当作 Pod 已自动使用新版本。
 
 **当前风险/待协调**：`portal-v1.0` 只是一份候选镜像 Tag，不代表 Portal DAG GitSync 已隔离；用户未选中具体 8 镜像中的哪一个，因此不会猜测目标 GHCR Package 或推送任意镜像。上述实现变更可以走源代码 PR/CI，实际 publish/promote 分别需精确目标和资源预检。
+
+## 5. Current Local-dev `latest` simplification — supersedes candidate default for Portal
+
+> 2026-10-24 最新决定：Local 开发使用已有 DAG/KPO 的 `:latest`，不为 `portal-v1.0` 来回调整镜像引用；可选候选及 Promote 流程**保留**，但不是当前 Portal P2/P3/P4 的必经路径。上述第 4 节为历史已实现候选能力和原有待验收项，不能当作本轮唯一默认开发路线。
+
+- [x] 5.1 只读确认 Main 与 Portal P2 PR #416、现有 8 镜像依赖、Airflow GitSync + KPO `:latest` 引用和 Always 策略；记录新 Pod 使用新镜像、已运行 Pod 不自动更新的事实。
+- [x] 5.2 增加原 single-image Workflow 手工 `publish-latest`：仅该包新镜像 SHA/Run tag，先镜像旧 `:latest` 到 unique rollback tag 并核验旧 Digest，再 Push 新 latest 并 Registry Readback；原 `validate`（默认）、候选 `publish`、可选 promote-tested 保留。非 Main / PR 不发布。
+- [x] 5.3 同步 8 镜像边界负向/正向 Policy Test、Developer CODE、OpenSpec 与 Portal Change 设计。
+- [ ] 5.4 PR 最终 SHA CI/合并/Main 读回证据；静态/离线测试不等于 GHCR Push 成功。
+- [ ] 5.5 仅在后续具体源码要求重建时，核实精确受影响 `image` / parent Digest、活动 GHCR/Session/Pod/Writer 状态，单独授权手动 `publish-latest`；本次变更不触发 Workflow Dispatch，不修改业务正在使用的标签。

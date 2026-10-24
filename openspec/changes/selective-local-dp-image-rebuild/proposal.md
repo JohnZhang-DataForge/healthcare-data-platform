@@ -29,3 +29,9 @@
 ## Follow-up: portal-v1.0 staged candidate (2026-10-24)
 
 按用户新的发布策略，单镜像应先发布独立可测试的候选标签 `portal-v1.0`，保留真实 Digest；业务仍使用原 `:latest`。通过隔离验证后，再在一个独立、显式批准的 Workflow 中把**完全相同的 Digest** 设置为 `:latest`，不能在晋级时重新构建。现有一次性 `promote-latest` 将删除，以防未经验证的构建覆盖业务镜像。由于 Portal P2 Airflow DAG 属于 GitSync 而非 8 个镜像包，镜像候选发布和独立 DAG 版本测试属于不同验收对象；当前镜像目标未指定，不能推测并发布无关包。
+
+## Current decision 2026-10-24 — local-dev latest (supersedes the staged-candidate default above)
+
+用户现决定为当前 Local DP + Portal 开发直接使用已引用的 `:latest`，减少为了测试在 DAG/KPO/Helm 中切换镜像标签。单镜像 Workflow 保留可选的候选 `publish` 和独立 `promote-tested` 作将来稳定发布使用；本轮新增明确手工 `publish-latest`：仅选中镜像 Clean Build + no-network Smoke、推不可复用 SHA/Run Tag，先保存旧 `latest` Digest 的不可复用备份 Tag，再覆写该包 `latest` 并做 Registry 独立读回。其他七个镜像不重建、不更新。Main Push/PR 默认不发布，且实际 GHCR 写入仍需独立执行授权。
+
+Portal P2 的 `new_only_omop_consumer.py` 属 GitSync DAG，不靠 Image 发布部署；P3/P4 按 Listener/Renderer/Writer 的实际源码封装路径，**只**重建受影响镜像及必要父子依赖。新 Pod 按 `image_pull_policy=Always` 拉取新 `latest`，但已运行 Pod 不会自动更换版本，必须记录业务 Run 的真实 imageID/Digest。GitSync 更新影响共享 DAG 解析，与 `latest` 镜像发布是两个不同风险 Gate。历史候选方案保留为非默认选项，不作为当前 Portal P2/P3/P4 的开发前置。

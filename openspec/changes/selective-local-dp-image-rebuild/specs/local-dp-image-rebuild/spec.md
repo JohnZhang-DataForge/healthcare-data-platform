@@ -15,7 +15,7 @@ The maintained single-image Workflow SHALL accept a fixed allowlist of the eight
 
 ### Requirement: Publication SHALL be separately and explicitly authorized by operation
 
-The single-image Workflow SHALL default to `validate` without GHCR mutation. Explicit `publish` on Main SHALL push one unique Run tag and a named candidate tag (default `portal-v1.0`), never `:latest`. A distinct manual `promote-tested` workflow SHALL promote the **same tested Digest**, without rebuilding.
+The single-image Workflow SHALL default to `validate` without GHCR mutation. On Main, explicit `publish` SHALL publish a named candidate without changing latest; explicit `publish-latest` SHALL publish ONLY the selected image as latest after smoke, with an immutable Run tag and verified rollback snapshot. The optional `promote-tested` workflow SHALL still support later tested candidate releases.
 
 #### Scenario: A DAG-only change is merged
 
@@ -26,7 +26,7 @@ The single-image Workflow SHALL default to `validate` without GHCR mutation. Exp
 #### Scenario: A feature-branch publish is requested
 
 - **GIVEN** a manual Workflow selection on a non-Main ref
-- **WHEN** `publish` or `promote-tested` is selected
+- **WHEN** `publish`, `publish-latest`, or `promote-tested` is selected
 - **THEN** validation SHALL fail before GHCR publishing
 
 ### Requirement: Child image parent SHALL be recorded and immutable for the build
@@ -50,9 +50,9 @@ The existing full image rebuild workflow SHALL no longer respond to normal PR or
 - **WHEN** Main is updated
 - **THEN** the full eight-image workflow SHALL remain idle unless separately manually dispatched
 
-### Requirement: Production latest MUST be the exact tested candidate digest
+### Requirement: Optional candidate promotion MUST preserve the tested digest
 
-Only an explicitly requested manual promotion SHALL replace an existing `:latest` tag. Promotion SHALL require a valid release candidate tag (default `portal-v1.0`), exact `sha256` Digest, and a nonempty independent test evidence reference. The runner SHALL verify that the candidate tag resolves to the expected Digest immediately before publishing and SHALL NOT invoke a new Docker build for promotion.
+For the optional staged-release workflow, manual `promote-tested` SHALL require a valid release candidate tag (default `portal-v1.0`), exact `sha256` Digest, and a nonempty independent test evidence reference. The runner SHALL verify that the candidate tag resolves to the expected Digest immediately before publishing and SHALL NOT invoke a new Docker build for promotion.
 
 #### Scenario: A candidate is published but not accepted
 
@@ -81,3 +81,27 @@ A business image candidate tag SHALL NOT be treated as evidence that GitSync-man
 - **GIVEN** the eight existing Dockerfiles do not package that DAG's OpenLineage opt-in
 - **WHEN** any image receives a `portal-v1.0` tag
 - **THEN** that tag by itself SHALL NOT qualify as P2 DAG/Provider or business lineage acceptance
+
+### Requirement: Local development single-image latest SHALL be explicitly requested and reversible
+
+Local development MAY use `publish-latest` after selected-image Clean Build and no-network Smoke. It MUST publish a unique SHA/Run tag, verify and preserve the previous latest Digest under an immutable rollback tag, then update only the selected package's `:latest` and verify Registry readback. PR/Main pushes MUST NOT auto-publish. No workflow in this change SHALL alter a running Pod, shared Airflow scheduler, or business database.
+
+#### Scenario: Local portal-related image code needs an updated runtime
+
+- **GIVEN** the user authorizes `publish-latest` for one of the eight images on Main, with no conflicting release
+- **WHEN** the selected Docker build and smoke succeed and the previous latest is safely backed up
+- **THEN** only the selected package's `:latest` SHALL be updated, leaving the seven siblings unchanged
+- **AND** the new Digest, prior Digest and rollback tag SHALL be recorded for controlled rollback
+
+#### Scenario: The previous latest cannot be read or backed up
+
+- **GIVEN** the Registry lookup of previous latest or rollback backup fails
+- **WHEN** `publish-latest` is requested
+- **THEN** the workflow SHALL fail before replacing the existing `:latest`
+
+#### Scenario: Portal P2 source is DAG-only
+
+- **GIVEN** `new_only_omop_consumer.py` is delivered through GitSync instead of the eight image Dockerfiles
+- **WHEN** Airflow/OpenLineage integration is updated
+- **THEN** no image rebuild is necessary solely due to this DAG source change
+- **AND** Provider/Transport and real Marquez Job/Run verification remain independent gates

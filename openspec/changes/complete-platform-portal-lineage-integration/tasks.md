@@ -48,3 +48,10 @@
 - [ ] 7.3 全部相应真实验收、Merge/Main/Run 证据确认后才申请 Archive；独立 Dashboard/公网只读展示属于未来独立 Change。
 
 **Next action after this planning PR:** 2.2 当前服务/历史事件的受控只读 Live Inventory，随后并行推进 3.1 / 4.1。未满足运行安全门槛时 HOLD Live，但可继续无副作用源码/静态测试。
+
+## 8. Local latest / image-closure decision (2026-10-24; current effective plan)
+
+- [x] 8.1 核对 Airflow `new_only_omop_consumer.py`、`landing_spark_processing.py`：实际镜像引用现有 `:latest`，KPO `image_pull_policy=Always`；P2 GitSync 的 DAG Source 不在这八个镜像中。无需为开发添加 `portal-v1.0` 镜像切换逻辑或第九个 Image。
+- [x] 8.2 调整发布设计：Local 开发优先手工 `publish-latest` 单镜像；旧镜像回退 Tag/旧 Digest 与新 SHA/Run Digest 均可追溯；8 镜像全量更新仍仅供显式人工使用；保留候选晋级作为非默认方式。
+- [ ] 8.3 检查 PR/CI 及 Main 启用结果，PR #416 保持独立；仅在真实 P3/P4 代码封装依赖改变时识别目标镜像并重建。**不在本 Change 内启动实际 GHCR 发布/业务 DAG**。
+- [ ] 8.4 P2 本体需完成 PR #416 与 GitSync 同步及 Provider/Transport 实机行为验证；P3/P4/P5 按既有验收 Gate，不能因 latest 方案简化而跳过业务 E2E 或血缘验证。

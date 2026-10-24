@@ -40,20 +40,42 @@ class SelectiveImagePlanTests(unittest.TestCase):
                 self.assertIn("ARG BASE_IMAGE=" + plan["parent_repo"] + ":latest",
                               (ROOT / plan["dockerfile"]).read_text())
 
-    def test_publish_candidates_only_and_no_build_to_latest_path(self):
-        for operation, publish in (("validate", "false"), ("publish", "true")):
+    def test_explicit_dev_latest_and_optional_candidate_modes(self):
+        for operation, publish, candidate, promote in (
+            ("validate", "false", "false", "false"),
+            ("publish", "true", "true", "false"),
+            ("publish-latest", "true", "false", "true"),
+        ):
             with self.subTest(operation=operation):
                 plan = module.build_plan("synthea", operation, "refs/heads/main",
                                          release_tag="portal-v1.0")
                 self.assertEqual(plan["publish"], publish)
-                self.assertEqual(plan["promote"], "false")
-                self.assertEqual(plan["release_tag"], "portal-v1.0")
+                self.assertEqual(plan["publish_candidate"], candidate)
+                self.assertEqual(plan["promote"], promote)
         for ref in ("refs/heads/feature/foo", "refs/tags/v1", "", "main"):
-            with self.subTest(ref=ref):
-                with self.assertRaisesRegex(ValueError, "REQUIRES_MAIN"):
-                    module.build_plan("synthea", "publish", ref)
-        with self.assertRaisesRegex(ValueError, "NOT_ALLOWLISTED"):
-            module.build_plan("synthea", "promote-latest", "refs/heads/main")
+            for operation in ("publish", "publish-latest"):
+                with self.subTest(ref=ref, operation=operation):
+                    with self.assertRaisesRegex(ValueError, "REQUIRES_MAIN"):
+                        module.build_plan("synthea", operation, ref)
+
+    def test_latest_is_selected_only_manual_main_and_preserves_rollback(self):
+        single = (ROOT / ".github/workflows/local-dp-image-rebuild-single.yml").read_text()
+        self.assertIn("          - publish-latest", single)
+        self.assertIn("if: steps.plan.outputs.promote == 'true'", single)
+        self.assertIn("if: steps.plan.outputs.publish_candidate == 'true'", single)
+        self.assertIn('docker push "$IMAGE_TAG"', single)
+        self.assertIn("pre-latest-run", single)
+        self.assertIn("PREVIOUS_DIGEST", single)
+        self.assertIn('docker push "${PACKAGE}:latest"', single)
+        self.assertIn("LATEST_REGISTRY_READBACK_MISMATCH", single)
+        self.assertLess(single.index("Selected image no-network smoke before any publication"),
+                        single.index("Explicit one-image latest release with rollback snapshot"))
+        self.assertLess(single.index("docker push \"${PACKAGE}:${BACKUP_TAG}\""),
+                        single.index("docker push \"${PACKAGE}:latest\""))
+        self.assertLess(single.index("test \"$BACKUP_DIGEST\" = \"$PREVIOUS_DIGEST\""),
+                        single.index("docker push \"${PACKAGE}:latest\""))
+        self.assertIn("image_pull_policy", (ROOT / "local-data-platform/airflow/dags/new_only_omop_consumer.py").read_text())
+        self.assertNotIn("push:", single.split("permissions:", 1)[0])
 
     def test_candidate_release_tag_validation(self):
         for tag in ("portal-v1.0", "portal-v1.0.1", "synthea-v2.1"):
@@ -95,8 +117,8 @@ class SelectiveImagePlanTests(unittest.TestCase):
         promotion = (ROOT / ".github/workflows/local-dp-image-promote-tested.yml").read_text()
         self.assertIn("docker build", candidate)
         self.assertIn("portal-v1.0", candidate)
-        self.assertNotIn("promote-latest", candidate)
-        self.assertNotIn('docker push "${PACKAGE}:latest"', candidate)
+        self.assertNotIn("          - promote-latest", candidate)
+        self.assertIn('docker push "${PACKAGE}:latest"', candidate)
         self.assertIn("docker push", promotion)
         self.assertIn('docker tag "$PINNED"', promotion)
         self.assertNotIn("docker build", promotion)
@@ -153,7 +175,7 @@ class SelectiveImagePlanTests(unittest.TestCase):
         self.assertIn("docker build", source)
         self.assertIn("docker push", source)
         self.assertIn('steps.plan.outputs.release_tag', source)
-        self.assertNotIn('docker push "${PACKAGE}:latest"', source)
+        self.assertIn('docker push "${PACKAGE}:latest"', source)
         self.assertIn("GITHUB_RUN_ID", source)
         self.assertNotIn("build_base()", source)
         self.assertNotIn("build_child()", source)
