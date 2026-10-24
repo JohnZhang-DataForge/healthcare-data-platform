@@ -36,3 +36,9 @@
 ### P2.3 — FHIR DIRECT adapter 离线验收（2026-10-24）
 - [PR #452](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/452) 新增 `direct_fhir_publisher.py`（不含硬编码医院身份），调用已验收 P4.1 `verify_handoff` → 校验外部 Profile 为 `FHIR_R4/DIRECT` → 从只读冻结请求路径读取实际 FHIR bytes → `publish_immutable`。只使用共享 Publisher，不改 Generator、OIE、Local DP；不运行真实 Azure。
 - 离线 Fake Blob 测试覆盖 Atlanta Profile、Manifest SHA、逐字节读回、同请求重试、篡改和错路线拒绝。Healthcare [Run #40131636131](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40131636131) 的 Pure Offline/Fault + 本地 Azurite SDK 两 Job PASS；测试源 HEAD `202215fc2b700b700385c89dbf3118b8f3bdf2b7`。因此 2.3 标记离线实现完成；3.1 仍 OPEN 直到真实 Atlanta Azure Landing GET/Manifest E2E，4.2 也继续 OPEN。
+
+
+### P3.2 — OIE HL7 发布适配器离线候选（2026-10-24）
+- `oie_hl7_publisher.py` 从真实 Generator P4.1 源 Manifest 重新核验 FHIR/Encounter，严格要求每个 Encounter 有对应的 **新** OIE persisted message readback：Channel ID、Message ID、实际转换 bytes / SKIP marker，并执行 `verify_adt_against_fhir` 复核 A01 住院和 MSH-10 / 来源关联。
+- IMP 不得 SKIP；AMB 不可伪造 ADT A01；仅上传通过验证的 HL7 原始 Bytes，skip-only 禁止伪造成功 Manifest；复用已验收 `publish_immutable`。
+- 此处仅离线 Mock 结果，**未授权使用真实 OIE 的 Derby 消息或 Azure PUT**，3.2 / 4.2 保持 OPEN，后续经授权才实现受控 OIE 逐条 Fetcher 与 Live 新 Request E2E。
