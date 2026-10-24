@@ -306,3 +306,14 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [Azure Blob offline CI](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only 跑本适配器和共享 Publisher Fake/Azurite 测试，不访问真实 K8s/Azure |
 
 此 Adapter **仅通过调用方显式提供 backend 才可能执行 Blob PUT**，仍不得以单测或已验收 Generator/OIE 结果推断真实 Landing 已有数据；实际执行需新的 Request、只读 PVC、最小权限和操作前授权。
+
+
+## OIE persisted HL7 ADT delivery adapter（Johns Creek Profile；离线候选）
+
+| 文件 | 职责与边界 |
+| --- | --- |
+| [oie_hl7_publisher.py](../../../../local-data-platform/apps/clinical_producers/oie_hl7_publisher.py) | 外部 `FHIR_R4/HL7_V2/OIE` Profile + 实际 OIE 逐 Encounter 消息读回（Channel ID / Message ID / bytes 或 SKIP）→ 独立 ADT A01/FHIR 关联验证 → 共享 Blob Publisher；不执行 OIE POST，不读/改历史 Derby |
+| [test_oie_hl7_publisher.py](../../../../local-data-platform/tests/clinical_producers/test_oie_hl7_publisher.py) | 离线源 FHIR 冻结 Manifest、消息覆盖、IMP A01/AMB SKIP、HL7 Control ID、错医院/Channel/消息身份、幂等与无伪成功 Manifest 测试 |
+| [Azure Blob offline CI](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only Fake/Azurite + OIE adapter；没有真实 OIE/K8s/Azure I/O |
+
+**重要**：`OIEReadback` 是 Live OIE 消息 Fetcher 的输入合同，本身不能证明其来自真实 Derby；生产执行必须由经授权的 OIE scoped-account 读取新 Request 消息 ID 并证实返回的 message bytes。旧 #40128211780 的 32 条消息不可重放，真实 Blob 交付须独立做 K8s→Azure 双医院 E2E。
