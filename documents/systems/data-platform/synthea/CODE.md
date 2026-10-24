@@ -252,3 +252,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [OIE import PoC notes](../../../../local-data-platform/apps/clinical_producers/oie/CHANNEL-POC.md) | Message API and runtime gates, no public listener |
 | [OIE import static tests](../../../../local-data-platform/tests/clinical_producers/test_oie_channel_build.py) | XML parse and event slicing contract tests |
 | [OIE channel static CI](../../../../.github/workflows/oie-channel-static.yml) | Hosted-only Channel build test; does not import/deploy |
+
+
+## OIE 4.7 channel import isolated debug gate
+[GitHub-hosted Channel import smoke](../../../../.github/workflows/oie-channel-isolated-import.yml) uses a throwaway OIE 4.7.0 official-source image/Derby and diagnostic Java 21 module access to expose the actual channel-create failure. Never touches `dw-oie` PVC or uses patient data; API import acceptance still requires a separate live Run.
