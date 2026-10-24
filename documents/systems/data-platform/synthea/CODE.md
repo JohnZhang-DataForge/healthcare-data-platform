@@ -256,3 +256,11 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 
 ## OIE 4.7 channel import isolated debug gate
 [GitHub-hosted Channel import smoke](../../../../.github/workflows/oie-channel-isolated-import.yml) uses a throwaway OIE 4.7.0 official-source image/Derby and diagnostic Java 21 module access to expose the actual channel-create failure. Never touches `dw-oie` PVC or uses patient data; API import acceptance still requires a separate live Run.
+
+
+## OIE HL7 2.5.1 independent message readback
+| Path | Role |
+| --- | --- |
+| [HL7 source readback](../../../../local-data-platform/apps/clinical_producers/oie/hl7_readback.py) | Strict segment and source identity/control/time match for **actual OIE returned** ADT^A01 messages; no cloud code |
+| [HL7 readback tests](../../../../local-data-platform/tests/clinical_producers/test_oie_hl7_readback.py) | Rejects wrong class, timestamp, version, control IDs, malformed segments |
+| [HL7 readback CI](../../../../.github/workflows/oie-hl7-readback-unit.yml) | Isolated unit/contract tests; not OIE runtime acceptance |
