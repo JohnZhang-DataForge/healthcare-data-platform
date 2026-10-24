@@ -130,15 +130,12 @@ def select_writes(entries, batch, entity, source_name):
     return None
 
 
-def parent_matches_airflow(entry, airflow_runs):
+def parent_matches_airflow(entry, airflow_runs, role):
     facet = (entry["detail"].get("facets") or {}).get("parent") or {}
     parent_job = facet.get("job") or {}
     parent_run = facet.get("run") or {}
     return (parent_job.get("namespace") == AIRFLOW_NS
-            and parent_job.get("name") in (
-                "new_only_omop_consumer." + AIRFLOW_TASK["person"],
-                "new_only_omop_consumer." + AIRFLOW_TASK["encounter"],
-                "new_only_omop_consumer." + AIRFLOW_TASK["reconcile"])
+            and parent_job.get("name") == "new_only_omop_consumer." + AIRFLOW_TASK[role]
             and parent_run.get("runId") in airflow_runs)
 
 
@@ -156,13 +153,12 @@ def evaluate(data, batch):
     complete_input = len(expected) == 2 and expected <= observed
     terminal = complete_input and all(e["state"] == "COMPLETED"
                                       for e in matching)
-    airflow_ids = {
-        x["id"] for runs in data["airflow"].values() for x in runs
-        if x.get("state") == "COMPLETED"
-    }
-    parent_verified = any(
-        parent_matches_airflow(e, airflow_ids)
-        for entries in roles.values() for e in entries
+    parent_verified = all(
+        any(parent_matches_airflow(
+            e, {r["id"] for r in data["airflow"][role]
+                if r.get("state") == "COMPLETED"}, role
+        ) for e in roles[role])
+        for role in ROLES
     )
     return {
         "batch_id": batch,
