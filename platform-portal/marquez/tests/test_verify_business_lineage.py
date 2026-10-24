@@ -1,5 +1,6 @@
 """Offline regression for actual Marquez API response shapes; never POST events."""
 import importlib.util
+import copy
 from pathlib import Path
 from unittest import TestCase, main
 from unittest.mock import patch
@@ -97,6 +98,9 @@ class BusinessLineageTests(TestCase):
 
     def test_dataset_version_mismatch_fails(self):
         data = fixture()
+        data["roles"]["reconcile"][1]["detail"]["inputDatasetVersions"] = copy.deepcopy(
+            data["roles"]["reconcile"][1]["detail"]["inputDatasetVersions"]
+        )
         data["roles"]["reconcile"][1]["detail"]["inputDatasetVersions"][0][
             "datasetVersionId"]["version"] = "wrong-version"
         self.assertFalse(lineage.evaluate(data, BATCH)[
