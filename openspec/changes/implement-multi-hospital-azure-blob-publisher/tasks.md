@@ -12,7 +12,8 @@
 - [x] 2.2 增加 Mock/Azurite 单元/集成与 Fault Injection：SHA tamper、已存在不同内容、权限失败、部分写入重入、Manifest-only success 禁止、secret redaction。
 - [x] 2.3 建立 Generator verified handoff 到 Publisher 交付输入适配，任何医院/格式由 Profile 选择，禁止耦合 Generator 核心源码。
 - [x] 2.4 实现 `dw-az-blob` 独立 DIRECT FHIR runtime CLI、不可变 Base Image 的 Dockerfile 和受控 `emptyDir` Stage Job 模板，Host-only 离线失败/重试/身份脱敏测试（**不包含真正部署、镜像发布或跨 Namespace Stage**）。
-- [ ] 2.5 受控源侧只读读取与跨 Namespace 完整性保持的 ephemeral Stage 协议/Workflow，以及 OIE 的 authenticated persisted readback Fetcher；均须运行前独立审查与授权。
+- [ ] 2.5 原跨 Namespace ephemeral Stage 需求已由 `dw-synthea` 共 Namespace 只读 PVC 设计取消；仍待 OIE authenticated persisted readback Fetcher，运行前独立审查与授权。
+- [ ] 2.6 Publisher GHCR 镜像 Main-only Clean Build + 无网络非 root Smoke + 唯一 git-SHA 标签发布和 Digest 读回；不修改 `latest`、不触碰 K8s/Azure（需真实 Main release Run PASS 才完成）。
 
 ## 3. Hospital Routes
 - [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
@@ -69,3 +70,8 @@
 - `dw-az-blob` 曾由 [Self-Runner #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 创建（UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`）。受控删除 [Self-Runner PR #261](https://github.com/JohnZhang-DataForge/Self-Runner/pull/261)、[Run #40133855773](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133855773) **SUCCESS**：严格核对原 UID、所属标签、无额外 Namespaced 资源、全局活动 Job=0，DELETE 后独立 API 读回 **ABSENT PASS**；`dw-synthea`/`dw-oie` 原 Namespace 与 PVC UID 未变，原 PVC 仍 Bound，无 Azure/OIE 消息写入。
 - 此源码 PR 将 [新 DIRECT FHIR Runtime PR #460](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/460) 的 Job 模板迁移至 `local-data-platform/kubernetes/manifests/synthea/blob-publisher/`，使用既有 Generator PVC readOnly（volumeMount + PVC volume）、`--source-mode direct-readonly-pvc`；保留 Runtime、Dockerfile 与原 Blob 模拟/Azurite 安全契约。删除旧独立 Namespace YAML、NetworkPolicy、README、staging Job 和静态测试，更新 CODE.md/CI/Design。
 - 只读挂载必须在真正部署前核实 PVC accessModes、worker01、已有 Generator 并发作业、证书/网络/Secret Scope 与远端 Azure Account/Container/RBAC。Publisher 镜像未发布 GHCR、Secret 和运行 Job 未创建、Azure Blob PUT/GET 未执行，两医院 E2E 仍 OPEN；OpenSpec 4.1/4.2 **不打勾**。
+
+### P2.6 — 主线 SHA-only Publisher 镜像发布候选（2026-10-24）
+- `.github/workflows/azure-blob-publisher-ghcr-release.yml` 仅因自身路径的 Main Push 自动执行 Release，PR 在 GitHub-hosted Ubuntu Runner 进行 host contract + Docker clean build / non-root read-only/no-network smoke；真实推 GHCR 仅发生在 Main push 或人工 main dispatch，令镜像可复现且不会因其它业务代码更新发布或覆盖 `latest`。
+- 基础镜像 `python:3.12-slim-bookworm` 在 CI 中下载后按实际 RepoDigest 转为 `python:3.12-slim-bookworm@sha256:<real>`，构建过程仅使用不可变 digest；最终镜像只发布 `git-<exact Main SHA>` 标签，保存真实仓库 Digest。Dockerfile 仍然要求 `BASE_IMAGE` 参数，不允许静默使用 latest。
+- Release 不授权 Publisher Job 或 Azure SP Secret 安装，真实 K8s/PVC/Azure Storage E2E 仍需独立预检与受控执行。PR Test 与 Main Release 的 Run 结论要分别记录；未成功 Push 前 2.6 保持 OPEN。
