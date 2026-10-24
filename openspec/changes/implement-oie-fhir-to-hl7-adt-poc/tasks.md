@@ -1,7 +1,6 @@
 # Tasks — OIE FHIR→HL7 ADT PoC
 
-> **ACTIVE / PLAN ONLY.** Scope is clinical mapping and isolated OIE runtime.
-> No K8s deployment, OIE conversion, Blob or Fabric is accepted by this PR.
+> **ACTIVE / DEBUG OIE 4.7.0 RUNTIME VERIFIED.** Strict mapping offline tests and nonpersistent `dw-oie/worker01` OIE engine installation have passed. **OIE Channel FHIR→HL7, Azure Blob, Fabric, and persistent PVC remain NOT VERIFIED.**
 
 ## 1. Planning and boundaries
 - [x] 1.1 Check real main/source P4.1 boundary, OIE release/license/container provenance and relevant governance; preserve old Local DP/OMOP.
@@ -11,7 +10,7 @@
 
 ## 2. Implementation (new bounded PRs after this change is merged)
 - [x] 2.1 Implement isolated OIE ADT Channel source mapping and offline positive/negative deterministic tests.
-- [ ] 2.2 Build own pinned OIE 4.7.0 container from verified official artifact; CI test image/Java/OIE startup in disposable environment.
+- [x] 2.2 Build own pinned OIE 4.7.0 container from verified official artifact; CI test image/Java/OIE startup in disposable environment.
 - [x] 2.3 Add `dw-oie` namespace, single worker01-pinned OIE workload, isolated PVC, ClusterIP and minimal Secret/permissions templates; only static validation until authorized.
 - [ ] 2.4 Run real OIE 4.7.0 conversion on actual Johns Creek Synthea FHIR Bundle, independently HL7 v2.5.1 parse/readback; record skips, rejects, retries and exact SHA/Digest/Run.
 - [ ] 2.5 With separate user approval and session coordination, validate live `dw-oie` placement/PVC and isolated OIE Channel; preserve durable state and inspect other live work before write.
@@ -42,7 +41,7 @@ separate coordinated runtime authorization.
 
 ## 2.6 — Disposable first-install before durable storage (user-directed, 2026-10-24)
 - [x] 2.6.1 Add worker01-only OIE debug Deployment + ClusterIP service templates with ephemeral `emptyDir`, separate Secret and no PVC/StatefulSet creation; static CI and component map.
-- [ ] 2.6.2 After exact image verification/publishing and coordination, install a **disposable** OIE in `dw-oie` for real startup/Channel E2E. Record runtime evidence. Do not create PVC or move local data.
+- [x] 2.6.2 After exact image verification/publishing and coordination, install a **disposable** OIE in `dw-oie` for real startup/Channel E2E. Record runtime evidence. Do not create PVC or move local data.
 - [ ] 2.6.3 After live Channel tests the user will provision durable on-premises storage separately; evaluate migration to persistent StatefulSet/PVC only after that explicit handoff.
 
 The previously authored durable manifests remain **later-phase source definitions only**; do not apply them during initial debugging. This scope change explicitly supersedes any earlier advice to create `oie-state` PVC before first debug install.
@@ -56,3 +55,11 @@ The previously authored durable manifests remain **later-phase source definition
 
 - 添加仅 Main 触发的独立 SHA 标签 GHCR Release Workflow，锁定官方 OIE 4.7.0 源码 Commit，必须通过临时 Docker HTTPS 启动测试才能推送镜像；输出 registry Digest 与实际非 root UID/GID，不覆盖 `latest`。
 - **仅此代码 PR 不等于 Publish**：2.2 保持 OPEN，直到 Main 后发布 Run 实际 PASS、Registry Digest 独立核对。任何在 `dw-oie` 创建 K8s 资源仍需额外资源检查与协调。
+
+### P2.2 + P2.6.2 — Verified immutable image + worker01 disposable installation (2026-10-24)
+
+- Healthcare exact upstream OIE `v4.7.0` commit `f9ba73e28de151b041b97e7383e0ab9d2c4f1799`, source image build and isolated HTTPS startup: [Healthcare Run #40118903350](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40118903350) PASS. Fixed Build PR [#430](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/430) merged Main `cfc600846278aee98b1d29c5c585c924e514cc2f`.
+- Real GHCR release [Healthcare Run #40119734447](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40119734447) PASS, release Main `bcb18bc93e0372e4e78aa373c83768a143ab4b0d`, immutable `ghcr.io/johnzhang-dataforge/healthcare-oie@sha256:6716fb6210f9dc029c801b13cc152ff3fcb1ad4df05c1dbe5a9d438a482ba84b`, UID 100 / GID 65533. No `latest` promotion.
+- Independent real [Self-Runner read-only preflight #40119650504](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40119650504) PASS: `worker01` Ready/unpressured, `dw-oie` absent, active K8s Jobs=0, runner namespace-create RBAC yes. Earlier [#40119576058](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40119576058) failed ONLY because an absent namespace `--ignore-not-found -o json` yielded empty stdout, subsequently fixed.
+- **REAL OIE K8s INSTALL PASS**: [Self-Runner Run #40120249619](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120249619), final Self-Runner [PR #248](https://github.com/JohnZhang-DataForge/Self-Runner/pull/248) Main `7f06aed022c91db2dac2535d1b5fc7d0b6db42a5`. New `dw-oie`; Deployment `oie-debug`, Pod `oie-debug-f8f5d9c89-44vd2` on **worker01**, ClusterIP, OIE 4.7.0 and Derby existence/Ready PASS. **`emptyDir` only; 0 PVC in `dw-oie`; PV/PVC/StorageClass mutation NO**. Temporary Secret used for initial admin password, not logged.
+- **NEXT**: user performs on-premises persistent storage setup separately. Until PVC is explicitly provided/authorized, **do not convert** this temporary `emptyDir` by delete/reinstall or claim durable acceptance. OIE Channel actual clinical conversion remains task 2.4 OPEN; durable 2.5/2.6.3 remain OPEN. Never treat OIE startup as Patient/Encounter→ADT runtime validation.

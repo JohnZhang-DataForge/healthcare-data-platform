@@ -222,3 +222,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | 文件 | 作用 |
 | --- | --- |
 | [oie-470-ghcr-release.yml](../../../../.github/workflows/oie-470-ghcr-release.yml) | 仅 Main、正式 4.7.0 上游精确源码及临时容器启动 PASS 后推送 `healthcare-oie:git-<MainSHA>`，独立 Digest 读回，不改 `latest` 或共享 K8s |
+
+## OIE 非持久化 Live 安装验收（2026-10-24）
+
+[Self-Runner Run #40120249619](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120249619) 已将 `dw-oie/oie-debug` 真正安装在 worker01。使用独立 GHCR OIE 4.7.0 固定镜像 Digest、嵌入式 Derby 和 `emptyDir`，Pod Ready、版本与临时存储独立读回 PASS；`dw-oie` PVC=0。后续 PVC 由用户在内网另行配置，切换前不得删除现有 PVC，也不得把临时环境测试当作 HL7 Channel 已验收。对应 [OIE OpenSpec](../../../../openspec/changes/implement-oie-fhir-to-hl7-adt-poc/tasks.md) 中 2.4/2.5/2.6.3 仍 OPEN。
