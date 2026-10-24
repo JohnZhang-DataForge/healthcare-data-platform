@@ -31,3 +31,14 @@ python platform-portal/openlineage/spark/render.py --run-token probe01 > /tmp/po
 [系统 CODE](../CODE.md) · [Marquez CODE](../marquez/CODE.md) · [Data Platform Spark CODE](../../data-platform/spark/CODE.md)。
 
 > **P3 变更边界**：此版本生成持久化 Parquet 的目标仅为测试 PVC，和业务 S3/PG 完全隔离；每次独立 token，使用 `errorifexists` 禁止无声覆盖。真实 Job/Run/Dataset 读回与 PVC 权限仍 PENDING，不能仅凭静态通过认定 `unknown` 已修复。旧 A4 未写输出的历史结论仍有效。
+
+## P4 NEW_ONLY 业务 Listener（2026-10-24）
+
+隔离 `platform-portal/openlineage/spark/sparkapplication.yaml.tpl` 是已验证 P3 探针，**不作为业务 Pod 的执行模板**。本轮按最小修改接入真正的 `NEW_ONLY` 三个 SparkApplication：
+- [Person 模板](../../../../local-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl)：合成患者 CSV/Manifest → 实际 S3A Processing Parquet，可验两侧 Dataset；
+- [Visit 模板](../../../../local-data-platform/spark/manifests/task003/encounter-canonical-adapter.yaml.tpl)：合成 Encounter CSV → 实际 S3A Processing Parquet，可验两侧 Dataset；
+- [Reconcile 模板](../../../../local-data-platform/spark/manifests/task004/person-visit-reconciliation.yaml.tpl)：只读两个 Processing Parquet，**没有输出写入**，只期待输入 Dataset。
+
+镜像负责正确模板生效：[NEW_ONLY v2 child Dockerfile](../../../../local-data-platform/images/landing-processing-runtime/Dockerfile) 将这三个模板覆盖到父镜像原路径；基础父 `task004-runtime` 及三个 PySpark 业务算法不需要重建/修改。Airflow `latest` 不改；单独执行镜像 Clean Build、no-network Smoke、精确 Digest 晋级后，新增 Pod 才可拉取新版。配置复用 P3 成功的 OpenLineage Spark package `1.47.1` / Listener / Private Marquez API；Namespace 独立使用 `healthcare-platform-spark-business`，真实 Job appName 使用每个实际 SparkApplication `__APP_NAME__`，不伪造 parent facet 或 Writer COMMIT。
+
+[离线 P4 Contract Tests](../../../../.github/quality/tests/test_portal_p4_spark_listener.py) 严格检查三组实际业务模板 Listener/Source/S3A/I/O/子镜像版本闭包。[P4 GitHub Hosted Static CI](../../../../.github/workflows/portal-p4-business-spark-static.yml) 只做纯离线验证；`Writer` 和 PG 真实提交仍由 P5 控制及独立读回，不从 Spark COMPLETE 推断。
