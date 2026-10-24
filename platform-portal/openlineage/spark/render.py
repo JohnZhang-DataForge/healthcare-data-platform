@@ -1,6 +1,6 @@
 """OFFLINE manifest renderer ONLY. Never talks to Kubernetes or other services.
 
-Output is a ConfigMap + SparkApplication YAML pair, for future manual-gated
+Output is a ConfigMap + per-run PVC + SparkApplication manifest set, for future manual-gated
 controlled execution. No API operations are performed by this script.
 """
 from __future__ import annotations
@@ -24,6 +24,24 @@ def render(token: str) -> str:
     cm_name = app_name + "-source"
     template = (BASE / "sparkapplication.yaml.tpl").read_text(encoding="utf-8")
     application = yaml.safe_load(template.replace("__RUN_TOKEN__", token))
+    pvc_name = app_name + "-output"
+    pvc = {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "metadata": {
+            "name": pvc_name,
+            "namespace": NAMESPACE,
+            "labels": {
+                "app.kubernetes.io/name": "portal-p3-spark-probe",
+                "platform-portal-phase": "p3",
+            },
+        },
+        "spec": {
+            "accessModes": ["ReadWriteOnce"],
+            "storageClassName": "local-path",
+            "resources": {"requests": {"storage": "1Gi"}},
+        },
+    }
     configmap = {
         "apiVersion": "v1",
         "kind": "ConfigMap",
@@ -43,10 +61,14 @@ def render(token: str) -> str:
     assert application["metadata"]["name"] == app_name
     assert application["metadata"]["namespace"] == NAMESPACE
     assert application["spec"]["volumes"][0]["configMap"]["name"] == cm_name
+    assert application["spec"]["volumes"][1]["persistentVolumeClaim"]["claimName"] == pvc_name
+    assert application["spec"]["arguments"][-1] == (
+        f"file:///opt/spark/portal-a4-output/{token}/summary.parquet"
+    )
     assert application["spec"]["restartPolicy"]["type"] == "Never"
     assert application["spec"]["sparkConf"]["spark.openlineage.transport.type"] == "http"
     return yaml.safe_dump_all(
-        [configmap, application], sort_keys=False, explicit_start=True
+        [configmap, pvc, application], sort_keys=False, explicit_start=True
     )
 
 
