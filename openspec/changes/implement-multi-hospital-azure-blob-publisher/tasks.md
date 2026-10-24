@@ -48,3 +48,9 @@
 - 用户将 Publisher 目标 Namespace 指定为 `dw-az-blob`，而 Generator/OIE 分别保持 `dw-synthea`、`dw-oie`。Namespace/Default-Deny NetworkPolicy 作为独立文件，默认不执行；NetworkPolicy 可能阻断 DNS、OIE 和 Azure，必须先制定并验证允许规则。
 - 提供 Hosted-only `test_blob_namespace_contract.py` 和新 Namespace README；严格禁止把 `dw-synthea` 的 PVC 直接挂载到 `dw-az-blob`。未来跨 Namespace 的源文件交接和真实 OIE 凭证 Fetcher 仍未开发/验收。
 - 此项不代表 Namespace 已在 Kubernetes 创建；4.1/4.2 等真实环境 Gate 保持 OPEN。
+
+### P4.4 — dw-az-blob Namespace 真实集群创建与独立读回（2026-10-24）
+- Healthcare [PR #456](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/456) 已合并，静态模板/Main SHA `f52138cbffcfe6b4049d0bbe0ccbf1022938829f`；Self-Runner [PR #259](https://github.com/JohnZhang-DataForge/Self-Runner/pull/259)，执行 Main SHA `78bb420f8f30b22025050895ecb4db72679ced56`。
+- [Self-Runner Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) **SUCCESS**，预检 active Kubernetes Jobs=0、worker01 Ready、dw-synthea/Generator PVC Bound、dw-oie Deployment Ready。原 Namespace 不存在，`kubectl create` 只创建 `dw-az-blob`，独立读回 `PASS`；UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`，Restricted Pod Security 标签匹配。
+- 本次新 Namespace 内 Pods/Jobs/PVC/Secrets=0；NetworkPolicy **未应用**、Publisher Image/Pod/Secret/实际 Azure RBAC 均未配置，OIE Derby 和 Generator PVC 未修改、Azure Storage 写入=0。
+- 4.4 的 **Namespace 创建** 可以判为 `LIVE_VERIFIED`，但 4.1（Azure Account/身份/安全联检）、4.2（双医院真实发布）及跨 Namespace 受控 handoff **仍 OPEN**。不能以 Namespace SUCCESS 推断数据能发布。

@@ -318,7 +318,7 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 
 **重要**：`OIEReadback` 是 Live OIE 消息 Fetcher 的输入合同，本身不能证明其来自真实 Derby；生产执行必须由经授权的 OIE scoped-account 读取新 Request 消息 ID 并证实返回的 message bytes。旧 #40128211780 的 32 条消息不可重放，真实 Blob 交付须独立做 K8s→Azure 双医院 E2E。
 
-## Azure Blob Publisher 独立 Namespace（静态，尚未部署）
+## Azure Blob Publisher 独立 Namespace（已创建；工作负载未部署）
 
 | 文件 | 职责与状态 |
 | --- | --- |
@@ -327,4 +327,4 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [isolated Publisher boundary](../../../../local-data-platform/kubernetes/manifests/azure-blob/README.md) | 声明 `dw-synthea` PVC 不可跨 Namespace 挂载，未来需独立只读源到 ephemeral 输入的授权交接，不修改 OIE/PVC |
 | [namespace isolation tests](../../../../local-data-platform/tests/clinical_producers/test_blob_namespace_contract.py) | Hosted-only 静态边界断言；不调用 kubectl、不创建 Namespace/Secret、无 Azure 操作 |
 
-`dw-az-blob` 是目标运行隔离方案；实际 Namespace 创建、Publisher Pod/Job、OIE Fetcher、Azure 最小权限 Secret 均未获本静态 PR 的 Runtime 验收。
+`dw-az-blob` Namespace 已由 Self-Runner [Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 在真实集群创建并独立读回（UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`）；Publisher Pod/Job、OIE Fetcher、Azure Secret/真实 Blob 写入仍未部署或验收。
