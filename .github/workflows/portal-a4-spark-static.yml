@@ -38,11 +38,17 @@ jobs:
           python - "$RUNNER_TEMP/portal-a4-gha01.yaml" <<'PY'
           import pathlib,sys,yaml
           p=pathlib.Path(sys.argv[1])
-          cm,app=list(yaml.safe_load_all(p.read_text()))
-          assert cm['kind']=='ConfigMap' and app['kind']=='SparkApplication'
-          assert cm['metadata']['namespace']==app['metadata']['namespace']=='dw-spark'
-          assert app['metadata']['name']=='portal-a4-gha01'
-          assert app['spec']['restartPolicy']['type']=='Never'
+          cm,pvc,app=list(yaml.safe_load_all(p.read_text()))
+          assert [x["kind"] for x in (cm,pvc,app)]==[
+              "ConfigMap","PersistentVolumeClaim","SparkApplication"]
+          assert all(x["metadata"]["namespace"]=="dw-spark" for x in (cm,pvc,app))
+          assert app["metadata"]["name"]=="portal-a4-gha01"
+          assert app["spec"]["restartPolicy"]["type"]=="Never"
+          assert pvc["metadata"]["name"]=="portal-a4-gha01-output"
+          assert pvc["spec"]["accessModes"]==["ReadWriteOnce"]
+          assert pvc["spec"]["storageClassName"]=="local-path"
+          assert app["spec"]["volumes"][1]["persistentVolumeClaim"]["claimName"]==pvc["metadata"]["name"]
+          assert app["spec"]["arguments"][-1]=="file:///opt/spark/portal-a4-output/gha01/summary.parquet"
           print("PORTAL_A4_GITHUB_HOSTED_OFFLINE_YAML_RENDER=PASS")
           print("PORTAL_A4_STATIC_TEST_SUITE=PASS")
           print("PORTAL_A4_REAL_SPARKAPPLICATION=NOT_RUN")
