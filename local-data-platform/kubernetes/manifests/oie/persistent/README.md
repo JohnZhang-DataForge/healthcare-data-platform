@@ -65,3 +65,9 @@ the hot reload is already accepted. Do not change any other StorageClass.
 OpenSpec Change: `implement-oie-fhir-to-hl7-adt-poc`. Real Channel
 FHIR→ADT conversion and Blob publication are **separate, still-open
 acceptance gates**.
+
+## Live durable acceptance — 2026-10-24
+
+**Completed, not just planned:** [Self-Runner Live #40121734522](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121734522) installed a single `oie` StorageClass with `Retain`/`WaitForFirstConsumer`, 10Gi RWO PVC `dw-oie/oie-state`, and patched existing `dw-oie/oie-debug` from `emptyDir` to that claim. Exact PV: `pvc-8ca5e84e-d58a-4448-9059-47473023f036`, directory `/data/oie/pvc-8ca5e84e-d58a-4448-9059-47473023f036_dw-oie_oie-state`. OIE 4.7.0 stayed on worker01, Ready, Derby writable. Shared local-path provisioner **was not restarted**.
+
+[Restart durability Run #40122005828](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40122005828) independently verified that a unique test marker written into OIE `/opt/engine/appdata` survived replacement of the Pod; the replacement Pod is `oie-debug-5dbf74d9cf-vgjkd` on worker01, and the marker was safely removed after verification. This establishes **single PVC persistence across Pod recreation**, not a tested off-node backup/disaster recovery solution. Do not delete the Retain PVC/PV; coordinate before changing path, node, image or introducing a second OIE writer. No separate local HL7-file PVC is needed for planned direct Blob publishing. OIE Channel conversion is still not accepted.
