@@ -318,13 +318,9 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 
 **重要**：`OIEReadback` 是 Live OIE 消息 Fetcher 的输入合同，本身不能证明其来自真实 Derby；生产执行必须由经授权的 OIE scoped-account 读取新 Request 消息 ID 并证实返回的 message bytes。旧 #40128211780 的 32 条消息不可重放，真实 Blob 交付须独立做 K8s→Azure 双医院 E2E。
 
-## Azure Blob Publisher 独立 Namespace（已创建；工作负载未部署）
+## Azure Blob Publisher 运行位置（dw-synthea；尚未部署 Publisher Job）
 
-| 文件 | 职责与状态 |
-| --- | --- |
-| [dw-az-blob namespace](../../../../local-data-platform/kubernetes/manifests/azure-blob/namespace.yaml) | 声明 Publisher 独立 `dw-az-blob` Namespace 和 Restricted Pod Security；不是实际集群创建证据 |
-| [default-deny NetworkPolicy](../../../../local-data-platform/kubernetes/manifests/azure-blob/networkpolicy-default-deny.yaml) | 仅静态隔离候选，应用后将同时阻断 DNS/OIE/Azure，必须有独立经审查的出站白名单方案才可启用 |
-| [isolated Publisher boundary](../../../../local-data-platform/kubernetes/manifests/azure-blob/README.md) | 声明 `dw-synthea` PVC 不可跨 Namespace 挂载，未来需独立只读源到 ephemeral 输入的授权交接，不修改 OIE/PVC |
-| [namespace isolation tests](../../../../local-data-platform/tests/clinical_producers/test_blob_namespace_contract.py) | Hosted-only 静态边界断言；不调用 kubectl、不创建 Namespace/Secret、无 Azure 操作 |
-
-`dw-az-blob` Namespace 已由 Self-Runner [Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 在真实集群创建并独立读回（UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`）；Publisher Pod/Job、OIE Fetcher、Azure Secret/真实 Blob 写入仍未部署或验收。
+- **Publisher/Generator 同 Namespace**：`dw-synthea` / `worker01`；Publisher Job 只读挂载现有 `synthea-new-generator-state` PVC，读取经 `source_handoff` 验证的冻结 Manifest/FHIR 原始 Bytes。新 Job 不需要独立 PVC，不改变已有数据；具体镜像、入口、RBAC、Secret 和挂载权限仍需受控开发与验收。
+- **OIE 继续独立**：`dw-oie` 的服务通过认证的内部 API 接收 FHIR 请求，OIE 自己的 Derby/PVC 仍留在原 Namespace。后续经 scoped OIE 身份读取真实 HL7 结果，`oie_hl7_publisher.py` 负责校验并调用共享 Publisher；不能跨 Namespace 挂载 `oie-state`。
+- **独立 `dw-az-blob` 方案已撤回且在集群删除**：[Self-Runner #40133855773](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133855773) 实际执行严格 UID+空资源审查与删除后独立读回，`dw-synthea/dw-oie` 和两个 PVC UID 未变。此前创建的证据 [#40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 保留历史意义，不代表 Namespace 目前存在。
+- 本 PR 移除不再适用的独立 Namespace YAML、NetworkPolicy、README 和静态测试，也从 [Blob CI](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) 移除相关测试入口；以上属于**部署决策与代码清理**，不是 Azure SP/RBAC/Secret 或真实 Blob E2E。
