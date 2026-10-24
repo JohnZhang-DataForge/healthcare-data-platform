@@ -1,12 +1,12 @@
 # Tasks — Independent synthea_new_generator
 
-> **状态：ACTIVE / SPEC FIRST。** 当前只创建 OpenSpec，不声明 Python、K8s、FHIR→OIE、Azure Blob 或 Fabric 已完成。原 `apps/synthea/new_only/` 及 OMOP 链路绝不因本 Change 改写。
+> **状态：ACTIVE / P1 已合并，P2 独立真实生成 Smoke 通过；P3/P4 待开发。** 不声明 Kubernetes、FHIR→OIE、Azure Blob 或 Fabric 已完成。原 `apps/synthea/new_only/` 及 OMOP 链路绝不因本 Change 改写。
 
 ## 1. P0 — OpenSpec design and baseline
 
 - [x] 1.1 只读核对当前 Healthcare Main、旧 `generate_new_only.py`、Synthea 基础镜像、旧 S3 发布合同与 OpenSpec/命名/CODE Map 治理；明确旧 NEW_ONLY 不动。
 - [x] 1.2 建立本独立 Change 的 Proposal、Design、Delta Spec、Tasks；冻结 `synthea_new_generator` 参数化/本地生成接口、Atlanta/Johns Creek 两 Profile 和下游 OIE 边界。
-- [ ] 1.3 本 OpenSpec PR 在精确 Head 上通过 Strict Validation、Trusted Change Gate、文档链接等适用检查；合并后核对 Main 与 PR/CI 证据。**仅规划成功，不等于业务实现。**
+- [x] 1.3 本 OpenSpec PR 在精确 Head 上通过 Strict Validation、Trusted Change Gate、文档链接等适用检查；合并后核对 Main 与 PR/CI 证据。**仅规划成功，不等于业务实现。**
 
 ## 2. P1 — Request and frozen-generation core
 
@@ -17,9 +17,9 @@
 
 ## 3. P2 — Real Synthea formats and hospital profiles
 
-- [ ] 3.1 使用固定 Synthea 版本实际运行 CSV-only、FHIR_R4-only、CSV+FHIR，核验 Bundle/Patient/Encounter/Reference、真实文件清单与计数；记录不支持的 Synthea 参数或输出差异。
-- [ ] 3.2 为 Atlanta/FHIR 和 Johns Creek/HL7 两个**独立生成请求**建立外部配置 Profile，均从 FHIR R4 起步；运行验证 Georgia Atlanta/Johns Creek 地理参数，不暗中回退州/城市。
-- [ ] 3.3 验证不同医院 Profile/请求重试互不影响，新医院 Profile 不要求修改 Generator 代码；保持医院/Feed ID 与文件交付元数据由外部组件管理。
+- [x] 3.1 使用固定 Synthea 版本实际运行 CSV-only、FHIR_R4-only、CSV+FHIR，核验 Bundle/Patient/Encounter/Reference、真实文件清单与计数；记录不支持的 Synthea 参数或输出差异。
+- [x] 3.2 为 Atlanta/FHIR 和 Johns Creek/HL7 两个**独立生成请求**建立外部配置 Profile，均从 FHIR R4 起步；运行验证 Georgia Atlanta/Johns Creek 地理参数，不暗中回退州/城市。
+- [x] 3.3 验证不同医院 Profile/请求重试互不影响，新医院 Profile 不要求修改 Generator 代码；保持医院/Feed ID 与文件交付元数据由外部组件管理。
 
 ## 4. P3 — Package and isolated Kubernetes jobs
 
@@ -49,4 +49,6 @@
 
 - Atlanta/FHIR 与 Johns Creek/HL7 由两个独立 Profile 管理：同一个 `synthea_new_generator` 统一执行 `FHIR_R4` 原生生成，下游以 `DIRECT` 或 `OIE` 区分，不在 Generator 中引入医院/OIE 分支。
 - 本 PR 新增 Profile Adapter、Schema、单测及 GitHub-hosted 隔离 Synthea Source Smoke；任何临床事件→ADT 转换与 Blob Publisher 均不在此 PR 中。
-- 真实 Java/Synthea 的 FHIR、CSV、两种地理参数测试在最终 PR Run 通过后才可勾选 3.1–3.3；未执行、失败或格式不符一律保留未完成状态。
+- GitHub-hosted 真实 Synthea Smoke [Run #40095976490](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40095976490) 已在功能源码 SHA `a347454b16e6c93804e399543b46ce6dfcb4a4ac` PASS：pinned v3.3.0 upstream `995cf2fd33e67918d4e33110d9f68ad248002221`；Atlanta FHIR 1 Patient/43 Encounter/1 Bundle；Johns Creek FHIR 1/31/1 Bundle；Atlanta CSV 1/43/18 CSV；combined 1/43/18 CSV + 1 Bundle；同请求 FHIR readback/replay PASS。外部 Profile 单测和 CI 全部通过。该执行只发生在 GitHub-hosted 临时环境，未触发共享 Kubernetes/OIE/Azure/PG。后续提交后的 PR HEAD CI 需单独核实。
+
+**P0/P1 Merge 证据**：OpenSpec PR [#414](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/414) Main `0f808fca1a7ac80308859cde27cd5838082185bb`；P1 代码 PR [#417](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/417) Main `8e075bca130429c261a0f2cf245daef83ba8eebf`，受信任 OpenSpec / Component Map / Unit 测试通过。本 P2 对应 PR [#418](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/418)，完成合并后核对最新 Main。
