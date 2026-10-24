@@ -165,3 +165,14 @@ Atlanta/FHIR 和 Johns Creek/HL7 Profile 仅构造 FHIR R4 新生成请求；OIE
 - [Healthcare PR #423](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/423) 修复新 K8s Job 的 ConfigMap 单文件 `subPath` 挂载，以匹配 Generator 严格的拒绝符号链接策略。
 - [Self-Runner Run #40100347980](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40100347980) 验证 `worker01` 生成 1 Patient / 43 Encounter / 1 FHIR Bundle，同请求重试以及新 PVC 内文件 SHA 读回 PASS。独立新 PVC `synthea-new-generator-state` 保留、Bound / Retain；临时 Job、ConfigMap 和 Pull Secret 清理完毕；旧 NEW_ONLY PVC 身份不变。
 - **未完成**：OIE 将 FHIR 转为 HL7、Blob Landing Publisher、Fabric 消费者；本 Run 不构成这些环节的通过证据。
+
+## P4.1 — FHIR 下游只读交接
+
+| 文件 | 责任与边界 |
+| --- | --- |
+| [source_handoff.py](../../../../local-data-platform/apps/clinical_producers/source_handoff.py) | 下游只读核验冻结 Request/Manifest/实际 FHIR 文件与医院 Profile；仅输出交接 JSON，不发布云端或 HL7 |
+| [source-handoff-v1.schema.json](../../../../local-data-platform/contracts/synthea/new-generator/source-handoff-v1.schema.json) | 源文件交接 JSON v1 机器协议 |
+| [test_source_handoff.py](../../../../local-data-platform/tests/synthea_new_generator/test_source_handoff.py) | 本地正常、漂移/篡改、符号链接、重试/只读测试 |
+| [SOURCE-HANDOFF.md](SOURCE-HANDOFF.md) | 交接布局、CLI 与接收方复验规则 |
+
+OIE/Blob 发布不属于 P4.1；其 Runtime 成功不能由离线校验测试推出。
