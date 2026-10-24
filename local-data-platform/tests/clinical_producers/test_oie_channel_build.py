@@ -14,6 +14,7 @@ class ChannelBuildTests(unittest.TestCase):
   root=ET.fromstring(result)
   self.assertEqual(root.findtext("id"),CHANNEL_ID)
   self.assertEqual(root.findtext("name"),CHANNEL_NAME)
+  self.assertLessEqual(len(CHANNEL_NAME),40,"OIE CHANNEL.NAME is VARCHAR(40)")
   self.assertEqual(root.findtext("sourceConnector/transformer/inboundDataType"),"RAW")
   self.assertEqual(root.findtext("sourceConnector/transportName"),"Channel Reader")
   self.assertEqual(root.findtext("properties/initialState"),"STARTED")
