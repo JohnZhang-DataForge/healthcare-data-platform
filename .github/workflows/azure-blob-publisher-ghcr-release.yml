@@ -1,0 +1,149 @@
+name: Healthcare Azure Blob Publisher SHA-only GHCR Release
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/azure-blob-publisher-ghcr-release.yml"
+      - "local-data-platform/images/azure-blob-publisher/**"
+      - "local-data-platform/apps/clinical_producers/**"
+      - "local-data-platform/apps/synthea/synthea_new_generator/**"
+      - "local-data-platform/tests/clinical_producers/**"
+  push:
+    branches: [main]
+    paths:
+      # Only the reviewed workflow addition/change activates a one-time release.
+      - ".github/workflows/azure-blob-publisher-ghcr-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: healthcare-azure-blob-publisher-sha-only-release
+  cancel-in-progress: false
+
+env:
+  PACKAGE: ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher
+  # Tag used only for initial Docker Hub resolution. The build itself is
+  # always bound to and logs the resolved immutable sha256 parent digest.
+  PARENT_TAG: python:3.12-slim-bookworm
+
+jobs:
+  preflight:
+    name: Host-only Publisher contract and release guard (no GHCR write)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Assert image and release scope plus Blob source contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'FROM ${BASE_IMAGE}' local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'ENTRYPOINT ["python3", "-m", "apps.clinical_producers.azure_blob_runtime"]' local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'USER 10001:10001' local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'namespace: dw-synthea' local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl
+          grep -Fq 'claimName: synthea-new-generator-state' local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_runtime.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_direct_fhir_publisher.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_hl7_publisher.py -v
+          echo PUBLISHER_RELEASE_HOSTED_CONTRACT=PASS
+          echo KUBERNETES_MUTATIONS=NO
+          echo AZURE_STORAGE_WRITES=NO
+
+  build-and-smoke:
+    name: Publisher immutable base clean build and container smoke
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Bind base to actual immutable digest and clean-build independent image
+        id: build
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$GITHUB_SHA"
+          docker pull "$PARENT_TAG"
+          base="$(docker image inspect "$PARENT_TAG" --format '{{range .RepoDigests}}{{println .}}{{end}}' | grep -E '^python@sha256:[a-f0-9]{64}$' | head -n1)"
+          [[ "$base" =~ ^python@sha256:[a-f0-9]{64}$ ]] || { echo HOLD_UNRESOLVED_PYTHON_BASE; exit 1; }
+          base_ref="python:3.12-slim-bookworm@${base#python@}"
+          echo "PINNED_PARENT_IMAGE=$base_ref"
+          tag="$PACKAGE:git-$GITHUB_SHA"
+          docker build --pull --no-cache \
+            --build-arg "BASE_IMAGE=$base_ref" \
+            --build-arg "PROJECT_GIT_SHA=$GITHUB_SHA" \
+            -f local-data-platform/images/azure-blob-publisher/Dockerfile \
+            -t "$tag" local-data-platform
+          label="$(docker image inspect "$tag" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+          test "$label" = "$GITHUB_SHA"
+          test "$(docker image inspect "$tag" --format '{{.Config.User}}')" = "10001:10001"
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_OUTPUT"
+          echo "PUBLISHER_CLEAN_BUILD=PASS"
+      - name: Run no-network read-only container entrypoint smoke
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --tmpfs /tmp:rw,size=64m \
+            --entrypoint python3 "$IMAGE_TAG" -c '
+          import os
+          from apps.clinical_producers.azure_blob_runtime import (
+              CONFIG_KEYS, PublisherRuntimeBlocked, main)
+          from apps.clinical_producers.azure_blob_publisher import (
+              AzureSDKBlobBackend, publish_immutable)
+          from apps.clinical_producers.oie_hl7_publisher import prepare_oie_hl7
+          from azure.identity import ClientSecretCredential
+          from azure.storage.blob import BlobServiceClient
+          assert os.getuid() == 10001 and os.getgid() == 10001
+          assert len(CONFIG_KEYS) == 5
+          print("PUBLISHER_IMAGE_IMPORT_NONROOT_NO_NETWORK=PASS")
+          '
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.azure_blob_runtime --help >/dev/null
+          echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
+          echo "AZURE_BLOB_REAL_UPLOAD=NO"
+          echo "DW_SYNTHETIC_PVC_MOUNT=NO"
+      - name: Publish git-SHA tag only from exact Main release activation
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$IMAGE_TAG" = "$PACKAGE:git-$GITHUB_SHA"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+          docker push "$IMAGE_TAG"
+          docker pull "$IMAGE_TAG"
+          digest="$(docker image inspect "$IMAGE_TAG" --format '{{range .RepoDigests}}{{println .}}{{end}}' | grep -E '^ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:[a-f0-9]{64}$' | head -n1)"
+          [[ "$digest" =~ ^ghcr\.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:[a-f0-9]{64}$ ]]
+          echo "PUBLISHER_IMAGE_DIGEST_REF=$digest"
+          echo PUBLISHER_GHCR_SHA_ONLY_PUBLISH=PASS
+          echo LATEST_TAG_MODIFIED=NO
+          echo SHARED_K8S_RESOURCE_CREATED=NO
+          echo AZURE_BLOB_LANDING_MUTATED=NO
+          {
+            echo "## Azure Blob Publisher SHA-only release"
+            echo "- Healthcare source SHA: `$GITHUB_SHA`"
+            echo "- Image tag: `$IMAGE_TAG`"
+            echo "- Immutable image digest: `$digest`"
+            echo "- Clean build / non-root offline smoke: PASS"
+            echo "- Shared K8s, OIE, Azure Blob/Secret: UNCHANGED"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: PR build is local-only (never push)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo PUBLISHER_PR_IMAGE_BUILD=PASS
+          echo GHCR_PUSH_SKIPPED=YES
