@@ -31,6 +31,10 @@ class OieIsolationTemplates(unittest.TestCase):
         self.assertRegex(s, r"nodeSelector:\n\s+kubernetes.io/hostname: worker01")
         self.assertIn("automountServiceAccountToken: false", s)
         self.assertIn("runAsNonRoot: true", s)
+        self.assertIn("runAsUser: __OIE_ENGINE_UID__", s)
+        self.assertIn("runAsGroup: __OIE_ENGINE_GID__", s)
+        self.assertIn("fsGroup: __OIE_ENGINE_GID__", s)
+        self.assertIn("defaultMode: 0440", s)
         self.assertIn("allowPrivilegeEscalation: false", s)
         self.assertIn("claimName: oie-state", s)
         self.assertNotIn("hostPath:", s)
@@ -60,10 +64,11 @@ class OieIsolationTemplates(unittest.TestCase):
         rendered["pvc.yaml.tpl"] = rendered["pvc.yaml.tpl"].replace(
             "__OIE_WORKER01_STORAGE_CLASS__", "verified-worker01-sc"
         )
-        rendered["statefulset.yaml.tpl"] = rendered["statefulset.yaml.tpl"].replace(
-            "__OIE_PINNED_IMAGE_DIGEST__",
-            "ghcr.io/example/never-deploy@sha256:" + "a" * 64,
-        )
+        rendered["statefulset.yaml.tpl"] = (rendered["statefulset.yaml.tpl"]
+            .replace("__OIE_PINNED_IMAGE_DIGEST__",
+                     "ghcr.io/example/never-deploy@sha256:" + "a" * 64)
+            .replace("__OIE_ENGINE_UID__", "10001")
+            .replace("__OIE_ENGINE_GID__", "10001"))
         for name, content in rendered.items():
             item = yaml.safe_load(content)
             self.assertIsInstance(item, dict)
