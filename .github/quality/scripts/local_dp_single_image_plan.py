@@ -119,7 +119,7 @@ def promotion_plan(
         # Reviewer-supplied reference is mandatory, not self-certifying.
         if not acceptance_evidence or acceptance_evidence.strip() != acceptance_evidence:
             raise ValueError("BLOCKED:TEST_EVIDENCE_REQUIRED")
-        if not re.fullmatch(r"https://github\\.com/JohnZhang-DataForge/(?:healthcare-data-platform|Self-Runner)/(?:actions/runs/[0-9]+|pull/[0-9]+)(?:/?)", acceptance_evidence):
+        if not re.fullmatch(r"https://github\.com/JohnZhang-DataForge/(?:healthcare-data-platform|Self-Runner)/(?:actions/runs/[0-9]+|pull/[0-9]+)(?:/?)", acceptance_evidence):
             raise ValueError("BLOCKED:INVALID_TEST_EVIDENCE_REFERENCE")
     spec = IMAGES[image]
     return {
