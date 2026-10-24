@@ -47,8 +47,17 @@ def verify():
         # Verify these really are KPO fields declared templateable by Airflow.
         require("env_vars" in task.template_fields,
                 "KPO_ENV_VARS_NOT_TEMPLATABLE")
-        env = task.env_vars
-        require(isinstance(env, dict), "KPO_PARENT_ENV_SHAPE")
+        # KPO normalizes dict input into Kubernetes V1EnvVar objects;
+        # both dict and V1EnvVar list are legitimate operator internals.
+        raw_env = task.env_vars
+        if isinstance(raw_env, dict):
+            env = raw_env
+        elif isinstance(raw_env, list):
+            env = {item.name: item.value for item in raw_env
+                   if isinstance(getattr(item, "name", None), str)}
+            require(len(env) == len(raw_env), "KPO_ENV_DUPLICATE_OR_INVALID")
+        else:
+            raise AssertionError("BLOCKED:KPO_PARENT_ENV_SHAPE")
         required = {
             "OPENLINEAGE_PARENT_REQUIRED",
             "OPENLINEAGE_PARENT_NAMESPACE",
