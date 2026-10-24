@@ -92,3 +92,8 @@ The previously authored durable manifests remain **later-phase source definition
 ### Confirmed original OIE Channel 500 root cause (2026-10-24)
 - [GitHub-hosted isolated OIE import diagnostic](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40124952205) with temporary `VMOPTIONS=--add-opens=java.sql/java.sql=ALL-UNNAMED` unmasked Derby `SQLDataException`: inserting Channel name `Healthcare Johns Creek FHIR to HL7 ADT PoC` exceeded `CHANNEL.NAME VARCHAR(40)`. **This is not an OIE database/PVC corruption or a broken engine image.** Live Channel was not verified imported.
 - Change canonical Channel name to `Johns Creek FHIR to HL7 ADT` (<=40 characters), preserve fixed Channel ID and mappings, rerun isolated import; only if success, update controlled Self-Runner live workflow expectation and recheck channel list before a new POST. No shared Derby/PG migration.
+
+
+### 2.4.3 — Independent HL7 v2.5.1 server-message readback contract (2026-10-24)
+- **Offline implementation complete:** Add `hl7_readback.py` strict MSH/EVN/PID/PV1 decoder + source identity/time/control ID correlation to verified Johns Creek Patient+Encounter envelope and negative tests. Designed to validate **actual OIE returned bytes** independently of JavaScript mapper; this unit gate is NOT live OIE conversion.
+- **Live readback remains pending:** Supply actual OIE message processed content after one-channel guarded import, assert 1 IMP A01 / 30 AMB never A01, retry stability, no Blob writes; retain failure records.

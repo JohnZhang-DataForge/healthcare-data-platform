@@ -1,0 +1,23 @@
+name: OIE HL7 v2.5.1 Independent Readback Unit
+on:
+  pull_request:
+    paths:
+      - "local-data-platform/apps/clinical_producers/oie/hl7_readback.py"
+      - "local-data-platform/tests/clinical_producers/test_oie_hl7_readback.py"
+      - ".github/workflows/oie-hl7-readback-unit.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  readback-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_hl7_readback.py -v
+      - run: |
+          echo OIE_HL7_INDEPENDENT_PARSER_TEST=PASS
+          echo OIE_LIVE_CHANNEL_MUTATION=NO
+          echo OIE_BLOB_PUBLICATION=NO
