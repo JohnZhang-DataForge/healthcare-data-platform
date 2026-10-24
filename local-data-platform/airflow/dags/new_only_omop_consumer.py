@@ -16,6 +16,7 @@ from airflow.operators.python import PythonOperator, BranchPythonOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.providers.cncf.kubernetes.operators.pod import KubernetesPodOperator
 from airflow.providers.cncf.kubernetes.secret import Secret
+from airflow.providers.openlineage.utils.selective_enable import enable_lineage
 
 DAG_DIR=str(Path(__file__).resolve().parent)
 if DAG_DIR not in sys.path:
@@ -94,7 +95,9 @@ SECURITY={"runAsNonRoot":True,"runAsUser":10001,"runAsGroup":10001,
           "allowPrivilegeEscalation":False,"capabilities":{"drop":["ALL"]}}
 NODE={"kubernetes.io/hostname":"worker02"}
 
-with DAG(
+# A3-compatible scoped opt-in; global SELECTIVE_ENABLE must remain True.
+# Observability only: no new tasks or changes to routing/Writer authorization.
+with enable_lineage(DAG(
     dag_id="new_only_omop_consumer",
     description="Manual NEW_ONLY S3->Spark->atomically fenced OMOP Writer; strict 2-gate COMMIT",
     start_date=datetime(2026,10,14),
@@ -104,7 +107,7 @@ with DAG(
     is_paused_upon_creation=True,
     default_args={"retries":0},
     tags=["task004","new-only","omop","manual-gated"],
-) as dag:
+)) as dag:
     scan_ready_manifests=KubernetesPodOperator(
         task_id="scan_ready_manifests",name="new-only-consumer-discovery",
         namespace="dw-spark",service_account_name="task004-control-runtime",

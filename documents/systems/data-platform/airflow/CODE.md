@@ -1,8 +1,8 @@
 ---
 status: active
 scope: airflow-source-code-map
-last_verified: 2026-10-16
-source_sha: d019429332e794e412426cf9c5053bafa043c05e
+last_verified: 2026-10-24
+source_sha: 460069e37d3ac38ec2f240f3105d023799340785
 ---
 
 # Airflow — CODE / 源码导航
@@ -13,7 +13,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件（直接链接） | 作用 / 使用范围 |
 | --- | --- |
-| [`new_only_omop_consumer.py`](../../../../local-data-platform/airflow/dags/new_only_omop_consumer.py) | 经 Person/Visit E2E 验收的手工 NEW_ONLY Consumer DAG；串联 READY 选择、只读 Claim、Spark、对账和受控 Writer |
+| [`new_only_omop_consumer.py`](../../../../local-data-platform/airflow/dags/new_only_omop_consumer.py) | 经 Person/Visit E2E 验收的手工 NEW_ONLY Consumer DAG；串联 READY 选择、只读 Claim、Spark、对账和受控 Writer。Portal P2 在既有 DAG 外层使用 Provider 的 `enable_lineage(DAG(...))`，仅增加可观测 opt-in，不改 DAG/Task ID、XCom 或 Writer Gate；新业务 Run 及 Transport 生效仍待 Live 读回 |
 | [`new_only_omop_routing.py`](../../../../local-data-platform/airflow/dags/new_only_omop_routing.py) | 纯 Batch/Manifest 校验及 fail-closed 路由；完成批次走 `already_completed_no_replay` |
 | [`new_only_omop_writer_handoff.py`](../../../../local-data-platform/airflow/dags/new_only_omop_writer_handoff.py) | Spark 结果与 Writer 之间的不可变交接校验；自身不授权 COMMIT |
 | [`landing_batch_discovery.py`](../../../../local-data-platform/airflow/dags/landing_batch_discovery.py) | 独立、周期性 S3 Landing Discovery DAG；扫描不等于自动业务提交 |
@@ -48,6 +48,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 ## 相关测试、Contract 与构建入口
 
+- **Portal P2 OpenLineage selective/负向边界**：[Opt-in contract tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_openlineage_opt_in.py)（纯离线 AST，不触发 DagRun；核对现有 14 个 Task ID、A3 Probe、Discovery 默认未 opt-in）。
 - **DAG / 路由**：[Consumer tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_omop_airflow_consumer.py)、[Writer branch tests](../../../../local-data-platform/tests/landing_discovery/test_new_only_airflow_writer_branch.py)、[Discovery DAG contract](../../../../local-data-platform/tests/landing_discovery/test_airflow_dag_contract.py)。
 - **Processing / Handoff**：[Spark processing gate](../../../../local-data-platform/tests/landing_discovery/test_spark_processing_gate.py)、[Airflow handoff](../../../../local-data-platform/tests/task004/test_step04f_airflow_handoff.py)、[Writer runtime](../../../../local-data-platform/tests/omop_writer/test_new_only_airflow_writer_runtime.py)。
 - **契约**：[NEW_ONLY Batch identity](../../../../local-data-platform/contracts/synthea/producer-batch-identity-v1.json)、[Writer identity](../../../../local-data-platform/contracts/omop-writer/writer-batch-identity-v1.json)。
