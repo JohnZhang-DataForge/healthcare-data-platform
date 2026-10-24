@@ -1,0 +1,222 @@
+name: Local DP Single Image Rebuild
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/local-dp-image-rebuild-single.yml"
+      - ".github/workflows/local-dp-image-rebuild.yml"
+      - ".github/quality/scripts/local_dp_single_image_plan.py"
+      - ".github/quality/tests/test_local_dp_single_image_plan.py"
+      - "openspec/changes/selective-local-dp-image-rebuild/**"
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Exact Local DP image to build (one of eight)"
+        type: choice
+        required: true
+        options:
+          - synthea
+          - task004-runtime
+          - task004-cdm-runtime
+          - landing-discovery-runtime
+          - landing-claim-runtime
+          - synthea-new-only
+          - landing-processing-runtime
+          - new-only-omop-writer
+      operation:
+        description: "validate: no publish; publish: unique tag; promote-latest: also replace selected latest"
+        type: choice
+        required: true
+        default: validate
+        options:
+          - validate
+          - publish
+          - promote-latest
+      parent_digest:
+        description: "Optional child-parent sha256:64hex; blank pins current parent latest to immutable digest"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-dp-image-rebuild-${{ github.event_name == 'workflow_dispatch' && inputs.image || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  policy:
+    name: Single-image policy and negative tests (no Docker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Enforce exact image and GHCR publishing policy offline
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests -p test_local_dp_single_image_plan.py -v
+          echo LOCAL_DP_SINGLE_IMAGE_POLICY=PASS
+          echo IMAGE_BUILD=NOT_EXECUTED_BY_POLICY
+
+  build:
+    name: Manual single selected image build and smoke
+    if: github.event_name == 'workflow_dispatch'
+    needs: policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Verify exact checkout, selection and release gates
+        id: plan
+        shell: bash
+        env:
+          SELECTED_IMAGE: ${{ inputs.image }}
+          SELECTED_OPERATION: ${{ inputs.operation }}
+          REQUESTED_PARENT_DIGEST: ${{ inputs.parent_digest }}
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 .github/quality/scripts/local_dp_single_image_plan.py \
+            --image "$SELECTED_IMAGE" \
+            --operation "$SELECTED_OPERATION" \
+            --git-ref "$GITHUB_REF" \
+            --parent-digest "$REQUESTED_PARENT_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "EXACT_HEALTHCARE_SHA=$GITHUB_SHA"
+          echo "SINGLE_IMAGE_SELECTED=$SELECTED_IMAGE"
+          echo "IMAGE_OPERATION=$SELECTED_OPERATION"
+
+      - name: Authenticate GHCR only when reading a parent or publishing
+        if: steps.plan.outputs.parent_repo != '' || steps.plan.outputs.publish == 'true'
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Resolve existing child-parent image to an immutable digest
+        if: steps.plan.outputs.parent_repo != ''
+        id: parent
+        shell: bash
+        env:
+          PARENT_REPO: ${{ steps.plan.outputs.parent_repo }}
+          PINNED_DIGEST: ${{ steps.plan.outputs.parent_digest }}
+        run: |
+          set -Eeuo pipefail
+          if [[ -n "$PINNED_DIGEST" ]]; then
+            BASE_REF="${PARENT_REPO}@${PINNED_DIGEST}"
+            docker pull "$BASE_REF"
+          else
+            docker pull "${PARENT_REPO}:latest"
+            BASE_REF="$(docker image inspect \
+              --format '{{range .RepoDigests}}{{println .}}{{end}}' "${PARENT_REPO}:latest" \
+              | grep -E "^\${PARENT_REPO}@sha256:[a-f0-9]{64}$" | head -n 1)"
+          fi
+          test -n "$BASE_REF"
+          case "$BASE_REF" in
+            "$PARENT_REPO"@sha256:*) ;;
+            *) echo 'BLOCKED:UNPINNED_PARENT'; exit 2 ;;
+          esac
+          echo "base_ref=$BASE_REF" >> "$GITHUB_OUTPUT"
+          echo "RESOLVED_PARENT_IMAGE=$BASE_REF"
+
+      - name: Clean build only the selected Dockerfile
+        id: built
+        shell: bash
+        env:
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          DOCKERFILE: ${{ steps.plan.outputs.dockerfile }}
+          PARENT_REPO: ${{ steps.plan.outputs.parent_repo }}
+          BASE_REF: ${{ steps.parent.outputs.base_ref }}
+        run: |
+          set -Eeuo pipefail
+          TAG="git-${GITHUB_SHA}-run${GITHUB_RUN_ID}-a${GITHUB_RUN_ATTEMPT}"
+          IMAGE_TAG="${PACKAGE}:${TAG}"
+          test -f "$DOCKERFILE"
+          args=(--pull --no-cache --build-arg "PROJECT_GIT_SHA=$GITHUB_SHA")
+          if [[ -n "$PARENT_REPO" ]]; then
+            test -n "$BASE_REF"
+            args+=(--build-arg "BASE_IMAGE=$BASE_REF")
+          else
+            test -z "$BASE_REF"
+          fi
+          docker build "${args[@]}" -f "$DOCKERFILE" -t "$IMAGE_TAG" local-data-platform
+          docker image inspect "$IMAGE_TAG" >/dev/null
+          echo "image_tag=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "SINGLE_IMAGE_BUILD=PASS"
+          echo "BUILT_IMAGE=$IMAGE_TAG"
+
+      - name: Selected image no-network smoke before any publication
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
+          SMOKE: ${{ steps.plan.outputs.smoke }}
+          WRITER_IMPORT: ${{ steps.plan.outputs.writer_import }}
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --network none --security-opt no-new-privileges \
+            --cap-drop ALL --entrypoint /bin/sh "$IMAGE_TAG" -ec "$SMOKE"
+          if [[ "$WRITER_IMPORT" == "true" ]]; then
+            docker run --rm --network none --security-opt no-new-privileges \
+              --cap-drop ALL --entrypoint python "$IMAGE_TAG" \
+              -c 'import new_only_airflow_writer, task004_cdm_dynamic_pg_writer'
+          fi
+          echo SINGLE_IMAGE_NO_NETWORK_SMOKE=PASS
+
+      - name: Publish unique SHA and Run-tag for selected package only
+        if: steps.plan.outputs.publish == 'true'
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          docker push "$IMAGE_TAG"
+          echo "PUBLISHED_SINGLE_IMMUTABLE_TAG=$IMAGE_TAG"
+
+      - name: Explicitly promote only the selected package to latest
+        if: steps.plan.outputs.promote == 'true'
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
+          PACKAGE: ${{ steps.plan.outputs.package }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
+          docker tag "$IMAGE_TAG" "${PACKAGE}:latest"
+          docker push "${PACKAGE}:latest"
+          echo "PROMOTED_SINGLE_LATEST=${PACKAGE}:latest"
+
+      - name: Summarize exact target and mutation boundary
+        if: always()
+        shell: bash
+        env:
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          IMAGE_TAG: ${{ steps.built.outputs.image_tag }}
+          BASE_REF: ${{ steps.parent.outputs.base_ref }}
+          PUBLISH: ${{ steps.plan.outputs.publish }}
+          PROMOTE: ${{ steps.plan.outputs.promote }}
+        run: |
+          {
+            echo "### Local DP single-image build"
+            echo "- Source SHA: \`$GITHUB_SHA\`"
+            echo "- Package: \`$PACKAGE\`"
+            echo "- Built tag: \`$IMAGE_TAG\`"
+            echo "- Parent digest ref: \`$BASE_REF\`"
+            echo "- Requested publish: \`$PUBLISH\`"
+            echo "- Requested latest promotion: \`$PROMOTE\`"
+            echo "- Kubernetes/Airflow/S3/PostgreSQL operations: NONE"
+            echo "- Actual publish/promotion success is determined by prior step status."
+          } >> "$GITHUB_STEP_SUMMARY"
