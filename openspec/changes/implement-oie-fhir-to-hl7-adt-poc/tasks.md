@@ -1,6 +1,6 @@
 # Tasks — OIE FHIR→HL7 ADT PoC
 
-> **ACTIVE / DEBUG OIE 4.7.0 RUNTIME VERIFIED.** Strict mapping offline tests and nonpersistent `dw-oie/worker01` OIE engine installation have passed. **OIE Channel FHIR→HL7, Azure Blob, Fabric, and persistent PVC remain NOT VERIFIED.**
+> **OIE 4.7.0 CLINICAL MVP LIVE PASS (2026-10-24).** `dw-oie/worker01` Retain PVC and Johns Creek FHIR→HL7 ADT^A01 Channel have real runtime and independent persistent message readback evidence. **Azure Blob Publisher, HL7 delivery and Fabric remain NOT VERIFIED**; keep them separate.
 
 ## 1. Planning and boundaries
 - [x] 1.1 Check real main/source P4.1 boundary, OIE release/license/container provenance and relevant governance; preserve old Local DP/OMOP.
@@ -12,11 +12,11 @@
 - [x] 2.1 Implement isolated OIE ADT Channel source mapping and offline positive/negative deterministic tests.
 - [x] 2.2 Build own pinned OIE 4.7.0 container from verified official artifact; CI test image/Java/OIE startup in disposable environment.
 - [x] 2.3 Add `dw-oie` namespace, single worker01-pinned OIE workload, isolated PVC, ClusterIP and minimal Secret/permissions templates; only static validation until authorized.
-- [ ] 2.4 Run real OIE 4.7.0 conversion on actual Johns Creek Synthea FHIR Bundle, independently HL7 v2.5.1 parse/readback; record skips, rejects, retries and exact SHA/Digest/Run.
-- [ ] 2.5 With separate user approval and session coordination, validate live `dw-oie` placement/PVC and isolated OIE Channel; preserve durable state and inspect other live work before write.
+- [x] 2.4 Run real OIE 4.7.0 conversion on actual Johns Creek Synthea FHIR Bundle, independently HL7 v2.5.1 parse/readback; record skips, rejects, retries and exact SHA/Digest/Run.
+- [x] 2.5 With separate user approval and session coordination, validate live `dw-oie` placement/PVC and isolated OIE Channel; preserve durable state and inspect other live work before write.
 
 ## 3. Follow-on boundaries
-- [ ] 3.1 Document actual OIE runtime evidence in this Change and link handoff contract; do not mark Azure Blob publication done.
+- [x] 3.1 Document actual OIE runtime evidence in this Change and link handoff contract; do not mark Azure Blob publication done.
 - [ ] 3.2 Hand off shared immutable Azure Publisher and Atlanta/Johns Creek publishing to a separate Change; only archive after all OIE scope evidence is verified.
 
 **Execution rule:** each implementation PR must include `OpenSpec-Change:
@@ -107,4 +107,12 @@ The previously authored durable manifests remain **later-phase source definition
 
 ### 2.4.3 — Live worker01 message readback CLI safety option
 - [x] Extend already proven 31-event `oie_channel_runtime_probe.py` with explicit `--existing-channel` read-only configuration/empty-message preflight: exact canonical Channel ID/name/preprocessingScript from merged Healthcare Main must match OIE; Channel must already be STARTED; unlike isolated CI, this mode **never creates or redeploys** a Channel. Submits exactly frozen 31 synthetic FHIR Encounters + one IMP retry only after these checks; demands 1 A01 / 30 SKIP / identical retry + 32 persisted OIE message records. Production Blob delivery remains separate and not accepted.
-- [ ] Apply this CLI via a reviewed, guarded Self-Runner workflow against `dw-oie` worker01 one time; retain existing PVC/Channel, independently record actual Run/Manifest digest/Health Main. CI success here is not live acceptance.
+- [x] Apply this CLI via a reviewed, guarded Self-Runner workflow against `dw-oie` worker01 one time; retain existing PVC/Channel, independently record actual Run/Manifest digest/Health Main. CI success here is not live acceptance.
+
+
+### 2026-10-24 — OIE real persistent Channel / 31-Encounter clinical E2E ACCEPTED
+
+- **Fresh no-collision check:** [Self-Runner #40127647490](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40127647490) PASS, authenticated loopback OIE API, existing Channels=0, `dw-oie/oie-state` Bound on worker01; no mutations. [PR #257](https://github.com/JohnZhang-DataForge/Self-Runner/pull/257) merged Self-Runner `e067fb62cc3f32ad8c7b8d79927359f84c551e57`.
+- **Real persistent Channel import:** [Self-Runner #40127786353](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40127786353) PASS after exact Healthcare `32f5f09e681ede50886dcbb22ad0be989a00b745` immutable source pin: created `Johns Creek FHIR to HL7 ADT`, ID `69ace705-a675-45f6-b126-a3b22a65212a`, read back identical canonical mapping, deployed and confirmed STARTED through loopback OIE 4.7 API. Bound Retain Derby PVC, worker01, pinned image and no active K8s jobs checked; one new Channel, **no other Channel/Pod/PVC/OMOP/Blob mutation**. Workflow merged via [Self-Runner PR #255](https://github.com/JohnZhang-DataForge/Self-Runner/pull/255) after evidence/Head review. The earlier original long-name HTTP 500 remains recorded as FAIL.
+- **Real worker01 clinical live E2E:** [Self-Runner #40128211780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40128211780) PASS, [PR #258](https://github.com/JohnZhang-DataForge/Self-Runner/pull/258) merged Self-Runner Main `dab3aa2f8b27fdbb665b755068dfd21db5bcb8b1`. Fixed Healthcare Main `5e46ff6c2325ae2daf7eabb94cbee6debdaa3448`; actual earlier synthetically generated Johns Creek source `ci-johnscreek-fhir-0001`, [source Run #40123989893](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40123989893), immutable NDJSON SHA256 `af41fd1c84001c9a11f721a0c0004bd12164997b5e243c7071257e38fca3c67d`. Verified preexisting and STARTED Channel exact ID/name/preprocessing script, zero prior message records, Bound Retain PVC/image/worker01/no active K8s Jobs; no Channel overwrite/redeploy. Submitted **all 31 real synthetic FHIR Encounter inputs** through the running OIE REST Channel Reader: **1 IMP→HL7 v2.5.1 ADT^A01**, **30 AMB→explicit SKIP (zero A01)**; independent `hl7_readback.py` checked MSH/EVN/PID/PV1 patient, visit, UTC admission time and MSH-10 against FHIR. Replayed same IMP request **once** and verified identical HL7 bytes. Final **32 stored OIE message records** readback PASS in persistent Derby. Secret was scoped to localhost port-forward; no file/PVC reset, local-path restart, OMOP or Azure Blob operation.
+- **Acceptance boundary:** This is a P2.4/P2.5 OIE **clinical conversion** acceptance with source content persisted/read from OIE. The upstream fixture retains a `Channel Writer` destination targeting `none`; **there is no demonstrated downstream HL7 delivery or Azure Blob Publisher**. Before treating events as delivered, implement and independently verify an external immutable Publisher receipt, idempotency and target content SHA. No repeat of this exact data on the live Channel: its message-history-empty preflight intentionally rejects replay.
