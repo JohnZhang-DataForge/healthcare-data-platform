@@ -1,6 +1,6 @@
 # UNDEPLOYED TEMPLATE. Render only from controlled workflow and exact immutable digest.
 # Requires manually provisioned Secret `oie-bootstrap-properties` in dw-oie:
-#   key: mirth_properties (content: server.initialadminpassword = <secret>)
+#   key: mirth_properties (contents supplied out of band, never committed)
 # The official OIE 4.7.0 configure-from-env script reads /run/secrets/mirth_properties.
 # The same script MUTATES /opt/engine/conf/mirth.properties: do not set readOnlyRootFilesystem
 # until an image-specific writable config strategy is tested.
