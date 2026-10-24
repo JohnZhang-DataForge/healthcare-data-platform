@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 
 REGISTRY = "ghcr.io/johnzhang-dataforge"
-ALLOWED_OPERATIONS = frozenset({"validate", "publish"})
+ALLOWED_OPERATIONS = frozenset({"validate", "publish", "publish-latest"})
 ALLOWED_PROMOTION_MODES = frozenset({"verify-candidate", "promote-tested"})
 RELEASE_TAG_PATTERN = re.compile(r"[a-z][a-z0-9-]{1,25}-v[0-9]+\.[0-9]+(?:\.[0-9]+)?\Z")
 DIGEST_PATTERN = re.compile(r"sha256:[a-f0-9]{64}\Z")
@@ -91,7 +91,8 @@ def build_plan(image: str, operation: str, git_ref: str, parent_digest: str = ""
         "smoke": spec.smoke,
         "writer_import": str(spec.writer_import).lower(),
         "publish": str(operation != "validate").lower(),
-        "promote": "false",  # No build-to-latest path; promotion is a separate tested-digest workflow.
+        "publish_candidate": str(operation == "publish").lower(),
+        "promote": str(operation == "publish-latest").lower(),  # Explicit opt-in local development only.
     }
 
 
