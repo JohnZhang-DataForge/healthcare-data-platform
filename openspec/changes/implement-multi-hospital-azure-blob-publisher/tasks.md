@@ -13,7 +13,7 @@
 - [x] 2.3 建立 Generator verified handoff 到 Publisher 交付输入适配，任何医院/格式由 Profile 选择，禁止耦合 Generator 核心源码。
 - [x] 2.4 实现 `dw-az-blob` 独立 DIRECT FHIR runtime CLI、不可变 Base Image 的 Dockerfile 和受控 `emptyDir` Stage Job 模板，Host-only 离线失败/重试/身份脱敏测试（**不包含真正部署、镜像发布或跨 Namespace Stage**）。
 - [ ] 2.5 原跨 Namespace ephemeral Stage 需求已由 `dw-synthea` 共 Namespace 只读 PVC 设计取消；仍待 OIE authenticated persisted readback Fetcher，运行前独立审查与授权。
-- [ ] 2.6 Publisher GHCR 镜像 Main-only Clean Build + 无网络非 root Smoke + 唯一 git-SHA 标签发布和 Digest 读回；不修改 `latest`、不触碰 K8s/Azure（需真实 Main release Run PASS 才完成）。
+- [x] 2.6 Publisher GHCR 镜像 Main-only Clean Build + 无网络非 root Smoke + 唯一 git-SHA 标签发布和 Digest 读回；不修改 `latest`、不触碰 K8s/Azure；[Run #40137992945](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40137992945) 实际成功，镜像 Digest 已记录。
 
 ## 3. Hospital Routes
 - [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
@@ -80,3 +80,9 @@
 - 新增 `oie_persisted_readback.py`：认证 HTTP Cookie Client 只允许集群内 `https://oie-debug.dw-oie.svc.cluster.local:8443`，严格校验 CA 链，不接受 PoC 的 admin 身份或不验证证书的 TLS。API 路径限明确的 `/api/channels/<channelId>/messages/<messageId>` GET，不列举、重放、发送或删除 OIE 消息。
 - 对每个新请求 POST 所返回的精确 messageId，XML 中验证 processed、Source Connector `metaDataId=0`、`TRANSFORMED`、消息/Channel ID（响应提供时）和原始 HL7/Skip 字节；再交给既有 `prepare_oie_hl7` 验证所有 Encounter、FHIR A01、MSH-10 和门诊跳过。离线 Mock 覆盖消息重复/缺失、篡改、错误 HTTP/TLS/认证、API 范围越界和凭据脱敏。
 - 本 PR **不代表**已经配置 scoped OIE 用户或可信 CA，也没有向已验收 32 条 Derby 消息发起 GET/POST，更没有 Azure Blob PUT。真实新 Source Request 的事件提交收据来源、OIE API 权限、Endpoint 证书与 Live E2E 仍 OPEN；因此 2.5/3.2/4.2 保持 OPEN。
+
+### P2.6/4.1 — 真实镜像交付与只读集群预检证据（2026-10-24）
+- Healthcare [PR #464](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/464) 已合并 Main `56b89b981cfc6088e8404aea5eae6781943d58ef`，GitHub-hosted [GHCR Main Run #40137992945](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40137992945) **SUCCESS**。Publisher 镜像 `ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:e53a87105cb489cfd4da4f66734c57c2a1b472d84e6ee8fd91f75510fe88c6a2`，标签 `git-56b89b981cfc6088e8404aea5eae6781943d58ef`，父镜像 `python:3.12-slim-bookworm@sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70`。镜像 Clean Build、非 root、只读/无网络 Docker Smoke、SDK import、CLI --help 全 PASS，latest 未修改，无共享 K8s/Azure 写入。
+- Self-Runner [PR #263](https://github.com/JohnZhang-DataForge/Self-Runner/pull/263) 通过 [Run #40138182990](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40138182990) 实际 worker01/namespace/PVC/OIE **只读预检 SUCCESS**：`dw-synthea/synthea-new-generator-state` 是 `ReadWriteOnce`、`synthea-local`、PV Retain；活跃集群 Job 0，`dw-oie` ClusterIP:8443/OIE PVC Ready、`dw-az-blob` 仍不存在；当前 Runner 拥有在 `dw-synthea` 创建 Job 权限。
+- **已证实阻塞**：`dw-synthea/azure-blob-publisher-identity` Secret **不存在**；未发现 Profile ConfigMap；本轮未获取 Azure Account/Container/RBAC 实际状态。Publisher Job 没有创建，Source Generator PVC 未修改，未实际上传或 GET Azure Blob。真实 4.1 Azure 授权与 4.2 双医院 E2E 仍 OPEN。请勿把 Secret/Role 假设为现成或直接使用其它 Fabric 账号。
+- OIE 新 [PR #466](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/466) 合并 Main `43733f0f8be6fca71ffdcdac10cf597b8b78d59a`，Scoped Source Connector readback 逻辑与离线测试通过，但真实 OIE scoped user/TLS CA 不存在明确验收，当前 Publisher 镜像 Digest 是 PR #466 **之前** 的 SHA，只能作为相应历史版本的 DIRECT FHIR 镜像，不能虚称新代码已包含在旧镜像内。
