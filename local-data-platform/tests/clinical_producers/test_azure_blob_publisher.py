@@ -98,6 +98,16 @@ class PublisherTests(unittest.TestCase):
         self.assertEqual(set(item["etag"] for item in manifest["objects"]),
                          {'"etag-1"', '"etag-2"'})
 
+    def test_prefix_containing_format_name_is_safe(self):
+        p, data = request_plan(1)
+        backend = OfflineBlobBackend()
+        receipt = publish_immutable(p, data,
+                                    landing_prefix="healthcare/FHIR_R4/archive",
+                                    backend=backend)
+        self.assertEqual(receipt["status"], "BLOB_MANIFEST_COMMITTED")
+        self.assertTrue(receipt["objects"][0]["blob_key"].endswith(
+            "/FHIR_R4/fhir/patient-000.json"))
+
     def test_repeat_is_immutable_and_reads_every_object(self):
         p, data = request_plan()
         backend = OfflineBlobBackend()
