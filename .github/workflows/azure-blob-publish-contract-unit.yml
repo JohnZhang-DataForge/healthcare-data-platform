@@ -1,15 +1,18 @@
-name: Healthcare Azure Blob Publish Plan Contract Unit
+name: Healthcare Immutable Azure Blob Publisher Offline Tests
 on:
   pull_request:
     paths:
       - "local-data-platform/apps/clinical_producers/blob_publish_contract.py"
+      - "local-data-platform/apps/clinical_producers/azure_blob_publisher.py"
+      - "local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt"
       - "local-data-platform/contracts/clinical_producers/**"
       - "local-data-platform/tests/clinical_producers/test_blob_publish_contract.py"
+      - "local-data-platform/tests/clinical_producers/test_azure_blob_publisher*.py"
       - ".github/workflows/azure-blob-publish-contract-unit.yml"
   workflow_dispatch:
 permissions: {contents: read}
 jobs:
-  immutable-plan-contract:
+  immutable-plan-and-fault-injection:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -17,8 +20,34 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
+      - name: Pure offline contract tests
+        run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
+      - name: Pure offline immutable publisher and fault-injection tests
+        run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_publisher.py -v
       - run: |
-          echo BLOB_PUBLISH_PLAN_SOURCE_BYTES_AND_KEY_CONTRACT=PASS
-          echo AZURE_BLOB_UPLOAD=NOT_IMPLEMENTED
+          echo BLOB_PUBLISH_OFFLINE_CONTRACT_AND_FAULT_TESTS=PASS
+          echo SHARED_AZURE_WRITES=NO
+          echo SHARED_K8S_MUTATION=NO
+  isolated-azurite-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite:3.33.0
+        ports:
+          - 10000:10000
+    env:
+      AZURITE_ONLY: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Install pinned Azure SDK (CI emulator only)
+        run: pip install -r local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt
+      - name: Isolated Azurite conditional create / GET / conflict / retry
+        run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_publisher_azurite.py -v
+      - run: |
+          echo AZURITE_ONLY=PASS
+          echo REAL_AZURE_STORAGE_USED=NO
           echo SHARED_K8S_MUTATION=NO
