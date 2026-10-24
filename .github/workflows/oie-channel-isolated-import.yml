@@ -39,6 +39,8 @@ jobs:
           python3 -c 'import secrets,sys; open(sys.argv[1],"w").write("server.initialadminpassword = " + secrets.token_urlsafe(32) + "\n")' "$conf"
           sudo chown 100:65533 "$conf"
           sudo chmod 400 "$conf"
+          sudo cat "$conf" > "$RUNNER_TEMP/oie-isolated-admin-client"
+          chmod 600 "$RUNNER_TEMP/oie-isolated-admin-client"
           echo "$conf" >> "$RUNNER_TEMP/oie-isolated-secret-path.txt"
           docker run -d --name oie-isolated-import --cpus 2 --memory 4g \
             -e VMOPTIONS="--add-opens=java.sql/java.sql=ALL-UNNAMED" \
@@ -59,7 +61,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          conf="$RUNNER_TEMP/oie-isolated-admin"
+          conf="$RUNNER_TEMP/oie-isolated-admin-client"
           python3 - "$conf" "$RUNNER_TEMP/oie-jc-channel.xml" <<'PY'
           import http.cookiejar,re,ssl,sys,urllib.parse,urllib.request,urllib.error,xml.etree.ElementTree as ET
           content=open(sys.argv[1]).read()
@@ -109,6 +111,6 @@ jobs:
         shell: bash
         run: |
           docker rm -fv oie-isolated-import >/dev/null 2>&1 || true
-          rm -f "$RUNNER_TEMP/oie-isolated-admin" "$RUNNER_TEMP/oie-isolated-secret-path.txt" || true
+          rm -f "$RUNNER_TEMP/oie-isolated-admin" "$RUNNER_TEMP/oie-isolated-admin-client" "$RUNNER_TEMP/oie-isolated-secret-path.txt" || true
           echo SHARED_K8S_OIE_DERBY_MUTATION=NO
           echo PERSISTENT_OIE_PVC_MUTATION=NO
