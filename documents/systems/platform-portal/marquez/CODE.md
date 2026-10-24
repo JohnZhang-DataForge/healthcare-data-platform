@@ -16,6 +16,8 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 | [`kubernetes/recover-web.sh`](../../../../platform-portal/marquez/kubernetes/recover-web.sh) | 已 Ready Marquez Web 的受控恢复；可执行 `kubectl apply` NodePort Service，不是纯只读 |
 | [`kubernetes/web-nodeport.yaml`](../../../../platform-portal/marquez/kubernetes/web-nodeport.yaml) | `dw-marquez/marquez-web-lan` NodePort **30999**；仅 Web，不应视为公网授权 |
 | [`tests/verify.sh`](../../../../platform-portal/marquez/tests/verify.sh) | 真实 K8s/PG/HTTP 检查，含临时 port-forward；不属于离线单元测试 |
+| [`tests/inventory_readonly.py`](../../../../platform-portal/marquez/tests/inventory_readonly.py) | 固定目标、指定 context、只执行 `kubectl get` 的运行资源只读盘点；**不是** HTTP/PG SQL/lineage 健康证明 |
+| [`tests/test_inventory_readonly.py`](../../../../platform-portal/marquez/tests/test_inventory_readonly.py) | 纯离线测试：命令白名单、context fail-closed、资源状态及错误信息保护 |
 
 **依赖**：PG14 持久化组件由 [Postgres CODE](../postgres/CODE.md) 管理；Airflow Provider 与 Spark Listener 仅向 Marquez API 发送真实 OpenLineage，分别由 [Airflow CODE](../airflow/CODE.md)、[Spark CODE](../spark/CODE.md) 管理。版本/Ready/接入情况以单次 Run 证据为准，不等于实时探针。
 

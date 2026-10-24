@@ -6,11 +6,12 @@
 
 - [x] 1.1 只读核对当前 Healthcare Main、Portal A3/A4 历史证据、真实 `new_only_omop_consumer`/控制容器和 Portal 组件边界；确认没有同主题开放 PR。
 - [x] 1.2 建立本 Change 的 Proposal / Design / Delta Specs / Tasks，定义“现有 Task/Step 命名不动、先业务血缘”的交付范围、依赖、风险和可测试验收。
-- [ ] 1.3 提交专项 PR，核对最终 HEAD 的 OpenSpec Strict、Trusted Change Gate、Change Gate、适用文档检查，记录准确 Run/SHA；合并 Main。本 PR 不写业务代码、不修改集群。
+- [x] 1.3 规划 PR [#412](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/412) 最终 HEAD `b49f87f0f98738cab2ba112bd24184503ea9aa47` 的 OpenSpec Strict [#40090292733](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40090292733)、Trusted Change Gate [#40090292723](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40090292723)、Change Gate [#40090292728](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40090292728)、Docs Links [#40090292741](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40090292741) 均 SUCCESS，已 Squash Merge 到 Main `a407ccf8c7de60aa5a79617fd3df86dde2685dbf`；该 PR 仅 OpenSpec 文档，无 Runtime 修改。
 
 ## 2. P1 — Marquez / PG14 read-only live baseline
 
 - [x] 2.1 静态盘点既有 Helm/PG14/Marquez、A3 Provider/A4 Spark Listener 源码，标注 `deploy.sh`/`recover-web.sh`/`configure-scheduler.sh` 会修改资源，不能当作只读诊断。
+- [x] 2.2a 已编制仅执行固定 `kubectl get` 且要求精确 context 的 K8s 资源盘点脚本与纯离线测试；只检查 Namespaces、Deployments、Services、EndpointSlices、PG14 Pod/PVC，明确标记 HTTP / PG SQL / Job-Run-Dataset 未检查。尚未执行 Live 查询。
 - [ ] 2.2 核对共享环境占用与操作许可，使用受控只读命令检查 `dw-marquez` API/Web、Service/Endpoint、`dw-postgre14` PG14/PVC、健康/Namespace 及历史事件；记录时间、执行环境、实际源码 SHA。
 - [ ] 2.3 保存健康报告和异常矩阵；未证实则 `LIVE_STATUS=UNKNOWN`，不自行重启或重装。
 
