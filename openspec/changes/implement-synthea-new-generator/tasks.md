@@ -43,3 +43,10 @@
 - 已实现源文件：`apps/synthea/synthea_new_generator/{request,generator,entrypoint}.py`，v1 JSON Schemas、本地 Manifest/冻结/幂等安全检查及 Stub/负向单测。
 - 新增仅 CPU 的 PR 工作流 `.github/workflows/synthea-new-generator-unit.yml`；此处不依赖真实 Java Synthea、Kubernetes、Azure/OIE/Fabric。
 - P1 的 `2.1–2.4` 已覆盖源码、Mock/负向/并发单测；本 PR 最终 HEAD 的 CI 结论另以实际 Run 校验，不将 Stub 执行视作真实 Synthea/JAR、FHIR Bundle、州/城市匹配或镜像/K8s 的验证。P2/P3 仍保持未完成。
+
+
+### P2 实施记录（Profile / 实体 Source Smoke PR）
+
+- Atlanta/FHIR 与 Johns Creek/HL7 由两个独立 Profile 管理：同一个 `synthea_new_generator` 统一执行 `FHIR_R4` 原生生成，下游以 `DIRECT` 或 `OIE` 区分，不在 Generator 中引入医院/OIE 分支。
+- 本 PR 新增 Profile Adapter、Schema、单测及 GitHub-hosted 隔离 Synthea Source Smoke；任何临床事件→ADT 转换与 Blob Publisher 均不在此 PR 中。
+- 真实 Java/Synthea 的 FHIR、CSV、两种地理参数测试在最终 PR Run 通过后才可勾选 3.1–3.3；未执行、失败或格式不符一律保留未完成状态。
