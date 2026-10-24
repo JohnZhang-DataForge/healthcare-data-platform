@@ -170,7 +170,20 @@ with enable_lineage(DAG(
     # REAL S3 manifest is the only way to reach these Kubernetes controllers.
     # The frozen v2 image is supplied directly (the historical factory default
     # references another DAG's authorize_processing_replay task).
+    # Pass genuine Airflow OpenLineage provider UUIDs into the Spark listener.
+    # KPO is not a Spark-native provider operator: there is NO automatic
+    # Spark conf injection here. The v2 child runtime verifies these at render.
+    SPARK_PARENT_CONTEXT={
+        "OPENLINEAGE_PARENT_REQUIRED":"YES",
+        "OPENLINEAGE_PARENT_NAMESPACE":
+            "{{ macros.OpenLineageProviderPlugin.lineage_job_namespace() }}",
+        "OPENLINEAGE_PARENT_JOB":
+            "{{ macros.OpenLineageProviderPlugin.lineage_job_name(task_instance) }}",
+        "OPENLINEAGE_PARENT_RUN_ID":
+            "{{ macros.OpenLineageProviderPlugin.lineage_run_id(task_instance) }}",
+    }
     SPARK_INPUT={
+        **SPARK_PARENT_CONTEXT,
         "BATCH_ID":"{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['batch_id'] }}",
         "MANIFEST_URI":"{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['manifest_uri'] }}",
         "MANIFEST_SHA256":"{{ ti.xcom_pull(task_ids='select_verified_new_only_batch')['manifest_sha256'] }}",
@@ -186,6 +199,7 @@ with enable_lineage(DAG(
     spark_reconcile=make_processing_pod(
         "spark_reconcile",process="reconcile",
         env_vars={
+            **SPARK_PARENT_CONTEXT,
             "BATCH_ID":SPARK_INPUT["BATCH_ID"],
             "PATIENT_PROCESSING_URI":
                 "{{ ti.xcom_pull(task_ids='spark_patient')['processing_data_uri'] }}",

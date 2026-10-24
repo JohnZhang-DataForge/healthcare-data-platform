@@ -246,6 +246,10 @@ Path(
 )
 PY
 
+# The NEW_ONLY child image injects ONLY authentic Airflow provider parent IDs.
+# Legacy executions with no opt-in retain their original SparkApplication.
+python3 "$ROOT/spark/common/openlineage_parent_context.py" "$RENDERED" spark_encounter
+
 kubectl apply \
   --dry-run=client \
   -f "$RENDERED" \

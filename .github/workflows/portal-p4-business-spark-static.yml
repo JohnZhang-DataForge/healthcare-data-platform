@@ -6,6 +6,12 @@ on:
       - ".github/workflows/portal-p4-business-spark-static.yml"
       - "platform-portal/marquez/tests/verify_business_lineage.py"
       - "platform-portal/marquez/tests/test_verify_business_lineage.py"
+      - "local-data-platform/airflow/dags/new_only_omop_consumer.py"
+      - "local-data-platform/spark/common/openlineage_parent_context.py"
+      - "local-data-platform/tests/spark/test_openlineage_parent_context.py"
+      - "local-data-platform/scripts/task004/05d-run-person-canonical.sh"
+      - "local-data-platform/scripts/task004/05e-run-visit-canonical.sh"
+      - "local-data-platform/scripts/task004/05f-reconcile-person-visit.sh"
       - ".github/quality/tests/test_portal_p4_spark_listener.py"
       - ".github/quality/scripts/local_dp_single_image_plan.py"
       - "local-data-platform/spark/manifests/task002/person-canonical-adapter.yaml.tpl"
@@ -44,6 +50,9 @@ jobs:
             .github/quality/scripts/check_spark_manifest_source_closure.py
           PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
             -s platform-portal/marquez/tests -p "test_verify_business_lineage.py" -v
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s local-data-platform/tests/spark -p "test_openlineage_parent_context.py" -v
+          echo P4_AUTHENTIC_AIRFLOW_PARENT_CONTEXT=OFFLINE_PASS
           echo P4_REAL_CHILD_LINEAGE_VERIFIER=OFFLINE_PASS
           echo P4_THREE_REAL_BUSINESS_SPARK_CONFIGS=STATIC_PASS
           echo P4_SINGLE_CHILD_IMAGE_RELEASE_SCOPE=STATIC_PASS
