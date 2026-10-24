@@ -18,7 +18,8 @@
 - [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
 
 ## 4. Guarded Live and Documentation
-- [x] 4.4 创建独立 `dw-az-blob` Namespace 的静态 Kubernetes YAML/边界文档/离线门禁，显式阻止跨 Namespace 挂载现有 Generator PVC；**仅代码级别完成**，真实 `kubectl` Create/Readback 及 Writer 工作负载不在此勾选范围。
+- [x] 4.5 取消单独 Azure Blob Namespace，恢复 Publisher 目标为 `dw-synthea`，保留 `dw-oie` API+独立 PVC；清理旧模板/静态测试并严格删除空 Namespace，独立读回；不意味着 Publisher 或 Azure 已部署。
+- [x] 4.4 **已回退的历史里程碑**：曾通过 PR #456 创建独立 `dw-az-blob` 的 YAML/静态测试及 live Namespace，随后用户决定取消；真实回退由 4.5 记录，不能将本条作为当前 Publisher Namespace。
 - [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，批准范围后才允许 Self-Runner 的真实外部写入。
 - [ ] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
 - [ ] 4.3 同步真实 PR/Run/Blob object receipt、相关 CODE.md，明确 Fabric/OMOP 不在本 Change；再判断 archive。
@@ -54,3 +55,11 @@
 - [Self-Runner Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) **SUCCESS**，预检 active Kubernetes Jobs=0、worker01 Ready、dw-synthea/Generator PVC Bound、dw-oie Deployment Ready。原 Namespace 不存在，`kubectl create` 只创建 `dw-az-blob`，独立读回 `PASS`；UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`，Restricted Pod Security 标签匹配。
 - 本次新 Namespace 内 Pods/Jobs/PVC/Secrets=0；NetworkPolicy **未应用**、Publisher Image/Pod/Secret/实际 Azure RBAC 均未配置，OIE Derby 和 Generator PVC 未修改、Azure Storage 写入=0。
 - 4.4 的 **Namespace 创建** 可以判为 `LIVE_VERIFIED`，但 4.1（Azure Account/身份/安全联检）、4.2（双医院真实发布）及跨 Namespace 受控 handoff **仍 OPEN**。不能以 Namespace SUCCESS 推断数据能发布。
+
+### P4.5 — 撤销独立 Namespace，恢复与 Generator 共 Namespace（2026-10-24）
+
+- 用户决定为减少跨 Namespace PVC 交接复杂度，将 Publisher 运行位置恢复为 `dw-synthea`，目标 worker01，现有 `synthea-new-generator-state` 只读挂载；不增加 Publisher PVC。实际 Job/镜像仍未建，真实挂载前必须核查 PVC accessModes 与源 Pod 并发使用，避免影响 Generator。
+- `dw-oie` 保持独立 namespace 和 Retain PVC，无需同步移动：源 FHIR 通过受控 OIE API 提交；转换所得 HL7 必须从真实 OIE 消息独立读取并验证，不能跨 Namespace 访问 Derby/PVC。旧 32 条历史消息禁止重放。
+- `dw-az-blob` 曾由 [Self-Runner Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 创建，UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`。已用 [Self-Runner PR #261](https://github.com/JohnZhang-DataForge/Self-Runner/pull/261) 的 [Run #40133855773](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133855773) 检查：目标 Namespace UID/标签完全匹配、除自动 default SA 和 kube-root-ca ConfigMap 外无资源、集群 active Jobs=0、Generator/OIE 原 PVC Bound；执行只删除 `dw-az-blob`，独立读回 `ABSENT=PASS`，`dw-synthea`/`dw-oie` Namespace 与 PVC UID 未改变。
+- 当前源码取消原 `local-data-platform/kubernetes/manifests/azure-blob/` 静态 YAML/README 和 `test_blob_namespace_contract.py`，恢复当前设计与 CODE.md，保留过去 PR/Run 历史，不冒充未实施的 Publisher 镜像/Job/Scoped Secret 或实际 Azure PUT/GET。
+- 4.1/4.2、真实 Azure IAM/Secret、OIE scoped Fetcher、新冻结 Request 双医院 Blob E2E 继续 OPEN，任何 shared runtime 写入需新的授权和 preflight。
