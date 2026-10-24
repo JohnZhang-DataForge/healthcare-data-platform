@@ -140,6 +140,10 @@ def fetch_persisted_readbacks(
     Caller must bind receipts to one newly generated frozen Request and provide
     a genuine authenticated OIE API client. This helper does not submit data.
     """
+    try:
+        UUID(channel_id)
+    except (TypeError, ValueError, AttributeError):
+        raise OIEReadbackBlocked("INVALID_OIE_CHANNEL_ID") from None
     if not isinstance(new_request_messages, list) or not new_request_messages:
         raise OIEReadbackBlocked("NO_NEW_OIE_MESSAGE_RECEIPTS")
     ids = set()
