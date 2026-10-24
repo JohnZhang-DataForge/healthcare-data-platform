@@ -209,3 +209,10 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [debug/README.md](../../../../local-data-platform/kubernetes/manifests/oie/debug/README.md) | 安全调试步骤、失效数据边界以及持久化延后约束 |
 | [OIE debug template tests](../../../../local-data-platform/tests/clinical_producers/test_oie_debug_manifest.py) | 非持久化模式 YAML/节点/Secret 边界测试 |
 | [OIE debug static CI](../../../../.github/workflows/oie-debug-manifest-static.yml) | 无集群调用的 GitHub-hosted 静态门禁 |
+
+## OIE 4.7.0 固定源码镜像隔离 Smoke
+
+| 文件 | 作用 |
+| --- | --- |
+| [OIE pinned build README](../../../../local-data-platform/images/oie/README.md) | 上游 v4.7.0 精确 Commit、原 Dockerfile target/依赖与 GHCR 交付边界 |
+| [OIE 4.7 isolated image smoke](../../../../.github/workflows/oie-470-isolated-image-smoke.yml) | GitHub-hosted 官方源 Clean Build 与启动测试，不推送镜像、不改共享环境 |

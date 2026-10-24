@@ -46,3 +46,8 @@ separate coordinated runtime authorization.
 - [ ] 2.6.3 After live Channel tests the user will provision durable on-premises storage separately; evaluate migration to persistent StatefulSet/PVC only after that explicit handoff.
 
 The previously authored durable manifests remain **later-phase source definitions only**; do not apply them during initial debugging. This scope change explicitly supersedes any earlier advice to create `oie-state` PVC before first debug install.
+
+### P2.2 isolated image build gate candidate (2026-10-24)
+
+- 官方 OIE 4.7.0 tag 已核实解析为 immutable upstream `f9ba73e28de151b041b97e7383e0ab9d2c4f1799`；该 release 不提供已打包的 4.7.0 Docker image。新增只在 GitHub-hosted runner 构建官方源 `jre-run` target、只读版本/用户检查以及临时 loopback HTTPS 启动的 CI；不会写入 GHCR、K8s、Blob、OMOP。
+- Task 2.2 **保持 OPEN**，直到该工作流在确切 Head 上构建/启动 PASS，记录测试 image ID、依赖 Digest 并由独立流程发布可部署 registry Digest；只有 workflow 定义不等于已经成功构建。2.4 OIE Channel 真实转换仍 OPEN。
