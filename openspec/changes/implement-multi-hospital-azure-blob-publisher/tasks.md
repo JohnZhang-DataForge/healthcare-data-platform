@@ -75,3 +75,8 @@
 - `.github/workflows/azure-blob-publisher-ghcr-release.yml` 仅因自身路径的 Main Push 自动执行 Release，PR 在 GitHub-hosted Ubuntu Runner 进行 host contract + Docker clean build / non-root read-only/no-network smoke；真实推 GHCR 仅发生在 Main push 或人工 main dispatch，令镜像可复现且不会因其它业务代码更新发布或覆盖 `latest`。
 - 基础镜像 `python:3.12-slim-bookworm` 在 CI 中下载后按实际 RepoDigest 转为 `python:3.12-slim-bookworm@sha256:<real>`，构建过程仅使用不可变 digest；最终镜像只发布 `git-<exact Main SHA>` 标签，保存真实仓库 Digest。Dockerfile 仍然要求 `BASE_IMAGE` 参数，不允许静默使用 latest。
 - Release 不授权 Publisher Job 或 Azure SP Secret 安装，真实 K8s/PVC/Azure Storage E2E 仍需独立预检与受控执行。PR Test 与 Main Release 的 Run 结论要分别记录；未成功 Push 前 2.6 保持 OPEN。
+
+### P2.5 — OIE scoped persisted message readback 的离线实现（2026-10-24）
+- 新增 `oie_persisted_readback.py`：认证 HTTP Cookie Client 只允许集群内 `https://oie-debug.dw-oie.svc.cluster.local:8443`，严格校验 CA 链，不接受 PoC 的 admin 身份或不验证证书的 TLS。API 路径限明确的 `/api/channels/<channelId>/messages/<messageId>` GET，不列举、重放、发送或删除 OIE 消息。
+- 对每个新请求 POST 所返回的精确 messageId，XML 中验证 processed、Source Connector `metaDataId=0`、`TRANSFORMED`、消息/Channel ID（响应提供时）和原始 HL7/Skip 字节；再交给既有 `prepare_oie_hl7` 验证所有 Encounter、FHIR A01、MSH-10 和门诊跳过。离线 Mock 覆盖消息重复/缺失、篡改、错误 HTTP/TLS/认证、API 范围越界和凭据脱敏。
+- 本 PR **不代表**已经配置 scoped OIE 用户或可信 CA，也没有向已验收 32 条 Derby 消息发起 GET/POST，更没有 Azure Blob PUT。真实新 Source Request 的事件提交收据来源、OIE API 权限、Endpoint 证书与 Live E2E 仍 OPEN；因此 2.5/3.2/4.2 保持 OPEN。

@@ -312,6 +312,8 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 
 | 文件 | 职责与边界 |
 | --- | --- |
+| [oie_persisted_readback.py](../../../../local-data-platform/apps/clinical_producers/oie_persisted_readback.py) | 通过 Scoped OIE HTTP Cookie 登录、已验证 TLS 和限定 Channel/Message ID 的 GET，仅解析 OIE 4.7 持久化 Source Connector TRANSFORMED Byte/显式 SKIP；不提交或回放新旧消息，身份/CA 仍未配置于生产 |
+| [test_oie_persisted_readback.py](../../../../local-data-platform/tests/clinical_producers/test_oie_persisted_readback.py) | Offline XML 字节、消息范围/重复 ID、未处理/错误 Connector、错误 Credential 与严格 TLS/API 路由负向测试 |
 | [oie_hl7_publisher.py](../../../../local-data-platform/apps/clinical_producers/oie_hl7_publisher.py) | 外部 `FHIR_R4/HL7_V2/OIE` Profile + 实际 OIE 逐 Encounter 消息读回（Channel ID / Message ID / bytes 或 SKIP）→ 独立 ADT A01/FHIR 关联验证 → 共享 Blob Publisher；不执行 OIE POST，不读/改历史 Derby |
 | [test_oie_hl7_publisher.py](../../../../local-data-platform/tests/clinical_producers/test_oie_hl7_publisher.py) | 离线源 FHIR 冻结 Manifest、消息覆盖、IMP A01/AMB SKIP、HL7 Control ID、错医院/Channel/消息身份、幂等与无伪成功 Manifest 测试 |
 | [Azure Blob offline CI](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only Fake/Azurite + OIE adapter；没有真实 OIE/K8s/Azure I/O |
