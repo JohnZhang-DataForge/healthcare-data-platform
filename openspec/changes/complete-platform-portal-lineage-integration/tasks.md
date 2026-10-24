@@ -21,6 +21,13 @@
 - [ ] 3.2 仅修改真实 `new_only_omop_consumer` 所需最小配置，保留 DAG ID/Task ID/XCom/Claim/Fencing/Writer 许可；更新 Airflow CODE/测试并通过 PR CI。
 - [ ] 3.3 受控验证真实 Airflow Job/Run 读回及其他 DAG 默认行为；明确 Proven vs Not Proven。
 
+### P2 当前静态实施记录（2026-10-24，尚无业务 Live）
+
+- 双仓基线只读核对：Healthcare Main `460069e37d3ac38ec2f240f3105d023799340785`；Self-Runner Main `bd521563776d9fc7362e0a4d32c77b6b019ed1a9`。Healthcare 无开放 PR，Self-Runner 旧的 6 个开放 PR（#166–#168、#183–#185）未涉及本轮 Airflow P2；当时双仓 Actions running/queued 均为 0，**不代表集群内无活动资源**。
+- **3.1 部分只读源码核对**：A3 Probe 使用 `enable_lineage(DAG(...))`；既有 `configure-scheduler.sh` 设 `SELECTIVE_ENABLE=True`、HTTP Transport、Namespace 但仅触及 Scheduler Deployment。历史 A3 Provider 2.17.0 已验证；P1 没有读回当前实际 Airflow 执行组件上的 Provider/Transport/Selective。后者 **PENDING LIVE READONLY**，因此 3.1 不勾选。
+- **3.2 代码候选**：在原业务 `new_only_omop_consumer` DAG 外层使用 A3 相同的 selective wrapper；不调整 14 个 Task ID、DAG ID、XCom、S3/PG Claim、Spark、Writer/Fencing 或 Helm/K8s 配置。新增 AST 离线负向检查，核验 `landing_batch_discovery` 未 opt-in，A3 Probe 仍 opt-in；同步 Airflow CODE。PR CI 未完成前 **3.2 不勾选**。所有静态结论不代表部署。
+- **3.3 执行边界**：先让 PR 静态/单元/DagBag CI PASS；经审核合并并只读核对 GitSync SHA、执行进程 Provider/Transport、全局 Selective、Marquez 当前 0 Job/Run 基线及共享资源空闲/授权后，再用明确已完成且 Manifest 真实匹配的单个 Batch 做 `consumer_readonly=True`、不含 `spark_processing`/`writer_commit` 的受控手动 SKIP 路径；核对 Airflow 真实 Task state、Marquez namespace/Job/Run 和 PG14 持久化 COUNT 增量。不得触发新数据 Spark/Writer COMMIT，也不得因旧数据缺失伪造事件。任何一项未知则 HOLD，不把安全计划当运行成功。
+
 ## 4. P3 — Spark A4 real I/O and Job/Run fix
 
 - [ ] 4.1 对现有 A4 `unknown`、Job latestRun 空、Dataset I/O 0 的事件/facets 做只读溯源，冻结根因证据；原 Workflow FAILURE 记录不覆写。
