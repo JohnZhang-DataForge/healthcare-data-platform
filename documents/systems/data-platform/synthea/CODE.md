@@ -295,3 +295,14 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [azure-blob-publish-contract-unit.yml](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only Mock + Azurite CI；不会创建真实 Azure Blob/PVC |
 
 这只实现 shared publisher 传输层，**不是** Atlanta/Johns Creek live adapter 或 K8s→Azure E2E；`SOURCE_HANDOFF_VERIFIED` 和 `OIE_HL7_READBACK_VERIFIED` 必须由调用方独立认证、并提供已验证原始 bytes。无真实 Azure Account/Container/RBAC/Secret、工作负载身份和 Session Coordination Gate 时不得运行真实 PUT。
+
+
+## Direct FHIR delivery adapter（Atlanta Profile；离线候选）
+
+| 文件 | 责任与边界 |
+| --- | --- |
+| [direct_fhir_publisher.py](../../../../local-data-platform/apps/clinical_producers/direct_fhir_publisher.py) | 外部 Profile 的 `FHIR_R4/DIRECT` 路由，将 P4.1 验证的冻结原始 FHIR bytes / Manifest SHA 转换为共享 Publisher Plan；无固定 Atlanta 分支、不修改 Generator |
+| [test_direct_fhir_publisher.py](../../../../local-data-platform/tests/clinical_producers/test_direct_fhir_publisher.py) | Atlanta 模拟 Profile 离线交接、Blob 原始字节、同请求重试、医院/路由错配、源字节及 Manifest 篡改拒绝 |
+| [Azure Blob offline CI](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only 跑本适配器和共享 Publisher Fake/Azurite 测试，不访问真实 K8s/Azure |
+
+此 Adapter **仅通过调用方显式提供 backend 才可能执行 Blob PUT**，仍不得以单测或已验收 Generator/OIE 结果推断真实 Landing 已有数据；实际执行需新的 Request、只读 PVC、最小权限和操作前授权。

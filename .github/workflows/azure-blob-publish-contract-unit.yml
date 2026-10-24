@@ -4,10 +4,12 @@ on:
     paths:
       - "local-data-platform/apps/clinical_producers/blob_publish_contract.py"
       - "local-data-platform/apps/clinical_producers/azure_blob_publisher.py"
+      - "local-data-platform/apps/clinical_producers/direct_fhir_publisher.py"
       - "local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt"
       - "local-data-platform/contracts/clinical_producers/**"
       - "local-data-platform/tests/clinical_producers/test_blob_publish_contract.py"
       - "local-data-platform/tests/clinical_producers/test_azure_blob_publisher*.py"
+      - "local-data-platform/tests/clinical_producers/test_direct_fhir_publisher.py"
       - ".github/workflows/azure-blob-publish-contract-unit.yml"
   workflow_dispatch:
 permissions: {contents: read}
@@ -24,6 +26,8 @@ jobs:
         run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
       - name: Pure offline immutable publisher and fault-injection tests
         run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_publisher.py -v
+      - name: Direct verified FHIR handoff to shared publisher (no Azure)
+        run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_direct_fhir_publisher.py -v
       - run: |
           echo BLOB_PUBLISH_OFFLINE_CONTRACT_AND_FAULT_TESTS=PASS
           echo SHARED_AZURE_WRITES=NO
