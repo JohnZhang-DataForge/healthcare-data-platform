@@ -101,12 +101,15 @@ jobs:
               synthea-new-generator:p3-check \
               --request "/inputs/${source}.json"
           done
-          python3 - <<'PY'
+          # Manifests intentionally use UID 10001 / mode 0600. Read them through
+          # an independent read-only container, not as the GitHub Runner host UID.
+          docker run --rm -i --network none --read-only \
+            --mount "type=bind,source=${RUNNER_TEMP}/p3-state,target=/synthea-new-generator-state,readonly" \
+            --entrypoint python3 synthea-new-generator:p3-check - <<'PY'
           import hashlib
           import json
-          import os
           from pathlib import Path
-          root=Path(os.environ["RUNNER_TEMP"])/"p3-state"/"requests"
+          root=Path("/synthea-new-generator-state/requests")
           for request in ("ci-p3-atlanta-0001","ci-p3-johnscreek-0001"):
               folder=root/request
               manifest=json.loads((folder/"generation-manifest.json").read_text())
