@@ -122,3 +122,45 @@ jobs:
           done
           echo "AZURE_BLOB_PUBLICATION=NOT_STARTED"
           echo "OIE_HL7_TRANSFORMATION=NOT_STARTED"
+
+      - name: Extract verified real Johns Creek FHIR event envelopes for OIE Channel acceptance
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd local-data-platform
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          from apps.clinical_producers.source_handoff import verify_handoff
+          from apps.clinical_producers.oie.fhir_events import events_from_bundle
+          root=Path(os.environ["RUNNER_TEMP"])/"new-generator-state"
+          source=verify_handoff(root,Path("config/synthea-new-generator/johns-creek-hl7.json"),
+                                "ci-johnscreek-fhir-0001")
+          assert source["status"]=="SOURCE_HANDOFF_VERIFIED"
+          out=Path(os.environ["RUNNER_TEMP"])/"oie-real-johns-creek"
+          out.mkdir()
+          envelopes=[]
+          for f in source["files"]:
+              path=root/source["request_relative_path"]/"payload"/f["path"]
+              raw=path.read_bytes()
+              assert hashlib.sha256(raw).hexdigest()==f["sha256"]
+              assert len(raw)==f["size_bytes"]
+              envelopes += events_from_bundle(json.loads(raw),"ci-johnscreek-fhir-0001")
+          assert len(envelopes)==source["metrics"]["fhir_encounters"] and envelopes
+          payload="".join(json.dumps(e,sort_keys=True,separators=(",",":"))+"\\n"
+                          for e in envelopes)
+          (out/"encounter-events.ndjson").write_text(payload,encoding="utf-8")
+          (out/"source-handoff.json").write_text(json.dumps(source,sort_keys=True),encoding="utf-8")
+          (out/"events-sha256.txt").write_text(hashlib.sha256(payload.encode()).hexdigest()+"\\n")
+          print("REAL_JOHNS_CREEK_SOURCE_VERIFIED=PASS")
+          print("REAL_JOHNS_CREEK_ENCOUNTER_EVENTS="+str(len(envelopes)))
+          print("REAL_OIE_EVENT_ARTIFACT_SHA256="+hashlib.sha256(payload.encode()).hexdigest())
+          print("OIE_CHANNEL_LIVE_RUNTIME=NOT_TESTED")
+          PY
+      - name: Upload immutable synthetic FHIR event proof (short retention)
+        uses: actions/upload-artifact@v4
+        with:
+          name: oie-real-johns-creek-fhir-events-${{ github.run_id }}
+          path: ${{ runner.temp }}/oie-real-johns-creek/
+          retention-days: 3
+          if-no-files-found: error
