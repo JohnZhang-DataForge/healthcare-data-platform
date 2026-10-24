@@ -132,6 +132,31 @@ class PortalP4BusinessListenerTests(unittest.TestCase):
         self.assertIn("healthcare-platform-spark-business", smoke)
         self.assertIn("spark.extraListeners: io.openlineage", smoke)
 
+    def test_actual_airflow_task_parent_is_passed_to_v2_renderer_only(self):
+        dag = (ROOT / "local-data-platform/airflow/dags/new_only_omop_consumer.py").read_text()
+        helper = ROOT / "local-data-platform/spark/common/openlineage_parent_context.py"
+        self.assertTrue(helper.is_file())
+        for literal in (
+            "OPENLINEAGE_PARENT_REQUIRED",
+            "macros.OpenLineageProviderPlugin.lineage_job_namespace()",
+            "macros.OpenLineageProviderPlugin.lineage_job_name(task_instance)",
+            "macros.OpenLineageProviderPlugin.lineage_run_id(task_instance)",
+        ):
+            self.assertIn(literal, dag)
+        scripts = {
+            "spark_patient": "05d-run-person-canonical.sh",
+            "spark_encounter": "05e-run-visit-canonical.sh",
+            "spark_reconcile": "05f-reconcile-person-visit.sh",
+        }
+        image = IMAGE_DOCKERFILE.read_text()
+        for task, name in scripts.items():
+            source = ROOT / "local-data-platform/scripts/task004" / name
+            body = source.read_text()
+            self.assertIn("openlineage_parent_context.py", body)
+            self.assertIn(task, body)
+            self.assertIn(name, image)
+        self.assertIn("spark/common/openlineage_parent_context.py", image)
+
     def test_no_fake_business_completion_criteria_in_templates(self):
         for path in MANIFESTS.values():
             raw = path.read_text()
