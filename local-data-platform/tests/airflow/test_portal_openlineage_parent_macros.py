@@ -1,4 +1,4 @@
-"""Render NEW_ONLY Spark KPO parent fields with the REAL Airflow provider plugin.
+"""Render NEW_ONLY Spark KPO parent fields using real Provider macro functions.
 
 Runs only in the pinned Airflow 3.2.2 CI container, without a scheduler,
 metadatabase, K8s, Spark job, secrets, or any network access.
@@ -9,9 +9,8 @@ from pathlib import Path
 from types import SimpleNamespace
 import uuid
 
-from airflow.sdk.execution_time import macros
+from airflow.providers.openlineage.plugins import macros as real_provider_macros
 from airflow.models.dagbag import DagBag
-from airflow.sdk.plugins_manager import integrate_macros_plugins
 from jinja2 import Environment, StrictUndefined
 import pendulum
 
@@ -28,14 +27,14 @@ def require(ok, reason):
 
 
 def verify():
-    # This imports the actual Provider plugin registered in the Airflow image.
-    # It must expose its own macros module via the same name as the DAG Jinja.
-    integrate_macros_plugins()
-    module = getattr(macros, "OpenLineageProviderPlugin", None)
-    require(module is not None, "AIRFLOW_PROVIDER_MACROS_NOT_REGISTERED")
+    # Call the REAL Provider's implementation, not fake UUID generators.
+    # The isolated parse-only container does not initialize task-runner plugin
+    # discovery; verify deployment registration separately inside actual
+    # Airflow Pods before authorizing a live Spark job.
     for name in ("lineage_job_namespace", "lineage_job_name", "lineage_run_id"):
-        require(callable(getattr(module, name, None)),
-                "OPENLINEAGE_MACRO_MISSING_" + name)
+        require(callable(getattr(real_provider_macros, name, None)),
+                "OPENLINEAGE_PROVIDER_MACRO_NOT_INSTALLED_" + name)
+    provider_namespace = SimpleNamespace(OpenLineageProviderPlugin=real_provider_macros)
 
     bag = DagBag(dag_folder=str(DAGS), include_examples=False, safe_mode=False)
     require(not bag.import_errors, "DAG_IMPORT_ERRORS")
@@ -66,7 +65,7 @@ def verify():
         )
         rendered = {
             key: jinja.from_string(env[key]).render(
-                macros=macros, task_instance=ti, ti=ti
+                macros=provider_namespace, task_instance=ti, ti=ti
             )
             for key in required
         }
@@ -84,7 +83,8 @@ def verify():
         seen_runs.add(run_id)
         print("AIRFLOW_OPENLINEAGE_REAL_MACRO_RENDER=" + task_id + ":PASS")
     require(len(seen_runs) == len(ROLES), "INCOMPLETE_OPENLINEAGE_TASKS")
-    print("AIRFLOW_OPENLINEAGE_PARENT_MACROS_OFFLINE=PASS")
+    print("AIRFLOW_OPENLINEAGE_PROVIDER_FUNCTIONS_OFFLINE=PASS")
+    print("AIRFLOW_LIVE_PLUGIN_REGISTRATION=NOT_CHECKED")
     print("AIRFLOW_DATABASE_QUERY=NONE")
     print("DAGRUN_CREATED=NO")
     print("KUBERNETES_SPARK_OR_WRITER_EXECUTION=NO")
