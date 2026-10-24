@@ -1,6 +1,16 @@
 # Tasks — Platform Portal Real Business Lineage MVP
 
-> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 STATIC CONTRACT PASS; LIVE VERIFICATION PENDING / P3+ OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 SOURCE MERGED (LIVE OPEN) / P3 ISOLATED PARQUET SOURCE MERGED (LIVE OPEN) / P4+ OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+
+
+### Current integration checkpoint — 2026-10-24 (supersedes historical pending-PR paragraphs)
+
+- **P2 CODE/MAIN MERGED**：Healthcare [PR #416](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/416) Squash 合并 Main `7c192414fcdca99278421c003d1d135dac6a3968`，14 个 Task 不变、`enable_lineage(DAG(...))` 选择性接入，最终 PR HEAD `0d2754cd15e26271086a08d5c8b76e669ce3708b` 的 [DagBag #40104118553](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40104118553)、[Source Preflight #40104118540](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40104118540)、OpenSpec/Trusted/Docs 检查全部 SUCCESS。GitSync 实际加载及 Marquez 新事件尚未独立读回，不能宣称 P2 Live PASS。P2 3.1 Runtime Provider/Transport 与 3.3 真实 Job/Run 仍 OPEN。
+- **P2 当前只读验收入口**：Self-Runner [PR #245](https://github.com/JohnZhang-DataForge/Self-Runner/pull/245) merged `9ce36e77c3aad5aa47179e56346a011306125744`，手工 `portal-p2-airflow-runtime-readonly.yml` 输入准确 Healthcare SHA，默认 inventory，verify-source 可核对 live DAG SHA256；[静态 #40104815139](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40104815139) SUCCESS，真正 `dw-runner-set` inventory **未执行**。无 Scheduler 重启、DAG Trigger、Spark/Writer 提交。本轮无法通过当前 GitHub Connector 手工 dispatch，并不冒充已执行。
+- **P3 SOURCE/MAIN MERGED**：Healthcare [PR #432](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/432) Squash `e297709dc8e8964e1dec90f2874087616a1cc371`：三行 synthetic CSV → Spark 聚合 → 每 Run 专属 1Gi PVC 真 Parquet 输出 → Spark 再读取结果检查；Renderer 输出 ConfigMap / PVC / SparkApplication，隔离命名严格校验，Listener 增加显式 `spark.openlineage.appName`，但 **`unknown` 修复仅假设，未实机证实**。最终静态 [Hosted Workflow #40119064671](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40119064671)、OpenSpec、Source、Docs SUCCESS，未创建 PVC/Pod。原 A4 历史 FAILURE 证据保留。
+- **P3 手工 Live 入口 READY**：Self-Runner 复用旧 `portal-a4-live-smoke.yml`，[PR #246](https://github.com/JohnZhang-DataForge/Self-Runner/pull/246) Squash `d25291086056353252f4a052e9ba383c1cf1b609`；PR Static 成功，真实 Live skipped。新手工 Job 要求已持久化 Parquet 的 Spark 日志证明，及 Marquez 非 `unknown` Job 下 COMPLETE Run + Input/Output Dataset 读回；本轮没有手工运行此 Workflow。成功时仅尝试清理本次 Token PVC，失败时保留该 PVC 供诊断。
+- **测试环境取舍（用户确认）**：Local 现有合成测试数据可重生成；优先完成真实成功的业务/血缘测试，不必因为历史测试行长期存在而牺牲开发速度。重置仍须锁定确切 Namespace/PVC/S3 前缀/Batch 与活跃 Run，避免删除其它 Session 正在使用的资源；数据可删不代表验证可以省略。
+- **下一步**：先运行上述 P2 `inventory` / `verify-source` 只读工作流并读回当前 GitSync/Provider；再手动运行 P3 隔离 Live，按 Spark 完成与 Marquez 真 Dataset edges 识别是否存在真实 Listener gap。P2/P3 Live 通过后再改 P4 实际 Person/Visit 模板/受影响 Image，并经新 Batch 验收。仅当相关真实步骤通过才勾选原 3.1/3.3/4.2/4.3。
 
 ## 1. P0 — Scope and plan
 
