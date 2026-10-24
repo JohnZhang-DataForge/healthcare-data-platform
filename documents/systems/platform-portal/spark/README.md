@@ -17,6 +17,8 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 - P3 增加 `spark.openlineage.appName=portal-a4-<run-token>` 作为 `unknown` Job 关联的候选改进；是否解决必须通过真实 Run+Dataset 读回，不在离线阶段宣称修复。
 - Marquez 目标为 `http://marquez.dw-marquez.svc.cluster.local/api/v1/lineage`；OpenLineage Namespace `healthcare-platform-spark-probe`，不伪造 Airflow parent run、业务关联或人工 POST JSON。
 
+> **最新 P3 独立 Live 验收（2026-10-24）**：[Run #40120840326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120840326) 真实 Spark COMPLETED、3 行 CSV 聚合、PVC 上 Parquet 写出再读回 2 行、Marquez **非 unknown** 具体 Job + COMPLETED Run + 1 Input + 1 Output DatasetVersion，均 PASS。旧 A4 `unknown` / 0 Output 的历史结果仍保留，不能推断根因在单独一个配置；本次**未运行实际 OMOP Person/Visit/S3**。完整 [P2/P3 实机 evidence](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P2-P3-ISOLATED-LIVE-VERIFICATION-20261024.md)。
+
 ## A4 的真实验收与限制
 
 **2026-10-14 历史结果**：隔离 SparkApplication **COMPLETED**、3 行 CSV 聚合成功、Marquez 收到带 Spark facets 的真实 COMPLETED Run。**初始 Workflow 38628542127 的整体结论仍为 FAILURE**；后续受控只读 Run 38629607225 等验证部分结果成功。`portal_a4_a438628542127` 应用 Job 的 `latestRun` 仍为空，完成 Run 出现在 `unknown` Job，`inputDatasetVersions=0` / `outputDatasetVersions=0`。Job/Run 关联与真实 Dataset I/O 的根因尚未确认，不允许声称完整业务血缘通过。
