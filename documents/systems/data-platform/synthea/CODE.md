@@ -328,3 +328,14 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [namespace isolation tests](../../../../local-data-platform/tests/clinical_producers/test_blob_namespace_contract.py) | Hosted-only 静态边界断言；不调用 kubectl、不创建 Namespace/Secret、无 Azure 操作 |
 
 `dw-az-blob` Namespace 已由 Self-Runner [Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 在真实集群创建并独立读回（UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`）；Publisher Pod/Job、OIE Fetcher、Azure Secret/真实 Blob 写入仍未部署或验收。
+
+## Azure Blob Publisher Direct-FHIR runtime（仅源码与隔离 Job 模板；未部署）
+
+| 文件 | 职责 |
+| --- | --- |
+| [azure_blob_runtime.py](../../../../local-data-platform/apps/clinical_producers/azure_blob_runtime.py) | Stage 完成标记、外部固定 Manifest SHA、Profile 与 FHIR bytes 验证、最小权限 SP 环境注入及 Azure SDK immutable Writer 的一次性入口；错误只输出脱敏状态。当前 **仅 DIRECT FHIR**。 |
+| [Publisher Dockerfile](../../../../local-data-platform/images/azure-blob-publisher/Dockerfile) | 独立 Non-root Python 镜像构建定义，强制调用方传入不可变 Base Image；未构建 GHCR Release Image |
+| [DIRECT FHIR Job template](../../../../local-data-platform/kubernetes/manifests/azure-blob/publish-direct-fhir-job.yaml.tpl) | `dw-az-blob` 内 Job，使用 ephemeral `emptyDir`、受控 ConfigMap Profile、引用本 Namespace 的 `azure-blob-publisher-identity` Secret；无跨 Namespace PVC，所有参数和镜像 Digest 必须经 Runner 审核后渲染 |
+| [runtime offline tests](../../../../local-data-platform/tests/clinical_producers/test_azure_blob_runtime.py) | 缺失 ready、错误来源 SHA、缺失 Secret、数据篡改、不可变重试、脱敏和 Job 模板隔离的离线断言 |
+
+**未完成边界**：`dw-az-blob` Namespace 已创建，但 runtime image 尚无 GHCR Digest；完整的受控 `dw-synthea`→`dw-az-blob` source staging 和 OIE persisted readback Fetcher 尚未开发；Azure RBAC/Secret/Job/真实 Blob GET 未验证。不运行此 Job 模板，不创建 Secret，也不对历史 Request 进行重放。
