@@ -318,24 +318,20 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 
 **重要**：`OIEReadback` 是 Live OIE 消息 Fetcher 的输入合同，本身不能证明其来自真实 Derby；生产执行必须由经授权的 OIE scoped-account 读取新 Request 消息 ID 并证实返回的 message bytes。旧 #40128211780 的 32 条消息不可重放，真实 Blob 交付须独立做 K8s→Azure 双医院 E2E。
 
-## Azure Blob Publisher 独立 Namespace（已创建；工作负载未部署）
+## Azure Blob Publisher 运行位置（dw-synthea；尚未部署工作负载）
 
-| 文件 | 职责与状态 |
-| --- | --- |
-| [dw-az-blob namespace](../../../../local-data-platform/kubernetes/manifests/azure-blob/namespace.yaml) | 声明 Publisher 独立 `dw-az-blob` Namespace 和 Restricted Pod Security；不是实际集群创建证据 |
-| [default-deny NetworkPolicy](../../../../local-data-platform/kubernetes/manifests/azure-blob/networkpolicy-default-deny.yaml) | 仅静态隔离候选，应用后将同时阻断 DNS/OIE/Azure，必须有独立经审查的出站白名单方案才可启用 |
-| [isolated Publisher boundary](../../../../local-data-platform/kubernetes/manifests/azure-blob/README.md) | 声明 `dw-synthea` PVC 不可跨 Namespace 挂载，未来需独立只读源到 ephemeral 输入的授权交接，不修改 OIE/PVC |
-| [namespace isolation tests](../../../../local-data-platform/tests/clinical_producers/test_blob_namespace_contract.py) | Hosted-only 静态边界断言；不调用 kubectl、不创建 Namespace/Secret、无 Azure 操作 |
+- Publisher 与 Generator 统一在 `dw-synthea/worker01`；静态 DIRECT FHIR Job 使用已有 `synthea-new-generator-state` PVC **readOnly**，不创建额外 PVC，不需要跨 Namespace 文件交接。前置核查 PVC accessModes、节点以及并行 Generator Job。
+- OIE 保留独立 `dw-oie` 和原 Derby/PVC；FHIR 经现有受控 OIE API 交接，HL7 经未来 Scoped OIE Fetcher 独立读回；两边不能互挂 PVC。
+- 曾创建的 `dw-az-blob` 已由 [Self-Runner Run #40133855773](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133855773) 对照 UID 和空资源清单删除，独立读回 ABSENT；两个原 Namespace 和 PVC UID 未变。旧 YAML/NetworkPolicy/staging Job 和测试已撤销。
 
-`dw-az-blob` Namespace 已由 Self-Runner [Run #40133194325](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40133194325) 在真实集群创建并独立读回（UID `879dc420-a9c0-4560-bdd7-4dbb72146fbd`）；Publisher Pod/Job、OIE Fetcher、Azure Secret/真实 Blob 写入仍未部署或验收。
-
-## Azure Blob Publisher Direct-FHIR runtime（仅源码与隔离 Job 模板；未部署）
+## Azure Blob Publisher Direct-FHIR runtime（源码 + dw-synthea Job 模板；未部署）
 
 | 文件 | 职责 |
 | --- | --- |
-| [azure_blob_runtime.py](../../../../local-data-platform/apps/clinical_producers/azure_blob_runtime.py) | Stage 完成标记、外部固定 Manifest SHA、Profile 与 FHIR bytes 验证、最小权限 SP 环境注入及 Azure SDK immutable Writer 的一次性入口；错误只输出脱敏状态。当前 **仅 DIRECT FHIR**。 |
+| [azure_blob_runtime.py](../../../../local-data-platform/apps/clinical_producers/azure_blob_runtime.py) | 支持已有 staged-ready marker 兼容模式和 `--source-mode direct-readonly-pvc` 新模式，外部固定 Manifest SHA、Profile 与 FHIR bytes 验证、最小权限 SP 环境注入及 Azure SDK immutable Writer 的一次性入口；错误只输出脱敏状态。当前 **仅 DIRECT FHIR**。 |
 | [Publisher Dockerfile](../../../../local-data-platform/images/azure-blob-publisher/Dockerfile) | 独立 Non-root Python 镜像构建定义，强制调用方传入不可变 Base Image；未构建 GHCR Release Image |
-| [DIRECT FHIR Job template](../../../../local-data-platform/kubernetes/manifests/azure-blob/publish-direct-fhir-job.yaml.tpl) | `dw-az-blob` 内 Job，使用 ephemeral `emptyDir`、受控 ConfigMap Profile、引用本 Namespace 的 `azure-blob-publisher-identity` Secret；无跨 Namespace PVC，所有参数和镜像 Digest 必须经 Runner 审核后渲染 |
-| [runtime offline tests](../../../../local-data-platform/tests/clinical_producers/test_azure_blob_runtime.py) | 缺失 ready、错误来源 SHA、缺失 Secret、数据篡改、不可变重试、脱敏和 Job 模板隔离的离线断言 |
+| [DIRECT FHIR Job template](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl) | `dw-synthea` 内 Job，同 Namespace 只读挂载既有 Generator PVC；引用受控 ConfigMap Profile 和本 Namespace 专用 `azure-blob-publisher-identity` Secret，所有参数/镜像 Digest 必须经 Runner 审核后渲染 |
+| [Same-namespace Job guide](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/README.md) | 现有 Generator PVC 的只读挂载、OIE API 隔离和真实 Azure 操作门槛 |
+| [runtime offline tests](../../../../local-data-platform/tests/clinical_producers/test_azure_blob_runtime.py) | 缺失 ready、旧 staged 模式拒绝隐式绕过、新 readonly PVC 模式、错误来源 SHA、缺失 Secret、数据篡改、不可变重试、脱敏和 Job 模板路径的离线断言 |
 
-**未完成边界**：`dw-az-blob` Namespace 已创建，但 runtime image 尚无 GHCR Digest；完整的受控 `dw-synthea`→`dw-az-blob` source staging 和 OIE persisted readback Fetcher 尚未开发；Azure RBAC/Secret/Job/真实 Blob GET 未验证。不运行此 Job 模板，不创建 Secret，也不对历史 Request 进行重放。
+**未完成边界**：`dw-az-blob` 已删除，改用 `dw-synthea` 现有 PVC 的 readOnly 源；runtime image 尚无 GHCR Digest，OIE persisted readback Fetcher、Azure RBAC/Secret/Job/真实 Blob GET 未验证。不执行此 Job 模板，不创建 Secret，也不重放历史 Request。
