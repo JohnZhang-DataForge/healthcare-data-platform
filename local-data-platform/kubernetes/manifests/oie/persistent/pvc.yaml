@@ -1,0 +1,15 @@
+# This is the ONLY additional persistent volume request for OIE.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: oie-state
+  namespace: dw-oie
+  labels:
+    app.kubernetes.io/name: oie
+    app.kubernetes.io/part-of: healthcare-clinical-producers
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: oie
+  resources:
+    requests:
+      storage: 10Gi

@@ -1,0 +1,14 @@
+# Dedicated to existing worker01 /data/oie configuration in local-path-config.
+# The provisioner has already hot-reloaded this configuration; DO NOT restart it.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: oie
+  labels:
+    app.kubernetes.io/name: oie
+    app.kubernetes.io/part-of: healthcare-clinical-producers
+provisioner: rancher.io/local-path
+parameters:
+  nodePath: /data/oie
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer

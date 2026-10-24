@@ -1,0 +1,27 @@
+name: OIE Dedicated StorageClass and PVC Static Gate
+on:
+  pull_request:
+    paths:
+      - "local-data-platform/kubernetes/manifests/oie/persistent/**"
+      - "local-data-platform/tests/clinical_producers/test_oie_persistent_static.py"
+      - ".github/workflows/oie-persistent-static.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oie-persistent-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check 'PyYAML==6.0.3'
+      - run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_persistent_static.py -v
+      - run: |
+          echo OIE_STORAGECLASS_CREATED=NO
+          echo OIE_PVC_CREATED=NO
+          echo LOCALPATH_PROVISIONER_RESTARTED=NO
