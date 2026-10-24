@@ -28,7 +28,7 @@ class OieIsolationTemplates(unittest.TestCase):
         s = self.files["statefulset.yaml.tpl"]
         self.assertIn("kind: StatefulSet", s)
         self.assertRegex(s, r"(?m)^  replicas: 1$")
-        self.assertRegex(s, r"nodeSelector:\s+\n\s+kubernetes.io/hostname: worker01")
+        self.assertRegex(s, r"nodeSelector:\n\s+kubernetes.io/hostname: worker01")
         self.assertIn("automountServiceAccountToken: false", s)
         self.assertIn("runAsNonRoot: true", s)
         self.assertIn("allowPrivilegeEscalation: false", s)
