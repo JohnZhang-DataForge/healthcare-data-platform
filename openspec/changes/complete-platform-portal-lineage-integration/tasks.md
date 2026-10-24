@@ -55,6 +55,13 @@
 - **Acceptance not claimed**: this code/CI does not publish a new image, synchronize Airflow GitSync, run Spark/DAG, or fix Reconcile's extra RUNNING action children. Next release must have explicit single-child image Clean Build/Smoke, review its immutable Digest, independently read newly created Spark Pods, confirm NEW_ONLY Airflow Provider macro import/render, match **actual** Spark application `parentRunId` with **actual** Marquez Airflow Task Run UUID, and separately investigate physical child COMPLETE events.
 - **P4 5.3 and all P5/6.x remain unchecked** until this real evidence and Writer/PG17/SKIP gates pass. The earlier P4 omnibus workflow #40125211881 remains recorded as FAILURE, with Writer SKIPPED.
 
+### P4 post-merge runtime-macro confidence gate — offline CI candidate (2026-10-24)
+
+- After [Healthcare PR #462](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/462) merged genuine Airflow Task namespace/job/run IDs → Spark Application `parent*` properties, the previous Airflow DagBag job only **parsed** `new_only_omop_consumer`; it did not render the real OpenLineage Provider Jinja macros with TaskInstance context.
+- Add `local-data-platform/tests/airflow/test_portal_openlineage_parent_macros.py` and **reuse** `.github/workflows/local-dp-airflow-dagbag-parse.yml` existing pinned `apache/airflow:3.2.2` image. The test integrates the actual Provider plugin (not mock Jinja macro replacements); renders exactly three KPO `env_vars` templates under `StrictUndefined` with synthetic `TaskInstance`-shaped read-only context; validates job namespace/name, canonical UUID, 3 unique Task Run IDs and KPO templating contract.
+- Offline only: no Airflow DB/real DagRun, Spark Job, Kubernetes, Writer/PG17 or GHCR operations; `--network none`, read-only source/container. Fail closed when plugin, Jinja variable, source shape or runtime UUID generation fails. Update Airflow CODE map.
+- **No P4/P5 live checkbox changed.** After this gate passes, the remaining boundary is manual one-image `landing-processing-runtime` publish/immutable Digest readback, current GitSync proof, genuine KPO runtime rendering and a separately approved fresh synthetic Batch with Marquez/Writer evidence.
+
 ## 1. P0 — Scope and plan
 
 - [x] 1.1 只读核对当前 Healthcare Main、Portal A3/A4 历史证据、真实 `new_only_omop_consumer`/控制容器和 Portal 组件边界；确认没有同主题开放 PR。
