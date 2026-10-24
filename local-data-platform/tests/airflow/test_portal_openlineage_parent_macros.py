@@ -9,9 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 import uuid
 
-from airflow import macros
+from airflow.sdk.execution_time import macros
 from airflow.models.dagbag import DagBag
-from airflow.plugins_manager import integrate_macros_plugins
+from airflow.sdk.plugins_manager import integrate_macros_plugins
 from jinja2 import Environment, StrictUndefined
 import pendulum
 
