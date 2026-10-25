@@ -208,6 +208,13 @@
 
 ## 7. P6 — Native Marquez showcase and closeout
 
+### P6 7.1 最终 GUI 通过（2026-10-25，覆盖下方更早的部分验收快照）
+
+- 用户最后提供的四张 Chrome 原生 Marquez 截图已**实际验证目标新批次 `synthea-new-only-gh-40208104106`**，`s3://health-processing` 中 `ingest_date=2026-10-25/entity=encounter` 与 `entity=patient` 的 `run_id` 均和 P5 真实 Spark Application/Writer E2E 相符。两份 Dataset 均具有 Table Level 输入 Dataset→Spark Action Job→Processing 输出与 Column Level 字段连线。**不再误用旧历史 Batch `39625216978`**。
+- 浏览器目标批次两份实际物理 Dataset 连线 + [原 Marquez GET #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 中的精确 Reconcile 两输入 DatasetVersion 及 Writer UUID 已满足 P6 7.1 可复现原生 Web 演示验收。**P6 7.1 勾选；7.2 已完成；7.3 Archive 继续 OPEN**。
+- 保留已知设计选择：Reconcile Application 自身图在 Full Graph ON 时仍孤点、部分物理 RDD Action START-only、原严格 `business_dataset_gate=INCOMPLETE`，**不伪造物理 Action COMPLETE**；浏览器未直接展示 Reconcile 双输入的单一合并画布。详情 [原始用户截图文字验收记录](evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。
+- Archive 前查验本 Change 中剩余历史 P2/P3、8.x、Listener 等未关闭任务：**完成 7.1 并不等于全部 Change 关闭**。任何归档应经独立 PR/审查；不触发新 Business E2E。
+
 ### 2026-10-25 P6 7.1 partial Live + 7.2 documentation / 7.3 archive boundary
 
 - **Current exact source**: Healthcare `b92ccc9b7976e740d9dd77994a0725b115693705`, Self-Runner `273661160a6cc585709ee54a432e9b9bdcf31afc`; isolated read-only P6 [Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308), [Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399) **SUCCESS**. No Airflow trigger, Spark/Writer run, PG SQL write, S3 publication, Helm/Service/RBAC update, event POST, or external NodePort exposure.
@@ -220,7 +227,7 @@
 
 
 
-- [ ] 7.1 官方 Web 内网 HTML/API/真实 P5 DatasetVersion GET、Safari Dashboard/Job Cards、Chrome Reconcile LATEST RUN Parent **GUI 前缀对账** 均已 PASS；用户又确认 `Full Graph=ON` 时 P5 Reconcile Application 仍只有单 JOB 节点，并在 **另一个历史 Batch `synthea-new-only-gh-39625216978`** 的 Datasets → Column Level 页面看到真实字段 lineage 连线（GUI 渲染能力 PASS）。**该历史 Dataset 不是指定 P5 Batch `synthea-new-only-gh-40208104106`；本批次 Dataset GUI 输入/输出连线仍未展示，因此 7.1 保持 OPEN**，7.3 不归档。截图含局域网地址不上传 GitHub，见 [P6 视觉审查](evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。
+- [x] 7.1 官方 Marquez Web 内网**真实浏览器演示 PASS（方案 A）**：Safari Dashboard/Job Cards，Chrome Reconcile Application 的 ParentRun Facet，及精确新 Batch `synthea-new-only-gh-40208104106` 两个 Processing Dataset — `entity=encounter` 与 `entity=patient`（均 `ingest_date=2026-10-25`）— 的 Table Level `input→Spark Action→output` 与 Column Level 映射连线；截图能看到 `STOP→end_datetime`、`PATIENT→source_person_id`、`ETHNICITY→ethnicity_code`、`Id→source_record_id` 等。原 GET-only #40209504539/#40218701308 独立验证 Reconcile 精确消费两个 DatasetVersion，Writer PG17 COMMIT/SKIP 由 P5 独立证据说明。**Reconcile 顶层 Application Full Graph 仍单 Job，RDD START_ONLY 且严格 business_dataset_gate=INCOMPLETE 保留**；不宣称同屏显示 Reconcile 全图或已做公网/备份演练。见 [P6 最终目标 Batch GUI 审查](evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。原用户截图含局域网地址，未上传 GitHub。
 - [x] 7.2 同步 `documents/systems/platform-portal/` README/CODE、项目状态及 OpenSpec：只有 Live 已验证的结果标记为完成。 **证据：P6 #40218701308 + 受控文档 PR；不将 HTTP GET 成功伪称浏览器交互成功。**
 - [ ] 7.3 全部相应真实验收、Merge/Main/Run 证据确认后才申请 Archive；独立 Dashboard/公网只读展示属于未来独立 Change。
 

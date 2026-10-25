@@ -12,6 +12,10 @@ evidence:
 
 # P6 — Marquez 官方 Web / OpenLineage 内网演示指引
 
+> **最终 GUI 接受范围（2026-10-25，覆盖下文更早的“未验证目标 Batch”历史描述）：P6 7.1 已按照方案 A PASS。** 用户真实 Chrome 内网浏览器已打开 P5 新批次 `synthea-new-only-gh-40208104106` 的 **Encounter（`entity=encounter`）和 Patient（`entity=patient`）** 两份 `s3://health-processing` 输出 Dataset，路径均包含 `ingest_date=2026-10-25`，并在 Table Level 看见输入 Dataset → 真实 Spark Action → 输出 Dataset，在 Column Level 看见真实字段映射。Reconcile 的两份输入 DatasetVersion 由独立 API [#40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 精确匹配；Writer PG17 durable COMMIT/同批 SKIP 以历史独立 SQL 读回证明。**Reconcile Application Full Graph ON 仍为孤立 Job，物理 RDD START-only 与严格 `business_dataset_gate=INCOMPLETE` 未改变。** 实际 UI 未同屏展示 Reconcile 的双输入连线，不能因此声称有完整同屏 Workflow 图。用户图像带局域网地址，未上传仓库；详见 [P6 GUI 文字验收记录](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。P6 7.3 Archive 仍 OPEN，先复核整个 OpenSpec Change 未完成任务。
+
+
+
 > **验收边界**：2026-10-25 17:54 UTC 的独立受控 [GET-only Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) **SUCCESS**；[Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399) 保存 4 份不含患者记录的原始报告。已验证 Marquez Web 首页 HTML 200、`/healthcheck=OK`、Web Proxy API 200/直接 API 一致、K8s 10/10 Ready/Bound/Endpoint、真实业务 DatasetVersion 与 ParentRun。**用户后续于 2026-10-25 提供三张 iPhone Safari 的真实 LAN 页面截图，证明官方 Dashboard/Job 列表已在实际手机浏览器中正常呈现**（见 [视觉补证](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)）。**用户随后提交的桌面 Chrome 截图已打开 Reconcile Spark Application 的 Job / LATEST RUN Facets 面板**，看到 `COMPLETED`、`jobType=APPLICATION`、`parent` Facet 存在与 Spark/OpenLineage 3.5.7/1.47.1。但该 Application 的表级 Lineage 画布只有一个 Job 节点，`parent.job`/`parent.run` 仍折叠，未可视化真实 Dataset 边；详见 [现有补证记录](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。因此 OpenSpec P6 7.1 完整浏览器演示 Gate 仍 OPEN；不能把 HTML 200、页面 Job Card 或 API GET 误称为已完成真实血缘图交互验收。
 
 ## 1. 网络与安全
@@ -71,7 +75,20 @@ curl --max-time 10 -fsS "$API/namespaces/healthcare-platform-spark-business/jobs
 
 API 响应原文可能包含字段元数据；对外展示前检查内容，**不上传患者级记录、Secret、凭证、私有节点 IP 或不需要的源 ID**。对严格 DatasetVersion/ParentRun 映射，应优先引用当前 `platform-portal/marquez/tests/verify_business_lineage.py` 和上述原始 P6 Artifact，而不是截取一个没有 Run UUID 的孤立网页。
 
-## 5. 已实际通过的验收与未验证项
+## 5. 真实 P5 批次 Table / Column Level GUI 演示（2026-10-25 已现场通过）
+
+> 业务固定批次：`synthea-new-only-gh-40208104106`，源业务 SHA `95f480078da622178f4fa7b68d986d8e05a91ae9`。不同于此前曾展示的 `2026-10-21 / 39625216978` 历史数据。
+
+| Processing Output | 真实截图可见固定路径段 | GUI 连接 / 映射 |
+| --- | --- | --- |
+| Encounter | `s3://health-processing`、`ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106/entity=encounter/run_id=task004-encounter-20261025T154424Z-9/work/normalized/data` | Table Level 上游 Dataset→`task004_encounter` Spark Action→输出；Column Level `STOP→end_datetime`、`PATIENT→source_person_id`、`PROVIDER→source_provider_id` 等 |
+| Patient | `s3://health-processing`、`ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106/entity=patient/run_id=task004-person-20261025T154424Z-9/work/normalized/data` | Table Level 上游 Dataset→`task004_person` Spark Action→输出；Column Level `ETHNICITY→ethnicity_code`、`BIRTHDATE→birth_date`、`Id→source_record_id`、`GENDER→gender_code`、`RACE→race_code` 等 |
+
+- **Reconcile 在 GUI 看法**：顶层 `APPLICATION` 的 Full Graph 单 Job 并非后台无血缘；业务真实输入在底层 Spark Action 和两个 Processing DatasetVersion。独立 GET 已核实消费相同两份版本。若演示观众希望看到全局图，可分别展示两份 Table/Column 数据流与真实 Parent/Run，**不许拼接伪造一个官方未渲染的同屏大图**。
+- **数据实体命名**：Person Stage 在 Processing S3 路径中实际是 `entity=patient`，Visit 是 `entity=encounter`，不要用 `entity=person/visit` 过滤漏掉它们。
+- **遗留观察**：物理 RDD Action 显示 START-only 的情形按方案 A 保留独立说明；本次只审查真实已有 Dataset 元数据，不触发新的 Spark/Writer，也不包含公网或备份验收。
+
+## 6. 机器独立验收及历史 GUI 补证矩阵（以下旧行保留当时快照）
 
 | Gate | 本次现场证据 |
 | --- | --- |
@@ -89,4 +106,4 @@ API 响应原文可能包含字段元数据；对外展示前检查内容，**�
 | 外网安全 / 公网可达性 | **NOT_CHECKED**；不据此开放 NodePort 30999 |
 | 真实 Listener outage 故障注入 / PG14 备份恢复 | **NOT_CHECKED**；不属于 P6 本次 GET-only Run |
 
-**终结标准**：实际打开官方 Web 和观察真实 Job Card 已在用户 Safari 截图中证明；P6 7.1 的 Parent namespace/Run 前缀现已在 GUI 展开且与独立证据匹配；后续须在 Dataset 或实际 Spark Action 页面定位 **`ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106`** 的真实 Dataset 输入输出连线，勿选择旧 `39625216978` Batch（并记录是否受 RDD 限制影响），仅由此才能勾选浏览器级验收。后续 P6 7.3 的 OpenSpec Archive 必须在实际 Main/CI/证据核对与治理规则满足后单独申请；**本文件及成功 Run 均不自动授权 Archive**。
+**验收与归档边界（最终）：**最终四张用户截图已经完成 P5 精确 `ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106` 的 **Encounter + Patient** Table/Column Level 真实 Lineage 可视化；结合先前独立 Reconcile DatasetVersion GET，**P6 7.1 方案 A 可验收**。但 Reconcile Application 孤点 / 物理 RDD START-only 依旧保留，未经证明的同屏双输入图不予声称。**7.3 Archive 未批准**：需先逐项处理整个 Change 的其他 OPEN Task、核对 Main/CI/Live Evidence，再单独 Review Archive PR。
