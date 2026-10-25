@@ -27,10 +27,10 @@ if (!input || !input.bundle || typeof input.request_id !== "string") {
     throw new Error("OIE_ADT_BLOCKED_EVENT_ENVELOPE");
 }
 var result = fhirToAdtA01(input.bundle, {
-    hospital_id: "demo-johns-creek",
-    feed_id: "demo-johns-creek-hl7-v2",
+    hospital_id: "johns-creek-hospital-b",
+    feed_id: "johns-creek-hospital-b-hl7-v2",
     request_id: input.request_id,
-    assigning_authority: "DEMOJC"
+    assigning_authority: "JOHNSCREEKB"
 });
 if (result.messages.length > 1) {
     throw new Error("OIE_ADT_BLOCKED_MULTIPLE_ENCOUNTERS_IN_ONE_EVENT");
