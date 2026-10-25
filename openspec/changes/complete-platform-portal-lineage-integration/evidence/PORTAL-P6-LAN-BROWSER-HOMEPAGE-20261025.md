@@ -1,6 +1,6 @@
 # P6 — 用户提供的真实 LAN 浏览器可视化证据审查（2026-10-25）
 
-> **状态：Safari 首页/真实 Job 列表 PASS，Chrome Reconcile Job / 最新 Run Facets 详情可视化 PASS；严格的具体 Parent job/run ID 和 Dataset/Lineage 输入输出图仍待视觉核对，P6 7.1 整项 OPEN。** 本登记是用户在项目会话中提供的最初三张手机浏览器截图及后续三张桌面 Chrome Reconcile Job/Run 截图的**文字审查结果**，并不是新的 GitHub Actions、外部网络探测或在本仓库公开的图片附件。未经用户额外批准，**不将含内部网络地址的原始截图上传 GitHub**。
+> **最新分层结论：Safari 首页/Job 列表 PASS；P5 Reconcile Application Chrome GUI Parent job namespace 和 Run ID 前缀可见且与独立 API 证据吻合；Full Graph=ON 时该 Application 仍为单一 Job 节点；另一历史 Batch 在官方 Dataset 页面真实呈现 Column Lineage 连线 PASS。** 但历史 Dataset 属于 2026-10-21 的 Batch，**不是** P5 指定的 2026-10-25 Batch；P6 7.1 的目标 Batch Dataset GUI 精确对账仍 OPEN，7.3 Archive 不可提前关闭。 本登记是用户在项目会话中提供的最初三张手机浏览器截图及后续三张桌面 Chrome Reconcile Job/Run 截图的**文字审查结果**，并不是新的 GitHub Actions、外部网络探测或在本仓库公开的图片附件。未经用户额外批准，**不将含内部网络地址的原始截图上传 GitHub**。
 
 ## 与机器自动验收的独立关联
 
@@ -20,7 +20,7 @@
 | Reconcile Spark Application | `new_only_omop_consumer.spark_reconcile.task004_reconcile_20261025t154718z_7` Job Card 显示在 `healthcare-platform-spark-business` Namespace，状态 `COMPLETED` | **PASS：跨 Airflow / Spark Namespace 的 UI Job 身份展示**；截图不包含 Run Parent Facet 详情 |
 | Airflow 前置任务 | `route_new_only_status`、`inspect_claim_readonly`、`select_verified_new_only_batch`、`scan_ready_manifests`、`route_writer_authorization`、`prepare_writer_handoff` 均可见 Job Card 的 `COMPLETED` 状态 | **PASS：前置任务列表展示** |
 | 单一 Job 与 LATEST RUN 详情 | 后续桌面 Chrome 真实打开 Reconcile Spark Application Job 详情：状态 `COMPLETED`，页面 `LATEST RUN` 面板、Job Facets 与 Run Facets 真实渲染，`RUN HISTORY` 页签可见（未打开） | **PASS：已可视化 Job 详情与最新 Run Facets**；Run UUID/完整历史列表仍 NOT_CHECKED |
-| Dataset/Lineage 图 | 后续 Chrome 已真实打开 Reconcile Spark Application 的 Lineage 画布（Table Level、depth 2、Full Graph 开关关闭），**画布仅显示该 Application 的单个 JOB 节点**，未显示 `health-landing`、`health-processing` 或跨 Dataset 边 | **PARTIAL**：Lineage UI 本身可用，但实际 Dataset 关系**未在此 Application 的画布可视化**；API GET 的独立业务 edges PASS 仍有效 |
+| Dataset/Lineage 图 | Reconcile Application 的 Full Graph 从 OFF 切到 **ON** 后仍只有单个 JOB 节点；另一个历史批次的 Dataset 页面在 **Column Level** 下可见真实字段映射连线 | **GUI 能绘制历史 Column Lineage = PASS**，但 P5 目标 Batch 的 Dataset 图仍待检查；不能把旧批次图作为本批次展示证据 |
 | RDD Action 终态 | 本次截图并未显示 Action 子 Run 的 START-only/RUNNING | **NOT_CHECKED**；设计 A 已知 RDD 限制继续保留，不得推断其已消失 |
 | 公开访问或网络安全 | 未测试公网可达性、匿名鉴权防护、PG14 备份 | **NOT_CHECKED**；不因此批准开放 Web NodePort |
 
@@ -35,8 +35,19 @@
 - **安全**：截图中的 `DELETE` 是 Marquez Job 详情自带操作按钮，**绝对不得点击**；此次仅打开页面，没有操作删除、修改 Job、写数据或人为补发 OpenLineage COMPLETE。
 - **仍 OPEN 的 P6 7.1 残余 GUI Gate**：浏览器展开 `parent.job` 与 `parent.run` 至具体身份，再进入 Person/Visit 或 Reconcile 的实际 **Spark Action** Job 或 Dataset 页面，检查 `health-landing` 输入、`health-processing` 输出以及 Reconcile 消费两条 Processing Dataset 的可视化关系。若 GUI 版本无法绘制该依赖，则如实记录限制，不能靠后端 GET 冒充 GUI 连线。
 
+## 用户进一步 Chrome 截图：Reconcile Parent + 历史 Column Lineage（2026-10-25）
+
+本轮用户新增的 **3 张桌面 Chrome 真实截图**分别显示 Reconcile Application Full Graph、其 Run Parent Facet 展开结果，以及另一个数据集的 Column Level 血缘图。原始图片包含局域网地址，**不上传 GitHub**。三个画面的身份与适用范围必须分开审查：
+
+1. **P5 Reconcile Application Full Graph：**目标仍为 `new_only_omop_consumer.spark_reconcile.task004_reconcile_20261025t154718z_7`（namespace `healthcare-platform-spark-business`）。截图中 `Full Graph` 开关已明确开启（绿色），`Compact Nodes` 仍关，`Depth=2`、`Table Level`；画布**仍仅一个 JOB 节点**，无可见 Dataset edges。此结果表明简单开启 Full Graph 没有解决 Application 顶层节点的图形呈现缺口；它不推翻独立 Marquez API 的真实 Spark Action / DatasetVersion 数据。
+2. **P5 真实父子关联可视化：**Reconcile Application 的 `RUN FACETS → parent → job` 已展开，显示 namespace 为 **`healthcare-platform-airflow`**，`name` 前缀 `new_only_omop_consumer.spark_r...`；`parent → run → runId` 已展开，页面可见前缀 `01a173bb-987a-7b3b-a0ec-e1ce42...`。该前缀与早前 [独立 ParentRun GET #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 所确认的 Reconcile Airflow Run UUID `01a173bb-987a-7b3b-a0ec-e1ce422e01ed` **一致**。**完整名称/UUID 在截图中被 UI 省略号截断**；GUI 级通过“可见 Parent namespace / 前缀与 API 完整 ID 对齐”，不宣称完整 UUID 在屏幕完全展示或 RUN HISTORY 曾被点击。
+3. **真实历史 Column Lineage 图：**用户在官方 Datasets 页面进入 `Mode=Column Level`，可看到左、右两组 Dataset 字段及逐列连线，包括 `STOP → end_datetime`、`PATIENT → source_person_id`、`PROVIDER → source_provider_id`、`START → start_datetime`、`Id → source_encounter_id`、`PAYER_COVERAGE → payer_coverage`，以及其余可见字段映射。目标页面显示 `Namespace=s3://health-processing`，Dataset 名包含 **`ingest_date=2026-10-21/batch_id=synthea-new-only-gh-39625216978/entity=encounter`**。这是**历史的不同 Batch**，不能因此宣称最新 P5 Batch `synthea-new-only-gh-40208104106` 在 GUI 中已有同样的 Column Lineage。截屏中输入端完整 Dataset namespace/name 未全部露出，也不能将输入端猜作 `s3://health-landing`。
+4. **P6 后续验收结论：**官方 Column Level 血缘图形渲染能力 **PASS（历史独立 Batch）**；目标 P5 Reconcile 的 Airflow Parent Facet GUI 显示 **PASS_WITH_TRUNCATED_IDS**；P5 的**精确批次** Dataset 输入输出 GUI 仍 **OPEN**。不因为 GUI 图形可视化能力通过就伪造 `business_dataset_gate=PASS`，原物理 RDD `START_ONLY_OBSERVED` 已知限制不变。
+5. **最短剩余步骤：**在 Datasets 页选择 `s3://health-processing`，只打开 Dataset 名包含 `ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106` 的 `entity=person` 或 `entity=encounter` Processing 输出，查看其 Column/Table Level 的真实输入边；也可进入该 Batch 的实际 Spark Action Job，而不是 Application 顶层孤点。记录屏幕上可见的目标 Batch、Dataset namespace 和连线。若 GUI 无法显示目标 Batch 的边则记录事实，不虚构。
+6. **安全：**截图中的浏览器连接标记/局域网主机等均不进入仓库，元数据页面也不包含已授权的新写入动作；不触发 Spark/Airflow/Writer、PG 或任意事件补发，不点击 GUI 的 `DELETE`。
+
 ## 下一步 / 收尾 Gate
 
-P6 7.1 的剩余浏览器级验收路径：真实 Reconcile Application 的 Job 与最新 Run Facets 已展示；接下来**展开右侧 `RUN FACETS → parent → job` 和 `parent → run` 的完整值**并对照现有 P5 GET-only 证据，之后改查 Person/Visit/Reconcile 对应 **底层 Spark Action Job** 或 Dataset 页面，观察 `s3://health-landing` 输入、`s3://health-processing` 输出及两个 Processing Dataset 对 Reconcile 的实际输入关系。**如果 GUI 未显示该图**，如实记录 GUI 局限而不能拿 API PASS 冒充屏幕实际呈现。
+P6 7.1 的剩余浏览器级验收路径：Reconcile Application 的 `parent.job.namespace` 及 `parent.run.runId` 前缀已展示且与独立 GET 证据吻合；Full Graph=ON 仍为孤点。历史 Batch 的 Column Level 图已展示。**请在 Datasets 页面改选 P5 指定 Batch `synthea-new-only-gh-40208104106`（`ingest_date=2026-10-25`）而非历史 `39625216978`，核对至少一个真实 Processing Dataset 的输入/输出连线并截图。** 理想情况还要在相同 Batch 上看到 Person + Visit 两个 Processing Dataset 对 Reconcile 的输入关联。**如果 GUI 未显示该图**，如实记录 GUI 局限而不能拿 API PASS 冒充屏幕实际呈现。
 
 在得到上述浏览器视觉证据前，OpenSpec `7.1` **不得勾选**、`7.3` **不得归档**。这不影响早已通过的 P5 事务与 API 血缘验收。

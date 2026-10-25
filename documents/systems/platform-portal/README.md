@@ -7,6 +7,8 @@ source_sha: 95f480078da622178f4fa7b68d986d8e05a91ae9
 
 # Platform Portal — OpenLineage + Marquez 可观测性子系统
 
+> **2026-10-25 P6 新增 GUI 分层验收**：用户真实 Chrome 截图已证明 Reconcile Application `RUN FACETS.parent` 中的 Airflow Namespace 与父 Run ID 前缀吻合既有 API 验收，`Full Graph=ON` 时 Application 图仍仅一个 Job 节点。独立的**历史** Dataset `synthea-new-only-gh-39625216978`（2026-10-21）在 Marquez `Column Level` 页显示真实字段映射连线（如 `PATIENT → source_person_id`），**证明原生 UI 可以绘制列级 Lineage**。但 P5 验收批 `synthea-new-only-gh-40208104106` 的 Dataset 图仍未在浏览器证实，P6 7.1 / 7.3 继续 OPEN。原含内网地址截图不上传 GitHub，仅保存 [文字审查](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)；不涉及新业务运行。
+
 > **2026-10-25 P6 桌面 Chrome Reconcile Job/Run Facets 可视化补证**：在真实官方 Marquez Lineage 页已打开 `new_only_omop_consumer.spark_reconcile.task004_reconcile_20261025t154718z_7` 的 Job 和最新 Run Facets；显示 `COMPLETED`、`jobType=APPLICATION`、`parent` 字段、Spark 3.5.7/OpenLineage 1.47.1。当前 Application 画布只有孤立的 `JOB` 节点；物理 Action 的真实 Dataset 边仍未在 UI 证明，故 **P6 7.1 及 Archive 7.3 保持 OPEN**。见 [浏览器截图文字审查](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。
 
 > **2026-10-25 P6 真正 LAN 浏览器首页/Job 列表截图补证（更新下方早先“未验证浏览器”结论）**：用户三张 iPhone Safari 截图确证官方 Marquez DataOps UI 及真实 Airflow DAG/Writer/Reconcile、Spark Reconcile Application 的绿色 `COMPLETED` Job Card 正常渲染；截图当时概览显示 139 Events、23 Datasets、4 Sources、71 Jobs。**未查看单 Job 的 Run 详情或 Person/Visit→Reconcile Dataset Lineage 图，7.1 整项保持 OPEN；7.3 Archive 保持 OPEN**。详情 [P6 浏览器截图审查（保护私网地址）](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。
