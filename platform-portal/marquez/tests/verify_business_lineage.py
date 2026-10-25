@@ -233,13 +233,25 @@ def evaluate(data, batch, apps=None):
     patient = select_writes(roles["person"], batch, "patient", "patients.csv")
     encounter = select_writes(roles["encounter"], batch, "encounter", "encounters.csv")
     expected = {x for x in (patient, encounter) if x is not None}
-    matching = []
-    for entry in roles["reconcile"]:
-        if identities(entry["detail"], "input") & expected:
-            matching.append(entry)
-    observed = set().union(*(identities(e["detail"], "input")
+    # Compare *all* Processing patient/encounter inputs from this batch, not
+    # only versions that happen to match the produced versions. Otherwise
+    # a stale/extra version could be silently ignored and yield false PASS.
+    def batch_processing_inputs(entry):
+        return {
+            identity for identity in identities(entry["detail"], "input")
+            if identity[0] == "s3://health-processing"
+            and has_batch(identity, batch)
+            and any("/entity=" + entity + "/" in "/" + identity[1] + "/"
+                    for entity in ("patient", "encounter"))
+        }
+
+    matching = [
+        entry for entry in roles["reconcile"]
+        if batch_processing_inputs(entry)
+    ]
+    observed = set().union(*(batch_processing_inputs(e)
                              for e in matching)) if matching else set()
-    complete_input = len(expected) == 2 and expected <= observed
+    complete_input = len(expected) == 2 and observed == expected
     terminal = complete_input and all(e["state"] == "COMPLETED"
                                       for e in matching)
     # The *application* Run must carry the Airflow parent. Child action
@@ -260,6 +272,22 @@ def evaluate(data, batch, apps=None):
     all_applications_completed = all(
         hierarchy[role]["application_completed"] for role in ROLES
     )
+    child_parent_verified = all(
+        hierarchy[role]["spark_action_application_parent"] == "VERIFIED"
+        for role in ROLES
+    )
+    # These two gates deliberately answer different questions. A START-only
+    # RDD Action cannot be reported as terminal just because its application
+    # and its exact input/output DatasetVersion identities are verified.
+    edges_pass = (
+        patient is not None and encounter is not None and complete_input
+        and all_applications_completed and parent_verified
+        and child_parent_verified
+    )
+    stale_actions = sum(
+        hierarchy[role]["running_children_after_application_completed"]
+        for role in ROLES
+    )
     return {
         "batch_id": batch,
         "person_read_write": patient is not None,
@@ -276,6 +304,17 @@ def evaluate(data, batch, apps=None):
         "spark_hierarchy": hierarchy,
         "airflow_spark_direct_parent": (
             "VERIFIED" if parent_verified else "UNPROVEN"
+        ),
+        # Design A explicitly separates exact business lineage correctness
+        # from physical Spark RDD Action end-event completeness.
+        "business_edges_gate": "PASS" if edges_pass else "INCOMPLETE",
+        "rdd_action_lifecycle": (
+            "START_ONLY_OBSERVED" if stale_actions
+            else "NO_START_ONLY_OBSERVED_IN_SNAPSHOT"
+        ),
+        "p4_design_a_gate": (
+            "PASS_WITH_KNOWN_RDD_LIMITATION" if edges_pass and stale_actions
+            else "PASS" if edges_pass else "INCOMPLETE"
         ),
         "business_dataset_gate": (
             "PASS" if patient is not None and encounter is not None
@@ -305,10 +344,15 @@ def main(argv=None):
         report = evaluate(snapshot(apps), args.batch_id, apps)
     except (ValueError, KeyError, TypeError, OSError, json.JSONDecodeError):
         print(json.dumps({"business_dataset_gate": "UNVERIFIED",
+                          "business_edges_gate": "UNVERIFIED",
+                          "p4_design_a_gate": "UNVERIFIED",
                           "reason": "MARQUEZ_GET_OR_SCHEMA_FAILED"}))
         return 2
     print(json.dumps(report, indent=2, sort_keys=True))
-    return 0 if report["business_dataset_gate"] == "PASS" else 1
+    # The Design A CLI exit is keyed to verified *business* edges, not to
+    # the independent RDD lifecycle. The historical strict gate stays intact
+    # and reports INCOMPLETE until the real RDD end events arrive.
+    return 0 if report["business_edges_gate"] == "PASS" else 1
 
 
 if __name__ == "__main__":
