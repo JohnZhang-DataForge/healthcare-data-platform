@@ -66,7 +66,15 @@ class FabricCrossRootContract(unittest.TestCase):
         self.assertNotIn("capacity_id", main)
         self.assertIn("module \"storage\"", main)
         self.assertIn("blob_role_assignments  = merge(var.blob_role_assignments, local.workspace_identity_role_assignments)", main)
-        self.assertIn("blob_role_assignments  = {}", tfvars)
+        self.assertIn("blob_role_assignments = {", tfvars)
+        self.assertIn("healthcare_blob_publisher = {", tfvars)
+        self.assertIn('principal_id = "01cd737f-6c86-48bb-ae5c-209246d62ed6"', tfvars)
+        self.assertIn('role         = "Storage Blob Data Contributor"', tfvars)
+        # Exactly one new externally pinned writer. Workspace Reader remains
+        # discovered by remote state and is never granted Contributor.
+        self.assertEqual(tfvars.count("Storage Blob Data Contributor"), 1)
+        self.assertEqual(tfvars.count("healthcare_blob_publisher = {"), 1)
+
         self.assertIn('storage_account_name   = "johnzhang"', tfvars)
         self.assertIn("default = {}", self.source(STORAGE, "iam.tf"))
         self.assertIn('healthcare_omop = "healthcare-omop"', tfvars)
