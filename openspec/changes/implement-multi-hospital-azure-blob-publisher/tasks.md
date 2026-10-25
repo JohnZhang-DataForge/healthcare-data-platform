@@ -18,7 +18,7 @@
 - [x] 2.7 Publisher 已编码并通过离线 CI 支持 GitHub OIDC 换取的短期 Azure Storage Access Token、token 到期边界及同 Namespace 一次性 Session Secret Job 模板；Healthcare PR #469 / Main GHCR Run #40148148246 已成功。真实 Session Secret 生命周期仍由 4.6 另行验收。
 
 ## 3. Hospital Routes
-- [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
+- [x] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
 - [ ] 3.2 Johns Creek：新 FHIR Source Request → real OIE Channel → independent HL7 ADT A01 readback → Blob Publisher；非住院事件显式跳过，不制造 A01。
 - [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
 - [x] 3.4 **受控医院身份命名整改**：Profile、FHIR Publisher、OIE Channel/HL7 Assigning Authority、两仓 Workflow、测试和 Blob Key 使用固定 Hospital A/B 标识；对 `demo-` 临时身份 fail-closed；重新发布匹配源码的 Publisher Digest 并验证运行前匹配。未完成前禁止 Atlanta 真实 PUT。
@@ -167,3 +167,11 @@
 - Self-Runner [PR #297](https://github.com/JohnZhang-DataForge/Self-Runner/pull/297) **已合并** Main `6b1ac1849b5277f647abdedd7f4ee77f526bffbb`，手工 E2E 和只读预检固定新医院 ID / Healthcare SHA / GHCR Digest；Hosted [Run #40226017942](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226017942) PASS；合并 Main 后实际 [Readonly Run #40226055238](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226055238) **SUCCESS**：worker01 Ready、Generator PVC Bound、全集群 Active Job 0、Scoped Secret Keyset PASS、新 Atlanta Profile PASS、Profile ConfigMap 0，无 K8s/Azure 写入。
 - 3.4 仅代表**业务身份整改、镜像发布、离线 CI 与真实只读门禁**已完成。**未**触发新 Atlanta FHIR Azure PUT/GET/Manifest/Retry；Johns Creek 共享 OIE Channel 尚未部署本次新版本，历史 32 条仍原样保留。Task 3.1/3.2/4.2/4.7 继续 OPEN，不能因本勾选视为双医院 E2E 成功。
 - 详见 [HOSPITAL-AB-IDENTITY-RENAME-20261025.md](evidence/HOSPITAL-AB-IDENTITY-RENAME-20261025.md)。
+
+### 3.1 — Atlanta Hospital A 真实 Azure Blob DIRECT FHIR E2E（2026-10-25）
+
+- **E2E ACCEPTED**：[Self-Runner Main Run #40238053772](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40238053772) `workflow_dispatch`、Attempt 1 **SUCCESS**，精确 Self-Runner Main `6b1ac1849b5277f647abdedd7f4ee77f526bffbb`，执行时 Healthcare Main `89a14d1949be91c9c5f934fb45962b4e2124630a`，Publisher 受保护输入版本 `b033d7b8fd8cf752de7e64b240ea3dc83ce1fe7d` 无漂移、精确 GHCR Digest `sha256:a92d06610813a38d3d9707133038f503f1f49b1d76a4144bc2500bded321e3da`。
+- `dw-synthea/worker01` 生成全新 `atlanta-fhir-gh-40238053772`；Source Manifest SHA `468eb083d7db21dff2fa9336b587250c30f2cdfb853e8e1ee62c4f6537f15327`，FHIR Blob 5 个真实写入现有 `johnzhang/landing`。Commit Manifest key `clinical/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/atlanta-fhir-gh-40238053772/landing-manifest.json`、GET SHA `772bcc6bcce0ffc137df3af0602238f69db18f8418f62acbc865780957af6af7`、ETag `"0x8DF32E36D2AA68B"`。对全部 5 个实际 Blob 的独立 GET/HEAD、SHA/ETag 验证 PASS；安全重试 `ALREADY_MATCHING` 与 ETag 零变化 PASS、错误 SHA fail-closed 并独立验证远端未改写 PASS，Run-scoped Jobs/ConfigMaps 清理 PASS。
+- 后置 [K8s 只读复核 Attempt 3](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226055238/attempts/3) **SUCCESS**：全局 Active Jobs=0，`dw-synthea` 中包含 `profile.json` 的 ConfigMap=0，Publisher Secret/OIE/PVC 正常；不是新数据写入 Run。
+- **准确边界**：本次仅完成 Atlanta DIRECT FHIR 的 Task 3.1；双医院共同门槛 Task 4.2、Johns Creek Task 3.2、跨院分离 Task 3.3、Secret 轮换 Task 4.7、整体文档归档 Task 4.3 均继续 OPEN。原先 3.4 文本“尚未触发 E2E”是改名验收当时的历史记录，不覆盖本节最新事实。
+- [完整 Source / Blob / Manifest / Run 及后置复查证据](evidence/ATLANTA-DIRECT-FHIR-AZURE-LIVE-E2E-20261025.md)。
