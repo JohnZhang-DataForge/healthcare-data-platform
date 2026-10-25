@@ -90,7 +90,7 @@ class DirectFHIRTests(unittest.TestCase):
     def test_plan_reads_original_fhir_bytes_and_real_manifest_sha(self):
         plan, content = prepare_direct_fhir(self.root, self.profile,
                                             self.request_id)
-        self.assertEqual(plan["hospital_id"], "demo-atlanta")
+        self.assertEqual(plan["hospital_id"], "atlanta-hospital-a")
         self.assertEqual(plan["target_format"], "FHIR_R4")
         self.assertEqual(plan["source_manifest_sha256"], sha256(self.manifest))
         self.assertEqual(content, {"fhir/patient.json": self.fhir.read_bytes()})
