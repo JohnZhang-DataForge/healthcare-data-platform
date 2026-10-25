@@ -7,8 +7,8 @@ const vm = require("node:vm");
 const {fhirToAdtA01} = require("../../apps/clinical_producers/oie/adt_a01.js");
 
 const config = {
-  hospital_id:"demo-johns-creek", feed_id:"demo-johns-creek-hl7-v2",
-  request_id:"johnscreek-fhir-0001", assigning_authority:"DEMOJC"
+  hospital_id:"johns-creek-hospital-b", feed_id:"johns-creek-hospital-b-hl7-v2",
+  request_id:"johnscreek-fhir-0001", assigning_authority:"JOHNSCREEKB"
 };
 function bundle(klass="IMP", status="finished") {
   return {resourceType:"Bundle",type:"collection",entry:[
@@ -33,11 +33,11 @@ test("strict real A01 segment structure with patient, encounter, historic timest
   assert.equal(msh[11],"2.5.1");
   assert.equal(evn[1],"A01");
   assert.equal(msh[6],"20261024131530+0000");
-  assert.match(msh[9],/demo-johns-creek.*enc-one-A01$/);
-  assert.equal(pid[3],"patient-one^^^DEMOJC^MR");
+  assert.match(msh[9],/johns-creek-hospital-b.*enc-one-A01$/);
+  assert.equal(pid[3],"patient-one^^^JOHNSCREEKB^MR");
   assert.equal(pid[5],"Cooper^Anne");
   assert.equal(pv1[2],"I");
-  assert.equal(pv1[19],"enc-one^^^DEMOJC^VN");
+  assert.equal(pv1[19],"enc-one^^^JOHNSCREEKB^VN");
   assert.equal(pv1[44],"20261024131530+0000");
 });
 test("same request and event yields identical MSH-10 / whole byte payload",()=>{
