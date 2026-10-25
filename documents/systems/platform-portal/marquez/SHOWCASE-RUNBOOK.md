@@ -12,7 +12,7 @@ evidence:
 
 # P6 — Marquez 官方 Web / OpenLineage 内网演示指引
 
-> **验收边界**：2026-10-25 17:54 UTC 的独立受控 [GET-only Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) **SUCCESS**；[Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399) 保存 4 份不含患者记录的原始报告。已验证 Marquez Web 首页 HTML 200、`/healthcheck=OK`、Web Proxy API 200/直接 API 一致、K8s 10/10 Ready/Bound/Endpoint、真实业务 DatasetVersion 与 ParentRun。**用户后续于 2026-10-25 提供三张 iPhone Safari 的真实 LAN 页面截图，证明官方 Dashboard/Job 列表已在实际手机浏览器中正常呈现**（见 [视觉补证](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)）。**但是尚未点击 Job 的 Run History 或展示 Dataset Lineage 图**，因此 OpenSpec P6 7.1 完整浏览器演示 Gate 仍 OPEN；不能把 HTML 200、页面 Job Card 或 API GET 误称为已完成真实血缘图交互验收。
+> **验收边界**：2026-10-25 17:54 UTC 的独立受控 [GET-only Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) **SUCCESS**；[Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399) 保存 4 份不含患者记录的原始报告。已验证 Marquez Web 首页 HTML 200、`/healthcheck=OK`、Web Proxy API 200/直接 API 一致、K8s 10/10 Ready/Bound/Endpoint、真实业务 DatasetVersion 与 ParentRun。**用户后续于 2026-10-25 提供三张 iPhone Safari 的真实 LAN 页面截图，证明官方 Dashboard/Job 列表已在实际手机浏览器中正常呈现**（见 [视觉补证](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)）。**用户随后提交的桌面 Chrome 截图已打开 Reconcile Spark Application 的 Job / LATEST RUN Facets 面板**，看到 `COMPLETED`、`jobType=APPLICATION`、`parent` Facet 存在与 Spark/OpenLineage 3.5.7/1.47.1。但该 Application 的表级 Lineage 画布只有一个 Job 节点，`parent.job`/`parent.run` 仍折叠，未可视化真实 Dataset 边；详见 [现有补证记录](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。因此 OpenSpec P6 7.1 完整浏览器演示 Gate 仍 OPEN；不能把 HTML 200、页面 Job Card 或 API GET 误称为已完成真实血缘图交互验收。
 
 ## 1. 网络与安全
 
@@ -37,9 +37,11 @@ evidence:
 | Writer Airflow Job | `new_only_omop_consumer.execute_new_only_writer` |
 | Writer OpenLineage Run UUID | `01a173bb-987a-7916-b46d-e562e9e036a9` |
 
+**实际截图提示：**在 Reconcile Application 的 `Lineage` 页面即使设置 `Depth=2`，屏幕也可能只显示单个绿色 `JOB` 节点。截图中 `Full Graph` 开关是关闭的；可以在既有只读界面尝试打开它，但不能凭开关就保证 Dataset 图出现。右侧 `LATEST RUN → RUN FACETS → parent` 已可见，下一步可展开 `job` 和 `run` 子对象，核对精确 Parent 身份。**请勿点击详情中的 `DELETE` 按钮。**
+
 以上 Spark Application 全名用于查 **Application 自身**的真实 `COMPLETED` 和 Airflow `ParentRunFacet`；底层 Spark Action Job 可能不是这个完全限定名字，而是 `task004_person_...<action>` 等。**业务读写 DatasetVersion 位于真实的子 Action Job**；不能仅凭 Application 的 Dataset 列表为空就否认已有读写血缘。
 
-## 3. GUI 演示顺序（首页/Job 列表已真实执行；Run 详情和 Dataset 图仍待人工验证）
+## 3. GUI 演示顺序（首页、Job 列表及 Reconcile 最新 Run Facets 已实测；底层 Dataset 图仍待核对）
 
 1. 在 LAN 浏览器打开官方 Web 首页，确认能进入 **Jobs / Datasets / Lineage** 导航；搜索栏先查 `new_only_omop_consumer`。如无法访问，先确认节点私网可路由及网络策略；不要修改 NodePort/Ingress 或导出 PG 密码排障。
 2. 选择 Namespace `healthcare-platform-airflow`；依次查询 `new_only_omop_consumer.spark_patient`、`spark_encounter`、`spark_reconcile`、`execute_new_only_writer`，在 **Job / RUN HISTORY** 面板核对实际任务 Run。对 Writer 的真实 Run ID 核对上述 UUID（Marquez 返回 `COMPLETED`）。
@@ -80,8 +82,10 @@ API 响应原文可能包含字段元数据；对外展示前检查内容，**�
 | PG17 真 COMMIT 与同批 SKIP | **引用先前独立 P5 Run**；P6 本身未访问 PG17 |
 | 物理 RDD Action | `START_ONLY_OBSERVED`、原严格 `business_dataset_gate=INCOMPLETE`，未伪造终态 |
 | 用户 LAN 浏览器首页及业务 Job 列表 | **PASS（用户 Safari 截图）**；官方 Dashboard，Airflow DAG/Writer/Reconcile Spark Application 的 COMPLETED Job Cards，139 events / 23 datasets / 4 sources / 71 jobs 的截图时点统计 | 
-| Job Run History / ParentRun 详情、Dataset/Lineage 图 | **NOT_CHECKED**；三张截图均未进入 Job 详情或数据集血缘可视化画布 | 
+| Reconcile Application 的 Job/LATEST RUN Facets | **PASS（用户桌面 Chrome 截图）**；真实 Job 状态 COMPLETED、LATEST RUN 面板、parent Run Facet 存在，Spark 3.5.7 / OpenLineage Adapter 1.47.1 | 
+| 精确 Parent job/run ID / 完整 Run History | **NOT_CHECKED**；parent 子对象尚未展开，RUN HISTORY 尚未点击 | 
+| 真实 Dataset/Lineage 视觉连接 | **NOT_CHECKED**；已打开 Application Lineage 画布，但仅有单一 JOB 节点；须查看底层 Spark Action Job 或 Dataset 页面 | 
 | 外网安全 / 公网可达性 | **NOT_CHECKED**；不据此开放 NodePort 30999 |
 | 真实 Listener outage 故障注入 / PG14 备份恢复 | **NOT_CHECKED**；不属于 P6 本次 GET-only Run |
 
-**终结标准**：实际打开官方 Web 和观察真实 Job Card 已在用户 Safari 截图中证明；P6 7.1 后续须进入 Job/Run、查看 Dataset/Lineage 图（并记录是否受 RDD 限制影响），仅由此才能勾选浏览器级验收。后续 P6 7.3 的 OpenSpec Archive 必须在实际 Main/CI/证据核对与治理规则满足后单独申请；**本文件及成功 Run 均不自动授权 Archive**。
+**终结标准**：实际打开官方 Web 和观察真实 Job Card 已在用户 Safari 截图中证明；P6 7.1 后续须展开 parent.job/parent.run 详情，并在底层 Spark Action/Dataset 页面检查真实 Dataset/Lineage 连线（并记录是否受 RDD 限制影响），仅由此才能勾选浏览器级验收。后续 P6 7.3 的 OpenSpec Archive 必须在实际 Main/CI/证据核对与治理规则满足后单独申请；**本文件及成功 Run 均不自动授权 Archive**。
