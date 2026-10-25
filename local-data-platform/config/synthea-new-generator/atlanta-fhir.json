@@ -1,7 +1,7 @@
 {
   "schema_version": "synthea-hospital-feed-profile-v1",
-  "hospital_id": "demo-atlanta",
-  "feed_id": "demo-atlanta-fhir-r4",
+  "hospital_id": "atlanta-hospital-a",
+  "feed_id": "atlanta-hospital-a-fhir-r4",
   "location": {
     "state": "Georgia",
     "city": "Atlanta"
