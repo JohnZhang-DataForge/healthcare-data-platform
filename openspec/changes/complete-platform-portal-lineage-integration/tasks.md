@@ -173,6 +173,8 @@
 - [x] 3.1 只读核对 A3 Provider/Transport/Selective 现行生效位置，设计业务 DAG 的最小 opt-in 改动和负向防扩散测试。**Scheduler 配置/GitSync Live 已通过；其它角色不全配置，Task 级事件仍须真实业务 Run。**
 - [x] 3.2 仅修改真实 `new_only_omop_consumer` 所需最小配置，保留 DAG ID/Task ID/XCom/Claim/Fencing/Writer 许可；更新 Airflow CODE/测试并通过 PR CI。**仅 SOURCE / STATIC PASS，非 Main 部署或业务 Live。**
 - [ ] 3.3 受控验证真实 Airflow Job/Run 读回及其他 DAG 默认行为；明确 Proven vs Not Proven。**真实 NEW_ONLY DAG/10 Job+Run Live PASS（#40126168286）；其它 DAG 未意外开启 Lineage 的 Live Negative 仍待独立验收，故不提前勾全项。**
+  - **2026-10-25 源码负向合同加强（新增离线测试，非 Live Negative）**：现有 `test_new_only_openlineage_opt_in.py` 从仅验证 `landing_batch_discovery`，扩展为完整枚举 `local-data-platform/airflow/dags/*.py` 的 AST；要求只有 `new_only_omop_consumer.py` / `platform_portal_openlineage_probe.py` 可出现 `enable_lineage` 调用和明确 Provider 选择性 Import，其他 DAG/Helper 都必须无隐式 opt-in。该测试由本 PR 的 Source Preflight/相关 CI 证实后才可报告 STATIC PASS。**即使静态 CI 通过，3.3 仍 OPEN**：未在现场独立验证未启用 DAG 实际运行时不产生新的 Marquez Task Events，不修改共享 Airflow Scheduler 或 Trigger。
+
 
 ### P2 当前静态实施记录（2026-10-24，尚无业务 Live）
 
