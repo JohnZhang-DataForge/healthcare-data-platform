@@ -89,7 +89,7 @@
 
 ### P4.1 — Azure Landing GitHub OIDC 身份/RBAC 真实只读核验（2026-10-24）
 
-- Azure Terraform 的 [shared storage vars](../../../../azure-fabric/infra-terraform/shared-infra/storage/terraform.tfvars) 确定现有 Resource Group `OMOP`、Storage Account `johnzhang`、Container `landing`，`blob_role_assignments = {}`：当前 Terraform 并未通过该 map 创建 Publisher 新授权，不代表历史已有授权不存在。
+- Azure Terraform 的 [shared storage vars](../../../azure-fabric/infra-terraform/shared-infra/storage/terraform.tfvars) 确定现有 Resource Group `OMOP`、Storage Account `johnzhang`、Container `landing`，`blob_role_assignments = {}`：当前 Terraform 并未通过该 map 创建 Publisher 新授权，不代表历史已有授权不存在。
 - Self-Runner [PR #265](https://github.com/JohnZhang-DataForge/Self-Runner/pull/265) 第一次只读 [Run #40146328038](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40146328038) 在严格假设 OIDC 默认 `sub` 格式时 `HOLD`，尚未调用 Azure；[PR #266](https://github.com/JohnZhang-DataForge/Self-Runner/pull/266) 保持 issuer/repository/owner/Main ref/push event/audience 强校验，兼容自定义 GitHub OIDC Subject，第二次 [Run #40146476474](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40146476474) **SUCCESS**。
 - 成功 Run 使用现有 Self-Runner `vars.AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/`AZURE_SUBSCRIPTION_ID` + GitHub `id-token: write`，无长期 Client Secret。实测 GitHub Main OIDC assertions、Azure ARM 和 Azure Storage OIDC Token Exchange 均 PASS；ARM GET Storage Account 与 Container 均 HTTP 200，订阅/RG/Account/Container roleAssignments REST GET 均 200；对应 service principal 对目标容器存在直接或继承 `Storage Blob Data Contributor` 角色；数据接口 Container HEAD HTTP 200。角色枚举只核对 service principal **直接身份**的可见授权；不对 group-based RBAC 做否定判断。
 - **验证只读**：无 Azure Blob PUT、角色变更、Terraform Apply、K8s Secret/Pod/PVC 变更；可以判断 Self-Runner 的 OIDC 身份在 Azure RBAC 上具备所需数据写入角色，但**尚未实际验证 PUT/GET 数据交付**。
