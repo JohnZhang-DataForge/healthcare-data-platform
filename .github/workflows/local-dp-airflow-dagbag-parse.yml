@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/local-dp-airflow-dagbag-parse.yml"
       - "local-data-platform/airflow/dags/**"
+      - "local-data-platform/tests/airflow/test_portal_openlineage_parent_macros.py"
       - "openspec/changes/relocate-local-data-platform/**"
   workflow_dispatch:
 
@@ -62,3 +63,25 @@ jobs:
           print("DAG_COUNT=" + str(len(bag.dags)))
           print("DAG_TASK_EXECUTION=NOT_PERFORMED")
           '
+
+      - name: Render true OpenLineage provider parent macros for all three KPO tasks
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          # Reuse the existing temporary Airflow image, with NO network,
+          # scheduler, database, K8s, data reads or Pod creation.
+          docker run --rm \
+            --network none \
+            --read-only \
+            --tmpfs /tmp:rw,nosuid,nodev \
+            -e AIRFLOW_HOME=/tmp/airflow \
+            -e AIRFLOW__CORE__LOAD_EXAMPLES=False \
+            -e AIRFLOW__OPENLINEAGE__NAMESPACE=healthcare-platform-airflow \
+            -e PYTHONDONTWRITEBYTECODE=1 \
+            -e PYTHONPATH=/opt/local-data-platform/airflow/dags \
+            -v "${PWD}/local-data-platform:/opt/local-data-platform:ro" \
+            --entrypoint python \
+            local-dp-airflow-dagbag:test \
+            /opt/local-data-platform/tests/airflow/test_portal_openlineage_parent_macros.py
+          echo REAL_OPENLINEAGE_MACRO_RENDER=OFFLINE_PASS
+          echo NO_RUNTIME_AND_NO_GHCR_PUBLISH=YES
