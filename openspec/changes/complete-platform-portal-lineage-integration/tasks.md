@@ -196,7 +196,7 @@
 
 ## 4. P3 — Spark A4 real I/O and Job/Run fix
 
-- [ ] 4.1 对现有 A4 `unknown`、Job latestRun 空、Dataset I/O 0 的事件/facets 做只读溯源，冻结根因证据；原 Workflow FAILURE 记录不覆写。
+- [ ] 4.1 对历史 A4 `unknown`、Application `latestRun` 空、0 I/O 的事件/Facets 做只读溯源并冻结**唯一根因**。**已补 2026-10-25 原始日志/源码逐行审计**：旧 #38628542127 Spark 计算成功且 Listener 发出 COMPLETE，但验证器只按 expected Application Job 查询，因事件实际落 `unknown` 而 `MARQUEZ_SPARK_RUN_NOT_FOUND`；独立 #38629607225 证实 `unknown` Run `COMPLETED` 而 App `latestRun=False`。PR #432 Diff 确认旧 Probe 没有持久输出，足以解释 0 Output；新版**同时**增加 explicit `spark.openlineage.appName` 与 Parquet 持久写出并正向 PASS，**无法单变量证明 `unknown` / 0 Input 的唯一原因**。旧原始 FAILURE 不覆写；保留 OPEN，详情 [A4 逐项原始取证](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 - [x] 4.2 在独立隔离 fixture 中定义实际输入与持久化输出 Dataset，修复 per-job Listener/Job/Run（依赖和测试固定），代码静态、负向测试通过。**P3 合成 PVC Parquet 与真实 Job/Run 正向验收通过，旧 unknown 的单独根因未 A/B 证明。**
 - [x] 4.3 经授权进行隔离 SparkApplication Live Smoke，核对 Event job/run 名称和真实两个方向 Dataset API 图；保留失败 Run/资源归属。**Run #40120840326：Spark COMPLETED / Parquet readback / Marquez non-unknown Job + 1 input + 1 output DatasetVersion PASS。**
 
