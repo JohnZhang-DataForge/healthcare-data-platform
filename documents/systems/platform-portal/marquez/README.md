@@ -7,6 +7,8 @@ source_sha: b92ccc9b7976e740d9dd77994a0725b115693705
 
 # Marquez — OpenLineage API 与原生 Web
 
+> **新增用户浏览器真实视觉证据（2026-10-25）**：iPhone Safari 内网加载官方 Marquez DataOps Dashboard，真实 DAG、Writer、Reconcile 的 Job 卡片和 Reconcile Spark Application 均呈现 `COMPLETED`，首页汇总可见 139 Events / 23 Datasets / 4 Sources / 71 Jobs（截图时点）。**首页和 Job 列表 GUI PASS；Run 详情 / Dataset Lineage 图仍 NOT_CHECKED**。原始含私网地址的截图不上传公开仓库，详见 [文字审查记录](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。P6 7.1、7.3 不因此结案。
+
 > **P6 内网实机只读 Web/API 与业务血缘 (2026-10-25)**：[Self-Runner #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) **SUCCESS**、[Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399)；K8s 10/10 Namespace/Deployment/Service/Endpoint/PG14 Pod+PVC PASS，官方 Web 首页 `HTTP 200`、`/healthcheck=OK`，Web API Proxy / 直接 API 的 7 namespaces 一致。真实 P5 Batch `synthea-new-only-gh-40208104106` 的 Person/Visit/Reconcile 血缘与 Parent/DatasetVersion `business_edges_gate=PASS`，Writer 真 Airflow OpenLineage Run `COMPLETED`；RDD 物理 Action 仍 START-only、原严格终态 `INCOMPLETE`。**无用户 LAN 浏览器实际 GUI 交互、截图、外网可达性或 PG14 备份恢复验证**。具体 [P6 官方 Web 演示与只读查询手册](SHOWCASE-RUNBOOK.md)；OpenSpec P6 7.1 浏览器实机 Gate 尚未完成，7.3 Archive 尚未批准。P5 PG17 真 COMMIT 必须使用原 P5 独立读回证明，不能凭 Marquez 状态推断。
 
 
