@@ -20,7 +20,7 @@ COMPONENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$")
 # Preserve original source path spelling (and SHA) while rejecting controls,
 # separators, reserved URL syntax, spaces and unsafe path components.
 # HL7 remains on the original strict ASCII filename policy.
-FHIR_COMPONENT = re.compile(r"^[^\\W_][\\w.'\u2019-]{0,159}$", re.UNICODE)
+FHIR_COMPONENT = re.compile(r"^[^\W_][\w.'’-]{0,159}$", re.UNICODE)
 TOP = {"schema_version", "hospital_id", "feed_id", "request_id",
        "source_manifest_sha256", "target_format", "verification_state",
        "objects", "skipped_non_admissions"}
