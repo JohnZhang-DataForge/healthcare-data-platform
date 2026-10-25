@@ -1,6 +1,6 @@
-# Portal P5 — 全新 Batch E2E 执行登记（2026-10-25；非最终验收）
+# Portal P5 — 全新 Batch E2E：原失败保留、独立 COMMIT/GET/SKIP 方案 A 验收（2026-10-25）
 
-> 状态：**IN PROGRESS / 未验收**。本页只记录在 GitHub 可独立核对的执行事实与安全边界。不能将 Workflow 步骤 SUCCESS、Airflow Task SUCCESS 或 Spark Application COMPLETED 直接视为 PostgreSQL17 Writer 原子 COMMIT。最终结论须补充原始 Artifact、独立 PG17 Readback、同 Batch SKIP 和 Marquez GET，随后另行审查 OpenSpec 勾选。
+> **最终验收：P5 6.1–6.4 / P4 5.4 已按方案 A 真实验证通过；保留原始完整 E2E Workflow #40208104106 的 FAILURE。** 此页记录先发生的失败、持久 COMMIT 的独立 PG17 Readback、随后单独成功的 Marquez GET 与已提交 Batch 的真实幂等 SKIP。RDD 物理 Action 的 START-only 观测缺口不做伪造或合并为严格终态 PASS。
 
 ## 源代码、控制入口和协调范围
 
@@ -15,7 +15,7 @@
 - 该原始 Run 的候选 `synthea-new-only-gh-40207853132` 仅在 PVC 内留下生成产物，**未做** prepublish/publish、S3 READY 或 Consumer/Writer Trigger；原 DAG paused 状态恢复，临时 Job/Secret 清理。这些是 PR 中记录的现场调查，不应夸大为本轮重新完成的独立 PG/S3 审计。
 - 后续新 Run 在自己的只读 Preflight 检查失败候选的 Claim/Ledger 为零，不重放、覆盖或删除该候选。另见原独立只读 [Preflight #40207289577](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40207289577)。
 
-## 正在执行的第二次真实独立 Batch（已观察到的 GitHub 步骤结果）
+## 历史现场快照：第二次 Batch 在执行期间的 GitHub 步骤结果（已被后文最终结论覆盖）
 
 截至本次初始 GitHub Jobs GET，Run #40208104106 的以下步骤已经标记 **SUCCESS**：
 
@@ -38,15 +38,43 @@
 - 异常退出后 `Restore original DAG pause state` SUCCESS：`P5_FINAL_DAG_PAUSED=True`、`P5_FINAL_ACTIVE_CONSUMER_RUNS=0`；最终 PG Readback / 证据上传 / Kubeconfig 清理步骤均 SUCCESS。不构成全局 Pod 已全部释放的推断。
 - 补证入口：[Self-Runner GET-only #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539)，专门针对**已提交** Batch，使用精确源 SHA/已知 ParentRun UUID/PG17 Readback，仅 GET Marquez + Airflow 只读查询，**无** `airflow dags trigger`、Spark/Writer/S3 写入；该入口的结果与同 Batch SKIP 仍分别需要真实验收。原 P5 Run 的总体 FAILURE 不因补证而删除或覆盖。
 
-## 尚须满足的独立验收矩阵
+## 最终补证：独立 Marquez GET 与同 Batch SKIP（2026-10-25）
+
+### 业务血缘 / Writer 关联 — Self-Runner #40209504539 SUCCESS
+
+[只读独立 Run #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539)（[原始 Artifact #12604904023](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539/artifacts/12604904023)）绑定 Healthcare `95f480078da622178f4fa7b68d986d8e05a91ae9`，未触发 Airflow、Spark、Writer 或其他存储写入：
+
+- 再次独立从 PG17 读取原 Batch `COMPLETED` Claim、Ledger、Person/Visit Stage、两份 VERIFIED Checkpoint、`Person 1394 / Visit 200556` 和与原 COMMIT 后一致的内容 MD5；零活动 Claim，零 Visit orphan。
+- 以原始 Airflow Task 的真实 ParentRun UUID 反向定位 **唯一真实** Spark Application：Person `task004_person_20261025t154424z_9`、Visit `task004_encounter_20261025t154424z_9`、Reconcile `task004_reconcile_20261025t154718z_7`，三者 Application `COMPLETED`、对应 Parent 精确匹配。
+- 严格 `business_edges_gate=PASS`，Person/Visit Landing→Processing 的实际读写 DatasetVersion 完整，Reconcile 的两条输入准确指向上述两个已产生的 Processing DatasetVersion；Writer Airflow OpenLineage Run `01a173bb-987a-7916-b46d-e562e9e036a9` 在 Marquez `COMPLETED`，且 PG17 真实 durable COMMIT 单独证明。**这两类证据须结合使用，单一 Airflow/Marquez COMPLETED 不能证明 PG17 提交。**
+- `p4_design_a_gate=PASS_WITH_KNOWN_RDD_LIMITATION`；`rdd_action_lifecycle=START_ONLY_OBSERVED`；原 `business_dataset_gate=INCOMPLETE` 不改写。补证报告里的 `pg17_independent_readback=NOT_CHECKED` 是 GET-only 模块内部单项的职责边界；PG17 已由同一受控 Run 的独立只读查询另行证明。
+
+### 真正幂等 SKIP — Self-Runner #40209818676 SUCCESS
+
+[受控同 Batch Run #40209818676](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676)（[原始 Artifact #12604879769](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676/artifacts/12604879769)）在重新确认唯一目标 Claim/Manifest SHA、PG17 内容与 8 组控制指纹、零活跃 Airflow Task/DagRun 和 SparkApplication 后，**没有再生成数据，也没有再执行任何 Spark/Writer**。仅使用与 COMMIT 相同的 `batch_id`、`manifest_uri`、`manifest_sha256` 和 `writer_commit=true` 配置，执行独立验证性 DagRun `portal-p5-verified-skip`：
+
+- DagRun `success`；`already_completed_no_replay=success`。
+- `spark_patient`、`spark_encounter`、`spark_reconcile`、`prepare_writer_handoff`、`route_writer_authorization`、`execute_new_only_writer`、`writer_committed_verified` 均为 `skipped`。
+- `pg-before.txt` 与 `pg-after.txt` **逐字节 `diff` 相同**，包含 Person/Visit 实际行数、Claim、Ledger、Checkpoint、活动 Lease，以及 Person/Visit Content、两份 Map、Claim、Ledger、Stage、Checkpoint 的八组 MD5；证明此次 SKIP 对 PG17 检查范围内为**零变化**。
+- 原 DAG 在启动时 `PAUSED=True`；Workflow 的 Always Restore Pause + 最终 PG17 Readback 步骤 SUCCESS。保留此前失败运行和应用资源历史，不对旧 Batch 做重放或清理。
+- 错 Manifest/Fencing/Listener outage 的适用**离线负向合同**由原 P5 source/unit suite 和既有守卫覆盖；**本次未执行故障注入式 Listener outage Live**，不得夸大测试范围。
+
+### 范围和遗留
+
+- P5 本轮严格证明的端到端链路：**全新 Synthea READY → Airflow → 三个真实 Spark Application → Writer 原子 COMMIT → PG17 durable readback → 同 Batch SKIP/PG17 零变化 → 独立 Marquez exact Parent/DatasetVersion/Writer Run GET**。最后两组验收跨三个 Run 分开执行，**不是原始 #40208104106 单条 SUCCESS**。
+- P4 物理 RDD START-only 的已知观测缺口按照 ADR/方案 A 独立披露。PG17 不存在已证实的 OpenLineage Dataset 终端事件，Writer 可信状态由 Airflow Writer Run + 原子 Ledger/Checkpoint/CDM 实际 Readback 双证据构成。
+- 原一体化脚本 `spark-apps.jsonl` 未保存导致的 Post-COMMIT `FileNotFoundError` 是**测试工具缺陷**。真实 App 身份已通过 Marquez GET 的 ParentRun 反向选择弥补；为何资源采集时未产生文件尚未取得精确闭环。不因此修改业务 Spark/Writer、OpenLineage 版本或重建任何镜像。
+- Self-Runner 两个补证 Workflow 是隔离的一次性审计入口，见临时 [PR #294](https://github.com/JohnZhang-DataForge/Self-Runner/pull/294)，不能未经审查便合并成 Main 的永久自动执行器。
+
+## 最终验收矩阵（原先 OPEN，已按不同真实 Run 分层验收）
 
 | Gate | 现场要求 | 本登记状态 |
 | --- | --- | --- |
-| P5 6.1 安全/版本/运行独占 | 运行窗口所有门禁及最终资源归属可复核 | Preflight Step SUCCESS；最终资源释放未核验 |
-| P5 6.2 COMMIT | 唯一 Batch READY、3 个 Spark Application、Writer Transaction、PG17 Person/Visit 新增行数、Ledger/Checkpoint、FK/Map 独立 Readback | **OPEN** |
-| P5 6.3 SKIP | 同一 Manifest 的第二个 DagRun 跳过 Spark/Writer；提交前后 PG17 表/ID Map/Ledger/Checkpoint 指纹零变化 | **OPEN** |
-| P5 6.4 Marquez | GET 的真实 Airflow ParentRun UUID、Spark App→Action、数据输入输出 DatasetVersion 与 Writer Run、独立 PG17 提交事实同批对应 | **OPEN** |
-| P4 5.4 Writer 可信状态关联 | 不仅依赖 Spark COMPLETE；对齐真实 Airflow Writer、PG17 durable state、Batch/Manifest SHA | **OPEN** |
+| P5 6.1 安全/版本/运行独占 | 精确 SHA、Digest、GitSync、资源闲置、原状态恢复 | **PASS**：#40208104106 前置 Gate + #40209818676 运行前 Guard/恢复 |
+| P5 6.2 COMMIT | READY→Airflow/Spark→原子 Writer→PG17 durability | **PASS**：#40208104106（原 Workflow FAILURE，真实 COMMIT/PG readback PASS），#40209504539 独立复验 |
+| P5 6.3 SKIP | 同 Manifest 新 DagRun 严格跳过 Spark/Writer，PG17 零变化 | **PASS**：#40209818676 + Artifact #12604879769；Listener 故障注入未执行 |
+| P5 6.4 Marquez | 真 Parent UUID、S3 DatasetVersion、Writer Run + PG17 COMMIT 同一 Manifest | **PASS_WITH_KNOWN_RDD_LIMITATION**：#40209504539（Design A） |
+| P4 5.4 Writer 可信状态关联 | Airflow Writer UUID + PG17 committed Claim/Ledger/Checkpoint/CDM Readback 同一 Batch | **PASS**：#40208104106 + #40209504539 |
 
 设计 A 的 P4 物理 RDD Action START-only/RUNNING 已知观测缺口保持独立披露；不伪造 COMPLETE，不用 `business_edges_gate` 代替 PG17 状态，不将原 `business_dataset_gate=INCOMPLETE` 改成 PASS。OpenLineage 1.47.1/1.54.0 已知行为参见 [ADR](../../../../documents/architecture/design/OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md)。
 
