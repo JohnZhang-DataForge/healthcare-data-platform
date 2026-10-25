@@ -25,6 +25,11 @@ AIRFLOW_TASK = {
 ROLES = ("person", "encounter", "reconcile")
 
 
+def qualified_application_job(role, app):
+    """Marquez application Job is Airflow task scoped; Spark action Jobs are not."""
+    return "new_only_omop_consumer." + AIRFLOW_TASK[role] + "." + app
+
+
 def get_json(path):
     """Only GET the existing private Marquez API; fail closed on off-host URLs."""
     url = urllib.parse.urljoin(ROOT + "/", path)
@@ -72,9 +77,11 @@ def snapshot(apps):
     result = {"roles": {}, "airflow": {}}
     for role in ROLES:
         app = apps[role]
+        qualified = qualified_application_job(role, app)
         names = sorted({
             job.get("name", "") for job in jobs
-            if job.get("name") == app or job.get("name", "").startswith(app + ".")
+            if job.get("name") in (app, qualified)
+            or job.get("name", "").startswith(app + ".")
         })
         if not names or len(names) > 40:
             raise ValueError("MISSING_OR_EXCESSIVE_SPARK_JOBS:" + role)
@@ -156,11 +163,12 @@ def spark_child_parent_matches(entry, app, application_run_ids):
             and parent_run.get("runId") in application_run_ids)
 
 
-def run_hierarchy(entries, app):
-    """Summarize immutable run facts without pretending to fix a RUNNING run."""
+def run_hierarchy(entries, app, application_job=None):
+    """Distinguish qualified Spark APPLICATION from bare Spark action namespace."""
+    actual_application = application_job if application_job is not None else app
     completed_apps = {
         e["id"] for e in entries
-        if e["job"] == app and e["state"] == "COMPLETED"
+        if e["job"] == actual_application and e["state"] == "COMPLETED"
     }
     actions = [
         e for e in entries if e["job"].startswith(app + ".")
@@ -203,8 +211,9 @@ def run_hierarchy(entries, app):
 
 def evaluate(data, batch, apps=None):
     roles = data["roles"]
-    # Exact app IDs are supplied by the caller in live mode. The offline
-    # fixtures can derive the application level (unqualified) Job name.
+    # Live caller passes exact physical app names, not Marquez-qualified Jobs.
+    # Offline historical fixtures retain their pre-qualification app identities.
+    live = apps is not None
     apps = apps or {
         role: next((e["job"] for e in roles[role]
                     if "." not in e["job"]), None)
@@ -212,8 +221,12 @@ def evaluate(data, batch, apps=None):
     }
     if any(not apps.get(role) for role in ROLES):
         raise ValueError("SPARK_APPLICATION_ID_MISSING")
+    application_jobs = {
+        role: qualified_application_job(role, apps[role]) if live else apps[role]
+        for role in ROLES
+    }
     hierarchy = {
-        role: run_hierarchy(roles[role], apps[role])
+        role: run_hierarchy(roles[role], apps[role], application_jobs[role])
         for role in ROLES
     }
 
@@ -240,7 +253,7 @@ def evaluate(data, batch, apps=None):
                 role,
             )
             for e in roles[role]
-            if e["job"] == apps[role] and e["state"] == "COMPLETED"
+            if e["job"] == application_jobs[role] and e["state"] == "COMPLETED"
         )
         for role in ROLES
     )

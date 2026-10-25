@@ -175,6 +175,76 @@ class BusinessLineageTests(TestCase):
         self.assertFalse(report["spark_hierarchy"]["person"][
             "application_completed"])
 
+    def test_actual_marquez_qualified_application_is_not_bare_running_placeholder(self):
+        data = fixture()
+        apps = {"person": "person-app", "encounter": "visit-app",
+                "reconcile": "reconcile-app"}
+        for role, app in apps.items():
+            rows = data["roles"][role]
+            rows[0]["job"] = lineage.qualified_application_job(role, app)
+            rows[0]["detail"]["facets"] = {"parent": {
+                "job": {"namespace": lineage.AIRFLOW_NS,
+                        "name": "new_only_omop_consumer." + lineage.AIRFLOW_TASK[role]},
+                "run": {"runId": data["airflow"][role][0]["id"]},
+            }}
+            rows.append(entry(app, "bare-" + role, "RUNNING"))
+            for item in rows:
+                if item["job"].startswith(app + "."):
+                    item["detail"]["facets"] = {"parent": {
+                        "job": {"namespace": lineage.SPARK_NS, "name": app},
+                        "run": {"runId": rows[0]["id"]},
+                    }}
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["airflow_spark_direct_parent"], "VERIFIED")
+        self.assertTrue(all(report["spark_hierarchy"][role]["application_completed"]
+                            for role in lineage.ROLES))
+        self.assertTrue(all(report["spark_hierarchy"][role][
+            "spark_action_application_parent"] == "VERIFIED"
+            for role in lineage.ROLES))
+        self.assertFalse(report["reconcile_input_runs_terminal"])
+        self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+
+    def test_bare_completed_cannot_substitute_missing_qualified_application(self):
+        data = fixture()
+        apps = {"person": "person-app", "encounter": "visit-app",
+                "reconcile": "reconcile-app"}
+        # The bare job can be COMPLETED and still is NOT the qualified
+        # application Run that carries the Airflow ParentRunFacet.
+        for role, app in apps.items():
+            data["roles"][role][0]["detail"]["facets"] = {"parent": {
+                "job": {"namespace": lineage.AIRFLOW_NS,
+                        "name": "new_only_omop_consumer." + lineage.AIRFLOW_TASK[role]},
+                "run": {"runId": data["airflow"][role][0]["id"]},
+            }}
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertFalse(any(report["spark_hierarchy"][role]["application_completed"]
+                             for role in lineage.ROLES))
+        self.assertEqual(report["airflow_spark_direct_parent"], "UNPROVEN")
+        self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+
+    def test_snapshot_fetches_exact_qualified_application_without_prefix_spoof(self):
+        apps = {"person": "person-app", "encounter": "visit-app",
+                "reconcile": "reconcile-app"}
+        job_names = []
+        for role, app in apps.items():
+            job_names.extend((app, app + ".write",
+                              lineage.qualified_application_job(role, app)))
+        job_names.append("other_dag.spark_patient.person-app")
+        calls = []
+        def fake_runs(ns, name, limit=35):
+            calls.append((ns, name))
+            return []
+        with patch.object(lineage, "list_jobs", return_value=[
+                {"name": name} for name in job_names
+        ]), patch.object(lineage, "get_runs", side_effect=fake_runs):
+            data = lineage.snapshot(apps)
+        self.assertEqual(set(data["roles"]), set(lineage.ROLES))
+        for role, app in apps.items():
+            self.assertIn((lineage.SPARK_NS,
+                           lineage.qualified_application_job(role, app)), calls)
+        self.assertNotIn((lineage.SPARK_NS,
+                          "other_dag.spark_patient.person-app"), calls)
+
     def test_p5_has_explicit_unverified_durable_writes(self):
         report = lineage.evaluate(fixture(), BATCH)
         self.assertEqual(report["writer_commit"], "NOT_CHECKED")
