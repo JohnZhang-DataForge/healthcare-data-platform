@@ -29,6 +29,10 @@ CONFIG_KEYS = (
     "AZURE_BLOB_ACCOUNT_URL", "AZURE_BLOB_CONTAINER",
     "AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET",
 )
+TEMPORARY_TOKEN_KEYS = (
+    "AZURE_BLOB_ACCOUNT_URL", "AZURE_BLOB_CONTAINER",
+    "AZURE_STORAGE_BEARER_TOKEN", "AZURE_STORAGE_TOKEN_EXPIRES_ON",
+)
 
 
 class PublisherRuntimeBlocked(RuntimeError):
@@ -88,17 +92,42 @@ def publish_direct_from_stage(
     verified_plan(plan, sources, landing_prefix=landing_prefix)
 
     scope = os.environ if env is None else env
-    if any(not isinstance(scope.get(k), str) or not scope.get(k)
-           for k in CONFIG_KEYS):
-        raise PublisherRuntimeBlocked("MISSING_SCOPED_AZURE_IDENTITY")
-    factory = backend_factory or AzureSDKBlobBackend.from_service_principal
-    backend = factory(
-        account_url=scope["AZURE_BLOB_ACCOUNT_URL"],
-        container=scope["AZURE_BLOB_CONTAINER"],
-        tenant_id=scope["AZURE_TENANT_ID"],
-        client_id=scope["AZURE_CLIENT_ID"],
-        client_secret=scope["AZURE_CLIENT_SECRET"],
-    )
+    mode = scope.get("AZURE_AUTH_MODE", "client-secret")
+    if mode == "client-secret":
+        if (scope.get("AZURE_STORAGE_BEARER_TOKEN")
+                or scope.get("AZURE_STORAGE_TOKEN_EXPIRES_ON")):
+            raise PublisherRuntimeBlocked("CONFLICTING_AZURE_AUTH_MODES")
+        if any(not isinstance(scope.get(k), str) or not scope.get(k)
+               for k in CONFIG_KEYS):
+            raise PublisherRuntimeBlocked("MISSING_SCOPED_AZURE_IDENTITY")
+        factory = backend_factory or AzureSDKBlobBackend.from_service_principal
+        options = {
+            "account_url": scope["AZURE_BLOB_ACCOUNT_URL"],
+            "container": scope["AZURE_BLOB_CONTAINER"],
+            "tenant_id": scope["AZURE_TENANT_ID"],
+            "client_id": scope["AZURE_CLIENT_ID"],
+            "client_secret": scope["AZURE_CLIENT_SECRET"],
+        }
+    elif mode == "temporary-access-token":
+        if any(scope.get(k) for k in (
+                "AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET")):
+            raise PublisherRuntimeBlocked("CONFLICTING_AZURE_AUTH_MODES")
+        if any(not isinstance(scope.get(k), str) or not scope.get(k)
+               for k in TEMPORARY_TOKEN_KEYS):
+            raise PublisherRuntimeBlocked("MISSING_TEMPORARY_AZURE_STORAGE_TOKEN")
+        expiration = scope["AZURE_STORAGE_TOKEN_EXPIRES_ON"]
+        if not re.fullmatch(r"[1-9][0-9]{9}", expiration):
+            raise PublisherRuntimeBlocked("INVALID_TEMPORARY_TOKEN_EXPIRY")
+        factory = backend_factory or AzureSDKBlobBackend.from_temporary_access_token
+        options = {
+            "account_url": scope["AZURE_BLOB_ACCOUNT_URL"],
+            "container": scope["AZURE_BLOB_CONTAINER"],
+            "access_token": scope["AZURE_STORAGE_BEARER_TOKEN"],
+            "expires_on": int(expiration),
+        }
+    else:
+        raise PublisherRuntimeBlocked("UNSUPPORTED_AZURE_AUTH_MODE")
+    backend = factory(**options)
     return publish_immutable(
         plan, sources, landing_prefix=landing_prefix, backend=backend)
 
