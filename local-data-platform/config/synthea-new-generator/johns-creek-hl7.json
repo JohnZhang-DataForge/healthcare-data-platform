@@ -1,7 +1,7 @@
 {
   "schema_version": "synthea-hospital-feed-profile-v1",
-  "hospital_id": "demo-johns-creek",
-  "feed_id": "demo-johns-creek-hl7-v2",
+  "hospital_id": "johns-creek-hospital-b",
+  "feed_id": "johns-creek-hospital-b-hl7-v2",
   "location": {
     "state": "Georgia",
     "city": "Johns Creek"
