@@ -231,10 +231,17 @@ class BusinessLineageTests(TestCase):
     def verified_live(self):
         """Build a realistic qualified, fully parent-verified Marquez fixture."""
         data = fixture()
-        apps = {"person": "person-app", "encounter": "visit-app",
-                "reconcile": "reconcile-app"}
+        apps = {"person": "person_app", "encounter": "encounter_app",
+                "reconcile": "reconcile_app"}
+        legacy = {"person": "person-app", "encounter": "visit-app",
+                  "reconcile": "reconcile-app"}
         for role, app in apps.items():
             rows = data["roles"][role]
+            # Real live CLI accepts lowercase alphanumeric/underscore app IDs,
+            # unlike legacy string-only fixtures with hyphenated fake IDs.
+            for row in rows:
+                if row["job"] == legacy[role] or row["job"].startswith(legacy[role] + "."):
+                    row["job"] = app + row["job"][len(legacy[role]):]
             app_run = rows[0]
             app_run["job"] = lineage.qualified_application_job(role, app)
             app_run["detail"]["facets"] = {"parent": {
@@ -276,7 +283,11 @@ class BusinessLineageTests(TestCase):
 
     def test_design_a_rejects_wrong_dataset_version(self):
         data, apps = self.verified_live()
-        data["roles"]["reconcile"][1]["detail"]["inputDatasetVersions"][0][
+        # Copy before editing: fixture() intentionally shares the exact same
+        # object for produced and consumed DatasetVersion in the happy case.
+        child = data["roles"]["reconcile"][1]["detail"]
+        child["inputDatasetVersions"] = copy.deepcopy(child["inputDatasetVersions"])
+        child["inputDatasetVersions"][0][
             "datasetVersionId"]["version"] = "stale"
         report = lineage.evaluate(data, BATCH, apps)
         self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
