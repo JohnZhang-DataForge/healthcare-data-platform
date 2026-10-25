@@ -25,7 +25,7 @@
 ## 4. Guarded Live and Documentation
 - [x] 4.5 用户撤销独立 Publisher Namespace，集群严格核对后删除 `dw-az-blob`，Publisher 改为 `dw-synthea` 只读使用 Generator 现有 PVC，并迁移最近合并的 DIRECT FHIR Runtime Job 模板/回归；OIE 独立不变。
 - [x] 4.4 创建独立 `dw-az-blob` Namespace 的静态 Kubernetes YAML/边界文档/离线门禁，显式阻止跨 Namespace 挂载现有 Generator PVC；**仅代码级别完成**，真实 `kubectl` Create/Readback 及 Writer 工作负载不在此勾选范围。
-- [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，批准范围后才允许 Self-Runner 的真实外部写入。
+- [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，并通过 Terraform 授予新 Publisher 的 landing 容器级 RBAC、K8s Secret 后独立验证；真实 Blob 写入需另行 E2E 验收。
 - [ ] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
 - [ ] 4.6 将 OIDC Storage Token **恰好在已验证新 Request 的 Job 启动前**以短期 Secret 交付，绑定唯一 Job、期限、只读 PVC 和有界清理；不得把 GITHUB_TOKEN/OIDC JWT 冒充 Azure Access Token，不得提前写入过期 token。
 - [ ] 4.3 同步真实 PR/Run/Blob object receipt、相关 CODE.md，明确 Fabric/OMOP 不在本 Change；再判断 archive。
@@ -109,3 +109,9 @@
 - Self-Runner [PR #268](https://github.com/JohnZhang-DataForge/Self-Runner/pull/268) / [Run #40147726787](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40147726787) 只读检查已验证 GitHub AZURE_CLIENT_ID/TENANT_ID vars 可用，但 `secrets.AZURE_CLIENT_SECRET=false`；`dw-synthea/azure-blob-publisher-identity` 未创建。已用 [Self-Runner PR #269](https://github.com/JohnZhang-DataForge/Self-Runner/pull/269) 删除仅一次检查 Workflow，保留 GitHub Run 证据。
 - 新临时认证代码明确区分 GitHub OIDC assertion 与 Azure Storage scope Access Token，仅在可信 Runner 上先交换 OAuth Token 后才有可能使用。静态 Job 模板引用 **一次性 Secret** `access-token`/`expires-on` 且对 20 分钟内结束和 SDK 到期保护有约束；当前 **没有** 自动 Secret 创建/绑定/清理 Workflow，也没有任何真实 Secret/Pod/Blob PUT。不要在没有新冻结 FHIR Manifest SHA 和具体 Job 的前提下预先把短期 Token 写入 K8s，避免留下过期 Secret。
 - 下一运行前门槛：新 Source Request + hospital profile ConfigMap、当前 worker01/PVC 与全局 Job 无冲突、Main/镜像 Digest 绑定、OIDC 交换为 Storage audience、每次 Job 对应临时 Secret 生命周期及必需清理、实际 Blob GET+ETag+Manifest 读回。仅 2.7 代码/镜像级完成，4.1/4.2/4.6 均 OPEN。
+
+### P4.1 — 新 Publisher 独立 Service Principal 与最小权限 Terraform（2026-10-25）
+- 用户已在 Entra 手动创建 `healthcare-blob-publisher` 并将新 Client Secret 安全保存于 Self-Runner GitHub Secret，独立于旧 Terraform/Fabric 身份。
+- Self-Runner [PR #284](https://github.com/JohnZhang-DataForge/Self-Runner/pull/284) / [Run #40204467859](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40204467859) 验证 GitHub 配置、`dw-synthea` 可读、Landing 的 Role Assignment 写权限；Graph 应用目录 GET 403 是原 Terraform 身份 Graph 读取不足，并非 Azure Blob 问题。
+- [PR #286](https://github.com/JohnZhang-DataForge/Self-Runner/pull/286) / [Run #40204621241](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40204621241) 使用新 Publisher 自身的机密凭据兑换 Storage audience OAuth token：`appId`/Tenant/`aud` 验证通过；从**其自身 OAuth token**解析并确定 `Service Principal Object ID = 01cd737f-6c86-48bb-ae5c-209246d62ed6`，绝非 App Registration Object ID。没有暴露 Client Secret/Token，亦无 Blob/K8s/RBAC 修改。
+- 本 Terraform PR 在现有 `shared-infra/storage` 的 **现有** `blob_role_assignments` Map 新增仅一个 `healthcare_blob_publisher`，角色限定为 `Storage Blob Data Contributor`，目标作用域是现有 `OMOP/johnzhang/landing` 容器。其他 Workspace Reader 配置不变；不要重复 Portal 创建同一 Role Assignment。**PR/Plan 不等于已 Apply**，Apply/独立 RBAC 读回和 K8s Secret 状态必须在执行后记录。
