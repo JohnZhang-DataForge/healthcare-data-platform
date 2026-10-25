@@ -61,8 +61,8 @@ class RuntimeTests(unittest.TestCase):
         }, separators=(",", ":")).encode()
         self.plan = {
             "schema_version": VERSION,
-            "hospital_id": "demo-atlanta",
-            "feed_id": "demo-atlanta-fhir-r4",
+            "hospital_id": "atlanta-hospital-a",
+            "feed_id": "atlanta-hospital-a-fhir-r4",
             "request_id": "newbatch-00001",
             "source_manifest_sha256": SOURCE_SHA,
             "target_format": "FHIR_R4",
