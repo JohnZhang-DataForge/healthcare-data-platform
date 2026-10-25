@@ -58,3 +58,94 @@ jobs:
           echo P4_SINGLE_CHILD_IMAGE_RELEASE_SCOPE=STATIC_PASS
           echo K8S_SPARK_WRITER_GHCR_MUTATION=NONE
           echo LIVE_S3_DATASET_EDGES=NOT_VERIFIED
+
+
+  p4-child-image-build-smoke:
+    name: Single P4 V2 child image clean build/smoke (no publish)
+    if: github.event_name == 'pull_request'
+    needs: p4-listener-static
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout exact PR source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Compute allowlisted one-image validation plan without mutation
+        id: plan
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python3 .github/quality/scripts/local_dp_single_image_plan.py \
+            --image landing-processing-runtime \
+            --operation validate \
+            --git-ref refs/heads/feature-validation \
+            --release-tag portal-v1.0 >> "$GITHUB_OUTPUT"
+          echo P4_CHILD_BUILD_SOURCE_SHA="$(git rev-parse HEAD)"
+          echo P4_CHILD_IMAGE_COUNT=1
+          echo P4_GHCR_MUTATION=NONE
+
+      - name: Authenticate read-only GHCR for existing parent image
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io \
+            -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Pull existing TASK004 parent and pin its exact registry digest
+        id: parent
+        shell: bash
+        env:
+          PARENT_REPO: ${{ steps.plan.outputs.parent_repo }}
+        run: |
+          set -Eeuo pipefail
+          test "$PARENT_REPO" = ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime
+          docker pull "${PARENT_REPO}:latest"
+          BASE_REF="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' \
+            "${PARENT_REPO}:latest" \
+            | grep -E "^${PARENT_REPO}@sha256:[a-f0-9]{64}$" | head -n 1)"
+          test -n "$BASE_REF"
+          echo "base_ref=$BASE_REF" >> "$GITHUB_OUTPUT"
+          echo "P4_PINNED_PARENT=$BASE_REF"
+
+      - name: Clean build only landing-processing-runtime V2 without registry publish
+        shell: bash
+        env:
+          BASE_REF: ${{ steps.parent.outputs.base_ref }}
+          DOCKERFILE: ${{ steps.plan.outputs.dockerfile }}
+        run: |
+          set -Eeuo pipefail
+          test "$DOCKERFILE" = local-data-platform/images/landing-processing-runtime/Dockerfile
+          test -n "$BASE_REF"
+          docker build --pull --no-cache \
+            --build-arg "PROJECT_GIT_SHA=$(git rev-parse HEAD)" \
+            --build-arg "BASE_IMAGE=$BASE_REF" \
+            -f "$DOCKERFILE" -t portal-p4-v2-child:offline-smoke \
+            local-data-platform
+          docker image inspect portal-p4-v2-child:offline-smoke \
+            --format 'P4_LOCAL_IMAGE_ID={{.Id}}'
+          echo P4_REAL_CHILD_IMAGE_CLEAN_BUILD=PASS
+          echo P4_IMAGE_PUSH=NO
+
+      - name: Run canonical child-image smoke fully without network or privileges
+        shell: bash
+        env:
+          SMOKE: ${{ steps.plan.outputs.smoke }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$SMOKE"
+          docker run --rm --network none \
+            --security-opt no-new-privileges --cap-drop ALL \
+            --entrypoint /bin/sh portal-p4-v2-child:offline-smoke -ec "$SMOKE"
+          echo P4_REAL_CHILD_IMAGE_NO_NETWORK_SMOKE=PASS
+          echo P4_PARENT_IMAGE_REBUILT=NO
+          echo P4_IMAGE_PUBLISHED=NO
+          echo P4_K8S_AIRFLOW_SPARK_WRITER_OPERATION=NONE
