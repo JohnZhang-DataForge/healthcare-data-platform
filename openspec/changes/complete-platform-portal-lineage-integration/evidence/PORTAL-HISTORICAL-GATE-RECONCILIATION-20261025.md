@@ -20,7 +20,24 @@
 2. **4.1 — A4 unknown 根因**：保留 [原失败 #38628542127](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38628542127) 与 [独立只读 #38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225)；旧 Probe **本就没有持久 Parquet Output 操作**，所以 0 Output Dataset 有一个直接确定的必要原因。旧事件挂 `unknown`、App Job `latestRun` 空的完整独立归因**未经控制变量 A/B**，新 P3 正向 FIXTURE 不能倒推其唯一成因。后续可只读复核事件 Facet/Provider 配置；无必要为了归档而在共享集群重跑旧 Probe。
 3. **7.3 — Archive**：只有以上事实和所有其它 tasks 经具体证据/Closeout 处理后，再单独审批 Archive。P4 RDD START-only 作为**批准的设计 A 限制**长期保留；不把它伪装成物理 COMPLETE。用户希望的公网 Portal/认证隔离属于**未来独立 Change**，不并入本历史核销。
 
-## 三、归档审查防护
+## 三、A4 历史 `unknown` 的精确只读取证（尚不能证明唯一源码根因）
+
+**未执行**新的 K8s/Marquez 请求。本节针对已封存的 2026-10-14 GitHub 原始日志、当时独立 GET 与后来源码 PR #432 的逐行 Diff，复核最小因果事实。**原失败 Run 仍是 FAILURE**。
+
+| 可独立检验的事实 | 原始证据 | 可作出的结论 |
+| --- | --- | --- |
+| Spark 的真实计算已成功 | [旧 Spark Live #38628542127](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38628542127) job `116073956838`，日志 `A4_ACTUAL_SPARK_STATE=COMPLETED`、`PORTAL_A4_SPARK_READONLY_AGGREGATION=PASS` | Spark 运算自身成功，不能说任务执行失败 |
+| 原 Workflow **为什么失败** | 同一旧 Job 仅在固定名字 `portal_a4_a438628542127` 下找 `COMPLETED` Marquez Job/Run；等候后 `AssertionError: MARQUEZ_SPARK_RUN_NOT_FOUND`、Workflow `FAILURE`。Driver 日志反而记载 `EventEmitter: Emitting lineage completed successfully with run id: 01a13c02-6d9c-7684-913d-f64966d76110` | **明确确认的是验证器按预期 Job 名查询失败**，不是没有完成 OpenLineage Event |
+| 旧 Marquez 元数据究竟落在哪里 | [独立 READONLY #38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225) job `116077545210`：旧 Application Job `latestRun=False`，Job Facet 仅 `jobType`，0 Job Input/Output；但 `unknown` Job `latestRun=True`，对应 `01a13c02-6d9c-7684-913d-f64966d76110` Run `state=COMPLETED`，`inputDatasetVersions=0` / `outputDatasetVersions=0`，Run Facets = environment-properties/processing_engine/spark_properties | **已确认** Events 被记录在 `unknown` Job，故原按应用名查询的验证器看不到完整 Run |
+| 为什么旧 Output Dataset 为零（直接证据） | [PR #432](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/432) `probe.py` 补丁显示**旧版仅** CSV 读取、GroupBy、Collect，**没有** `--output-uri` 或任何持久数据写出；新版才增加 `write.mode("errorifexists").parquet(...)` 并读取核验两行 | **旧 Probe 从未执行持久 Output 写操作，是 0 Output Dataset 的已证明充分解释**；不能把无输出归咎于 Listener 丢数据 |
+| 更改后为何 NEW Probe 实际通过 | 同一 [PR #432](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/432) `sparkapplication.yaml.tpl` 同时增加 `spark.openlineage.appName=portal-a4-<token>`、PVC 输出挂载及写出操作；新受控 [#40120840326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120840326) 得到真实非 `unknown` Job / COMPLETED Run / 1 Input + 1 Output DatasetVersion / Parquet 读回 | **这是正向回归通过的强证据，不是单变量 A/B**。它同时改变 appName 与 I/O；旧 `unknown` 对应哪个确切 Listener/运行时解析路径、为何旧 Input Dataset 为零，尚无唯一根因 |
+| 旧 Spark shutdown Kubernetes PVC 删除异常 | 原 #38628542127 Driver 在发出 OpenLineage COMPLETE 后有 Fabric8 `KubernetesClientException: DELETE persistentvolumeclaims` 清理权限异常 | 该异常是**独立观测事实**；当前**无证据**证明它导致 `unknown` Job / 0 Dataset 或持久数据损坏，不进行 Kubernetes 权限更改 |
+
+**具体排除的错误结论**：不能宣称旧 Spark 没跑、Marquez 完全没收到 Event、`unknown` 的唯一原因是没有 `spark.openlineage.appName`、旧输入读取无血缘一定由 File CSV 方式造成、PVC shutdown 异常造成 Job 命名错误、或者新 P3/ P4 的成功会逆向将旧失败 Run 变绿。
+
+**剩余 `4.1` 可选验收路径**：如果希望完整关闭历史 `unknown` 根因，先用上述已存在 Facets/Driver log 和 PR #432 的前后源码做更深入的只读 Agent/Listener 代码行为审查；若仍要求严格唯一因果，才考虑**另外授权、隔离的 A/B**（只改变 explicit `spark.openlineage.appName`，固定读写操作、Listener/JAR、Marquez Namespace、其他维度）以及实际环境的独占/安全门槛。本轮禁止为了归档而触发旧已退休 Probe、重建镜像或伪造 OpenLineage COMPLETE。由于缺单变量唯一因果证据，`4.1` **保持 OPEN**。
+
+## 四、归档审查防护
 
 - 所有表格行是**重新对账的当前解释**，不会删除或篡改早期真实失败 Run 或当年静态 `PENDING` 快照；相关 Tasks 状态只在同一 PR 修正。
 - 不允许把 GitHub PR `MERGED` 自动映射成 K8s 的 Live：以上各行都分别列出源码、真正运行及其明确不可证明的边界。
