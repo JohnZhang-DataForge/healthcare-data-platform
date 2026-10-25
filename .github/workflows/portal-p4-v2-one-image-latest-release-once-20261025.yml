@@ -1,0 +1,215 @@
+name: Portal P4 Authorized Single V2 Child GHCR Latest Release Once
+
+on:
+  push:
+    branches: [feature/portal-p4-v2-one-image-latest-release-once-20261025]
+    paths: [.github/workflows/portal-p4-v2-one-image-latest-release-once-20261025.yml]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: local-dp-image-ghcr-release
+  cancel-in-progress: false
+
+jobs:
+  publish_one_child:
+    name: Clean build, smoke, rollback snapshot and GHCR latest readback
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout EXACT reviewed Healthcare Main source
+        uses: actions/checkout@v6
+        with:
+          ref: dd38feba6ec5bc523da311c85b52ceffd5d07a44
+          persist-credentials: false
+
+      - name: Fail closed on authorization, stable Main, single image and one-time attempt
+        id: plan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_EVENT_NAME" = push
+          test "$GITHUB_REF" = refs/heads/feature/portal-p4-v2-one-image-latest-release-once-20261025
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$(git rev-parse HEAD)" = dd38feba6ec5bc523da311c85b52ceffd5d07a44
+          test -n "$GH_TOKEN"
+          CURRENT_MAIN="$(curl -fsS --retry 2 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/JohnZhang-DataForge/healthcare-data-platform/git/ref/heads/main \
+            | python3 -c 'import json,sys;print(json.load(sys.stdin)["object"]["sha"])')"
+          test "$CURRENT_MAIN" = dd38feba6ec5bc523da311c85b52ceffd5d07a44 || {
+            echo BLOCKED:MAIN_MOVED_SINCE_APPROVED_SHA
+            exit 3
+          }
+          PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
+            -s .github/quality/tests -p test_local_dp_single_image_plan.py -v
+          python3 .github/quality/scripts/local_dp_single_image_plan.py \
+            --image landing-processing-runtime \
+            --operation validate \
+            --git-ref "$GITHUB_REF" \
+            --release-tag portal-v1.0 >> "$GITHUB_OUTPUT"
+          echo "exact_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo RELEASE_AUTHORIZATION=ONLY_LANDING_PROCESSING_V2_LATEST
+          echo RELEASE_GHCR_PACKAGE_SCOPE=ONE
+          echo RELEASE_K8S_AIRFLOW_SPARK_WRITER=NO
+
+      - name: Authenticate GitHub Container Registry only for selected package
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+      - name: Verify same immutable TASK004 parent digest as approved PR packaging
+        id: parent
+        shell: bash
+        env:
+          PARENT_REPO: ${{ steps.plan.outputs.parent_repo }}
+        run: |
+          set -Eeuo pipefail
+          test "$PARENT_REPO" = ghcr.io/johnzhang-dataforge/healthcare-data-platform-task004-runtime
+          PARENT_DIGEST=sha256:9fa3f6fff70c3bfa07cc66ad4fb3a8c301b58d5e7f79c3db0e6b89137791e0d1
+          docker pull "$PARENT_REPO:latest"
+          CURRENT_PARENT="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' \
+            "$PARENT_REPO:latest" | grep -E "^$PARENT_REPO@sha256:[a-f0-9]{64}$" | head -n 1)"
+          test "$CURRENT_PARENT" = "$PARENT_REPO@$PARENT_DIGEST" || {
+            echo BLOCKED:PARENT_DIGEST_DRIFT
+            exit 3
+          }
+          echo "base_ref=$CURRENT_PARENT" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_PARENT_DIGEST=$PARENT_DIGEST"
+
+      - name: Preserve exact prior child latest identity BEFORE build
+        id: old
+        shell: bash
+        env:
+          PACKAGE: ${{ steps.plan.outputs.package }}
+        run: |
+          set -Eeuo pipefail
+          test "$PACKAGE" = ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2
+          docker pull "$PACKAGE:latest"
+          OLD_REF="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' \
+            "$PACKAGE:latest" | grep -E "^$PACKAGE@sha256:[a-f0-9]{64}$" | head -n 1)"
+          test -n "$OLD_REF"
+          OLD_DIGEST="$(printf '%s\n' "$OLD_REF" | cut -d @ -f 2)"
+          echo "previous_digest=$OLD_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_PREVIOUS_LATEST_DIGEST=$OLD_DIGEST"
+
+      - name: Clean-build the ONLY selected child from exact Main and pinned parent
+        id: build
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.plan.outputs.exact_sha }}
+          DOCKERFILE: ${{ steps.plan.outputs.dockerfile }}
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          BASE_REF: ${{ steps.parent.outputs.base_ref }}
+        run: |
+          set -Eeuo pipefail
+          test "$DOCKERFILE" = local-data-platform/images/landing-processing-runtime/Dockerfile
+          test -n "$BASE_REF"
+          TAG="git-$SOURCE_SHA-run$GITHUB_RUN_ID-a$GITHUB_RUN_ATTEMPT"
+          IMAGE="$PACKAGE:$TAG"
+          docker build --pull --no-cache \
+            --build-arg "PROJECT_GIT_SHA=$SOURCE_SHA" \
+            --build-arg "BASE_IMAGE=$BASE_REF" \
+            -f "$DOCKERFILE" -t "$IMAGE" local-data-platform
+          docker image inspect "$IMAGE" >/dev/null
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo RELEASE_V2_CHILD_CLEAN_BUILD=PASS
+          echo RELEASE_PARENT_REBUILT=NO
+
+      - name: Run canonical allowlisted smoke with no network and dropped capabilities
+        shell: bash
+        env:
+          IMAGE: ${{ steps.build.outputs.image }}
+          SMOKE: ${{ steps.plan.outputs.smoke }}
+        run: |
+          set -Eeuo pipefail
+          test -n "$SMOKE"
+          docker run --rm --network none --security-opt no-new-privileges \
+            --cap-drop ALL --entrypoint /bin/sh "$IMAGE" -ec "$SMOKE"
+          echo RELEASE_V2_CHILD_SMOKE=PASS
+
+      - name: Push immutable run tag, snapshot old latest, then promote ONLY this child latest
+        id: release
+        shell: bash
+        env:
+          IMAGE: ${{ steps.build.outputs.image }}
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          OLD_DIGEST: ${{ steps.old.outputs.previous_digest }}
+          SOURCE_SHA: ${{ steps.plan.outputs.exact_sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = refs/heads/feature/portal-p4-v2-one-image-latest-release-once-20261025
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$PACKAGE" = ghcr.io/johnzhang-dataforge/healthcare-data-platform-local-dp-landing-processing-v2
+          test -n "$OLD_DIGEST"
+          CURRENT_MAIN="$(curl -fsS --retry 2 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/JohnZhang-DataForge/healthcare-data-platform/git/ref/heads/main \
+            | python3 -c 'import json,sys;print(json.load(sys.stdin)["object"]["sha"])')"
+          test "$CURRENT_MAIN" = "$SOURCE_SHA" || { echo BLOCKED:MAIN_MOVED_BEFORE_PUBLICATION; exit 3; }
+          docker push "$IMAGE" | tee "$RUNNER_TEMP/portal-p4-immutable-push.log"
+          NEW_DIGEST="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' \
+            "$RUNNER_TEMP/portal-p4-immutable-push.log" | tail -n 1)"
+          [[ "$NEW_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]] || exit 3
+          # Re-fetch previous latest from registry and ensure no another writer changed it.
+          docker image rm "$PACKAGE:latest" || true
+          docker pull "$PACKAGE:latest"
+          CURRENT_REF="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' \
+            "$PACKAGE:latest" | grep -E "^$PACKAGE@sha256:[a-f0-9]{64}$" | head -n 1)"
+          test "$CURRENT_REF" = "$PACKAGE@$OLD_DIGEST" || { echo BLOCKED:LATEST_CHANGED_BEFORE_RELEASE; exit 4; }
+          BACKUP_TAG="pre-latest-run$GITHUB_RUN_ID-a$GITHUB_RUN_ATTEMPT"
+          docker tag "$PACKAGE:latest" "$PACKAGE:$BACKUP_TAG"
+          docker push "$PACKAGE:$BACKUP_TAG" | tee "$RUNNER_TEMP/portal-p4-backup-push.log"
+          BACKUP_DIGEST="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' \
+            "$RUNNER_TEMP/portal-p4-backup-push.log" | tail -n 1)"
+          test "$BACKUP_DIGEST" = "$OLD_DIGEST" || { echo BLOCKED:ROLLBACK_SNAPSHOT_MISMATCH; exit 5; }
+          echo "RELEASE_ROLLBACK_TAG=$BACKUP_TAG"
+          docker tag "$IMAGE" "$PACKAGE:latest"
+          docker push "$PACKAGE:latest" | tee "$RUNNER_TEMP/portal-p4-latest-push.log"
+          PUSHED="$(sed -nE 's/.*digest: (sha256:[0-9a-f]{64}).*/\1/p' \
+            "$RUNNER_TEMP/portal-p4-latest-push.log" | tail -n 1)"
+          test "$PUSHED" = "$NEW_DIGEST" || { echo BLOCKED:LATEST_PUSH_DIGEST_MISMATCH; exit 6; }
+          docker image rm "$PACKAGE:latest"
+          docker pull "$PACKAGE:latest"
+          docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' \
+            "$PACKAGE:latest" | grep -Fx "$PACKAGE@$NEW_DIGEST" >/dev/null || {
+              echo BLOCKED:LATEST_GHCR_READBACK_MISMATCH
+              exit 7
+            }
+          echo "old_digest=$OLD_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "new_digest=$NEW_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "rollback_tag=$BACKUP_TAG" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_SINGLE_LATEST=PASS old=$OLD_DIGEST new=$NEW_DIGEST rollback=$BACKUP_TAG"
+
+      - name: Summarize traceability, including failure/non-execution distinction
+        if: always()
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.plan.outputs.exact_sha }}
+          PACKAGE: ${{ steps.plan.outputs.package }}
+          BASE_REF: ${{ steps.parent.outputs.base_ref }}
+          OLD_DIGEST: ${{ steps.release.outputs.old_digest }}
+          NEW_DIGEST: ${{ steps.release.outputs.new_digest }}
+          ROLLBACK_TAG: ${{ steps.release.outputs.rollback_tag }}
+        run: |
+          {
+            echo "### One-time approved P4 V2 GHCR latest release"
+            echo "- Source Main SHA: $SOURCE_SHA"
+            echo "- Exactly one selected package: $PACKAGE"
+            echo "- Immutable existing parent: $BASE_REF"
+            echo "- Previous latest digest: $OLD_DIGEST"
+            echo "- New latest digest: $NEW_DIGEST"
+            echo "- Rollback tag: $ROLLBACK_TAG"
+            echo "- Latest released successfully ONLY if RELEASE_SINGLE_LATEST=PASS in preceding step"
+            echo "- No K8s/Airflow/Spark/S3/PG/Writer operations in this Workflow"
+          } >> "$GITHUB_STEP_SUMMARY"
