@@ -15,6 +15,8 @@
 - [ ] 2.5 原跨 Namespace ephemeral Stage 需求已由 `dw-synthea` 共 Namespace 只读 PVC 设计取消；仍待 OIE authenticated persisted readback Fetcher，运行前独立审查与授权。
 - [x] 2.6 Publisher GHCR 镜像 Main-only Clean Build + 无网络非 root Smoke + 唯一 git-SHA 标签发布和 Digest 读回；不修改 `latest`、不触碰 K8s/Azure；[Run #40137992945](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40137992945) 实际成功，镜像 Digest 已记录。
 
+- [ ] 2.7 Publisher 支持 GitHub OIDC 换取的短期 Azure Storage Access Token、token 到期边界及同 Namespace 短期 Session Secret Job 模板；新的 GHCR Digest、真实 Session Secret 生命周期仍须分别验收。
+
 ## 3. Hospital Routes
 - [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
 - [ ] 3.2 Johns Creek：新 FHIR Source Request → real OIE Channel → independent HL7 ADT A01 readback → Blob Publisher；非住院事件显式跳过，不制造 A01。
@@ -25,6 +27,7 @@
 - [x] 4.4 创建独立 `dw-az-blob` Namespace 的静态 Kubernetes YAML/边界文档/离线门禁，显式阻止跨 Namespace 挂载现有 Generator PVC；**仅代码级别完成**，真实 `kubectl` Create/Readback 及 Writer 工作负载不在此勾选范围。
 - [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，批准范围后才允许 Self-Runner 的真实外部写入。
 - [ ] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
+- [ ] 4.6 将 OIDC Storage Token **恰好在已验证新 Request 的 Job 启动前**以短期 Secret 交付，绑定唯一 Job、期限、只读 PVC 和有界清理；不得把 GITHUB_TOKEN/OIDC JWT 冒充 Azure Access Token，不得提前写入过期 token。
 - [ ] 4.3 同步真实 PR/Run/Blob object receipt、相关 CODE.md，明确 Fabric/OMOP 不在本 Change；再判断 archive。
 
 ### P1.3 — 实际初始 Blob 发布计划输入合同
@@ -95,3 +98,8 @@
 - **验证只读**：无 Azure Blob PUT、角色变更、Terraform Apply、K8s Secret/Pod/PVC 变更；可以判断 Self-Runner 的 OIDC 身份在 Azure RBAC 上具备所需数据写入角色，但**尚未实际验证 PUT/GET 数据交付**。
 - GitHub OIDC 凭据只在 GitHub Workflow 生命周期可用，不会自动传递到 `dw-synthea` Pod。现有 Publisher Job 调用 `ClientSecretCredential` 并引用 `dw-synthea/azure-blob-publisher-identity`（预检 [#40138182990](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40138182990) 确认不存在）。**不能因为 Runner OIDC 通过就宣布 K8s Job 已获得身份。** 后续须明确选择独立 K8s Workload Identity/Scoped Secret 或经过审查改为 Runner 执行 Azure 上传，再做真实数据 E2E。
 - 原任务 4.1 保持 OPEN：Azure 身份和目标容器只读预检完成，但 Publisher K8s 认证、完整网络和实际写入授权执行门槛尚未完成；4.2 双医院实际上传/独立读回也 OPEN。
+
+### P2.7 — GitHub OIDC 与 K8s Secret 的现实限制（2026-10-24）
+- Self-Runner [Credential Readiness #40147726787](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40147726787) 实际只读检验：`vars.AZURE_CLIENT_ID`、`vars.AZURE_TENANT_ID` 均存在，仓库 `secrets.AZURE_CLIENT_SECRET` **不存在**，`dw-synthea/azure-blob-publisher-identity` **不存在**。不能将 `GITHUB_TOKEN` 或 GitHub OIDC JWT 当成 `ClientSecretCredential` 的 Entra Client Secret，过期的 Azure Storage Access Token 也不能充作长期 K8s Secret。此次只读 Workflow 没有修改 Azure/K8s。
+- 选择保持 Publisher 运行在 `dw-synthea`，增加 `temporary-access-token` 认证模式：调用方先用已验证 Self-Runner OIDC 联邦身份向 Entra **换取 Azure Storage audience Access Token**，在真正创建经核验的 Publisher Job 前设一个一次性 Session Secret；运行时拒绝无/近到期 Token、异常 Auth Mode 和同时带有旧 Client Secret 的配置。仍只读挂载 Generator PVC、源 Manifest 的 SHA、远端 immutable Azure GET/Manifest 最后提交规则不变。
+- 静态 `publish-direct-fhir-temporary-token-job.yaml.tpl` 使用 `__SESSION_SECRET_NAME__` + `access-token/expires-on`，Job deadline 20 分钟，不代表已将任何真实 Token 写入集群。需具备真实 Source Request/Profile ConfigMap/完整云端读回/生命周期清理和安全门槛后才能做 Live Job，避免生成一个很快过期却无人使用的 Secret。
