@@ -343,3 +343,17 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 **Publisher GHCR 已发布，未部署（2026-10-24）**：Healthcare [PR #464](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/464) / [Main Release Run #40137992945](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40137992945) SUCCESS；镜像 `ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:e53a87105cb489cfd4da4f66734c57c2a1b472d84e6ee8fd91f75510fe88c6a2`，源码 SHA `56b89b981cfc6088e8404aea5eae6781943d58ef`，实际非 root/无网络容器 Smoke 通过。随后 [PR #466](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/466) 又新增了 OIE Scoped Readback，但不包含在上述旧镜像 Digest 中。
 
 [Self-Runner 只读预检 #40138182990](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40138182990) 确认 `dw-synthea` Generator PVC RWO/synthea-local/Retain，worker01/OIE 正常、全局 active Job=0、`dw-az-blob` ABSENT；**当前没有** `azure-blob-publisher-identity` Secret 或医院 Profile ConfigMap。尚无真实 Publisher Job/Azure Blob PUT，后续部署需要独立行动授权和 Azure 目标/权限核查。
+
+## Atlanta DIRECT FHIR → Azure Blob：Self-Runner 手工 E2E 源码索引（2026-10-25）
+
+以下属于临床 Producer 下游集成入口，不改变 `synthea_new_generator` 内部行为、旧 NEW_ONLY 或 Portal P5。
+
+| 受维护的外部入口 | 作用与安全边界 |
+| --- | --- |
+| [Self-Runner `scripts/azure_blob_atlanta_direct_fhir_e2e.py`](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/scripts/azure_blob_atlanta_direct_fhir_e2e.py) | **手工运行时**受控新 Atlanta Request、worker01 Generator、只读 PVC Source SHA 审计、Publisher、独立 Azure GET/ETag、同请求重试、错误 SHA 负向验证及仅本 Run 的资源清理；静态合并**不**执行上传 |
+| [Self-Runner `azure-blob-publisher-atlanta-e2e-manual.yml`](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-blob-publisher-atlanta-e2e-manual.yml) | PR **仅 Hosted CI**；Main 上 `workflow_dispatch` 且 `PUBLISH_ATLANTA` 才允许真实 K8s/Azure 副作用；必须独立取得本次运行授权和并发 Gate |
+| [Self-Runner `azure-blob-publisher-readonly-preflight.yml`](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-blob-publisher-readonly-preflight.yml) | worker01、Generator PVC、OIE、Existing K8s Secret Keyset（不打印值）和 Atlanta Profile 静态配置只读检查 |
+| [当前 DIRECT FHIR Job 模板](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl) | `dw-synthea`、worker01、现有 `synthea-new-generator-state` 只读卷、`azure-blob-publisher-identity` 三字段、经验证的 Profile ConfigMap 和精确 Manifest SHA |
+| [独立 Blob Publisher/Runtime](../../../../local-data-platform/apps/clinical_producers/azure_blob_runtime.py) | `ClientSecretCredential` 与 immutable Azure PUT/GET、Manifest-last；仅已审查镜像 digest 的业务入口 |
+
+合并 Runner [PR #295](https://github.com/JohnZhang-DataForge/Self-Runner/pull/295)；真实 K8s 只读 [Run #40218904158](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218904158)、[Run #40219870444](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40219870444) 均 SUCCESS。**Atlanta Azure Blob 数据 E2E 尚未执行，Profile ConfigMap 在只读预检时为 0；禁止把静态 PR/无 Active Job 当作自动批准共享写入。** 验收以 [当前 Publisher OpenSpec Evidence](../../../../openspec/changes/implement-multi-hospital-azure-blob-publisher/evidence/ATLANTA-DIRECT-FHIR-PREFLIGHT-20261025.md) 记录为准。
