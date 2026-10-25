@@ -52,7 +52,7 @@ jobs:
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_publisher.py -v
           # Permanent prevention: old identifiers may remain in historical evidence,
           # never in maintained clinical implementation, tests, profiles or workflows.
-          if git grep -n -E 'demo-atlanta|demo-johns-creek|DEMOJC' -- \
+          if git grep -n -E 'd[e]mo-atlanta|d[e]mo-johns-creek|D[E]MOJC' -- \
             local-data-platform/apps/clinical_producers \
             local-data-platform/tests/clinical_producers \
             local-data-platform/tests/synthea_new_generator \
