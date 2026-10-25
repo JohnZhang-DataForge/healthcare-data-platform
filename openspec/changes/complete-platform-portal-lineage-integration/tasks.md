@@ -3,6 +3,12 @@
 > **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED / P2 REAL NEW_ONLY AIRFLOW JOB/RUN LIVE PASS / P3 ISOLATED SPARK I/O LIVE PASS / P4 DESIGN A BUSINESS EDGES ACCEPTED WITH RDD ACTION TERMINAL GAP / P4 5.4 + P5 WRITER OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
 
 
+### P5 live execution register — 2026-10-25 (NO COMMIT VERDICT YET)
+
+- **Evidence, not acceptance**: [P5 fresh Batch run register](evidence/PORTAL-P5-FRESH-BATCH-EXECUTION-20261025.md) records fixed Healthcare source SHA `95f480078da622178f4fa7b68d986d8e05a91ae9`, Self-Runner PR #292, original Generator Digest assertion **FAILURE** [#40207853132](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40207853132) and its separate corrected new Batch Run [#40208104106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106). First Run never reached S3 READY or Writer; do not replay the PVC candidate.
+- **At initial read**: corrected Run's preflight/GitSync, generation, READY and manifest checks were SUCCESS; Airflow/Spark→Writer/PG17→same-batch SKIP step was **IN_PROGRESS**, Marquez GET and final cleanup still pending. Session interruption does not release resource exclusivity. No second Run or shared-resource mutation is authorized by this documentation.
+- **Open gates remain**: P4 5.4 and P5 6.1–6.4 remain **unchecked** until independent PG17 durable readback, idempotent SKIP/zero-content-change, exact Marquez identity/version matching and resource-release evidence are captured and reviewed. Preserve Design A RDD terminal limitation explicitly; do not infer Writer COMMIT from Spark completion.
+
 ### P4 Design A source closeout — 2026-10-25 (CI and prior independent real-event evidence)
 
 - **Acceptance basis and distinction**: Existing independent exact-identity Marquez GET / PG14 evidence [Self-Runner #40197583583](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197583583) and [#40197739051](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197739051) already proved 3/3 qualified Spark Applications COMPLETED with real Airflow task ParentRun UUIDs, 3/3 dataset-bearing child→actual Spark application Parent UUIDs, real Landing→Processing Parquet and Reconcile's same two Processing DatasetVersions; four physical START-only RDD runs were confirmed independently. These are previous *real* run audits, **not a new P4 live run**.
