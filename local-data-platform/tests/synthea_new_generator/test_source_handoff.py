@@ -74,7 +74,7 @@ class HandoffTests(unittest.TestCase):
         result = self.inspect()
         self.assertEqual((result["schema_version"], result["status"]), (VERSION, STATUS))
         self.assertEqual((result["hospital_id"], result["target_format"], result["transformer"]),
-                         ("demo-johns-creek", "HL7_V2", "OIE"))
+                         ("johns-creek-hospital-b", "HL7_V2", "OIE"))
         self.assertEqual(result["metrics"]["fhir_encounters"], 1)
         self.assertEqual(result["source_manifest_sha256"],
                          sha256(self.folder / "generation-manifest.json"))

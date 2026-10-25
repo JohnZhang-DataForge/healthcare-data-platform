@@ -100,14 +100,65 @@ jobs:
           assert root.findtext('name')=='Johns Creek FHIR to HL7 ADT'
           print('OIE_ISOLATED_CHANNEL_READBACK=PASS')
           PY
-      - name: Fetch frozen real Johns Creek source from passing Synthea run
-        uses: actions/download-artifact@v4
-        with:
-          repository: JohnZhang-DataForge/healthcare-data-platform
-          run-id: 40123989893
-          name: oie-real-johns-creek-fhir-events-40123989893
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ${{ runner.temp }}/oie-real-johns-creek
+      - name: Generate NEW Johns Creek Hospital B FHIR source locally (not old 32 messages)
+        shell: bash
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin >/dev/null
+          image=ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest
+          docker pull "$image"
+          test "$(docker image inspect "$image" --format '{{index .Config.Labels "io.healthcare-data-platform.synthea.commit"}}')" = 995cf2fd33e67918d4e33110d9f68ad248002221
+          mkdir -p "$RUNNER_TEMP/new-hospital-b-input" "$RUNNER_TEMP/new-hospital-b-state"
+          sudo chown -R 10001:10001 "$RUNNER_TEMP/new-hospital-b-state"
+          cd local-data-platform
+          python3 -m apps.clinical_producers.hospital_profiles             --profile config/synthea-new-generator/johns-creek-hl7.json             --request-id ci-johnscreek-fhir-0001 --population 1             --output "$RUNNER_TEMP/new-hospital-b-input/request.json"
+          docker run --rm --network none --cpus 2 --memory 5g             --mount "type=bind,source=$GITHUB_WORKSPACE/local-data-platform,target=/workspace,readonly"             --mount "type=bind,source=$RUNNER_TEMP/new-hospital-b-input,target=/inputs,readonly"             --mount "type=bind,source=$RUNNER_TEMP/new-hospital-b-state,target=/synthea-new-generator-state"             --workdir /workspace --entrypoint python3 "$image"             -m apps.synthea.synthea_new_generator.entrypoint             --request /inputs/request.json
+          sudo chmod -R a+rX "$RUNNER_TEMP/new-hospital-b-state"
+          echo NEW_HOSPITAL_B_FHIR_GENERATION=PASS
+
+      - name: Independently verify new source FHIR Manifest and pin exact event SHA
+        id: source
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/oie-real-johns-creek"
+          PYTHONPATH=local-data-platform python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          from apps.clinical_producers.source_handoff import verify_handoff
+          from apps.clinical_producers.oie.fhir_events import events_from_bundle
+          root=Path(os.environ["RUNNER_TEMP"])/"new-hospital-b-state"
+          profile=Path("local-data-platform/config/synthea-new-generator/johns-creek-hl7.json")
+          handoff=verify_handoff(root,profile,"ci-johnscreek-fhir-0001")
+          assert handoff["hospital_id"]=="johns-creek-hospital-b"
+          assert handoff["feed_id"]=="johns-creek-hospital-b-hl7-v2"
+          events=[]
+          for file in handoff["files"]:
+              path=root/handoff["request_relative_path"]/"payload"/file["path"]
+              raw=path.read_bytes()
+              assert hashlib.sha256(raw).hexdigest()==file["sha256"]
+              events+=events_from_bundle(json.loads(raw),handoff["request_id"])
+          assert len(events)==handoff["metrics"]["fhir_encounters"]
+          modes={}
+          for event in events:
+              kind=event["bundle"]["entry"][1]["resource"]["class"]["code"]
+              modes[kind]=modes.get(kind,0)+1
+          assert modes=={"IMP":1,"AMB":30},modes
+          raw="".join(json.dumps(e,sort_keys=True,separators=(",",":"))+"\n" for e in events).encode()
+          digest=hashlib.sha256(raw).hexdigest()
+          out=Path(os.environ["RUNNER_TEMP"])/"oie-real-johns-creek"
+          (out/"encounter-events.ndjson").write_bytes(raw)
+          (out/"source-handoff.json").write_text(json.dumps(handoff,sort_keys=True))
+          (out/"events-sha256.txt").write_text(digest+"\n")
+          with open(os.environ["GITHUB_OUTPUT"],"a") as stream:
+              stream.write("events_sha="+digest+"\n")
+              stream.write("manifest_sha="+handoff["source_manifest_sha256"]+"\n")
+          print("NEW_HOSPITAL_B_SOURCE_HANDOFF=PASS")
+          print("NEW_HOSPITAL_B_EVENTS_SHA256="+digest)
+          print("NEW_HOSPITAL_B_MANIFEST_SHA256="+handoff["source_manifest_sha256"])
+          PY
       - name: Exercise real FHIR IMP and AMB through isolated OIE and independently read messages
         shell: bash
         run: |
@@ -115,6 +166,8 @@ jobs:
           cd local-data-platform
           PYTHONPATH=. python3 tests/clinical_producers/oie_channel_runtime_probe.py \
             --artifact "$RUNNER_TEMP/oie-real-johns-creek" \
+            --expected-events-sha256 "${{ steps.source.outputs.events_sha }}" \
+            --expected-manifest-sha256 "${{ steps.source.outputs.manifest_sha }}" \
             --admin-conf "$RUNNER_TEMP/oie-isolated-admin-client"
       - name: Record bounded isolated OIE server error log if failure
         if: failure()

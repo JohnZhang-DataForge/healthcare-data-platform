@@ -21,6 +21,7 @@
 - [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
 - [ ] 3.2 Johns Creek：新 FHIR Source Request → real OIE Channel → independent HL7 ADT A01 readback → Blob Publisher；非住院事件显式跳过，不制造 A01。
 - [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
+- [ ] 3.4 **受控医院身份命名整改**：Profile、FHIR Publisher、OIE Channel/HL7 Assigning Authority、两仓 Workflow、测试和 Blob Key 使用固定 Hospital A/B 标识；对 `demo-` 临时身份 fail-closed；重新发布匹配源码的 Publisher Digest 并验证运行前匹配。未完成前禁止 Atlanta 真实 PUT。
 
 ## 4. Guarded Live and Documentation
 - [x] 4.5 用户撤销独立 Publisher Namespace，集群严格核对后删除 `dw-az-blob`，Publisher 改为 `dw-synthea` 只读使用 Generator 现有 PVC，并迁移最近合并的 DIRECT FHIR Runtime Job 模板/回归；OIE 独立不变。
@@ -150,3 +151,11 @@
 - Healthcare Main 已发展至 `36bd4ee903f627bd851ab6a30444d9dd62767788`（对 `b92ccc9b7976e740d9dd77994a0725b115693705` 的增量仅 Portal 文档）；受控脚本按组件路径逐项验证源码和模板零漂移，现有 Publisher Digest `sha256:06324ae6571a6f72f3b317a1ba577851952bb421fc33ef1d87b4718acfcea4e6` 不因无关 Commit 被默认为新镜像。
 - 手工执行采用**新** Atlanta Request → Generator PVC → 独立只读 Source Manifest SHA 复核 → 现有长期 Secret 的 Publisher immutable Azure `landing` PUT → Runner 另行 Storage OAuth 独立 Blob/Manifest GET+HEAD、SHA256/ETag → 同 Request retry 不变 → 错 SHA 负向防护；仅管理本 Run 临时 Job/ConfigMap；不接触 Portal/PG17/OIE 消息。
 - **STATUS = READONLY PASS / LIVE PUBLISH NOT STARTED**，3.1/4.1/4.2/4.7 仍 OPEN；不得在实际 Blob PUT/GET/Manifest 独立读回前打勾。详细 [ATLANTA-DIRECT-FHIR-PREFLIGHT-20261025.md](evidence/ATLANTA-DIRECT-FHIR-PREFLIGHT-20261025.md)。
+
+### 3.4 — 医院身份命名和历史数据边界（2026-10-25）
+
+- 原先医院配置中的 `demo-atlanta` 与 `demo-johns-creek` 是**已弃用的早期模拟身份**，不得继续作为新 Azure Blob FHIR/HL7 Publisher 的运行标识；这不是重命名历史已发布数据。固定新的 Hospital A/B Profile ID：`atlanta-hospital-a` / `atlanta-hospital-a-fhir-r4` 和 `johns-creek-hospital-b` / `johns-creek-hospital-b-hl7-v2`。
+- Johns Creek OIE Channel 新的 HL7 Assigning Authority = `JOHNSCREEKB`；已安装 OIE Channel/历史消息**不会**因为 Git 代码合并自动变更。下一次新 HL7 E2E 前须只读核对部署的 Channel 代码/配置，再单独审查受控更新、只针对新消息验证；不能盲目改已有 32 条历史验收消息。
+- 标识的生成/校验、Azure Blob 路径及 immutable Manifest 元数据必须一致；旧 Prefix 可能已有对象时只读保留，不复用旧 Identity、同 Request ID 改名重放或强制覆盖。
+- `hospital_profiles.validate_profile` 和 `blob_publish_contract.verified_plan` 在进入 Generator 或 Azure SDK 之前拒绝 `demo-` 占位 Hospital/Feed ID，相关正负测试写入 GitHub CI。
+- **发布版本门禁**：旧 Publisher Digest `sha256:06324ae6571a6f72f3b317a1ba577851952bb421fc33ef1d87b4718acfcea4e6` 是本次代码更名前生成，不能用于宣称新策略已打包。先完成 Healthcare GitHub-hosted CI、对应 GHCR 新 Digest，然后再更新 Self-Runner 的手工 E2E 和只读预检，并做静态及 Live 只读验证。未完成真实 Azure PUT/GET/Manifest+幂等前 3.1/4.2 继续 OPEN。

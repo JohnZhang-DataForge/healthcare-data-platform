@@ -47,8 +47,8 @@ class HospitalProfilesTests(unittest.TestCase):
 
     def test_new_hospital_does_not_require_generator_code_change(self):
         profile = copy.deepcopy(load_profile(PROFILES / "atlanta-fhir.json"))
-        profile["hospital_id"] = "demo-hospital-d"
-        profile["feed_id"] = "demo-hospital-d-fhir"
+        profile["hospital_id"] = "hospital-d"
+        profile["feed_id"] = "hospital-d-fhir"
         profile["location"] = {"state": "New York", "city": "New York"}
         validate_profile(profile)
         generated = build_request(profile, "hospital-d-gen-0001")
@@ -71,6 +71,23 @@ class HospitalProfilesTests(unittest.TestCase):
                 invalid[key] = val
                 with self.assertRaises(GenerationBlocked):
                     validate_profile(invalid)
+
+    def test_placeholder_identity_rejected_at_profile_boundary(self):
+        base = load_profile(PROFILES / "atlanta-fhir.json")
+        for key in ("hospital_id", "feed_id"):
+            with self.subTest(key=key):
+                invalid = copy.deepcopy(base)
+                invalid[key] = "demo-placeholder"
+                with self.assertRaisesRegex(GenerationBlocked, "DEMO_HOSPITAL_FEED_ID_RESERVED"):
+                    validate_profile(invalid)
+
+    def test_stable_hospital_a_b_ids(self):
+        atl = load_profile(PROFILES / "atlanta-fhir.json")
+        jc = load_profile(PROFILES / "johns-creek-hl7.json")
+        self.assertEqual((atl["hospital_id"], atl["feed_id"]),
+                         ("atlanta-hospital-a", "atlanta-hospital-a-fhir-r4"))
+        self.assertEqual((jc["hospital_id"], jc["feed_id"]),
+                         ("johns-creek-hospital-b", "johns-creek-hospital-b-hl7-v2"))
 
     def test_duplicate_json_key_rejected(self):
         with tempfile.TemporaryDirectory() as root:

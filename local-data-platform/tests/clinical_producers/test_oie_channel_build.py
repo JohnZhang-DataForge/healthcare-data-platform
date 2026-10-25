@@ -21,7 +21,7 @@ class ChannelBuildTests(unittest.TestCase):
   s=root.findtext("preprocessingScript")
   self.assertIn("fhirToAdtA01",s)
   self.assertIn('JSON.parse(String(message))',s)
-  self.assertIn('demo-johns-creek-hl7-v2',s)
+  self.assertIn('johns-creek-hospital-b-hl7-v2',s)
   self.assertIn('OIE_ADT_NON_INPATIENT_SKIPPED',s)
   self.assertNotIn("<id>62af393b-ff61-47ec-b5fa-ccd2cd08ce55</id>",result)
  def test_patient_encounter_slices_preserve_source_and_inpatient_logic_not_here(self):

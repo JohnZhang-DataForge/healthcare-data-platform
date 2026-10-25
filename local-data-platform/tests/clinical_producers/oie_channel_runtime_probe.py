@@ -21,8 +21,6 @@ import xml.etree.ElementTree as ET
 from apps.clinical_producers.oie.hl7_readback import verify_adt_against_fhir
 
 CHANNEL_ID = "69ace705-a675-45f6-b126-a3b22a65212a"
-DIGEST = "af41fd1c84001c9a11f721a0c0004bd12164997b5e243c7071257e38fca3c67d"
-MANIFEST = "05fe2808331522f2b8dae77c7e844ce0fa2e75081fa41adbedda0e9a49246b81"
 SKIP = "OIE_ADT_NON_INPATIENT_SKIPPED"
 
 
@@ -59,18 +57,18 @@ class OieApi:
             raise RuntimeError(f"ISOLATED_OIE_API_HTTP_{err.code}_ON_{path.split('?')[0]}") from None
 
 
-def read_events(root: Path) -> list[dict]:
+def read_events(root: Path, expected_events_sha256: str, expected_manifest_sha256: str) -> list[dict]:
     raw = (root / "encounter-events.ndjson").read_bytes()
-    if hashlib.sha256(raw).hexdigest() != DIGEST:
+    if hashlib.sha256(raw).hexdigest() != expected_events_sha256:
         raise ValueError("IMMUTABLE_EVENT_ARTIFACT_HASH_MISMATCH")
-    if (root / "events-sha256.txt").read_text().strip() != DIGEST:
+    if (root / "events-sha256.txt").read_text().strip() != expected_events_sha256:
         raise ValueError("EVENT_ARTIFACT_RECEIPT_MISMATCH")
     handoff = json.loads((root / "source-handoff.json").read_text())
     if not (handoff["status"] == "SOURCE_HANDOFF_VERIFIED"
             and handoff["request_id"] == "ci-johnscreek-fhir-0001"
-            and handoff["hospital_id"] == "demo-johns-creek"
-            and handoff["feed_id"] == "demo-johns-creek-hl7-v2"
-            and handoff["source_manifest_sha256"] == MANIFEST):
+            and handoff["hospital_id"] == "johns-creek-hospital-b"
+            and handoff["feed_id"] == "johns-creek-hospital-b-hl7-v2"
+            and handoff["source_manifest_sha256"] == expected_manifest_sha256):
         raise ValueError("SOURCE_HANDOFF_IDENTITY_MISMATCH")
     entries = [json.loads(x) for x in raw.splitlines()]
     if len(entries) != handoff["metrics"]["fhir_encounters"] or len(entries) != 31:
@@ -138,8 +136,8 @@ def validate_record(doc: ET.Element, kind: str, envelope: dict) -> str:
         if not content.startswith("MSH|"):
             raise RuntimeError("ISOLATED_INPATIENT_NOT_PROCESSED_HL7")
         matched = verify_adt_against_fhir(
-            content, envelope, hospital_id="demo-johns-creek",
-            feed_id="demo-johns-creek-hl7-v2", assigning_authority="DEMOJC")
+            content, envelope, hospital_id="johns-creek-hospital-b",
+            feed_id="johns-creek-hospital-b-hl7-v2", assigning_authority="JOHNSCREEKB")
         if not matched["control_id"].endswith("-A01"):
             raise RuntimeError("ISOLATED_CONTROL_ID_WRONG")
         # Test runner reports aggregate evidence below
@@ -159,8 +157,13 @@ def main() -> None:
     parser.add_argument("--admin-conf", type=Path, required=True)
     parser.add_argument("--existing-channel", action="store_true",
                         help="Read back existing persistent Channel only; never deploy or overwrite")
+    parser.add_argument("--expected-events-sha256", required=True)
+    parser.add_argument("--expected-manifest-sha256", required=True)
     args = parser.parse_args()
-    entries = read_events(args.artifact)
+    for value in (args.expected_events_sha256, args.expected_manifest_sha256):
+        if not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise ValueError("UNSAFE_UNPINNED_ISOLATED_SOURCE")
+    entries = read_events(args.artifact, args.expected_events_sha256, args.expected_manifest_sha256)
     secret = args.admin_conf.read_text()
     match = re.search(r"^\s*server\.initialadminpassword\s*=\s*(\S.+?)\s*$", secret, re.M)
     if not match:

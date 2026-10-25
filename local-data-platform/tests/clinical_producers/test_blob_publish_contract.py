@@ -11,8 +11,8 @@ from apps.clinical_producers.blob_publish_contract import (
 def fhir_plan():
     raw=json.dumps({"resourceType":"Bundle","entry":[]},sort_keys=True).encode()
     name="fhir/patient-one.json"
-    plan={"schema_version":VERSION,"hospital_id":"demo-atlanta",
-          "feed_id":"demo-atlanta-fhir-r4","request_id":"atlanta-20261024-0001",
+    plan={"schema_version":VERSION,"hospital_id":"atlanta-hospital-a",
+          "feed_id":"atlanta-hospital-a-fhir-r4","request_id":"atlanta-20261024-0001",
           "source_manifest_sha256":"a"*64,"target_format":"FHIR_R4",
           "verification_state":"SOURCE_HANDOFF_VERIFIED","skipped_non_admissions":0,
           "objects":[{"name":name,"size_bytes":len(raw),"sha256":hashlib.sha256(raw).hexdigest(),
@@ -23,7 +23,7 @@ class BlobPlanTests(unittest.TestCase):
     def test_fhir_validated_bytes_yield_stable_hospital_route_key(self):
         plan,content=fhir_plan()
         result=verified_plan(plan,content,landing_prefix="healthcare/v1")
-        self.assertEqual(result[0]["blob_key"],"healthcare/v1/demo-atlanta/demo-atlanta-fhir-r4/atlanta-20261024-0001/FHIR_R4/fhir/patient-one.json")
+        self.assertEqual(result[0]["blob_key"],"healthcare/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/atlanta-20261024-0001/FHIR_R4/fhir/patient-one.json")
         self.assertEqual(result,verified_plan(plan,content,landing_prefix="healthcare/v1"))
     def test_changed_bytes_and_undeclared_data_fail(self):
         plan,data=fhir_plan()
@@ -50,22 +50,29 @@ class BlobPlanTests(unittest.TestCase):
         with self.assertRaisesRegex(BlobPlanRejected,"INVALID_LANDING_PREFIX"):
             verified_plan(p,d,landing_prefix="../../unsafe")
 
+    def test_demo_placeholder_rejected_before_blob_key_creation(self):
+        for key in ("hospital_id", "feed_id"):
+            p, data = fhir_plan()
+            p[key] = "demo-placeholder"
+            with self.assertRaisesRegex(BlobPlanRejected, "DEMO_HOSPITAL_FEED_ID_RESERVED"):
+                verified_plan(p, data, landing_prefix="healthcare")
+
     def test_hl7_a01_strict_positive_and_control_id_conflict(self):
-        control="demo-johns-creek-demo-johns-creek-hl7-v2-johnscreek-20261024-0001-enc-one-A01"
+        control="johns-creek-hospital-b-johns-creek-hospital-b-hl7-v2-johnscreek-20261024-0001-enc-one-A01"
         moment="20261024131530+0000"
         fields=["PV1","1","I"]+[""]*42
-        fields[19]="enc-one^^^DEMOJC^VN"
+        fields[19]="enc-one^^^JOHNSCREEKB^VN"
         fields[44]=moment
         wire="\r".join((
-            "MSH|^~\\&|SYNTHEA_SIM|DEMOJC|LANDING|SYNTHETIC|"+moment+
+            "MSH|^~\\&|SYNTHEA_SIM|JOHNSCREEKB|LANDING|SYNTHETIC|"+moment+
             "||ADT^A01^ADT_A01|"+control+"|P|2.5.1",
             "EVN|A01|"+moment,
-            "PID|1||patient-one^^^DEMOJC^MR||Demo^Patient",
+            "PID|1||patient-one^^^JOHNSCREEKB^MR||Demo^Patient",
             "|".join(fields)))+"\r"
         raw=wire.encode()
         name="hl7/enc-one.hl7"
-        plan={"schema_version":VERSION,"hospital_id":"demo-johns-creek",
-              "feed_id":"demo-johns-creek-hl7-v2",
+        plan={"schema_version":VERSION,"hospital_id":"johns-creek-hospital-b",
+              "feed_id":"johns-creek-hospital-b-hl7-v2",
               "request_id":"johnscreek-20261024-0001",
               "source_manifest_sha256":"b"*64,"target_format":"HL7_V2",
               "verification_state":"OIE_HL7_READBACK_VERIFIED","skipped_non_admissions":30,

@@ -35,12 +35,12 @@ Publisher SHALL 使用稳定、按医院/Feed/Request/Format 隔离的 Blob key�
 Atlanta `DIRECT` FHIR SHALL 发布已验证 FHIR R4 原始字节。Johns Creek `OIE` HL7 SHALL 只发布经 OIE 4.7 Channel 真实转换、且独立 HL7 v2.5.1 ADT^A01 解析成功的合法住院事件。对不合格的 Encounter MUST 记录 SKIP，不得伪造 A01；两个医院的前缀和身份不可混用。
 
 #### Scenario: Atlanta FHIR delivery
-- **GIVEN** `demo-atlanta` 已验证 FHIR Bundle 与医院 Profile
+- **GIVEN** `atlanta-hospital-a` 已验证 FHIR Bundle 与医院 Profile
 - **WHEN** Publisher 提交 Azure Landing
 - **THEN** 对应 FHIR Blob 和最终 Manifest 必须可从目标 Azure Container 独立 GET/校验，未执行 OIE 变换
 
 #### Scenario: Johns Creek outpatient
-- **GIVEN** `demo-johns-creek` 的 AMB Encounter
+- **GIVEN** `johns-creek-hospital-b` 的 AMB Encounter
 - **WHEN** OIE 路由准备发布
 - **THEN** 不生成任何 ADT^A01 Blob，对跳过事件有可追踪的计数
 

@@ -17,7 +17,7 @@ from apps.clinical_producers.oie_persisted_readback import (
 from apps.clinical_producers.oie_hl7_publisher import SKIP_MARKER
 
 CHANNEL = "69ace705-a675-45f6-b126-a3b22a65212a"
-HL7 = b"MSH|^~\\&|synthea|demo|landing|demo|20261024131530+0000||ADT^A01^ADT_A01|msg|P|2.5.1\r"
+HL7 = b"MSH|^~\\&|synthea|hospital-b|landing|synthetic|20261024131530+0000||ADT^A01^ADT_A01|msg|P|2.5.1\r"
 
 
 def record(payload=HL7, *, processed="true", status="TRANSFORMED",

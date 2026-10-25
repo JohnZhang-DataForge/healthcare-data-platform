@@ -357,3 +357,12 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [独立 Blob Publisher/Runtime](../../../../local-data-platform/apps/clinical_producers/azure_blob_runtime.py) | `ClientSecretCredential` 与 immutable Azure PUT/GET、Manifest-last；仅已审查镜像 digest 的业务入口 |
 
 合并 Runner [PR #295](https://github.com/JohnZhang-DataForge/Self-Runner/pull/295)；真实 K8s 只读 [Run #40218904158](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218904158)、[Run #40219870444](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40219870444) 均 SUCCESS。**Atlanta Azure Blob 数据 E2E 尚未执行，Profile ConfigMap 在只读预检时为 0；禁止把静态 PR/无 Active Job 当作自动批准共享写入。** 验收以 [当前 Publisher OpenSpec Evidence](../../../../openspec/changes/implement-multi-hospital-azure-blob-publisher/evidence/ATLANTA-DIRECT-FHIR-PREFLIGHT-20261025.md) 记录为准。
+
+## 稳定医院身份（2026-10-25，阻止临时 ID 渗入真实业务）
+
+- [Atlanta Hospital A Profile](../../../../local-data-platform/config/synthea-new-generator/atlanta-fhir.json)：`atlanta-hospital-a` / `atlanta-hospital-a-fhir-r4`，FHIR R4 → DIRECT → Azure Blob。
+- [Johns Creek Hospital B Profile](../../../../local-data-platform/config/synthea-new-generator/johns-creek-hl7.json)：`johns-creek-hospital-b` / `johns-creek-hospital-b-hl7-v2`，FHIR → OIE → HL7 ADT A01。
+- [hospital_profiles.py](../../../../local-data-platform/apps/clinical_producers/hospital_profiles.py)、[blob_publish_contract.py](../../../../local-data-platform/apps/clinical_producers/blob_publish_contract.py)：对占位式 `demo-` 医院和 Feed 标识 fail-closed，阻断未来重复引入开发期命名。
+- [build_channel.py](../../../../local-data-platform/apps/clinical_producers/oie/build_channel.py)：新生成 Channel 的 HL7 assigning authority 统一为 `JOHNSCREEKB`，旧 OIE 已部署 Channel **不会自动更新**，后续更新时需要校验 Message Control ID/PID/PV1 与 FHIR Encounter 的一致性。
+- [Self-Runner Atlanta E2E](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/scripts/azure_blob_atlanta_direct_fhir_e2e.py)：Blob Key / Manifest 独立读回断言必须随新 Hospital A Profile 同步；旧 Publisher image Digest 禁止代表更新后源码。
+- 历史证据/曾经运行的消息保留原始标识以备审计，不允许以新标识伪装旧消息或覆盖已有 Blob。实时业务发布仍按 OpenSpec 3.1/3.2/4.2 门禁实施。

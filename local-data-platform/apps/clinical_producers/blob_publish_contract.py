@@ -74,6 +74,8 @@ def verified_plan(plan: dict, source_bytes: dict[str, bytes], *,
     for field in ("hospital_id", "feed_id"):
         if not isinstance(plan[field], str) or not SAFE_ID.fullmatch(plan[field]):
             raise BlobPlanRejected("INVALID_SOURCE_ID")
+        if plan[field].startswith("demo-"):
+            raise BlobPlanRejected("DEMO_HOSPITAL_FEED_ID_RESERVED")
     if not isinstance(plan["request_id"], str) or not REQUEST_ID.fullmatch(plan["request_id"]):
         raise BlobPlanRejected("INVALID_REQUEST_ID")
     if (not isinstance(plan["source_manifest_sha256"], str)

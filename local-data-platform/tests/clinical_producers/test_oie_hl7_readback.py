@@ -10,22 +10,22 @@ from apps.clinical_producers.oie.hl7_readback import (
 
 PATIENT_ID="patient-one"
 ENCOUNTER_ID="enc-one"
-AUTH="DEMOJC"
-HOSP="demo-johns-creek"
-FEED="demo-johns-creek-hl7-v2"
+AUTH="JOHNSCREEKB"
+HOSP="johns-creek-hospital-b"
+FEED="johns-creek-hospital-b-hl7-v2"
 REQUEST="johnscreek-fhir-0001"
 CONTROL="-".join((HOSP,FEED,REQUEST,ENCOUNTER_ID,"A01"))
 TIME="20261024131530+0000"
 
 
 def sample():
-    msh="MSH|^~\\&|SYNTHEA_SIM|DEMOJC|LANDING|SYNTHETIC|"+TIME+"||ADT^A01^ADT_A01|"+CONTROL+"|P|2.5.1"
+    msh="MSH|^~\\&|SYNTHEA_SIM|JOHNSCREEKB|LANDING|SYNTHETIC|"+TIME+"||ADT^A01^ADT_A01|"+CONTROL+"|P|2.5.1"
     evn="EVN|A01|"+TIME
-    pid="PID|1||"+PATIENT_ID+"^^^DEMOJC^MR||A\\F\\B^C\\S\\D"
-    pv1="PV1|1|I"+"|"*16+"|"+ENCOUNTER_ID+"^^^DEMOJC^VN"+"|"*24+"|"+TIME
+    pid="PID|1||"+PATIENT_ID+"^^^JOHNSCREEKB^MR||Synthetic\\F\\Patient^Hospital\\S\\B"
+    pv1="PV1|1|I"+"|"*16+"|"+ENCOUNTER_ID+"^^^JOHNSCREEKB^VN"+"|"*24+"|"+TIME
     # Canonical PV1 positional fields use a list to prevent accidental off-by-one.
     p=["PV1","1","I"]+[""]*42
-    p[19]=ENCOUNTER_ID+"^^^DEMOJC^VN"
+    p[19]=ENCOUNTER_ID+"^^^JOHNSCREEKB^VN"
     p[44]=TIME
     return "\r".join((msh,evn,pid,"|".join(p)))+"\r"
 

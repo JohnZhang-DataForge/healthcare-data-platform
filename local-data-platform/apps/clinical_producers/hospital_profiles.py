@@ -36,6 +36,9 @@ def validate_profile(profile: dict) -> dict:
     for key in ("hospital_id", "feed_id"):
         if not isinstance(profile[key], str) or not ID.fullmatch(profile[key]):
             raise GenerationBlocked("INVALID_HOSPITAL_FEED_ID")
+        # Runtime identities are stable contracts, not development placeholders.
+        if profile[key].startswith("demo-"):
+            raise GenerationBlocked("DEMO_HOSPITAL_FEED_ID_RESERVED")
     location = profile["location"]
     if not isinstance(location, dict) or set(location) != {"state", "city"}:
         raise GenerationBlocked("INVALID_HOSPITAL_LOCATION")

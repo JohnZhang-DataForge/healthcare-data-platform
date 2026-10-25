@@ -30,8 +30,8 @@ def request_plan(n=2):
                         "source_event_id": None})
     return ({
         "schema_version": VERSION,
-        "hospital_id": "demo-atlanta",
-        "feed_id": "demo-atlanta-fhir-r4",
+        "hospital_id": "atlanta-hospital-a",
+        "feed_id": "atlanta-hospital-a-fhir-r4",
         "request_id": "atlanta-20261024-0002",
         "source_manifest_sha256": "a" * 64,
         "target_format": "FHIR_R4",
@@ -196,7 +196,7 @@ class PublisherTests(unittest.TestCase):
     def test_content_conflict_does_not_overwrite_or_commit(self):
         p, data = request_plan()
         backend = OfflineBlobBackend()
-        key = "healthcare/demo-atlanta/demo-atlanta-fhir-r4/" + (
+        key = "healthcare/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/" + (
             p["request_id"] + "/FHIR_R4/fhir/patient-000.json")
         backend.blobs[key] = BlobSnapshot(b"malicious", {"kind": "data"},
                                           "application/fhir+json", '"old"')

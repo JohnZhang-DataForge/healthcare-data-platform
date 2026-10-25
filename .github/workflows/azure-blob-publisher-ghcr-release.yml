@@ -50,6 +50,22 @@ jobs:
           grep -Fq 'claimName: synthea-new-generator-state' local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_runtime.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_publisher.py -v
+          # Permanent prevention: old identifiers may remain in historical evidence,
+          # never in maintained clinical implementation, tests, profiles or workflows.
+          if git grep -n -E 'd[e]mo-atlanta|d[e]mo-johns-creek|D[E]MOJC' -- \
+            local-data-platform/apps/clinical_producers \
+            local-data-platform/tests/clinical_producers \
+            local-data-platform/tests/synthea_new_generator \
+            local-data-platform/config/synthea-new-generator \
+            .github/workflows; then
+            echo 'HOLD_LEGACY_DEMO_HOSPITAL_ID_IN_MAINTAINED_SOURCE'
+            exit 1
+          fi
+          echo 'LEGACY_HOSPITAL_ID_SOURCE_SCAN=PASS'
+          python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p test_hospital_profiles.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_channel_build.py -v
+          node local-data-platform/tests/clinical_producers/test_oie_adt_a01.js
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_direct_fhir_publisher.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_hl7_publisher.py -v
           echo PUBLISHER_RELEASE_HOSTED_CONTRACT=PASS
