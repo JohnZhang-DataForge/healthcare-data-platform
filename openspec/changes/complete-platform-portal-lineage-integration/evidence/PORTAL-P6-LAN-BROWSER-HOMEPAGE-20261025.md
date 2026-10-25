@@ -1,6 +1,6 @@
-# P6 — 用户提供的真实 LAN Safari 页面截图审查（2026-10-25）
+# P6 — 用户提供的真实 LAN 浏览器可视化证据审查（2026-10-25）
 
-> **状态：浏览器首页及真实 Job 列表视觉验证 PASS；Job/Run 详情、Dataset Lineage 图仍待截图，P6 7.1 整项 OPEN。** 本登记是用户在项目会话中提供的三张手机浏览器截图的**文字审查结果**，并不是新的 GitHub Actions、外部网络探测或在本仓库公开的图片附件。未经用户额外批准，**不将含内部网络地址的原始截图上传 GitHub**。
+> **状态：Safari 首页/真实 Job 列表 PASS，Chrome Reconcile Job / 最新 Run Facets 详情可视化 PASS；严格的具体 Parent job/run ID 和 Dataset/Lineage 输入输出图仍待视觉核对，P6 7.1 整项 OPEN。** 本登记是用户在项目会话中提供的最初三张手机浏览器截图及后续三张桌面 Chrome Reconcile Job/Run 截图的**文字审查结果**，并不是新的 GitHub Actions、外部网络探测或在本仓库公开的图片附件。未经用户额外批准，**不将含内部网络地址的原始截图上传 GitHub**。
 
 ## 与机器自动验收的独立关联
 
@@ -19,13 +19,24 @@
 | Reconcile 业务任务 | `new_only_omop_consumer.spark_reconcile` Job Card 可见、状态 `COMPLETED` | **PASS：Job 列表显示** |
 | Reconcile Spark Application | `new_only_omop_consumer.spark_reconcile.task004_reconcile_20261025t154718z_7` Job Card 显示在 `healthcare-platform-spark-business` Namespace，状态 `COMPLETED` | **PASS：跨 Airflow / Spark Namespace 的 UI Job 身份展示**；截图不包含 Run Parent Facet 详情 |
 | Airflow 前置任务 | `route_new_only_status`、`inspect_claim_readonly`、`select_verified_new_only_batch`、`scan_ready_manifests`、`route_writer_authorization`、`prepare_writer_handoff` 均可见 Job Card 的 `COMPLETED` 状态 | **PASS：前置任务列表展示** |
-| 单一 Run 详情 | 未展示实际某个 Job 的 Run History/Run UUID/ParentRunFacet 详情 | **NOT_CHECKED** |
-| Dataset/Lineage 图 | 未展示点击后的上游 `health-landing` / 下游 `health-processing` 数据集或 Person→Reconcile 血缘画布 | **NOT_CHECKED**（尽管独立 API GET 已 PASS） |
+| 单一 Job 与 LATEST RUN 详情 | 后续桌面 Chrome 真实打开 Reconcile Spark Application Job 详情：状态 `COMPLETED`，页面 `LATEST RUN` 面板、Job Facets 与 Run Facets 真实渲染，`RUN HISTORY` 页签可见（未打开） | **PASS：已可视化 Job 详情与最新 Run Facets**；Run UUID/完整历史列表仍 NOT_CHECKED |
+| Dataset/Lineage 图 | 后续 Chrome 已真实打开 Reconcile Spark Application 的 Lineage 画布（Table Level、depth 2、Full Graph 开关关闭），**画布仅显示该 Application 的单个 JOB 节点**，未显示 `health-landing`、`health-processing` 或跨 Dataset 边 | **PARTIAL**：Lineage UI 本身可用，但实际 Dataset 关系**未在此 Application 的画布可视化**；API GET 的独立业务 edges PASS 仍有效 |
 | RDD Action 终态 | 本次截图并未显示 Action 子 Run 的 START-only/RUNNING | **NOT_CHECKED**；设计 A 已知 RDD 限制继续保留，不得推断其已消失 |
 | 公开访问或网络安全 | 未测试公网可达性、匿名鉴权防护、PG14 备份 | **NOT_CHECKED**；不因此批准开放 Web NodePort |
 
+## 用户追加 Chrome Reconcile Job / LATEST RUN / Run Facets 截图（2026-10-25）
+
+该组**新增三张桌面 Chrome 屏幕截图**显示与 Safari 同一真实业务环境，但**不在 GitHub 保存任何带局域网私有 IP 的原始图片或完整浏览器 URL**：
+
+- **实际页面/身份**：Marquez 真实 `Lineage / Job` 画布选中 `healthcare-platform-spark-business` 中的 `new_only_omop_consumer.spark_reconcile.task004_reconcile_20261025t154718z_7`。表级（`Table Level`）模式、`Depth=2`，截图中 `Full Graph` 关闭；画布只有孤立的一枚绿色 `JOB` 节点。**不能把该图报告为已经展示 Person/Visit→Reconcile 的 Dataset 图**。
+- **实际 Job 详细面板**：成功打开右侧详情，`RUNNING STATUS=COMPLETED`、`TYPE=BATCH`、`LAST RUNTIME=0m 50s`，时间显示 2026-10-25 上午 11:47–11:48；`PARENT JOB` 字段存在但名称截断，不能靠它单独判定精确 Parent UUID。
+- **实际最新 Run / facets**：`LATEST RUN` 页签处于选中状态，`RUN HISTORY` 页签可点击但尚未截图确认历史明细。Job Facets 的 `jobType=APPLICATION`、`integration=SPARK` 可见。展开的 `RUN FACETS` 包含 `environment-properties`、`parent`、`spark_properties`、`processing_engine`；后者显示 `name=spark`、`version=3.5.7`、`openlineageAdapterVersion=1.47.1`。Facet 的 `parent.job`、`parent.run` 仍是折叠的子对象；**仅能证实 parent 元数据存在，具体 job/Run ID 仍需展开确认**。
+- **历史机器独立对账范围**：已成功的 [P5 GET-only #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 与 [P6 GET-only #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) 曾用精确 Parent UUID / 子 Spark Action DatasetVersion 在 Marquez API 得到 `business_edges_gate=PASS`；本组 UI 验证的是**Application 本身**，物理 Action 的 Dataset 图应转至带实际输入输出 DatasetVersion 的 Action Job / Dataset 页面核验，不能将 Application 孤点图理解为 ETL 未产生数据。
+- **安全**：截图中的 `DELETE` 是 Marquez Job 详情自带操作按钮，**绝对不得点击**；此次仅打开页面，没有操作删除、修改 Job、写数据或人为补发 OpenLineage COMPLETE。
+- **仍 OPEN 的 P6 7.1 残余 GUI Gate**：浏览器展开 `parent.job` 与 `parent.run` 至具体身份，再进入 Person/Visit 或 Reconcile 的实际 **Spark Action** Job 或 Dataset 页面，检查 `health-landing` 输入、`health-processing` 输出以及 Reconcile 消费两条 Processing Dataset 的可视化关系。若 GUI 版本无法绘制该依赖，则如实记录限制，不能靠后端 GET 冒充 GUI 连线。
+
 ## 下一步 / 收尾 Gate
 
-P6 7.1 的剩余**唯一浏览器级最低验收路径**：在现有已打开的内网 Safari 官方 Marquez 页面，点击 `new_only_omop_consumer.spark_reconcile.task004_reconcile_20261025t154718z_7` Job Card，进入其 Run 详情并核对真实 Run/Parent 关联；随后打开 **Dataset / Lineage** 视图，观察 Person/Visit Processing Dataset 对 Reconcile 的实际输入关系，并提供相应页面截图。也可分别查看 Person 或 Visit 底层 Spark Action Job 的 `s3://health-landing` 输入和 `s3://health-processing` 输出。**如果 GUI 未显示该图**，如实记录 GUI 局限而不能拿 API PASS 冒充屏幕实际呈现。
+P6 7.1 的剩余浏览器级验收路径：真实 Reconcile Application 的 Job 与最新 Run Facets 已展示；接下来**展开右侧 `RUN FACETS → parent → job` 和 `parent → run` 的完整值**并对照现有 P5 GET-only 证据，之后改查 Person/Visit/Reconcile 对应 **底层 Spark Action Job** 或 Dataset 页面，观察 `s3://health-landing` 输入、`s3://health-processing` 输出及两个 Processing Dataset 对 Reconcile 的实际输入关系。**如果 GUI 未显示该图**，如实记录 GUI 局限而不能拿 API PASS 冒充屏幕实际呈现。
 
 在得到上述浏览器视觉证据前，OpenSpec `7.1` **不得勾选**、`7.3` **不得归档**。这不影响早已通过的 P5 事务与 API 血缘验收。
