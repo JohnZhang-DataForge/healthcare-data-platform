@@ -203,6 +203,12 @@ class BusinessLineageTests(TestCase):
             for role in lineage.ROLES))
         self.assertFalse(report["reconcile_input_runs_terminal"])
         self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+        # Design A accepts real business versions and both parent links
+        # while exposing the unsolved physical RDD Action lifecycle.
+        self.assertEqual(report["business_edges_gate"], "PASS")
+        self.assertEqual(report["p4_design_a_gate"],
+                         "PASS_WITH_KNOWN_RDD_LIMITATION")
+        self.assertEqual(report["rdd_action_lifecycle"], "START_ONLY_OBSERVED")
 
     def test_bare_completed_cannot_substitute_missing_qualified_application(self):
         data = fixture()
@@ -221,6 +227,136 @@ class BusinessLineageTests(TestCase):
                              for role in lineage.ROLES))
         self.assertEqual(report["airflow_spark_direct_parent"], "UNPROVEN")
         self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+
+    def verified_live(self):
+        """Build a realistic qualified, fully parent-verified Marquez fixture."""
+        data = fixture()
+        apps = {"person": "person_app", "encounter": "encounter_app",
+                "reconcile": "reconcile_app"}
+        legacy = {"person": "person-app", "encounter": "visit-app",
+                  "reconcile": "reconcile-app"}
+        for role, app in apps.items():
+            rows = data["roles"][role]
+            # Real live CLI accepts lowercase alphanumeric/underscore app IDs,
+            # unlike legacy string-only fixtures with hyphenated fake IDs.
+            for row in rows:
+                if row["job"] == legacy[role] or row["job"].startswith(legacy[role] + "."):
+                    row["job"] = app + row["job"][len(legacy[role]):]
+            app_run = rows[0]
+            app_run["job"] = lineage.qualified_application_job(role, app)
+            app_run["detail"]["facets"] = {"parent": {
+                "job": {"namespace": lineage.AIRFLOW_NS,
+                        "name": "new_only_omop_consumer." + lineage.AIRFLOW_TASK[role]},
+                "run": {"runId": data["airflow"][role][0]["id"]},
+            }}
+            for child in rows[1:]:
+                child["detail"]["facets"] = {"parent": {
+                    "job": {"namespace": lineage.SPARK_NS, "name": app},
+                    "run": {"runId": app_run["id"]},
+                }}
+        return data, apps
+
+    def test_design_a_pass_with_real_versions_and_start_only_children(self):
+        data, apps = self.verified_live()
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "PASS")
+        self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+        self.assertEqual(report["p4_design_a_gate"],
+                         "PASS_WITH_KNOWN_RDD_LIMITATION")
+        self.assertEqual(report["rdd_action_lifecycle"], "START_ONLY_OBSERVED")
+        self.assertEqual(report["writer_commit"], "NOT_CHECKED")
+
+    def test_design_a_rejects_wrong_airflow_run_even_if_versions_match(self):
+        data, apps = self.verified_live()
+        data["roles"]["person"][0]["detail"]["facets"]["parent"]["run"][
+            "runId"] = "wrong-airflow-task"
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
+        self.assertEqual(report["p4_design_a_gate"], "INCOMPLETE")
+
+    def test_design_a_rejects_wrong_spark_action_parent(self):
+        data, apps = self.verified_live()
+        data["roles"]["reconcile"][1]["detail"]["facets"]["parent"]["run"][
+            "runId"] = "different-spark-application"
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
+
+    def test_design_a_rejects_wrong_dataset_version(self):
+        data, apps = self.verified_live()
+        # Copy before editing: fixture() intentionally shares the exact same
+        # object for produced and consumed DatasetVersion in the happy case.
+        child = data["roles"]["reconcile"][1]["detail"]
+        child["inputDatasetVersions"] = copy.deepcopy(child["inputDatasetVersions"])
+        child["inputDatasetVersions"][0][
+            "datasetVersionId"]["version"] = "stale"
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
+        self.assertFalse(report["reconcile_has_exact_two_produced_versions"])
+
+    def test_design_a_rejects_extra_stale_dataset_version(self):
+        data, apps = self.verified_live()
+        extra = copy.deepcopy(
+            data["roles"]["reconcile"][1]["detail"]["inputDatasetVersions"][0]
+        )
+        extra["datasetVersionId"]["version"] = "older-version"
+        data["roles"]["reconcile"][1]["detail"]["inputDatasetVersions"].append(extra)
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
+        self.assertFalse(report["reconcile_has_exact_two_produced_versions"])
+
+    def test_design_a_rejects_absent_exact_qualified_application(self):
+        data, apps = self.verified_live()
+        data["roles"]["person"][0]["job"] = "person-app"
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
+
+    def test_design_a_distinguishes_all_terminal_from_known_limitation(self):
+        data, apps = self.verified_live()
+        for role in lineage.ROLES:
+            for item in data["roles"][role][1:]:
+                item["state"] = item["detail"]["state"] = "COMPLETED"
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "PASS")
+        self.assertEqual(report["business_dataset_gate"], "PASS")
+        self.assertEqual(report["rdd_action_lifecycle"],
+                         "NO_START_ONLY_OBSERVED_IN_SNAPSHOT")
+        self.assertEqual(report["p4_design_a_gate"], "PASS")
+
+    def test_design_a_rejects_incomplete_application_even_if_child_versions_match(self):
+        data, apps = self.verified_live()
+        data["roles"]["person"][0]["state"] = "RUNNING"
+        report = lineage.evaluate(data, BATCH, apps)
+        self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
+
+    def test_cli_uses_business_edges_without_erasing_strict_incomplete(self):
+        data, apps = self.verified_live()
+        argv = ["--batch-id", BATCH, "--person-app", apps["person"],
+                "--encounter-app", apps["encounter"],
+                "--reconcile-app", apps["reconcile"]]
+        printed = []
+        with patch.object(lineage, "snapshot", return_value=data), patch.object(
+            lineage, "print", create=True, side_effect=printed.append
+        ):
+            self.assertEqual(lineage.main(argv), 0)
+        import json
+        report = json.loads(printed[0])
+        self.assertEqual(report["business_edges_gate"], "PASS")
+        self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+        self.assertEqual(report["p4_design_a_gate"],
+                         "PASS_WITH_KNOWN_RDD_LIMITATION")
+        self.assertEqual(report["pg17_independent_readback"], "NOT_CHECKED")
+
+    def test_cli_does_not_pass_without_real_parent(self):
+        data, apps = self.verified_live()
+        data["roles"]["reconcile"][0]["detail"]["facets"]["parent"][
+            "run"]["runId"] = "fabricated"
+        argv = ["--batch-id", BATCH, "--person-app", apps["person"],
+                "--encounter-app", apps["encounter"],
+                "--reconcile-app", apps["reconcile"]]
+        with patch.object(lineage, "snapshot", return_value=data), patch.object(
+            lineage, "print", create=True
+        ):
+            self.assertEqual(lineage.main(argv), 1)
 
     def test_snapshot_fetches_exact_qualified_application_without_prefix_spoof(self):
         apps = {"person": "person-app", "encounter": "visit-app",
