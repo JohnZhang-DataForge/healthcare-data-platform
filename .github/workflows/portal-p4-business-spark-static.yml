@@ -126,7 +126,7 @@ jobs:
           test "$DOCKERFILE" = local-data-platform/images/landing-processing-runtime/Dockerfile
           test -n "$BASE_REF"
           docker build --pull --no-cache \
-            --build-arg "PROJECT_GIT_SHA=$GITHUB_SHA" \
+            --build-arg "PROJECT_GIT_SHA=$(git rev-parse HEAD)" \
             --build-arg "BASE_IMAGE=$BASE_REF" \
             -f "$DOCKERFILE" -t portal-p4-v2-child:offline-smoke \
             local-data-platform
