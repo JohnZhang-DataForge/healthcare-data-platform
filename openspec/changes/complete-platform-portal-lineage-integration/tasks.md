@@ -1,6 +1,6 @@
 # Tasks — Platform Portal Real Business Lineage MVP
 
-> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED / P2 REAL NEW_ONLY AIRFLOW JOB/RUN LIVE PASS / P3 ISOLATED SPARK I/O LIVE PASS / P4 DESIGN A BUSINESS EDGES ACCEPTED WITH RDD ACTION TERMINAL GAP / P4 5.4 + P5 6.1–6.4 LIVE ACCEPTED UNDER DESIGN A / P6 OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED / P2 REAL NEW_ONLY AIRFLOW JOB/RUN LIVE PASS / P3 ISOLATED SPARK I/O LIVE PASS / P4 DESIGN A BUSINESS EDGES ACCEPTED WITH RDD ACTION TERMINAL GAP / P4 5.4 + P5 6.1–6.4 LIVE ACCEPTED UNDER DESIGN A / P6 7.1–7.2 GUI/DOC PASS / P6 7.3 ARCHIVE OPEN; HISTORICAL GATES RECONCILED (3.3, 4.1 OPEN).** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
 
 
 ### P5 final Design A acceptance — 2026-10-25 (multiple independent real Runs; original FAILURE retained)
@@ -149,6 +149,12 @@
 - **Historical Marquez gate remains INCOMPLETE (same successful read-only Run):** `P4_REAL_AIRFLOW_SPARK_PARENT=UNPROVEN` and `P4_REAL_RECONCILE_CHILD_TERMINAL=False` for immutable historical batch `synthea-new-only-gh-39625216978` and its original three Spark Applications. These are not new lineage events. Real TaskInstance rendering in live KPO and fresh Spark parent facet are **NOT_CHECKED**.
 - **P4/P5 live checkboxes remain OPEN.** Next independent gates: build/publish **only** `landing-processing-runtime` child image with exact digest, verify its real KPO pull + new source GitSync identity, then separately authorized fresh batch actual Marquez Airflow → Spark parent, Reconcile child terminal, Writer COMMIT / PG17 readback / same-batch SKIP. This read-only gate does not authorize any shared runtime write.
 
+### 2026-10-25 历史待办事实核销（最新结论；不是新的集群验收）
+
+- **已依据不可变 PR/Main/Run 日志和现有代码，核销 7 个旧 OPEN**：`8.3`、`8.4`、`P3.2`、`P3.3`、`P4.3`、Section 11 原 P4 Pod/Parent/Dataset Live、Section 11 原 P5 Writer/PG17/SKIP/Marquez Live。所有原失败 Run、不独立确认的 PVC 删除和 RDD START-only 问题不被抹除；详见 [完整逐条核销证据](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
+- **仍 OPEN，不能为了归档硬勾选**：P2 `3.3` 尚缺“无关 DAG 没被意外开启 OpenLineage”真实负向验收；P3 `4.1` 旧 A4 `unknown` / 空 `latestRun` 根因未经过受控 A/B 完全证明；P6 `7.3` 整个 Change Archive 仍须单独审查。其它项目和未来公网 Portal 的独立 Change 不能视为本次范围。
+- 早期 P2/P3/P4 章节中的“尚未 Live”“尚未 Merge”文字是**原日期现场快照**；以上证据与对应勾选行优先作为当前状态。没有新 Helm/GHCR/PVC/S3/PG17 操作，不能将源代码/文档通过冒称本轮新的集群 Live。
+
 ## 1. P0 — Scope and plan
 
 - [x] 1.1 只读核对当前 Healthcare Main、Portal A3/A4 历史证据、真实 `new_only_omop_consumer`/控制容器和 Portal 组件边界；确认没有同主题开放 PR。
@@ -237,14 +243,14 @@
 
 - [x] 8.1 核对 Airflow `new_only_omop_consumer.py`、`landing_spark_processing.py`：实际镜像引用现有 `:latest`，KPO `image_pull_policy=Always`；P2 GitSync 的 DAG Source 不在这八个镜像中。无需为开发添加 `portal-v1.0` 镜像切换逻辑或第九个 Image。
 - [x] 8.2 调整发布设计：Local 开发优先手工 `publish-latest` 单镜像；旧镜像回退 Tag/旧 Digest 与新 SHA/Run Digest 均可追溯；8 镜像全量更新仍仅供显式人工使用；保留候选晋级作为非默认方式。
-- [ ] 8.3 检查 PR/CI 及 Main 启用结果，PR #416 保持独立；仅在真实 P3/P4 代码封装依赖改变时识别目标镜像并重建。**不在本 Change 内启动实际 GHCR 发布/业务 DAG**。
-- [ ] 8.4 P2 本体需完成 PR #416 与 GitSync 同步及 Provider/Transport 实机行为验证；P3/P4/P5 按既有验收 Gate，不能因 latest 方案简化而跳过业务 E2E 或血缘验证。
+- [x] 8.3 **历史 PR/CI/Main 和最小镜像 Release 对账 PASS**：P2 PR #416 MERGED `7c192414fcdca99278421c003d1d135dac6a3968`，手工最小镜像发布策略 PR #419/#425 生效；P4 PR #441 后仅 `landing-processing-v2` 实际 Clean Build/GHCR `:latest` 发布 [#40123946926](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40123946926) SUCCESS 且旧 Digest/Tag 可追溯；未自动触发 8 镜像重建。**这是当时 release 的精确核验，不能声称当前 latest 仍等于原旧 Digest或需要本轮重新发布**。见 [历史核销矩阵](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
+- [x] 8.4 **P2 Main/GitSync/Provider/Transport 和主链路 PASS**：PR #416 已 MERGED；[只读 runtime #40120678131](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120678131) 验证 Scheduler Provider 2.17.0/Selective/Transport、真实 Scheduler+dag-processor GitSync SHA；[A3 Probe #40121352170](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121352170) 实际两 Task Events、[NEW_ONLY #40126168286](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40126168286) 真实 10 Job/Run；P3/P4/P5 各自后续真实验收完成。**非 opt-in DAG 的实机负向验证仍由独立 3.3 OPEN 负责**，不能以此勾选 3.3。见 [核销矩阵](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 
 ### P3 2026-10-24 隔离真实 Dataset 输出实现（本节是当前候选，仍需 CI 和 Live）
 
 - [x] 核对历史 [A4 真实失败 Run #38628542127](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38628542127) 与 [独立 facets 读回 #38629607225](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38629607225)：Spark 计算成功、事件 COMPLETED 挂在 `unknown` Job；App Job 的 `latestRun` 为空，Input/Output DatasetVersions 均为 0。原历史 `probe.py` 未写出任何 Dataset，故**输出为零的根因至少包括没有 Output 操作**，不能据此认定 Listener 的 Parquet 输出采集有缺陷。Job 名字错位的完整根因仍未知，OpenSpec 4.1 保持 OPEN。
-- [ ] P3.2 代码候选：现行隔离 Probe 新增 `--output-uri` 严格路径白名单，数据通过唯一的 `local-path` PVC 持久化 Parquet、Spark 读回 2 行；Renderer 输出 ConfigMap + PVC + SparkApplication 三文档；Spark Listener 增加显式 `spark.openlineage.appName`，不假设能消除 `unknown`；负向合同与 PR CI 待跑。该项完成也只是静态通过，不代表真正申请到 PVC 或 Marquez Dataset 读回。
-- [ ] P3.3 Live 独立门：确认 worker02/StorageClass 与 Driver/Executor RWO 同节点挂载、运行 JAR、无冲突后，用**全新唯一 Token**创建且仅写本次测试 PVC；待 SparkApp COMPLETED 后核对真 Parquet 读回、Marquez 正确 Job+Run+Input/Output Dataset links。保留失败证据；只清理已标定为本次的隔离资源。当前没有执行 Live 或 GHCR 镜像更新。
+- [x] P3.2 **隔离 Parquet 源码+负向合同完成**：[PR #432](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/432) MERGED；`probe.py` 限定唯一 Token 的 `--output-uri`、`errorifexists` 写 Parquet/读回严格两行；`render.py` 输出 ConfigMap+PVC+SparkApplication；`test_static.py` 检查 `local-path`/Volume/Listener `appName`/负向路径。真正 Live 只由单列 P3.3/[#40120840326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120840326) 证明。见 [核销矩阵](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
+- [x] P3.3 **真实隔离 Spark+PVC Parquet/Marquez I/O Live PASS**：[Run #40120840326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40120840326) SUCCESS，真正创建受限 ConfigMap/PVC/SparkApplication、Spark COMPLETED、真实 Parquet Readback PASS，Marquez 一个非 `unknown` Job Run COMPLETE + **1 Input / 1 Output DatasetVersion**。**PVC 删除当时仅清理尝试，未独立验证 NotFound；worker02/RWO 跨节点故障场景也未单独证明**。原旧 unknown 完整根因仍是 4.1 OPEN。见 [证据矩阵](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 
 
 ## 9. 2026-10-24 REAL P2/P3 Live 实验结果（当前证据；覆盖前文静态阶段旧结论）
@@ -263,12 +269,12 @@
 - [x] P4.1 只读定位：`new_only_omop_consumer` 的 Spark 三阶段均以 KPO `landing-processing-runtime:latest` 调用 `task004-runtime person/visit/reconcile`，随后由各自 Shell 渲染 `task002/person-canonical-adapter`、`task003/encounter-canonical-adapter`、`task004/person-visit-reconciliation` SparkApplication。真正 S3A 操作在 `spark:3.5.7-python3` Driver/Executor 中，Airflow opt-in 不等于实际 Spark Listener。
 - [x] P4.2 仅修改上述三个 SparkApplication 模板（P3 已验证 Listener 1.47.1、private HTTP、`spark.openlineage.appName=__APP_NAME__`、业务 namespace），`landing-processing-runtime` Dockerfile 覆盖父镜像的旧模板；**只需重建该一个现有 v2 child 镜像**。CI 加入静态 YAML schema、正/负 Listener 合同、镜像 COPY 及 smoke Gate；对应 CODE/Docs。已在 [PR #441](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/441) Main `9199710bf5f43d506628fa31f81cb2b107a55c11` 完成全部 CI；构建镜像真实验证见 [P4 Evidence](evidence/PORTAL-P4-BUSINESS-IMAGE-LATEST-RELEASE-20261024.md)。
 - [x] P4.2b 单镜像 Clean Build/Smoke 后，针对 `landing-processing-runtime` 显式 `publish-latest`，记录旧/新镜像 Digest、backout tag；已完成 GHCR 最新 Digest 精确读回；**实际业务 Pod imageID 仍 PENDING，归入 5.3 Live Gate**。本次仅一个子镜像版本更新，未改其它七个镜像。
-- [ ] P4.3 真实 NEW_ONLY 合成 Batch Person、Visit、Reconcile 各自独立 Run/Job/Dataset readback；Reconcile 只读**不期待输出 Dataset**。若与 Writer 同批 E2E，可复用 P5 的新 Batch，确保不伪造 PG COMMIT 或 Airflow parent。全部业务 Live 尚未执行。
+- [x] P4.3 **真实 NEW_ONLY Person/Visit/Reconcile 三阶段业务 Live，Design A 验收 PASS_WITH_KNOWN_RDD_LIMITATION**：原 P4 [#40125211881](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125211881) GitHub Workflow FAILURE（顶层 Dataset 检验器错误），但真实 DAG/3 Spark SUCCESS；后续 [P4 GET #40197583583](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197583583) 与 [P5 GET #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 验证三 Spark Application/Parent、Person/Visit S3 输入输出 DatasetVersion、Reconcile 精确读取两份 Processing DatasetVersion/无输出预期。物理 RDD START-only，严格 `business_dataset_gate=INCOMPLETE` 原样保留，不造假。见 [证据矩阵](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 
 ## 11. 2026-10-24 P4 单镜像 Release 实际读回（业务 Live 待验）
 
 - [x] [P4 PR #441](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/441) Source/CI/Main `9199710bf5f43d506628fa31f81cb2b107a55c11`：三个 Spark 实际业务模板 Listener 1.47.1 正向/负向合同及只覆盖 NEW_ONLY V2 Child 镜像方案通过；Airflow / PySpark 算法 / Writer / Fencing 均未改。
 - [x] [P4 真实 Release #40123946926](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40123946926) SUCCESS：只构建 `landing-processing-v2`，新 `latest` `sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`；原版本 `sha256:93adcaeefc5c29f87e3fca212e20faaebbaad99b23c7a8fe0fb5ebe5636331ba` 备份标签 `pre-latest-run40123946926-a1`；单镜像无网 Smoke、GHCR 推送和重新 Pull Digest 验证全部 PASS。
-- [ ] 真实 `new_only_omop_consumer` 新建 KPO Pod 实际 imageID/SHA256 读回，三个真实 SparkApplication 新 namespace 的 Job/Run/S3A Dataset edges，Airflow Task→Spark Batch/Run 对应。这是 P4 5.3，**不能因为镜像发布成功就勾选**。
-- [ ] P5 唯一 Batch Writer 原子 COMMIT / PG17 Readback / 同批安全 SKIP / 独立 PG 零变化、真实 Marquez 图，仍须后续单独验收。
+- [x] **历史 P4 单镜像 Release 实际 Pod ImageID + 三真实 SparkApplication/Parent/Dataset Verified**：原 [P4 Live #40125211881](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125211881) 的三个真实新 KPO Pod `imageID` 均读回当时获批 GHCR V2 `sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`；后续 [P4 #40197583583](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197583583)/[P5 #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 核验真 Spark Parent/Read/Write DatasetVersion。旧 Workflow FAILURE 不改写，旧 Digest 不等于未来或 P5 新 Digest，RDD known gap 保留。见 [历史核销](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
+- [x] **历史 P5 唯一新 Batch COMMIT/PG17/SKIP/Marquez 方案 A 真实验收完成**：2026-10-25 Batch `synthea-new-only-gh-40208104106` 的原 [#40208104106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106) Workflow FAILURE 是 PG17 原子 COMMIT **之后**缺 `spark-apps.jsonl`，并非事务失败；真实 PG17 +100 Person/+15,742 Visit；独立 [#40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) Marquez+PG17 GET SUCCESS，[#40209818676](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676) 同 Batch Spark/Writer skipped、PG17 八指纹零变化 SUCCESS；P6 已有目标 Batch 官方浏览器 Dataset 图。保留旧失败，绝不重放 Writer。见 [P5 Evidence](evidence/PORTAL-P5-FRESH-BATCH-EXECUTION-20261025.md) 与 [本次核销](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 - 完整证据：[P4 Live Registry Release 记录](evidence/PORTAL-P4-BUSINESS-IMAGE-LATEST-RELEASE-20261024.md)。
