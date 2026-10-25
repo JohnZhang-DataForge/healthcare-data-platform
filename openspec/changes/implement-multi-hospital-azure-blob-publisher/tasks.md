@@ -15,7 +15,7 @@
 - [ ] 2.5 原跨 Namespace ephemeral Stage 需求已由 `dw-synthea` 共 Namespace 只读 PVC 设计取消；仍待 OIE authenticated persisted readback Fetcher，运行前独立审查与授权。
 - [x] 2.6 Publisher GHCR 镜像 Main-only Clean Build + 无网络非 root Smoke + 唯一 git-SHA 标签发布和 Digest 读回；不修改 `latest`、不触碰 K8s/Azure；[Run #40137992945](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40137992945) 实际成功，镜像 Digest 已记录。
 
-- [ ] 2.7 Publisher 支持 GitHub OIDC 换取的短期 Azure Storage Access Token、token 到期边界及同 Namespace 短期 Session Secret Job 模板；新的 GHCR Digest、真实 Session Secret 生命周期仍须分别验收。
+- [x] 2.7 Publisher 已编码并通过离线 CI 支持 GitHub OIDC 换取的短期 Azure Storage Access Token、token 到期边界及同 Namespace 一次性 Session Secret Job 模板；Healthcare PR #469 / Main GHCR Run #40148148246 已成功。真实 Session Secret 生命周期仍由 4.6 另行验收。
 
 ## 3. Hospital Routes
 - [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
@@ -103,3 +103,9 @@
 - Self-Runner [Credential Readiness #40147726787](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40147726787) 实际只读检验：`vars.AZURE_CLIENT_ID`、`vars.AZURE_TENANT_ID` 均存在，仓库 `secrets.AZURE_CLIENT_SECRET` **不存在**，`dw-synthea/azure-blob-publisher-identity` **不存在**。不能将 `GITHUB_TOKEN` 或 GitHub OIDC JWT 当成 `ClientSecretCredential` 的 Entra Client Secret，过期的 Azure Storage Access Token 也不能充作长期 K8s Secret。此次只读 Workflow 没有修改 Azure/K8s。
 - 选择保持 Publisher 运行在 `dw-synthea`，增加 `temporary-access-token` 认证模式：调用方先用已验证 Self-Runner OIDC 联邦身份向 Entra **换取 Azure Storage audience Access Token**，在真正创建经核验的 Publisher Job 前设一个一次性 Session Secret；运行时拒绝无/近到期 Token、异常 Auth Mode 和同时带有旧 Client Secret 的配置。仍只读挂载 Generator PVC、源 Manifest 的 SHA、远端 immutable Azure GET/Manifest 最后提交规则不变。
 - 静态 `publish-direct-fhir-temporary-token-job.yaml.tpl` 使用 `__SESSION_SECRET_NAME__` + `access-token/expires-on`，Job deadline 20 分钟，不代表已将任何真实 Token 写入集群。需具备真实 Source Request/Profile ConfigMap/完整云端读回/生命周期清理和安全门槛后才能做 Live Job，避免生成一个很快过期却无人使用的 Secret。
+
+### P2.7 — GitHub OIDC-only Publisher 代码与镜像真实验收（2026-10-24）
+- Healthcare [PR #469](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/469) 所有适用 CI PASS，合并 Main `3b1716b8defd598deedda348a646e4a4280527ac`。独立 GitHub-hosted Main [GHCR Run #40148148246](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40148148246) **SUCCESS**，Non-root/无网络容器 Smoke PASS。实际 Publisher Digest `ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:06324ae6571a6f72f3b317a1ba577851952bb421fc33ef1d87b4718acfcea4e6`；旧 `git-56b89b...` 镜像不包含本 Token 功能，不要误用。未修改 `latest`。
+- Self-Runner [PR #268](https://github.com/JohnZhang-DataForge/Self-Runner/pull/268) / [Run #40147726787](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40147726787) 只读检查已验证 GitHub AZURE_CLIENT_ID/TENANT_ID vars 可用，但 `secrets.AZURE_CLIENT_SECRET=false`；`dw-synthea/azure-blob-publisher-identity` 未创建。已用 [Self-Runner PR #269](https://github.com/JohnZhang-DataForge/Self-Runner/pull/269) 删除仅一次检查 Workflow，保留 GitHub Run 证据。
+- 新临时认证代码明确区分 GitHub OIDC assertion 与 Azure Storage scope Access Token，仅在可信 Runner 上先交换 OAuth Token 后才有可能使用。静态 Job 模板引用 **一次性 Secret** `access-token`/`expires-on` 且对 20 分钟内结束和 SDK 到期保护有约束；当前 **没有** 自动 Secret 创建/绑定/清理 Workflow，也没有任何真实 Secret/Pod/Blob PUT。不要在没有新冻结 FHIR Manifest SHA 和具体 Job 的前提下预先把短期 Token 写入 K8s，避免留下过期 Secret。
+- 下一运行前门槛：新 Source Request + hospital profile ConfigMap、当前 worker01/PVC 与全局 Job 无冲突、Main/镜像 Digest 绑定、OIDC 交换为 Storage audience、每次 Job 对应临时 Secret 生命周期及必需清理、实际 Blob GET+ETag+Manifest 读回。仅 2.7 代码/镜像级完成，4.1/4.2/4.6 均 OPEN。
