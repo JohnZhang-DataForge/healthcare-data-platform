@@ -258,6 +258,55 @@ class AzureSDKBlobBackend:
                                     credential=credential)
         return cls(service.get_container_client(container))
 
+    @classmethod
+    def from_temporary_access_token(cls, *, account_url: str, container: str,
+                                    access_token: str, expires_on: int,
+                                    ) -> "AzureSDKBlobBackend":
+        """Use a bounded, already-exchanged Entra STORAGE token for one Job.
+
+        The CI OIDC JWT and GITHUB_TOKEN are NOT Azure Storage bearer tokens.
+        Caller must exchange GitHub OIDC for an Azure Storage access token
+        immediately before the Job and remove the temporary K8s credential
+        once that specific Job completes. This factory never exchanges/mints
+        credentials and does not persist token data.
+        """
+        import re
+        import time
+        from urllib.parse import urlsplit
+        from azure.core.credentials import AccessToken
+        from azure.storage.blob import BlobServiceClient
+
+        url = urlsplit(account_url)
+        if (url.scheme != "https" or not url.hostname
+                or not url.hostname.endswith(".blob.core.windows.net")
+                or url.username or url.password or url.port
+                or url.path not in ("", "/") or url.query or url.fragment):
+            raise PublishBlocked("INVALID_AZURE_ACCOUNT_URL")
+        if (not isinstance(container, str) or not 3 <= len(container) <= 63
+                or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",container)):
+            raise PublishBlocked("INVALID_CONTAINER")
+        if (not isinstance(access_token, str) or
+                not re.fullmatch(r"[A-Za-z0-9._~-]{64,8192}", access_token)):
+            raise PublishBlocked("INVALID_TEMPORARY_AZURE_STORAGE_TOKEN")
+        if (type(expires_on) is not int or
+                not 1800 < expires_on - time.time() <= 7200):
+            raise PublishBlocked("TEMPORARY_TOKEN_EXPIRY_OUT_OF_BOUNDS")
+
+        class JobScopedStorageCredential:
+            def get_token(self, *scopes, **kwargs):
+                if (not scopes
+                        or any(s not in (
+                            "https://storage.azure.com/.default",
+                            "https://storage.azure.com/") for s in scopes)):
+                    raise PublishBlocked("INVALID_TEMPORARY_AZURE_TOKEN_SCOPE")
+                if time.time() + 300 >= expires_on:
+                    raise PublishBlocked("TEMPORARY_AZURE_STORAGE_TOKEN_EXPIRED")
+                return AccessToken(access_token, expires_on)
+
+        client = BlobServiceClient(account_url=account_url,
+                                   credential=JobScopedStorageCredential())
+        return cls(client.get_container_client(container))
+
     def create(self, key: str, data: bytes, metadata: dict[str, str],
                content_type: str) -> str | None:
         from azure.core.exceptions import (

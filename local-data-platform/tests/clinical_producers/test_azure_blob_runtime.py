@@ -1,6 +1,7 @@
 """Offline secure launch contract for staged Azure Blob DIRECT FHIR Job."""
 from contextlib import redirect_stderr
 import hashlib
+import time
 from io import StringIO
 import json
 from pathlib import Path
@@ -187,6 +188,67 @@ class RuntimeTests(unittest.TestCase):
                                     "CONFLICTING_SOURCE_MODES"):
             self.run_once(direct_readonly_source=True)
         self.assertEqual(self.backend.writes, [])
+
+    def test_temporary_storage_token_mode_needs_no_client_secret(self):
+        config = {
+            "AZURE_AUTH_MODE": "temporary-access-token",
+            "AZURE_BLOB_ACCOUNT_URL": CONFIG["AZURE_BLOB_ACCOUNT_URL"],
+            "AZURE_BLOB_CONTAINER": "landing",
+            "AZURE_STORAGE_BEARER_TOKEN": "TEST_TOKEN_ONLY_" + "a" * 90,
+            "AZURE_STORAGE_TOKEN_EXPIRES_ON": str(int(time.time()) + 3600),
+        }
+        receipt = self.run_once(env=config, ready_marker=None,
+                                direct_readonly_source=True)
+        self.assertEqual(receipt["status"], "BLOB_MANIFEST_COMMITTED")
+        self.assertEqual(len(self.factories), 1)
+        self.assertEqual(self.factories[0]["access_token"],
+                         config["AZURE_STORAGE_BEARER_TOKEN"])
+        self.assertEqual(self.factories[0]["expires_on"],
+                         int(config["AZURE_STORAGE_TOKEN_EXPIRES_ON"]))
+        self.assertNotIn("client_secret", self.factories[0])
+
+    def test_token_mode_missing_secret_expiry_and_auth_conflict_are_closed(self):
+        base = {
+            "AZURE_AUTH_MODE": "temporary-access-token",
+            "AZURE_BLOB_ACCOUNT_URL": CONFIG["AZURE_BLOB_ACCOUNT_URL"],
+            "AZURE_BLOB_CONTAINER": "landing",
+            "AZURE_STORAGE_BEARER_TOKEN": "TEST_TOKEN_ONLY_" + "a" * 90,
+            "AZURE_STORAGE_TOKEN_EXPIRES_ON": str(int(time.time()) + 3600),
+        }
+        cases = [
+            ({**base, "AZURE_STORAGE_BEARER_TOKEN": ""},
+             "MISSING_TEMPORARY_AZURE_STORAGE_TOKEN"),
+            ({**base, "AZURE_STORAGE_TOKEN_EXPIRES_ON": "not-a-time"},
+             "INVALID_TEMPORARY_TOKEN_EXPIRY"),
+            ({**base, "AZURE_CLIENT_SECRET": SECRET},
+             "CONFLICTING_AZURE_AUTH_MODES"),
+            ({**base, "AZURE_AUTH_MODE": "gibberish"},
+             "UNSUPPORTED_AZURE_AUTH_MODE"),
+            ({**CONFIG, "AZURE_STORAGE_BEARER_TOKEN": "malicious"},
+             "CONFLICTING_AZURE_AUTH_MODES"),
+        ]
+        for variables, error in cases:
+            with self.subTest(error=error):
+                with self.assertRaisesRegex(PublisherRuntimeBlocked,error):
+                    self.run_once(env=variables)
+        self.assertEqual(self.factories, [])
+        self.assertEqual(self.backend.writes, [])
+
+    def test_temporary_token_template_requires_one_shot_secret(self):
+        tpl = (ROOT / "kubernetes/manifests/synthea/blob-publisher/"
+               "publish-direct-fhir-temporary-token-job.yaml.tpl").read_text()
+        self.assertIn("namespace: dw-synthea", tpl)
+        self.assertIn("activeDeadlineSeconds: 1200", tpl)
+        self.assertIn("AZURE_AUTH_MODE", tpl)
+        self.assertIn("temporary-access-token", tpl)
+        self.assertIn("name: __SESSION_SECRET_NAME__", tpl)
+        self.assertIn("key: access-token", tpl)
+        self.assertIn("key: expires-on", tpl)
+        self.assertIn("claimName: synthea-new-generator-state", tpl)
+        self.assertIn("readOnly: true", tpl)
+        self.assertIn("__PINNED_SOURCE_MANIFEST_SHA256__", tpl)
+        self.assertNotIn("client-secret",tpl)
+        self.assertNotIn("dw-az-blob",tpl)
 
     def test_job_template_mounts_existing_generator_pvc_readonly_same_namespace(self):
         template = (ROOT / "kubernetes/manifests/synthea/blob-publisher/"

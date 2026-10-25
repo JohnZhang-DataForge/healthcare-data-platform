@@ -1,6 +1,9 @@
 """Offline immutable Azure Blob Publisher tests; no network, Azure, or K8s."""
 import hashlib
 import json
+import time
+from types import ModuleType
+from unittest.mock import patch
 from pathlib import Path
 import sys
 import unittest
@@ -36,6 +39,59 @@ def request_plan(n=2):
         "skipped_non_admissions": 0,
         "objects": objects,
     }, content)
+
+
+class TemporaryStorageTokenTests(unittest.TestCase):
+    def test_factory_fences_token_expiry_and_target(self):
+        import sys
+        core = ModuleType("azure.core")
+        credential_mod = ModuleType("azure.core.credentials")
+        class AccessToken:
+            def __init__(self, token, expires_on):
+                self.token, self.expires_on = token, expires_on
+        credential_mod.AccessToken = AccessToken
+        sdk = ModuleType("azure.storage.blob")
+        class BlobServiceClient:
+            def __init__(self, *, account_url, credential):
+                self.account_url = account_url
+                self.credential = credential
+            def get_container_client(self, container):
+                self.container = container
+                return self
+        sdk.BlobServiceClient = BlobServiceClient
+        fake_modules = {
+            "azure": ModuleType("azure"),
+            "azure.core": core,
+            "azure.core.credentials": credential_mod,
+            "azure.storage": ModuleType("azure.storage"),
+            "azure.storage.blob": sdk,
+        }
+        good = dict(account_url="https://johnzhang.blob.core.windows.net",
+                    container="landing",
+                    access_token="FAKE_STORAGE_ACCESS_TOKEN_" + "X"*96,
+                    expires_on=int(time.time())+3600)
+        with patch.dict(sys.modules, fake_modules):
+            backend = AzureSDKBlobBackend.from_temporary_access_token(**good)
+            self.assertEqual(backend._container.account_url,good["account_url"])
+            self.assertEqual(backend._container.container, "landing")
+            credential = backend._container.credential
+            issued = credential.get_token("https://storage.azure.com/.default")
+            self.assertEqual(issued.token,good["access_token"])
+            self.assertEqual(issued.expires_on,good["expires_on"])
+            with self.assertRaisesRegex(PublishBlocked, "INVALID_TEMPORARY_AZURE_TOKEN_SCOPE"):
+                credential.get_token("https://management.azure.com/.default")
+            for override,error in (
+                ({"expires_on":int(time.time())+60}, "TEMPORARY_TOKEN_EXPIRY_OUT_OF_BOUNDS"),
+                ({"expires_on":int(time.time())+7201}, "TEMPORARY_TOKEN_EXPIRY_OUT_OF_BOUNDS"),
+                ({"expires_on":"not-integer"}, "TEMPORARY_TOKEN_EXPIRY_OUT_OF_BOUNDS"),
+                ({"access_token":"fake token with spaces"}, "INVALID_TEMPORARY_AZURE_STORAGE_TOKEN"),
+                ({"account_url":"http://johnzhang.blob.core.windows.net"}, "INVALID_AZURE_ACCOUNT_URL"),
+                ({"container":"BadContainer"}, "INVALID_CONTAINER"),
+            ):
+                with self.subTest(error=error, override=override):
+                    with self.assertRaisesRegex(PublishBlocked,error):
+                        AzureSDKBlobBackend.from_temporary_access_token(
+                            **{**good,**override})
 
 
 class OfflineBlobBackend:
