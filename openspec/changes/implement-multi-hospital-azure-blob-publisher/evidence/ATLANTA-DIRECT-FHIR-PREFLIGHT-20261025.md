@@ -36,3 +36,5 @@
 4. Client Secret 有期限，4.7 的 Rotation 运行方案和首个真实 Publisher Job 读写仍 **OPEN**。不创建或改写原 Identity/RBAC/Secret。
 
 **下一步**：运营方完成实时 Session 资源协调与 `dw-synthea` scoped Job/ConfigMap + `OMOP/johnzhang/landing` 新不可变 Blob 写入授权后，从 Self-Runner Main **手动**触发 `Atlanta DIRECT FHIR to Azure Blob - Manual E2E` 并填 `PUBLISH_ATLANTA`；读回 Run/Request/SHA/Blob 清单后才勾选对应 OpenSpec Task。
+
+**故障保全**：工作流失败、超时或日志缺失不等于 Azure 未写入；先按本次新 Request ID 查询可能已创建的对象与最终 Manifest，再决定是否恢复或重新触发，且禁止覆盖原 Blob。
