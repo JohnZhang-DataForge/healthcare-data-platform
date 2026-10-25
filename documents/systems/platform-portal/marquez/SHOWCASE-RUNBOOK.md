@@ -12,7 +12,7 @@ evidence:
 
 # P6 — Marquez 官方 Web / OpenLineage 内网演示指引
 
-> **验收边界**：2026-10-25 17:54 UTC 的独立受控 [GET-only Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) **SUCCESS**；[Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399) 保存 4 份不含患者记录的原始报告。已验证 Marquez Web 首页 HTML 200、`/healthcheck=OK`、Web Proxy API 200/直接 API 一致、K8s 10/10 Ready/Bound/Endpoint、真实业务 DatasetVersion 与 ParentRun。**用户后续于 2026-10-25 提供三张 iPhone Safari 的真实 LAN 页面截图，证明官方 Dashboard/Job 列表已在实际手机浏览器中正常呈现**（见 [视觉补证](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)）。**但是尚未点击 Job 的 Run History 或展示 Dataset Lineage 图**，因此 OpenSpec P6 7.1 完整浏览器演示 Gate 仍 OPEN；不能把 HTML 200、页面 Job Card 或 API GET 误称为已完成真实血缘图交互验收。
+> **验收边界**：2026-10-25 17:54 UTC 的独立受控 [GET-only Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) **SUCCESS**；[Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399) 保存 4 份不含患者记录的原始报告。已验证 Marquez Web 首页 HTML 200、`/healthcheck=OK`、Web Proxy API 200/直接 API 一致、K8s 10/10 Ready/Bound/Endpoint、真实业务 DatasetVersion 与 ParentRun。**用户后续于 2026-10-25 提供三张 iPhone Safari 的真实 LAN 页面截图，证明官方 Dashboard/Job 列表已在实际手机浏览器中正常呈现**（见 [视觉补证](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)）。**但是尚未点击 Job 的 Run History 或展示 Dataset Lineage 图**，因此 OpenSpec P6 7.1 完整浏览器演示 Gate 仍 OPEN；不能把 HTML 200、页面 Job Card 或 API GET 误称为已完成真实血缘图交互验收。
 
 ## 1. 网络与安全
 
