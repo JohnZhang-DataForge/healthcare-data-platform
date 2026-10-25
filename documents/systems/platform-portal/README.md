@@ -7,6 +7,8 @@ source_sha: 95f480078da622178f4fa7b68d986d8e05a91ae9
 
 # Platform Portal — OpenLineage + Marquez 可观测性子系统
 
+> **2026-10-25 P6 真正 LAN 浏览器首页/Job 列表截图补证（更新下方早先“未验证浏览器”结论）**：用户三张 iPhone Safari 截图确证官方 Marquez DataOps UI 及真实 Airflow DAG/Writer/Reconcile、Spark Reconcile Application 的绿色 `COMPLETED` Job Card 正常渲染；截图当时概览显示 139 Events、23 Datasets、4 Sources、71 Jobs。**未查看单 Job 的 Run 详情或 Person/Visit→Reconcile Dataset Lineage 图，7.1 整项保持 OPEN；7.3 Archive 保持 OPEN**。详情 [P6 浏览器截图审查（保护私网地址）](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。
+
 > **2026-10-25 P6 官方 Marquez Web 内网 HTTP/GET 实机验证 PASS（浏览器视觉尚未验收）**：[Self-Runner #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) 校验 K8s Marquez+PG14 资源 **10/10 PASS**；Web 首页 HTML 200、healthcheck OK、官方 Web Proxy 与直接 API 的 7 个 Namespace 完全一致。固定真实 P5 Batch 的 Airflow→Spark Person/Visit/Reconcile 真实 ParentRun 与 DatasetVersion `business_edges_gate=PASS`，Writer Airflow Run `COMPLETED`，物理 RDD Action `RUNNING` 已知限制继续暴露。**LAN 浏览器的可视化点击/截图不在本次 HTTP probe 覆盖范围，因此 OpenSpec P6 7.1 GUI Gate 仍 OPEN**；不会将 API PASS 误报为已完成 GUI 演示，也不会将 Writer Run 状态误报为独立 PG17 COMMIT。详见 [官方 Marquez Web 演示与只读查询指南](marquez/SHOWCASE-RUNBOOK.md)，历史 P5 durable 证据仍单独有效。**P6 7.3 Archive 尚未批准**。
 
 
