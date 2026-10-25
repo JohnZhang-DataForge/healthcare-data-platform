@@ -11,6 +11,7 @@ source_sha: f3b2d9e97d9afe4e7457a1d48fde9e655add47d7
 
 本目录集中导航**讨论稿与已确认但尚未实施的目标架构设计**。每份设计以自身 status 为准；任何目标设计都不代表已经部署或运行验收，也不取代系统实际源码、项目唯一状态与 OpenSpec Change。
 
+- **[OpenLineage Spark RDD Action START-only 生命周期：方案 A 设计决策与经验](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md)**：精确应用 Job 身份、真实 Parent/DatasetVersion、1.47.1/1.54.0 A/B、上游源码过滤假设、Marquez 展示影响、分层严格验收和未来 FHIR/HL7 的复用检查清单；P4 物理终态仍待确认，P5 Writer E2E 另行验收。
 - [Data Platform V2：仓库迁移与模块化重构设计](DATA-PLATFORM-V2-MIGRATION-DESIGN.md)：四个顶层模块、本地组件划分、Task004 兼容重命名、公共能力提取、实施阶段、测试和回滚。
 - [OpenSpec 接入与开发治理设计](OPENSPEC-ADOPTION-DESIGN.md)：同仓 OpenSpec、Documents/Specs/Changes 权威边界、官方标准流程、Agent 接力、STEP09 实施 Gate（编写时为未初始化的讨论稿；此后 G0–G4 已实施，G5 首个业务 Change 未开始，最新状态以 [实施计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 为准）。
 
