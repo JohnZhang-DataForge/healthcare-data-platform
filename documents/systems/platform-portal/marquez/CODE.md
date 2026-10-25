@@ -1,8 +1,8 @@
 ---
 status: active
 scope: portal-marquez-source-map
-last_verified: 2026-10-18
-source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
+last_verified: 2026-10-25
+source_sha: b92ccc9b7976e740d9dd77994a0725b115693705
 ---
 
 # Marquez — CODE / 源码导航
@@ -18,8 +18,10 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 | [`tests/verify.sh`](../../../../platform-portal/marquez/tests/verify.sh) | 真实 K8s/PG/HTTP 检查，含临时 port-forward；不属于离线单元测试 |
 | [`tests/inventory_readonly.py`](../../../../platform-portal/marquez/tests/inventory_readonly.py) | 固定目标、指定 context、只执行 `kubectl get` 的运行资源只读盘点；**不是** HTTP/PG SQL/lineage 健康证明 |
 | [`tests/test_inventory_readonly.py`](../../../../platform-portal/marquez/tests/test_inventory_readonly.py) | 纯离线测试：命令白名单、context fail-closed、资源状态及错误信息保护 |
-| [`tests/verify_business_lineage.py`](../../../../platform-portal/marquez/tests/verify_business_lineage.py) | 对固定内网 Marquez 执行有界 HTTP GET，按精确 Batch 和三个 Spark app 读取真实 Child Run、DatasetVersion、Parent Facet；分别校验 Spark Action→Application 与 Airflow Task→Spark Application 两级父关系，报告应用已 COMPLETED 而子 Run 仍 RUNNING 的事实，并明确 Writer/PG17/SKIP 尚未读回；不修改 Marquez 或 Writer |
+| [`tests/verify_business_lineage.py`](../../../../platform-portal/marquez/tests/verify_business_lineage.py) | 对固定内网 Marquez 执行有界 HTTP GET，按精确 Batch 和三个 Spark Application 查询真实子 Run、DatasetVersion、两级 Parent；分别报告严格业务血缘和物理 RDD Action 生命周期，明确 Writer durable COMMIT / PG17 / SKIP **必须独立核对**，不伪造 Action COMPLETE，也不修改 Marquez 或 Writer |
 | [`tests/test_verify_business_lineage.py`](../../../../platform-portal/marquez/tests/test_verify_business_lineage.py) | 纯离线回归：读取和写入 DatasetVersion 同一性、Reconcile 终态、Spark Action/Application 精确 Parent、Airflow→Spark 真实 Task Run ID、错误 Batch、HTTP off-host fail-closed |
+
+**P6 演示/运维导航**：[官方 Marquez Web 内网演示与固定 Batch 只读查询](SHOWCASE-RUNBOOK.md)；独立受控 GET-only [Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308)，Artifact 包含 K8s/HTTP/API/Lineage 四类验证；没有新增或变更本组件的真实部署脚本、Helm、镜像、业务逻辑或应用测试源码。浏览器级可视化尚需人工实机确认。
 
 **依赖**：PG14 持久化组件由 [Postgres CODE](../postgres/CODE.md) 管理；Airflow Provider 与 Spark Listener 仅向 Marquez API 发送真实 OpenLineage，分别由 [Airflow CODE](../airflow/CODE.md)、[Spark CODE](../spark/CODE.md) 管理。版本/Ready/接入情况以单次 Run 证据为准，不等于实时探针。
 

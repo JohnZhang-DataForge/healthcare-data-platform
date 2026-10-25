@@ -208,8 +208,17 @@
 
 ## 7. P6 — Native Marquez showcase and closeout
 
-- [ ] 7.1 完成内网 Marquez 官方 Web 的可复现演示和只读查询说明；不裸露 NodePort 30999 到公网，不开发自研 UI。
-- [ ] 7.2 同步 `documents/systems/platform-portal/` README/CODE、项目状态及 OpenSpec：只有 Live 已验证的结果标记为完成。
+### 2026-10-25 P6 7.1 partial Live + 7.2 documentation / 7.3 archive boundary
+
+- **Current exact source**: Healthcare `b92ccc9b7976e740d9dd77994a0725b115693705`, Self-Runner `273661160a6cc585709ee54a432e9b9bdcf31afc`; isolated read-only P6 [Run #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308), [Artifact #12609050399](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308/artifacts/12609050399) **SUCCESS**. No Airflow trigger, Spark/Writer run, PG SQL write, S3 publication, Helm/Service/RBAC update, event POST, or external NodePort exposure.
+- **P6 internal HTML/API GET and real lineage PASS, not GUI visual PASS:** K8s fixed inventory 10/10, Web root HTTP 200 HTML, `/healthcheck=OK`, Web API proxy exactly matches direct API (7 namespaces). Real P5 Batch `synthea-new-only-gh-40208104106` Person/Visit Landing→Processing and Reconcile two produced DatasetVersions with true Airflow/Spark ParentRun `business_edges_gate=PASS`; writer Airflow OpenLineage Run `01a173bb-987a-7916-b46d-e562e9e036a9` `COMPLETED`. RDD START-only and `business_dataset_gate=INCOMPLETE` persist under Design A. **Actual LAN browser rendering, Job/Run/graph clicking and screenshots NOT_CHECKED**; P6 7.1 remains OPEN until those actions are completed on the real official Web, not sample screenshots.
+- **P6 7.2 scoped docs:** [showcase runbook](../../../documents/systems/platform-portal/marquez/SHOWCASE-RUNBOOK.md) provides existing Batch's exact job identities, LAN-only browser sequence, internal GET endpoints, safe restrictions, and evidence matrix; synchronizes Marquez and Portal README/CODE, PROJECT-STATUS and this OpenSpec. No maintained application-source additions or image rebuild. Only claim 7.2 closed after applicable PR/CI/Main verification.
+- **P6 7.3**: OpenSpec Archive remains **OPEN** because browser GUI end-to-end verification is absent; also examine all Change Tasks (including historical plan entries) and final Main/evidence before Archive. Never auto-archive based solely on the P6 API 200 probe.
+
+
+
+- [ ] 7.1 内网 Marquez 官方 Web **HTML/health/API/真实血缘 GET 已 PASS**，只读演示步骤已形成；但实际 LAN 浏览器页面交互、Run History/Dataset Graph 人工观察与截图仍未验证，不暴露 NodePort 30999 到公网；该剩余 GUI Gate 未完成不得勾选。
+- [x] 7.2 同步 `documents/systems/platform-portal/` README/CODE、项目状态及 OpenSpec：只有 Live 已验证的结果标记为完成。 **证据：P6 #40218701308 + 受控文档 PR；不将 HTTP GET 成功伪称浏览器交互成功。**
 - [ ] 7.3 全部相应真实验收、Merge/Main/Run 证据确认后才申请 Archive；独立 Dashboard/公网只读展示属于未来独立 Change。
 
 **Next action after this planning PR:** 2.2 当前服务/历史事件的受控只读 Live Inventory，随后并行推进 3.1 / 4.1。未满足运行安全门槛时 HOLD Live，但可继续无副作用源码/静态测试。

@@ -7,6 +7,10 @@ source_sha: 95f480078da622178f4fa7b68d986d8e05a91ae9
 
 # Platform Portal — OpenLineage + Marquez 可观测性子系统
 
+> **2026-10-25 P6 官方 Marquez Web 内网 HTTP/GET 实机验证 PASS（浏览器视觉尚未验收）**：[Self-Runner #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) 校验 K8s Marquez+PG14 资源 **10/10 PASS**；Web 首页 HTML 200、healthcheck OK、官方 Web Proxy 与直接 API 的 7 个 Namespace 完全一致。固定真实 P5 Batch 的 Airflow→Spark Person/Visit/Reconcile 真实 ParentRun 与 DatasetVersion `business_edges_gate=PASS`，Writer Airflow Run `COMPLETED`，物理 RDD Action `RUNNING` 已知限制继续暴露。**LAN 浏览器的可视化点击/截图不在本次 HTTP probe 覆盖范围，因此 OpenSpec P6 7.1 GUI Gate 仍 OPEN**；不会将 API PASS 误报为已完成 GUI 演示，也不会将 Writer Run 状态误报为独立 PG17 COMMIT。详见 [官方 Marquez Web 演示与只读查询指南](marquez/SHOWCASE-RUNBOOK.md)，历史 P5 durable 证据仍单独有效。**P6 7.3 Archive 尚未批准**。
+
+
+
 > **2026-10-25 P5 实机方案 A 验收（覆盖下方较早 P4/P2 Pending 描述）**：全新 `synthea-new-only-gh-40208104106` Batch 的 Landing READY→Airflow→三 Spark Application→Writer **真实原子 COMMIT**，PG17 独立读回 **+100 Person/+15,742 Visit**，Ledger/2 VERIFIED Checkpoint/FK 与无活动 Claim 全部通过；[原 Run #40208104106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106) **仍为 FAILURE**（COMMIT 后测试采集缺 `spark-apps.jsonl`，原始证据不改写）。单独 [Marquez GET #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 核对真实 Airflow ParentRun、Person/Visit 真实 Input/Output DatasetVersion、Reconcile 精确复用两个 Processing 版本、Writer Airflow Run 与 PG17 durable COMMIT，`business_edges_gate=PASS`；单独 [同 Batch SKIP #40209818676](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676) 证实 Spark/Writer 全 skipped、PG17 前后八份指纹零变化。P4 5.4 与 P5 6.1–6.4 按**跨三条独立真实 Run 的分层方案 A** 验收，而非原 Workflow 全绿。**RDD 物理 Action START-only / RUNNING 仍是已知观测限制，原严格 `business_dataset_gate=INCOMPLETE` 不改写**；PG17 无已证明的 OpenLineage durable Dataset edge，Writer 可信状态以 PG17 Ledger/Checkpoint/CDM 真读回为准。完整 [P5 验收/失败证据](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P5-FRESH-BATCH-EXECUTION-20261025.md)。**下一步 P6：官方 Marquez Web 演示、README/CODE/最终状态与归档评审**，不开发自建 UI。
 
 
