@@ -3,7 +3,7 @@
 resource_group_name    = "OMOP"
 storage_account_name   = "johnzhang"
 landing_container_name = "landing"
-blob_role_assignments  = {
+blob_role_assignments = {
   healthcare_blob_publisher = {
     # Verified from this enterprise service principal's own Storage OAuth token:
     # Self-Runner read-only Run #40204621241; NOT the App Registration Object ID.
