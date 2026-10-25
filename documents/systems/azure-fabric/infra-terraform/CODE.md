@@ -181,3 +181,9 @@ source_sha: null
 ## Azure Blob Publisher 独立 Landing 写入身份（2026-10-25）
 - `azure-fabric/infra-terraform/shared-infra/storage/terraform.tfvars` 的 `blob_role_assignments.healthcare_blob_publisher` 固定手动创建的 **Enterprise Service Principal Object ID**，来自 [Self-Runner 真实身份核验 Run #40204621241](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40204621241)，而非 Application Registration Object ID。角色为 `Storage Blob Data Contributor`，只在现有 `OMOP/johnzhang/landing` Container 上授予；既有 Fabric Workspace Reader 仍从独立 Workspace State 查询。
 - Terraform 只管理 Azure RBAC，不管理 Client Secret、GitHub Secret 或 Kubernetes Secret；它们不进入远端 Terraform State。是否已 Apply 和 Azure 独立读回必须以 Self-Runner 的真实 Run 为准；仅源码配置不代表权限已生效。
+
+## Azure Blob Publisher Landing Role Assignment Terraform Import 真实验证（2026-10-25）
+
+- 角色的 Azure 管理操作已由用户完成。原 Terraform [Self-Runner #40205455766](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40205455766) 因已有 Reader-only ABAC 委派条件在尝试新建 Contributor 时 403；后续只读 [#40205946610](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40205946610) 发现 Publisher 的 Landing Contributor 授权**已存在**。
+- [Self-Runner PR #290](https://github.com/JohnZhang-DataForge/Self-Runner/pull/290) 与 [Run #40207100424](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40207100424) 将该现存 Role Assignment 安全导入 `shared-infra/storage.tfstate` 的 `module.storage.azurerm_role_assignment.landing["healthcare_blob_publisher"]`，ID 独立读回匹配，最终 Terraform **no drift**；绝不能重复 Terraform Create。没有其他 Azure/K8s/Blob 修改。
+- 独立 Publisher 的 Client Secret 在 Self-Runner GitHub Secrets 中，不在 Terraform State；Kubernetes `dw-synthea/azure-blob-publisher-identity` 仍待实际创建、验收和轮换。

@@ -28,6 +28,7 @@
 - [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，并通过 Terraform 授予新 Publisher 的 landing 容器级 RBAC、K8s Secret 后独立验证；真实 Blob 写入需另行 E2E 验收。
 - [ ] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
 - [ ] 4.6 将 OIDC Storage Token **恰好在已验证新 Request 的 Job 启动前**以短期 Secret 交付，绑定唯一 Job、期限、只读 PVC 和有界清理；不得把 GITHUB_TOKEN/OIDC JWT 冒充 Azure Access Token，不得提前写入过期 token。
+- [ ] 4.7 新隔离 Service Principal 的长期 Client Secret 已在 GitHub 安全配置；受控创建 `dw-synthea/azure-blob-publisher-identity`，验证键名和值的等同性（不输出值）、K8s RBAC 和轮换规则，并用真实 Publisher Source Request 验证存储读写。禁止把 Terraform State 作为密钥容器。
 - [ ] 4.3 同步真实 PR/Run/Blob object receipt、相关 CODE.md，明确 Fabric/OMOP 不在本 Change；再判断 archive。
 
 ### P1.3 — 实际初始 Blob 发布计划输入合同
@@ -126,3 +127,10 @@
 - 后续 [ABAC 审计 Run #40205946610](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40205946610) 证实 `github-terraform` 对 `landing` 的 `Role Based Access Control Administrator` 委派带 Condition：仅允许将 `Storage Blob Data Reader`(`2a2b9908-6ea1-4ae2-8e65-a410df84e7d1`) 分配给 Fabric Workspace Identity `1ae64649-a7c3-497e-9fe3-69b37d27c453`。**不允许给新 Publisher 主体创建 Contributor Role Assignment**。权限检查 API 报 possible write 并不证明其 ABAC condition 放行。
 - **仍需一次 Azure 管理员操作**：在现有 `johnzhang/landing` 容器 IAM 为 Terraform 身份增加**仅可授予 `Storage Blob Data Contributor` 给 `healthcare-blob-publisher`** 的受限 ABAC 委派，然后对当前失败的 Terraform Workflow 作受控重试；或管理员直接给 Publisher 授权后，先将该现有 Role Assignment Import 到 Terraform State，绝不能直接重复 Apply。不得弱化原 Fabric Reader 委派的约束。
 - Kubernetes `dw-synthea/azure-blob-publisher-identity` 的长效 Secret **尚未创建**。GitHub Client Secret 已配置，但没有经过允许的密钥交付 Workflow 与 Kubernetes 内容读回；不能将 RBAC Plan/OAuth 登录视为实际 Blob 上传能力。Source FHIR→Azure Blob/E2E 同样未执行；Task 4.1/4.2 继续 OPEN。
+
+### P4.1 — Publisher Azure Container RBAC 已存在并导入 Terraform State，No Drift（2026-10-25）
+
+- 用户完成 Azure Portal 权限操作后，使用原 [Terraform Apply Run #40205455766 attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40205455766) 再次尝试，**精确 Terraform Plan PASS** (1 create, 0 change, 0 destroy)，但 `Apply` 仍遭 ABAC 403；**不得把这次失败视为角色不存在或做第三次 create 重试**。
+- 重新运行只读 [ABAC Run #40205946610 attempt 2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40205946610) 发现 Azure 已有与目标严格匹配的 **唯一** `Storage Blob Data Contributor` 授权：Enterprise Principal Object ID `01cd737f-6c86-48bb-ae5c-209246d62ed6`，Scope `OMOP/johnzhang/landing`。旧 Terraform 身份的 Fabric Reader ABAC 委派条件仍存在，但对 Publisher 角色的读取不受其阻断。
+- [Self-Runner PR #290](https://github.com/JohnZhang-DataForge/Self-Runner/pull/290) 使用审查过的 Main-only 一次性 Workflow、现有 Shared Storage Remote State 和精确 Healthcare SHA `3a67e746d8f04003508bb4bb5dce431dfbcfc147`。真实 [Run #40207100424](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40207100424) **SUCCESS**：Azure ARM 精确 Match=1、现存 ID 校验、`terraform import module.storage.azurerm_role_assignment.landing["healthcare_blob_publisher"]` 导入成功、State 资源 ID 独立读回 PASS、`terraform plan -detailed-exitcode` 零漂移 PASS。导入的是 Azure 既存 Role Assignment `556bf8d5-8fd1-4ed5-b7b9-74a2e4b015f8`，并未新增、更新或删除 Azure RBAC / Blob 数据。
+- 因此 **Azure Publisher 容器级写角色存在并由 Terraform State 管理**；旧“尚需新建角色委派/再次 Apply”建议已被以上真实证据覆盖，不能再按照历史建议盲目 Apply。仍未验收 `dw-synthea/azure-blob-publisher-identity` 长期 Secret（新任务 4.7），也未执行真实 Publisher Blob PUT/GET（4.2），因此整体任务 4.1/4.2 仍 OPEN。
