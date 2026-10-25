@@ -49,6 +49,7 @@ jobs:
           grep -Fq 'namespace: dw-synthea' local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl
           grep -Fq 'claimName: synthea-new-generator-state' local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_runtime.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_publisher.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_direct_fhir_publisher.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_hl7_publisher.py -v
           echo PUBLISHER_RELEASE_HOSTED_CONTRACT=PASS
