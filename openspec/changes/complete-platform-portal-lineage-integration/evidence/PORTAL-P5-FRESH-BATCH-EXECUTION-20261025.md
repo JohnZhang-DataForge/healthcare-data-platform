@@ -28,6 +28,16 @@
 
 随后 `Real Airflow Spark atomic Writer COMMIT, independent PG17, same-batch SKIP` **in_progress**；`Independent Marquez GET, exact DatasetVersion ParentRun and Writer evidence correlation`、最终 PG17 Readback、DAG pause restore、Artifact 保存 **pending**。**当前没有足够证据判定最终 PG17 COMMIT、SKIP 或 P5 Lineage PASS**。GitHub 在 Run 未结束时不能提供完整 Job Logs/Artifact 的情况不应解释为错误或成功。
 
+## 第二次 Run 最终结论（2026-10-25T15:50Z 后独立核验）
+
+- 原 [Run #40208104106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106) 的 **Workflow 总结果 = FAILURE**。不能重标 SUCCESS。其原始 [Artifact #12605147240](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106/artifacts/12605147240) 包含 `pg-before.txt`、`pg-after.txt`、`pg-final-always.txt`、`airflow-commit.json`、`writer-handoff.json`、`images.jsonl` 与 Synthea READY 证据，允许独立交叉复核。
+- 实际失败点：Writer Step 完成 Airflow/PG17 后调用 `verify_runtime.py`，在读取 `spark-apps.jsonl` 时抛出 `FileNotFoundError`。原 `capture.py` 有生成此文件的代码，但运行时**未产生可读文件**；Artifact 中只有 `images.jsonl`，不能推断 Spark App 未运行。该缺口发生在同 Batch SKIP 触发之前，后续 Marquez GET 步骤因此 SKIPPED；并非 Writer COMMIT 失败。
+- 独立 PG17 读回：`PERSON_TOTAL:1294 → 1394`，`VISIT_TOTAL:184814 → 200556`；`BATCH_CLAIM=1`、`BATCH_COMPLETED=1`、`BATCH_LEDGER=1`、`BATCH_STAGE_PERSON=100`、`BATCH_STAGE_VISIT=15742`、`BATCH_CHECKPOINT=2`（Person、Visit 各 1）、`BATCH_PERSON_MAPPED=100`、`BATCH_VISIT_MAPPED=15742`、`VISIT_ORPHANS=0`、`ACTIVE_CLAIMS=0`。`pg-after.txt` 与失败后**独立再次只读**的 `pg-final-always.txt` 数字及 8 组内容/Map/Ledger/Stage/Checkpoint MD5 指纹一致。
+- `airflow-commit.json` 显示 `portal-p5-commit-40208104106` 的 DAG 与所有 Person/Visit/Reconcile/Writer 任务 SUCCESS；日志明文标记 `TASK004_NEW_ONLY_WRITER_RESULT=COMPLETED`、`PG_RECONCILIATION=PASS`、`NO_SECOND_COMMIT=PASS`。Writer 已经将 **100 Person + 15,742 Visit** 实际持久化，**绝不可对这一 Batch 重新启动 COMMIT 或整条 Fresh E2E Workflow**。
+- Manifest 真值：`s3://health-landing/source=synthea/source_version=v3.3.0/ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106/manifest.json`，SHA256 `cad0a79c1f536e5d3fed0e732c2b2da4cc7af48c89355c6fa95f0b380042130e`。真实 V2 Pod Image Digest 为 `sha256:42d6d087de4dfecf35c51bf84461fddea9635506ed73b6a59f7de8c44d8e775d`（至少 Person/Visit，见 Run 的 Image Evidence）。
+- 异常退出后 `Restore original DAG pause state` SUCCESS：`P5_FINAL_DAG_PAUSED=True`、`P5_FINAL_ACTIVE_CONSUMER_RUNS=0`；最终 PG Readback / 证据上传 / Kubeconfig 清理步骤均 SUCCESS。不构成全局 Pod 已全部释放的推断。
+- 补证入口：[Self-Runner GET-only #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539)，专门针对**已提交** Batch，使用精确源 SHA/已知 ParentRun UUID/PG17 Readback，仅 GET Marquez + Airflow 只读查询，**无** `airflow dags trigger`、Spark/Writer/S3 写入；该入口的结果与同 Batch SKIP 仍分别需要真实验收。原 P5 Run 的总体 FAILURE 不因补证而删除或覆盖。
+
 ## 尚须满足的独立验收矩阵
 
 | Gate | 现场要求 | 本登记状态 |
