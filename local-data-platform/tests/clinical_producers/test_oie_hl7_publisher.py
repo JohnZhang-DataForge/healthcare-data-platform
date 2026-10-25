@@ -21,23 +21,23 @@ from apps.synthea.synthea_new_generator.generator import (
 from apps.synthea.synthea_new_generator.request import SCHEMA_VERSION, normalize
 
 CHANNEL = "69ace705-a675-45f6-b126-a3b22a65212a"
-HOSP = "demo-johns-creek"
-FEED = "demo-johns-creek-hl7-v2"
+HOSP = "johns-creek-hospital-b"
+FEED = "johns-creek-hospital-b-hl7-v2"
 REQUEST = "johnscreek-next-0001"
-AUTH = "DEMOJC"
+AUTH = "JOHNSCREEKB"
 WHEN = "20261024131530+0000"
 CONTROL = "-".join((HOSP, FEED, REQUEST, "enc-one", "A01"))
 
 
 def sample_hl7():
     lines = [
-        ("MSH|^~\\&|SYNTHEA_SIM|DEMOJC|LANDING|SYNTHETIC|" + WHEN +
+        ("MSH|^~\\&|SYNTHEA_SIM|JOHNSCREEKB|LANDING|SYNTHETIC|" + WHEN +
          "||ADT^A01^ADT_A01|" + CONTROL + "|P|2.5.1"),
         "EVN|A01|" + WHEN,
-        "PID|1||patient-one^^^DEMOJC^MR||Demo^Patient",
+        "PID|1||patient-one^^^JOHNSCREEKB^MR||Demo^Patient",
     ]
     pv1 = ["PV1", "1", "I"] + [""] * 42
-    pv1[19] = "enc-one^^^DEMOJC^VN"
+    pv1[19] = "enc-one^^^JOHNSCREEKB^VN"
     pv1[44] = WHEN
     return ("\r".join(lines + ["|".join(pv1)]) + "\r").encode()
 
