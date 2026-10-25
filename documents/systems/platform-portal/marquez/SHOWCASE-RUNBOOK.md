@@ -37,7 +37,7 @@ evidence:
 | Writer Airflow Job | `new_only_omop_consumer.execute_new_only_writer` |
 | Writer OpenLineage Run UUID | `01a173bb-987a-7916-b46d-e562e9e036a9` |
 
-**实际截图提示：**在 Reconcile Application 的 `Lineage` 页面即使设置 `Depth=2`，屏幕也可能只显示单个绿色 `JOB` 节点。截图中 `Full Graph` 开关是关闭的；可以在既有只读界面尝试打开它，但不能凭开关就保证 Dataset 图出现。右侧 `LATEST RUN → RUN FACETS → parent` 已可见，下一步可展开 `job` 和 `run` 子对象，核对精确 Parent 身份。**请勿点击详情中的 `DELETE` 按钮。**
+**更新的真实 GUI 结果（用户后续 Chrome 三图）**：`Full Graph` **已切到 ON**、`Depth=2` 时，P5 Reconcile Application 依旧只有单个 `JOB` 节点，**不是数据处理失败证据**。其 `LATEST RUN → RUN FACETS → parent → job/run` 已展开，屏幕可见 `healthcare-platform-airflow` 与精确 ParentRun UUID 的一致前缀 `01a173bb-987a-7b3b-a0ec-e1ce42...`（UI 省略号截断）。用户也展示了官方 Datasets **Column Level** 的真实字段映射连线，如 `PATIENT → source_person_id` 和 `STOP → end_datetime`，但**该图属于旧 Batch `synthea-new-only-gh-39625216978`（`ingest_date=2026-10-21`）**，不是 P5 新批次 `40208104106`。因此已验证官方 Column Lineage GUI 能画线，**P5 精确 Batch 的 Dataset GUI 连线仍待验收**。文字记录见 [浏览器证据](../../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。**请勿点击 `DELETE`。**
 
 以上 Spark Application 全名用于查 **Application 自身**的真实 `COMPLETED` 和 Airflow `ParentRunFacet`；底层 Spark Action Job 可能不是这个完全限定名字，而是 `task004_person_...<action>` 等。**业务读写 DatasetVersion 位于真实的子 Action Job**；不能仅凭 Application 的 Dataset 列表为空就否认已有读写血缘。
 
@@ -83,9 +83,10 @@ API 响应原文可能包含字段元数据；对外展示前检查内容，**�
 | 物理 RDD Action | `START_ONLY_OBSERVED`、原严格 `business_dataset_gate=INCOMPLETE`，未伪造终态 |
 | 用户 LAN 浏览器首页及业务 Job 列表 | **PASS（用户 Safari 截图）**；官方 Dashboard，Airflow DAG/Writer/Reconcile Spark Application 的 COMPLETED Job Cards，139 events / 23 datasets / 4 sources / 71 jobs 的截图时点统计 | 
 | Reconcile Application 的 Job/LATEST RUN Facets | **PASS（用户桌面 Chrome 截图）**；真实 Job 状态 COMPLETED、LATEST RUN 面板、parent Run Facet 存在，Spark 3.5.7 / OpenLineage Adapter 1.47.1 | 
-| 精确 Parent job/run ID / 完整 Run History | **NOT_CHECKED**；parent 子对象尚未展开，RUN HISTORY 尚未点击 | 
-| 真实 Dataset/Lineage 视觉连接 | **NOT_CHECKED**；已打开 Application Lineage 画布，但仅有单一 JOB 节点；须查看底层 Spark Action Job 或 Dataset 页面 | 
+| P5 Reconcile Parent 视觉匹配 / Run History | **PARTIAL PASS**：Airflow Namespace、Run UUID 可见前缀匹配 #40209504539；完整 UUID 被屏幕省略号截断，RUN HISTORY 仍未检查 | 
+| 官方 Column Level 实际字段连线（另一历史 Batch） | **PASS**：历史 `synthea-new-only-gh-39625216978` / `ingest_date=2026-10-21` Dataset 可见 Column lineage；不是 P5 新批次 | 
+| P5 指定 Batch 的 Dataset Lineage 视觉连接 | **OPEN**：`40208104106` 的 Reconcile Application Full Graph ON 仍只有单 JOB；需查本批次实际 Processing Dataset / Spark Action | 
 | 外网安全 / 公网可达性 | **NOT_CHECKED**；不据此开放 NodePort 30999 |
 | 真实 Listener outage 故障注入 / PG14 备份恢复 | **NOT_CHECKED**；不属于 P6 本次 GET-only Run |
 
-**终结标准**：实际打开官方 Web 和观察真实 Job Card 已在用户 Safari 截图中证明；P6 7.1 后续须展开 parent.job/parent.run 详情，并在底层 Spark Action/Dataset 页面检查真实 Dataset/Lineage 连线（并记录是否受 RDD 限制影响），仅由此才能勾选浏览器级验收。后续 P6 7.3 的 OpenSpec Archive 必须在实际 Main/CI/证据核对与治理规则满足后单独申请；**本文件及成功 Run 均不自动授权 Archive**。
+**终结标准**：实际打开官方 Web 和观察真实 Job Card 已在用户 Safari 截图中证明；P6 7.1 的 Parent namespace/Run 前缀现已在 GUI 展开且与独立证据匹配；后续须在 Dataset 或实际 Spark Action 页面定位 **`ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106`** 的真实 Dataset 输入输出连线，勿选择旧 `39625216978` Batch（并记录是否受 RDD 限制影响），仅由此才能勾选浏览器级验收。后续 P6 7.3 的 OpenSpec Archive 必须在实际 Main/CI/证据核对与治理规则满足后单独申请；**本文件及成功 Run 均不自动授权 Archive**。
