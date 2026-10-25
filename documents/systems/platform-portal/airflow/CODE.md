@@ -11,7 +11,7 @@ source_sha: 460069e37d3ac38ec2f240f3105d023799340785
 | --- | --- |
 | [`airflow/dags/platform_portal_openlineage_probe.py`](../../../../local-data-platform/airflow/dags/platform_portal_openlineage_probe.py) | 真实 Airflow opt-in Probe DAG，`schedule=None`，2 个无业务数据任务；部署读取仍通过现有 Airflow DAG GitSync |
 | [`new_only_omop_consumer.py`](../../../../local-data-platform/airflow/dags/new_only_omop_consumer.py) | **P2 业务侧显式 opt-in**：使用与 A3 一致的 `enable_lineage(DAG(...))`；14 个原 Task、路由和 Writer 许可不改。只在 Airflow `SELECTIVE_ENABLE=True`、实际执行组件具备 Provider/Transport 时发出真实事件；运行态尚未验收 |
-| [`test_new_only_openlineage_opt_in.py`](../../../../local-data-platform/tests/landing_discovery/test_new_only_openlineage_opt_in.py) | 离线 AST 合同：DAG selective wrapper、14 Task ID、XCom/Writer Gate，以及 Discovery 默认不 opt-in 的负向检查 |
+| [`test_new_only_openlineage_opt_in.py`](../../../../local-data-platform/tests/landing_discovery/test_new_only_openlineage_opt_in.py) | 离线 AST 合同：DAG selective wrapper、14 Task ID、XCom/Writer Gate，以及 Discovery 默认不 opt-in 的负向检查；新用例枚举**整个**已提交 `airflow/dags/*.py` 的 AST，只允许 NEW_ONLY / A3 Probe 两个组件具有 `enable_lineage` 调用及 Import。**仍非其他 DAG 真实运行时的负向事件证明** |
 | [`configure-scheduler.sh`](../../../../platform-portal/openlineage/airflow/configure-scheduler.sh) | 有副作用：改共享 Scheduler 的 OpenLineage 环境变量、选择性采集并触发滚动更新 |
 | [`verify-real-events.sh`](../../../../platform-portal/openlineage/airflow/verify-real-events.sh) | **真实 DAG Trigger**、Task 状态和 Marquez API 查询，不是离线单元测试 |
 

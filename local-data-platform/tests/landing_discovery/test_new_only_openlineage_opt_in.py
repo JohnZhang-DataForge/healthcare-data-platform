@@ -117,6 +117,45 @@ class BusinessOpenLineageOptInContract(unittest.TestCase):
         self.assertIn('dag_id="landing_batch_discovery"',
                       DISCOVERY.read_text(encoding="utf-8"))
 
+    def test_all_shipped_dag_modules_have_exact_selective_opt_in_allowlist(self):
+        """Fail if any other shipped DAG/helper enables Lineage silently.
+
+        This inventories source AST only. It does not run Airflow tasks or
+        prove the deployed Provider/transport or live negative event behavior.
+        """
+        approved = {"new_only_omop_consumer.py",
+                    "platform_portal_openlineage_probe.py"}
+        files = sorted(DAGS.glob("*.py"))
+        self.assertGreaterEqual(len(files), 4)
+        self.assertTrue(approved.issubset({p.name for p in files}))
+        for path in files:
+            with self.subTest(path=path.name):
+                tree = _tree(path)
+                calls = [
+                    node for node in ast.walk(tree)
+                    if isinstance(node, ast.Call) and (
+                        (isinstance(node.func, ast.Name)
+                         and node.func.id == "enable_lineage") or
+                        (isinstance(node.func, ast.Attribute)
+                         and node.func.attr == "enable_lineage"))
+                ]
+                imported_selective = [
+                    node for node in ast.walk(tree)
+                    if isinstance(node, ast.ImportFrom) and
+                    node.module == (
+                        "airflow.providers.openlineage.utils.selective_enable")
+                ]
+                wrappers = _lineage_wrapped_dags(tree)
+                if path.name in approved:
+                    self.assertEqual(len(calls), 1)
+                    self.assertEqual(len(imported_selective), 1)
+                    self.assertEqual(len(wrappers), 1)
+                else:
+                    self.assertEqual(calls, [], "unexpected DAG opt-in")
+                    self.assertEqual(imported_selective, [],
+                                     "unrelated module imports selective opt-in")
+                    self.assertEqual(wrappers, [])
+
     def test_a3_probe_remains_opted_in(self):
         self.assertEqual(len(_lineage_wrapped_dags(_tree(PROBE))), 1)
 
