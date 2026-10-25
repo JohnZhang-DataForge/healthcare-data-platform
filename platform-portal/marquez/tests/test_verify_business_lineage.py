@@ -317,6 +317,36 @@ class BusinessLineageTests(TestCase):
         report = lineage.evaluate(data, BATCH, apps)
         self.assertEqual(report["business_edges_gate"], "INCOMPLETE")
 
+    def test_cli_uses_business_edges_without_erasing_strict_incomplete(self):
+        data, apps = self.verified_live()
+        argv = ["--batch-id", BATCH, "--person-app", apps["person"],
+                "--encounter-app", apps["encounter"],
+                "--reconcile-app", apps["reconcile"]]
+        printed = []
+        with patch.object(lineage, "snapshot", return_value=data), patch.object(
+            lineage, "print", create=True, side_effect=printed.append
+        ):
+            self.assertEqual(lineage.main(argv), 0)
+        import json
+        report = json.loads(printed[0])
+        self.assertEqual(report["business_edges_gate"], "PASS")
+        self.assertEqual(report["business_dataset_gate"], "INCOMPLETE")
+        self.assertEqual(report["p4_design_a_gate"],
+                         "PASS_WITH_KNOWN_RDD_LIMITATION")
+        self.assertEqual(report["pg17_independent_readback"], "NOT_CHECKED")
+
+    def test_cli_does_not_pass_without_real_parent(self):
+        data, apps = self.verified_live()
+        data["roles"]["reconcile"][0]["detail"]["facets"]["parent"][
+            "run"]["runId"] = "fabricated"
+        argv = ["--batch-id", BATCH, "--person-app", apps["person"],
+                "--encounter-app", apps["encounter"],
+                "--reconcile-app", apps["reconcile"]]
+        with patch.object(lineage, "snapshot", return_value=data), patch.object(
+            lineage, "print", create=True
+        ):
+            self.assertEqual(lineage.main(argv), 1)
+
     def test_snapshot_fetches_exact_qualified_application_without_prefix_spoof(self):
         apps = {"person": "person-app", "encounter": "visit-app",
                 "reconcile": "reconcile-app"}
