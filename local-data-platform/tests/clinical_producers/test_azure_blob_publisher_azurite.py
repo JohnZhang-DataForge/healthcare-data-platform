@@ -36,8 +36,8 @@ class AzuritePublisherTests(unittest.TestCase):
         self.raw = raw
         self.plan = {
             "schema_version": VERSION,
-            "hospital_id": "demo-atlanta",
-            "feed_id": "demo-atlanta-fhir-r4",
+            "hospital_id": "atlanta-hospital-a",
+            "feed_id": "atlanta-hospital-a-fhir-r4",
             "request_id": "atlanta-azurite-0001",
             "source_manifest_sha256": "c" * 64,
             "target_format": "FHIR_R4",
@@ -76,7 +76,7 @@ class AzuritePublisherTests(unittest.TestCase):
                               **args)
 
     def test_existing_wrong_bytes_fail_closed_and_no_manifest(self):
-        data_key = ("healthcare/test/demo-atlanta/demo-atlanta-fhir-r4/"
+        data_key = ("healthcare/test/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/"
                     "atlanta-azurite-0001/FHIR_R4/fhir/encounter.json")
         self.service.get_blob_client(self.container, data_key).upload_blob(
             b"conflict", overwrite=False)
