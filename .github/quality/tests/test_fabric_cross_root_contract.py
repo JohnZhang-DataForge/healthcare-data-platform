@@ -66,7 +66,7 @@ class FabricCrossRootContract(unittest.TestCase):
         self.assertNotIn("capacity_id", main)
         self.assertIn("module \"storage\"", main)
         self.assertIn("blob_role_assignments  = merge(var.blob_role_assignments, local.workspace_identity_role_assignments)", main)
-        self.assertIn("blob_role_assignments = {", tfvars)
+        self.assertIn("blob_role_assignments  = {", tfvars)
         self.assertIn("healthcare_blob_publisher = {", tfvars)
         self.assertIn('principal_id = "01cd737f-6c86-48bb-ae5c-209246d62ed6"', tfvars)
         self.assertIn('role         = "Storage Blob Data Contributor"', tfvars)
