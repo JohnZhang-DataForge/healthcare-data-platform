@@ -67,11 +67,19 @@ def verify():
         require(required.issubset(env), "KPO_PARENT_FIELDS_MISSING")
         require(env["OPENLINEAGE_PARENT_REQUIRED"] == "YES",
                 "KPO_PARENT_NOT_REQUIRED")
+        # Provider 2.x under Airflow 3 reads logical_date from DagRun
+        # through TaskInstance.get_template_context(), not ti.logical_date.
+        # Supply only that read-only interface: no DB or task execution.
+        when = pendulum.datetime(2026, 10, 24, 21, 0, tz="UTC")
+        dag_run = SimpleNamespace(
+            dag_id=EXPECTED_DAG, logical_date=when,
+            run_after=when, conf={}, clear_number=0,
+        )
         ti = SimpleNamespace(
             dag_id=EXPECTED_DAG, task_id=task_id, try_number=1,
-            map_index=-1,
-            logical_date=pendulum.datetime(2026, 10, 24, 21, 0, tz="UTC"),
+            map_index=-1, dag_run=dag_run,
         )
+        ti.get_template_context = lambda dr=dag_run: {"dag_run": dr}
         rendered = {
             key: jinja.from_string(env[key]).render(
                 macros=provider_namespace, task_instance=ti, ti=ti
@@ -87,14 +95,17 @@ def verify():
         run_id = rendered["OPENLINEAGE_PARENT_RUN_ID"]
         require(str(uuid.UUID(run_id)) == run_id,
                 "INVALID_REAL_PROVIDER_UUID")
-        # Provider should derive unique IDs for different task instances.
+        # Same task-instance context must yield the same UUID without
+        # writing state; distinct task IDs must not collide.
+        require(real_provider_macros.lineage_run_id(ti) == run_id,
+                "NONDETERMINISTIC_PROVIDER_RUN_ID")
         require(run_id not in seen_runs, "DUPLICATE_TASK_RUN_ID")
         seen_runs.add(run_id)
         print("AIRFLOW_OPENLINEAGE_REAL_MACRO_RENDER=" + task_id + ":PASS")
     require(len(seen_runs) == len(ROLES), "INCOMPLETE_OPENLINEAGE_TASKS")
     print("AIRFLOW_OPENLINEAGE_PROVIDER_FUNCTIONS_OFFLINE=PASS")
     print("AIRFLOW_LIVE_PLUGIN_REGISTRATION=NOT_CHECKED")
-    print("AIRFLOW_DATABASE_QUERY=NONE")
+    print("AIRFLOW_TASK_INSTANCE_CONTEXT=MINIMAL_READONLY_TEST_DOUBLE")\n    print("AIRFLOW_DATABASE_QUERY=NONE")
     print("DAGRUN_CREATED=NO")
     print("KUBERNETES_SPARK_OR_WRITER_EXECUTION=NO")
 
