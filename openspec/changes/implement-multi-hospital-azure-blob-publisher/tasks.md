@@ -21,7 +21,7 @@
 - [ ] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
 - [ ] 3.2 Johns Creek：新 FHIR Source Request → real OIE Channel → independent HL7 ADT A01 readback → Blob Publisher；非住院事件显式跳过，不制造 A01。
 - [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
-- [ ] 3.4 **受控医院身份命名整改**：Profile、FHIR Publisher、OIE Channel/HL7 Assigning Authority、两仓 Workflow、测试和 Blob Key 使用固定 Hospital A/B 标识；对 `demo-` 临时身份 fail-closed；重新发布匹配源码的 Publisher Digest 并验证运行前匹配。未完成前禁止 Atlanta 真实 PUT。
+- [x] 3.4 **受控医院身份命名整改**：Profile、FHIR Publisher、OIE Channel/HL7 Assigning Authority、两仓 Workflow、测试和 Blob Key 使用固定 Hospital A/B 标识；对 `demo-` 临时身份 fail-closed；重新发布匹配源码的 Publisher Digest 并验证运行前匹配。未完成前禁止 Atlanta 真实 PUT。
 
 ## 4. Guarded Live and Documentation
 - [x] 4.5 用户撤销独立 Publisher Namespace，集群严格核对后删除 `dw-az-blob`，Publisher 改为 `dw-synthea` 只读使用 Generator 现有 PVC，并迁移最近合并的 DIRECT FHIR Runtime Job 模板/回归；OIE 独立不变。
@@ -159,3 +159,11 @@
 - 标识的生成/校验、Azure Blob 路径及 immutable Manifest 元数据必须一致；旧 Prefix 可能已有对象时只读保留，不复用旧 Identity、同 Request ID 改名重放或强制覆盖。
 - `hospital_profiles.validate_profile` 和 `blob_publish_contract.verified_plan` 在进入 Generator 或 Azure SDK 之前拒绝 `demo-` 占位 Hospital/Feed ID，相关正负测试写入 GitHub CI。
 - **发布版本门禁**：旧 Publisher Digest `sha256:06324ae6571a6f72f3b317a1ba577851952bb421fc33ef1d87b4718acfcea4e6` 是本次代码更名前生成，不能用于宣称新策略已打包。先完成 Healthcare GitHub-hosted CI、对应 GHCR 新 Digest，然后再更新 Self-Runner 的手工 E2E 和只读预检，并做静态及 Live 只读验证。未完成真实 Azure PUT/GET/Manifest+幂等前 3.1/4.2 继续 OPEN。
+
+### 3.4 — 稳定身份整改后端到端独立验收（2026-10-25）
+
+- Healthcare [PR #490](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/490) **已合并** Main `b033d7b8fd8cf752de7e64b240ea3dc83ce1fe7d`。两医院正式 Hospital/Feed IDs、Johns Creek Assigning Authority、Profile/Plan Schema、Python/Node 正负测试及新的临时 OIE 完整转换/独立读回 [Run #40225717610](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40225717610) SUCCESS；旧历史 FHIR Artifact 不再作为新身份新 Channel 的业务验收输入。
+- Publisher [GHCR Main Run #40225880536](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40225880536) **SUCCESS**：新精确 Digest `sha256:a92d06610813a38d3d9707133038f503f1f49b1d76a4144bc2500bded321e3da`，Nonroot/无网络 Smoke PASS，未修改 latest。旧 Digest 不包含这次修改。
+- Self-Runner [PR #297](https://github.com/JohnZhang-DataForge/Self-Runner/pull/297) **已合并** Main `6b1ac1849b5277f647abdedd7f4ee77f526bffbb`，手工 E2E 和只读预检固定新医院 ID / Healthcare SHA / GHCR Digest；Hosted [Run #40226017942](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226017942) PASS；合并 Main 后实际 [Readonly Run #40226055238](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226055238) **SUCCESS**：worker01 Ready、Generator PVC Bound、全集群 Active Job 0、Scoped Secret Keyset PASS、新 Atlanta Profile PASS、Profile ConfigMap 0，无 K8s/Azure 写入。
+- 3.4 仅代表**业务身份整改、镜像发布、离线 CI 与真实只读门禁**已完成。**未**触发新 Atlanta FHIR Azure PUT/GET/Manifest/Retry；Johns Creek 共享 OIE Channel 尚未部署本次新版本，历史 32 条仍原样保留。Task 3.1/3.2/4.2/4.7 继续 OPEN，不能因本勾选视为双医院 E2E 成功。
+- 详见 [HOSPITAL-AB-IDENTITY-RENAME-20261025.md](evidence/HOSPITAL-AB-IDENTITY-RENAME-20261025.md)。
