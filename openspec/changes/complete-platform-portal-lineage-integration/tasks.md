@@ -1,7 +1,15 @@
 # Tasks — Platform Portal Real Business Lineage MVP
 
-> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED (HISTORICAL LINEAGE EMPTY) / P2 REAL NEW_ONLY AIRFLOW JOB/RUN LIVE PASS / P3 ISOLATED SPARK I/O LIVE PASS / P4 PERSON+VISIT I/O LIVE PASS, RECONCILE INPUTS PARTIAL / P5 WRITER OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
+> **STATUS: ACTIVE / P0 COMPLETE / P1 INFRA VERIFIED / P2 REAL NEW_ONLY AIRFLOW JOB/RUN LIVE PASS / P3 ISOLATED SPARK I/O LIVE PASS / P4 DESIGN A BUSINESS EDGES ACCEPTED WITH RDD ACTION TERMINAL GAP / P4 5.4 + P5 WRITER OPEN.** 本 Change 优先交付 Portal；`modernize-legacy-task-code` 命名及结构实施暂停，但原 Change 保留 Active，不伪称关闭。尚未批准任何共享 K8s/PG/S3 变更；勾选源代码静态工作不等于运行验收。
 
+
+### P4 Design A source closeout — 2026-10-25 (CI and prior independent real-event evidence)
+
+- **Acceptance basis and distinction**: Existing independent exact-identity Marquez GET / PG14 evidence [Self-Runner #40197583583](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197583583) and [#40197739051](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197739051) already proved 3/3 qualified Spark Applications COMPLETED with real Airflow task ParentRun UUIDs, 3/3 dataset-bearing child→actual Spark application Parent UUIDs, real Landing→Processing Parquet and Reconcile's same two Processing DatasetVersions; four physical START-only RDD runs were confirmed independently. These are previous *real* run audits, **not a new P4 live run**.
+- **Bounded Design A verifier**: `platform-portal/marquez/tests/verify_business_lineage.py` now reports independently: `business_edges_gate` (strict real write/read DatasetVersion *identity* + exact Airflow/Spark parent hierarchy + Application COMPLETE), `rdd_action_lifecycle` (physical START-only state not suppressed), and `p4_design_a_gate` (PASS vs PASS_WITH_KNOWN_RDD_LIMITATION vs INCOMPLETE). The pre-existing `business_dataset_gate` remains a stricter terminal-gated result and continues `INCOMPLETE` for those four historical RUNNING actions. CLI exit success reflects only independently validated Design A *business edges*, not all physical actions; missing exact Parent, wrong/extra DatasetVersion, missing App, API/Schema error all fail closed. Existing Writer/PG17/SKIP remain `NOT_CHECKED`.
+- **Owner-approved P4 5.3 interpretation**: 5.3 is accepted **only under Design A's explicitly documented physical Action observability exception**, using the real read-only evidence above plus offline positive/negative source tests. No physical RDD COMPLETE is inferred or emitted; the raw lifecycle issue remains OPEN as a separate technical debt. The original raw `business_dataset_gate` must **not** be rewritten to PASS. If CI fails, or subsequent independent GET finds incorrect Parent/DatasetVersion, revoke this acceptance and reopen 5.3.
+- **5.4 handoff to P5**: Writer commit/durable PG17 state correlation requires a **new**, authorized P5 synthetic Batch; 5.4 remains unchecked while Writer, PG17 readback, same-batch SKIP and ledger correlation are untested in this round. No shared-runtime operations, image/JAR upgrades, lineage event POST or historical Batch replay in this PR.
+- **Future live acceptance**: P5's 6.4 must rerun the Design A checker against the P5 batch at exact Healthcare SHA and also independently check writer transaction evidence; do not treat this docs/CI merge as that verification.
 
 ### P4 recorded design decision A — 2026-10-25 (DESIGN ONLY; no live rerun)
 
@@ -173,7 +181,7 @@
 
 - [x] 5.1 对照实际 SparkApplication Renderer/Control Runtime/Image，设计不触碰业务算法的最小 Listener 接入；定义可核验的 Batch/DagRun/Spark Run/Dataset 身份映射。**确定 control-Pod 生成三个实际 SparkApplication、镜像仅 NEW_ONLY v2 子镜像、Batch/run_id/Processing URI 已由现有 State/XCom 保留；无伪造 parent。**
 - [x] 5.2 业务模板/包装层及受影响镜像精确改动，补全 CODE/单测/负向回归；只重建受影响的镜像和其必要父子依赖，避免无关 8 镜像重建。**PR #441 静态 CI/Main 合并 PASS；单个 `landing-processing-v2` Child Clean Build/Smoke/GHCR Latest Digest PASS；真实 Pod/E2E 独立待验。**
-- [ ] 5.3 对真实 Person、Visit、Reconcile 运行核对 Marquez events/edges；禁止人工伪造 parent/COMPLETED event 补洞。**Person/Visit 真正 S3A Input+Output Child-Run COMPLETED，Reconcile 两个真实 Input 均被采集但两个 child Run 仍 RUNNING；尚非全面 PASS。证据 #40125843864 / #40125995864。**
+- [x] 5.3 对真实 Person、Visit、Reconcile 运行核对 Marquez events/edges；禁止人工伪造 parent/COMPLETED event 补洞。**依据用户批准的方案 A 限定验收：真实 Spark App/完整 Airflow Parent、Person/Visit 真实 S3 输入输出版本、Reconcile 精确两个版本及 Action→App Parent 全部由独立 #40197583583 实机确认；四条物理 RDD START-only / RUNNING 由 #40197739051 原样记录为独立的已知观测缺口，原有 strict `business_dataset_gate=INCOMPLETE` 不改写，新的严格业务边字段必须经 CI 正反向测试。不是“所有物理 Run 均 COMPLETED”，也不是本轮重新跑了 Live。5.4/P5 仍 OPEN。**
 - [ ] 5.4 Writer 业务提交的可信状态关联方案：复用现有真实执行结果和 PG17 readonly Ledger/Checkpoint/CDM readback，不改变事务/Fencing，不凭 Spark COMPLETED 认定 Writer COMMIT。
 
 ## 6. P5 — Fresh synthetic batch end-to-end acceptance
