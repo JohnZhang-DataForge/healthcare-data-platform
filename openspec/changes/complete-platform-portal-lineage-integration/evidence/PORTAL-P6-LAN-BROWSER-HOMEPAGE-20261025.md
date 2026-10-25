@@ -1,5 +1,9 @@
 # P6 — 用户提供的真实 LAN 浏览器可视化证据审查（2026-10-25）
 
+> **最新最终结论（覆盖本文下方历次“尚未验证目标 Batch”历史快照）：P6 7.1 方案 A 的真实官方 Marquez GUI 演示已通过。** 用户在同一内网 Chrome 官方 Web 页面实际打开新批次 `synthea-new-only-gh-40208104106` 的 **Encounter 与 Patient 两个 Processing Dataset**，并在该 Batch 的 Table Level / Column Level 看到有向 Job 数据流和逐列映射；对应历史 P5/P6 API GET 已证明 Reconcile 消费两份真实 DatasetVersion。该 GUI 没有展示 Reconcile Application 的完整合并图、完整 Run History 或物理 RDD Action 的最终态；这些限制**仍单独如实披露**。P6 7.3 OpenSpec Archive 仍须另行核对整个 Change 的未完成任务，不能从 7.1 PASS 推导整个 Change 完成。用户截图中带私网地址，**只保留文字审查，不在 GitHub 提交原始图片**。
+
+
+
 > **最新分层结论：Safari 首页/Job 列表 PASS；P5 Reconcile Application Chrome GUI Parent job namespace 和 Run ID 前缀可见且与独立 API 证据吻合；Full Graph=ON 时该 Application 仍为单一 Job 节点；另一历史 Batch 在官方 Dataset 页面真实呈现 Column Lineage 连线 PASS。** 但历史 Dataset 属于 2026-10-21 的 Batch，**不是** P5 指定的 2026-10-25 Batch；P6 7.1 的目标 Batch Dataset GUI 精确对账仍 OPEN，7.3 Archive 不可提前关闭。 本登记是用户在项目会话中提供的最初三张手机浏览器截图及后续三张桌面 Chrome Reconcile Job/Run 截图的**文字审查结果**，并不是新的 GitHub Actions、外部网络探测或在本仓库公开的图片附件。未经用户额外批准，**不将含内部网络地址的原始截图上传 GitHub**。
 
 ## 与机器自动验收的独立关联
@@ -46,7 +50,26 @@
 5. **最短剩余步骤：**在 Datasets 页选择 `s3://health-processing`，只打开 Dataset 名包含 `ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106` 的 `entity=person` 或 `entity=encounter` Processing 输出，查看其 Column/Table Level 的真实输入边；也可进入该 Batch 的实际 Spark Action Job，而不是 Application 顶层孤点。记录屏幕上可见的目标 Batch、Dataset namespace 和连线。若 GUI 无法显示目标 Batch 的边则记录事实，不虚构。
 6. **安全：**截图中的浏览器连接标记/局域网主机等均不进入仓库，元数据页面也不包含已授权的新写入动作；不触发 Spark/Airflow/Writer、PG 或任意事件补发，不点击 GUI 的 `DELETE`。
 
-## 下一步 / 收尾 Gate
+## P6 7.1 目标 Batch 浏览器可视化正式验收：真实 Encounter + Patient（2026-10-25）
+
+此节是用户最后提供的 **4 张桌面 Chrome 内网官方 Marquez Web 截图**的视觉审查，按截图页面显示的完整 DataSet 名称与既有 P5 Manifest/Run 身份核对。原始带私网主机地址的图片**仅保留在会话中，不上传 GitHub**；原 P5 无需也未重新运行。当前 Docs-only 源码基线为 Healthcare Main `e9feb459c8f2f75b4d3bba68b1f917aadfa68ef0`，业务事件本身仍绑定当时的 Healthcare `95f480078da622178f4fa7b68d986d8e05a91ae9`。
+
+| GUI 观察内容 | 确切独立 Batch 身份 / 对应事实 | 结果 |
+| --- | --- | --- |
+| **Encounter / Visit Processing Dataset** | 页面 Column Level 头部明确显示 `Namespace=s3://health-processing`、`ingest_date=2026-10-25`、`batch_id=synthea-new-only-gh-40208104106`、`entity=encounter`、`run_id=task004-encounter-20261025T154424Z-9`、`work/normalized/data` | **PASS：精确目标 Batch 的实体及运行身份** |
+| Encounter Table Level | 同一命名空间的目标 Dataset 画布显示一个上游 Dataset，经过 `task004_encounter...` Spark Action Job 连接到输出 Dataset；图中有输入/作业/输出节点 | **PASS：真实 Table Level 数据流可视化** |
+| Encounter Column Level | 在目标 `40208104106` 的 Column Level 截图中，字段间实际可见 `STOP→end_datetime`、`PATIENT→source_person_id`、`PROVIDER→source_provider_id`、`START→start_datetime`、`Id→source_encounter_id`、`PAYER_COVERAGE→payer_coverage` 等边 | **PASS：精确目标 Batch 的列级转换可视化** |
+| **Patient / Person Processing Dataset** | 页面 Column Level 头部明确显示 `Namespace=s3://health-processing`、`ingest_date=2026-10-25`、`batch_id=synthea-new-only-gh-40208104106`、`entity=patient`、`run_id=task004-person-20261025T154424Z-9`、`work/normalized/data` | **PASS：精确目标 Batch 的实体及运行身份**；此处真实路径是 `entity=patient`，不是 `entity=person` |
+| Patient Table Level | 同一目标 Dataset 显示上游 Dataset → `task004_person_...` Spark Action Job → Processing 输出 Dataset | **PASS：真实 Table Level 数据流可视化** |
+| Patient Column Level | 目标 Batch 的两个 Dataset 列节点之间实际可见 `ETHNICITY→ethnicity_code`、`BIRTHDATE→birth_date`、`Id→source_record_id`、`DEATHDATE→death_date`、`GENDER→gender_code`、`RACE→race_code` | **PASS：精确目标 Batch 的列级映射可视化** |
+| Reconcile Parent 与两份输入版本 | 浏览器之前已展示 Reconcile Application 的 `RUN FACETS.parent`、匹配 Airflow ParentRun 前缀；原 [独立 GET-only #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 和 [P6 API #40218701308](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40218701308) **PASS** 精确证明 Reconcile 真实子 Spark Action 消费 Person/Encounter 上述两份 Processing DatasetVersion | **PASS：GUI 的两份真实输出 + 独立 GET 的版本关联**；未声称浏览器同一个画布上显示 Reconcile 双输入 |
+| Writer PG17 durable COMMIT + 同批 SKIP | 原 [#40208104106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106) 原 Workflow **FAILURE** 但实际 Writer COMMIT；后续 [独立只读 #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 与 [同批 SKIP #40209818676](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676) 分别证明 PG17 +100 Person/+15,742 Visit 和幂等零变化 | **PASS：保留原有独立证据，不以截图代替 DB 提交** |
+
+**方案 A 判定**：官方 Marquez 内网浏览器的首页、真实业务 Job、ParentRun Facet、**P5 同一新 Batch 的 Person 和 Encounter 两份 Dataset 的 Table/Column Level 连线**，与 GET-only 的精确 Reconcile 输入 DatasetVersion 已形成相互独立、可重复查询的演示证据。因此原 P6 **7.1 通过**，在 OpenSpec 勾选 `[x]`，原有 [演示 Runbook](../../../../documents/systems/platform-portal/marquez/SHOWCASE-RUNBOOK.md) 按真实路径更新。**保留三个不同的边界**：(a) `Full Graph=ON` 的 Reconcile *Application* 顶层仍仅一个 Job 节点；(b) 物理 RDD `START_ONLY_OBSERVED`，原严格 `business_dataset_gate=INCOMPLETE` **绝不改成 PASS**；(c) 本次并未做 GUI 的完整 `RUN HISTORY` 浏览、公共网络可达性或 PG14 备份恢复演练。
+
+**Archive 安全 Gate**：该 OpenSpec Change 在勾选 P6 7.1 之前仍有总计 11 个未勾选条目（包括 P2/P3 历史项、P6 7.1/7.3、8.x 及后续镜像/Listener 验收项）。本次仅凭屏幕+历史 API 证据关闭 **7.1**；其他项逐项核对并依据对应 PR/Run 关闭或拆分之前，**7.3 和整个 Change Archive 仍 OPEN**。本轮没有 K8s/Airflow/Spark/S3/PG 写入、镜像重建或 OpenLineage 人工 COMPLETE。
+
+## 后续归档前检查 / 历史遗留 GUI 步骤（以下旧说明已由上节最终结果覆盖）
 
 P6 7.1 的剩余浏览器级验收路径：Reconcile Application 的 `parent.job.namespace` 及 `parent.run.runId` 前缀已展示且与独立 GET 证据吻合；Full Graph=ON 仍为孤点。历史 Batch 的 Column Level 图已展示。**请在 Datasets 页面改选 P5 指定 Batch `synthea-new-only-gh-40208104106`（`ingest_date=2026-10-25`）而非历史 `39625216978`，核对至少一个真实 Processing Dataset 的输入/输出连线并截图。** 理想情况还要在相同 Batch 上看到 Person + Visit 两个 Processing Dataset 对 Reconcile 的输入关联。**如果 GUI 未显示该图**，如实记录 GUI 局限而不能拿 API PASS 冒充屏幕实际呈现。
 
