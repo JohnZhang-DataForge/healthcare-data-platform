@@ -1,5 +1,9 @@
 # Portal Business Lineage MVP
 
+## Purpose
+
+Define the accepted, LAN-only Healthcare Platform Portal business lineage MVP boundary: additive Airflow NEW_ONLY and Spark OpenLineage instrumentation, correct real Job/Run/Parent and S3 DatasetVersion identities, honest PG17 Writer commit evidence, and safe native Marquez Web readback. This specification does not implement public anonymous access or Azure/Fabric cross-platform presentation. Historical A4 unknown-job unique root cause is independently deferred; physical RDD Action START-only remains a disclosed Design A observability limitation rather than a repaired event lifecycle.
+
 ## Requirements
 
 ### Requirement: Observability remains additive to existing business contracts
