@@ -1,5 +1,7 @@
 # P2 3.3 — 非 opt-in Airflow Smoke DAG 真实负向事件验收（2026-10-25）
 
+> **最终验收：P2 3.3 的「NEW_ONLY 正向 + 无业务 Smoke 负向」按明确限制 PASS，原 #40247000949 Workflow FAILURE 保留。**
+
 > **范围：** 选择已存在、只调用 `BashOperator` 打印消息的 `airflow_smoke_test.check_airflow`，**不运行** `landing_batch_discovery`（S3/PG）或任何 `new_only_omop_consumer` 业务 Task/Writer。原始测试 Workflows 是 **Self-Runner 临时分支**的单次 Push 入口，不能未经审查合并为 Main 的常驻自动执行器。
 
 ## 版本与证据
@@ -19,7 +21,9 @@
 
 ## 清理/归档前必要 Gate
 
-- **原 #40247000949 完整 Run 终态及 Original Paused 状态恢复：待独立最终读回确认**。该 Run 的结果轮询表达式可能存在格式问题，不能用原 Job 的 Pipeline 结论替代上方独立核验，也不因此二次触发 Smoke。待确认 Always Restore/Artifact 后把实际结果补在这里。
+- **原 #40247000949 的最终状态 = FAILURE**，不能改写为 SUCCESS。[原 Artifact #12618978964](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247000949/artifacts/12618978964)。原任务实际一次性触发了 `portal-p2-nonoptin-gh-40247000949`；但是后面的 `python3 -c` 状态查询字符串使用了**字面量反斜杠-n**，被 stderr 抑制后得到空状态，轮询结束时报 `BLOCKED:SMOKE_DAG_NOT_SUCCESS=`（2026-10-26 00:02:42 UTC），因此该 Workflow 的 Marquez 比较步骤 **SKIPPED**。这属于**测试监视脚本**缺陷，不是 DagRun/Task 或 Marquez 业务失败。**绝不重触发该测试 DagRun**。
+- **原暂停状态从未改变**：#40247000949 preflight 实际 `P2_ORIGINAL_PAUSED=false`，所以没有执行 unpause/pause，Always Restore 步骤 `SUCCESS` 并记录 `P2_SMOKE_PAUSE_NEVER_CHANGED=YES`。
+- **结束后的再次独立读回**：[Self-Runner #40247531737](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247531737) **SUCCESS**、[Artifact #12619835296](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247531737/artifacts/12619835296)，于 **2026-10-26 00:04 UTC** 再次独立确认 `DagRun=success`、`check_airflow=success`、`P2_NONOPTED_EXISTING_JOB_NAMES=[]`、`P2_NO_NEW_NONOPTIN_OR_UNKNOWN_MARQUEZ_EVENTS=PASS`；`P2_SMOKE_CURRENT_PAUSED=false`、`P2_ORIGINAL_UNPAUSED_SETTING_PRESERVED=PASS`，并明确给出 `P2_POST_WORKFLOW_LATE_EVENTS_NEGATIVE=PASS`。该最后一步仅 GET/DB 查询，无新 DAG trigger/事件发送或暂停变更。
 - 非 opt-in DAG 的 Live Negative 仅实际触发了这一个**无业务** Smoke；其他真正的 S3/PG DAG 只进行了已合并源码 AST 负向覆盖，**没有运行它们**。因此不能声称“所有 DAG 均经过 Live 负向执行”。
 - 此测试没有业务 Batch/Manifest、Synthea、SparkApplication 或 Writer COMMIT；不推断 PG17 计数变化，也不修改既有 RDD START-only 的设计 A 限制。
-- PR/Status 完成前，应核对原 DAG pause 的恢复是否确实发生且不影响现有其他 Session；任何不确定事项保持 OPEN，不凭文档将其抹除。
+- **P2 3.3 可按范围勾选**：正向真实 NEW_ONLY 10 Job+Run（#40126168286）+ 全目录源码 AST 负向（PR #498）+ 真实无业务 Smoke 负向（原 #40247000949 仅用于产生本次 Run，两个独立只读 #40247126516、#40247531737 证明结果和状态）。**未触发其它有 S3/PG 副作用的未 opt-in DAG**；因而不能声称每个未 opt-in DAG 都做过 Live Negative，也不承诺将来 Provider/Transport 改变时结论仍成立。
