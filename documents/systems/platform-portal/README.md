@@ -7,6 +7,9 @@ source_sha: 95f480078da622178f4fa7b68d986d8e05a91ae9
 
 # Platform Portal — OpenLineage + Marquez 可观测性子系统
 
+> **本地 P1–P6 阶段 Closeout 决议（2026-10-25；优先于下方各历史时间点快照）**：用户批准按原已验收 **Design A** 正式结束 LAN-only Portal 阶段。精确 P5 Batch 的 Person/Encounter Table/Column 可视化、真实业务 Parent/DatasetVersion、PG17 durable COMMIT 与同批 SKIP 均保留独立验收；A4 旧 `unknown` 唯一事件级归因**未证实但暂缓、移出此 MVP 前置要求**，P4 物理 RDD START-only / `business_dataset_gate=INCOMPLETE` **继续保留**，不可宣称修复。P6 7.3 **另经 Archive PR 方生效**。公网匿名只读 Portal、Azure/Fabric 统一血缘是**未来两个独立项目**，现有 Web-only NodePort 30999 不得直接暴露公网。统一 [Closeout 与遗留决议](../../architecture/design/LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)，下文较早 P6 未通过的段落是历史过程，不代表最新状态。
+
+
 > **最新 P6 原生 GUI 验收（2026-10-25，覆盖下列旧版“目标批次 GUI 尚未通过”说明）**：用户 Chrome 官方 Marquez Web 截图明确展示同一 P5 Batch `synthea-new-only-gh-40208104106`（`ingest_date=2026-10-25`）的 **`entity=encounter` 与 `entity=patient`** 两份 `s3://health-processing` Dataset：Table Level 实际输入→Spark Action→输出 Job/Data edges，Column Level 字段映射连线分别可见 `PATIENT→source_person_id`、`STOP→end_datetime` 和 `ETHNICITY→ethnicity_code`、`Id→source_record_id`。Reconcile 精确消费这两个 DatasetVersion 的证据由独立 GET-only P5/P6 Run 完成；**P6 7.1 方案 A PASS，P6 7.2 已完成**。必须继续披露 Reconcile Application Full Graph 孤点、RDD Action START-only / 严格 `business_dataset_gate=INCOMPLETE`、Writer PG17 独立 durable Readback；这些不是新截图能消除的限制。**P6 7.3 Archive 仍 OPEN**，Change 的其他历史任务尚需核对。详见 [Marquez 内网演示指南](marquez/SHOWCASE-RUNBOOK.md) 与 [用户实际 GUI 证据文字审查](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。含内网地址的图片未上传 GitHub，未改运行环境。
 
 
