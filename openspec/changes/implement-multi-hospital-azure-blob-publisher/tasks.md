@@ -22,6 +22,8 @@
 - [ ] 3.2 Johns Creek：新 FHIR Source Request → real OIE Channel → independent HL7 ADT A01 readback → Blob Publisher；非住院事件显式跳过，不制造 A01。
 - [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
 - [x] 3.4 **受控医院身份命名整改**：Profile、FHIR Publisher、OIE Channel/HL7 Assigning Authority、两仓 Workflow、测试和 Blob Key 使用固定 Hospital A/B 标识；对 `demo-` 临时身份 fail-closed；重新发布匹配源码的 Publisher Digest 并验证运行前匹配。未完成前禁止 Atlanta 真实 PUT。
+- [x] 3.5 **Synthea 100 人 FHIR Filename Contract 修复（代码/CI）**：针对真实 100 Bundle 中的撇号及 Unicode 患者名修正 FHIR Blob leaf 安全字符校验，保留 Synthea 原始文件名和字节、HL7 严格 ASCII、URL 保留字符与路径穿越负向门禁；源端和 Publisher 禁止未经验证写入。
+- [ ] 3.6 **冻结的 100 人 Atlanta Request 发布恢复验收**：失败后只读确认原 Request 文件数、不可变源 Manifest SHA、无 Publisher Job/Blob Manifest，再使用新源码及不可变 Publisher Digest 受控恢复；100 文件逐个 GET/ETag/SHA、Manifest COMMIT、重试及错误 SHA 全 PASS 才完成。禁止直接 rerun 原失败 Workflow。
 
 ## 4. Guarded Live and Documentation
 - [x] 4.5 用户撤销独立 Publisher Namespace，集群严格核对后删除 `dw-az-blob`，Publisher 改为 `dw-synthea` 只读使用 Generator 现有 PVC，并迁移最近合并的 DIRECT FHIR Runtime Job 模板/回归；OIE 独立不变。
@@ -175,3 +177,11 @@
 - 后置 [K8s 只读复核 Attempt 3](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226055238/attempts/3) **SUCCESS**：全局 Active Jobs=0，`dw-synthea` 中包含 `profile.json` 的 ConfigMap=0，Publisher Secret/OIE/PVC 正常；不是新数据写入 Run。
 - **准确边界**：本次仅完成 Atlanta DIRECT FHIR 的 Task 3.1；双医院共同门槛 Task 4.2、Johns Creek Task 3.2、跨院分离 Task 3.3、Secret 轮换 Task 4.7、整体文档归档 Task 4.3 均继续 OPEN。原先 3.4 文本“尚未触发 E2E”是改名验收当时的历史记录，不覆盖本节最新事实。
 - [完整 Source / Blob / Manifest / Run 及后置复查证据](evidence/ATLANTA-DIRECT-FHIR-AZURE-LIVE-E2E-20261025.md)。
+
+### P3.5/P3.6 — Atlanta 100 人真实运行中的 FHIR 文件名兼容缺陷（2026-10-25）
+
+- 用户明确授权新的 `population=100` Batch，Self-Runner [PR #298](https://github.com/JohnZhang-DataForge/Self-Runner/pull/298) 增加 5/100 参数与精确数量验证，后续 [PR #299](https://github.com/JohnZhang-DataForge/Self-Runner/pull/299) 清理未使用的触发入口。[Main Push 单次 Dispatch #40245578811](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40245578811) 通过 [PR #300](https://github.com/JohnZhang-DataForge/Self-Runner/pull/300) **SUCCESS** 并触发真实 100 人 [Run #40245591533](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40245591533)，单次触发器已经由 [PR #301](https://github.com/JohnZhang-DataForge/Self-Runner/pull/301) 从 Main 撤销。
+- **原始业务 Run FAILURE，保留不覆写**：`ATLANTA_NEW_GENERATOR_REQUEST_COMPLETED=PASS`，`population=100`，但 `fhir-source-audit` Job FAILED，报通用 `HOLD_RUNTIME_FAILURE_INSPECT_RESOURCES_BEFORE_RETRY`。不是 Azure 成功：旧 Run **没有创建任何 Publisher Job**、不存在已提交的 Azure Manifest 证据，旧 5 人 Batch 未触碰；不得对失败 Run 直接 rerun。
+- 单独只读取证 [Self-Runner PR #302 / Run #40246631764](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40246631764) 通过失败 Job 的原始日志确认 `BlobPlanRejected: UNSAFE_OR_DUPLICATE_OBJECT_NAME`；[只读 PVC 定界分类 #40246918815](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40246918815) 在不读取/输出任何 Patient JSON 内容、原始姓名或凭据的情况下证实冻结请求 **100 个 FHIR 文件、重名 0、旧 ASCII Blob key 规则误拒 2 个文件**（含撇号 1、非 ASCII 1），无空格/路径穿越/URL 保留字符；只读分类 Job 已清理。
+- 修复采用 **原始 Source 路径保持不变**，仅对 FHIR leaf 增加安全 Unicode 字母/数字与 ASCII/排版撇号；仍拒绝空格、控制符、路径分隔符、URL 保留字符、点路径；HL7 leaf 仍沿用原有严格 ASCII 条件。独立 100 Object 正向与旧负向回归、FHIR 源字节/Blob Name 原样保留测试纳入 CI，Main GHCR 发布必须重新 Clean Build 固定新 digest；旧 Publisher `sha256:a92d0661…` **不包含修复**。
+- 本次代码修复的 CI/GHCR 成功不等于恢复发布成功。后续先独立确认冻结 `atlanta-fhir-gh-40245591533` Source Manifest 精确 SHA、无同 Request Azure durable writes，再采用受控只读源 Publisher continuation；仅 Task 3.6 E2E 真通过才可勾选，双院 Task 4.2 仍 OPEN。

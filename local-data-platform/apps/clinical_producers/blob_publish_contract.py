@@ -16,6 +16,11 @@ SAFE_ID = re.compile(r"^[a-z][a-z0-9-]{2,63}$")
 REQUEST_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9-]{7,65}$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 COMPONENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,159}$")
+# Synthea FHIR patient filenames may contain apostrophes and Unicode letters.
+# Preserve original source path spelling (and SHA) while rejecting controls,
+# separators, reserved URL syntax, spaces and unsafe path components.
+# HL7 remains on the original strict ASCII filename policy.
+FHIR_COMPONENT = re.compile(r"^[^\W_][\w.'’-]{0,159}$", re.UNICODE)
 TOP = {"schema_version", "hospital_id", "feed_id", "request_id",
        "source_manifest_sha256", "target_format", "verification_state",
        "objects", "skipped_non_admissions"}
@@ -58,7 +63,7 @@ def _valid_path(value: object, fmt_dir: str, suffix: str) -> bool:
     return (str(p) == value and len(p.parts) == 2 and not p.is_absolute()
             and p.parts[0] == fmt_dir and
             p.parts[1] not in (".", "..") and
-            bool(COMPONENT.fullmatch(p.parts[1])) and
+            bool((FHIR_COMPONENT if fmt_dir == "fhir" else COMPONENT).fullmatch(p.parts[1])) and
             p.suffix == suffix)
 
 
