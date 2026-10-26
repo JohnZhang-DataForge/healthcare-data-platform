@@ -25,6 +25,36 @@ class BlobPlanTests(unittest.TestCase):
         result=verified_plan(plan,content,landing_prefix="healthcare/v1")
         self.assertEqual(result[0]["blob_key"],"healthcare/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/atlanta-20261024-0001/FHIR_R4/fhir/patient-one.json")
         self.assertEqual(result,verified_plan(plan,content,landing_prefix="healthcare/v1"))
+    def test_100_fhir_files_preserve_safe_apostrophe_and_unicode_names(self):
+        plan, _ = fhir_plan()
+        raw = json.dumps({"resourceType": "Bundle", "entry": []}).encode()
+        names = [f"fhir/patient-{i:03}.json" for i in range(98)]
+        names.extend(["fhir/Anne_O'Neil.json", "fhir/Élodie_O’Connor.json"])
+        plan["objects"] = [
+            {"name": name, "size_bytes": len(raw),
+             "sha256": hashlib.sha256(raw).hexdigest(),
+             "source_event_id": None}
+            for name in names
+        ]
+        sources = {name: raw for name in names}
+        keys = verified_plan(plan, sources, landing_prefix="clinical/v1")
+        self.assertEqual(len(keys), 100)
+        self.assertEqual(len({x["blob_key"] for x in keys}), 100)
+        for name in names:
+            self.assertTrue(any(x["blob_key"].endswith("/FHIR_R4/" + name) for x in keys))
+
+    def test_fhir_name_expansion_does_not_allow_unsafe_paths_or_hl7_unicode(self):
+        for filename in (
+            "fhir/patient name.json", "fhir/../patient.json",
+            "fhir/patient\\\\oops.json", "fhir/patient%name.json",
+            "fhir/patient?name.json", "fhir/patient#name.json",
+            "fhir/patient\nname.json", "fhir/.hidden.json",
+        ):
+            plan, data = fhir_plan()
+            plan["objects"][0]["name"] = filename
+            with self.assertRaisesRegex(BlobPlanRejected, "UNSAFE_OR_DUPLICATE_OBJECT_NAME"):
+                verified_plan(plan, data, landing_prefix="clinical/v1")
+
     def test_changed_bytes_and_undeclared_data_fail(self):
         plan,data=fhir_plan()
         key=next(iter(data))
