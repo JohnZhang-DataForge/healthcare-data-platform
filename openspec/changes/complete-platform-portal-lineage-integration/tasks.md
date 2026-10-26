@@ -168,12 +168,17 @@
 - [x] 2.2 通过既有 Runner ServiceAccount 临时 tokenFile kubeconfig 及固定 GET/HTTP/PG14 READ ONLY 检查完成当下 Live Baseline：[Self-Runner PR #244](https://github.com/JohnZhang-DataForge/Self-Runner/pull/244) 已合并，最终测试 HEAD `f6e59183f1b426d13049d2783cd14ffa026a34f3`、[Live Run #40093060512](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40093060512) SUCCESS；Healthcare 被测 SHA `26e2eb4f2bdc5835eb79ea0b6c96f2891a45c1ee`。K8s 10/10、Marquez Web/API/Proxy、PG14 只读 37 表 PASS。未重启/部署/写 SQL/触发 DAG/Spark，外部浏览器路径未验收。
 - [x] 2.3 正式保存 [P1 实机证据与异常矩阵](evidence/PORTAL-P1-READONLY-VERIFICATION-20261024.md)。**INFRA/API/PG14 HEALTH=PASS；HISTORICAL LINEAGE=EMPTY/BLOCKED**：Marquez 三个 Namespace（default/airflow/spark-probe）均 0 Job，A3 两个 Task 0 Completed Run；PG14 精确 COUNT：3 namespaces / 0 jobs / 0 runs / 0 lineage_events。没有把历史 A3/A4 原成功证明覆写，也没有猜测是谁清空数据。当前尚不能验收 Portal Job/Run/Dataset 业务链路；后续 P2/P3 必须用新产生的真实事件读回。
 
+### 2026-10-25 最新 3.3 实机验收结论（下面原 P2 旧快照的“仍待 Live”由此覆盖）
+
+- **P2 3.3 方案 A 的真实负向证据已齐**：正向 `new_only_omop_consumer` 在 Marquez 10 个真实 DAG/Task Job+Run；Source AST 对所有已提交 DAG 的 selective opt-in 精确 allowlist 检查；真实执行无业务 `airflow_smoke_test` 并由后续**两条独立只读 Run**确认 DagRun/Task 成功但未产生相应 Marquez Job/Run 或新 `unknown` 事件。
+- 原测试 Workflow [#40247000949](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247000949) 保留 **FAILURE**（只在真实 DagRun 之后的 Python CLI Poll 发生故障），不得标为完整 SUCCESS；独立 [#40247126516](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247126516) 和 [#40247531737](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247531737) SUCCESS/Artifact，最终检测 DAG 原始 `paused=false` 保持不变，运行后迟到事件亦无。
+- **限制**：只选择了一个已知无业务输出的非 opt-in DAG 做 Live；其他非 opted-in DAG 因可能实际访问 S3/PG，**没有**擅自 Trigger。若未来 DAG 加入新选择性标记或全局 Airflow Provider 配置改变，需要重新做针对性的负向验证。明确范围和失败事实见 [P2 3.3 证据](evidence/PORTAL-P2-NONOPTIN-LIVE-NEGATIVE-20261025.md)。
+
 ## 3. P2 — Airflow real business opt-in
 
 - [x] 3.1 只读核对 A3 Provider/Transport/Selective 现行生效位置，设计业务 DAG 的最小 opt-in 改动和负向防扩散测试。**Scheduler 配置/GitSync Live 已通过；其它角色不全配置，Task 级事件仍须真实业务 Run。**
 - [x] 3.2 仅修改真实 `new_only_omop_consumer` 所需最小配置，保留 DAG ID/Task ID/XCom/Claim/Fencing/Writer 许可；更新 Airflow CODE/测试并通过 PR CI。**仅 SOURCE / STATIC PASS，非 Main 部署或业务 Live。**
-- [ ] 3.3 受控验证真实 Airflow Job/Run 读回及其他 DAG 默认行为；明确 Proven vs Not Proven。**真实 NEW_ONLY DAG/10 Job+Run Live PASS（#40126168286）；其它 DAG 未意外开启 Lineage 的 Live Negative 仍待独立验收，故不提前勾全项。**
-  - **2026-10-25 源码负向合同加强（新增离线测试，非 Live Negative）**：现有 `test_new_only_openlineage_opt_in.py` 从仅验证 `landing_batch_discovery`，扩展为完整枚举 `local-data-platform/airflow/dags/*.py` 的 AST；要求只有 `new_only_omop_consumer.py` / `platform_portal_openlineage_probe.py` 可出现 `enable_lineage` 调用和明确 Provider 选择性 Import，其他 DAG/Helper 都必须无隐式 opt-in。该测试由本 PR 的 Source Preflight/相关 CI 证实后才可报告 STATIC PASS。**即使静态 CI 通过，3.3 仍 OPEN**：未在现场独立验证未启用 DAG 实际运行时不产生新的 Marquez Task Events，不修改共享 Airflow Scheduler 或 Trigger。
+- [x] 3.3 **P2 真实 NEW_ONLY 正向 + 非 opt-in Smoke 实机负向（有界）PASS**：NEW_ONLY 真实 DAG/10 Job+Run 由 [#40126168286](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40126168286) 证明；仓库全部 `airflow/dags/*.py` 的 AST 负向 opt-in Allowlist 已由 [PR #498](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/498) 离线 CI 覆盖。受控 [#40247000949](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247000949) 只真实触发**一个**非 opted-in `airflow_smoke_test.check_airflow`，其 Workflow **FAILURE** 是随后状态轮询器格式缺陷，保留原结论；两条独立只读 [#40247126516](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247126516) 与 [#40247531737](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247531737) **SUCCESS**，独立证明精确 DagRun/Task `success`、Marquez 中无 Smoke/`unknown` 新事件、结束后无迟到事件且 DAG 原始 `paused=false` 未变。**未运行其它需要 S3/PG 权限的非 opt-in DAG；不能扩张为全 DAG Live Negative；没有重新触发或业务 Writer。** 详见 [P2 实机负向最终证据](evidence/PORTAL-P2-NONOPTIN-LIVE-NEGATIVE-20261025.md)。
 
 
 ### P2 当前静态实施记录（2026-10-24，尚无业务 Live）
