@@ -201,7 +201,7 @@
 
 ## 4. P3 — Spark A4 real I/O and Job/Run fix
 
-- [ ] 4.1 对历史 A4 `unknown`、Application `latestRun` 空、0 I/O 的事件/Facets 做只读溯源并冻结**唯一根因**。**已补 2026-10-25 原始日志/源码逐行审计**：旧 #38628542127 Spark 计算成功且 Listener 发出 COMPLETE，但验证器只按 expected Application Job 查询，因事件实际落 `unknown` 而 `MARQUEZ_SPARK_RUN_NOT_FOUND`；独立 #38629607225 证实 `unknown` Run `COMPLETED` 而 App `latestRun=False`。PR #432 Diff 确认旧 Probe 没有持久输出，足以解释 0 Output；新版**同时**增加 explicit `spark.openlineage.appName` 与 Parquet 持久写出并正向 PASS，**无法单变量证明 `unknown` / 0 Input 的唯一原因**。旧原始 FAILURE 不覆写；保留 OPEN，详情 [A4 逐项原始取证](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
+- [ ] 4.1 **历史 A4 `unknown` 的唯一事件级根因仍 OPEN；源代码机制调查显著推进**：已核对原 #38628542127 / 旧 Marquez #38629607225、PR #432 前后差异，深入阅读官方 OpenLineage Spark `1.47.1` 固定标签的 `ApplicationJobNameResolver`、`SparkApplicationNameApplicationJobNameProvider`、`ContextFactory`、`OpenLineageSparkListener`、`SparkApplicationExecutionContext` 与上游单测。**确证**缺失显式 `spark.openlineage.appName` 且事件上下文没有有效 SparkContext/name 时，Job 会 fallback 为 `unknown`；但 **Spark 3.5.7 停止顺序不支持“调用 spark.stop 必定没有 SparkContext”的断言**，历史确切触发点缺原完整 Event Payload，不能标唯一已证。旧 CSV read/collect 不会产持久 Output；某个 `unknown` Run 0 Input 不代表所有 SQL/RDD 子 Run 无 Input。再做独立只读 [#40249499652](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40249499652) SUCCESS（只代表查询完成），旧 App/`unknown` Job/Run 均 404，无法恢复原 Event；**4.1 继续不勾选，7.3 不 Archive**。详见 [架构法证报告](../../../documents/architecture/design/OPENLINEAGE-SPARK-A4-UNKNOWN-JOB-FORENSICS.md) 和 [原历史核销](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 - [x] 4.2 在独立隔离 fixture 中定义实际输入与持久化输出 Dataset，修复 per-job Listener/Job/Run（依赖和测试固定），代码静态、负向测试通过。**P3 合成 PVC Parquet 与真实 Job/Run 正向验收通过，旧 unknown 的单独根因未 A/B 证明。**
 - [x] 4.3 经授权进行隔离 SparkApplication Live Smoke，核对 Event job/run 名称和真实两个方向 Dataset API 图；保留失败 Run/资源归属。**Run #40120840326：Spark COMPLETED / Parquet readback / Marquez non-unknown Job + 1 input + 1 output DatasetVersion PASS。**
 
@@ -285,3 +285,12 @@
 - [x] **历史 P4 单镜像 Release 实际 Pod ImageID + 三真实 SparkApplication/Parent/Dataset Verified**：原 [P4 Live #40125211881](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40125211881) 的三个真实新 KPO Pod `imageID` 均读回当时获批 GHCR V2 `sha256:f735f6088efad7f0f0b6f2a4d2540ecfa5195925cda719cfc0c17c5e78a21f37`；后续 [P4 #40197583583](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197583583)/[P5 #40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) 核验真 Spark Parent/Read/Write DatasetVersion。旧 Workflow FAILURE 不改写，旧 Digest 不等于未来或 P5 新 Digest，RDD known gap 保留。见 [历史核销](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 - [x] **历史 P5 唯一新 Batch COMMIT/PG17/SKIP/Marquez 方案 A 真实验收完成**：2026-10-25 Batch `synthea-new-only-gh-40208104106` 的原 [#40208104106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106) Workflow FAILURE 是 PG17 原子 COMMIT **之后**缺 `spark-apps.jsonl`，并非事务失败；真实 PG17 +100 Person/+15,742 Visit；独立 [#40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) Marquez+PG17 GET SUCCESS，[#40209818676](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676) 同 Batch Spark/Writer skipped、PG17 八指纹零变化 SUCCESS；P6 已有目标 Batch 官方浏览器 Dataset 图。保留旧失败，绝不重放 Writer。见 [P5 Evidence](evidence/PORTAL-P5-FRESH-BATCH-EXECUTION-20261025.md) 与 [本次核销](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
 - 完整证据：[P4 Live Registry Release 记录](evidence/PORTAL-P4-BUSINESS-IMAGE-LATEST-RELEASE-20261024.md)。
+
+
+### 2026-10-25 / UTC 10-26 A4 固定上游版本法证（不改变唯一根因验收要求）
+
+- 上游 `1.47.1` 名称 Provider 和它的单元测试已明确证明 `unknown` fallback；Listener/ContextFactory 在每个 Application START/END 创建执行 Context，事件间上下文有可能不同；**尚未实证旧具体事件缺失 SparkContext**。
+- Apache Spark `v3.5.7` 在 stop 中先 post ApplicationEnd/stop listener bus，再 clear Active Context；不能只凭 shutdown 位置确定 null context。
+- 旧 Run 的 EventEmitter INFO 不打印完整 JobName/EventType；独立当年 GET 的 `unknown` Run 有 0 I/O，但未遍历全部 SQL/RDD 子 Job。新版改了显式 appName+PVC+Parquet 多个条件，不能作为单变量证明。
+- 当前再读旧 Marquez [#40249499652](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40249499652) 对旧 Job/Run 全部 404，不猜测删除/过期原因，不能补造历史事件。
+- [A4 版本级架构法证](../../../documents/architecture/design/OPENLINEAGE-SPARK-A4-UNKNOWN-JOB-FORENSICS.md) 已整理未来 FHIR/HL7 建议；**4.1 和 7.3 均保持 OPEN**，未经单独授权不进行共享 Spark A/B。
