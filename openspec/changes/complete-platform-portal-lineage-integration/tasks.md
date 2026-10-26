@@ -201,7 +201,7 @@
 
 ## 4. P3 — Spark A4 real I/O and Job/Run fix
 
-- [ ] 4.1 **历史 A4 `unknown` 的唯一事件级根因仍 OPEN；源代码机制调查显著推进**：已核对原 #38628542127 / 旧 Marquez #38629607225、PR #432 前后差异，深入阅读官方 OpenLineage Spark `1.47.1` 固定标签的 `ApplicationJobNameResolver`、`SparkApplicationNameApplicationJobNameProvider`、`ContextFactory`、`OpenLineageSparkListener`、`SparkApplicationExecutionContext` 与上游单测。**确证**缺失显式 `spark.openlineage.appName` 且事件上下文没有有效 SparkContext/name 时，Job 会 fallback 为 `unknown`；但 **Spark 3.5.7 停止顺序不支持“调用 spark.stop 必定没有 SparkContext”的断言**，历史确切触发点缺原完整 Event Payload，不能标唯一已证。旧 CSV read/collect 不会产持久 Output；某个 `unknown` Run 0 Input 不代表所有 SQL/RDD 子 Run 无 Input。再做独立只读 [#40249499652](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40249499652) SUCCESS（只代表查询完成），旧 App/`unknown` Job/Run 均 404，无法恢复原 Event；**4.1 继续不勾选，7.3 不 Archive**。详见 [架构法证报告](../../../documents/architecture/design/OPENLINEAGE-SPARK-A4-UNKNOWN-JOB-FORENSICS.md) 和 [原历史核销](evidence/PORTAL-HISTORICAL-GATE-RECONCILIATION-20261025.md)。
+- [x] 4.1 **A4 历史 `unknown` Job：按用户 2026-10-25 明确决议完成范围裁定 / DEFERRED（不是唯一根因技术验收 PASS）**。旧 #38628542127 Workflow FAILURE、#38629607225 `unknown` COMPLETED Run 及 #40249499652 后续 GET 404 均保留原结论；上游 OL Spark 1.47.1 fallback 与旧无持久 Output 的机制解释已有 [独立法证](../../../documents/architecture/design/OPENLINEAGE-SPARK-A4-UNKNOWN-JOB-FORENSICS.md)，但旧确切事件失去名称的唯一因果仍 `UNVERIFIED`。用户同意**不做新 A/B，历史唯一根因不再是本地 P1–P6 交付门槛**；后续单独立项、重新授权，且不得声称它已被修复。P4 RDD START-only 按方案 A 保留，严格 `business_dataset_gate=INCOMPLETE` 不改写。追踪与再启动门槛见 [本地 MVP 关闭/遗留设计](../../../documents/architecture/design/LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)。
 - [x] 4.2 在独立隔离 fixture 中定义实际输入与持久化输出 Dataset，修复 per-job Listener/Job/Run（依赖和测试固定），代码静态、负向测试通过。**P3 合成 PVC Parquet 与真实 Job/Run 正向验收通过，旧 unknown 的单独根因未 A/B 证明。**
 - [x] 4.3 经授权进行隔离 SparkApplication Live Smoke，核对 Event job/run 名称和真实两个方向 Dataset API 图；保留失败 Run/资源归属。**Run #40120840326：Spark COMPLETED / Parquet readback / Marquez non-unknown Job + 1 input + 1 output DatasetVersion PASS。**
 
@@ -218,6 +218,12 @@
 - [x] 6.2 一个全新独立 Batch 完成 Synthea READY→Airflow→Person/Visit/Reconcile→Writer 原子 COMMIT→PG17 独立读回，新增 100 Person/15,742 Visit；只验证 **1 个**（非理想的 2 个）新 Batch，原 Workflow 整体 FAILURE 原样保留。
 - [x] 6.3 对同一 Batch/Manifest 做独立受控 SKIP DagRun #40209818676，三个 Spark 任务与 Writer 全部 skipped，PG17 人员/就诊数、Claim、Ledger、Checkpoint 及八份内容/控制 MD5 前后零变化；保留 Fencing/非法 Manifest 离线测试，未实施 Listener outage Live 注入。
 - [x] 6.4 独立 Marquez GET 的真 Airflow→Spark Parent UUID、DatasetVersion Person/Visit 输出与 Reconcile 精确两输入、Writer Airflow Run 与 PG17 durable COMMIT 同 Batch/Manifest 交叉验证（#40209504539）；`business_edges_gate=PASS`，方案 A `PASS_WITH_KNOWN_RDD_LIMITATION`，原严格 RDD 终态 INCOMPLETE 明示。
+
+### 2026-10-25 用户最终阶段裁定（更新旧 4.1 严格唯一根因门槛）
+
+- 本地 Portal P1–P6 按 **Design A** 原业务验收与真实 GUI 证据结束。**A4 4.1 的 Checkbox 只代表“历史问题已有法证 + 用户明确接受独立延期”这项范围裁定完成**，绝对不代表旧 Job 的唯一事件根因已证实；P4 物理 RDD START-only / Strict Dataset Gate INCOMPLETE 仍保留。
+- **7.3 仍未执行**，需要独立 Archive PR 将所有原始 Evidence 迁移 Archive，按 Delta Spec 同步 Current Spec 并修复源文档链接后，经 Required CI/Main Merge 才能勾选 Archive Done。
+- 公网匿名只读展示和 Azure/Fabric 跨平台血缘展示**独立立项**，不属于此 Change 的范围。长期追踪记录：[Local MVP Closeout & Deferred Followups](../../../documents/architecture/design/LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)。
 
 ## 7. P6 — Native Marquez showcase and closeout
 
