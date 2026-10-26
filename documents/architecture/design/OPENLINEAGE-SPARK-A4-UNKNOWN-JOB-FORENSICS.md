@@ -12,7 +12,7 @@ evidence:
 
 # A4 历史故障法证：OpenLineage Spark 1.47.1 的 `unknown` Job 与 Dataset 观测边界
 
-> **结论类别：已证实的历史现象 + 官方固定版本源码机制 + 尚待证明的事件级归因。不是用户批准的运行时修复，也不是正式认定 OpenLineage 上游存在某个未确认 Bug。** 所有调查仅用历史 GitHub 日志/PR、公开 1.47.1 / Spark 3.5.7 标签源码和一次内网 Marquez GET-only；没有创建 SparkApplication、重启 Airflow、改写 Marquez/PG/S3、发布镜像或补造事件。关联 [OpenSpec 4.1](../../../openspec/changes/complete-platform-portal-lineage-integration/tasks.md)，与已批准的 [RDD START-only 方案 A](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md) **是两个独立问题**。
+> **结论类别：已证实的历史现象 + 官方固定版本源码机制 + 尚待证明的事件级归因。不是用户批准的运行时修复，也不是正式认定 OpenLineage 上游存在某个未确认 Bug。** 所有调查仅用历史 GitHub 日志/PR、公开 1.47.1 / Spark 3.5.7 标签源码和一次内网 Marquez GET-only；没有创建 SparkApplication、重启 Airflow、改写 Marquez/PG/S3、发布镜像或补造事件。关联 [OpenSpec 4.1](../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/tasks.md)，与已批准的 [RDD START-only 方案 A](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md) **是两个独立问题**。
 
 ## 1. 旧运行的事实与直接失败点
 
@@ -48,7 +48,7 @@ evidence:
   - 旧 Probe **确实没有持久 Output Writer**，所以没有持久 Output Dataset 是预期的；
   - 旧查询显示 `unknown` Run 的 **0 Input/Output** 是事实，却**不能证明**所有 SQL/RDD 子 Run 均没有 CSV Input；
   - 旧 `unknown` Run 的具体 `jobType` Facet、事件原始 Job Payload 未被 2026-10-14 的短摘要完整保存，不能从 Run Facet 名称反推它必定属于 Application END。
-- 此处与现有正式 P4/P5 经验一致：业务数据边在底层 Spark Action Job；Application 自身即使未显示 Dataset，也必须用完整 Namespace + Job Name + Run ID 反向审计子 Job。参见 [RDD 方案 A 决策](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md) 和 [P6 固定 Batch UI 证据](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。
+- 此处与现有正式 P4/P5 经验一致：业务数据边在底层 Spark Action Job；Application 自身即使未显示 Dataset，也必须用完整 Namespace + Job Name + Run ID 反向审计子 Job。参见 [RDD 方案 A 决策](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md) 和 [P6 固定 Batch UI 证据](../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。
 
 ## 4. 原 Marquez 在线数据重取：独立 GET 只读成功、目标均 404
 

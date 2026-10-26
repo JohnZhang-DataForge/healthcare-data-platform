@@ -11,6 +11,9 @@ evidence:
 
 # 本地 Platform Portal P1–P6 MVP 关闭决议与独立遗留事项
 
+> **归档操作当前状态**：用户批准的本地阶段 Closeout 范围裁定已通过 PR #505 并入 Main；独立 Archive PR 正将完整本地 Change 移入 [Archive](../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/tasks.md)，同时同步 `openspec/specs/portal-business-lineage/spec.md` 与相关链接。归档实际生效以独立 PR 的 Required CI/最终 Main SHA 为准，不能由本文件的陈述提前推断合并。
+
+
 > **2026-10-25 用户正式决定**：按已批准的 **OpenLineage Design A** 结束**本地 LAN-only** Portal/Marquez P1–P6 阶段；不为早期 A4 `unknown` 的历史唯一事件根因或 P4 `RDD START-only` 继续投入本阶段开发。这是**验收范围裁定**，不是“bug 已修复”、不是“全部物理 Run 已 COMPLETED”，也不是现在重新部署或运行的证明。
 >
 > **单独项目边界**：未来**公网匿名只读展示**与**Azure/Fabric/FHIR/HL7 跨平台血缘展示**将另立独立 OpenSpec Change/设计及各自运行、安全、身份与真实 E2E 门槛；**不属于此本地 Change 的归档条件，也不视为已开始实施**。
@@ -23,7 +26,7 @@ evidence:
 | Airflow 单 DAG opt-in + 非 opt-in 有界负向 | NEW_ONLY 真实 DAG/Task OpenLineage [#40126168286](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40126168286)；一个无业务 `airflow_smoke_test` 的真实负向由 [#40247126516](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247126516)/[#40247531737](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40247531737) SUCCESS 证实；原触发测试 #40247000949 因**后置轮询故障**仍为 FAILURE；并未实机运行所有其它 DAG |
 | Spark Person/Visit/Reconcile、Parent 和真实 DatasetVersion | [#40197583583](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197583583) / [#40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539)：实际 Spark Application `COMPLETED` 与 Airflow Parent 对应；Person/Visit Processing DatasetVersion 与 Reconcile 的两份输入精确匹配。**物理 RDD START-only 仍然存在** |
 | 原子 Writer E2E 与同批 SKIP | **P5 Batch `synthea-new-only-gh-40208104106`**：原 [#40208104106](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106) Workflow **FAILURE**（Writer 实际 COMMIT 后辅助 `spark-apps.jsonl` 缺失），独立 PG17 读回 **+100 Person/+15,742 Visit** [#40209504539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539) SUCCESS；同批 SKIP [#40209818676](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676) SUCCESS、PG 指纹零变化 |
-| 官方 Marquez Web 真实 GUI | 用户内网 Chrome 精确打开 P5 `ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106` 的 `entity=patient`、`entity=encounter`，两份均显示 Table/Column Level 实际输入→Spark Action→输出 Dataset 及字段映射；Reconcile Application 顶层 Full Graph 仍单 Job，不夸称有跨两输入的原生同屏合并图。细节参见 [真实 GUI 验收](../../../openspec/changes/complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md) 与 [Showcase Runbook](../../systems/platform-portal/marquez/SHOWCASE-RUNBOOK.md) |
+| 官方 Marquez Web 真实 GUI | 用户内网 Chrome 精确打开 P5 `ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106` 的 `entity=patient`、`entity=encounter`，两份均显示 Table/Column Level 实际输入→Spark Action→输出 Dataset 及字段映射；Reconcile Application 顶层 Full Graph 仍单 Job，不夸称有跨两输入的原生同屏合并图。细节参见 [真实 GUI 验收](../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md) 与 [Showcase Runbook](../../systems/platform-portal/marquez/SHOWCASE-RUNBOOK.md) |
 
 ## 二、Deferred：A4 `unknown` 历史事件唯一触发条件
 

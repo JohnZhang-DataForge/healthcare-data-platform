@@ -76,7 +76,7 @@
 | P5 6.4 Marquez | 真 Parent UUID、S3 DatasetVersion、Writer Run + PG17 COMMIT 同一 Manifest | **PASS_WITH_KNOWN_RDD_LIMITATION**：#40209504539（Design A） |
 | P4 5.4 Writer 可信状态关联 | Airflow Writer UUID + PG17 committed Claim/Ledger/Checkpoint/CDM Readback 同一 Batch | **PASS**：#40208104106 + #40209504539 |
 
-设计 A 的 P4 物理 RDD Action START-only/RUNNING 已知观测缺口保持独立披露；不伪造 COMPLETE，不用 `business_edges_gate` 代替 PG17 状态，不将原 `business_dataset_gate=INCOMPLETE` 改成 PASS。OpenLineage 1.47.1/1.54.0 已知行为参见 [ADR](../../../../documents/architecture/design/OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md)。
+设计 A 的 P4 物理 RDD Action START-only/RUNNING 已知观测缺口保持独立披露；不伪造 COMPLETE，不用 `business_edges_gate` 代替 PG17 状态，不将原 `business_dataset_gate=INCOMPLETE` 改成 PASS。OpenLineage 1.47.1/1.54.0 已知行为参见 [ADR](../../../../../documents/architecture/design/OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md)。
 
 ## 接管、安全退出和下一步
 

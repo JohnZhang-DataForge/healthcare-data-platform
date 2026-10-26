@@ -18,7 +18,7 @@ evidence:
 
 - 业务路线：Synthea 合成数据 → SeaweedFS S3 Landing READY → Airflow `new_only_omop_consumer` → Spark Person / Visit / Reconcile → Processing Parquet → Writer 原子 COMMIT → PostgreSQL17 OMOP；OpenLineage 旁路向 Marquez 0.51.1（PostgreSQL14 Metadata）发送 Job / Run / Dataset 事件。
 - 真实展示面是 Marquez 官方 Web，而非自建 Portal 前端；`platform-portal/marquez/tests/verify_business_lineage.py` 是**只读审计器**，并非 Marquez UI 的替身。
-- 此 ADR 记录**长期设计取舍和故障经验**，当前实施/验收仍由 [Portal OpenSpec](../../../openspec/changes/complete-platform-portal-lineage-integration/tasks.md) 及原始 GitHub Run 裁决；部署/源码变更另行 PR，不借文档批准 Spark、Airflow、PG17、S3 或 Azure 写操作。
+- 此 ADR 记录**长期设计取舍和故障经验**，当前实施/验收仍由 [Portal OpenSpec](../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/tasks.md) 及原始 GitHub Run 裁决；部署/源码变更另行 PR，不借文档批准 Spark、Airflow、PG17、S3 或 Azure 写操作。
 - 以下实际证据来自 2026-10-25 当时的现场/独立读回；`last_verified` 不是承诺今天及未来的在线健康。
 - **术语**：RDD = Resilient Distributed Dataset（Spark 弹性分布式数据集），属于 **Apache Spark**，不是 OpenLineage 的类型；DataFrame / Spark SQL 操作（如 `count()`、`collect()`）可在引擎底层触发 RDD/Spark Job。`map_partitions_parallel_collection` 是 OpenLineage 根据底层执行过程生成的物理 Job 名称，**不证明**业务源码直接调用 `mapPartitions()`。
 
@@ -159,7 +159,7 @@ if (outputs.isEmpty() && !(jobEnd.jobResult() instanceof JobFailed)) {
 - [Self-Runner #40197739051：四条真实 Action START-only 的独立 PG14 事件读回](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40197739051)
 - [Self-Runner #40198536340：旧 P3 合成隔离样例只读回归](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40198536340)
 - [Self-Runner #40198710705：仅测试 YAML 升级至 OL 1.54.0 仍 FAIL](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40198710705)
-- [对应 OpenSpec P4/P5 进度、历史 Run 及未完成门槛](../../../openspec/changes/complete-platform-portal-lineage-integration/tasks.md)
+- [对应 OpenSpec P4/P5 进度、历史 Run 及未完成门槛](../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/tasks.md)
 
 **上游：**
 - [OpenLineage 1.47.1 RDD END 过滤源码](https://github.com/OpenLineage/OpenLineage/blob/1.47.1/integration/spark/app/src/main/java/io/openlineage/spark/agent/lifecycle/RddExecutionContext.java#L255-L305)
