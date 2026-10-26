@@ -64,6 +64,19 @@ jobs:
           echo 'LEGACY_HOSPITAL_ID_SOURCE_SCAN=PASS'
           python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p test_hospital_profiles.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
+          # Blob key policy must accept realistic Synthea patient spelling
+          # without relaxing path traversal, reserved URL or HL7 guards.
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, "local-data-platform")
+          from apps.clinical_producers.blob_publish_contract import _valid_path
+          assert _valid_path("fhir/Élodie_O'Neil.json", "fhir", ".json")
+          assert _valid_path("fhir/Anne_O’Connor.json", "fhir", ".json")
+          assert not _valid_path("fhir/patient?name.json", "fhir", ".json")
+          assert not _valid_path("fhir/patient name.json", "fhir", ".json")
+          assert not _valid_path("hl7/Élodie.hl7", "hl7", ".hl7")
+          print("FHIR_SYNTHETIC_UNICODE_APOSTROPHE_BLOB_KEY_CONTRACT=PASS")
+          PY
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_channel_build.py -v
           node local-data-platform/tests/clinical_producers/test_oie_adt_a01.js
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_direct_fhir_publisher.py -v
