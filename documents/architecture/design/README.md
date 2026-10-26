@@ -11,6 +11,7 @@ source_sha: f3b2d9e97d9afe4e7457a1d48fde9e655add47d7
 
 本目录集中导航**讨论稿与已确认但尚未实施的目标架构设计**。每份设计以自身 status 为准；任何目标设计都不代表已经部署或运行验收，也不取代系统实际源码、项目唯一状态与 OpenSpec Change。
 
+- **[本地 Portal P1–P6 MVP 正式收尾与 A4/P4 延后跟踪](LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)**：按用户确认的 Design A 验收结束 LAN-only 阶段，单独记录历史 A4 `unknown` 未证实的唯一根因、P4 RDD START-only 的已知限制和重新立项条件；公网只读/ Azure-Fabric 血缘展示另做独立项目，不隐含已部署。
 - **[OpenLineage Spark 1.47.1 旧 A4 `unknown` Job 根因法证](OPENLINEAGE-SPARK-A4-UNKNOWN-JOB-FORENSICS.md)**：官方 1.47.1 Java Job Name Provider、ContextFactory 与 Spark 3.5.7 生命周期源码、旧原始失败与 GET-only 取证；已确定 `unknown` 命名回退机制及旧无 Output Writer，完整历史事件唯一根因尚未证明，不与 RDD START-only 方案 A 混淆。
 - **[OpenLineage Spark RDD Action START-only 生命周期：方案 A 设计决策与经验](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md)**：精确应用 Job 身份、真实 Parent/DatasetVersion、1.47.1/1.54.0 A/B、上游源码过滤假设、Marquez 展示影响、分层严格验收和未来 FHIR/HL7 的复用检查清单；P4 物理终态仍待确认，P5 Writer E2E 另行验收。
 - [Data Platform V2：仓库迁移与模块化重构设计](DATA-PLATFORM-V2-MIGRATION-DESIGN.md)：四个顶层模块、本地组件划分、Task004 兼容重命名、公共能力提取、实施阶段、测试和回滚。
