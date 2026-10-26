@@ -139,6 +139,29 @@ class DirectFHIRTests(unittest.TestCase):
                                 landing_prefix="healthcare", backend=backend)
         self.assertEqual(backend.writes, [])
 
+    def test_unicode_patient_name_preserves_original_fhir_bundle_and_azure_key(self):
+        original_bytes = self.fhir.read_bytes()
+        new_file = self.fhir.with_name("Élodie_O'Neil.json")
+        self.fhir.rename(new_file)
+        self.fhir = new_file
+        frozen = json.loads((self.folder / "request.json").read_text())
+        actual = validate_payload(self.folder / "payload", frozen["request"])
+        self.manifest.write_text(json.dumps({
+            "schema_version": MANIFEST_VERSION,
+            "request_id": self.request_id,
+            "request_sha256": frozen["request_sha256"],
+            "status": COMPLETED, **actual,
+        }), encoding="utf-8")
+        backend = MemoryBackend()
+        receipt = publish_direct_fhir(self.root, self.profile, self.request_id,
+                                      landing_prefix="clinical/v1", backend=backend)
+        self.assertEqual(receipt["status"], "BLOB_MANIFEST_COMMITTED")
+        self.assertEqual(len(receipt["objects"]), 1)
+        key = receipt["objects"][0]["blob_key"]
+        self.assertTrue(key.endswith("/FHIR_R4/fhir/Élodie_O'Neil.json"))
+        self.assertEqual(backend.data[key].data, original_bytes)
+        self.assertEqual(backend.writes[-1], receipt["manifest_key"])
+
     def test_symlinked_payload_rejected_before_upload(self):
         target = self.root / "outside.json"
         self.fhir.rename(target)
