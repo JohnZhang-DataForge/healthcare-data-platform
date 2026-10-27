@@ -9,6 +9,7 @@
 ## 当前文档目录（Data Platform / Engineering 已切换）
 
 - [Architecture](architecture/SYSTEM-OVERVIEW.md)：全局系统架构、数据流、基础设施和 Architecture Decisions。
+- [Infra — Healthcare On-Demand Live Demo](infra/README.md)：面向 Emory 的按需公网演示、双运行时 PySpark/OpenLineage、Azure Blob 中转、Cloudflare 只读站点（目标架构，尚未实施）。
 - [架构设计讨论稿](architecture/design/README.md)：[V2 多来源 Fabric 与双 Portal 展示路线](architecture/design/HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)、Data Platform V2 源码迁移与 [OpenSpec 接入设计](architecture/design/OPENSPEC-ADOPTION-DESIGN.md)（为编制时点的 Draft；OpenSpec 已投入变更管理，本地物理目录已迁移但运行路径/E2E 未验收；Fabric 新业务 ETL 尚未实施）。
 - [Systems](systems/README.md)：Data Platform 本地五组件、Azure/Fabric 与 Platform Portal 已统一进入 `systems/`，均提供 README/CODE 组件导航。
 - [Engineering](engineering/README.md)：开发规范、Agent 规则、测试、运维、迁移与项目状态。
