@@ -82,6 +82,8 @@ class ExporterTests(unittest.TestCase):
         self.assertEqual(fetch_events("http://marquez:5000/api/v1", limit=1, opener=fake), self.events)
         self.assertEqual([m for m, _ in fake.calls], ["GET", "GET"])
         self.assertTrue(all("/events/lineage?" in url for _, url in fake.calls))
+        self.assertTrue(all("sortDirection=asc" in url for _, url in fake.calls))
+        self.assertFalse(any("?sort=" in url for _, url in fake.calls))
 
     def test_inconsistent_page_is_blocked(self):
         fake = StubHttp([{"events": [self.events[0]], "totalCount": 2},
@@ -118,7 +120,8 @@ class ExporterTests(unittest.TestCase):
 
     def test_private_identifiers_block_not_rewrite(self):
         for name in ("s3://private/patient", "http://10.0.0.3/path",
-                     "jdbc:postgresql://db", "localhost:5000", "table?token=hidden"):
+                     "jdbc:postgresql://db", "localhost:5000",
+                     "http://marquez:5000/internal", "table?token=hidden"):
             bad = event()
             bad["inputs"][0]["name"] = name
             with self.subTest(name=name), self.assertRaises(ExportError):
