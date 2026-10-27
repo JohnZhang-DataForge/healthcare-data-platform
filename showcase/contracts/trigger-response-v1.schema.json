@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://healthcare-showcase.example/schema/trigger-response-v1.schema.json",
+  "title": "Accepted Demo Trigger Response v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "showcase.trigger-response.v1"
+    },
+    "request_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "phase": {
+      "const": "ACCEPTED"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "idempotent_replay": {
+      "type": "boolean"
+    },
+    "status_url": {
+      "type": "string",
+      "pattern": "^/api/demo/status/[0-9a-fA-F-]{36}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "request_id",
+    "phase",
+    "accepted_at",
+    "idempotent_replay",
+    "status_url"
+  ]
+}

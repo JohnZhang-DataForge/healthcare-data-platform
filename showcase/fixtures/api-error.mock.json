@@ -1,0 +1,5 @@
+{
+  "schema_version": "showcase.api-error.v1",
+  "error_code": "TRIGGER_DISABLED",
+  "message": "Live demonstration is currently disabled."
+}

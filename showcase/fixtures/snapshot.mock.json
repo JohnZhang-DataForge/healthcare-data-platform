@@ -1,0 +1,124 @@
+{
+  "schema_version": "showcase.snapshot.v1",
+  "snapshot_id": "snapshot-mock-atlanta-001",
+  "data_origin": "MOCK",
+  "generated_at": "2026-10-27T20:00:00Z",
+  "last_success_at": "2026-10-27T19:50:00Z",
+  "source_backend": "LOCAL_K8S",
+  "summary": {
+    "patient_count": 5,
+    "encounter_count": 12,
+    "hospital_count": 3,
+    "dq_checks_passed": 4,
+    "dq_checks_failed": 0,
+    "quality_status": "PASS"
+  },
+  "hospitals": [
+    {
+      "hospital_ref": "hospital-atlanta",
+      "city": "Atlanta",
+      "source_type": "CSV"
+    },
+    {
+      "hospital_ref": "hospital-new-york",
+      "city": "New York",
+      "source_type": "FHIR_R4"
+    },
+    {
+      "hospital_ref": "hospital-chicago",
+      "city": "Chicago",
+      "source_type": "HL7_V2"
+    }
+  ],
+  "runs": [
+    {
+      "run_ref": "run-patient-transform",
+      "display_name": "Patient canonical transform (illustrative)",
+      "backend": "LOCAL_K8S",
+      "phase": "COMPLETE",
+      "started_at": "2026-10-27T19:45:00Z",
+      "completed_at": "2026-10-27T19:49:00Z"
+    },
+    {
+      "run_ref": "run-encounter-transform",
+      "display_name": "Encounter canonical transform (illustrative)",
+      "backend": "LOCAL_K8S",
+      "phase": "COMPLETE",
+      "started_at": "2026-10-27T19:46:00Z",
+      "completed_at": "2026-10-27T19:50:00Z"
+    }
+  ],
+  "datasets": [
+    {
+      "dataset_ref": "dataset-patient-landing",
+      "label": "Synthetic Patient Landing",
+      "layer": "LANDING",
+      "columns": [
+        "ID",
+        "BIRTHDATE",
+        "GENDER"
+      ]
+    },
+    {
+      "dataset_ref": "dataset-patient-processing",
+      "label": "Patient Canonical",
+      "layer": "PROCESSING",
+      "columns": [
+        "source_record_id",
+        "birth_date",
+        "gender_code"
+      ]
+    },
+    {
+      "dataset_ref": "dataset-encounter-landing",
+      "label": "Synthetic Encounter Landing",
+      "layer": "LANDING",
+      "columns": [
+        "ID",
+        "PATIENT",
+        "START"
+      ]
+    },
+    {
+      "dataset_ref": "dataset-encounter-processing",
+      "label": "Encounter Canonical",
+      "layer": "PROCESSING",
+      "columns": [
+        "source_record_id",
+        "source_person_id",
+        "start_datetime"
+      ]
+    }
+  ],
+  "lineage": {
+    "table_edges": [
+      {
+        "source_dataset_ref": "dataset-patient-landing",
+        "target_dataset_ref": "dataset-patient-processing",
+        "run_ref": "run-patient-transform"
+      },
+      {
+        "source_dataset_ref": "dataset-encounter-landing",
+        "target_dataset_ref": "dataset-encounter-processing",
+        "run_ref": "run-encounter-transform"
+      }
+    ],
+    "column_edges": [
+      {
+        "source_dataset_ref": "dataset-patient-landing",
+        "source_column": "BIRTHDATE",
+        "target_dataset_ref": "dataset-patient-processing",
+        "target_column": "birth_date",
+        "run_ref": "run-patient-transform"
+      },
+      {
+        "source_dataset_ref": "dataset-encounter-landing",
+        "source_column": "PATIENT",
+        "target_dataset_ref": "dataset-encounter-processing",
+        "target_column": "source_person_id",
+        "run_ref": "run-encounter-transform"
+      }
+    ]
+  },
+  "mock_notice": "MOCK ONLY — illustrative synthetic UI fixture, not a real completed E2E batch or verified hospital deployment."
+}

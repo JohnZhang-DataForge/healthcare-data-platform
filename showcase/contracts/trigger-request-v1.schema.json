@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://healthcare-showcase.example/schema/trigger-request-v1.schema.json",
+  "title": "Demo Trigger Request v1",
+  "description": "POST-only; token never logged, persisted, returned or exposed in static assets. No user-selected workflow, backend, shell or capacity.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "showcase.trigger-request.v1"
+    },
+    "client_request_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "turnstile_token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    }
+  },
+  "required": [
+    "schema_version",
+    "client_request_id",
+    "turnstile_token"
+  ]
+}

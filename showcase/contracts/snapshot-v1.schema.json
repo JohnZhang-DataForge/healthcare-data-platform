@@ -1,0 +1,359 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://healthcare-showcase.example/schema/snapshot-v1.schema.json",
+  "title": "Public Healthcare Showcase Snapshot v1",
+  "description": "Sanitized last-successful snapshot; GET cannot trigger execution. MOCK must render a visible banner.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "showcase.snapshot.v1"
+    },
+    "snapshot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,95}$"
+    },
+    "data_origin": {
+      "enum": [
+        "MOCK",
+        "VERIFIED_EXPORT"
+      ]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_success_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_backend": {
+      "enum": [
+        "LOCAL_K8S",
+        "FABRIC",
+        "MIXED"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "patient_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "encounter_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "hospital_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dq_checks_passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dq_checks_failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "quality_status": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "PARTIAL"
+          ]
+        }
+      },
+      "required": [
+        "patient_count",
+        "encounter_count",
+        "hospital_count",
+        "dq_checks_passed",
+        "dq_checks_failed",
+        "quality_status"
+      ]
+    },
+    "hospitals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hospital_ref": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,95}$"
+          },
+          "city": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "source_type": {
+            "enum": [
+              "CSV",
+              "FHIR_R4",
+              "HL7_V2"
+            ]
+          }
+        },
+        "required": [
+          "hospital_ref",
+          "city",
+          "source_type"
+        ]
+      }
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "run_ref": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,95}$"
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "backend": {
+            "enum": [
+              "LOCAL_K8S",
+              "FABRIC"
+            ]
+          },
+          "phase": {
+            "enum": [
+              "ACCEPTED",
+              "GENERATING",
+              "BLOB_READY",
+              "SPARK_RUNNING",
+              "QUALITY_PASSED",
+              "LINEAGE_SYNCED",
+              "SNAPSHOT_PUBLISHED",
+              "COMPLETE",
+              "FAILED",
+              "EXPIRED"
+            ]
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "run_ref",
+          "display_name",
+          "backend",
+          "phase",
+          "started_at",
+          "completed_at"
+        ]
+      }
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "dataset_ref": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{1,95}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "layer": {
+            "enum": [
+              "LANDING",
+              "PROCESSING",
+              "OMOP",
+              "LAKEHOUSE"
+            ]
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+            }
+          }
+        },
+        "required": [
+          "dataset_ref",
+          "label",
+          "layer",
+          "columns"
+        ]
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "table_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "source_dataset_ref": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{1,95}$"
+              },
+              "target_dataset_ref": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{1,95}$"
+              },
+              "run_ref": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{1,95}$"
+              }
+            },
+            "required": [
+              "source_dataset_ref",
+              "target_dataset_ref",
+              "run_ref"
+            ]
+          }
+        },
+        "column_edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "source_dataset_ref": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{1,95}$"
+              },
+              "source_column": {
+                "type": "string"
+              },
+              "target_dataset_ref": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{1,95}$"
+              },
+              "target_column": {
+                "type": "string"
+              },
+              "run_ref": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{1,95}$"
+              }
+            },
+            "required": [
+              "source_dataset_ref",
+              "source_column",
+              "target_dataset_ref",
+              "target_column",
+              "run_ref"
+            ]
+          }
+        }
+      },
+      "required": [
+        "table_edges",
+        "column_edges"
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_commit_sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "source_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "verification_run_url": {
+          "type": "string",
+          "pattern": "^https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/actions/runs/[0-9]+$"
+        }
+      },
+      "required": [
+        "source_commit_sha",
+        "source_manifest_sha256",
+        "verification_run_url"
+      ]
+    },
+    "mock_notice": {
+      "type": "string",
+      "minLength": 12,
+      "maxLength": 160
+    }
+  },
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "data_origin",
+    "generated_at",
+    "last_success_at",
+    "source_backend",
+    "summary",
+    "hospitals",
+    "runs",
+    "datasets",
+    "lineage"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "data_origin": {
+            "const": "VERIFIED_EXPORT"
+          }
+        },
+        "required": [
+          "data_origin"
+        ]
+      },
+      "then": {
+        "required": [
+          "evidence"
+        ],
+        "not": {
+          "required": [
+            "mock_notice"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "data_origin": {
+            "const": "MOCK"
+          }
+        },
+        "required": [
+          "data_origin"
+        ]
+      },
+      "then": {
+        "required": [
+          "mock_notice"
+        ],
+        "not": {
+          "required": [
+            "evidence"
+          ]
+        }
+      }
+    }
+  ]
+}

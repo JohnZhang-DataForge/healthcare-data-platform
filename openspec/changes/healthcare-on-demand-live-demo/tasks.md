@@ -9,6 +9,14 @@
 - [x] 1.3 创建 OpenSpec Proposal、Design、Delta Specs（目标 Requirements/Scenario）及后续逐项验收 Tasks；文档索引必须链接唯一权威设计。
 - [x] 1.4 设计基线 [Healthcare PR #508](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/508) 经 OpenSpec validate、Trusted Change Gate、Change Gate、Documentation Relative Links 四项 GitHub 检查 SUCCESS，2026-10-26（美国东部）已 squash merge 到 Main `a030d02d46c85bc6932ce7ddba73b5c609f25b58`，并独立从 Main 读回正式方案。设计关闭不等于后续实现或运行验收。
 
+## 1A. P0 Showcase contract foundation（2026-10-27，代码/Schema；尚未部署）
+
+- [x] 1.5 为 P1–P4 冻结 Versioned Snapshot/Trigger/Status/Error JSON Schema v1，包含严格白名单、Mock/Verified Origin、证据门槛、不可用户指定 Workflow/Backend 的负向约束。正式约定见 [Showcase P0](../../../documents/systems/showcase/README.md)。
+- [x] 1.6 提交只含虚构合成数字的 `showcase/fixtures/*.mock.json`，显式 `MOCK ONLY`，用于前端/Exporter/Worker/部署的独立 Mock 集成；不冒充现有真实 P5 Batch。
+- [x] 1.7 建立 P1–P4 独占目录、CODE 地图、Branch/PR 及共享资源协调边界，明确 GET 静态快照与 POST 控制接口契约。
+- [ ] 1.8 PR CI schema/negative tests 全绿、review/merge Main、从 Main 精确 SHA 复核后才将 `CONTRACT FROZEN v1` 标记正式生效。后续若需调整 Schema，做版本/兼容审查；不能在未合并分支上宣称冻结。
+- [ ] 1.9 P1–P4 各自独立 PR 实现/集成（对应原 4.x/5.x 验收要求），P2/P3 真实访问及 P4 公网发布均须各自通过安全/费用 Gate；P0 不包含实际部署。
+
 ## 2. Free-runtime compatibility proof (future separately authorized work)
 
 - [ ] 2.1 固定跨 Fabric/Local 的 PySpark/Delta/OpenLineage 版本矩阵和冻结 FHIR/HL7 合成输入 Contract、测试账号/Workspace/费用 Gate。**已完成一部分实机只读证据**：[Self-Runner #40438541415](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40438541415) GET 成功：`healthcare-omop` 与 `johnzhang-test` 都是 Fabric Runtime 2.0 / Starter Pool；本地 dw-spark 27 个历史 SparkApplication 均 3.5.7，检查时 active=0；当前可见 Trial FTL4 Active。已提交隔离内存 PySpark 冒烟源码，**但尚未真正执行 Fabric Notebook / Local Spark 和 OpenLineage，故 2.1 保持未勾选**。
