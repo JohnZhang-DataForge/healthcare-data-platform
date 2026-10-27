@@ -129,3 +129,27 @@ class ConsumerTests(unittest.TestCase):
     def test_duplicate_json_keys_rejected(self):
         with self.assertRaises(c.RelayError):
             c.parse_json(b'{"state":"COMMITTED","state":"PENDING"}')
+
+    def test_bounded_transport_retry_and_no_business_replay(self):
+        blob, marker, _ = fixture()
+        class Flaky(Marquez):
+            def verify(self, event):
+                self.gets += 1
+                if self.gets == 1:
+                    raise ConnectionError("temporarily offline")
+        m = Flaky()
+        delays = []
+        self.assertEqual(1, c.consume_with_retry(blob, marker, m, self.cp,
+                                                    attempts=3, sleep=delays.append))
+        self.assertEqual([1], delays)
+        self.assertEqual(2, len(m.posts))
+        self.assertEqual(0, c.consume_with_retry(blob, marker, m, self.cp, sleep=delays.append))
+
+    def test_bad_manifest_never_auto_retried(self):
+        blob, marker, _ = fixture()
+        blob.data[marker] = b'{"state":"PENDING"}'
+        delays = []
+        with self.assertRaises(c.RelayError):
+            c.consume_with_retry(blob, marker, Marquez(), self.cp,
+                                 attempts=3, sleep=delays.append)
+        self.assertEqual([], delays)
