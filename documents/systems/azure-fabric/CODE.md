@@ -34,3 +34,7 @@ Azure/Fabric 的 README/CODE/技术说明都在 `documents/systems/azure-fabric/
 
 - [`azure-fabric/deployment/trial_smoke_publisher.py`](../../../azure-fabric/deployment/trial_smoke_publisher.py): scope-validated Fabric Trial Notebook/Pipeline Git-native publishing facade; `validate` no cloud calls; `publish` requires independently read live Workspace/Lakehouse Terraform outputs, exact confirmation, Fabric identity, fresh item inventory and post-publish API readback. Does not delete or orphan-cleanup Items; initial publish rejects pre-existing same-name Items until ownership resolution.
 - [offline tests](../../../.github/quality/tests/test_fabric_trial_smoke_publisher.py) and [static CI](../../../.github/workflows/fabric-trial-smoke-publisher-static.yml): no Fabric API nor Terraform Remote State access in CI. [Self-Runner workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-trial-native-item-publish.yml) was delivered by Self-Runner PR #204 (Main `4d31fcd17fba15f57f52bd08ad8ec4f9cfe9e01b`). Static CI PASSED; default mode validates source offline. Real Fabric publish and post-publish run acceptance have not been executed.
+
+## Immutable OpenLineage Blob Publisher (offline only)
+
+- [Publisher entrypoint](../../../azure-fabric/openlineage/publisher.py) · [Fake Azure and recovery tests](../../../azure-fabric/openlineage/tests/test_publisher.py) · [publisher protocol](../../../azure-fabric/openlineage/PUBLISHER.md). Independently verified immutable event readback before committed Manifest; Azure live operations unapproved.
