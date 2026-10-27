@@ -39,3 +39,7 @@
 本地真实 Marquez 匿名化 JSONL 输入 Marquito 作者 parser 的成功证据为 [Self-Runner #40321797660](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40321797660)：190 Events / 48 Jobs / 23 Datasets / 44 Table Edges / 176 Column Edges。非浏览器 UI 和非 Fabric 事件验收。Fabric 原生 Item Relations GET [#40251306511](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40251306511) 只读成功，但仅结构依赖，非 Spark Bloodline。跨 Azure Spark Listener、Blob 中转、Cloudflare 自动触发仍未验证。
 
 本轮仅 Git 文档/Spec，无 Runtime 可回退事项。未来按 Emergency OFF → 不再受理 → 保留只读快照 → 按单独授权检查 paid Capacity 状态恢复。不得自动删除旧 Blob、PG14 或已有业务数据；后续代码实现需拆分有界 PR，按最小功能的 Task 逐项交付。
+
+## 2026-10-27 并行实施和部署归属修正（覆盖此前 P4 源码计划）
+
+用户确认只读 Web 先复用 Marquito 原始项目的功能与布局，Cloudflare Pages 由用户手工操作，不独立开发 Portal Infra 组件；用户坚持沿用当前 Public Healthcare Repo。单独开发 Agent 分为 Web、Marquez Exporter、Azure OpenLineage/Blob Relay；访客控制器延期。操作级、OpenSpec 分工和授权前置条件参见 [并行工作计划](parallel-workstreams.md)。Marquito 许可证尚未确认，非商业目的不等于获得复制/公开部署许可；授权前不得提交其源码到公开仓库。P0 JSON Schema 不因本次计划修改而变更，新增 JSONL 静态读取路径须经过 Coordinator 的兼容性复核。云端 Fabric 同 Runtime 历史 HOLD 与真实资源授权不改变。

@@ -15,7 +15,7 @@
 - [x] 1.6 提交只含虚构合成数字的 `platform-portal/portal/fixtures/*.mock.json`，显式 `MOCK ONLY`，用于前端/Exporter/Worker/部署的独立 Mock 集成；不冒充现有真实 P5 Batch。
 - [x] 1.7 建立 P1–P4 独占目录、CODE 地图、Branch/PR 及共享资源协调边界，明确 GET 静态快照与 POST 控制接口契约。
 - [x] 1.8 **CONTRACT FROZEN v1（仅机器契约，不代表部署）**：P0 [PR #513](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/513) HEAD `516721a055a2a0bb2babdf91102691c293cb68c1` 的 旧 CI（当时名称为 Showcase Contract Validation）、OpenSpec Static、OpenSpec Change Gate、Trusted Change Gate、Documentation Relative Links、Component Code Naming **6/6 SUCCESS**；Squash Merge `a5778f50b06f4cfb3051df3a1870b5be0dd97aee`，从 Main 实际重新读取 `snapshot-v1.schema.json` 和 `documents/systems/showcase/README.md` 并确认版本。后续 Schema 调整需版本/兼容审查；真实展示/Cloudflare/Runner 尚未部署。
-- [ ] 1.9 P1–P4 各自独立 PR 实现/集成（对应原 4.x/5.x 验收要求），P2/P3 真实访问及 P4 公网发布均须各自通过安全/费用 Gate；P0 不包含实际部署。
+- [ ] 1.9 Portal 后续实现/集成总 Gate（原 P1–P4 分工由下文第 7 节最新并行策略覆盖）。Web、Exporter、Azure Relay、访客 Control 与用户手工 Cloudflare 各自验收后方可关闭；P0 不包括实机部署。
 - [x] 1.10 **Portal 命名/路径更正（Main 验收完成）**：原顶级 `showcase/` 与单独 `documents/systems/showcase/` 全量搬迁到 `platform-portal/portal/` 和 `documents/systems/platform-portal/portal/`，`schema_version` 改为 `portal.*.v1`，CI 改名并同步系统 README/CODE；[PR #515](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/515) 六项检查全部 SUCCESS，Main Squash `59a5ef8ab65aa3fa757ef710f4bdb96f0440d72b`；独立从 Main 读回 `portal.snapshot.v1`、新 CODE 与 CI，确认旧根目录及旧 Workflow 均不再存在。
 
 ## 2. Free-runtime compatibility proof (future separately authorized work)
@@ -50,3 +50,18 @@
 - [ ] 6.1 验收真实新 5–10 患者批次：Source Manifest、Azure Blob、Spark ETL、DQ、OpenLineage Event、Marquez PG14 独立读回、公开快照与邮件/成本报告。
 - [ ] 6.2 测试恶意/重复/非 US/IP 额度/跨日/并行请求，以及家用网络、Azure、Runner、Cloudflare 失败路径和回退。
 - [ ] 6.3 仅达到全套 E2E 与代码、许可、权限、预算 Gate 后同步 Current Specs、按真实证据 Archive Change；OpenSpec 静态 PASS 不能替代验收。
+
+## 7. 并行 Agent 实施与手工 Cloudflare（2026-10-27 最新分工）
+
+> 详细角色、可复制 Agent 指令、代码所有权与冲突解决统一见 [parallel-workstreams.md](parallel-workstreams.md)。此节任务由主 Session 汇总；各 Agent PR 需关联对应**单独**任务行并只编辑自己的进度，不以其他 Session 的代码完成代替真实验收。**P4 Infra 源码模块已按用户决定取消**；原 4.x/5.x 是历史功能需求，并不构成自动运行授权。
+
+- [x] 7.0 确定三个并行 Agent：A Marquito Web、B Marquez GET-only Exporter、C Azure OpenLineage Blob Publisher/Local Consumer；协调分支与独占代码路径，Cloudflare 改用户手工发布，暂缓访客 Control；完成本计划并由 CI/PR 入 Main（仅计划工作，不代表代码完成）。
+- [ ] 7.1 **Agent A：Marquito 评估和依赖许可 Gate**。核查作者源码、静态构建和 JSONL 解析兼容；未获重发布授权前不得复制作者源码到 Public Repo 或公开部署。
+- [ ] 7.2 **Agent A：Portal Web 集成**。利用获得授权的 Marquito 代码/合法适配方式实现静态展示，解析导出事件，标明 MOCK / VERIFIED，离线浏览器验收 Table/Column Lineage。
+- [ ] 7.3 **Agent B：Marquez 只读事件导出**。离线 Mock 与独立 API GET 适配，输出稳定 OpenLineage JSONL，字段检查保留表/列血缘；无 Marquez POST 或 PG 写入。
+- [ ] 7.4 **Agent B：网站数据发布包**。生成冻结 `portal.snapshot.v1` 及对应可公开的 JSONL，验证源 SHA、Manifest、Run URL、数据一致性；失败不能替换最后成功快照，未通过的只保留为本地候选。
+- [ ] 7.5 **Agent C：Azure OpenLineage 兼容设计**。研究 Fabric Runtime/Listener/SDK、固定事件格式和适配代码；Fabric 实机测试继续 HOLD，不启动新的 Notebook。
+- [ ] 7.6 **Agent C：Blob OpenLineage Publisher（离线）**。不可变事件对象、SHA256/条件创建、最后发布 Manifest，Fake Azure 客户端及异常测试，不真实 Blob 写入。
+- [ ] 7.7 **Agent C：本地 Blob→Marquez Consumer（离线）**。只消费 committed Manifest、校验/去重/重试/checkpoint，Fake Marquez readback 测试；真实 PG14/Marquez POST 另需授权。
+- [ ] 7.8 **用户操作：Cloudflare Pages 手工发布**。等 A/B 构建与静态数据审核成功，按 [CLOUDFLARE-MANUAL](../../../documents/systems/platform-portal/portal/CLOUDFLARE-MANUAL.md) 配置项目、GitHub、构建目录、可选域名；主 Session 在用户读回反馈后验收，只读网站上线不代表控制 API 已启用。
+- [ ] 7.9 **主 Session：全局联调与后续 Gate**。按各 PR CI/Main readback 核对 A/B 接口；C 离线测试单独读回，规划授权后的真实 Azure 测试；自动触发 Cloudflare Worker/配额/邮件在后续阶段再开。
