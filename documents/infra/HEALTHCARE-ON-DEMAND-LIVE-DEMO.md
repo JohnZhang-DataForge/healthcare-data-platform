@@ -119,7 +119,11 @@ lineage/manifests/v1/<request_id>/commit.json
 - Fabric Spark Listener、Blob 持久化、Local 同步、云端 Notebook FHIR/HL7、Cloudflare 真人触发与 Email 均属于 **PLANNED / NEEDS_LIVE_VERIFICATION**。
 - [原有本地 Portal 关闭和 A4/P4 延后项](../architecture/design/LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)、[FHIR/HL7 设计](../architecture/design/FHIR-HL7-MULTISOURCE-MVP-DESIGN.md)、[Fabric 系统说明](../systems/azure-fabric/README.md) 的既有事实不变。
 
-## 7. 实机兼容性前置证据（只读，非 Spark POC PASS）
+## 7. Spark 双运行时真实兼容性 POC（部分 PASS / Fabric HOLD）
+
+[2026-10-26 实机证据报告](SPARK-PORTABILITY-POC-20261026.md)：K8s Spark 3.5.7 对同一份 5 人合成数据转换实际运行、行数及 SHA256 **PASS**；Fabric Runtime 2.0 免费 Trial 的 Notebook CREATE/Run/DELETE 及 Job `Completed` **PASS_WITH_SCOPE**，但三轮均无法取得非空 `properties.exitValue` 校验 DataFrame 哈希，**跨平台转换一致性 HOLD / UNVERIFIED**。第三次 `getDefinition` 返回 HTTP 202，异步发布未完成是否导致退出值空缺尚属假设。已达到三轮失败停止规则，未获新决定不继续运行。OpenLineage Listener、Blob/Delta 和真实 FHIR/HL7 E2E 都未验收，Backend 继续 UNDECIDED。
+
+## 8. 先前只读运行环境证据（非跨云业务 POC PASS）
 
 - [Self-Runner #40438541415](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40438541415)：通过 GET 读取 Fabric 的 healthcare-omop、johnzhang-test 两个 Workspace，Spark Runtime 均为 **2.0** / Starter Pool；两者当前都只列出 Lakehouse 与 SQL Endpoint，**没有已部署 Notebook**；枚举 Capacity 得到 Active FTL4 试用与 PP3（不得误认为当前 Workspace 一定绑定哪个 Capacity，后续必须核对 `capacityId`）。
 - 同 Run：Kubernetes dw-spark 读到 27 个历史 SparkApplication，全部 Spark 3.5.7 / `spark:3.5.7-python3`，查询时 0 active。Spark Listener 历史模板使用 Scala 2.12 的 OpenLineage 1.47.1；该 JAR **不得不经验证直接套用 Fabric Runtime 2.0（Spark 4.1 / Scala 2.13）**。
