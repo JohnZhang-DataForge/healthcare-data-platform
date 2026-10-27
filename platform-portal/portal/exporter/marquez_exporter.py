@@ -38,7 +38,7 @@ def digest(data: bytes) -> str:
 def public_id(value):
     if not isinstance(value, str) or not 0 < len(value) <= 1024:
         raise ExportError("Invalid lineage identity")
-    if SECRET.search(value) or PRIVATE.search(value) or any(x in value for x in ("?", "@", "\\", "\n", "\r")):
+    if SECRET.search(value) or PRIVATE.search(value) or "://" in value or any(x in value for x in ("?", "@", "\\", "\n", "\r")):
         raise ExportError("Unsafe lineage identity: publish gate HOLD")
     for address in IP.findall(value):
         try:
@@ -162,7 +162,7 @@ def fetch_events(base, limit=100, max_events=50000, opener=urlopen):
         raise ExportError("Invalid pagination bounds")
     events, offset, total = [], 0, None
     while True:
-        uri = base.rstrip("/") + "/events/lineage?" + urlencode({"sort": "asc", "limit": limit, "offset": offset})
+        uri = base.rstrip("/") + "/events/lineage?" + urlencode({"sortDirection": "asc", "limit": limit, "offset": offset})
         req = Request(uri, headers={"Accept": "application/json"}, method="GET")
         with opener(req, timeout=15) as response:
             body = json.load(response)
