@@ -1,5 +1,5 @@
 ---
-status: draft
+status: active
 scope: healthcare-cross-cloud-showcase-infrastructure-index
 decision_date: 2026-10-26
 ---

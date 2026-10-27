@@ -1,5 +1,5 @@
 ---
-status: draft
+status: active
 scope: healthcare-on-demand-live-demo
 decision_date: 2026-10-26
 implementation_status: design-only; not-deployed
