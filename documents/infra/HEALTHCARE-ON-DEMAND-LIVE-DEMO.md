@@ -119,7 +119,13 @@ lineage/manifests/v1/<request_id>/commit.json
 - Fabric Spark Listener、Blob 持久化、Local 同步、云端 Notebook FHIR/HL7、Cloudflare 真人触发与 Email 均属于 **PLANNED / NEEDS_LIVE_VERIFICATION**。
 - [原有本地 Portal 关闭和 A4/P4 延后项](../architecture/design/LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)、[FHIR/HL7 设计](../architecture/design/FHIR-HL7-MULTISOURCE-MVP-DESIGN.md)、[Fabric 系统说明](../systems/azure-fabric/README.md) 的既有事实不变。
 
-## 7. 后续分层 Gate（具体勾选仅在 OpenSpec）
+## 7. 实机兼容性前置证据（只读，非 Spark POC PASS）
+
+- [Self-Runner #40438541415](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40438541415)：通过 GET 读取 Fabric 的 healthcare-omop、johnzhang-test 两个 Workspace，Spark Runtime 均为 **2.0** / Starter Pool；两者当前都只列出 Lakehouse 与 SQL Endpoint，**没有已部署 Notebook**；枚举 Capacity 得到 Active FTL4 试用与 PP3（不得误认为当前 Workspace 一定绑定哪个 Capacity，后续必须核对 `capacityId`）。
+- 同 Run：Kubernetes dw-spark 读到 27 个历史 SparkApplication，全部 Spark 3.5.7 / `spark:3.5.7-python3`，查询时 0 active。Spark Listener 历史模板使用 Scala 2.12 的 OpenLineage 1.47.1；该 JAR **不得不经验证直接套用 Fabric Runtime 2.0（Spark 4.1 / Scala 2.13）**。
+- 已准备完全独立的 5 条匿名患者 DataFrame 内存转换测试，意在同源码分别测试 Local Spark / Fabric Spark；实际运行与 Delta / OpenLineage 验收仍待证据，不能写成兼容已通过。
+
+## 8. 后续分层 Gate（具体勾选仅在 OpenSpec）
 
 A. 本设计/OpenSpec + 文档导航/Schema/Trusted Change Gate 静态通过（仅本轮）。
 
