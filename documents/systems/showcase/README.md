@@ -1,8 +1,8 @@
 ---
-status: proposed-contract
+status: active-contract
 scope: healthcare-showcase-contract-foundation-v1
 decision_date: 2026-10-27
-implementation_status: schema-and-mock-only; no-runtime-or-public-deployment
+implementation_status: contract-frozen-v1; no-runtime-or-public-deployment
 ---
 
 # Healthcare Showcase — P0 Contract Foundation
@@ -47,6 +47,12 @@ implementation_status: schema-and-mock-only; no-runtime-or-public-deployment
 
 各 Agent 在独立 Branch/PR 工作；在接手前读取 `AGENTS.md`、本页、[session coordination](../../engineering/development/SESSION-COORDINATION.md) 与当前 `main` / 开放 PR。每份 PR 正文包含 `OpenSpec-Change: healthcare-on-demand-live-demo` 和具体 `OpenSpec-Task: n.n`；PR 合并前必须通过 Required CI。一次涉及相同 Workflow/Schema/Infra root 的修改先协调 Owner；即使目录不同，共享 Spark、Airflow、PostgreSQL、K8s、Azure 的实机写入**不能并行默认执行**。P0 没有给任何 Agent 运行或收费授权。
 
+## P0 已验证的 Git 证据（2026-10-27）
+
+- [PR #513](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/513)：六项 GitHub CI **SUCCESS**（Schema Contract、OpenSpec Static、Change Gate、Trusted Change Gate、Documentation Links、Naming）。
+- 目标 PR HEAD `516721a055a2a0bb2babdf91102691c293cb68c1` → Main Squash `a5778f50b06f4cfb3051df3a1870b5be0dd97aee`；合并后从 Main 对关键 Schema/README 实际读回确认。
+- **CONTRACT FROZEN v1（字段/API/Fixture/所有权）**；仅静态 Schema/Mock 经过验证，P1–P4 代码、实际 UI、Marquez 真实导出、Cloudflare 控制和部署 **均未实现**。安全与付费操作边界照旧。
+
 ## P0 验证 / 下一 Gate
 
-`python -m pip install -r showcase/requirements-test.txt`，随后 `python -m unittest discover -s showcase/tests -p 'test_*.py' -v`；专用 CI 只执行 schema/fixtures 的离线检测。完成 Merge + Static CI 与 Git Main readback 后才能称 **CONTRACT FROZEN v1**。P1–P4 可消费冻结契约进行代码并行；其中 P2/P3 的真实 Runtime 集成与 P4 公网发布仍分别需要独立安全/成本 Gate，不得由 P0 自动授权。
+`python -m pip install -r showcase/requirements-test.txt`，随后 `python -m unittest discover -s showcase/tests -p 'test_*.py' -v`；专用 CI 只执行 schema/fixtures 的离线检测。上述 Git 验收门槛已通过，当前可称 **CONTRACT FROZEN v1**。P1–P4 可消费冻结契约进行代码并行；其中 P2/P3 的真实 Runtime 集成与 P4 公网发布仍分别需要独立安全/成本 Gate，不得由 P0 自动授权。
