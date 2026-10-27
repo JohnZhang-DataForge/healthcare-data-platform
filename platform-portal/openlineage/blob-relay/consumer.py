@@ -175,3 +175,24 @@ class MarquezHttp:
                 data = self.request("GET", f"/namespaces/{quote(ds['namespace'], safe='')}/datasets/{quote(ds['name'], safe='')}")
                 if data.get("namespace") != ds["namespace"] or data.get("name") != ds["name"]:
                     raise RelayError("Marquez dataset readback mismatch")
+
+def consume_with_retry(store, manifest_key: str, marquez, checkpoint: Checkpoint,
+                       *, attempts: int = 3, sleep=None) -> int:
+    """Bounded retry for transport outages; NEVER retries malformed manifests.
+
+    A failed GET after an accepted POST is retried as lineage-only at-least-once
+    delivery. Caller may inject a no-op sleeper for deterministic offline tests.
+    """
+    import time
+    if not isinstance(attempts, int) or not 1 <= attempts <= 10:
+        raise RelayError("attempts must be between 1 and 10")
+    if sleep is None:
+        sleep = time.sleep
+    for attempt in range(attempts):
+        try:
+            return consume(store, manifest_key, marquez, checkpoint)
+        except (ConnectionError, TimeoutError, OSError):
+            if attempt + 1 == attempts:
+                raise
+            sleep(min(2 ** attempt, 30))
+    raise AssertionError("unreachable")
