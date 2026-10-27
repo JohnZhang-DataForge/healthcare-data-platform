@@ -66,6 +66,18 @@ class ShowcaseContractsTest(unittest.TestCase):
         with self.assertRaises(ValidationError):
             validate("run-status-v1", status)
 
+    def test_snapshot_rejects_private_runtime_fields(self):
+        snap = load("snapshot.mock.json", FIXTURES)
+        snap["marquez_private_api"] = "http://internal:5000/api/v1"
+        with self.assertRaises(ValidationError):
+            validate("snapshot-v1", snap)
+
+    def test_error_contract_rejects_unexpected_internal_details(self):
+        err = load("api-error.mock.json", FIXTURES)
+        err["stack_trace"] = "hidden implementation"
+        with self.assertRaises(ValidationError):
+            validate("api-error-v1", err)
+
     def test_public_mock_has_no_identifying_payload(self):
         snap = load("snapshot.mock.json", FIXTURES)
         serialized = json.dumps(snap).lower()
