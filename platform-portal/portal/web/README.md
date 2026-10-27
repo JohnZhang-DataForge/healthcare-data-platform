@@ -32,4 +32,4 @@ The tests consume the actual P0 mock snapshot from `../fixtures/snapshot.mock.js
 4. Prove `npm ci && npm test && npm run build`, inspect `out/`, and browser-test Table/Column edges against Agent B sanitized historical events plus empty/failure scenarios. Test the exact intended commit. This has **not** been done.
 5. Only after Coordinator approval may Cloudflare be configured manually by the user.
 
-For the upstream technical review see [UPSTREAM-REVIEW](UPSTREAM-REVIEW.md) on the separate 7.1 PR. Those two agent branches are intentionally independent; Main Session coordinates merges.
+For upstream technical review see [Agent A 7.1 PR #518](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/518). The two agent branches are intentionally independent; Main Session coordinates merges.
