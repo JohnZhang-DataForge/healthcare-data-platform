@@ -26,7 +26,7 @@ def validate(contract, payload):
     Draft202012Validator.check_schema(schema)
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(payload)
 
-class ShowcaseContractsTest(unittest.TestCase):
+class PortalContractsTest(unittest.TestCase):
     def test_all_examples_match_versioned_schemas(self):
         for contract, filename in CASES.items():
             with self.subTest(contract=contract):

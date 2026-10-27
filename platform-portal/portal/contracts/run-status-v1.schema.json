@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://healthcare-showcase.example/schema/run-status-v1.schema.json",
+  "$id": "https://healthcare-portal.example/schema/run-status-v1.schema.json",
   "title": "Read-only Demo Run Status v1",
   "description": "Only verified backend readback advances real statuses; MOCK status must always be visibly labelled.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "showcase.run-status.v1"
+      "const": "portal.run-status.v1"
     },
     "request_id": {
       "type": "string",
