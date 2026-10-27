@@ -16,7 +16,7 @@
 - [x] 1.7 建立 P1–P4 独占目录、CODE 地图、Branch/PR 及共享资源协调边界，明确 GET 静态快照与 POST 控制接口契约。
 - [x] 1.8 **CONTRACT FROZEN v1（仅机器契约，不代表部署）**：P0 [PR #513](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/513) HEAD `516721a055a2a0bb2babdf91102691c293cb68c1` 的 旧 CI（当时名称为 Showcase Contract Validation）、OpenSpec Static、OpenSpec Change Gate、Trusted Change Gate、Documentation Relative Links、Component Code Naming **6/6 SUCCESS**；Squash Merge `a5778f50b06f4cfb3051df3a1870b5be0dd97aee`，从 Main 实际重新读取 `snapshot-v1.schema.json` 和 `documents/systems/showcase/README.md` 并确认版本。后续 Schema 调整需版本/兼容审查；真实展示/Cloudflare/Runner 尚未部署。
 - [ ] 1.9 P1–P4 各自独立 PR 实现/集成（对应原 4.x/5.x 验收要求），P2/P3 真实访问及 P4 公网发布均须各自通过安全/费用 Gate；P0 不包含实际部署。
-- [ ] 1.10 **Portal 命名/路径更正**：原顶级 `showcase/` 与单独 `documents/systems/showcase/` 全量搬迁到 `platform-portal/portal/` 和 `documents/systems/platform-portal/portal/`，`schema_version` 改为 `portal.*.v1`，CI 改名并同步系统 README/CODE；必须通过 CI、Main Merge 和新路径读回后才正式勾选。
+- [x] 1.10 **Portal 命名/路径更正（Main 验收完成）**：原顶级 `showcase/` 与单独 `documents/systems/showcase/` 全量搬迁到 `platform-portal/portal/` 和 `documents/systems/platform-portal/portal/`，`schema_version` 改为 `portal.*.v1`，CI 改名并同步系统 README/CODE；[PR #515](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/515) 六项检查全部 SUCCESS，Main Squash `59a5ef8ab65aa3fa757ef710f4bdb96f0440d72b`；独立从 Main 读回 `portal.snapshot.v1`、新 CODE 与 CI，确认旧根目录及旧 Workflow 均不再存在。
 
 ## 2. Free-runtime compatibility proof (future separately authorized work)
 

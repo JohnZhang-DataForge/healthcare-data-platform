@@ -2,7 +2,7 @@
 status: active-contract
 scope: healthcare-portal-contract-foundation-v1
 decision_date: 2026-10-27
-implementation_status: rename-pending-ci; no-runtime-or-public-deployment
+implementation_status: contract-frozen-v1; no-runtime-or-public-deployment
 ---
 
 # Healthcare Portal — P0 Contract Foundation
@@ -57,6 +57,10 @@ P4 的 `portal/infra/` 管理 **本 Portal** 的 Cloudflare Pages/Worker 发布�
 - 目标 PR HEAD `516721a055a2a0bb2babdf91102691c293cb68c1` → Main Squash `a5778f50b06f4cfb3051df3a1870b5be0dd97aee`；合并后从 Main 对关键 Schema/README 实际读回确认。
 - **最初 P0 版本已通过验收（此次重命名后需重新检查路径/接口前缀）**；仅静态 Schema/Mock 经过验证，P1–P4 代码、实际 UI、Marquez 真实导出、Cloudflare 控制和部署 **均未实现**。安全与付费操作边界照旧。
 
+## 归属重命名验收（2026-10-27）
+
+[PR #515](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/515) 六项 GitHub CI（Portal Contract Validation、OpenSpec Static、Change Gate、Trusted Gate、Documentation Links、Code Naming）全部 SUCCESS；Main SHA `59a5ef8ab65aa3fa757ef710f4bdb96f0440d72b`。已重新从 Main 读取 Schema、CODE，并检查旧源码 Root/旧 CI 文件均不存在，版本 `portal.snapshot.v1` 可读。仅目录与静态接口验收，**不是** Cloudflare Pages、Worker、Marquez 导出或 Fabric E2E 的运行验收。
+
 ## P0 验证 / 下一 Gate
 
-`python -m pip install -r platform-portal/portal/requirements-test.txt`，随后 `python -m unittest discover -s platform-portal/portal/tests -p 'test_*.py' -v`；专用 CI 只执行 schema/fixtures 的离线检测。初版 P0 验收已通过；本次移动后，以最新 PR CI、Main 合并与新路径读回完成 **PORTAL CONTRACT FROZEN v1**。P1–P4 可消费冻结契约进行代码并行；其中 P2/P3 的真实 Runtime 集成与 P4 公网发布仍分别需要独立安全/成本 Gate，不得由 P0 自动授权。
+`python -m pip install -r platform-portal/portal/requirements-test.txt`，随后 `python -m unittest discover -s platform-portal/portal/tests -p 'test_*.py' -v`；专用 CI 只执行 schema/fixtures 的离线检测。初版 P0 验收与 [重命名 PR #515](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/515) 均通过 CI、合并 Main 与新路径读回，当前正式 **PORTAL CONTRACT FROZEN v1**。P1–P4 可消费冻结契约进行代码并行；其中 P2/P3 的真实 Runtime 集成与 P4 公网发布仍分别需要独立安全/成本 Gate，不得由 P0 自动授权。
