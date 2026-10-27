@@ -7,7 +7,7 @@ implementation_status: contract-frozen-v1; no-runtime-or-public-deployment
 
 # Healthcare Portal — P0 Contract Foundation
 
-本页是 *Portal P0* 的接口与 Agent 协作权威入口。Portal 属于既有 `platform-portal/` 子组件，不是新独立系统；此前误建的顶级源码已迁移。长期目标架构继续以 [按需真实演示设计](../../../infra/HEALTHCARE-ON-DEMAND-LIVE-DEMO.md) 为准；任务进度只在 [Active OpenSpec tasks](../../../../openspec/changes/healthcare-on-demand-live-demo/tasks.md) 管理。Source map 见 [CODE](CODE.md)。
+本页是 *Portal P0* 的接口与 Agent 协作权威入口。**最新用户决定（2026-10-27）**：三个独立 Session 为 Marquito Web、Marquez Exporter、Azure OpenLineage/Blob Relay；Cloudflare 用户手工配置，独立 P4 Infra 开发包取消，访客 Control 待后续阶段。最新协调和 Agent 提示词见 [OpenSpec Parallel Workstreams](../../../../openspec/changes/healthcare-on-demand-live-demo/parallel-workstreams.md)；下文旧 P1–P4 表为冻结 P0 历史分工，不应再作为当前执行分配。Portal 属于既有 `platform-portal/` 子组件，不是新独立系统；此前误建的顶级源码已迁移。长期目标架构继续以 [按需真实演示设计](../../../infra/HEALTHCARE-ON-DEMAND-LIVE-DEMO.md) 为准；任务进度只在 [Active OpenSpec tasks](../../../../openspec/changes/healthcare-on-demand-live-demo/tasks.md) 管理。Source map 见 [CODE](CODE.md)。
 
 ## P0 契约版本与范围
 
@@ -47,9 +47,9 @@ implementation_status: contract-frozen-v1; no-runtime-or-public-deployment
 
 各 Agent 在独立 Branch/PR 工作；在接手前读取 `AGENTS.md`、本页、[session coordination](../../../engineering/development/SESSION-COORDINATION.md) 与当前 `main` / 开放 PR。每份 PR 正文包含 `OpenSpec-Change: healthcare-on-demand-live-demo` 和具体 `OpenSpec-Task: n.n`；PR 合并前必须通过 Required CI。一次涉及相同 Workflow/Schema/Infra root 的修改先协调 Owner；即使目录不同，共享 Spark、Airflow、PostgreSQL、K8s、Azure 的实机写入**不能并行默认执行**。P0 没有给任何 Agent 运行或收费授权。
 
-## P4 Infra 的职责与边界
+## 历史 P4 Infra 的职责与边界（当前已由用户改成 Cloudflare 手工配置）
 
-P4 的 `portal/infra/` 管理 **本 Portal** 的 Cloudflare Pages/Worker 发布配置、路由与域名、staging/production 环境绑定、经 P3 确认的 D1 migrations / Durable Object bindings、Secret **引用名称**、可回滚部署配置；不得保存 Secret 值。`.github/workflows/` 存放 Actions 发布入口。P3 `portal/control/` 才负责 Turnstile、地域判断、原子配额、single-flight 和固定 Workflow 的业务控制。P4 不接管 Marquez/PG14、业务 Spark/Airflow/OMOP 或现有 Azure/Fabric Terraform，也不能自行上线公网或启用收费资源。
+以下仅记载原 P0 设计，不表示要实施 P4 Infra 源码。用户改为按 [手工配置指南](CLOUDFLARE-MANUAL.md) 执行 Cloudflare 操作；后续如需 Worker Control 仍另走源码/安全 Gate。历史设计中，P4 的 `portal/infra/` 管理 **本 Portal** 的 Cloudflare Pages/Worker 发布配置、路由与域名、staging/production 环境绑定、经 P3 确认的 D1 migrations / Durable Object bindings、Secret **引用名称**、可回滚部署配置；不得保存 Secret 值。`.github/workflows/` 存放 Actions 发布入口。P3 `portal/control/` 才负责 Turnstile、地域判断、原子配额、single-flight 和固定 Workflow 的业务控制。P4 不接管 Marquez/PG14、业务 Spark/Airflow/OMOP 或现有 Azure/Fabric Terraform，也不能自行上线公网或启用收费资源。
 
 ## P0 已验证的 Git 证据（2026-10-27）
 
