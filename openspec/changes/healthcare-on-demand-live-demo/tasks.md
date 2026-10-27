@@ -56,7 +56,7 @@
 > 详细角色、可复制 Agent 指令、代码所有权与冲突解决统一见 [parallel-workstreams.md](parallel-workstreams.md)。此节任务由主 Session 汇总；各 Agent PR 需关联对应**单独**任务行并只编辑自己的进度，不以其他 Session 的代码完成代替真实验收。**P4 Infra 源码模块已按用户决定取消**；原 4.x/5.x 是历史功能需求，并不构成自动运行授权。
 
 - [x] 7.0 确定三个并行 Agent：A Marquito Web、B Marquez GET-only Exporter、C Azure OpenLineage Blob Publisher/Local Consumer；协调分支与独占代码路径，Cloudflare 改用户手工发布，暂缓访客 Control；完成本计划并由 CI/PR 入 Main（仅计划工作，不代表代码完成）。
-- [ ] 7.1 **Agent A：Marquito 评估和依赖许可 Gate**。核查作者源码、静态构建和 JSONL 解析兼容；未获重发布授权前不得复制作者源码到 Public Repo 或公开部署。
+- [ ] 7.1 **Agent A：Marquito 评估和依赖许可 Gate**。核查作者源码、静态构建和 JSONL 解析兼容；未获重发布授权前不得复制作者源码到 Public Repo 或公开部署。 **进度（Agent A，2026-10-27）**：已只读核对上游 Next.js 静态导出、JSONL parser、Table/Column 图及样例入口；[技术评估](../../../platform-portal/portal/web/UPSTREAM-REVIEW.md)。尚无适用的重发布许可，未在本环境执行原项目构建/浏览器测试，故不勾选；等待作者授权和主 Session 路径批准。
 - [ ] 7.2 **Agent A：Portal Web 集成**。利用获得授权的 Marquito 代码/合法适配方式实现静态展示，解析导出事件，标明 MOCK / VERIFIED，离线浏览器验收 Table/Column Lineage。
 - [ ] 7.3 **Agent B：Marquez 只读事件导出**。离线 Mock 与独立 API GET 适配，输出稳定 OpenLineage JSONL，字段检查保留表/列血缘；无 Marquez POST 或 PG 写入。
 - [ ] 7.4 **Agent B：网站数据发布包**。生成冻结 `portal.snapshot.v1` 及对应可公开的 JSONL，验证源 SHA、Manifest、Run URL、数据一致性；失败不能替换最后成功快照，未通过的只保留为本地候选。
