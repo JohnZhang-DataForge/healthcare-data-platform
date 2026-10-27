@@ -11,7 +11,7 @@
 
 ## 2. Free-runtime compatibility proof (future separately authorized work)
 
-- [ ] 2.1 固定跨 Fabric/Local 的 PySpark/Delta/OpenLineage 版本矩阵和冻结 FHIR/HL7 合成输入 Contract、测试账号/Workspace/费用 Gate。
+- [ ] 2.1 固定跨 Fabric/Local 的 PySpark/Delta/OpenLineage 版本矩阵和冻结 FHIR/HL7 合成输入 Contract、测试账号/Workspace/费用 Gate。**已完成一部分实机只读证据**：[Self-Runner #40438541415](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40438541415) GET 成功：`healthcare-omop` 与 `johnzhang-test` 都是 Fabric Runtime 2.0 / Starter Pool；本地 dw-spark 27 个历史 SparkApplication 均 3.5.7，检查时 active=0；当前可见 Trial FTL4 Active。已提交隔离内存 PySpark 冒烟源码，**但尚未真正执行 Fabric Notebook / Local Spark 和 OpenLineage，故 2.1 保持未勾选**。
 - [ ] 2.2 免费 Fabric 真实 Notebook POC：Listener/SDK 产生 START、COMPLETE、Input/Output、ColumnLineage；Blob readback；记录 CU/时长与失败。
 - [ ] 2.3 现有 K8s Spark Operator 同核心 ETL POC：业务 DQ、持久读回与 OpenLineage 一致性；不得回放冻结历史 OMOP Batch。
 - [ ] 2.4 两后端数据/性能/费用报告；用户依据证据选择正式常态 Backend 或保留双模式，不能推断付费 F2 已授权。

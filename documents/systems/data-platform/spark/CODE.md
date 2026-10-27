@@ -42,6 +42,12 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`canonical_gate.py`](../../../../local-data-platform/spark/common/canonical_gate.py) | Canonical Schema/Metadata/Unique Key 共用 Gate |
 | [`omop.py`](../../../../local-data-platform/spark/common/omop.py) | OMOP 人口学 Concept 和 Schema/Person 辅助校验 |
 
+## Cross-runtime compatibility smoke (test-only)
+
+| 源文件（直接链接） | 职责 / 使用边界 |
+| --- | --- |
+| [`portable_patient_smoke.py`](../../../../local-data-platform/spark/apps/compatibility/portable_patient_smoke.py) | 隔离的 5 条匿名 Patient PySpark DataFrame 等价性冒烟测试；用于 Fabric Spark / Local Spark 的同源码版本兼容性，内存计算，不读写业务数据库或 Blob，不证明 OpenLineage Listener 已兼容 |
+
 ## 4. Canonical、OMOP Mapping Contracts
 
 | 源文件（直接链接） | 职责 / 使用边界 |
