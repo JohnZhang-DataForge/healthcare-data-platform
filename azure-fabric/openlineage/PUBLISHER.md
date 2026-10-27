@@ -8,4 +8,4 @@ A caller supplies actual OpenLineage RunEvent JSON objects, one batch ID, backen
 
 `AzureBlobStore` is injected with an SDK `ContainerClient`, not auto-connected. Its `create` maps actual Azure ResourceExistsError to `BlobExists` and preserves all other failures. The Fake SDK tests assert `BlockBlob` and `overwrite=False`. Real Azure container IAM, app identity, provisioning, monitoring, retry/backoff and private collector ingestion are **HOLD** until independently authorized. Use private `openlineage/v1/` prefix separate from business RAW/READY & Terraform State.
 
-Downstream contract: [Local Blob Consumer](../../../platform-portal/openlineage/blob-relay/) after its separate PR. Same physical Dataset namespace/name or exact Manifest lineage evidence, **never similarity**, is needed for cross-cloud joins.
+Downstream contract: Local Blob Consumer (separate OpenSpec 7.7 / PR #522, path `platform-portal/openlineage/blob-relay/`) after its separate PR. Same physical Dataset namespace/name or exact Manifest lineage evidence, **never similarity**, is needed for cross-cloud joins.
