@@ -1,0 +1,8 @@
+{
+  "schema_version": "showcase.trigger-response.v1",
+  "request_id": "6d02ac20-f1b8-40f8-88d7-a9e67b4185aa",
+  "phase": "ACCEPTED",
+  "accepted_at": "2026-10-27T20:00:01Z",
+  "idempotent_replay": false,
+  "status_url": "/api/demo/status/6d02ac20-f1b8-40f8-88d7-a9e67b4185aa"
+}

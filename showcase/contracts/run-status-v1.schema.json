@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://healthcare-showcase.example/schema/run-status-v1.schema.json",
+  "title": "Read-only Demo Run Status v1",
+  "description": "Only verified backend readback advances real statuses; MOCK status must always be visibly labelled.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "showcase.run-status.v1"
+    },
+    "request_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "phase": {
+      "enum": [
+        "ACCEPTED",
+        "GENERATING",
+        "BLOB_READY",
+        "SPARK_RUNNING",
+        "QUALITY_PASSED",
+        "LINEAGE_SYNCED",
+        "SNAPSHOT_PUBLISHED",
+        "COMPLETE",
+        "FAILED",
+        "EXPIRED"
+      ]
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_origin": {
+      "enum": [
+        "MOCK",
+        "VERIFIED_READBACK"
+      ]
+    },
+    "last_successful_snapshot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,95}$"
+    },
+    "public_message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "completed_snapshot_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,95}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "request_id",
+    "phase",
+    "observed_at",
+    "data_origin",
+    "last_successful_snapshot_id",
+    "public_message"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "COMPLETE"
+          }
+        },
+        "required": [
+          "phase"
+        ]
+      },
+      "then": {
+        "required": [
+          "completed_snapshot_id"
+        ]
+      }
+    }
+  ]
+}

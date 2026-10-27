@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://healthcare-showcase.example/schema/api-error-v1.schema.json",
+  "title": "Public API Error Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "showcase.api-error.v1"
+    },
+    "error_code": {
+      "enum": [
+        "INVALID_REQUEST",
+        "TURNSTILE_FAILED",
+        "REGION_DENIED",
+        "TRIGGER_DISABLED",
+        "IP_LIMIT",
+        "GLOBAL_LIMIT",
+        "ALREADY_RUNNING",
+        "BUDGET_LOCKED",
+        "BACKEND_UNAVAILABLE",
+        "STATUS_NOT_FOUND"
+      ]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "retry_after_seconds": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schema_version",
+    "error_code",
+    "message"
+  ]
+}
