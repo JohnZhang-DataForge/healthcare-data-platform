@@ -1,0 +1,11 @@
+# OpenLineage Blob -> existing Marquez consumer (offline)
+
+Entry: [consumer.py](consumer.py). Unit tests: `python -m unittest discover -s platform-portal/openlineage/blob-relay/tests -p 'test_*.py' -v`. **No Azure, Kubernetes, PG14, Marquez POST, or network operations were executed** by this module's offline tests.
+
+The caller injects an authorized READ-only Blob store, an authorized existing PRIVATE Marquez endpoint, and a **persistent SQLite checkpoint** on a mounted durable local volume. Call `consume(blob_store, manifest_key, marquez, checkpoint)` only for the exact `openlineage/v1/batches/<batch>/manifest.json` key returned by the Publisher. The design intentionally does not implement a cloud polling loop, scheduler, Synthea rerun, Spark trigger or PG17/OMOP Writer.
+
+Checks happen **before POST**: committed marker exists and has schema version `openlineage.blob-manifest.v1`; event count/prefix/key/sha256, canonical JSON, Run UUID, Job/Dataset namespace/name and stable event identity all match. The uncommitted/incomplete/tampered batch is rejected, no event is POSTed.
+
+POST lineage only to the existing Marquez `/api/v1/lineage`. An independent GET Job by exact namespace/name, GET Run by UUID and GET each actual input/output Dataset by namespace/name must succeed before SQLite checkpoint. Terminal COMPLETE requires a Run in state COMPLETED. The code does not guess or add any Dataset or Column lineage edge. A failure leaves checkpoint unadvanced; restart replays the lineage event at least once. Replays may POST twice after a network ambiguity; **this is expected, not an OMOP batch replay**. Successful readback then checkpoint suppresses later repeats, even across process restart.
+
+Later authorized integration must: inject private Blob Storage Data Reader identity (not account keys), configure internal-only Marquez name/port and bounded retries/backoff, private network, monitoring/poison-batch quarantine, robust concurrent-single-consumer lease or unique checkpoint ownership, backup/restore of checkpoint, Dataset readback compatibility against actual Marquez version, security review including possible SQL/secret facets; verify real PG14 persistence and Azure object immutability in a controlled window. Until then **HOLD**.

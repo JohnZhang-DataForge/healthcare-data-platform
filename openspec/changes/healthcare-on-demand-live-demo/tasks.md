@@ -62,6 +62,6 @@
 - [ ] 7.4 **Agent B：网站数据发布包**。生成冻结 `portal.snapshot.v1` 及对应可公开的 JSONL，验证源 SHA、Manifest、Run URL、数据一致性；失败不能替换最后成功快照，未通过的只保留为本地候选。
 - [ ] 7.5 **Agent C：Azure OpenLineage 兼容设计**。研究 Fabric Runtime/Listener/SDK、固定事件格式和适配代码；Fabric 实机测试继续 HOLD，不启动新的 Notebook。
 - [ ] 7.6 **Agent C：Blob OpenLineage Publisher（离线）**。不可变事件对象、SHA256/条件创建、最后发布 Manifest，Fake Azure 客户端及异常测试，不真实 Blob 写入。
-- [ ] 7.7 **Agent C：本地 Blob→Marquez Consumer（离线）**。只消费 committed Manifest、校验/去重/重试/checkpoint，Fake Marquez readback 测试；真实 PG14/Marquez POST 另需授权。
+- [x] 7.7 **Agent C：本地 Blob→Marquez Consumer（离线）**。只消费 committed Manifest、校验/去重/重试/checkpoint，Fake Marquez readback 测试；真实 PG14/Marquez POST 另需授权。**仅离线 Consumer/Mock 与 SQLite checkpoint 测试通过；真实 Marquez/PG14 读写 HOLD。**
 - [ ] 7.8 **用户操作：Cloudflare Pages 手工发布**。等 A/B 构建与静态数据审核成功，按 [CLOUDFLARE-MANUAL](../../../documents/systems/platform-portal/portal/CLOUDFLARE-MANUAL.md) 配置项目、GitHub、构建目录、可选域名；主 Session 在用户读回反馈后验收，只读网站上线不代表控制 API 已启用。
 - [ ] 7.9 **主 Session：全局联调与后续 Gate**。按各 PR CI/Main readback 核对 A/B 接口；C 离线测试单独读回，规划授权后的真实 Azure 测试；自动触发 Cloudflare Worker/配额/邮件在后续阶段再开。
