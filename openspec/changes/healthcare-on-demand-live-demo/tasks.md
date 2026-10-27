@@ -7,7 +7,7 @@
 - [x] 1.1 核对 Healthcare/Self-Runner 最新 Main 与开放 PR/Running Workflows，阅读文档治理、现有 Fabric Capacity Trial 和本地 Portal 真实验收与延后边界，确定本轮纯文档影响范围。
 - [x] 1.2 在 documents/infra/ 冻结 On-Demand Live Demo 目标、双 Spark 可移植策略、OpenLineage → Blob → Marquez/PG14、Marquito 风格展示、访问控制/预算/不实施边界。
 - [x] 1.3 创建 OpenSpec Proposal、Design、Delta Specs（目标 Requirements/Scenario）及后续逐项验收 Tasks；文档索引必须链接唯一权威设计。
-- [ ] 1.4 确认本 PR 的 OpenSpec schema/strict、Trusted Change Gate、Markdown link 检查与 Main 合并；留下准确 PR/CI/merge 证据。设计关闭不等于运行验收。
+- [x] 1.4 设计基线 [Healthcare PR #508](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/508) 经 OpenSpec validate、Trusted Change Gate、Change Gate、Documentation Relative Links 四项 GitHub 检查 SUCCESS，2026-10-26（美国东部）已 squash merge 到 Main `a030d02d46c85bc6932ce7ddba73b5c609f25b58`，并独立从 Main 读回正式方案。设计关闭不等于后续实现或运行验收。
 
 ## 2. Free-runtime compatibility proof (future separately authorized work)
 
