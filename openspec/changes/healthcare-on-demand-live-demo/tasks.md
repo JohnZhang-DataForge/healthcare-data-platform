@@ -14,7 +14,7 @@
 - [x] 1.5 为 P1–P4 冻结 Versioned Snapshot/Trigger/Status/Error JSON Schema v1，包含严格白名单、Mock/Verified Origin、证据门槛、不可用户指定 Workflow/Backend 的负向约束。正式约定见 [Showcase P0](../../../documents/systems/showcase/README.md)。
 - [x] 1.6 提交只含虚构合成数字的 `showcase/fixtures/*.mock.json`，显式 `MOCK ONLY`，用于前端/Exporter/Worker/部署的独立 Mock 集成；不冒充现有真实 P5 Batch。
 - [x] 1.7 建立 P1–P4 独占目录、CODE 地图、Branch/PR 及共享资源协调边界，明确 GET 静态快照与 POST 控制接口契约。
-- [ ] 1.8 PR CI schema/negative tests 全绿、review/merge Main、从 Main 精确 SHA 复核后才将 `CONTRACT FROZEN v1` 标记正式生效。后续若需调整 Schema，做版本/兼容审查；不能在未合并分支上宣称冻结。
+- [x] 1.8 **CONTRACT FROZEN v1（仅机器契约，不代表部署）**：P0 [PR #513](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/513) HEAD `516721a055a2a0bb2babdf91102691c293cb68c1` 的 Showcase Contract Validation、OpenSpec Static、OpenSpec Change Gate、Trusted Change Gate、Documentation Relative Links、Component Code Naming **6/6 SUCCESS**；Squash Merge `a5778f50b06f4cfb3051df3a1870b5be0dd97aee`，从 Main 实际重新读取 `snapshot-v1.schema.json` 和 `documents/systems/showcase/README.md` 并确认版本。后续 Schema 调整需版本/兼容审查；真实展示/Cloudflare/Runner 尚未部署。
 - [ ] 1.9 P1–P4 各自独立 PR 实现/集成（对应原 4.x/5.x 验收要求），P2/P3 真实访问及 P4 公网发布均须各自通过安全/费用 Gate；P0 不包含实际部署。
 
 ## 2. Free-runtime compatibility proof (future separately authorized work)
