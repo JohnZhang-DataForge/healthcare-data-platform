@@ -9,13 +9,14 @@
 - [x] 1.3 创建 OpenSpec Proposal、Design、Delta Specs（目标 Requirements/Scenario）及后续逐项验收 Tasks；文档索引必须链接唯一权威设计。
 - [x] 1.4 设计基线 [Healthcare PR #508](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/508) 经 OpenSpec validate、Trusted Change Gate、Change Gate、Documentation Relative Links 四项 GitHub 检查 SUCCESS，2026-10-26（美国东部）已 squash merge 到 Main `a030d02d46c85bc6932ce7ddba73b5c609f25b58`，并独立从 Main 读回正式方案。设计关闭不等于后续实现或运行验收。
 
-## 1A. P0 Showcase contract foundation（2026-10-27，代码/Schema；尚未部署）
+## 1A. P0 Portal contract foundation（2026-10-27，代码/Schema；尚未部署）
 
-- [x] 1.5 为 P1–P4 冻结 Versioned Snapshot/Trigger/Status/Error JSON Schema v1，包含严格白名单、Mock/Verified Origin、证据门槛、不可用户指定 Workflow/Backend 的负向约束。正式约定见 [Showcase P0](../../../documents/systems/showcase/README.md)。
-- [x] 1.6 提交只含虚构合成数字的 `showcase/fixtures/*.mock.json`，显式 `MOCK ONLY`，用于前端/Exporter/Worker/部署的独立 Mock 集成；不冒充现有真实 P5 Batch。
+- [x] 1.5 为 P1–P4 冻结 Versioned Snapshot/Trigger/Status/Error JSON Schema v1，包含严格白名单、Mock/Verified Origin、证据门槛、不可用户指定 Workflow/Backend 的负向约束。正式约定见 [Portal P0](../../../documents/systems/platform-portal/portal/README.md)。
+- [x] 1.6 提交只含虚构合成数字的 `platform-portal/portal/fixtures/*.mock.json`，显式 `MOCK ONLY`，用于前端/Exporter/Worker/部署的独立 Mock 集成；不冒充现有真实 P5 Batch。
 - [x] 1.7 建立 P1–P4 独占目录、CODE 地图、Branch/PR 及共享资源协调边界，明确 GET 静态快照与 POST 控制接口契约。
-- [x] 1.8 **CONTRACT FROZEN v1（仅机器契约，不代表部署）**：P0 [PR #513](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/513) HEAD `516721a055a2a0bb2babdf91102691c293cb68c1` 的 Showcase Contract Validation、OpenSpec Static、OpenSpec Change Gate、Trusted Change Gate、Documentation Relative Links、Component Code Naming **6/6 SUCCESS**；Squash Merge `a5778f50b06f4cfb3051df3a1870b5be0dd97aee`，从 Main 实际重新读取 `snapshot-v1.schema.json` 和 `documents/systems/showcase/README.md` 并确认版本。后续 Schema 调整需版本/兼容审查；真实展示/Cloudflare/Runner 尚未部署。
+- [x] 1.8 **CONTRACT FROZEN v1（仅机器契约，不代表部署）**：P0 [PR #513](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/513) HEAD `516721a055a2a0bb2babdf91102691c293cb68c1` 的 旧 CI（当时名称为 Showcase Contract Validation）、OpenSpec Static、OpenSpec Change Gate、Trusted Change Gate、Documentation Relative Links、Component Code Naming **6/6 SUCCESS**；Squash Merge `a5778f50b06f4cfb3051df3a1870b5be0dd97aee`，从 Main 实际重新读取 `snapshot-v1.schema.json` 和 `documents/systems/showcase/README.md` 并确认版本。后续 Schema 调整需版本/兼容审查；真实展示/Cloudflare/Runner 尚未部署。
 - [ ] 1.9 P1–P4 各自独立 PR 实现/集成（对应原 4.x/5.x 验收要求），P2/P3 真实访问及 P4 公网发布均须各自通过安全/费用 Gate；P0 不包含实际部署。
+- [ ] 1.10 **Portal 命名/路径更正**：原顶级 `showcase/` 与单独 `documents/systems/showcase/` 全量搬迁到 `platform-portal/portal/` 和 `documents/systems/platform-portal/portal/`，`schema_version` 改为 `portal.*.v1`，CI 改名并同步系统 README/CODE；必须通过 CI、Main Merge 和新路径读回后才正式勾选。
 
 ## 2. Free-runtime compatibility proof (future separately authorized work)
 
@@ -31,7 +32,7 @@
 - [ ] 3.3 本地 Consumer 仅对成功事件调用内网 Marquez POST，PG14 GET/Job/Run/Dataset 独立读回后 checkpoint；不能重跑业务 Writer。
 - [ ] 3.4 Dataset URI/Manifest 证据跨 Runtime 对齐，不依赖 Fabric CascadeDelete 等资源依赖伪造业务边。
 
-## 4. Read-only showcase (future)
+## 4. Read-only Portal (future)
 
 - [ ] 4.1 核实 Marquito 源码许可或选取有许可的图形组件，使用真实脱敏 JSONL 在浏览器验证 Table/Column Lineage。
 - [ ] 4.2 创建 Cloudflare Pages 匿名只读站点和版本化快照，验证数据字段白名单/脱敏，不能直接访问 Marquez/API/PG/Private Blob。
