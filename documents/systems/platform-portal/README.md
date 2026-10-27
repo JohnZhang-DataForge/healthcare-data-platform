@@ -5,7 +5,10 @@ last_verified: 2026-10-25
 source_sha: 95f480078da622178f4fa7b68d986d8e05a91ae9
 ---
 
-# Platform Portal — OpenLineage + Marquez 可观测性子系统
+# Platform Portal — OpenLineage / Marquez / Portal 可观测性系统
+
+> **2026-10-27 目录归属更新**：面向公网的 UI 属于现有 Platform Portal 的 [`portal/`](../../../platform-portal/portal/) 子组件（[README](portal/README.md) · [CODE](portal/CODE.md)），并非新建第四个顶级系统。仅 P0 Contract/Mock/CI 已实现，Web/Exporter/Worker/Infra 尚未部署；既有 Marquez 和 PG14 不变。下文历史“独立项目”仅指独立变更、安全、验收 Gate。
+
 
 > **本地 Portal P1–P6 MVP 归档收尾（2026-10-25）**：原有 LAN-only 官方 Marquez Web、NEW_ONLY Airflow→Spark→真实 S3 DatasetVersion、Patient/Encounter Table/Column Level UI、Writer PG17 真 COMMIT 及同批 SKIP 已按 Design A 验收，完整原始 Evidence 随独立 Archive PR 存放 [Portal OpenSpec Archive](../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/tasks.md)。旧 A4 `unknown` 唯一事件原因**未证实、独立延期**，P4 物理 RDD START-only 与 `business_dataset_gate=INCOMPLETE` **保留**；不伪造 COMPLETE、不改写原失败 Run。公网匿名只读及 Azure/Fabric/FHIR/HL7 综合展示将在**独立项目**实施，现有 Web NodePort 30999 **不可直接公开**。参见 [长期遗留与独立项目边界](../../architecture/design/LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)。归档正式生效以 Archive PR CI/Main Merge 为准。
 

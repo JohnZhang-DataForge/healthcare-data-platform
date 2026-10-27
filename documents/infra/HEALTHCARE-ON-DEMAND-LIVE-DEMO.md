@@ -8,6 +8,8 @@ source_sha: 37ba38ce0cc23f2c6f324c30a2d5cea0c4e2eb3c
 
 # Healthcare On-Demand Live Demo — Emory 按需真实 E2E 展示
 
+> **2026-10-27 目录归属**：公网 Web 与受控 API 归入既有 [`platform-portal/portal/`](../../platform-portal/portal/) 子组件，不另建独立网站源码根目录。P4 `portal/infra/` 仅管理 Cloudflare 部署与回滚，不重复 Fabric Terraform、Marquez 或本地数据平台。见 [Portal P0 契约](../systems/platform-portal/portal/README.md)。
+
 > **用户确认的目标方案，尚未实施。** 本文件是跨云 Demo 专项基础设施设计入口；开发与验收任务只在 [Active OpenSpec Change](../../openspec/changes/healthcare-on-demand-live-demo/tasks.md) 跟踪。本文不授权购买云容量、执行 Notebook、修改 K8s、写 PostgreSQL 或发布公网入口。
 
 ## 1. 目标与已确认决策

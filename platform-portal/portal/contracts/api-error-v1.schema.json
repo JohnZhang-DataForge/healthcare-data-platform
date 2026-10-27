@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://healthcare-showcase.example/schema/api-error-v1.schema.json",
+  "$id": "https://healthcare-portal.example/schema/api-error-v1.schema.json",
   "title": "Public API Error Envelope v1",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "showcase.api-error.v1"
+      "const": "portal.api-error.v1"
     },
     "error_code": {
       "enum": [

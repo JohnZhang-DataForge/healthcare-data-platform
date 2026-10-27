@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://healthcare-showcase.example/schema/snapshot-v1.schema.json",
-  "title": "Public Healthcare Showcase Snapshot v1",
+  "$id": "https://healthcare-portal.example/schema/snapshot-v1.schema.json",
+  "title": "Public Healthcare Portal Snapshot v1",
   "description": "Sanitized last-successful snapshot; GET cannot trigger execution. MOCK must render a visible banner.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "showcase.snapshot.v1"
+      "const": "portal.snapshot.v1"
     },
     "snapshot_id": {
       "type": "string",

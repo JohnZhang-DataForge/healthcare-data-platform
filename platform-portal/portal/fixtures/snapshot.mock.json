@@ -1,5 +1,5 @@
 {
-  "schema_version": "showcase.snapshot.v1",
+  "schema_version": "portal.snapshot.v1",
   "snapshot_id": "snapshot-mock-atlanta-001",
   "data_origin": "MOCK",
   "generated_at": "2026-10-27T20:00:00Z",

@@ -1,5 +1,5 @@
 {
-  "schema_version": "showcase.trigger-request.v1",
+  "schema_version": "portal.trigger-request.v1",
   "client_request_id": "d7c06a76-7d48-4f24-9b2a-1f14e735afce",
   "turnstile_token": "MOCK_TEST_TOKEN_NEVER_SEND_TO_SERVER"
 }
