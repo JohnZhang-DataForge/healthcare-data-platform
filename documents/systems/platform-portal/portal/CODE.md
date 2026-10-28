@@ -12,6 +12,6 @@
 | Agent B Exporter | [`platform-portal/portal/exporter/`](../../../../platform-portal/portal/exporter/) | GET-only Marquez 原始事件导出、公开白名单、证据门槛和离线测试；**未执行真实 Marquez 读回/公网发布** |
 | Agent B Offline CI | [`.github/workflows/portal-exporter-offline.yml`](../../../../.github/workflows/portal-exporter-offline.yml) | Fake GET + 真实 v1 JSON Schema 离线验证（无共享 Runtime） |
 
-Agent B Exporter 源码与离线测试已在独立开发分支实现，尚待 PR CI/Review/Main Merge；Web、Control 和真实部署仍以各自独立 PR/运行证据为准。勿把 Exporter 单测或契约通过写成已部署。
+Exporter 源码、专用 CI 和离线测试已由 Agent B PR #523 实现，但**尚无真实 Marquez 数据读回或公网发布**；Web、Control 和公开部署仍由各自任务验收。新增维护源码须同步本 CODE 地图。
 
 **当前并行开发分工（未实现）**：见 [OpenSpec 多 Agent 计划](../../../../openspec/changes/healthcare-on-demand-live-demo/parallel-workstreams.md)；Web= `platform-portal/portal/web/`、Exporter=`platform-portal/portal/exporter/`、Azure Relay=`azure-fabric/openlineage/` + `platform-portal/openlineage/blob-relay/`。Cloudflare 由用户手动配置，[手工指南](CLOUDFLARE-MANUAL.md)；旧 `portal/infra/` 不再列为当前开发任务。Agent 新增实际源码时，各自 PR 必须同步 owning CODE map 和本 CHANGE 的对应 Task。
