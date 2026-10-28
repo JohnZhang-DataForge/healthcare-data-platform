@@ -1,3 +1,5 @@
+> **2026-10-27 路线更新：本手册只适用于旧 Cloudflare Pages 静态网站方案，已非首版公网 MVP。** 用户已选择直接复用 Marquez Web + Cloudflare Tunnel；当前操作请改看 [Marquez 公网 MVP 设计](../marquez/PUBLIC-SHOWCASE-PLAN.md) 和 [新 Change](../../../../openspec/changes/reuse-marquez-public-showcase/tasks.md)。本页保留作为未来静态模式的历史资料；不要依此连接 Pages 发布首版。
+
 # Cloudflare Pages 人工配置指南 — Portal 只读网站
 
 > **预备步骤，不表示已上线。** Cloudflare 完全由用户手工操作；这些步骤**只能在 Web Agent 的可合法发布源码与 Exporter 的公开数据包通过验收后执行**。所有界面名称可能随 Cloudflare UI 版本稍有变化。不得为方便操作将本地 Marquez/PG14、Azure 私有 Blob、Token 或访问内网的 API 直接暴露到浏览器。

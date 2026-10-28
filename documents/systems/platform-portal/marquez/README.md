@@ -7,6 +7,8 @@ source_sha: b92ccc9b7976e740d9dd77994a0725b115693705
 
 # Marquez — OpenLineage API 与原生 Web
 
+> **2026-10-27 新公网 MVP 决策**：复用本组件现有官方 Web，不开发 Marquito/React Flow 首版；设计见 [Native Public Showcase](PUBLIC-SHOWCASE-PLAN.md) 和 [新 OpenSpec Change](../../../../openspec/changes/reuse-marquez-public-showcase/tasks.md)。Cloudflare Tunnel 由用户手操，服务端仍需 Gateway 在 Marquez 自身 API Proxy 之前拒写；目前尚未对外部署。既有 P6 LAN 证据照旧。
+
 > **最新 P6 GUI 完整目标 Batch 结果（2026-10-25，更新下方旧历史状态）**：内网 Chrome 官方 Marquez 页面已在 **新 Batch `synthea-new-only-gh-40208104106`** 的 `s3://health-processing` 中证明两份实际输出 `entity=encounter` / `entity=patient`（`ingest_date=2026-10-25`）的 Table Level 数据集→真实 Spark Job→数据集和 Column Level 逐字段映射连线。此前新批次 `RUN FACETS.parent` 也已在 GUI 显示正确 Airflow namespace/UUID 前缀；Reconcile 的**精确两份输入 DatasetVersion 通过独立 API GET**。**P6 7.1 方案 A PASS**；但 Reconcile 顶层 Application 画布仍一个节点、RDD 物理 Action START-only、严格原 `business_dataset_gate=INCOMPLETE`，不能声称已经恢复物理终态或同屏画完 Reconcile。参考 [SHOWCASE-RUNBOOK](SHOWCASE-RUNBOOK.md) 与 [GUI 分层验收记录](../../../../openspec/changes/archive/2026-10-25-complete-platform-portal-lineage-integration/evidence/PORTAL-P6-LAN-BROWSER-HOMEPAGE-20261025.md)。P6 7.3 Archive 待整个 Change 原有未完成事项独立核查，截图不对外分享私网 IP。
 
 
