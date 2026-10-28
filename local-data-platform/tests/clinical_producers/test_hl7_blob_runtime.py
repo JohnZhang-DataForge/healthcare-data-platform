@@ -134,6 +134,7 @@ class HL7BlobRuntimeTests(unittest.TestCase):
             {"hospital_id": "atlanta-hospital-a"},
             {"source_manifest_sha256": "b" * 64},
             {"channel_id": "00000000-0000-4000-8000-000000000000"},
+            {"messages": [{"encounter_id": "enc-one", "message_id": "1001"}]},
             {"messages": [
                 {"encounter_id": "enc-one", "message_id": "1001"},
                 {"encounter_id": "enc-two", "message_id": "1001"}]},
