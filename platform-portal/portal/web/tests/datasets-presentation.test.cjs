@@ -107,6 +107,9 @@ test('packer injects readonly and UX scripts before original bundle and rejects 
   try{
     fs.mkdirSync(path.join(d,'dist'));
     fs.writeFileSync(path.join(d,'dist/index.html'),'<html><head></head><body><script src="./bundle.js"></script></body></html>');
+    for (const asset of ['public-readonly.css','public-datasets.css','public-readonly.js','public-datasets.js']) {
+      fs.writeFileSync(path.join(d,'dist',asset), 'fixture for '+asset);
+    }
     const s=install(d);
     assert.ok(s.indexOf('public-readonly.js')<s.indexOf('public-datasets.js'));
     assert.ok(s.indexOf('public-datasets.js')<s.indexOf('bundle.js'));
@@ -156,4 +159,26 @@ test('unknown landing leaf or partial metadata retains honest Marquez default an
     assert.equal(x.rows[0].span.textContent,'source=synthea/source_version=v3.3.0/ing...');
     assert.equal(x.rows[0].link.getAttribute('data-public-dataset'),null);
   }
+});
+
+test('fingerprinted script URLs change with content; stable assets keep stable cache keys',()=>{
+  const {fingerprintUrl,install}=require('../install-overlay.cjs');
+  const os=require('node:os');
+  const d=fs.mkdtempSync(path.join(os.tmpdir(),'portal-fingerprint-'));
+  try{
+    fs.mkdirSync(path.join(d,'dist'));
+    fs.writeFileSync(path.join(d,'dist/index.html'),'<html><head></head><body><script src="./bundle.js"></script></body></html>');
+    const files=['public-readonly.css','public-datasets.css','public-readonly.js','public-datasets.js'];
+    files.forEach((asset,i)=>fs.writeFileSync(path.join(d,'dist',asset),'version-one-'+i));
+    const before=fingerprintUrl(d,'public-datasets.js');
+    assert.match(before,/^\/public-datasets\.js\?v=[0-9a-f]{20}$/);
+    const cssBefore=fingerprintUrl(d,'public-datasets.css');
+    const output=install(d);
+    assert.ok(output.includes(before));
+    assert.ok(output.includes(cssBefore));
+    fs.writeFileSync(path.join(d,'dist','public-datasets.js'),'version-two');
+    assert.notEqual(fingerprintUrl(d,'public-datasets.js'),before);
+    assert.equal(fingerprintUrl(d,'public-datasets.css'),cssBefore);
+    assert.throws(()=>fingerprintUrl(d,'missing.js'),/ENOENT/);
+  }finally{fs.rmSync(d,{recursive:true,force:true});}
 });

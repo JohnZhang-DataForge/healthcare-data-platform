@@ -8,9 +8,15 @@ test('inject before original Web bundle, fail closed for changed template', () =
     fs.mkdirSync(path.join(d, 'dist'));
     const f = path.join(d, 'dist/index.html');
     fs.writeFileSync(f, '<html><head></head><body><script src="./bundle.js"></script></body></html>');
+    for (const asset of ['public-readonly.css','public-datasets.css','public-readonly.js','public-datasets.js']) {
+      fs.writeFileSync(path.join(d,'dist',asset), 'asset bytes for '+asset);
+    }
     const h = install(d);
     assert.ok(h.indexOf('public-readonly.js') < h.indexOf('./bundle.js'));
-    assert.match(h, /public-readonly.css/);
+    assert.match(h, /public-readonly.css\?v=[0-9a-f]{20}/);
+    assert.match(h, /public-readonly.js\?v=[0-9a-f]{20}/);
+    assert.match(h, /public-datasets.js\?v=[0-9a-f]{20}/);
+    assert.match(h, /public-datasets.css\?v=[0-9a-f]{20}/);
     assert.throws(() => install(d), /Unsupported/);
   } finally { fs.rmSync(d, { recursive: true, force: true }); }
 });
