@@ -16,8 +16,8 @@
 
 ## 3. Cloudflare Tunnel (Agent M3 docs + user manual)
 - [ ] 3.1 准备可按 UI 实际操作的 `documents/systems/platform-portal/marquez/PUBLIC-TUNNEL-RUNBOOK.md`，Tunnel 仅指 Gateway，不映射 NodePort、API、PG14；Token 本地保存，含测试、诊断和一键撤销方案。
-- [ ] 3.2 **用户手工执行** Cloudflare Dashboard Tunnel/DNS/域名及 origin cloudflared 安装；前提是 M1/M2 Gate 合格并独立授权具体公网发布动作，不由 Agent 擅自部署。
+- [ ] 3.2 **用户手工执行（PARTIAL LIVE）**：2026-10-28 UTC 用户已在 Cloudflare Dashboard 创建 Tunnel、Published Application/CNAME，手工部署 K8s Secret/cloudflared Deployment，且公网 Marquez 页面实机可达；但 M1/M2 完整安全 Gate、Cloudflare Access 与 Token 轮换/连接器健康尚无独立验证，**不视为批准匿名发布或本任务全验收**。见 [本次用户现场观察](evidence/PUBLIC-MARQUEZ-RUNTIME-OBSERVATION-20261028.md)。
 
 ## 4. Acceptance / Release (Coordinator + user)
-- [ ] 4.1 用户授权后在可控窗口串行测试浏览器 GUI 的真实 Patient/Encounter Table/Column、Job/Run，独立验证写请求不可达、必要 API 读请求可达及敏感字段披露范围；记录 exact Main SHA、环境、时间和可回滚证据。
-- [ ] 4.2 只有 4.1 满足后才批准稳定域名对匿名访客上线；用户证实访问成功后记录真实 URL/域名。若环境断网，诚实显示不可用，**没有自动静态快照回退**。不虚构 Always-on SLA。
+- [ ] 4.1 **现场部分通过（2026-10-28 UTC）**：用户贴出的 Gateway 本地只读验证有 GET/HEAD 200、POST/DELETE 405、指定 API 403；公网 Chrome 已显示真实 Job `COMPLETED`、Person/Encounter Table Level 和 Patient Column Level 六条映射。**尚缺 Encounter 公网 Column、Run History 精确读回、全部敏感 GET/写方法/编码绕过测试、Access/Token 轮换确认及独立运行版本证据**，因此不勾选。详见 [OpenSpec 观察记录](evidence/PUBLIC-MARQUEZ-RUNTIME-OBSERVATION-20261028.md)。
+- [ ] 4.2 **域名已经实测可访问但匿名正式发布尚未获验收**：用户公网截图证实 `https://lineage.johnzhang-dataforge.site` 返回真实 Marquez Web；仅证明当时访问可用，不证明 Access 限制、敏感内容审查、外网负向安全、持续在线或 Always-on SLA。必须先完成 4.1 剩余安全 Gate，再批准稳定匿名展示；**没有自动静态快照回退**。
