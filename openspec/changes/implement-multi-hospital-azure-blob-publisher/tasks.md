@@ -221,3 +221,10 @@
 - Healthcare PR #534 已于 Main 合并 `37c3cc0d100e5f9e996a76f7d30f42f62d3e9b65`，现有 `hl7_blob_runtime.py` 通过 Host-only Mock/Azurite 验收。此前 GHCR `sha256:cfc94...` 属旧 DIRECT FHIR 源码，**不包含 HL7 新入口**。
 - 本候选 PR 更新唯一 SHA-only Publisher release workflow 的 Host CI：增加新的 OIE scoped readback 与 HL7 runtime 完整离线测试；Docker 非 root/无网络、只读 Smoke 强制 import HL7 runtime 并运行其 `--help`。此工作流已有 Main-only SHA 标签、Digest 发布验证，**仅 workflow 路径推送到 Main 后触发一次真实 GHCR 镜像发布**；仍不创建任何 K8s Job/Secret，也不发布 Azure Blob。
 - 发布流程必须实际完成 Main Push Run、Digest 单独核对后，才把新镜像标为 `GHCR_RELEASE_PASS` 并给后续受控 Self-Runner 使用；PR CI 和 Host Docker 成功不是 Registry Digest。Johns Creek 3.2/4.2 保持 OPEN。
+
+
+### 2026-10-28 — Johns Creek新冻结FHIR→OIE提交端代码候选（尚未实机）
+
+- 新增`oie_message_submit.py`：沿用已验收 `source_handoff.verify_handoff`，绑定`johnscreek-hl7-gh-<run_id>`与外部 Source Manifest SHA、Hospital/Feed；读取并校验全部冻结 FHIR Bundle、完整 Encounter 数量与唯一 ID，在**任何** OIE POST 前严格拒绝缺失/篡改。使用 OIE scoped 非管理员账号 + 可信 CA HTTPS，逐条传递 Patient+Encounter Envelope 到**已经实机证实正确的**指定 Channel，仅将真实 OIE 数字 Message ID/源 Encounter 输出给同一 Runner。单次 POST timeout/ACK不明或部分成功均`HOLD_NO_RETRY`，不自动重复上游消息、不触碰历史 32 条 Derby。
+- 新增同 Namespace worker01 / Generator 只读 PVC 静态 Sender Job `submit-oie-new-fhir-job.yaml.tpl` 及离线负向测试；现有 Azure Publisher SHA-only Workflow 扩充真实镜像 OIE POST 模块 Import/无网络 CLI Smoke，**该PR合并才触发新 SHA/Digest 构建**，尚未验收Registry。
+- 此新增源码不等于完整受控 Self-Runner Controller 或授权：仍待用户执行的真实只读 OIE Channel/TLS/权限实机核对、新 batch生成/审核、新消息一次提交/完整收据捕获、Blob远端独立 GET/ETag/SHA/Manifest、幂等。OpenSpec 3.2/3.3/4.2和OIE 2.5均保持 OPEN。

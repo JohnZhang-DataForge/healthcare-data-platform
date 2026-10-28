@@ -83,6 +83,7 @@ jobs:
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_hl7_publisher.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_persisted_readback.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_hl7_blob_runtime.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_message_submit.py -v
           echo PUBLISHER_RELEASE_HOSTED_CONTRACT=PASS
           echo KUBERNETES_MUTATIONS=NO
           echo AZURE_STORAGE_WRITES=NO
@@ -134,6 +135,8 @@ jobs:
           from apps.clinical_producers.azure_blob_publisher import (
               AzureSDKBlobBackend, publish_immutable)
           from apps.clinical_producers.oie_hl7_publisher import prepare_oie_hl7
+          from apps.clinical_producers.oie_message_submit import (
+              ScopedOIEPoster, submit_new_fhir_request)
           from apps.clinical_producers.hl7_blob_runtime import (
               RECEIPT_VERSION, publish_hl7_from_new_receipts)
           assert RECEIPT_VERSION == "healthcare-oie-new-request-receipts-v1"
@@ -149,6 +152,10 @@ jobs:
           docker run --rm --network none --read-only --cap-drop ALL \
             --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
             -m apps.clinical_producers.hl7_blob_runtime --help >/dev/null
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.oie_message_submit --help >/dev/null
+          echo "OIE_SCOPED_POST_RUNTIME_CLI_SMOKE=PASS"
           echo "PUBLISHER_HL7_RUNTIME_CLI_SMOKE=PASS"
           echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
           echo "AZURE_BLOB_REAL_UPLOAD=NO"

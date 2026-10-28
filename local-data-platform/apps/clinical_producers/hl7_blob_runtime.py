@@ -207,6 +207,7 @@ def main(argv: list[str] | None = None) -> int:
         "status": result["status"],
         "manifest_key": result["manifest_key"],
         "manifest_sha256": result["manifest_sha256"],
+        "manifest_create_status": result["manifest_create_status"],
         "objects_verified": len(result["objects"]),
     }, sort_keys=True))
     return 0
