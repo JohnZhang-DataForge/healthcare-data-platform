@@ -4,6 +4,16 @@
 
 **DRAFT / 未通过评审 / 不授权运行。** 完整、可讨论的技术设计与 Local 对照矩阵维护在唯一正文：[Fabric FHIR Blob → Notebook/Pipeline → OneLake 入库初稿](../../../documents/architecture/design/FABRIC-FHIR-BLOB-INGESTION-DRAFT.md)。本文件仅固定 OpenSpec 决策背景、未决项、风险与实现门槛，避免复制另一份可能漂移的详细设计。
 
+## Local architecture deep-dive (2026-10-27)
+
+源码级分层复盘与新通用代码目录树见 [Local DP → Fabric 代码架构](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)。核心改进：
+
+- 明确 Local 历史 Processing/Canonical/Approved Raw/Processed/Candidate/Writer 的逻辑合同与当前 NEW_ONLY 并行 Person/Encounter Spark → Reconciliation → Handoff → PG Writer 的实际运行路径不同，不把所有历史发布器说成当前 DAG 默认工作。
+- Fabric Bronze 为原始 FHIR 字节，Local Approved Raw 为 Canonical Parquet；Silver 对应 approved Canonical，Candidate/Serving 保留持久化 Gate。
+- 候选源码采用 azure-fabric/ingestion/ 下的 Python package：sources、canonical、mapping、quality、publishing、jobs、runtime 与单测；Fabric 原生 Notebook/Pipeline 仅薄调用，不把所有 Mapper 写进 notebook-content.py。
+- 单 Notebook 首批降低成本，但严格 OMOP Person+Visit 的多表 readback/commit visibility 可使用独立 verifier Notebook；Delta 不等于 PG single-TX。
+- Local Canonical/OMOP Contracts 以既有文件为唯一事实，不手工创建第二套不一致 schema；FHIR/HL7/PG Snapshot 的源 Adapter 独立，不强行共用原始 Manifest 协议。
+
 核对基准 Healthcare Main 4596c1cec866032e5753597201b595dd1505b2ae（2026-10-27）。对现有代码和合同仅做只读核对；没有对用户提到的 Azure Blob 成功提交做本轮独立 Runtime GET，也没有把三次 Fabric Notebook Test FAILED 改写成成功。
 
 ## Candidate decisions for review (not adopted)
