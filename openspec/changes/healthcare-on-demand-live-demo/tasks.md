@@ -60,7 +60,7 @@
 - [ ] 7.2 **Agent A：Portal Web 集成**。利用获得授权的 Marquito 代码/合法适配方式实现静态展示，解析导出事件，标明 MOCK / VERIFIED，离线浏览器验收 Table/Column Lineage。
 - [ ] 7.3 **Agent B：Marquez 只读事件导出**。离线 Mock 与独立 API GET 适配，输出稳定 OpenLineage JSONL，字段检查保留表/列血缘；无 Marquez POST 或 PG 写入。
 - [ ] 7.4 **Agent B：网站数据发布包**。生成冻结 `portal.snapshot.v1` 及对应可公开的 JSONL，验证源 SHA、Manifest、Run URL、数据一致性；失败不能替换最后成功快照，未通过的只保留为本地候选。
-- [ ] 7.5 **Agent C：Azure OpenLineage 兼容设计**。研究 Fabric Runtime/Listener/SDK、固定事件格式和适配代码；Fabric 实机测试继续 HOLD，不启动新的 Notebook。
+- [ ] 7.5 **Agent C：Azure OpenLineage 兼容设计**。研究 Fabric Runtime/Listener/SDK、固定事件格式和适配代码；Fabric 实机测试继续 HOLD，不启动新的 Notebook。 **2026-10-27：候选 Scala 2.13/2.12 Listener 适配配置、版本矩阵和离线测试已提交；真实 Fabric Listener/Notebook 仍 HOLD，故未勾选真实兼容验收。**
 - [x] 7.6 **Agent C：Blob OpenLineage Publisher（离线）**。不可变事件对象、SHA256/条件创建、最后发布 Manifest，Fake Azure 客户端及异常测试，不真实 Blob 写入。**仅源码/离线 Mock 已通过；Azure 实机验收仍 HOLD，3.x Gate 不受影响。**
 - [ ] 7.7 **Agent C：本地 Blob→Marquez Consumer（离线）**。只消费 committed Manifest、校验/去重/重试/checkpoint，Fake Marquez readback 测试；真实 PG14/Marquez POST 另需授权。
 - [ ] 7.8 **用户操作：Cloudflare Pages 手工发布**。等 A/B 构建与静态数据审核成功，按 [CLOUDFLARE-MANUAL](../../../documents/systems/platform-portal/portal/CLOUDFLARE-MANUAL.md) 配置项目、GitHub、构建目录、可选域名；主 Session 在用户读回反馈后验收，只读网站上线不代表控制 API 已启用。
