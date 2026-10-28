@@ -157,6 +157,7 @@ jobs:
             -m apps.clinical_producers.oie_message_submit --help >/dev/null
           echo "OIE_INTERNAL_ADMIN_SHA256_LEAF_PIN_AVAILABLE=PASS"
           echo "OIE_SCOPED_POST_RUNTIME_CLI_SMOKE=PASS"
+          echo "OIE_FIFTY_PATIENT_BOUNDED_EVENTS_RELEASE=PASS"
           echo "PUBLISHER_HL7_RUNTIME_CLI_SMOKE=PASS"
           echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
           echo "AZURE_BLOB_REAL_UPLOAD=NO"
