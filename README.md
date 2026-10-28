@@ -1,5 +1,41 @@
 # Healthcare Data Platform
 
+> **LIVE INTERACTIVE DEMO** — **[Explore the Healthcare Data Lineage Viewer](https://lineage.johnzhang-dataforge.site)**
+>
+> Explore real Airflow/Spark jobs, dataset dependencies, run metadata, and column-level transformations in Marquez. The pipeline uses **synthetic clinical data only**; this is a self-hosted engineering lab, so availability is not guaranteed.
+
+### See the transformations at field level
+
+These are six field mappings observed in the live Marquez Column Level view for the synthetic Patient pipeline.
+
+```mermaid
+flowchart LR
+    subgraph input["Synthetic Synthea source"]
+        E["ETHNICITY"]
+        B["BIRTHDATE"]
+        I["Id"]
+        D["DEATHDATE"]
+        G["GENDER"]
+        R["RACE"]
+    end
+
+    subgraph output["Canonical Patient dataset"]
+        E2["ethnicity_code"]
+        B2["birth_date"]
+        I2["source_record_id"]
+        D2["death_date"]
+        G2["gender_code"]
+        R2["race_code"]
+    end
+
+    E --> E2
+    B --> B2
+    I --> I2
+    D --> D2
+    G --> G2
+    R --> R2
+```
+
 A clinical data engineering project built with Kubernetes, PySpark, Apache Airflow, PostgreSQL, and Microsoft Fabric.
 
 The project starts with a straightforward problem: clinical data arrives in different formats, while analysts need consistent, traceable records they can query. I built a working local pipeline that takes synthetic patient and encounter data from source files to **OMOP CDM 5.4** tables. I am extending it with FHIR/HL7 source integration and an Azure/Microsoft Fabric analytics layer.
@@ -48,20 +84,13 @@ The local components run on a multi-node Kubernetes cluster. The producer and co
 
 **Retry-safe database writes.** The pipeline checks batch identity and prior completion before committing. Reconciliation and database readback are separate from orchestration status: a successful Airflow task does not, by itself, prove the data was committed. Running an already-completed batch follows a skip path rather than inserting the same records again.
 
-**Run and data lineage.** Airflow and Spark emit OpenLineage metadata to Marquez. On the internal network, the Marquez UI has displayed real Patient/Encounter processing datasets and field-level mappings. The remaining Spark RDD action lifecycle gap is documented rather than hidden.
+**Run and data lineage.** Airflow and Spark emit OpenLineage metadata to Marquez. The [public lineage explorer](https://lineage.johnzhang-dataforge.site) has been opened in a browser showing real Patient and Encounter table-level lineage and Patient column mappings. It reuses the native Marquez UI behind a method-filtering gateway; a dedicated public-facing UI and broader security review remain future work. An unresolved Spark RDD action lifecycle gap does not prevent viewing the verified business-level dependencies.
 
 **Repeatable engineering work.** Components are packaged as containers and deployed on Kubernetes. GitHub Actions builds and tests the images, while Terraform manages the Azure/Fabric infrastructure. Code, contracts, workflow definitions, and operational notes are kept in the repository.
 
-### A batch that can be checked
+### A verified batch
 
-On October 25, 2026, a new synthetic batch committed **100 Person** and **15,742 Visit Occurrence** rows. An independent PostgreSQL readback confirmed the commit. Running the same batch again skipped the Spark processing and writer, with no further database changes.
-
-- [Original batch execution](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40208104106) — the workflow ultimately reported failure in a *post-commit evidence step*, not in the database transaction.
-- [Independent PostgreSQL and lineage verification](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209504539).
-- [Same-batch skip and unchanged-data verification](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40209818676).
-- [Marquez walkthrough and known lineage limits](documents/systems/platform-portal/marquez/SHOWCASE-RUNBOOK.md).
-
-These are results from specific test runs, not production availability or performance claims. More results and their scope are recorded in the [project status](documents/engineering/status/PROJECT-STATUS.md).
+On October 25, 2026, a new synthetic batch committed **100 Person** and **15,742 Visit Occurrence** rows. Independent PostgreSQL readback confirmed the commit, and a repeat run took the already-completed-batch skip path without further database changes. These are results from specific test runs, not production availability or performance claims.
 
 ## Design choices
 
@@ -85,20 +114,23 @@ This repository uses generated records, not PHI. It explores practices that matt
 
 Terraform has provisioned and verified the Azure/Fabric foundation, including workspace, Lakehouse, identity/access configuration, and a Blob connection. Fabric pipelines/notebooks and the full **OMOP → Azure Blob → OneLake** analytical flow have **not** passed end-to-end acceptance. That work, along with FHIR/HL7 ingestion, is the next stage.
 
-## Where to start in the code
+## Explore the source code
 
-| Interested in | Start here |
+The links below go straight to the implementation and build files—no internal runbooks or agent-facing documentation.
+
+| Area | Source |
 | --- | --- |
-| System design and pipeline boundaries | [System overview](documents/architecture/SYSTEM-OVERVIEW.md) · [data flow](documents/architecture/DATA-FLOW.md) |
-| Ingestion, Airflow, Spark, and OMOP components | [Data platform guide](documents/systems/data-platform/README.md) · [source tree](local-data-platform/) |
-| The working batch consumer | [Airflow DAG](local-data-platform/airflow/dags/new_only_omop_consumer.py) |
-| Transformations and database writing | [Spark code map](documents/systems/data-platform/spark/CODE.md) · [OMOP code map](documents/systems/data-platform/omop/CODE.md) |
-| Lineage and the internal viewer | [Platform Portal](documents/systems/platform-portal/README.md) · [Marquez walkthrough](documents/systems/platform-portal/marquez/SHOWCASE-RUNBOOK.md) |
-| Azure and Microsoft Fabric | [Fabric system guide](documents/systems/azure-fabric/README.md) · [Terraform architecture](documents/systems/azure-fabric/infra-terraform/ARCHITECTURE.md) |
-| Builds, tests, and ongoing status | [GitHub Actions](.github/workflows/) · [project status](documents/engineering/status/PROJECT-STATUS.md) |
-
-For detailed design decisions, testing evidence, and operations, see the [documentation index](documents/README.md). Contributors and coding agents should begin with [AGENTS.md](AGENTS.md).
+| Airflow orchestration and batch consumer | [Airflow DAGs](local-data-platform/airflow/dags/) |
+| Synthetic clinical producers, FHIR and HL7 integration | [Clinical producers](local-data-platform/apps/clinical_producers/) |
+| PySpark Person/Visit transformations | [Spark applications](local-data-platform/spark/apps/) |
+| Guarded and idempotent OMOP writing | [OMOP writer](local-data-platform/apps/omop_writer/) |
+| Data contracts and validation | [Contracts](local-data-platform/contracts/) |
+| Kubernetes application definitions | [Kubernetes manifests](local-data-platform/kubernetes/manifests/) |
+| Marquez metadata and lineage setup | [Marquez integration](platform-portal/marquez/) |
+| Airflow/Spark OpenLineage emitters | [OpenLineage integrations](platform-portal/openlineage/) |
+| Azure / Microsoft Fabric infrastructure | [Terraform source](azure-fabric/infra-terraform/) |
+| CI/CD image builds and checks | [GitHub Actions workflows](.github/workflows/) |
 
 ---
 
-*Independent project · Synthetic clinical data · Local OMOP processing verified; cross-source and Fabric analytical processing still in progress.*
+*Independent engineering project · Synthetic clinical data only · Local OMOP pipeline verified · Multi-source and Fabric analytics still in development.*
