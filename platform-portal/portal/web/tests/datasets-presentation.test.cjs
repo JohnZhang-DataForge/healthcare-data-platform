@@ -3,6 +3,8 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const src=fs.readFileSync(path.join(__dirname,'../public-datasets.js'),'utf8');
 const encounter='source=synthea/source_version=v3.3.0/ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106/entity=encounter/run_id=task004-encounter-20261025T154424Z-9/work/normalized/data';
 const patient=encounter.replace('entity=encounter/run_id=task004-encounter','entity=patient/run_id=task004-person');
+const landingPrefix='source=synthea/source_version=v3.3.0/ingest_date=2026-10-25/batch_id=synthea-new-only-gh-40208104106';
+const landingNames=['manifest.json','encounters.csv','patients.csv'].map(name=>landingPrefix+'/'+name);
 function el(text=''){
   const attributes=new Map();
   return {textContent:text,href:'',
@@ -50,7 +52,7 @@ test('show real Encounter and Patient, exact Batch/date/Run, unmodified lineage 
   assert.equal(x.rows[1].span.textContent,'Patient');
   assert.equal(x.rows[0].cells[1].textContent,'40208104106');
   assert.equal(x.rows[0].cells[2].textContent,'2026-10-25');
-  assert.equal(x.rows[0].link.getAttribute('data-public-run'),'Run: task004-encounter-20261025T154424Z-9');
+  assert.equal(x.rows[0].link.getAttribute('data-public-description'),'Run: task004-encounter-20261025T154424Z-9');
   assert.equal(x.rows[0].link.getAttribute('title'),encounter);
   assert.ok(x.rows[0].link.href.endsWith(encodeURIComponent(encounter)));
   assert.match(x.rows[0].cells[1].getAttribute('title'),/Namespace: s3:\/\/health-processing/);
@@ -85,4 +87,47 @@ test('packer injects readonly and UX scripts before original bundle and rejects 
     assert.match(s,/public-datasets.css/);
     assert.throws(()=>install(d),/Unsupported/);
   }finally{fs.rmSync(d,{recursive:true,force:true});}
+});
+
+test('real Landing uses distinct file types, full batch and ingest date without inventing a run',()=>{
+  const x=setup({chosen:'s3://health-landing',ns:'s3://health-landing',data:landingNames});
+  assert.deepEqual(x.headers.slice(0,3).map(h=>h.textContent),
+    ['DATASET','BATCH','INGEST DATE']);
+  assert.deepEqual(x.rows.map(r=>r.span.textContent),
+    ['Batch Manifest','Encounters CSV','Patients CSV']);
+  assert.deepEqual(x.rows.map(r=>r.link.getAttribute('data-public-description')),
+    ['File: manifest.json','File: encounters.csv','File: patients.csv']);
+  assert.deepEqual(x.rows.map(r=>r.cells[1].textContent),
+    ['40208104106','40208104106','40208104106']);
+  assert.deepEqual(x.rows.map(r=>r.cells[2].textContent),
+    ['2026-10-25','2026-10-25','2026-10-25']);
+  assert.match(x.rows[0].cells[1].getAttribute('title'),/Namespace: s3:\/\/health-landing/);
+  assert.match(x.rows[0].cells[2].getAttribute('title'),/Marquez Source: s3:\/\/health-landing/);
+  for(let i=0;i<3;i++){
+    assert.ok(x.rows[i].link.href.endsWith(encodeURIComponent(landingNames[i])));
+    assert.equal(x.rows[i].link.getAttribute('title'),landingNames[i]);
+  }
+  x.update();
+  assert.equal(x.rows[2].span.textContent,'Patients CSV','re-render remains stable');
+});
+test('all 12 public Landing records are differentiated by exact (batch,file), not timestamps',()=>{
+  const batches=['39625216978','40186737808','40194178133','40208104106'];
+  const names=batches.flatMap(b=>['manifest.json','encounters.csv','patients.csv'].map(file=>
+    'source=synthea/source_version=v3.3.0/ingest_date=2026-10-25/batch_id=synthea-new-only-gh-'+b+'/'+file));
+  const x=setup({chosen:'s3://health-landing',ns:'s3://health-landing',data:names});
+  assert.equal(x.rows.length,12);
+  const keys=x.rows.map(r=>r.cells[1].textContent+'|'+r.span.textContent);
+  assert.equal(new Set(keys).size,12);
+});
+test('unknown landing leaf or partial metadata retains honest Marquez default and links',()=>{
+  for(const name of [
+    landingPrefix+'/unverified_file.csv',
+    'source=synthea/ingest_date=2026-10-25/manifest.json',
+    'source=synthea/batch_id=synthea-new-only-gh-40208104106/manifest.json'
+  ]){
+    const x=setup({chosen:'s3://health-landing',ns:'s3://health-landing',data:[name]});
+    assert.equal(x.headers[0].textContent,'NAME');
+    assert.equal(x.rows[0].span.textContent,'source=synthea/source_version=v3.3.0/ing...');
+    assert.equal(x.rows[0].link.getAttribute('data-public-dataset'),null);
+  }
 });

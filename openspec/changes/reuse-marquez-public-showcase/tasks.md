@@ -19,6 +19,8 @@
 
 - [ ] 1.7 **Public Web LAN image refresh**：2026-10-28 PR #545 合并 Main `b3d48bd0ba8010bf2e7d559eee47031597f6a104`，镜像构建发布 [#40686987016](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40686987016) PASS，Digest `sha256:483f115e3be0b69c755b07982d714319646bd124d3804645541e367222a97317`。受本次用户授权，将 `dw-marquez/Deployment/marquez-public-web` 的 `public-web` 镜像从旧固定 Digest `sha256:2ae03240ed5297f6bfaab08bc37d7752c43c0175b112ae02a7f19de3b4abeebf` 更新到新 Digest；只修改镜像，不修改任何 Service/NodePort/Cloudflare Gateway/Tunnel、Marquez API、PG14、Airflow 或数据。Runtime 更新与内网独立 GET/浏览器验收尚未完成，实际 Run/回退和源码版本需读回后才可勾选。
 
+- [ ] 1.8 **Landing Dataset readable filenames (CODED, LIVE NOT VERIFIED)**：根据公开 Marquez API GET-only [#40768910661](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40768910661) 的真实元数据，Landing 12 行为 4 Batch × 3 文件（manifest.json、encounters.csv、patients.csv），没有 `entity`/`run_id`/Column Lineage。扩展 `platform-portal/portal/web/public-datasets.js` 的可读标题至 `s3://health-landing`，以真实文件名 + Batch ID + Ingest Date 区分记录；Processing 保留 Patient/Encounter + Run ID。不能猜造 Landing `run_id` 或 Column Lineage，未知文件/命名回退原样，完整 Dataset href/Name/Namespace/Marquez Source 保留。此项须 PR CI/Main 镜像/受控部署与真实浏览器验收，暂不标完成。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
