@@ -31,7 +31,10 @@ from apps.clinical_producers.hl7_blob_runtime import (
 from apps.clinical_producers.source_handoff import verify_handoff
 
 ENCOUNTER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,150}$")
-MAX_EVENTS = 1000
+# A 50-person synthetic source may legitimately contain >1,000 Encounters.
+# Keep a finite cap before ANY OIE POST; 5,000 is an upper audit/receipt bound,
+# not a requirement to POST a fixed number of events.
+MAX_EVENTS = 5000
 MAX_POST_BYTES = 131_072
 MAX_ACK_BYTES = 4096
 
