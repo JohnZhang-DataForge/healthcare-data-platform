@@ -4,7 +4,7 @@
 
 现有合成 FHIR R4 Producer 已建立 Azure Blob 不可变对象/最后 Manifest 发布协议（真实 Blob 发布范围以 Publisher 的单独验收证据为准）。目前 Healthcare Fabric 仓库里尚无该来源的真实 Notebook/Pipeline 入库实现。需要先设计一条可复用 Local DP 已验收的 Manifest、Canonical、身份、事务保护、对账与血缘经验，同时减少 Airflow/K8s/PG 专用 Writer 的复杂度。
 
-本轮用户要求**先形成架构初稿并在独立 Git 分支讨论，绝不合并 Main**。
+本轮用户要求**先形成架构初稿并在独立 Git 分支讨论，绝不合并 Main**。根据后续要求增加 [Local DP 数据流复盘与新 Fabric 代码结构](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)，避免误将单 Notebook 设计成大型单文件实现。
 
 ## What Changes
 
