@@ -25,3 +25,13 @@ Upstream API is the existing cluster-local Marquez port 80; this Deployment does
 After an authorized preflight, run the pinned manifest with `kubectl apply -f platform-portal/portal/web/kubernetes/lan.yaml` on the trusted runner, check rollout and independent Service endpoints. LAN-only address is `http://<existing-private-k8s-node-address>:31080/` after verifying local firewall/NAT. The test must include `/healthcheck`, GET `/api/v1/namespaces`, Table/Column Lineage, Run History, original 30999 unchanged and Gateway upstream unchanged. A new NodePort may still be reachable outside LAN if separate router/firewall rules exist; do not equate absent Kubernetes ExternalIP with firewall proof.
 
 **Revert without touching original Web/PG:** remove only these three resources after specific authorization, or leave them isolated if validation fails. Do not remove original 30999, the Gateway or the Tunnel. This test does not imply public cutover.
+
+## Public Datasets presentation (Marquez 0.51.1)
+
+Only when a visitor enters `/datasets` without a previously saved Namespace selection, the public overlay selects `s3://health-processing` through the original MUI/Redux dropdown. Explicitly selected namespaces remain authoritative, and no automatic selection runs on the Jobs route.
+
+For a table of fully parseable Processing dataset IDs, the public columns become **Dataset, Batch, Ingest Date, Updated At, Quality, Column Lineage**. The Dataset cell shows `entity=patient/encounter` and the exact `run_id`; the batch cell shortens the known `synthea-new-only-gh-` prefix without changing identifiers. The original Dataset hyperlink and exact full path are retained. Different run IDs remain distinguishable.
+
+Marquez **Namespace** groups datasets while Marquez **Source** describes registered origin. They can have identical values (`s3://health-processing`) in our real metadata but are not equivalent concepts. The public list eliminates the redundant visible columns only for this known schema. Tooltips separately retain the original Namespace, original Marquez Source, and the actual Producer parsed from `source=synthea`. Other namespaces or paths without required identity fields fall back to the native Marquez table.
+
+Implementation: `public-datasets.js` and `public-datasets.css`, injected after the existing read-only controls but before the pinned upstream bundle. This is client-side display logic, not a security boundary or database/data lineage rename. Run `node --test platform-portal/portal/web/tests/*.test.cjs`; real MUI dropdown/browser E2E and a distinct immutable image digest require subsequent LAN verification. Source-only PRs do not deploy to 31080 and do not change the Cloudflare Gateway.
