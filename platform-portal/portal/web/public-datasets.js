@@ -40,21 +40,41 @@
     try {
       var namespace = decodeURIComponent(match[1]);
       var rawName = decodeURIComponent(match[2]);
-      if (namespace !== preferred) return null;
+      var isLanding = namespace === 's3://health-landing';
+      if (!isLanding && namespace !== preferred) return null;
+      var segments = rawName.split('/');
       var params = {};
-      rawName.split('/').forEach(function (part) {
+      segments.forEach(function (part) {
         var split = part.indexOf('=');
         if (split > 0) params[part.slice(0, split)] = part.slice(split + 1);
       });
-      if (!/^[a-z_]+$/i.test(params.entity || '') ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(params.ingest_date || '') ||
-          !params.batch_id || !params.run_id) return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(params.ingest_date || '') ||
+          !/^[a-zA-Z0-9_-]{1,120}$/.test(params.batch_id || '')) return null;
+      var label, detail;
+      if (isLanding) {
+        // Real Landing records: manifest.json, encounters.csv, patients.csv.
+        // These are raw files, not processing runs; no run_id is required.
+        var leaf = segments[segments.length - 1];
+        var labels = {
+          'manifest.json': 'Batch Manifest',
+          'encounters.csv': 'Encounters CSV',
+          'patients.csv': 'Patients CSV'
+        };
+        if (!Object.prototype.hasOwnProperty.call(labels, leaf)) return null;
+        label = labels[leaf];
+        detail = 'File: ' + leaf;
+      } else {
+        if (!/^[a-z_]+$/i.test(params.entity || '') ||
+            !/^[a-zA-Z0-9_.:-]{1,160}$/.test(params.run_id || '')) return null;
+        label = params.entity.charAt(0).toUpperCase() + params.entity.slice(1);
+        detail = 'Run: ' + params.run_id;
+      }
       return {
         namespace: namespace, rawName: rawName,
-        entity: params.entity.charAt(0).toUpperCase() + params.entity.slice(1),
+        label: label, detail: detail, isLanding: isLanding,
         batch: params.batch_id,
         batchLabel: params.batch_id.replace(/^synthea-new-only-gh-/, ''),
-        date: params.ingest_date, run: params.run_id,
+        date: params.ingest_date,
         source: params.source || 'source unspecified',
         version: params.source_version || ''
       };
@@ -114,10 +134,11 @@
           }
           target.removeAttribute('title');
         });
-        a.removeAttribute('data-public-run');
+        a.removeAttribute('data-public-description');
         a.removeAttribute('data-public-dataset');
         a.removeAttribute('aria-label');
         a.removeAttribute('title');
+        c[5].removeAttribute('title');
       });
       return;
     }
@@ -127,10 +148,10 @@
       if (!text) return;
       if (text.getAttribute('data-public-original-text') === null)
         text.setAttribute('data-public-original-text', text.textContent || '');
-      putText(text, d.entity);
+      putText(text, d.label);
       putAttr(a, 'data-public-dataset', 'true');
-      putAttr(a, 'data-public-run', 'Run: ' + d.run);
-      putAttr(a, 'aria-label', d.entity + ', batch ' + d.batch + ', ingested ' + d.date + ', run ' + d.run);
+      putAttr(a, 'data-public-description', d.detail);
+      putAttr(a, 'aria-label', d.label + ', batch ' + d.batch + ', ingested ' + d.date + ', ' + d.detail);
       putAttr(a, 'title', d.rawName);
       var batch = c[1].querySelector('div,span') || c[1];
       var date = c[2].querySelector('div,span') || c[2];
@@ -144,6 +165,8 @@
           putText(part[0], part[1]);
           putAttr(part[0], 'title', part[2]);
         });
+      if (d.isLanding && (c[5].textContent || '').trim() === 'N/A')
+        putAttr(c[5], 'title', 'Landing input file: column-level mappings are shown in Processing.');
     });
   }
 

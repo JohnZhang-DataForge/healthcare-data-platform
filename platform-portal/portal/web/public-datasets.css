@@ -1,7 +1,7 @@
-/* Only verified public Processing rows get a secondary Run ID line. */
+/* Real Landing files show their filename; Processing datasets show the Run ID. */
 table tbody a[data-public-dataset="true"] { display: inline-block; max-width: 350px; }
 table tbody a[data-public-dataset="true"]::after {
-  content: attr(data-public-run);
+  content: attr(data-public-description);
   display: block;
   max-width: 350px;
   overflow: hidden;
