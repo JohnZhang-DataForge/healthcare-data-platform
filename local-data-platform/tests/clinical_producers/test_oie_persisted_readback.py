@@ -139,10 +139,10 @@ class ScopedReadbackTests(unittest.TestCase):
                 def read(self,n):return b"SUCCESS"
             class FakeOpener:
                 def open(self,req,timeout):return Response()
-            with patch.dict(os.environ, {"OIE_INTERNAL_ADMIN_MODE":"1"}), \\
-                 patch("apps.clinical_producers.oie_persisted_readback.PinnedLeafHTTPSHandler") as pin, \\
-                 patch("apps.clinical_producers.oie_persisted_readback.build_opener",
-                       return_value=FakeOpener()):
+            with (patch.dict(os.environ, {"OIE_INTERNAL_ADMIN_MODE":"1"}),
+                  patch("apps.clinical_producers.oie_persisted_readback.PinnedLeafHTTPSHandler") as pin,
+                  patch("apps.clinical_producers.oie_persisted_readback.build_opener",
+                        return_value=FakeOpener())):
                 client=OIEScopedHTTPSClient(username="admin",password="synthetic",
                                             ca_file=leaf)
             pin.assert_called_once_with("synthetic test PEM")
