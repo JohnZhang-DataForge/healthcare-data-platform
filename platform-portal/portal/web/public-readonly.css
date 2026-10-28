@@ -1,0 +1,6 @@
+/* UI only: the public Gateway must still refuse all writes. */
+.MuiChip-deleteIcon,
+.public-readonly-tags .MuiAutocomplete-clearIndicator,
+.public-readonly-tags .MuiAutocomplete-popupIndicator,
+#eventsButton { display: none !important; }
+.public-readonly-tags { pointer-events: none !important; }

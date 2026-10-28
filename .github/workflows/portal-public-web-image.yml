@@ -1,0 +1,49 @@
+name: Portal Public Web Image
+on:
+  pull_request:
+    paths:
+      - 'platform-portal/portal/web/**'
+      - '.github/workflows/portal-public-web-image.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'platform-portal/portal/web/**'
+      - '.github/workflows/portal-public-web-image.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test platform-portal/portal/web/tests/*.test.cjs
+      - name: Image name
+        id: name
+        shell: bash
+        run: |
+          owner="$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+          echo "value=ghcr.io/$owner/healthcare-portal-public-web" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - name: GHCR login
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: platform-portal/portal/web
+          push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ steps.name.outputs.value }}:sha-${{ github.sha }}
+            ${{ steps.name.outputs.value }}:latest
+          provenance: true

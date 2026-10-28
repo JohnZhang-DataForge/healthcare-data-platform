@@ -10,6 +10,8 @@
 - [ ] 1.1 只读核对现有 Marquez 0.51.1 原生 Web/API 的真实请求矩阵、必要静态资源、Home/Jobs/Run/Dataset/Table/Column 功能及已知展示不完整边界，输出有代码证据的审核报告，不动既有 Helm/K8s。
 - [ ] 1.2 确认首版是否 **零 UI 代码更改**即可交付；仅如必要，再独立建议最小 UI 调整和禁用按钮，但不把隐藏按钮当后端保护。
 
+- [ ] 1.3 **Dedicated Public Web image (CODED, NOT DEPLOYED)**: 基于 Marquez Web 0.51.1 的固定官方镜像，在 `platform-portal/portal/web/` 创建只读展示 Overlay，隐藏 Job/Dataset 删除、Tag 编辑/删除、Tag Submit 和目前被 Gateway 拒绝的 raw Events 页面入口；保留 Dashboard、Jobs、Datasets、Run History、Table/Column Lineage 与只读导航/缩放/刷新。独立 GHCR 构建 Workflow + 离线测试。镜像实际构建、发布和公网切换须按对应证据验收；未经授权不改本地 Gateway/Tunnel/K8s。本项不因代码入 PR 即勾选。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
