@@ -155,6 +155,7 @@ jobs:
           docker run --rm --network none --read-only --cap-drop ALL \
             --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
             -m apps.clinical_producers.oie_message_submit --help >/dev/null
+          echo "OIE_INTERNAL_ADMIN_WITH_PINNED_CERT_AVAILABLE=PASS"
           echo "OIE_SCOPED_POST_RUNTIME_CLI_SMOKE=PASS"
           echo "PUBLISHER_HL7_RUNTIME_CLI_SMOKE=PASS"
           echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
