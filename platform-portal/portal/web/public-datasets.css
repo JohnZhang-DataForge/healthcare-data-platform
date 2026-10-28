@@ -1,0 +1,12 @@
+/* Only verified public Processing rows get a secondary Run ID line. */
+table tbody a[data-public-dataset="true"] { display: inline-block; max-width: 350px; }
+table tbody a[data-public-dataset="true"]::after {
+  content: attr(data-public-run);
+  display: block;
+  max-width: 350px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: .72;
+  font: 11px/1.5 monospace;
+}
