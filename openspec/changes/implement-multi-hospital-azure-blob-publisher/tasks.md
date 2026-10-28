@@ -261,3 +261,5 @@
 
 #### 2026-10-28 — OIE existing leaf not a valid CA; exact certificate pin compatibility
 - Self-Runner live bootstrap #40675672176 reached `TLS_PUBLIC_LEAF`, then `SSLCertVerificationError` when treating OIE existing leaf as normal CA trust. No OIE/Azure messages or persistent OIE modifications occurred. For the user-approved internal-only admin MVP, change `OIE_INTERNAL_ADMIN_MODE=1` to enforce **per-connection SHA256 pinned peer DER certificate** before any HTTP request (including admin login); do not use OS trust chains or DNS SAN, and do not modify the old OIE keystore. The explicit pin is carried by a new immutable `dw-synthea` Secret. TLS is encrypted but does not use CA validation in this mode; identity is validated by the exact pinned leaf. Strict default mode still validates CA/hostname. Separate Runner bootstrap and GHCR release must be rebuilt before E2E. Task 3.2 remains OPEN.
+
+- 2026-10-28 Final pinned OIE leaf fingerprint fix Main `55e8023c3521cb80a2c0ec3574fce7a3f05d6b91` needs independently inspected GHCR SHA tag/Digest. Read-only audit below records actual registry pull, not speculative digest, before Self-Runner E2E controller updates.
