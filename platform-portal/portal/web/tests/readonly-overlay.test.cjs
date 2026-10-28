@@ -16,16 +16,16 @@ test('inject before original Web bundle, fail closed for changed template', () =
 });
 test('Delete and Edit Tag disappear, View/Refresh still work, non-GET API rejected', async () => {
   const el = (s) => ({ textContent:s, hidden:false, style:{setProperty(k,v,priority) {this[k]=[v,priority];}}, setAttribute() {}, getAttribute() {return null;} });
-  const del=el('Delete'),edit=el('Edit Tag'),view=el('VIEW'),refresh=el('Refresh'),events=el('');
+  const del=el('Delete'),edit=el('Edit Tag'),fr=el('EFFACER'),es=el('ELIMINAR'),pl=el('USUNĄĆ'),zh=el('删除'),view=el('VIEW'),refresh=el('Refresh'),events=el('');
   const classes = new Set(), field = { disabled:false, tabIndex:0,
     closest:()=>({classList:{contains:(s)=>classes.has(s),add:(s)=>classes.add(s)}}) };
-  const doc={readyState:'complete',body:{},querySelectorAll:(q)=>q==='input#dataset-tags'?[field]:[del,edit,view,refresh],
+  const doc={readyState:'complete',body:{},querySelectorAll:(q)=>q==='input#dataset-tags'?[field]:[del,edit,fr,es,pl,zh,view,refresh],
     getElementById:(s)=>s==='eventsButton'?events:null};
   const seen=[];
   const win={location:{href:'https://example.org/'},fetch:(...p)=>{seen.push(p);return Promise.resolve('ok');}};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public-readonly.js'),'utf8'),
     {document:doc,window:win,URL,Promise,MutationObserver:class{observe(){}}});
-  assert.equal(del.hidden,true);assert.equal(edit.hidden,true);assert.equal(events.hidden,true);
+  assert.equal(del.hidden,true);assert.equal(edit.hidden,true);assert.equal(fr.hidden,true);assert.equal(es.hidden,true);assert.equal(pl.hidden,true);assert.equal(zh.hidden,true);assert.equal(events.hidden,true);
   assert.deepEqual(del.style.display,['none','important']);assert.deepEqual(edit.style.display,['none','important']);
   assert.equal(view.hidden,false);assert.equal(refresh.hidden,false);assert.equal(field.disabled,true);
   assert.ok(classes.has('public-readonly-tags'));
