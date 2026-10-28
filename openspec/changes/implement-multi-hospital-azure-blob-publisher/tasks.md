@@ -1,5 +1,7 @@
 # Tasks — Multi-Hospital Azure Blob Landing Publisher
 
+> **2026-10-28 最新真实运行状态 — 两医院 Azure Landing E2E 已验收：** Atlanta Hospital A FHIR Direct 已在 #40238053772 / #40250606505 完成，Johns Creek Hospital B 新 5 人 Synthea FHIR → OIE HL7 ADT^A01 → Azure Blob 独立读回 [Self-Runner #40715594941](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40715594941) **SUCCESS**：136 新 Encounter / 136 新 OIE Message ID / 6 A01 对象 / 130 非住院跳过；6 对象与 Manifest GET/HEAD/SHA/ETag、Publisher-only retry 幂等、临时资源按 Run 清理均 PASS。请求 `johnscreek-hl7-gh-40715594941`、源 SHA `3f997d301a92457985b8aaa7945cf6367935f701cda41265d72de1cc4cedf229`、Azure Manifest SHA `5ee8b78f5307bdeedfcdde76b2d9b15289ce6a2ea5242baddfc34d9f8219f193`。此为 Landing 验收，**不包括 Fabric Notebook/OMOP**。详见 [精确实机收据](evidence/JOHNS-CREEK-HL7-5P-AZURE-LIVE-E2E-20261028.md)。下方旧 dated HOLD 属历史阶段，不覆盖最新验证。
+
 > **2026-10-27 只读源码/验收对账（覆盖原 10-24 规划状态）：** Atlanta FHIR 5/100 Azure Blob 实机 E2E 已由 Run #40238053772 / #40250606505 验收；Johns Creek 实机 OIE 31 Encounter / 32 持久消息于 #40128211780 验收，但属于旧 Channel/旧 Request 历史。新版 Johns Creek OIE→HL7→Azure Blob 的 Task 3.2、双院 4.2 仍 OPEN；不得将旧『尚无任何 Azure 发布』的历史文字套用到 Atlanta，也不得将本分支候选代码视为 Live PASS。
 
 ## 1. Planning / Contract
@@ -19,8 +21,8 @@
 
 ## 3. Hospital Routes
 - [x] 3.1 Atlanta：源 FHIR R4 → verified handoff → Blob Publisher，验证 Byte-for-byte/FHIR manifest 后可提交。
-- [ ] 3.2 Johns Creek：新 FHIR Source Request → real OIE Channel → independent HL7 ADT A01 readback → Blob Publisher；非住院事件显式跳过，不制造 A01。
-- [ ] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
+- [x] 3.2 Johns Creek：新 FHIR Source Request → real OIE Channel → independent HL7 ADT A01 readback → Blob Publisher；非住院事件显式跳过，不制造 A01。
+- [x] 3.3 两路线的 request_id、医院和 destination prefix 分离与幂等测试；不得使用已验收 OIE 32 条消息的旧源请求重放。
 - [x] 3.4 **受控医院身份命名整改**：Profile、FHIR Publisher、OIE Channel/HL7 Assigning Authority、两仓 Workflow、测试和 Blob Key 使用固定 Hospital A/B 标识；对 `demo-` 临时身份 fail-closed；重新发布匹配源码的 Publisher Digest 并验证运行前匹配。未完成前禁止 Atlanta 真实 PUT。
 - [x] 3.5 **Synthea 100 人 FHIR Filename Contract 修复（代码/CI）**：针对真实 100 Bundle 中的撇号及 Unicode 患者名修正 FHIR Blob leaf 安全字符校验，保留 Synthea 原始文件名和字节、HL7 严格 ASCII、URL 保留字符与路径穿越负向门禁；源端和 Publisher 禁止未经验证写入。
 - [x] 3.6 **冻结的 100 人 Atlanta Request 发布恢复验收**：失败后只读确认原 Request 文件数、不可变源 Manifest SHA、无 Publisher Job/Blob Manifest，再使用新源码及不可变 Publisher Digest 受控恢复；100 文件逐个 GET/ETag/SHA、Manifest COMMIT、重试及错误 SHA 全 PASS 才完成。禁止直接 rerun 原失败 Workflow。
@@ -29,10 +31,10 @@
 - [x] 4.5 用户撤销独立 Publisher Namespace，集群严格核对后删除 `dw-az-blob`，Publisher 改为 `dw-synthea` 只读使用 Generator 现有 PVC，并迁移最近合并的 DIRECT FHIR Runtime Job 模板/回归；OIE 独立不变。
 - [x] 4.4 创建独立 `dw-az-blob` Namespace 的静态 Kubernetes YAML/边界文档/离线门禁，显式阻止跨 Namespace 挂载现有 Generator PVC；**仅代码级别完成**，真实 `kubectl` Create/Readback 及 Writer 工作负载不在此勾选范围。
 - [ ] 4.1 只读检查 Azure Account/Container/RBAC/网络、两仓 Main/并行任务、worker01/PVC/OIE，并通过 Terraform 授予新 Publisher 的 landing 容器级 RBAC、K8s Secret 后独立验证；真实 Blob 写入需另行 E2E 验收。
-- [ ] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
+- [x] 4.2 新合成源请求 K8s→Azure Landing 全流程 E2E：两医院独立证据、每对象 SHA/ETag/GET、最终 Manifest GET 和相同请求 retry 一致性；保留失败无覆盖。
 - [ ] 4.6 将 OIDC Storage Token **恰好在已验证新 Request 的 Job 启动前**以短期 Secret 交付，绑定唯一 Job、期限、只读 PVC 和有界清理；不得把 GITHUB_TOKEN/OIDC JWT 冒充 Azure Access Token，不得提前写入过期 token。
 - [ ] 4.7 新隔离 Service Principal 的长期 Client Secret 已在 GitHub 安全配置；受控创建 `dw-synthea/azure-blob-publisher-identity`，验证键名和值的等同性（不输出值）、K8s RBAC 和轮换规则，并用真实 Publisher Source Request 验证存储读写。禁止把 Terraform State 作为密钥容器。
-- [ ] 4.3 同步真实 PR/Run/Blob object receipt、相关 CODE.md，明确 Fabric/OMOP 不在本 Change；再判断 archive。
+- [x] 4.3 同步真实 PR/Run/Blob object receipt、相关 CODE.md，明确 Fabric/OMOP 不在本 Change；再判断 archive。
 
 ### P1.3 — 实际初始 Blob 发布计划输入合同
 - `blob_publish_contract.py` 仅接受冻结 Hospital/Feed/Request 与 `SOURCE_HANDOFF_VERIFIED` FHIR、`OIE_HL7_READBACK_VERIFIED` HL7；不可变对象逻辑以实际源 bytes / SHA256、严格相对路径与事件 Control ID 为起点；禁止含未声明源 bytes、跨医院前缀及模板路径穿越。
@@ -263,3 +265,11 @@
 - Self-Runner live bootstrap #40675672176 reached `TLS_PUBLIC_LEAF`, then `SSLCertVerificationError` when treating OIE existing leaf as normal CA trust. No OIE/Azure messages or persistent OIE modifications occurred. For the user-approved internal-only admin MVP, change `OIE_INTERNAL_ADMIN_MODE=1` to enforce **per-connection SHA256 pinned peer DER certificate** before any HTTP request (including admin login); do not use OS trust chains or DNS SAN, and do not modify the old OIE keystore. The explicit pin is carried by a new immutable `dw-synthea` Secret. TLS is encrypted but does not use CA validation in this mode; identity is validated by the exact pinned leaf. Strict default mode still validates CA/hostname. Separate Runner bootstrap and GHCR release must be rebuilt before E2E. Task 3.2 remains OPEN.
 
 - 2026-10-28 Final pinned OIE leaf fingerprint fix Main `55e8023c3521cb80a2c0ec3574fce7a3f05d6b91` needs independently inspected GHCR SHA tag/Digest. Read-only audit below records actual registry pull, not speculative digest, before Self-Runner E2E controller updates.
+
+
+### 2026-10-28 — Two-hospital Azure Landing live acceptance (supersedes historical HOLDs above)
+
+- **Hospital A / FHIR Direct:** independent Atlanta 5/100 real Blob object/Manifest GET/SHA/ETag/immutable recovery runs #40238053772 and #40250606505 (not rerun here).
+- **Hospital B / OIE HL7:** new 5-patient Johns Creek [Self-Runner #40715594941](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40715594941), SUCCESS; source 136 Encounter, 136 new OIE Message ID receipts, 6 IMP→ADT^A01, 130 non-inpatient explicit SKIP, 6 immutable Azure HL7 objects independently GET/HEAD/SHA/ETag and final Manifest GET/ETag, **Publisher-only repeat returns same committed objects**, no OIE replay. Unique Request `johnscreek-hl7-gh-40715594941`, actual source SHA `3f997d301a92457985b8aaa7945cf6367935f701cda41265d72de1cc4cedf229`, Azure Manifest SHA `5ee8b78f5307bdeedfcdde76b2d9b15289ce6a2ea5242baddfc34d9f8219f193`, ETag `"0x8DF3507BA545A58"`. Existing OIE Channel/Derby/PVC unchanged; own ephemeral ConfigMaps/Jobs cleaned. [Full bounded evidence](evidence/JOHNS-CREEK-HL7-5P-AZURE-LIVE-E2E-20261028.md).
+- **Inputs are NOT hardcoded:** Self-Runner PR #332 parameterized the reusable Workflow with `hospital_profile`, `population=5|10`, optional `seed` and `reference_date`; new source request ID generated from exact GitHub Run ID. One-time historical 100-person dispatch removed in PR #335, and failed 100-person Run #40684333118 left unchanged. Current validated OIE integration remains **Johns Creek Channel only**; other profiles require independent integration proofs.
+- **Tasks 3.2, 3.3, 4.2, 4.3 accepted within landing scope.** Older 3.2/4.2 unchecked entries and "No live HL7" statements above were historical and are superseded by this exact new Run. 4.1 Terraform RBAC/IaC, 4.6 OIDC short-lived Secret handoff and 4.7 Service Principal rotation/complete governance remain **OPEN**, as do downstream Fabric/OMOP, public Portal and any expanded hospital source deployments. Do not archive the Change while those independent tasks remain unresolved.
