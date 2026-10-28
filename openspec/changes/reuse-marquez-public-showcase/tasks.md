@@ -17,6 +17,8 @@
 
 - [ ] 1.6 **Public Web Datasets UX (CODED; IMAGE/LAN NOT VERIFIED)**: 首次进入 Datasets 且浏览器没有历史 Namespace 选择时选择 `s3://health-processing`，保留用户手动选择、Jobs 原筛选语义。仅对完整可解析的 Processing Dataset 将重复的 Namespace/Source 可见列替换为 Batch/Ingest Date，Entity + Run 展示在 Dataset 名称区域，保留 Updated At、Quality、Column Lineage、原始完整 URI/链接及 tooltip。原 Marquez Namespace、Source 独立保留在 tooltip，`source=synthea` 标记 Producer 而不是混作 Marquez Source；不认识的路径退回原版。源码/测试 `platform-portal/portal/web/`；Build/CI/运行浏览器真实验收之前保持 OPEN。不能直接修改 30999、31080、Gateway 或 Tunnel。
 
+- [ ] 1.7 **Public Web LAN image refresh**：2026-10-28 PR #545 合并 Main `b3d48bd0ba8010bf2e7d559eee47031597f6a104`，镜像构建发布 [#40686987016](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40686987016) PASS，Digest `sha256:483f115e3be0b69c755b07982d714319646bd124d3804645541e367222a97317`。受本次用户授权，将 `dw-marquez/Deployment/marquez-public-web` 的 `public-web` 镜像从旧固定 Digest `sha256:2ae03240ed5297f6bfaab08bc37d7752c43c0175b112ae02a7f19de3b4abeebf` 更新到新 Digest；只修改镜像，不修改任何 Service/NodePort/Cloudflare Gateway/Tunnel、Marquez API、PG14、Airflow 或数据。Runtime 更新与内网独立 GET/浏览器验收尚未完成，实际 Run/回退和源码版本需读回后才可勾选。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
