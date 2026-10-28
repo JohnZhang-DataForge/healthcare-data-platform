@@ -43,3 +43,7 @@
 ## 2026-10-27 并行实施和部署归属修正（覆盖此前 P4 源码计划）
 
 用户确认只读 Web 先复用 Marquito 原始项目的功能与布局，Cloudflare Pages 由用户手工操作，不独立开发 Portal Infra 组件；用户坚持沿用当前 Public Healthcare Repo。单独开发 Agent 分为 Web、Marquez Exporter、Azure OpenLineage/Blob Relay；访客控制器延期。操作级、OpenSpec 分工和授权前置条件参见 [并行工作计划](parallel-workstreams.md)。Marquito 许可证尚未确认，非商业目的不等于获得复制/公开部署许可；授权前不得提交其源码到公开仓库。P0 JSON Schema 不因本次计划修改而变更，新增 JSONL 静态读取路径须经过 Coordinator 的兼容性复核。云端 Fabric 同 Runtime 历史 HOLD 与真实资源授权不改变。
+
+## 2026-10-27 Marquez 复用首版（最新决策覆盖旧前端首发路线）
+
+新 Change：[reuse-marquez-public-showcase](../reuse-marquez-public-showcase/proposal.md) / [Design](../reuse-marquez-public-showcase/design.md)。用户选择现有 Marquez 0.51.1 原生 Web、现有 PG14、Cloudflare Tunnel（手操）+ 最小只读 Gateway 作为首版公网展示；不再以 Marquito 授权、React Flow 实现、静态 JSONL Exporter 或 Cloudflare Pages 为首发依赖。原 4.x/7.1/7.2/7.4/7.8 未完成工作保留历史状态，不标 Done。Fabric Listener、Azure Blob Publisher/Consumer、未来访客触发仍按本 Change 独立推进，Fabric 实机 HOLD 不变。共享运行操作和实际公网发布另需批准。
