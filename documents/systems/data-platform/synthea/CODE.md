@@ -399,3 +399,8 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [submit-oie-new-fhir-job.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/submit-oie-new-fhir-job.yaml.tpl) | Static one-time `dw-synthea/worker01` sender Job; read-only existing generator PVC, verified scoped **non-admin** OIE login + CA secrets, no legacy Channel replay. Only an authorized, coordinated Runner may instantiate it. |
 
 **Critical unfinished interface**: A same-run Self-Runner controller must generate the fresh source, verify deployed Channel and TLS/scoped send+read permissions, submit **once**, capture output receipts from that exact Job, save one immutable ConfigMap, then invoke existing `publish-oie-hl7-job.yaml.tpl`; all source/publisher images must use the matching new immutable GHCR digest. Unknown OIE POST = HOLD and independent audit, **never** re-run that Job. Merge and offline CI do not confer real OIE/Azure E2E acceptance.
+
+
+### Internal-cluster admin compatibility for Johns Creek (2026-10-28)
+
+When `OIE_INTERNAL_ADMIN_MODE=1` is set in the Johns Creek static Sender/Publisher Job manifests, `OIEScopedHTTPSClient` accepts the existing `admin` login with its current OIE TLS **leaf PEM** mounted as CA. The connection remains encrypted with certificate trust verification; only Service DNS SAN checking is disabled for this internal endpoint. This deliberately avoids gateway development, RBAC installation and existing keystore rotation for the portfolio MVP. It does not grant a restricted OIE role. `dw-oie` Deployment/PVC/Derby remain unchanged; the Self-Runner must obtain and verify the existing admin Secret and certificate before creating new `dw-synthea` Secrets, with values never committed to GitHub.
