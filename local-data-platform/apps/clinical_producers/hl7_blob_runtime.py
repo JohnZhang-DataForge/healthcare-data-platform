@@ -88,6 +88,9 @@ def load_new_request_receipts(path: Path, *, run_id: str, request_id: str,
     messages = doc["messages"]
     if not isinstance(messages, list) or not 0 < len(messages) <= MAX_EVENTS:
         raise HL7RuntimeBlocked("INVALID_OIE_RECEIPT_COUNT")
+    expected = handoff.get("metrics", {}).get("fhir_encounters")
+    if type(expected) is not int or expected != len(messages):
+        raise HL7RuntimeBlocked("OIE_RECEIPTS_DO_NOT_COVER_FROZEN_ENCOUNTERS")
     result = []
     ids, encounters = set(), set()
     for item in messages:
