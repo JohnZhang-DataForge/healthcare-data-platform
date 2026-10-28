@@ -88,7 +88,8 @@ spec:
               subPath: profile.json
               readOnly: true
             - name: oie-trust
-              mountPath: /oie-trust
+              mountPath: /oie-trust/ca.crt
+              subPath: ca.crt
               readOnly: true
             - name: tmp
               mountPath: /tmp
