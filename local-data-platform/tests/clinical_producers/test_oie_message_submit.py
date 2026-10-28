@@ -176,7 +176,7 @@ class OIEMessageSubmitTests(unittest.TestCase):
         poster.preflight_channel(CHANNEL)
         self.assertEqual(len(poster._opener.calls), 2)
         self.assertTrue(all(x.startswith("GET https://") for x in poster._opener.calls))
-        stale = render_channel().replace("JOHNSCREEKB", "OLD_DEMOJC")
+        stale = render_channel().replace("JOHNSCREEKB", "OLDCHANNEL")
         poster._opener = Opener(stale.encode("utf-8"))
         with self.assertRaisesRegex(OIEPostBlocked, "OIE_CHANNEL_CONFIG_DRIFT_HOLD"):
             poster.preflight_channel(CHANNEL)
