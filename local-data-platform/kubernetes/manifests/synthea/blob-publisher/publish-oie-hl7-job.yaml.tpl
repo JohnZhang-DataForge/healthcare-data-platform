@@ -75,6 +75,8 @@ spec:
                 secretKeyRef:
                   name: azure-blob-publisher-identity
                   key: client-secret
+            - name: OIE_INTERNAL_ADMIN_MODE
+              value: "1"
             - name: OIE_SCOPED_USERNAME
               valueFrom:
                 secretKeyRef:
