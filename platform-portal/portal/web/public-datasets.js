@@ -101,8 +101,9 @@
 
     var rows = table.querySelectorAll('tbody tr');
     var selector = document.getElementById('namespace-select');
-    var eligible = selector &&
-      (selector.textContent || '').indexOf(preferred) !== -1 && rows.length > 0;
+    var activeNamespace = selector && (selector.textContent || '').trim();
+    var eligible = (activeNamespace === preferred || activeNamespace === 's3://health-landing') &&
+      rows.length > 0;
     var parsed = [];
     for (var i = 0; i < rows.length; i++) {
       var cells = rows[i].querySelectorAll('td');
