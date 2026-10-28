@@ -37,6 +37,32 @@ function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[
   vm.runInNewContext(src,{window:win,document:doc,URL,MutationObserver:Observer});
   return {headers,rows,selector,saved,selected,opened:()=>opened,update};
 }
+test('public trailing slash route displays Processing and Landing, with exact preserved dataset hrefs',()=>{
+  for(const route of ['/datasets','/datasets/']){
+    const p=setup({route,chosen:'s3://health-processing'});
+    assert.deepEqual(p.headers.slice(0,3).map(h=>h.textContent),['DATASET','BATCH','INGEST DATE'],route+' Processing');
+    assert.equal(p.rows[0].span.textContent,'Encounter');
+    assert.equal(p.rows[1].span.textContent,'Patient');
+    assert.equal(p.rows[0].link.getAttribute('data-public-description'),'Run: task004-encounter-20261025T154424Z-9');
+    assert.ok(p.rows[0].link.href.endsWith(encodeURIComponent(encounter)));
+    const l=setup({route,chosen:'s3://health-landing',ns:'s3://health-landing',data:landingNames});
+    assert.deepEqual(l.headers.slice(0,3).map(h=>h.textContent),['DATASET','BATCH','INGEST DATE'],route+' Landing');
+    assert.deepEqual(l.rows.map(r=>r.span.textContent),['Batch Manifest','Encounters CSV','Patients CSV']);
+    assert.deepEqual(l.rows.map(r=>r.link.getAttribute('data-public-description')),['File: manifest.json','File: encounters.csv','File: patients.csv']);
+    assert.ok(l.rows.every(r=>r.cells[1].textContent==='40208104106'));
+    assert.ok(l.rows.every(r=>r.link.getAttribute('title')!==null));
+    const first=setup({route,ns:'default'});
+    assert.equal(first.opened(),1,'first visitor opens namespace selector on '+route);
+    const chosen=setup({route,ns:'default',chosen:'default'});
+    assert.equal(chosen.opened(),0,'manual namespace choice preserved on '+route);
+  }
+  for(const route of ['/jobs','/jobs/','/datasets/some-other-path','/datasets-old']){
+    const other=setup({route,ns:'default'});
+    assert.equal(other.opened(),0,route+' must not trigger namespace popup');
+    assert.equal(other.headers[0].textContent,'NAME',route+' must not rewrite unrelated tables');
+  }
+});
+
 test('first-visit DataSets picks real processing data; prior selection and Jobs remain untouched',()=>{
   const a=setup({ns:'default'});assert.equal(a.opened(),1);a.update();assert.equal(a.opened(),1);
   const b=setup({ns:'default',options:['default','s3://health-processing']});
