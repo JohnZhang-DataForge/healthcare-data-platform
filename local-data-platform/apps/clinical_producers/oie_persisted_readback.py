@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from http.cookiejar import CookieJar
 from pathlib import Path
+import os
 import re
 import ssl
 from typing import Protocol
@@ -174,22 +175,33 @@ def fetch_persisted_readbacks(
 
 
 class OIEScopedHTTPSClient:
-    """OIE 4.7 cookie login, restricted internal service and verified TLS only.
+    """OIE 4.7 cookie login, fixed internal service and certificate trust.
 
-    This is NOT the historical port-forward PoC admin client: dedicated
-    least-privilege OIE account and trusted CA chain are required.
+    Default mode preserves the existing scoped-account+hostname policy.
+    For the explicit internal-only MVP path, OIE_INTERNAL_ADMIN_MODE=1 permits
+    admin login with trust restricted to the pinned existing OIE certificate,
+    skipping only the missing Kubernetes DNS SAN (not certificate verification).
+    This is internal-cluster compatibility, not native OIE RBAC.
     """
 
     def __init__(self, *, username: str, password: str, ca_file: Path):
+        internal_admin_mode = os.environ.get("OIE_INTERNAL_ADMIN_MODE") == "1"
         if (not isinstance(username, str) or not re.fullmatch(
                 r"[A-Za-z0-9._-]{3,64}", username)
-                or username.lower() == "admin"
+                or (username.lower() == "admin" and not internal_admin_mode)
                 or not isinstance(password, str) or not password
                 or not isinstance(ca_file, Path)
                 or ca_file.is_symlink() or not ca_file.is_file()):
             raise OIEReadbackBlocked("OIE_SCOPED_IDENTITY_OR_TLS_REQUIRED")
         try:
             context = ssl.create_default_context(cafile=str(ca_file))
+            # The existing internal-only OIE certificate is issued without a
+            # Kubernetes Service DNS SAN. In the explicitly enabled MVP mode,
+            # trust the pinned OIE leaf PEM as CA rather than modifying its
+            # persistent keystore; full certificate chain validation stays ON.
+            # NEVER use CERT_NONE or a global urllib TLS override.
+            if internal_admin_mode:
+                context.check_hostname = False
             self._opener = build_opener(
                 HTTPCookieProcessor(CookieJar()),
                 HTTPSHandler(context=context))
