@@ -4,7 +4,7 @@
 
 ## 0. Formal Change & Coordination
 - [x] 0.1 确认用户选择现有官方 Marquez Web 作为公网只读首版，核对 2026-10-25 内网 Table/Column 真实证据、GitHub 最新 Main、OpenSpec/Agent 规则；创建 Proposal/Design/Specs/Tasks/并行 Agent 分工及手工 Cloudflare 初稿。本项仅文档 CI/Main readback 闭环。
-- [ ] 0.2 主 Session 在旧 `healthcare-on-demand-live-demo` 标记首版静态 Web/Marquito 路线被本 Change 取代（不勾选旧任务为真实 Done），保留 Blob Relay、Fabric HOLD 和后续按需触发；关闭或暂缓过时的 Agent A PR #518/#519，保留历史研究 PR #526。
+- [x] 0.2 主 Session 在旧 `healthcare-on-demand-live-demo` 标记首版静态 Web/Marquito 路线被本 Change 取代（不勾选旧任务为真实 Done），保留 Blob Relay、Fabric HOLD 和后续按需触发；关闭或暂缓过时的 Agent A PR #518/#519，保留历史研究 PR #526。 **已由 [PR #528](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/528) 将旧 Change 标记首版被替代，Main `06fb3f1135696b4f47f810d994fa9e69be1db7e4`；旧前端 PR #518/#519 均关闭、未合并，#526 研究 PR 历史资料已合并；未操作运行环境。**
 
 ## 1. Native Marquez UI / API Audit (Agent M1)
 - [ ] 1.1 只读核对现有 Marquez 0.51.1 原生 Web/API 的真实请求矩阵、必要静态资源、Home/Jobs/Run/Dataset/Table/Column 功能及已知展示不完整边界，输出有代码证据的审核报告，不动既有 Helm/K8s。
