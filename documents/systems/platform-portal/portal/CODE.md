@@ -10,6 +10,7 @@
 | P0 Test deps | [`platform-portal/portal/requirements-test.txt`](../../../../platform-portal/portal/requirements-test.txt) | 离线单测依赖 |
 | P0 CI | [`.github/workflows/portal-contract-validation.yml`](../../../../.github/workflows/portal-contract-validation.yml) | PR 无云/集群凭据的 Schema 验证 |
 | Public Web (independent) | [`platform-portal/portal/web/`](../../../../platform-portal/portal/web/) | 独立公网 UI Overlay、固定 Marquez 0.51.1 Dockerfile 和测试，无内部 Tunnel/Gateway 配置 |
+| Public Web LAN YAML | [`platform-portal/portal/web/kubernetes/lan.yaml`](../../../../platform-portal/portal/web/kubernetes/lan.yaml) | 单独 Public Web Deployment、ClusterIP + LAN NodePort 31080，不修改现有 Gateway Service、Marquez API、原版 30999 |
 | Public Web Image CI | [`.github/workflows/portal-public-web-image.yml`](../../../../.github/workflows/portal-public-web-image.yml) | PR 静态测试和 build，Main 发布独立 GHCR 镜像，绝不自动部署 |
 | Agent B Exporter | [`platform-portal/portal/exporter/`](../../../../platform-portal/portal/exporter/) | GET-only Marquez 原始事件导出、公开白名单、证据门槛和离线测试；**未执行真实 Marquez 读回/公网发布** |
 | Agent B Offline CI | [`.github/workflows/portal-exporter-offline.yml`](../../../../.github/workflows/portal-exporter-offline.yml) | Fake GET + 真实 v1 JSON Schema 离线验证（无共享 Runtime） |

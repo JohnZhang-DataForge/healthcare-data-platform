@@ -1,0 +1,97 @@
+# Separate LAN test of public read-only Marquez Web.
+# Do not relabel or replace original marquez-web, marquez-web-lan or showcase gateway.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marquez-public-web
+  namespace: dw-marquez
+  labels:
+    app.kubernetes.io/name: marquez-public-web
+    app.kubernetes.io/component: public-web
+    app.kubernetes.io/part-of: healthcare-portal
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: marquez-public-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: marquez-public-web
+        app.kubernetes.io/component: public-web
+    spec:
+      containers:
+        - name: public-web
+          image: ghcr.io/johnzhang-dataforge/healthcare-portal-public-web@sha256:2ae03240ed5297f6bfaab08bc37d7752c43c0175b112ae02a7f19de3b4abeebf
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: MARQUEZ_HOST
+              value: marquez.dw-marquez.svc.cluster.local
+            - name: MARQUEZ_PORT
+              value: "80"
+            - name: WEB_PORT
+              value: "3000"
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 8
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marquez-public-web
+  namespace: dw-marquez
+  labels:
+    app.kubernetes.io/name: marquez-public-web
+    app.kubernetes.io/part-of: healthcare-portal
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: marquez-public-web
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
+---
+# Optional LAN browser entrypoint. Firewall/NAT exposure is an external prerequisite.
+apiVersion: v1
+kind: Service
+metadata:
+  name: marquez-public-web-lan
+  namespace: dw-marquez
+  labels:
+    app.kubernetes.io/name: marquez-public-web
+    app.kubernetes.io/part-of: healthcare-portal
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: marquez-public-web
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: http
+      nodePort: 31080
