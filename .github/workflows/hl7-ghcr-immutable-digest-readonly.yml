@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      EXPECTED_MAIN_SHA: 0d74ce6f020553bf6f71638a5dca52d83d095ac9
+      EXPECTED_MAIN_SHA: 55e8023c3521cb80a2c0ec3574fce7a3f05d6b91
       PACKAGE: ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher
     steps:
       - uses: actions/checkout@v4
