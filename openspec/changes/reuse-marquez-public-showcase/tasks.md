@@ -15,6 +15,8 @@
 - [x] 1.4 **LAN 前置只读核查**：2026-10-28 UTC [Self-Runner #40623915046](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40623915046) 通过；`dw-marquez` 原 Marquez API/Web/Gateway、原 NodePort 30999 存在，独立新组件不存在，NodePort 31080 未占用，节点 Ready、无 ExternalIP，检查时 active K8s Jobs=0，部署 RBAC 可用。只读，不修改集群。
 - [ ] 1.5 **Public Web LAN isolation rollout**：从已发布 GHCR digest `sha256:2ae03240ed5297f6bfaab08bc37d7752c43c0175b112ae02a7f19de3b4abeebf`，仅创建 `dw-marquez` 中新 Deployment `marquez-public-web`、Service `marquez-public-web` (ClusterIP)、Service `marquez-public-web-lan` (NodePort 31080)，保持原 30999、Gateway、Cloudflare 上游完全不变。K8s YAML: `platform-portal/portal/web/kubernetes/lan.yaml`。正式 rollout/探针/GET/API/GUI 独立读回后才可勾选。不可凭 YAML/PR 完成标 Done。
 
+- [ ] 1.6 **Public Web Datasets UX (CODED; IMAGE/LAN NOT VERIFIED)**: 首次进入 Datasets 且浏览器没有历史 Namespace 选择时选择 `s3://health-processing`，保留用户手动选择、Jobs 原筛选语义。仅对完整可解析的 Processing Dataset 将重复的 Namespace/Source 可见列替换为 Batch/Ingest Date，Entity + Run 展示在 Dataset 名称区域，保留 Updated At、Quality、Column Lineage、原始完整 URI/链接及 tooltip。原 Marquez Namespace、Source 独立保留在 tooltip，`source=synthea` 标记 Producer 而不是混作 Marquez Source；不认识的路径退回原版。源码/测试 `platform-portal/portal/web/`；Build/CI/运行浏览器真实验收之前保持 OPEN。不能直接修改 30999、31080、Gateway 或 Tunnel。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
