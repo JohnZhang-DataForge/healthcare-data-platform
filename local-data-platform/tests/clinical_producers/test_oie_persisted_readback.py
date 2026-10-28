@@ -117,6 +117,34 @@ class ScopedReadbackTests(unittest.TestCase):
                 new_request_messages=[OIEPersistedMessage("enc-one","1001")])
         self.assertNotIn("DO_NOT_PRINT",str(ctx.exception))
 
+    def test_explicit_internal_admin_mode_keeps_certificate_trust(self):
+        with tempfile.TemporaryDirectory() as td:
+            leaf = Path(td) / "oie-leaf.pem"
+            leaf.write_text("synthetic trusted leaf", encoding="utf-8")
+            class Context:
+                def __init__(self):
+                    self.check_hostname = True
+                    self.verify_mode = "CERT_REQUIRED"
+            class Response:
+                status = 200
+                def __enter__(self): return self
+                def __exit__(self, *args): return False
+                def read(self, n): return b"SUCCESS"
+            class FakeOpener:
+                def open(self, req, timeout): return Response()
+            tls = Context()
+            with patch.dict(os.environ, {"OIE_INTERNAL_ADMIN_MODE": "1"}), \
+                 patch("apps.clinical_producers.oie_persisted_readback.ssl.create_default_context",
+                       return_value=tls) as make_ca, \
+                 patch("apps.clinical_producers.oie_persisted_readback.build_opener",
+                       return_value=FakeOpener()):
+                client = OIEScopedHTTPSClient(
+                    username="admin", password="synthetic", ca_file=leaf)
+            make_ca.assert_called_once_with(cafile=str(leaf))
+            self.assertFalse(tls.check_hostname)
+            self.assertEqual(tls.verify_mode, "CERT_REQUIRED")
+            self.assertIsNotNone(client)
+
     def test_scoped_client_rejects_admin_untrusted_tls_and_broad_paths(self):
         with tempfile.TemporaryDirectory() as tmp:
             ca=Path(tmp)/"ca.pem"
