@@ -12,6 +12,9 @@
 
 - [ ] 1.3 **Dedicated Public Web image (CODED, NOT DEPLOYED)**: 基于 Marquez Web 0.51.1 的固定官方镜像，在 `platform-portal/portal/web/` 创建只读展示 Overlay，隐藏 Job/Dataset 删除、Tag 编辑/删除、Tag Submit 和目前被 Gateway 拒绝的 raw Events 页面入口；保留 Dashboard、Jobs、Datasets、Run History、Table/Column Lineage 与只读导航/缩放/刷新。独立 GHCR 构建 Workflow + 离线测试。镜像实际构建、发布和公网切换须按对应证据验收；未经授权不改本地 Gateway/Tunnel/K8s。本项不因代码入 PR 即勾选。
 
+- [x] 1.4 **LAN 前置只读核查**：2026-10-28 UTC [Self-Runner #40623915046](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40623915046) 通过；`dw-marquez` 原 Marquez API/Web/Gateway、原 NodePort 30999 存在，独立新组件不存在，NodePort 31080 未占用，节点 Ready、无 ExternalIP，检查时 active K8s Jobs=0，部署 RBAC 可用。只读，不修改集群。
+- [ ] 1.5 **Public Web LAN isolation rollout**：从已发布 GHCR digest `sha256:2ae03240ed5297f6bfaab08bc37d7752c43c0175b112ae02a7f19de3b4abeebf`，仅创建 `dw-marquez` 中新 Deployment `marquez-public-web`、Service `marquez-public-web` (ClusterIP)、Service `marquez-public-web-lan` (NodePort 31080)，保持原 30999、Gateway、Cloudflare 上游完全不变。K8s YAML: `platform-portal/portal/web/kubernetes/lan.yaml`。正式 rollout/探针/GET/API/GUI 独立读回后才可勾选。不可凭 YAML/PR 完成标 Done。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
