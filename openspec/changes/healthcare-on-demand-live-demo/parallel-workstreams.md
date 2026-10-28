@@ -1,3 +1,5 @@
+> **历史静态前端并行方案，已被用户于 2026-10-27 改为复用现有 Marquez Web。** 首版新 Agent M1/M2/M3 的代码边界、实施步骤以 [新 Change](../reuse-marquez-public-showcase/parallel-workstreams.md) 为准。保留本页以便追溯旧 Agent A/B/C/D 进度及 Azure 离线交付，不自动删除代码或部署。
+
 # Portal 多 Session 并行开发协议 — 2026-10-27
 
 > **ACTIVE COORDINATION / NOT DEPLOYMENT AUTHORIZATION.** 本文件是已有 Active Change `healthcare-on-demand-live-demo` 的并行实施任务说明；唯一勾选进度在同目录 `tasks.md`，不是新 Change 或独立 Session Handoff。目标仓库是公开的 `JohnZhang-DataForge/healthcare-data-platform`，所有新代码仍在该仓库。网站属于现有 `platform-portal/portal/` 组件。
