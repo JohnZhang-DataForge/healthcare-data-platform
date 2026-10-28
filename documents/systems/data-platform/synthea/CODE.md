@@ -388,3 +388,14 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [Blob offline workflow](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | New candidate isolated tests, zero shared K8s/Azure effects. |
 
 **Audit reconciliation:** Atlanta Hospital A real 5/100 FHIR Azure E2E remains accepted (#40238053772 and #40250606505); older \"Publisher not deployed/No Blob PUT\" paragraphs above are historical snapshots. Johns Creek old OIE 31 Encounter/32 persisted messages #40128211780 are accepted conversion-only history. Fresh Johns Creek Channel config/TLS/scoped account, authenticated same-run OIE POST receipts and real HL7 Azure Blob E2E remain **OPEN** under `implement-multi-hospital-azure-blob-publisher` Task 3.2. Do not rerun historical OIE messages.
+
+
+### Johns Creek real OIE POST acknowledgment candidate (2026-10-28; live HOLD)
+
+| Source | Responsibility |
+| --- | --- |
+| [oie_message_submit.py](../../../../local-data-platform/apps/clinical_producers/oie_message_submit.py) | One-shot, source-SHA-pinned *NEW* frozen Johns Creek FHIR Request → one Patient/Encounter JSON envelope per OIE scoped HTTPS POST; exact OIE numeric Message ID ACK and full-count same-Run receipt output; never auto-retry uncertain POST or reuse old Derby messages. |
+| [test_oie_message_submit.py](../../../../local-data-platform/tests/clinical_producers/test_oie_message_submit.py) | Offline source counts, exact profile/channel/run, original bytes, duplicate ACK and partial/ambiguous POST with zero retries or secret leaks. |
+| [submit-oie-new-fhir-job.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/submit-oie-new-fhir-job.yaml.tpl) | Static one-time `dw-synthea/worker01` sender Job; read-only existing generator PVC, verified scoped **non-admin** OIE login + CA secrets, no legacy Channel replay. Only an authorized, coordinated Runner may instantiate it. |
+
+**Critical unfinished interface**: A same-run Self-Runner controller must generate the fresh source, verify deployed Channel and TLS/scoped send+read permissions, submit **once**, capture output receipts from that exact Job, save one immutable ConfigMap, then invoke existing `publish-oie-hl7-job.yaml.tpl`; all source/publisher images must use the matching new immutable GHCR digest. Unknown OIE POST = HOLD and independent audit, **never** re-run that Job. Merge and offline CI do not confer real OIE/Azure E2E acceptance.
