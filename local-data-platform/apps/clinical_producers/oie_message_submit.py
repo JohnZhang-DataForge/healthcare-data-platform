@@ -106,7 +106,11 @@ def prepare_new_fhir_events(state_root: Path, profile_path: Path,
                 "source_format": "FHIR_R4", "target_format": "HL7_V2",
                 "transformer": "OIE"}):
         raise OIEPostBlocked("JOHNS_CREEK_PROFILE_REQUIRED")
-    handoff = verify_handoff(Path(state_root), Path(profile_path), request_id)
+    try:
+        handoff = verify_handoff(Path(state_root), Path(profile_path), request_id)
+    except Exception:
+        # Keep validation failures stable and redact any underlying source path.
+        raise OIEPostBlocked("FROZEN_SOURCE_HANDOFF_FAILED") from None
     if handoff["source_manifest_sha256"] != expected_source_manifest_sha256:
         raise OIEPostBlocked("PINNED_MANIFEST_SHA_CHANGED")
     base = Path(state_root) / handoff["request_relative_path"] / "payload"
