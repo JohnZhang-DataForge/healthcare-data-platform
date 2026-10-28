@@ -7,6 +7,7 @@
 - [x] 1.1 从实际源代码核对 Publisher Landing Manifest v1、FHIR Source Handoff、Local Canonical/OMOP Contracts、Airflow NEW_ONLY/Writer 安全模型及 Fabric Notebook/Pipeline 占位状态。
 - [x] 1.2 整理 Blob → Pipeline → Spark Notebook → Bronze/Silver → 候选 OMOP Delta 初稿，列出 Local DP 可复用/可优化内容、事务边界、身份、成本与验收门槛。
 - [x] 1.3 在独立 feature 分支记录 proposal/design/tasks；不合并 main、不运行 Fabric、未经批准不生成可执行 Notebook/Pipeline。
+- [x] 1.6 基于 Local 真实 Main 源文件复盘两种流程：历史细粒度 Landing→Processing→Canonical/Approved Raw→Processed Candidate→Writer，以及当前 NEW_ONLY Airflow Person/Encounter 并行→Reconciliation→Writer；输出分层 CODE/Contract 对照、新 Fabric Python package / thin Notebook / Pipeline 目录树与依赖边界，记录 [专门设计稿](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)。**仅完成 Draft 文档，不代表未来源码/云端运行**。
 - [ ] 1.4 用户讨论并确认 5 个设计决策（层级终点、Shortcut/Copy、NEW_ONLY/Update、跨来源 ID、Fabric 旧 POC HOLD 的安全推进路径）。
 - [ ] 1.5 审核后补全正式 delta spec/验收场景、CODE 归属、源 SHA、需求边界；经静态 CI Review 后用户决定是否合并设计 PR。
 
