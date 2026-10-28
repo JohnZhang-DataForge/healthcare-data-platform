@@ -1,136 +1,124 @@
 # Healthcare Data Platform
 
-> **LIVE INTERACTIVE DEMO** — **[Explore the Healthcare Data Lineage Viewer](https://lineage.johnzhang-dataforge.site)**
->
-> Explore real Airflow/Spark jobs, dataset dependencies, run metadata, and column-level transformations in Marquez. The pipeline uses **synthetic clinical data only**; this is a self-hosted engineering lab, so availability is not guaranteed.
+**A working vertical slice of a unified data platform — from source-specific ingestion to trusted, traceable data.**
 
-### See the transformations at field level
+Different systems rarely agree on schemas, identifiers, or delivery formats. The engineering challenge is not just moving their data into one place; it is preserving where it came from, applying consistent rules, detecting bad or incomplete loads, and making the results safe to reuse.
 
-These are six field mappings observed in the live Marquez Column Level view for the synthetic Patient pipeline.
+This independent project tackles those problems with synthetic healthcare data. It has a **verified local CSV-to-OMOP pipeline**, working Airflow/Spark lineage, and separately developing FHIR R4, HL7 v2, and Microsoft Fabric integrations. It is an engineering lab, not a hospital integration or a production EHR system.
 
-```mermaid
-flowchart LR
-    subgraph input["Synthetic Synthea source"]
-        E["ETHNICITY"]
-        B["BIRTHDATE"]
-        I["Id"]
-        D["DEATHDATE"]
-        G["GENDER"]
-        R["RACE"]
-    end
+> **[Explore the live data lineage viewer](https://lineage.johnzhang-dataforge.site)** — Inspect real Spark jobs, upstream/downstream datasets, and Patient field mappings in Marquez. The self-hosted demo may be temporarily unavailable.
 
-    subgraph output["Canonical Patient dataset"]
-        E2["ethnicity_code"]
-        B2["birth_date"]
-        I2["source_record_id"]
-        D2["death_date"]
-        G2["gender_code"]
-        R2["race_code"]
-    end
+## The platform problem
 
-    E --> E2
-    B --> B2
-    I --> I2
-    D --> D2
-    G --> G2
-    R --> R2
-```
+A new source system should not require a completely new pipeline. But a shared ingestion framework also cannot assume that CSV, FHIR, HL7, and future enterprise feeds have the same structure or semantics.
 
-A clinical data engineering project built with Kubernetes, PySpark, Apache Airflow, PostgreSQL, and Microsoft Fabric.
+I designed the pipeline around a few practical questions:
 
-The project starts with a straightforward problem: clinical data arrives in different formats, while analysts need consistent, traceable records they can query. I built a working local pipeline that takes synthetic patient and encounter data from source files to **OMOP CDM 5.4** tables. I am extending it with FHIR/HL7 source integration and an Azure/Microsoft Fabric analytics layer.
+| Engineering question | Design response |
+| --- | --- |
+| **How do we onboard another source?** | Separate format-specific producers/adapters from a common landing, batch identity, validation, and processing contract. |
+| **How do different source records become consistent?** | Normalize source records into a canonical clinical representation, then map them to domain-standard OMOP tables while retaining source references. |
+| **How do we know a load is trustworthy?** | Require explicit batch selection, validation, reconciliation, and database readback rather than trusting an orchestrator's green status. |
+| **What happens after a failed or repeated run?** | Use batch identity, guarded commits, completion tracking, and a tested same-batch skip path to avoid duplicate writes. |
+| **Can someone explain a number or field later?** | Capture job, dataset, run, and column lineage with OpenLineage and Marquez. |
 
-This is an independent engineering project using **synthetic data only**. It is not connected to a hospital or a production EHR, and it does not contain patient information.
+The reusable part is **source onboarding, provenance, validation, reconciliation, and observability**. OMOP is the target model for this *clinical* example—not a universal model for HR, finance, student, or research administration data. Other domains would reuse the platform patterns with their own models and business rules.
 
-## The platform at a glance
-
-| Layer | Technology | Responsibility |
-| --- | --- | --- |
-| Source and ingestion | Synthea, CSV; FHIR R4 and HL7 v2 adapters in development | Generate or receive clinical records; preserve source identity and batch metadata |
-| Landing | SeaweedFS (S3-compatible); Azure Blob for cloud integration | Keep source batches and manifests separate from transformed data |
-| Orchestration | Apache Airflow | Select approved batches, coordinate Spark jobs, handle retries and checkpoints |
-| Processing | Apache Spark / PySpark, Python, SQL | Validate, normalize, map Patient/Encounter records to OMOP, and reconcile results |
-| Clinical data store | PostgreSQL 17, OMOP CDM 5.4 | Persist standardized Person and Visit Occurrence records through a guarded writer |
-| Lineage | OpenLineage, Marquez, PostgreSQL 14 | Track DAG runs, Spark jobs, datasets, and column mappings |
-| Cloud analytics | Azure Blob, Microsoft Fabric, OneLake Lakehouse | Provisioned foundation; end-to-end analytical ingestion is still in development |
-| Delivery | Kubernetes, Terraform, GitHub Actions, GHCR | Build images, provision infrastructure, run checks, and keep changes reproducible |
-
-### Data flow
-
-The solid path is the local pipeline that has been exercised end to end. Dashed paths show work that is not yet accepted as a complete data flow.
+## Architecture: different sources, common controls
 
 ```mermaid
 flowchart LR
-    S["Synthea<br/>synthetic CSV"] --> L["SeaweedFS / S3<br/>batch + manifest"]
-    L --> A["Airflow<br/>batch selection"]
-    A --> P["PySpark<br/>validation and OMOP mapping"]
-    P --> R["Reconciliation<br/>and guarded writer"]
-    R --> D[("PostgreSQL<br/>OMOP CDM 5.4")]
+    subgraph SOURCES["Source-specific ingestion"]
+        CSV["Synthea CSV<br/>verified local feed"]
+        FHIR["FHIR R4<br/>integration in progress"]
+        HL7["HL7 v2 / OIE<br/>integration in progress"]
+    end
 
-    A -. "run metadata" .-> M["OpenLineage / Marquez"]
-    P -. "dataset and column lineage" .-> M
+    subgraph LOCAL["Verified local processing path"]
+        LAND["S3-compatible landing<br/>batch + manifest"]
+        AIR["Airflow<br/>batch selection"]
+        SPARK["PySpark<br/>validation + canonical mapping"]
+        GATE["Reconciliation<br/>guarded writer"]
+        OMOP[("PostgreSQL 17<br/>OMOP Person + Visit")]
+    end
 
-    F["FHIR R4 producer<br/>component work"] --> B["Azure Blob<br/>publisher tested separately"]
-    H["HL7 v2 / OIE<br/>in development"] -.-> B
-    D -. "consistent export planned" .-> C[("Fabric OneLake<br/>Lakehouse")]
-    B -. "Fabric pipeline/notebook planned" .-> C
+    CSV --> LAND --> AIR --> SPARK --> GATE --> OMOP
+
+    AIR -. "run metadata" .-> LINEAGE["OpenLineage / Marquez<br/>run, table + column lineage"]
+    SPARK -. "dataset mappings" .-> LINEAGE
+
+    FHIR -. "cloud handoff work" .-> BLOB["Azure Blob<br/>publisher tested separately"]
+    HL7 -. "cloud handoff work" .-> BLOB
+    BLOB -. "not yet end-to-end" .-> FABRIC[("Microsoft Fabric / OneLake<br/>provisioned foundation")]
+    OMOP -. "analytics publishing planned" .-> FABRIC
 ```
 
-The local components run on a multi-node Kubernetes cluster. The producer and consumer are separate: generating a file does not automatically authorize a database write. A batch is identified by its manifest and checksum, and the consumer processes an approved snapshot rather than whatever happens to be newest in storage.
+**Reading the diagram:** The solid CSV → OMOP route has passed an end-to-end test and durable database readback. The OpenLineage connections are observed metadata flows. Dotted cloud integration routes are **component-level work or planned data flows**, not claims of a completed three-source Fabric pipeline.
 
-## What is working
+Source producers, landing, processing, and publishing are separate responsibilities. A generated file does not authorize a database write: processing starts from a selected batch with known identity and validation evidence. This is the boundary that makes onboarding additional feeds practical without weakening the controls on existing ones.
 
-**A real Person/Visit pipeline.** Synthea publishes synthetic source batches to S3-compatible storage. Airflow runs PySpark transformations for Patient and Encounter records, maps them to OMOP **Person** and **Visit Occurrence**, checks the resulting data, and hands it to a controlled PostgreSQL writer. Source IDs and batch IDs remain available for traceability.
+## What has been demonstrated
 
-**Retry-safe database writes.** The pipeline checks batch identity and prior completion before committing. Reconciliation and database readback are separate from orchestration status: a successful Airflow task does not, by itself, prove the data was committed. Running an already-completed batch follows a skip path rather than inserting the same records again.
+| Capability | Verified result |
+| --- | --- |
+| **End-to-end clinical processing** | Synthea source data through S3-compatible landing, Airflow, PySpark, reconciliation, and OMOP **Person / Visit Occurrence** writes. |
+| **Durable data quality checks** | A fresh October 25, 2026 batch committed **100 Person** and **15,742 Visit Occurrence** rows, confirmed by an independent PostgreSQL readback. |
+| **Safe retries** | Reprocessing the same completed batch followed the skip path, with no further database changes. |
+| **Real lineage** | The public Marquez UI has shown Patient and Encounter table-level paths, plus six real Patient column mappings. |
+| **Repeatable infrastructure** | Kubernetes workloads, container builds, GitHub Actions checks, and Terraform-managed Azure/Fabric infrastructure. |
 
-**Run and data lineage.** Airflow and Spark emit OpenLineage metadata to Marquez. The [public lineage explorer](https://lineage.johnzhang-dataforge.site) has been opened in a browser showing real Patient and Encounter table-level lineage and Patient column mappings. It reuses the native Marquez UI behind a method-filtering gateway; a dedicated public-facing UI and broader security review remain future work. An unresolved Spark RDD action lifecycle gap does not prevent viewing the verified business-level dependencies.
+### Inspect a transformation, not a slide
 
-**Repeatable engineering work.** Components are packaged as containers and deployed on Kubernetes. GitHub Actions builds and tests the images, while Terraform manages the Azure/Fabric infrastructure. Code, contracts, workflow definitions, and operational notes are kept in the repository.
+The live viewer shows the actual Synthea → canonical Patient lineage observed in the Spark pipeline. For example:
 
-### A verified batch
+| Source field | Canonical field |
+| --- | --- |
+| `BIRTHDATE` | `birth_date` |
+| `GENDER` | `gender_code` |
+| `RACE` | `race_code` |
+| `ETHNICITY` | `ethnicity_code` |
+| `Id` | `source_record_id` |
+| `DEATHDATE` | `death_date` |
 
-On October 25, 2026, a new synthetic batch committed **100 Person** and **15,742 Visit Occurrence** rows. Independent PostgreSQL readback confirmed the commit, and a repeat run took the already-completed-batch skip path without further database changes. These are results from specific test runs, not production availability or performance claims.
+**[Open the interactive lineage viewer](https://lineage.johnzhang-dataforge.site)** to explore the wider job/dataset relationships. It currently uses the native Marquez UI; a separate public-only UI build and fuller public access/security review remain open. These visualizations are evidence of observed business-level lineage, not a claim that every underlying Spark RDD lifecycle event is complete.
 
-## Design choices
+## How I would extend this to more sources
 
-### Standardize the clinical model, not just the file format
+The goal is to keep the shared controls stable while allowing each source to have its own adapter and domain mapping.
 
-CSV, FHIR, and HL7 have different structures and identifiers. The target is a consistent OMOP model that keeps source references and supports SQL-based analysis. The current accepted mappings cover **Person** and **Visit Occurrence**; the remaining OMOP domains and the complete multi-source ingestion path are future work.
+1. **Define the source contract.** Record the producer/feed identity, format and schema expectations, batch identity, checksums, and source-to-target mapping rules.
+2. **Land before transforming.** Keep the source payload and its metadata separate from normalized and curated datasets; detect missing or unexpected inputs before scheduling downstream work.
+3. **Reuse the processing pattern.** Adapt FHIR resources or HL7 messages into an approved canonical representation, then apply domain-specific transformations and quality checks. The current end-to-end implementation covers the CSV-based clinical path.
+4. **Publish only validated results.** Reconcile what was received and written, preserve source identifiers, and make reruns predictable.
+5. **Make every handoff observable.** Carry dataset and run identity through orchestration and Spark, so investigators can trace unexpected output back to inputs and transformations.
 
-### Check data after it lands
+This approach is deliberately not tied to one message standard or one processing runtime. It demonstrates a platform *pattern* using healthcare data, while leaving room for other business domains and their distinct models.
 
-Schema checks, manifests, source-to-target reconciliation, and durable readback answer different questions. Keeping those checks separate makes failures easier to isolate and prevents a green scheduler status from masking missing data.
+## Microsoft Fabric and the next integration milestones
 
-### Preserve history and make retries predictable
+The Azure/Fabric foundation is provisioned with Terraform, including a Fabric workspace and OneLake Lakehouse. Azure Blob publishing has been exercised separately. **A complete FHIR/HL7 → Fabric Notebook/Pipeline → curated OneLake load has not yet passed end-to-end acceptance.**
 
-Immutable source batches, explicit batch selection, guarded commits, and a completion ledger make a failed or repeated run easier to investigate. A retry should not silently change the identity of its source data or duplicate a prior commit.
+The next milestones are to validate each additional feed against the same landing and reconciliation contracts, implement the Fabric ingestion/transformation path, and establish clear raw/normalized/curated data boundaries in the cloud. Data quality, lineage, replay behavior, and evidence of durable writes will remain acceptance criteria—not optional reporting features.
 
-### Keep security and governance in the design
-
-This repository uses generated records, not PHI. It explores practices that matter in governed healthcare environments: separate service identities, controlled storage access, source metadata, lineage, and documented data contracts. It does **not** claim HIPAA certification or production security validation.
-
-### Keep Fabric deployment separate from Fabric data ingestion
-
-Terraform has provisioned and verified the Azure/Fabric foundation, including workspace, Lakehouse, identity/access configuration, and a Blob connection. Fabric pipelines/notebooks and the full **OMOP → Azure Blob → OneLake** analytical flow have **not** passed end-to-end acceptance. That work, along with FHIR/HL7 ingestion, is the next stage.
+The project uses **synthetic records only**. It does not contain real patient data, and it makes no HIPAA certification, institution-wide production-readiness, or always-on availability claim.
 
 ## Explore the source code
 
-The links below go straight to the implementation and build files—no internal runbooks or agent-facing documentation.
+These links go directly to implementation and build locations.
 
-| Area | Source |
+| Component | Source |
 | --- | --- |
-| Airflow orchestration and batch consumer | [Airflow DAGs](local-data-platform/airflow/dags/) |
-| Synthetic clinical producers, FHIR and HL7 integration | [Clinical producers](local-data-platform/apps/clinical_producers/) |
-| PySpark Person/Visit transformations | [Spark applications](local-data-platform/spark/apps/) |
-| Guarded and idempotent OMOP writing | [OMOP writer](local-data-platform/apps/omop_writer/) |
-| Data contracts and validation | [Contracts](local-data-platform/contracts/) |
-| Kubernetes application definitions | [Kubernetes manifests](local-data-platform/kubernetes/manifests/) |
-| Marquez metadata and lineage setup | [Marquez integration](platform-portal/marquez/) |
-| Airflow/Spark OpenLineage emitters | [OpenLineage integrations](platform-portal/openlineage/) |
-| Azure / Microsoft Fabric infrastructure | [Terraform source](azure-fabric/infra-terraform/) |
-| CI/CD image builds and checks | [GitHub Actions workflows](.github/workflows/) |
+| Batch orchestration | [Airflow DAGs](local-data-platform/airflow/dags/) |
+| Source onboarding, FHIR, and HL7 producers | [Clinical producer code](local-data-platform/apps/clinical_producers/) |
+| Spark normalization and clinical mapping | [PySpark applications](local-data-platform/spark/apps/) |
+| Reconciliation and controlled writes | [OMOP writer](local-data-platform/apps/omop_writer/) |
+| Input and output contracts | [Data contracts](local-data-platform/contracts/) |
+| Kubernetes deployment definitions | [Kubernetes manifests](local-data-platform/kubernetes/manifests/) |
+| Marquez integration | [Marquez component](platform-portal/marquez/) |
+| Airflow/Spark lineage emitters | [OpenLineage integration](platform-portal/openlineage/) |
+| Azure and Microsoft Fabric provisioning | [Terraform modules](azure-fabric/infra-terraform/) |
+| Automated builds and checks | [GitHub Actions](.github/workflows/) |
 
 ---
 
-*Independent engineering project · Synthetic clinical data only · Local OMOP pipeline verified · Multi-source and Fabric analytics still in development.*
+*Independent data engineering project · Synthetic clinical data · Verified local processing, with multi-source and Fabric ingestion under development.*
