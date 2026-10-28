@@ -25,6 +25,10 @@ class FakePoster:
         self.sent = []
         self.fail_at = fail_at
         self.ids = ids
+        self.preflights = []
+
+    def preflight_channel(self, channel_id):
+        self.preflights.append(channel_id)
 
     def submit(self, channel_id, event):
         self.sent.append((channel_id, json.loads(event)))
@@ -69,6 +73,7 @@ class OIEMessageSubmitTests(unittest.TestCase):
             {"encounter_id": "enc-one", "message_id": "20001"},
             {"encounter_id": "enc-two", "message_id": "20002"}])
         self.assertEqual(len(poster.sent), 2)
+        self.assertEqual(poster.preflights, [CHANNEL])
         self.assertEqual([e["bundle"]["entry"][1]["resource"]["id"]
                           for _, e in poster.sent], ["enc-one", "enc-two"])
         self.assertTrue(all(c == CHANNEL for c, _ in poster.sent))
@@ -148,6 +153,44 @@ class OIEMessageSubmitTests(unittest.TestCase):
             with self.assertRaises(OIEPostBlocked):
                 poster.submit(cid, raw)
         self.assertEqual(len(fake.calls), 1)
+
+    def test_live_channel_preflight_blocks_old_mapper_before_post(self):
+        from apps.clinical_producers.oie.build_channel import render_channel
+        class Response:
+            status = 200
+            def __init__(self, body): self.body = body
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self, size): return self.body
+        class Opener:
+            def __init__(self, config):
+                self.config = config
+                self.calls = []
+            def open(self, req, timeout):
+                self.calls.append(req.get_method() + " " + req.full_url)
+                if req.full_url.endswith("/status"):
+                    return Response(b"<status>STARTED</status>")
+                return Response(self.config)
+        poster = object.__new__(ScopedOIEPoster)
+        poster._opener = Opener(render_channel().encode("utf-8"))
+        poster.preflight_channel(CHANNEL)
+        self.assertEqual(len(poster._opener.calls), 2)
+        self.assertTrue(all(x.startswith("GET https://") for x in poster._opener.calls))
+        stale = render_channel().replace("JOHNSCREEKB", "OLD_DEMOJC")
+        poster._opener = Opener(stale.encode("utf-8"))
+        with self.assertRaisesRegex(OIEPostBlocked, "OIE_CHANNEL_CONFIG_DRIFT_HOLD"):
+            poster.preflight_channel(CHANNEL)
+        self.assertEqual(len(poster._opener.calls), 1)
+
+    def test_preflight_api_failure_prevents_any_fhir_post(self):
+        poster = FakePoster()
+        def fail(channel_id):
+            raise RuntimeError("secret leak attempt")
+        poster.preflight_channel = fail
+        with self.assertRaisesRegex(OIEPostBlocked,
+                                    "OIE_CHANNEL_IDENTITY_OR_STATE_HOLD_NO_POST"):
+            self.submit(poster)
+        self.assertEqual(poster.sent, [])
 
     def test_ambiguous_post_network_result_does_not_expose_body(self):
         class BrokenOpener:
