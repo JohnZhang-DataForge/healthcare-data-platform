@@ -65,3 +65,4 @@
 - [x] 7.7 **Agent C：本地 Blob→Marquez Consumer（离线）**。只消费 committed Manifest、校验/去重/重试/checkpoint，Fake Marquez readback 测试；真实 PG14/Marquez POST 另需授权。**仅离线 Consumer/Mock 与 SQLite checkpoint 测试通过；真实 Marquez/PG14 读写 HOLD。**
 - [ ] 7.8 **用户操作：Cloudflare Pages 手工发布**。等 A/B 构建与静态数据审核成功，按 [CLOUDFLARE-MANUAL](../../../documents/systems/platform-portal/portal/CLOUDFLARE-MANUAL.md) 配置项目、GitHub、构建目录、可选域名；主 Session 在用户读回反馈后验收，只读网站上线不代表控制 API 已启用。
 - [ ] 7.9 **主 Session：全局联调与后续 Gate**。按各 PR CI/Main readback 核对 A/B 接口；C 离线测试单独读回，规划授权后的真实 Azure 测试；自动触发 Cloudflare Worker/配额/邮件在后续阶段再开。
+- [ ] 7.10 **Agent D：公开只读血缘网站可替代方案调研**。Marquito 上游源码授权仍 HOLD，Agent A #518 为研究 PR、#519 为原创适配器 Draft/HOLD；在不复制未获授权代码、不修改 Web/Exporter/P0 的前提下调研有清晰商业与非商业再分发许可的完整替代网站/可视化组件，比较静态部署、OpenLineage JSONL 接入、表级与列级血缘、技术栈、维护和实施成本；形成有来源及可重复验证步骤的 Top 3 对比和唯一推荐，提交 `documents/systems/platform-portal/portal/FRONTEND-ALTERNATIVES.md`。调查 PR 关联本任务，纯文档/无运行副作用；主 Session 审核通过后再决定 Agent A 如何实施，**本任务不授权重做网站或部署**。
