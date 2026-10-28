@@ -1,6 +1,6 @@
 # Johns Creek Hospital B — real NEW 5-person FHIR → OIE → HL7 ADT^A01 → Azure Blob E2E
 
-**Status: LIVE_E2E_ACCEPTED (hospital B only).** Verified against actual Kubernetes/OIE/Azure operations; not inferred from CI or old Channel PoC. The existing Atlanta Hospital A direct FHIR → Azure E2E was already separately proven in runs [#40238053772](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40238053772) and [#40250606505](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40250606505).
+**Status: LIVE_E2E_ACCEPTED (hospital B only; two-hospital Landing acceptance when paired with Atlanta's separately verified runs).** Verified against actual Kubernetes/OIE/Azure operations; not inferred from CI or old Channel PoC. The existing Atlanta Hospital A direct FHIR → Azure E2E was already separately proven in runs [#40238053772](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40238053772) and [#40250606505](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40250606505).
 
 ## Immutable evidence
 
