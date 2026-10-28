@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT))
 from apps.clinical_producers.oie_persisted_readback import (
     OIEReadbackBlocked, OIEPersistedMessage, OIEScopedHTTPSClient,
     parse_persisted_source_message, fetch_persisted_readbacks, SERVICE_URL,
+    PinnedLeafHTTPSHandler,
 )
 from apps.clinical_producers.oie_hl7_publisher import SKIP_MARKER
 
@@ -117,32 +118,34 @@ class ScopedReadbackTests(unittest.TestCase):
                 new_request_messages=[OIEPersistedMessage("enc-one","1001")])
         self.assertNotIn("DO_NOT_PRINT",str(ctx.exception))
 
-    def test_explicit_internal_admin_mode_keeps_certificate_trust(self):
+    def test_internal_leaf_pin_rejects_changed_certificate(self):
+        peer = b"x" * 500
+        with patch("apps.clinical_producers.oie_persisted_readback.ssl.PEM_cert_to_DER_cert",
+                   return_value=peer):
+            handler = PinnedLeafHTTPSHandler("synthetic PEM")
+        handler._check_peer(peer)
+        with self.assertRaisesRegex(OIEReadbackBlocked,
+                                    "OIE_INTERNAL_TLS_LEAF_PIN_MISMATCH"):
+            handler._check_peer(b"other" * 100)
+
+    def test_explicit_internal_admin_mode_uses_pinned_handler_only(self):
         with tempfile.TemporaryDirectory() as td:
-            leaf = Path(td) / "oie-leaf.pem"
-            leaf.write_text("synthetic trusted leaf", encoding="utf-8")
-            class Context:
-                def __init__(self):
-                    self.check_hostname = True
-                    self.verify_mode = "CERT_REQUIRED"
+            leaf=Path(td)/"oie-leaf.pem"
+            leaf.write_text("synthetic test PEM", encoding="ascii")
             class Response:
-                status = 200
-                def __enter__(self): return self
-                def __exit__(self, *args): return False
-                def read(self, n): return b"SUCCESS"
+                status=200
+                def __enter__(self):return self
+                def __exit__(self,*args):return False
+                def read(self,n):return b"SUCCESS"
             class FakeOpener:
-                def open(self, req, timeout): return Response()
-            tls = Context()
-            with patch.dict(os.environ, {"OIE_INTERNAL_ADMIN_MODE": "1"}), \
-                 patch("apps.clinical_producers.oie_persisted_readback.ssl.create_default_context",
-                       return_value=tls) as make_ca, \
-                 patch("apps.clinical_producers.oie_persisted_readback.build_opener",
-                       return_value=FakeOpener()):
-                client = OIEScopedHTTPSClient(
-                    username="admin", password="synthetic", ca_file=leaf)
-            make_ca.assert_called_once_with(cafile=str(leaf))
-            self.assertFalse(tls.check_hostname)
-            self.assertEqual(tls.verify_mode, "CERT_REQUIRED")
+                def open(self,req,timeout):return Response()
+            with (patch.dict(os.environ, {"OIE_INTERNAL_ADMIN_MODE":"1"}),
+                  patch("apps.clinical_producers.oie_persisted_readback.PinnedLeafHTTPSHandler") as pin,
+                  patch("apps.clinical_producers.oie_persisted_readback.build_opener",
+                        return_value=FakeOpener())):
+                client=OIEScopedHTTPSClient(username="admin",password="synthetic",
+                                            ca_file=leaf)
+            pin.assert_called_once_with("synthetic test PEM")
             self.assertIsNotNone(client)
 
     def test_scoped_client_rejects_admin_untrusted_tls_and_broad_paths(self):

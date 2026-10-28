@@ -8,6 +8,10 @@ The exact FHIR/HL7 correlation and skip coverage remain in oie_hl7_publisher.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import hmac
+from http.client import HTTPSConnection
+import socket
 from http.cookiejar import CookieJar
 from pathlib import Path
 import os
@@ -174,13 +178,59 @@ def fetch_persisted_readbacks(
     return results
 
 
+class PinnedLeafHTTPSHandler(HTTPSHandler):
+    """Explicit internal-only exact OIE TLS leaf pin, checked before HTTP bytes.
+
+    OIE's existing leaf lacks the service DNS SAN and is not CA-trustable. A
+    fresh TLS handshake is used for every HTTPSConnection; BEFORE any login
+    credentials or clinical data are sent we compare the peer DER cert SHA256
+    with the single public PEM mounted in a Kubernetes Secret. No global TLS
+    disabling and no OIE keystore replacement. External endpoints unsupported.
+    """
+
+    def __init__(self, certificate_pem: str):
+        try:
+            if not isinstance(certificate_pem, str):
+                raise ValueError("missing PEM")
+            der = ssl.PEM_cert_to_DER_cert(certificate_pem)
+            if not 256 < len(der) < 16384:
+                raise ValueError("certificate size")
+        except (ValueError, TypeError):
+            raise OIEReadbackBlocked("OIE_INTERNAL_CERT_PIN_INVALID") from None
+        self._pin = hashlib.sha256(der).digest()
+        super().__init__()
+
+    def _check_peer(self, peer: bytes | None) -> None:
+        if (not peer or
+                not hmac.compare_digest(hashlib.sha256(peer).digest(), self._pin)):
+            raise OIEReadbackBlocked("OIE_INTERNAL_TLS_LEAF_PIN_MISMATCH")
+
+    def https_open(self, request):
+        # TLS is encrypted; the handshake's peer identity is authenticated by
+        # the exact pinned cert BEFORE HTTPSConnection sends HTTP headers.
+        context = ssl._create_unverified_context()
+        def factory(host, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, **kwargs):
+            conn = HTTPSConnection(host, timeout=timeout, context=context)
+            original_connect = conn.connect
+            def checked_connect():
+                original_connect()
+                try:
+                    self._check_peer(conn.sock.getpeercert(binary_form=True))
+                except Exception:
+                    conn.close()
+                    raise
+            conn.connect = checked_connect
+            return conn
+        return self.do_open(factory, request)
+
+
 class OIEScopedHTTPSClient:
     """OIE 4.7 cookie login, fixed internal service and certificate trust.
 
     Default mode preserves the existing scoped-account+hostname policy.
     For the explicit internal-only MVP path, OIE_INTERNAL_ADMIN_MODE=1 permits
-    admin login with trust restricted to the pinned existing OIE certificate,
-    skipping only the missing Kubernetes DNS SAN (not certificate verification).
+    admin login with exact per-connection OIE TLS leaf SHA256 pin verification
+    before any HTTP request bytes, avoiding Kubernetes DNS SAN requirements.
     This is internal-cluster compatibility, not native OIE RBAC.
     """
 
@@ -194,17 +244,14 @@ class OIEScopedHTTPSClient:
                 or ca_file.is_symlink() or not ca_file.is_file()):
             raise OIEReadbackBlocked("OIE_SCOPED_IDENTITY_OR_TLS_REQUIRED")
         try:
-            context = ssl.create_default_context(cafile=str(ca_file))
-            # The existing internal-only OIE certificate is issued without a
-            # Kubernetes Service DNS SAN. In the explicitly enabled MVP mode,
-            # trust the pinned OIE leaf PEM as CA rather than modifying its
-            # persistent keystore; full certificate chain validation stays ON.
-            # NEVER use CERT_NONE or a global urllib TLS override.
             if internal_admin_mode:
-                context.check_hostname = False
+                handler = PinnedLeafHTTPSHandler(
+                    ca_file.read_text(encoding="ascii"))
+            else:
+                handler = HTTPSHandler(
+                    context=ssl.create_default_context(cafile=str(ca_file)))
             self._opener = build_opener(
-                HTTPCookieProcessor(CookieJar()),
-                HTTPSHandler(context=context))
+                HTTPCookieProcessor(CookieJar()), handler)
             body = urlencode({"username": username, "password": password}).encode()
             status, result = self._call(
                 "/api/users/_login", method="POST", data=body,
