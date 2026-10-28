@@ -21,6 +21,8 @@
 
 - [ ] 1.8 **Landing Dataset readable filenames (CODED, LIVE NOT VERIFIED)**：根据公开 Marquez API GET-only [#40768910661](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40768910661) 的真实元数据，Landing 12 行为 4 Batch × 3 文件（manifest.json、encounters.csv、patients.csv），没有 `entity`/`run_id`/Column Lineage。扩展 `platform-portal/portal/web/public-datasets.js` 的可读标题至 `s3://health-landing`，以真实文件名 + Batch ID + Ingest Date 区分记录；Processing 保留 Patient/Encounter + Run ID。不能猜造 Landing `run_id` 或 Column Lineage，未知文件/命名回退原样，完整 Dataset href/Name/Namespace/Marquez Source 保留。此项须 PR CI/Main 镜像/受控部署与真实浏览器验收，暂不标完成。
 
+- [ ] 1.9 **Landing Public Web image refresh — runtime pending**：2026-10-28 Main `98516f64772405569128adf7c29f3151d3852245` 已通过 [GHCR 主分支发布 #40769439250](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40769439250)，不可变 Digest `sha256:c506087183e12899d98a4f721b79c416889f606fe10b89a7b373e7c3e23038aa`。用户授权仅滚动更新 `dw-marquez/Deployment/marquez-public-web` 的 `public-web` image，从 `sha256:483f115e3be0b69c755b07982d714319646bd124d3804645541e367222a97317` 切换到新 Digest；保持 `marquez-public-web` / `marquez-public-web-lan:31080` / `marquez-web-lan:30999` / `marquez-showcase-gateway` / Cloudflare Tunnel/DNS / API/PG14/ETL 完全不变。必须在安全预检后执行、确认 Pod Ready、新版 Landing 文件标签和真实 API GET，进一步验证经 Gateway 的只读拒绝，再根据实际 Run 记录完成情况；真实 Chrome GUI 验证仍单独待办。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
