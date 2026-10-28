@@ -10,6 +10,12 @@ evidence: [repository-source-review-only]
 
 > **DRAFT / 尚未批准架构 / 无运行副作用。** 本稿基于 2026-10-27 Healthcare Main 4596c1cec866032e5753597201b595dd1505b2ae 的源文件与已记录历史证据进行静态分析，未检查此刻 Azure Blob 对象实际字节、Fabric Items 或在线运行状态。用户说明 FHIR 已发布至 Azure Blob；本稿不将该事实扩大为 Fabric Bronze/Silver/OMOP 已入库。没有执行 Notebook、Pipeline、Terraform、Data Writes、部署或付费容量变更。
 
+## 0A. Local DP 源码复盘与代码模块设计（2026-10-27 补充）
+
+**请优先阅读 [Local DP 分层流程与 Fabric 通用代码架构讨论稿](LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)**：该文基于实际 Local DAG、Synthea Patient/Encounter Adapter、Raw Gate、Processed Candidate、Reconciliation、Writer 和 Publisher 源码区分 **完整分层设计** 与 **实际 NEW_ONLY 精简运行链**，给出了新 Python 包 / adapters / canonical / mapping / quality / publishing / Fabric thin Notebook / Pipeline 的模块树与依赖图。
+
+**修正初稿中“单个 Notebook”的容易误读之处**：MVP 可在一个 Notebook/Spark 会话中组合多个独立 Python 模块，**绝不把所有 ETL 拼成单文件**；严格的 OMOP Person/Visit 多表提交建议增加独立 verify Notebook（或等价只读验证器）。Local 的历史 approved Raw 是 Canonical 数据，并非字节级原始数据；Fabric Bronze 是原始 FHIR Bundle，两者不应简单同名相等。未来 PG→Blob OMOP 快照无需逆变换成 FHIR/Canonical，仍属于独立直通复制路线。
+
 ## 0. 目标、边界与现有设计的关系
 
 目标：从已经使用不可变协议发布到 Azure Blob 的 **FHIR R4 Bundle** 中加载 Patient 与 Encounter，经 Fabric Data Pipeline 编排、PySpark Notebook 校验/解析、写入 OneLake Lakehouse Delta，形成带医院/Feed/Request 可追溯身份的 Bronze、Silver 与最小 OMOP person/visit_occurrence 数据产品。
@@ -51,7 +57,7 @@ dw-synthea frozen Synthea FHIR R4
            + batch audit / source lineage evidence
 ~~~
 
-简化原则：**MVP 一个 Pipeline + 一个 Notebook + 可测试 Python 转换模块**，不要照搬 Local DP 的十几个中间 Workflow、每个阶段都单独起 SparkApplication、专门 PG SQL Writer。需要离线单测的解析/映射函数可与 Notebook 运行适配层分离；经过规模和故障数据证明后才拆多 Notebook/Pipeline。
+简化原则：**MVP 一个 Pipeline + 一个薄的 ingest Notebook + 可独立测试的多模块 Python ETL 核心；严格的 OMOP 跨表验收阶段引入独立 verify Notebook**，不要照搬 Local DP 的十几个中间 Workflow、每个阶段都单独起 SparkApplication、专门 PG SQL Writer。需要离线单测的解析/映射函数可与 Notebook 运行适配层分离；经过规模和故障数据证明后才拆多 Notebook/Pipeline。
 
 ### 1.1 精确 Landing 合同（按实际 Publisher 源码，而不是虚构 READY）
 
@@ -98,7 +104,7 @@ Manifest 当前字段：schema_version、hospital_id、feed_id、request_id、so
 - FHIR resource.id 是字符串；OMOP person_id/visit_occurrence_id 需要稳定数值 ID。建立受约束 Delta ID-map：(source_system, resource_type, source_record_id) → stable internal/OMOP ID，唯一/冲突检查及明确后续 Update 语义；**不能**假定 hash 截断天然无碰撞或 FHIR ID 是全局唯一。Encounter → Person 的 FK 必须由同一已核验映射得出。
 - 首批仅 NEW_ONLY；同源 FHIR 更新、删除、重发的 upsert/correction policy 是显式待决项。未批准前，同一个 source key 的不同 payload hash 应 HOLD，而不是自动改写已验收版本。
 
-**Phase E — Delta 写入、提交可见性、跨表对账**
+**Phase E — Delta 写入、提交可见性、跨表对账（独立 readback verifier 优先）**
 - Delta 单表可以提供原子事务/MERGE，但**不要把 person + visit + audit 三个 Delta 表误认为一笔跨表原子提交**。建议将处理结果按 batch_fingerprint / source_record_key 写入版本化 staging（例如 bronze_fhir_bundle_v、silver_fhir_patient_v、silver_fhir_encounter_v、omop_person_candidate_v、omop_visit_candidate_v），并用 _etl_batch_audit 记录 STARTED→VALIDATED→STAGED→RECONCILED→COMMITTED；只有独立读回及外键/数据质量通过后发布终态。
 - 提供只消费 **COMMITTED** 版本的 read-only serving views（必要时显式 latest committed 版本），未提交的半成品禁止被视为可用数据。需要进一步审查 ID-map 的幂等并发写法和 read committed view，串行限制相同 Feed/Batch 的竞态；流水线层并发=1 只作为 MVP 的操作约束，不声称获得分布式全局锁。
 - 在所有写入前取得当前 manifest 的不可变内容身份；重复提交/两次并发、未知 ACK、同请求新 SHA、临时失败恢复均应有测试。若还未有证明安全的跨表 serving visibility 策略，则仅交付 Bronze/Silver、**不得宣布 OMOP 已 COMMITTED**。
