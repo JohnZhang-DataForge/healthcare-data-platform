@@ -140,9 +140,14 @@ def normalize(events):
     if not isinstance(events, list) or not events:
         raise ExportError("Empty event export")
     unique = {}
+    job_names = {}
     for raw in events:
         e = clean_event(raw)
-        identity = (e["job"]["namespace"], e["job"]["name"], e["run"]["runId"], e["eventType"], e["eventTime"])
+        name, namespace = e["job"]["name"], e["job"]["namespace"]
+        if name in job_names and job_names[name] != namespace:
+            raise ExportError("Marquito cannot distinguish same-named jobs across namespaces")
+        job_names[name] = namespace
+        identity = (namespace, name, e["run"]["runId"], e["eventType"], e["eventTime"])
         if identity in unique and unique[identity] != e:
             raise ExportError("Conflicting events for the same job/run/type/time")
         unique[identity] = e
