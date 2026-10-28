@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT))
 import test_oie_hl7_publisher as fixtures
 from apps.clinical_producers.oie_message_submit import (
     OIEPostBlocked, ScopedOIEPoster, prepare_new_fhir_events,
-    submit_new_fhir_request, RECEIPT_VERSION,
+    submit_new_fhir_request, RECEIPT_VERSION, MAX_EVENTS,
 )
 
 RUN_ID = "12345678901"
@@ -100,6 +100,17 @@ class OIEMessageSubmitTests(unittest.TestCase):
         with self.assertRaises(OIEPostBlocked):
             self.submit(poster)
         self.assertEqual(poster.sent, [])
+
+    def test_fifty_person_contract_has_bounded_headroom_above_1000(self):
+        # Actual previous five-person Synthea cohort produced 136 Encounters.
+        # A new fifty-person cohort must not be rejected solely by the old
+        # 1000-event ceiling, but every post remains fully audited and capped.
+        self.assertEqual(MAX_EVENTS, 5000)
+        self.assertGreater(MAX_EVENTS, 10 * 136)
+        poster = FakePoster()
+        receipt = self.submit(poster)
+        self.assertEqual(len(receipt["messages"]), 2)
+        self.assertEqual(len(poster.sent), 2)
 
     def test_bad_source_count_blocks_before_any_post(self):
         # Manifest itself must remain valid; no caller may ignore a partial
