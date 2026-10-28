@@ -25,6 +25,8 @@
 
 - [ ] 1.10 **Datasets trailing slash regression (CODED; browser verification pending)**：用户两张公开 Chrome 截图显示 `https://lineage.johnzhang-dataforge.site/datasets/` 下 Processing 8 行、Landing 12 行均退回 NAME/NAMESPACE/SOURCE，根因 `public-datasets.js` 只识别无尾斜杠的 `/datasets`。修复两种路由格式兼容，增加两种路由下 Processing + Landing 的真实 ID 保真、列标题、文件标题、初访选择、手动选择与 /jobs 隔离的 Node DOM regression。修复后仅通过受控镜像升级触及 `dw-marquez/Deployment/marquez-public-web`，Gateway/Tunnel/Service 不变。**必须真实 Chrome/Playwright 验证 DOM 可见标题后才视为对用户缺陷完成。**
 
+- [ ] 1.11 **Trailing-slash regression image rollout**：修复 PR #553 已合并 Main `6d0378c0d84d301813037c9eec4d69b4617cc7c3`，主分支 GHCR [#40774345052](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40774345052) PASS，不可变镜像 Digest `sha256:bb234836756e846bec518c4d867ee90e5a855a60fb91c6b3e99522adb872ba5e`。仅滚动更新现有 `dw-marquez/Deployment/marquez-public-web` 的 `public-web` 容器镜像，严格核对原 `sha256:c506087183e12899d98a4f721b79c416889f606fe10b89a7b373e7c3e23038aa`，其余 Service、Gateway、Cloudflare、API、PG14 不变。必须验证 `/datasets` 与 `/datasets/` 在真实 Chrome DOM 下都显示 Landing (Manifest/Patients/Encounters) 与 Processing (Patient/Encounter) 的可读标题；脚本内容 GET 200 不够。Live rollout 尚未执行时不可标 Done。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
