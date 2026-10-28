@@ -228,3 +228,12 @@
 - 新增`oie_message_submit.py`：沿用已验收 `source_handoff.verify_handoff`，绑定`johnscreek-hl7-gh-<run_id>`与外部 Source Manifest SHA、Hospital/Feed；读取并校验全部冻结 FHIR Bundle、完整 Encounter 数量与唯一 ID，在**任何** OIE POST 前严格拒绝缺失/篡改。使用 OIE scoped 非管理员账号 + 可信 CA HTTPS，逐条传递 Patient+Encounter Envelope 到**已经实机证实正确的**指定 Channel，仅将真实 OIE 数字 Message ID/源 Encounter 输出给同一 Runner。单次 POST timeout/ACK不明或部分成功均`HOLD_NO_RETRY`，不自动重复上游消息、不触碰历史 32 条 Derby。
 - 新增同 Namespace worker01 / Generator 只读 PVC 静态 Sender Job `submit-oie-new-fhir-job.yaml.tpl` 及离线负向测试；现有 Azure Publisher SHA-only Workflow 扩充真实镜像 OIE POST 模块 Import/无网络 CLI Smoke，**该PR合并才触发新 SHA/Digest 构建**，尚未验收Registry。
 - 此新增源码不等于完整受控 Self-Runner Controller 或授权：仍待用户执行的真实只读 OIE Channel/TLS/权限实机核对、新 batch生成/审核、新消息一次提交/完整收据捕获、Blob远端独立 GET/ETag/SHA/Manifest、幂等。OpenSpec 3.2/3.3/4.2和OIE 2.5均保持 OPEN。
+
+
+### 2026-10-28 — Independent GHCR publisher image digest audit (no live effects)
+
+- Exact main source SHA for Johns Creek sender+publisher: `17ead446d8b1364ea2be89937599fc7764f0aa45` (merged PR #538). SHA-only publisher release uses an image label; PR static builds are **not** proof of the actual GHCR digest.
+- New `.github/workflows/hl7-ghcr-immutable-digest-readonly.yml` runs GitHub-hosted on PR and authenticates to GHCR with read-only token, pulls only `git-<exact_main_sha>`, checks actual registry Digest + `org.opencontainers.image.revision`, non-root 10001, and imports both `oie_message_submit` and `hl7_blob_runtime` from the same immutable digest (no network inside test container).
+- Publish `PUBLISHER_IMAGE_DIGEST_REF` in Run logs and summary only **after** real GHCR pull/verification succeeds; do not synthesize digest from Docker build or code SHA. This is `GHCR_READ_ONLY_AUDIT`; separate worker01/OIE Scoped User/TLS/channel real checks still mandatory. OpenSpec 3.2/3.3/4.2 remain OPEN until Azure live READBACK.
+
+- **Verified real GHCR pull**: [Healthcare Actions #40669656471](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40669656471) SUCCESS; exact immutable Registry digest `ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:fbdf32130ea5cc1d8fcec0258022100b5ae06a1ef95d573314b3af7eb242f590`, OCI revision `17ead446d8b1364ea2be89937599fc7764f0aa45`; both sender/publisher imported from pulled Digest on a no-network, non-root container. This verifies image packaging, not Johns Creek live Blob publishing.
