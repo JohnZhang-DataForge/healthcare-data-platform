@@ -214,3 +214,10 @@
 - **本候选实现（仅分支，未声称 CI/Live PASS）**：新增 `hl7_blob_runtime.py` 把独立 Runner 当次新消息收据 → `OIEScopedHTTPSClient` 精确 ID GET → `prepare_oie_hl7` → `publish_immutable` 串接，要求 `johnscreek-hl7-gh-<runner_run_id>`、外部 Source Manifest SHA、医院/Feed/Channel 严格绑定；只接收 Channel/Message 数字 ID，不扫描 OIE 记录，不提交/重放 FHIR，任何源/ID/HL7 检验失败都在 Azure 初始化前阻断。加入同 Namespace 现有 Generator PVC 只读的**静态** HL7 Job 模板、Mock 端到端与现有 Hosted CI。
 - **硬性未完成**：需要独立受控 Self-Runner 本次真实 FHIR Generator→新版 OIE Channel POST，记录并独立核验真实 messageId/receipt 来源；生产 scoped OIE 非 admin 账户、匹配 Service DNS 的可信 CA/TLS、真实已部署 Channel 版本检查；新的不可变 Publisher 镜像 Digest 和精确 Main/Runner SHA；真实 Azure Blob GET/Manifest、无重放的幂等验证。ConfigMap 中的收据 JSON **单凭自身无法证明**来自真实新 POST，Runner 必须同次产生并保护；任何 POST ACK 不明需 HOLD，不盲目重试。
 - **本阶段验收标识**：`CODE_CANDIDATE / CI_PENDING / OIE_SCOPED_IDENTITY_UNVERIFIED / AZURE_HL7_NOT_RUN`。不得勾选 3.2、3.3、4.2、2.5 或把旧 OIE 32 条消息拿来填充新 Run 收据。
+
+
+### Johns Creek HL7 Publisher immutable image release (2026-10-27)
+
+- Healthcare PR #534 已于 Main 合并 `37c3cc0d100e5f9e996a76f7d30f42f62d3e9b65`，现有 `hl7_blob_runtime.py` 通过 Host-only Mock/Azurite 验收。此前 GHCR `sha256:cfc94...` 属旧 DIRECT FHIR 源码，**不包含 HL7 新入口**。
+- 本候选 PR 更新唯一 SHA-only Publisher release workflow 的 Host CI：增加新的 OIE scoped readback 与 HL7 runtime 完整离线测试；Docker 非 root/无网络、只读 Smoke 强制 import HL7 runtime 并运行其 `--help`。此工作流已有 Main-only SHA 标签、Digest 发布验证，**仅 workflow 路径推送到 Main 后触发一次真实 GHCR 镜像发布**；仍不创建任何 K8s Job/Secret，也不发布 Azure Blob。
+- 发布流程必须实际完成 Main Push Run、Digest 单独核对后，才把新镜像标为 `GHCR_RELEASE_PASS` 并给后续受控 Self-Runner 使用；PR CI 和 Host Docker 成功不是 Registry Digest。Johns Creek 3.2/4.2 保持 OPEN。
