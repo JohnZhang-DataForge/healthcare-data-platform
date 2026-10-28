@@ -19,6 +19,8 @@
       var title = (b.getAttribute('aria-label') || b.getAttribute('title') || '').trim();
       if ((mutating.test(text) || mutating.test(title)) && !b.hidden) {
         b.hidden = true;
+        // MUI Button author styles can override the HTML hidden attribute.
+        if (b.style) b.style.setProperty('display', 'none', 'important');
         b.setAttribute('aria-hidden', 'true');
       }
     });
