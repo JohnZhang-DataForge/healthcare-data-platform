@@ -12,7 +12,7 @@
       return Promise.reject(Error('Public Web forbids write operations'));
     return orig.apply(this, arguments);
   };
-  var mutating = /^(delete(?:\s+(?:job|dataset|tag))?|edit\s+tag|submit|save(?:\s+changes)?)$/i;
+  var mutating = /^(delete(?:\s+(?:job|dataset|tag))?|effacer|eliminar|usunąć|删除|edit\s+tag|submit|save(?:\s+changes)?)$/i;
   function hide() {
     document.querySelectorAll('button,[role="button"]').forEach(function (b) {
       var text = (b.textContent || '').trim().replace(/\s+/g, ' ');
