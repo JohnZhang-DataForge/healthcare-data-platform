@@ -38,3 +38,6 @@ Azure/Fabric 的 README/CODE/技术说明都在 `documents/systems/azure-fabric/
 ## OpenLineage compatibility adapter (offline candidate)
 
 - [Candidate Listener config](../../../azure-fabric/openlineage/compatibility.py) · [Offline tests](../../../azure-fabric/openlineage/tests/test_compatibility.py) · [compatibility/authorization notes](../../../azure-fabric/openlineage/README.md). Scala 2.12 local and Scala 2.13 Fabric artifacts are not interchangeable. This source has no live Fabric test authorization; current Fabric Notebook HOLD remains.
+## Immutable OpenLineage Blob Publisher (offline only)
+
+- [Publisher entrypoint](../../../azure-fabric/openlineage/publisher.py) · [Fake Azure and recovery tests](../../../azure-fabric/openlineage/tests/test_publisher.py) · [publisher protocol](../../../azure-fabric/openlineage/PUBLISHER.md). Independently verified immutable event readback before committed Manifest; Azure live operations unapproved.
