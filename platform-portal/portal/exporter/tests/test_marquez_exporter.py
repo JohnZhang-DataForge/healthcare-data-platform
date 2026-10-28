@@ -109,6 +109,12 @@ class ExporterTests(unittest.TestCase):
         with self.assertRaises(ExportError):
             normalize([event(), conflicting])
 
+    def test_same_job_name_in_different_namespace_blocks_wrong_frontend_edges(self):
+        changed = event()
+        changed["job"]["namespace"] = "a-different-namespace"
+        with self.assertRaisesRegex(ExportError, "same-named jobs"):
+            normalize([event(), changed])
+
     def test_sensitive_facets_are_stripped_without_changing_identities(self):
         result = clean_event(event())
         text = json.dumps(result)
