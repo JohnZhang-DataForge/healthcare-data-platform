@@ -1,6 +1,6 @@
 # Tasks — Multi-Hospital Azure Blob Landing Publisher
 
-> ACTIVE PLANNING. 本 Change 只有设计与运行边界获得审查，并不表示 Azure Blob Publishing 已执行；初始权限、Azure 容器名称/Endpoint、OIE scoped account 及 Shared Runtime 授权仍需按实际检查。
+> **2026-10-27 只读源码/验收对账（覆盖原 10-24 规划状态）：** Atlanta FHIR 5/100 Azure Blob 实机 E2E 已由 Run #40238053772 / #40250606505 验收；Johns Creek 实机 OIE 31 Encounter / 32 持久消息于 #40128211780 验收，但属于旧 Channel/旧 Request 历史。新版 Johns Creek OIE→HL7→Azure Blob 的 Task 3.2、双院 4.2 仍 OPEN；不得将旧『尚无任何 Azure 发布』的历史文字套用到 Atlanta，也不得将本分支候选代码视为 Live PASS。
 
 ## 1. Planning / Contract
 - [x] 1.1 从 P4.1 Source Handoff 与 OIE worker01 Live E2E 的证据定义两条医院路线、公共 Publisher、immutable commit/读回、安全身份与 K8s namespace 边界。
@@ -205,3 +205,12 @@
 - 实机运行前 [K8s readonly Attempt 8](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226055238/attempts/8) / 运行后 [Attempt 10](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40226055238/attempts/10) **SUCCESS**，Active Jobs=0，原失败 Run 的 Profile ConfigMap 仍剩 1 个但属于历史冻结对象，不在本次清理范围；未删除原 PVC/Blob。
 - [Self-Runner PR #308](https://github.com/JohnZhang-DataForge/Self-Runner/pull/308) 合并 Main 并**移除**用过的单次自动恢复 Workflow，避免再次因 Main Push 重复调用。原两次失败 #40245591533 / #40248357801 历史结论仍为失败，最终成功的唯一证据是新的 Run #40250606505。
 - [完整 100 Object + Manifest Source/Digest/ETag/GET 验收证据](evidence/ATLANTA-FHIR-100-AZURE-FROZEN-SOURCE-LIVE-E2E-20261025.md)。**3.6 CHECKED**，**3.2、3.3、4.2 仍 OPEN**，不能替代 Johns Creek HL7 或 Fabric 后续装载。
+
+
+### 2026-10-27 — Task 3.2 新批次 OIE HL7 → Blob 代码/文档一致性审计及候选桥接
+
+- **已核实现行 Main 的事实**：`azure_blob_runtime.py` 只支持 DIRECT FHIR；`oie_hl7_publisher.py` 的完整来源关联和不可变 Blob adapter、`oie_persisted_readback.py` 的指定 Message GET/TLS/scoped cookie client 已在 Main，属于离线通过、**非** Johns Creek Azure Live E2E。
+- **文档纠偏**：本文件旧总标题中『只有规划/无任何 Azure Blob Publishing』是早期快照；Atlanta 已真实通过 5/100 FHIR Blob + Manifest GET/SHA/ETag；旧 OIE 32 条历史消息只能作为测试证据，不能复用。后续必须以新 Request + 新的已部署 Channel 签名/Assigning Authority 实机检查为准。
+- **本候选实现（仅分支，未声称 CI/Live PASS）**：新增 `hl7_blob_runtime.py` 把独立 Runner 当次新消息收据 → `OIEScopedHTTPSClient` 精确 ID GET → `prepare_oie_hl7` → `publish_immutable` 串接，要求 `johnscreek-hl7-gh-<runner_run_id>`、外部 Source Manifest SHA、医院/Feed/Channel 严格绑定；只接收 Channel/Message 数字 ID，不扫描 OIE 记录，不提交/重放 FHIR，任何源/ID/HL7 检验失败都在 Azure 初始化前阻断。加入同 Namespace 现有 Generator PVC 只读的**静态** HL7 Job 模板、Mock 端到端与现有 Hosted CI。
+- **硬性未完成**：需要独立受控 Self-Runner 本次真实 FHIR Generator→新版 OIE Channel POST，记录并独立核验真实 messageId/receipt 来源；生产 scoped OIE 非 admin 账户、匹配 Service DNS 的可信 CA/TLS、真实已部署 Channel 版本检查；新的不可变 Publisher 镜像 Digest 和精确 Main/Runner SHA；真实 Azure Blob GET/Manifest、无重放的幂等验证。ConfigMap 中的收据 JSON **单凭自身无法证明**来自真实新 POST，Runner 必须同次产生并保护；任何 POST ACK 不明需 HOLD，不盲目重试。
+- **本阶段验收标识**：`CODE_CANDIDATE / CI_PENDING / OIE_SCOPED_IDENTITY_UNVERIFIED / AZURE_HL7_NOT_RUN`。不得勾选 3.2、3.3、4.2、2.5 或把旧 OIE 32 条消息拿来填充新 Run 收据。
