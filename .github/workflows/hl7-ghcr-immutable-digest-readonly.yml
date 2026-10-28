@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      EXPECTED_MAIN_SHA: 17ead446d8b1364ea2be89937599fc7764f0aa45
+      EXPECTED_MAIN_SHA: 0d74ce6f020553bf6f71638a5dca52d83d095ac9
       PACKAGE: ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +48,10 @@ jobs:
           from apps.clinical_producers.hl7_blob_runtime import (
             RECEIPT_VERSION, publish_hl7_from_new_receipts)
           assert RECEIPT_VERSION == "healthcare-oie-new-request-receipts-v1"
+          from pathlib import Path
+          source = Path("apps/clinical_producers/oie_persisted_readback.py").read_text()
+          assert "OIE_INTERNAL_ADMIN_MODE" in source
+          assert "context.check_hostname = False" in source
           print("IMMUTABLE_IMAGE_OIE_SENDER_AND_HL7_PUBLISHER_IMPORT=PASS")
           '
           echo "PUBLISHER_IMAGE_DIGEST_REF=$digest"
