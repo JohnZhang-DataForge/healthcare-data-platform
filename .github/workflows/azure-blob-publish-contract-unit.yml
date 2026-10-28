@@ -9,6 +9,7 @@ on:
       - "local-data-platform/images/azure-blob-publisher/**"
       - "local-data-platform/apps/clinical_producers/direct_fhir_publisher.py"
       - "local-data-platform/apps/clinical_producers/oie_hl7_publisher.py"
+      - "local-data-platform/apps/clinical_producers/hl7_blob_runtime.py"
       - "local-data-platform/apps/clinical_producers/oie_persisted_readback.py"
       - "local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt"
       - "local-data-platform/contracts/clinical_producers/**"
@@ -17,6 +18,7 @@ on:
       - "local-data-platform/tests/clinical_producers/test_azure_blob_runtime.py"
       - "local-data-platform/tests/clinical_producers/test_direct_fhir_publisher.py"
       - "local-data-platform/tests/clinical_producers/test_oie_hl7_publisher.py"
+      - "local-data-platform/tests/clinical_producers/test_hl7_blob_runtime.py"
       - "local-data-platform/tests/clinical_producers/test_oie_persisted_readback.py"
       - ".github/workflows/azure-blob-publish-contract-unit.yml"
   workflow_dispatch:
@@ -42,6 +44,8 @@ jobs:
         run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_persisted_readback.py -v
       - name: Johns Creek OIE persisted A01 readback to shared publisher (offline)
         run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_hl7_publisher.py -v
+      - name: Fresh Johns Creek OIE receipts to immutable HL7 Blob (offline only)
+        run: python -m unittest discover -s local-data-platform/tests/clinical_producers -p test_hl7_blob_runtime.py -v
       - run: |
           echo BLOB_PUBLISH_OFFLINE_CONTRACT_AND_FAULT_TESTS=PASS
           echo SHARED_AZURE_WRITES=NO
