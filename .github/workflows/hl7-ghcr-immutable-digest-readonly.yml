@@ -1,0 +1,64 @@
+name: Verify Johns Creek GHCR Publisher Immutable Digest (read-only)
+
+# GitHub-hosted only. Resolve exact published Main SHA tag against GHCR,
+# verify image source label and import BOTH sender and publisher. NO push.
+on:
+  pull_request:
+    paths:
+      - .github/workflows/hl7-ghcr-immutable-digest-readonly.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_MAIN_SHA: 17ead446d8b1364ea2be89937599fc7764f0aa45
+      PACKAGE: ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify actual GHCR digest, source revision and locked image modules
+        shell: bash
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          set +x
+          [[ "$EXPECTED_MAIN_SHA" =~ ^[a-f0-9]{40}$ ]]
+          tag="$PACKAGE:git-$EXPECTED_MAIN_SHA"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+          docker pull "$tag"
+          digest="$(docker image inspect "$tag" --format '{{range .RepoDigests}}{{println .}}{{end}}' |
+            grep -E '^ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:[a-f0-9]{64}$' | head -n1)"
+          [[ "$digest" =~ ^ghcr\.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:[a-f0-9]{64}$ ]]
+          revision="$(docker image inspect "$tag" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+          test "$revision" = "$EXPECTED_MAIN_SHA"
+          test "$(docker image inspect "$tag" --format '{{.Config.User}}')" = "10001:10001"
+          # Check the pulled, immutable digest itself, not a local rebuild.
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --tmpfs /tmp:rw,size=64m \
+            --entrypoint python3 "$digest" -c '
+          from apps.clinical_producers.oie_message_submit import (
+            ScopedOIEPoster, submit_new_fhir_request)
+          from apps.clinical_producers.hl7_blob_runtime import (
+            RECEIPT_VERSION, publish_hl7_from_new_receipts)
+          assert RECEIPT_VERSION == "healthcare-oie-new-request-receipts-v1"
+          print("IMMUTABLE_IMAGE_OIE_SENDER_AND_HL7_PUBLISHER_IMPORT=PASS")
+          '
+          echo "PUBLISHER_IMAGE_DIGEST_REF=$digest"
+          echo "PUBLISHER_IMAGE_SOURCE_SHA=$revision"
+          echo "PUBLISHER_IMAGE_GHCR_READONLY_VERIFICATION=PASS"
+          echo "AZURE_BLOB_MUTATIONS=NO"
+          echo "OIE_AND_K8S_MUTATIONS=NO"
+          {
+            echo "## Johns Creek readonly GHCR registry audit"
+            echo "SOURCE_MAIN_SHA: $revision"
+            echo "DIGEST_REF: $digest"
+            echo "HL7 sender+publisher imported from exact registry digest: PASS"
+            echo "No image published or cluster/Blob changed"
+          } >> "$GITHUB_STEP_SUMMARY"
