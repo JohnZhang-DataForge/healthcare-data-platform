@@ -6,7 +6,7 @@
   var publicHeaders = ['DATASET', 'BATCH', 'INGEST DATE'];
   var choosing = false;
 
-  function onDatasetsRoute() { return window.location.pathname === '/datasets'; }
+  function onDatasetsRoute() { return /^\/datasets\/?$/.test(window.location.pathname); }
 
   function selectFirstUsefulNamespace() {
     // Only on Datasets, and only if the visitor never selected any namespace.
