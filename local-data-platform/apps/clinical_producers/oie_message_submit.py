@@ -21,6 +21,7 @@ import xml.etree.ElementTree as ET
 
 from apps.clinical_producers.hospital_profiles import load_profile
 from apps.clinical_producers.oie.fhir_events import events_from_bundle
+from apps.clinical_producers.oie.build_channel import render_channel, CHANNEL_NAME
 from apps.clinical_producers.oie_persisted_readback import (
     MESSAGE_ID, OIEScopedHTTPSClient, OIEReadbackBlocked, SERVICE_URL,
 )
@@ -40,6 +41,9 @@ class OIEPostBlocked(RuntimeError):
 
 
 class OIEPoster(Protocol):
+    def preflight_channel(self, channel_id: str) -> None:
+        """Read channel config and status; fail closed on mapper drift."""
+
     def submit(self, channel_id: str, event: bytes) -> str:
         """Return the actual numeric OIE source Message ID from one POST ACK."""
 
@@ -50,6 +54,47 @@ class ScopedOIEPoster(OIEScopedHTTPSClient):
     Its parent GET interface remains limited to individual persisted Message IDs.
     No mutation except new message delivery is exposed; no Channel management.
     """
+
+    def preflight_channel(self, channel_id: str) -> None:
+        """Verify exact live mapper bytes and STARTED state before first POST."""
+        try:
+            UUID(channel_id)
+        except (ValueError, TypeError, AttributeError):
+            raise OIEPostBlocked("INVALID_OIE_CHANNEL_ID") from None
+        for suffix, max_bytes in (("", 3_000_000), ("/status", 65_536)):
+            path = "/api/channels/" + channel_id + suffix
+            req = Request(
+                SERVICE_URL + path, method="GET",
+                headers={"X-Requested-With": "XMLHttpRequest",
+                         "Accept": "application/xml"})
+            try:
+                with self._opener.open(req, timeout=20) as response:
+                    if response.status != 200:
+                        raise OIEPostBlocked("OIE_CHANNEL_PREFLIGHT_HTTP_FAILED")
+                    raw = response.read(max_bytes + 1)
+            except OIEPostBlocked:
+                raise
+            except Exception:
+                raise OIEPostBlocked("OIE_CHANNEL_PREFLIGHT_GET_FAILED") from None
+            if (not raw or len(raw) > max_bytes
+                    or b"<!DOCTYPE" in raw.upper()
+                    or b"<!ENTITY" in raw.upper()):
+                raise OIEPostBlocked("OIE_CHANNEL_PREFLIGHT_INVALID")
+            if suffix:
+                if b"STARTED" not in raw.upper():
+                    raise OIEPostBlocked("OIE_CHANNEL_NOT_STARTED")
+            else:
+                try:
+                    observed = ET.fromstring(raw)
+                    expected = ET.fromstring(render_channel())
+                except (ET.ParseError, ValueError, AssertionError, OSError):
+                    raise OIEPostBlocked("OIE_CHANNEL_CONFIG_INVALID") from None
+                if (observed.tag != "channel"
+                        or observed.findtext("id") != channel_id
+                        or observed.findtext("name") != CHANNEL_NAME
+                        or observed.findtext("preprocessingScript") !=
+                           expected.findtext("preprocessingScript")):
+                    raise OIEPostBlocked("OIE_CHANNEL_CONFIG_DRIFT_HOLD")
 
     def submit(self, channel_id: str, event: bytes) -> str:
         try:
@@ -169,6 +214,10 @@ def submit_new_fhir_request(state_root: Path, profile_path: Path,
     handoff, events = prepare_new_fhir_events(
         state_root, profile_path, request_id, run_id=run_id,
         expected_source_manifest_sha256=expected_source_manifest_sha256)
+    try:
+        poster.preflight_channel(channel_id)
+    except Exception:
+        raise OIEPostBlocked("OIE_CHANNEL_IDENTITY_OR_STATE_HOLD_NO_POST") from None
     outputs = []
     seen_msg = set()
     for eid, raw in events:
