@@ -1,29 +1,30 @@
 # Tasks
 
-> DRAFT / DESIGN-ONLY。所有未完成任务保持未勾选；本设计即使日后被合并，也**不代表 Notebook、Pipeline、Delta 或 Azure 业务运行已部署**。本轮只提交 Git 文档，不进行 Azure/Blob/Spark/PG 的任何操作。具体设计见 [唯一初稿](../../../documents/architecture/design/FABRIC-FHIR-BLOB-INGESTION-DRAFT.md)。
+> **Architecture decision 2026-10-30 complete; implementation NOT authorized.** 详细权威设计：[ADR](../../../documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)。完成文档不等于运行时验收。
 
-## 1. Architecture draft and review
+## 1. Architecture decisions
 
-- [x] 1.1 从实际源代码核对 Publisher Landing Manifest v1、FHIR Source Handoff、Local Canonical/OMOP Contracts、Airflow NEW_ONLY/Writer 安全模型及 Fabric Notebook/Pipeline 占位状态。
-- [x] 1.2 整理 Blob → Pipeline → Spark Notebook → Bronze/Silver → 候选 OMOP Delta 初稿，列出 Local DP 可复用/可优化内容、事务边界、身份、成本与验收门槛。
-- [x] 1.3 在独立 feature 分支记录 proposal/design/tasks；不合并 main、不运行 Fabric、未经批准不生成可执行 Notebook/Pipeline。
-- [x] 1.6 基于 Local 真实 Main 源文件复盘两种流程：历史细粒度 Landing→Processing→Canonical/Approved Raw→Processed Candidate→Writer，以及当前 NEW_ONLY Airflow Person/Encounter 并行→Reconciliation→Writer；输出分层 CODE/Contract 对照、新 Fabric Python package / thin Notebook / Pipeline 目录树与依赖边界，记录 [专门设计稿](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)。**仅完成 Draft 文档，不代表未来源码/云端运行**。
-- [ ] 1.4 用户讨论并确认 5 个设计决策（层级终点、Shortcut/Copy、NEW_ONLY/Update、跨来源 ID、Fabric 旧 POC HOLD 的安全推进路径）。
-- [ ] 1.5 审核后补全正式 delta spec/验收场景、CODE 归属、源 SHA、需求边界；经静态 CI Review 后用户决定是否合并设计 PR。
+- [x] 1.1 2026-10-27 已核查 Local NEW_ONLY 真实 DAG、Canonical/OMOP Contract、Publisher v1 Manifest 和 Fabric 旧 POC 状态（静态）。
+- [x] 1.2 形成独立 Draft PR #533、两份 Fabric/Local 对照架构初稿，不合并 Main。
+- [x] 1.3 2026-10-30 讨论确认 Bronze raw / Silver Canonical Delta / Gold OMOP 业务分层。
+- [x] 1.4 确定 Source + Entity Adapter 插件化；Silver 后共用 OMOP Mapper、DQ、Identity、Reconciliation；Local 引擎逐步抽到 shared-data-engine，现有运行代码不动。
+- [x] 1.5 明确 PySpark 优先、dbt MVP 暂缓；Gold Warehouse T-SQL 事务首选 POC、全 Delta visibility 备选，均非既有已验收成果。
+- [x] 1.6 同步权威 ADR、原两份初稿的历史声明和 OpenSpec proposal/design/tasks。
+- [ ] 1.7 通过实机/成本验证后，最终敲定 Shortcut/Copy、Warehouse/Delta Writer、ID namespace、Canonical v2 和 Update 政策，完善正式 delta spec/测试及 CODE 导航。
+- [ ] 1.8 用户审查并决定是否合并此设计 PR；任何未来实施需要单独授权。
 
-## 2. Proposed future implementation (not authorized by this draft)
+## 2. Future implementation (not authorized)
 
-- [ ] 2.1 GET-only 核对新 FHIR 发布的 Manifest v1/对象 Byte SHA、实际 FHIR entry/Patient/Encounter/ref 形状、真实 Connection/RBAC/Runtime/Lakehouse 身份。
-- [ ] 2.2 离线冻结合成 FHIR fixtures；解析/Schema/URI/Reference/Concept、source identity、Manifest drift、hash、重试与非法输入负向测试。
-- [ ] 2.3 经用户新的明确授权后解决 Fabric Notebook Create/GetDefinition LRO/exitValue 旧三次失败；独立读回发布 Notebook 实际源 SHA 与处理结果，免费容量限制内运行。
-- [ ] 2.4 只在允许的 Fabric 测试 Workspace、隔离表上完成 Byte-HASH→Bronze 的最小真实 5–10 Patient Run 与同 Manifest 重试。
-- [ ] 2.5 100 人 FHIR Batch Patient/Encounter → Silver Canonical 的真实解析、FK/DQ/源追溯独立读回及负向测试。
-- [ ] 2.6 OMOP Person/Visit Delta Stable ID、source-key map、跨表可见性/读回和部分失败恢复设计单独审核并执行受控测试。
-- [ ] 2.7 真实 Pipeline Notebook 参数、Failed/Skipped/Committed 区分、成本/性能与 OpenLineage 完成事件独立核查。
-- [ ] 2.8 完成所有授权的实机 E2E 证据与文档/CODE/Spec 同步后，才考虑完成业务 Change/Archive。
+- [ ] G0：只读校验 Manifest 原始字节/对象 SHA/ETag、真实 FHIR Profile、Blob Shortcut RBAC/保留策略。
+- [ ] G1：冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
+- [ ] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
+- [ ] G3：5–10 新 synthetic Patient → Intake + Bronze raw/ref + receipt，按 Source Batch/Processing Version 验证 replay SKIP 和漂移 HOLD。
+- [ ] G4：100 新 synthetic Patient/Encounter → managed Silver canonical_patient/encounter Delta；PK/FK/DQ/来源/hash/readback、quarantine、approved 证据。
+- [ ] G5：Shared Silver→OMOP Person/Visit Candidate + Concept/Identity/row reconcile，证明相同输入/版本结果稳定。
+- [ ] G6：Warehouse staging + Person/Visit/IdentityMap/Ledger T-SQL 单事务（首选）故障、回滚、并发、未知 ACK、NOT ENFORCED 约束/读回；不能用时重新评审 Delta visibility。
+- [ ] G7：正式受控 Pipeline E2E、实际 Lineage、Compute/Cost/CI-CD/Runtime 兼容及清理证据。
+- [ ] G8：HL7/CSV Fabric Adapter、PG OMOP Snapshot、dbt、Canonical v2 等未来各自单独 Change。
 
-## 3. Explicit non-goals
+## 3. Explicit non-goals / safety
 
-- 本轮不改现有 Local PG17/S3/Airflow/Spark/Writer；不重放已经 COMMITTED 的 Source Batch。
-- 本轮不改现有 Azure Publisher Manifest v1、HL7 OIE、PG→Blob OMOP export 或对外 Portal。
-- 不创建/更改付费 Capacity、不 Apply Terraform、不创建云端 Pipeline/Notebook 或 Delta 表、不改变 Workspace 身份。
+本轮只提交 Git 设计文档。**不合并 main；不触发 Fabric/Azure/Blob/K8s/PostgreSQL 写入；不变更 Warehouse/Notebook/Pipeline/Connection/Terraform/paid capacity；不改 Local 或发布器生产实现。** Warehouse 跨表事务能力不代表跨系统事务；未通过实机 Gate 不得标记 Gold COMMITTED。

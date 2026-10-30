@@ -10,6 +10,16 @@ evidence: [github-code-readonly]
 
 > **DRAFT / 源码级核查，尚未实施、未验收 Runtime。** 基于 Healthcare Main 4596c1cec866032e5753597201b595dd1505b2ae（2026-10-27）的源码与 Contract 静态核对。本文区分 Local 的完整分层设计、历史更细粒度的 Raw/Processed 发布器、当前 NEW_ONLY 受控实际执行链。只在独立 Draft PR #533 中讨论，不合并 Main，不触发 Spark/Fabric/Blob/PG 操作。
 
+> **2026-10-30 架构决策更新：** [Bronze → Canonical Silver → OMOP Gold ADR](FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) 已确立为权威设计。本文件保留 2026-10-27 初稿/源码核查作为历史依据；其中“全 Delta Gold”、`azure-fabric/ingestion` 中混放共享业务 Mapper、独立 verify Notebook 必需等早期候选说法，如与 ADR 不一致，一律以 ADR 为准。**仅文档更新，不代表运行实现或部署已完成。**
+
+## 0. 已确定的共享业务核心与迁移边界（2026-10-30）
+
+**Bronze→Silver 在每个 Source/Entity Adapter 消除来源差异；Silver = 持久 Canonical Delta Patient/Encounter；Silver→Gold 共用 OMOP Mapper + DQ + Identity + Reconciliation。** Local 旧 DAG 的历史逻辑仍可参考，但不能机械照搬 Airflow/PG Writer。
+
+未来源码形态分两部分：`shared-data-engine/` 保存冻结合同与无云平台副作用的解析、Canonical、Quality、OMOP Candidate 核心（逐步从 Local 抽离并双运行时测试）；`azure-fabric/ingestion/` 仅保存 Blob/Delta/Warehouse/Notebook/Pipeline 专用 IO 与发布逻辑。**原 `azure-fabric/ingestion/src/healthcare_ingestion/` 是 2026-10-27 候选目录，现已被新 ADR 的 shared core + Fabric runtime 分层取代**；本 PR 不创建/移动这些代码。
+
+Gold **优先验证 Fabric Warehouse 单事务**，全 Delta visibility 是未验证的备选；Warehouse NOT ENFORCED 约束及跨系统 staging 的事务外边界必须明示。dbt 暂不纳入 MVP。完整代码目录、批次/处理/发布身份和分期门槛见 [ADR](FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)。
+
 ## 1. Local DP：通用数据流的设计意图
 
 ### 1.1 逻辑层、合同和完成边界
@@ -146,7 +156,7 @@ Product router ─┬─ Research / source-quality data products (later)
 
 注意：Fabric **Bronze 是原始 FHIR**，Local **Raw 是 Canonical approved**。在新代码里统一采用 Landing / Bronze / Canonical / Candidate / Serving，避免混淆。
 
-## 3. 推荐的 Fabric 代码结构（候选，不创建可运行代码）
+## 3. 2026-10-27 Fabric 代码结构候选（已由 2026-10-30 shared-engine ADR 调整）
 
 **一个 Pipeline 调度逻辑、一个 ingest Notebook + 可选独立 verify Notebook、内部由多模块普通 Python 包实现。** 不把所有业务逻辑塞进 notebook-content.py，也不强制每个 Stage 启动独立 Spark Job。
 
@@ -363,7 +373,7 @@ PG OMOP    → Export Snapshot Manifest → direct OMOP Replica ──┘    ↓
 
 **开发规范**：新源码全部按模块能力命名；修改实际 Python 或 Notebook/Pipeline 文件时同步 Azure/Fabric CODE.md；不改已经运行的 Local Task004 代码/PG17；任何 Azure Runtime/付费动作另需权限、并行 Session 协调与用户授权。仓库的源设计：[Fabric FHIR 初稿](FABRIC-FHIR-BLOB-INGESTION-DRAFT.md)，本文件仅深化代码和通用流转结构。
 
-## 7. 待讨论的结构性问题
+## 7. 2026-10-27 历史待讨论的问题（2026-10-30 ADR 已部分定版）
 
 - 是否采纳物理层 **Bronze（原始 FHIR）/ Silver（Approved Canonical）/ Candidate（OMOP）/ Serving（Committed）**，而非机械复制 Local 的 Raw 文件夹名？
 - 是否确定 **独立 Python 包 + thin Notebook** 为统一代码模式（推荐）；暂不修改 Local 现有目录及运行源码？

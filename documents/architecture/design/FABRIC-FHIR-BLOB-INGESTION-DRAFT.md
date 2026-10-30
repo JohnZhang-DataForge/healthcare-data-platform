@@ -6,9 +6,11 @@ source_sha: 4596c1cec866032e5753597201b595dd1505b2ae
 evidence: [repository-source-review-only]
 ---
 
-# Fabric FHIR R4 Blob → Spark Notebook → Pipeline → OneLake 入库设计（讨论初稿）
+# Fabric FHIR Blob → OneLake 入库初稿（2026-10-27 历史实现候选）
 
 > **DRAFT / 尚未批准架构 / 无运行副作用。** 本稿基于 2026-10-27 Healthcare Main 4596c1cec866032e5753597201b595dd1505b2ae 的源文件与已记录历史证据进行静态分析，未检查此刻 Azure Blob 对象实际字节、Fabric Items 或在线运行状态。用户说明 FHIR 已发布至 Azure Blob；本稿不将该事实扩大为 Fabric Bronze/Silver/OMOP 已入库。没有执行 Notebook、Pipeline、Terraform、Data Writes、部署或付费容量变更。
+
+> **2026-10-30 架构决策更新：** [Bronze → Canonical Silver → OMOP Gold ADR](FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) 已确立为权威设计。本文件保留 2026-10-27 初稿/源码核查作为历史依据；其中“全 Delta Gold”、`azure-fabric/ingestion` 中混放共享业务 Mapper、独立 verify Notebook 必需等早期候选说法，如与 ADR 不一致，一律以 ADR 为准。**仅文档更新，不代表运行实现或部署已完成。**
 
 ## 0A. Local DP 源码复盘与代码模块设计（2026-10-27 补充）
 
@@ -16,7 +18,7 @@ evidence: [repository-source-review-only]
 
 **修正初稿中“单个 Notebook”的容易误读之处**：MVP 可在一个 Notebook/Spark 会话中组合多个独立 Python 模块，**绝不把所有 ETL 拼成单文件**；严格的 OMOP Person/Visit 多表提交建议增加独立 verify Notebook（或等价只读验证器）。Local 的历史 approved Raw 是 Canonical 数据，并非字节级原始数据；Fabric Bronze 是原始 FHIR Bundle，两者不应简单同名相等。未来 PG→Blob OMOP 快照无需逆变换成 FHIR/Canonical，仍属于独立直通复制路线。
 
-## 0. 目标、边界与现有设计的关系
+## 0. 目标、边界与现有设计的关系（历史基线；最新架构以 ADR 为准）
 
 目标：从已经使用不可变协议发布到 Azure Blob 的 **FHIR R4 Bundle** 中加载 Patient 与 Encounter，经 Fabric Data Pipeline 编排、PySpark Notebook 校验/解析、写入 OneLake Lakehouse Delta，形成带医院/Feed/Request 可追溯身份的 Bronze、Silver 与最小 OMOP person/visit_occurrence 数据产品。
 
@@ -179,7 +181,7 @@ Manual/approved trigger(manifest_uri, sha, source identity)
 
 通用负向测试：Manifest 缺失/被篡改、相同 request_id 不同 SHA、Blob ETag/sha 漂移、非法 path、非 FHIR 格式、FHIR Bundle 重复 resource id、Encounter 缺 Patient、未知 Concept、重复/并发 Pipeline、partial Delta 表写入、连接/RBAC 失败、Notebook Completed 但无业务 readback、Job 超时、Workspace/Lakehouse 绑定错误。每项应明确 FAIL/HOLD vs expected SKIP，不能仅凭 Pipeline 绿色宣布数据业务成功。
 
-## 7. 本轮需要用户决策（正式实现前）
+## 7. 2026-10-27 历史未决问题（2026-10-30 ADR 已部分确定）
 
 1. **入库终点**：本轮直接完成 OMOP 5.4 Person + Visit Delta Gold，还是先 Bronze/Silver（推荐 G0–G4 达成后再开受控 OMOP G5）？两条都可在一个 Change 下分阶段。
 2. **Blob 接入**：先试 Shortcut 零拷贝（首选），还是 Copy Activity 显式复制到 Files（更容易留冻结副本，但增加开销）？

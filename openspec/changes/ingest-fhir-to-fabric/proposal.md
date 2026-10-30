@@ -2,29 +2,26 @@
 
 ## Why
 
-现有合成 FHIR R4 Producer 已建立 Azure Blob 不可变对象/最后 Manifest 发布协议（真实 Blob 发布范围以 Publisher 的单独验收证据为准）。目前 Healthcare Fabric 仓库里尚无该来源的真实 Notebook/Pipeline 入库实现。需要先设计一条可复用 Local DP 已验收的 Manifest、Canonical、身份、事务保护、对账与血缘经验，同时减少 Airflow/K8s/PG 专用 Writer 的复杂度。
+Azure Blob FHIR R4 Producer 已有 Manifest-last 和远端字节验证；但 Fabric 尚无完成验收的 Intake → Canonical → OMOP 入库链。Local DP 的 Canonical/Mapper/DQ/Reconciliation/Writer 经验应保留业务合同和安全语义，而非原样搬运 Airflow/K8s/PG 的物理流程。
 
-本轮用户要求**先形成架构初稿并在独立 Git 分支讨论，绝不合并 Main**。根据后续要求增加 [Local DP 数据流复盘与新 Fabric 代码结构](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)，避免误将单 Notebook 设计成大型单文件实现。
+2026-10-30 讨论决定采用 **Bronze 原始事实 → Silver 持久 Canonical Patient/Encounter Delta → Gold OMOP CDM 5.4**，来源格式差异由插件化 Source/Entity Adapters 在 Bronze→Silver 消化，Silver 之后复用共享引擎。本 PR 仍为 **Draft / design only**。
 
 ## What Changes
 
-- 首次明确 FHIR R4 Blob → Fabric Data Pipeline → PySpark Notebook → Lakehouse Bronze/Silver → 候选 OMOP Person/Visit Delta 路线。
-- 根据实际 Publisher Manifest 字段设计消费入口与字节/哈希/幂等协议，不创造不存在的 READY/cohort_id 字段。
-- 对照 Local DP 的 Source Contract、source-key mapping、双表 Writer、fencing/reconciliation 和已知 OpenLineage 问题提出 Fabric 适配和优化。
-- 分阶段定义 Source 验证、数据质量、Delta 跨表可见性保护、失败恢复与独立读回 Gate；明确待讨论选项与性能/成本/权限门槛。
-- 本 Change 当前仅为 **design-only draft**。详细方案唯一权威文本见 [Fabric FHIR 初稿](../../../documents/architecture/design/FABRIC-FHIR-BLOB-INGESTION-DRAFT.md)；确认后才创建可执行 Item、Specs/Tests 和细化实施计划。
+- Intake 以精确 Manifest SHA + 对象 byte/hash 验证放行；Bronze 原始数据通过 OneLake Shortcut（优先 POC）或 Copy，附 Delta receipt；不无条件重复复制。
+- PySpark FHIR Patient/Encounter adapters → Canonical Silver managed Delta table，含 Source Identity、版本、DQ、quarantine、approved readback；HL7/CSV Adapter 留待独立 Change。
+- Silver → shared OMOP Mapper + Concept/Stable ID + Reconciliation → Candidate → Gold Person/Visit；优先研究 Warehouse 内短 T-SQL 多表事务 Publisher，失败回退全 Delta committed visibility 的独立评审，不虚称跨系统 ACID。
+- 未来从 Local 纯 DataFrame/Contract 提炼 `shared-data-engine/`，保留 Local runtime 原状；Fabric 专用 I/O、Notebook、Pipeline 和 Warehouse Writer 独立。dbt 暂非 MVP 必需。
+- 区分 Source Batch、Processing Version、Publication ID，完整覆盖 replay/冲突/未知 ACK；首先解决旧 Fabric Notebook definition/exitValue HOLD，再逐 Gate 实机证明。
 
 ## Capabilities
 
 ### New Capabilities
-- ingest-fhir-to-fabric（**目标候选；尚未实现**）：通过受控 Pipeline 以明确的不可变 Manifest 消费原始 FHIR Bundle，并得到可核验 OneLake Delta Patient/Encounter/OMOP 数据产品。
+- `ingest-fhir-to-fabric`（拟建，**未部署**）：受控 FHIR Blob → Bronze → approved Silver Canonical Patient/Encounter → 经独立验证的 OMOP Gold Person/Visit。
 
 ### Modified Capabilities
-- 无：不改 Local Data Platform、Blob Publisher 和 Fabric 已有 Items 的行为。
+- 无运行中的能力；不变更现有 Local、Publisher、HL7 OIE、PG Snapshot 和 Fabric Items。
 
-## Impact
+## Impact and authority
 
-- 讨论稿：documents/architecture/design/FABRIC-FHIR-BLOB-INGESTION-DRAFT.md 及本 OpenSpec Change。
-- 未来潜在范围：azure-fabric/workspaces/healthcare-omop/notebooks/ingestion/、pipelines/、独立解析/测试组件、documents/systems/azure-fabric/*/CODE.md。
-- 本次无 Fabric/K8s/Azure Blob/PG 修改、无配置/密钥写入、无 runtime 或成本副作用；不同来源不做无证据患者合并。
-- PG→Fabric OMOP 快照复制、HL7 v2、公开触发器、Fabric OpenLineage Blob Relay 均属于关联但**独立**的交付边界。
+详见 [2026-10-30 架构决策](../../../documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)、[Local 代码复盘](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)。本次只修改 Git 设计文档，不合并 main、不运行 Spark/Fabric/Blob/PG/K8s、不创建表和 paid capacity。
