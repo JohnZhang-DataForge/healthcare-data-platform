@@ -32,10 +32,9 @@ Fabric Notebook/Pipeline 新增、删除、移动或改名源码时，**同一 P
 
 Azure/Fabric 的 README/CODE/技术说明都在 `documents/systems/azure-fabric/`；源码区只保留真正的程序、Terraform 配置、模板以及 Fabric Item 生成的机器可读元数据，不维护第二份说明性文档。
 
-## Trial-only fabric-cicd publisher (2026-10-21)
+## Retired johnzhang-test publisher (2026-10-31)
 
-- [`azure-fabric/deployment/trial_smoke_publisher.py`](../../../azure-fabric/deployment/trial_smoke_publisher.py): scope-validated Fabric Trial Notebook/Pipeline Git-native publishing facade; `validate` no cloud calls; `publish` requires independently read live Workspace/Lakehouse Terraform outputs, exact confirmation, Fabric identity, fresh item inventory and post-publish API readback. Does not delete or orphan-cleanup Items; initial publish rejects pre-existing same-name Items until ownership resolution.
-- [offline tests](../../../.github/quality/tests/test_fabric_trial_smoke_publisher.py) and [static CI](../../../.github/workflows/fabric-trial-smoke-publisher-static.yml): no Fabric API nor Terraform Remote State access in CI. [Self-Runner workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-trial-native-item-publish.yml) was delivered by Self-Runner PR #204 (Main `4d31fcd17fba15f57f52bd08ad8ec4f9cfe9e01b`). Static CI PASSED; default mode validates source offline. Real Fabric publish and post-publish run acceptance have not been executed.
+The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publisher.py`, offline tests and static workflow were removed from current Git after the final Fabric-native ADR. Prior sources remain in [fixed Git history](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/e4640eb4ce4edd8570ca60c9ad2c1b6152941743/azure-fabric/workspaces/johnzhang-test). Self-Runner PR #350 separately retired the executable test workflows. This **does not mean the previously Terraform-applied test Workspace/Lakehouse has been destroyed**; its state-aware retirement remains pending. Do not re-use these test items for `healthcare-omop`.
 
 ## OpenLineage compatibility adapter (offline candidate)
 

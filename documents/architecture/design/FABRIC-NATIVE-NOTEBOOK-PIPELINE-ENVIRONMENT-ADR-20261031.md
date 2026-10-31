@@ -46,7 +46,6 @@ healthcare-data-platform/
     │   │   │       └── pipeline-content.json
     │   │   └── environments/
     │   │       └── env_healthcare.Environment/  # files from actual Fabric export
-    │   └── johnzhang-test/                    # existing smoke, untouched
     ├── infra-terraform/                       # existing modules/state, untouched
     ├── deployment/                            # existing scoped publishing tools
     └── openlineage/                           # existing integration
@@ -82,7 +81,7 @@ shared-data-engine/ (editable Python source)
 ## Gates and ownership
 
 - Existing Local Canonical/OMOP Contracts at `local-data-platform/spark/contracts/` remain the only manually maintained authority until separate approved migration.
-- Native Notebook/Pipeline/Environment Item definitions use Fabric Git/fabric-cicd; existing Terraform owns Workspace/Lakehouse/Connection, **not simultaneously the same Item**. Current Trial publisher remains trial-only.
+- Native Notebook/Pipeline/Environment Item definitions use Fabric Git/fabric-cicd; existing Terraform owns Workspace/Lakehouse/Connection, **not simultaneously the same Item**. The retired trial-only publisher has been removed from current source; live test Workspace/State retirement remains a separately verified operation.
 - P0: latest Main/PR check, extend Shared/Native Item CODE-map and forbidden-import negative tests. P1: one Shared Wheel and synthetic FHIR/Contract offline tests. P2: real native Item export, Environment publish and build/readback verification, authorized separately. P3: verified Fabric Bronze/Silver small then 100-synthetic-batch end-to-end. P4: Gold controlled transaction POC.
 - Document merge authorizes **developer guidance only**, not Terraform apply, actual Fabric sync/publish, paid capacity, Blob/K8s/PG writes or production batch replay.
 
