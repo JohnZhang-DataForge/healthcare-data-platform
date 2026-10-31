@@ -4,6 +4,10 @@
 
 > **ACTIVE — 2026-10-21**。接续已完成的 Trial F4 Terraform Workspace/Lakehouse，不重复基础设施部署。新的 `shared-infra/connection` 与 Fabric Item 发布分开测试、分开授权；只有证据到位才能打勾。
 
+## 9. 2026-10-31 johnzhang-test source retirement
+
+- [x] 9.1 正式退役 `johnzhang-test` 原生 Notebook/Pipeline Smoke 定义、专用 `trial_smoke_publisher.py`、相关离线测试与静态 CI；Self-Runner PR #350 已取消旧 Apply/Publish/付费 F2 测试触发；修复 CODE 索引及 ADR/OpenSpec 引用。**仅 Git 源码清理；曾真实 Terraform Apply 的 Trial F4 Workspace/Lakehouse 和远程 State 必须独立核对并受控销毁，未完成时保留 Terraform Roots。**
+
 ## 1. Source audit and scope
 
 - [x] 1.1 核对 Healthcare Main `e49404ff7fde473d877c13fb37c8ce7ad33e2d4f`、Self-Runner Main `865a8f0eb7fbdcabceb190ac17f3915790ba0e2c`，OpenSpec 当前权属和 Run #39635155333 Attempt 2 的真实 Trial F4 验收。
