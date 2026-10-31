@@ -8,7 +8,7 @@ source_baseline_sha: 4596c1cec866032e5753597201b595dd1505b2ae
 
 # ADR 2026-10-30 — Fabric Bronze → Canonical Silver → OMOP Gold
 
-> **本文件是 PR #533 的权威架构决策。** 2026-10-30 讨论已确定数据分层、Source Adapter 解耦与 Canonical 后共享转换，但 **没有**授权实机部署、paid capacity、合并 main 或改动现有 Local DP。原 2026-10-27 初稿与 Local 源码复盘仍是历史证据；与本 ADR 冲突时以本 ADR 为准。
+> **本文为 Bronze/Silver/Gold 业务语义权威。** 2026-10-31 最终 [Fabric Native Notebook/Pipeline/Environment ADR](FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) 是 Notebook/PL/Environment/Wheel/Git 目录权威，之前 Fabric I/O 第二包目录提议不再适用。 2026-10-30 讨论已确定数据分层、Source Adapter 解耦与 Canonical 后共享转换，但 **没有**授权实机部署、paid capacity、合并 main 或改动现有 Local DP。原 2026-10-27 初稿与 Local 源码复盘仍是历史证据；与本 ADR 冲突时以本 ADR 为准。
 
 ## 1. 确定的数据模型及数据流
 
@@ -61,49 +61,26 @@ Adapter 做**来源解析与医学语义正规化**，并输出统一的 Canonic
 - Local 的 [patient-v1.json](../../../local-data-platform/spark/contracts/canonical/patient-v1.json)、[encounter-v1.json](../../../local-data-platform/spark/contracts/canonical/encounter-v1.json)、[person-v5.4.json](../../../local-data-platform/spark/contracts/omop/person-v5.4.json)、[visit-candidate-v1.json](../../../local-data-platform/spark/contracts/omop/visit-candidate-v1.json) 是既有基线；构建时 pin 来源 SHA/hash，**不复制维护第二套可能漂移的 Contract**。Local Patient v1 的 birth_date/gender/race/ethnicity 非空、Encounter v1 end_datetime 非空：真实 FHIR 可缺，必须按冻结 Synthea Profile 隔离或另评审 Canonical v2，禁止凭空补造临床事实。
 - 不跨医院依姓名/生日自动合并 Patient，FHIR resource.id 不是全局 ID；同医院更换 feed 也需要显式 source namespace/crosswalk 决策。现有 Local PG→Fabric OMOP Snapshot 是 **已标准化复制**，不必逆向重新经过 Canonical，属于独立交付数据产品。
 
-## 3. 物理执行与源码归属
+## 3. 最终 Fabric Native 执行与源码归属（2026-10-31）
 
 ~~~text
-shared-data-engine/                              # 未来代码抽离目标，当前不存在
-  contracts/                                    # Pin 现有 Local Canonical/OMOP 合同
+shared-data-engine/                           # one future Python wheel, pure business DataFrames
   src/healthcare_data_engine/
-    source_adapters/fhir_r4/{bundle,patient,encounter,reference}.py
-    source_adapters/csv/                         # 未来复用 Local
-    source_adapters/hl7_v2/                      # 未来
-    canonical/{contract,gate}.py
-    mapping/omop/{person,visit,concept,identity}.py
-    quality/   reconciliation/
-  tests/{unit,contract,cross_runtime}/
-azure-fabric/
-  ingestion/                                    # Fabric I/O、Publisher、Job ports
-    src/healthcare_fabric/
-      intake/{manifest_v1,blob_reader}.py
-      publishing/{bronze_receipt,silver_delta,candidate_delta}.py
-      gold/{warehouse_writer,delta_visibility_fallback}.py
-      jobs/ingest_fhir.py
-  workspaces/healthcare-omop/
-    notebooks/ingestion/nb_fhir_ingest.Notebook/
-    pipelines/pl_fhir_ingest.DataPipeline/
-local-data-platform/                            # 当前现有运行路径：不在本 PR 变更
+    adapters/fhir_r4/ canonical/ mapping/omop/ identity/ quality/ reconciliation/
+azure-fabric/workspaces/healthcare-omop/       # Fabric native Git Item definitions
+  notebooks/ingestion/nb_fhir_ingest.Notebook/  # actually executes Spark ETL
+  pipelines/pl_fhir_ingest.DataPipeline/        # workflow orchestration
+  environments/env_healthcare.Environment/      # published shared wheel
+azure-fabric/infra-terraform/                   # existing infra state; unchanged
+local-data-platform/                           # existing Local DP; unchanged
 ~~~
 
-- **PySpark 优先**：解析嵌套 FHIR、Reference、Source→Canonical、Canonical→OMOP Candidate。一个受控 Pipeline 调度一个薄 Notebook / Spark Session，业务模块为可单测 Python package；不是一个庞大的 notebook-content.py，也不机械复刻 Airflow 十几个 Task。
-- **Gold Writer 首选 POC = Fabric Warehouse T-SQL**：Approved Candidate 先独立加载到 Warehouse staging、验证 readback，然后在 **Warehouse 内短显式事务** 提交 `person`、`visit_occurrence`、`identity_map`、`batch_ledger`；失败 ROLLBACK。**跨 Blob/OneLake Lakehouse/Warehouse 传输本身不是同一个事务**。Warehouse PRIMARY/UNIQUE/FK 是 NOT ENFORCED，必须使用应用级唯一性/外键/并发冲突验证。是否在当前 Trial 和成本条件下可行，**尚未决定和验证**。
-- **备选 Gold = 全 Delta**：如果 Warehouse 不可行，另行设计 immutable Candidate staging + COMMITTED visibility + readback；Delta **单表原子性**不意味着 Person/Visit/Audit 跨表原子。未经负向/并发测试不得宣布正式 COMMITTED。
-- **SQL/dbt**：适合 Silver 之后的关系建模、文档/测试和 Warehouse SQL 项目，**不作为本 MVP 依赖**。Lakehouse SQL Analytics Endpoint 只读，不能依赖它以 T-SQL 更新 Silver Delta；Silver 使用 Spark 写。
-- `fabric-cicd` 拥有 Fabric Notebook/Pipeline/Environment 等代码物件；Terraform 仅管理经批准的 Infra/Workspace/Lakehouse/Connection，不能双重管理。Fabric Runtime 2.0 与 Local Spark 3.5.7 的 PySpark/Scala/Python/Listener 差异必须双端核验。
+**Notebook + Pipeline mandatory**: Pipeline orchestrates, Notebook executes visible PySpark source verification, native Spark/Delta I/O, Shared FHIR/Canonical/OMOP DQ and independent data readback. Fabric Environment installs and Publish-es the **single** Shared Engine wheel. There is no planned `azure-fabric/ingestion/`, `runtime/` or general I/O wheel. Contract authority stays in Local, frozen by hash until approved migration.
 
-官方运行时参考：
-- Blob shortcut: https://learn.microsoft.com/en-us/fabric/onelake/create-blob-shortcut
-- Lakehouse SQL read-only: https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-sql-analytics-endpoint
-- Warehouse multi-table TX: https://learn.microsoft.com/en-us/fabric/data-warehouse/transactions
-- Warehouse NOT ENFORCED constraints: https://learn.microsoft.com/en-us/fabric/data-warehouse/table-constraints
+**Gold Warehouse T-SQL POC**: approved Candidate stages first, then within Warehouse short explicit transaction publishes Person/Visit/IdentityMap/Ledger; failure ROLLBACK. Lakehouse→Warehouse data transfer is outside this transaction, and UNIQUE/FK constraints are NOT ENFORCED, requiring explicit application-level checks. All-Delta committed-visibility is an alternative needing separate evidence.
 
-## 3A. Shared Engine 目录和 Agent 归属规范（2026-10-30 确认）
+Fabric Workspace git folder and native Item GUIDs must be read back from Fabric, never guessed; Terraform owns approved Infra/Workspace/Lakehouse/Connection, Fabric Git owns Notebook/Pipeline/Environment. Existing `johnzhang-test` Trial publishing code and Local runtime are untouched. **Full normative details**: [Native Fabric ADR](FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md).
 
-`shared-data-engine/` 的完整目录/功能放置、唯一 owner、禁止的依赖方向、Contract 单一权威、Wheel 固定版本、双端测试和渐进迁移规则已正式确定，见 [Shared Data Engine Directory & Ownership](../../engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md)。根 `AGENTS.md` 和 `shared-data-engine/AGENTS.md` 为开发 Agent 提供必须先读的短规则。
-
-这项决定只确认**未来源码组织和行为约束**：当前只创建 scoped Agent 规则和组件文档导航，尚未创建 Python 包、真实 Shared Wheel、Fabric Notebook/Pipeline 或移动 Local 运行源码。Shared/Local/Fabric 新代码提交之前必须扩展相应 CODE-map CI，进行 Contract/negative/cross-runtime 测试。旧目录候选与此规则冲突时以新规则为准。
 
 ## 4. Batch / Processing / Publication 三种身份及状态
 
