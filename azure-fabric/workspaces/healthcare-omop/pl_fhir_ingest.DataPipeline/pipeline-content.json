@@ -1,5 +1,56 @@
 {
   "properties": {
-    "activities": []
+    "description": "FHIR R4 P2 staged Notebook orchestration. Default HALT; native ETL not released.",
+    "parameters": {
+      "run_mode": {
+        "type": "String",
+        "defaultValue": "HALT"
+      },
+      "request_id": {
+        "type": "String",
+        "defaultValue": ""
+      }
+    },
+    "activities": [
+      {
+        "name": "P2_FHIR_Guarded_Notebook",
+        "type": "TridentNotebook",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.01:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": true,
+          "secureOutput": true
+        },
+        "typeProperties": {
+          "notebookId": "8311ab6b-3484-4e96-8370-badeeb751633",
+          "workspaceId": "745ce03b-15b6-4870-b0e5-8c5750aa18dc",
+          "notebookParameters": {
+            "run_mode": {
+              "value": "HALT",
+              "type": "string"
+            },
+            "write_authorized": {
+              "value": false,
+              "type": "bool"
+            },
+            "retention_preflight_verified": {
+              "value": false,
+              "type": "bool"
+            },
+            "request_id": {
+              "value": "",
+              "type": "string"
+            }
+          }
+        }
+      }
+    ],
+    "annotations": [
+      "P2_STAGED_NOT_RELEASED",
+      "NO_AUTO_RETRY",
+      "NO_SCHEDULE"
+    ]
   }
 }
