@@ -52,3 +52,11 @@ jobs:
           test "$result" = 2 || { echo "EXPECTED_P2_RUNTIME_HOLD; got $result"; exit 1; }
           grep -q "HOLD_NATIVE_RUNTIME_DEPLOYMENT" "$RUNNER_TEMP/native-gate.txt"
           echo "NATIVE_GIT_EXPORT_VERIFIED_RUNTIME_HOLD"
+      - name: Archive SHA-verified sole Shared Engine Wheel
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-p2-shared-wheel-${{ github.sha }}
+          path: dist/healthcare_data_engine-0.1.0-py3-none-any.whl
+          if-no-files-found: error
+          retention-days: 30
