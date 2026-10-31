@@ -1,5 +1,7 @@
 # Shared Data Engine — 公共业务引擎
 
+> **2026-10-31 Shared Engine 与 Fabric 执行架构**：[Fabric Native ADR](../../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。Shared Engine 是唯一新 Python Wheel；Fabric Notebook/Pipeline/Environment 是必须的原生资源，I/O 优先用 Fabric API。
+
 **状态：目录规则已确定，业务 Python 包尚未实现。**
 
 未来唯一源码根目录：[`shared-data-engine/`](../../../../shared-data-engine/)。这里服务 Local DP 与 Azure Fabric 的可复用 Canonical/OMOP 业务算法，不承载 Data Lake/Database I/O 或平台部署。

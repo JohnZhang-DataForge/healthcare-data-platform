@@ -1,4 +1,6 @@
 ---
+
+> **2026-10-31 Fabric FHIR 开发基线**：[最终 Native Notebook/Pipeline/Environment ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。NB 必须执行真实 PySpark，PL 编排，Env 发布唯一 Shared Wheel；不创建额外 Fabric I/O/runtime Python Package。
 status: active
 scope: azure-fabric-system-overview
 last_verified: 2026-10-18

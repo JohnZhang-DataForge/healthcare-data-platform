@@ -1,5 +1,7 @@
 # Healthcare Data Platform — 文档新入口
 
+> **2026-10-31 正式开发设计依据**：[Fabric Notebook + Pipeline + Environment + Shared Engine ADR](architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)、[目录归属规范](engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md)。本次是规范定版，不代表 Fabric 云资源已部署。
+
 > **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec G0–G4 Bootstrap 已完成，后续工作由 Active Changes 管理（2026-10-18 核对）。
 >
 > 本目录已经完成本轮 STEP01–08 对本地 Pipeline、Portal、Azure/Fabric、项目状态、开发规则、运维与决策的终审核对。**历史证据和未实施的新能力仍由对应源码/验收与今后创建的 OpenSpec Change 管理**；文档目录中没有某项能力，不意味着它已经验收或不存在。
