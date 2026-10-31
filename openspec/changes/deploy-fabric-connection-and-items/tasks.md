@@ -8,6 +8,8 @@
 
 - [x] 9.1 正式退役 `johnzhang-test` 原生 Notebook/Pipeline Smoke 定义、专用 `trial_smoke_publisher.py`、相关离线测试与静态 CI；Self-Runner PR #350 已取消旧 Apply/Publish/付费 F2 测试触发；修复 CODE 索引及 ADR/OpenSpec 引用。**仅 Git 源码清理；曾真实 Terraform Apply 的 Trial F4 Workspace/Lakehouse 和远程 State 必须独立核对并受控销毁，未完成时保留 Terraform Roots。**
 
+- [ ] 9.2 云端退役（单独实际操作 Gate）：以 Terraform CLI Workspace `johnzhang-test` 只读检查 `workspace/onelake` 两个远端 State、Fabric Workspace/Lakehouse 当前 ID 与实际库存；确认没有业务数据和共享依赖后，审批并执行 **先 Lakehouse、后 Workspace** 的受控删除及独立读回；最后再清理测试 Terraform Roots/State。当前未执行，没有把代码删除冒充云端销毁。
+
 ## 1. Source audit and scope
 
 - [x] 1.1 核对 Healthcare Main `e49404ff7fde473d877c13fb37c8ce7ad33e2d4f`、Self-Runner Main `865a8f0eb7fbdcabceb190ac17f3915790ba0e2c`，OpenSpec 当前权属和 Run #39635155333 Attempt 2 的真实 Trial F4 验收。
