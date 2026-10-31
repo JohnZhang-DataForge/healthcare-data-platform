@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Lakehouse",
+    "displayName": "lh_omop_analytics",
+    "description": "OneLake analytics replica of local OMOP PostgreSQL snapshots"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "9741ef68-7bdf-a013-4bc8-5ab2e67c42ee"
+  }
+}

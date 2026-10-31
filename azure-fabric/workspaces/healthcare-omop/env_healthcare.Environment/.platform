@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Environment",
+    "displayName": "env_healthcare",
+    "description": "Healthcare Native Item; execution/publishing require separate gate."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "ed219dd5-b5ec-8517-46ed-8da0d85a4218"
+  }
+}
