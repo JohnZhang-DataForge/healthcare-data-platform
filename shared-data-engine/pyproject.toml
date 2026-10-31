@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=75,<83", "wheel>=0.45,<1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "healthcare-data-engine"
+version = "0.1.0"
+description = "Pure, platform-neutral healthcare FHIR R4 canonical transformation engine"
+requires-python = ">=3.10,<3.13"
+dependencies = []
+
+[project.optional-dependencies]
+spark = ["pyspark==3.5.7"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["healthcare_data_engine*"]
+namespaces = true

@@ -1,0 +1,62 @@
+name: Shared Engine Wheel Offline Validation
+on:
+  pull_request:
+    paths:
+      - 'shared-data-engine/**'
+      - '.github/workflows/shared-engine-wheel-validation.yml'
+      - 'documents/systems/data-platform/shared-engine/CODE.md'
+permissions:
+  contents: read
+jobs:
+  shared-engine-contract-wheel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_DATE_EPOCH: '1704067200' # reproducible ZIP timestamps, immutable release clock
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Create pinned wheelhouse then install test environment offline
+        run: |
+          set -euo pipefail
+          python -m pip wheel --wheel-dir "$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
+          python -m venv "$RUNNER_TEMP/shared-env"
+          "$RUNNER_TEMP/shared-env/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
+          "$RUNNER_TEMP/shared-env/bin/python" -c 'import sys,pyspark,setuptools; print(sys.version); print("pyspark",pyspark.__version__); print("setuptools",setuptools.__version__)'
+      - name: Synthetic FHIR R4 unit and PySpark Schema/Contract tests
+        env:
+          PYTHONPATH: shared-data-engine/src
+          SPARK_LOCAL_HOSTNAME: localhost
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/shared-env/bin/python" -m unittest discover -s shared-data-engine/tests -p 'test_*.py' -v
+      - name: Build sole Shared Wheel with pinned offline build tools
+        run: |
+          set -euo pipefail
+          mkdir -p dist dist-repeat
+          "$RUNNER_TEMP/shared-env/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
+          "$RUNNER_TEMP/shared-env/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist-repeat ./shared-data-engine
+          cmp dist/*.whl dist-repeat/*.whl
+          sha256sum dist/*.whl | tee dist/SHA256SUMS
+          echo "REPRODUCIBLE_WHEEL_PASS"
+      - name: Offline Wheel install and independent import outside repository
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/shared-env/bin/pip" install --no-index --no-deps --force-reinstall dist/*.whl
+          cd "$RUNNER_TEMP"
+          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.0"; print("WHEEL_IMPORT_PASS",h.__version__,h.__file__)'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: healthcare-data-engine-0.1.0-wheel-sha
+          path: |
+            dist/*.whl
+            dist/SHA256SUMS
+          retention-days: 30
