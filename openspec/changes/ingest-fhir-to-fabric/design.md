@@ -1,6 +1,6 @@
 # Design — 2026-10-30 Architecture Decision
 
-**Data architecture + Fabric-native code layout adopted 2026-10-31; runtime NOT authorized.** 权威详细决策：[ADR — Bronze → Canonical Silver → OMOP Gold](../../../documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)。保留 [2026-10-27 Fabric 初稿](../../../documents/architecture/design/FABRIC-FHIR-BLOB-INGESTION-DRAFT.md) 与 [Local 源码复盘](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md) 作为依据；若冲突，ADR 优先。
+**Data architecture + Fabric-native code layout adopted 2026-10-31; runtime NOT authorized.** 执行架构以 [Fabric-native ADR](../../../documents/architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) 为准，数据业务以 [Medallion ADR](../../../documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) 为准。2026-10-27 的两份重复 Draft 已从当前 Git 树清理；需要历史实现细节时按 Medallion ADR 的固定 Git Commit 追溯。
 
 ## Adopted design
 

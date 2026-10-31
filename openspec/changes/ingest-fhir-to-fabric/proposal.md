@@ -24,7 +24,7 @@ Azure Blob FHIR R4 Producer 已有 Manifest-last 和远端字节验证；但 Fab
 
 ## Impact and authority
 
-详见 [2026-10-30 架构决策](../../../documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)、[Local 代码复盘](../../../documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)。本次只修改 Git 设计文档，可在 GitHub CI/保护条件满足时合并 main 作为开发依据；不运行 Spark/Fabric/Blob/PG/K8s、不创建表和 paid capacity。
+当前依据：[Medallion 业务 ADR](../../../documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)、[Fabric Native 执行 ADR](../../../documents/architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) 和 [Local 代码提炼对照清单](../../../documents/architecture/design/FABRIC-FHIR-PRACTICAL-SOURCE-LAYOUT.md)。旧 Local 讨论稿仅保留固定 Git 历史链接。本次只修改 Git 设计文档，可在 GitHub CI/保护条件满足时合并 main 作为开发依据；不运行 Spark/Fabric/Blob/PG/K8s、不创建表和 paid capacity。
 
 
 2026-10-31 权威最终执行决策：[Fabric Native Notebook/Pipeline/Environment ADR](../../../documents/architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。

@@ -1,24 +1,35 @@
 ---
 status: active
 scope: architecture-design-index
-last_verified: 2026-10-19
-source_sha: f3b2d9e97d9afe4e7457a1d48fde9e655add47d7
+last_verified: 2026-10-31
+source_sha: 7060cbb673ea9bcea1de9311f58c1a4145316b35
 ---
 
-# 架构设计讨论稿
+# 架构与设计索引
 
-- **[Fabric Terraform 按真实 Workspace/资源类型独立部署架构（最新有效目标）](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)**：`fabric-workspace/<name>/<type>/` 独立 Root/State，`shared-infra/` 同级，Modules 通用，Workspace ID 经 Remote State Output 获取；Notebook/Pipeline 完全由 `fabric-cicd` 管理。实施见 [当前 OpenSpec Change](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。
+本目录只保留**仍有独立价值**的决策、实施计划和必要的历史风险/验收依据。设计合并不代表代码已部署或云端资源通过验收。新开发 Agent 应先阅读当前权威 ADR，不应把早期 Draft 或被替代的实现目录当作指令。
 
-本目录集中导航**讨论稿与已确认但尚未实施的目标架构设计**。每份设计以自身 status 为准；任何目标设计都不代表已经部署或运行验收，也不取代系统实际源码、项目唯一状态与 OpenSpec Change。
+## Healthcare / Fabric：当前有效开发依据
 
-- **[本地 Portal P1–P6 MVP 正式收尾与 A4/P4 延后跟踪](LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)**：按用户确认的 Design A 验收结束 LAN-only 阶段，单独记录历史 A4 `unknown` 未证实的唯一根因、P4 RDD START-only 的已知限制和重新立项条件；公网只读/ Azure-Fabric 血缘展示另做独立项目，不隐含已部署。
-- **[OpenLineage Spark 1.47.1 旧 A4 `unknown` Job 根因法证](OPENLINEAGE-SPARK-A4-UNKNOWN-JOB-FORENSICS.md)**：官方 1.47.1 Java Job Name Provider、ContextFactory 与 Spark 3.5.7 生命周期源码、旧原始失败与 GET-only 取证；已确定 `unknown` 命名回退机制及旧无 Output Writer，完整历史事件唯一根因尚未证明，不与 RDD START-only 方案 A 混淆。
-- **[OpenLineage Spark RDD Action START-only 生命周期：方案 A 设计决策与经验](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md)**：精确应用 Job 身份、真实 Parent/DatasetVersion、1.47.1/1.54.0 A/B、上游源码过滤假设、Marquez 展示影响、分层严格验收和未来 FHIR/HL7 的复用检查清单；P4 物理终态仍待确认，P5 Writer E2E 另行验收。
-- [Data Platform V2：仓库迁移与模块化重构设计](DATA-PLATFORM-V2-MIGRATION-DESIGN.md)：四个顶层模块、本地组件划分、Task004 兼容重命名、公共能力提取、实施阶段、测试和回滚。
-- [OpenSpec 接入与开发治理设计](OPENSPEC-ADOPTION-DESIGN.md)：同仓 OpenSpec、Documents/Specs/Changes 权威边界、官方标准流程、Agent 接力、STEP09 实施 Gate（编写时为未初始化的讨论稿；此后 G0–G4 已实施，G5 首个业务 Change 未开始，最新状态以 [实施计划](../../engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 为准）。
+- **[Fabric Notebook + Pipeline + Environment + Shared Engine 最终 ADR](FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)**：Fabric Git Item 目录、真正的 PySpark Notebook、Pipeline 编排、唯一 Shared Wheel 及 Environment Publish。
+- **[Fabric Bronze → Canonical Silver → OMOP Gold 业务 ADR](FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)**：数据契约、来源与批次版本、审批/重跑、Warehouse Gold 事务候选和 E2E 闸门。
+- **[Fabric FHIR 实战目录与文件级实施计划](FABRIC-FHIR-PRACTICAL-SOURCE-LAYOUT.md)**：已有 Local/Trial 源码对照、目标文件、OneLake Catalog 与分期开发步骤。
+- [Fabric Terraform Workspace-scoped 架构](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)：仍有效的 IaC 目标和 State 保护；实际变更以 [对应 OpenSpec](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md) 和真实 State 为准。
+- [FHIR R4 / HL7 v2 多来源 MVP](FHIR-HL7-MULTISOURCE-MVP-DESIGN.md)：医院模拟来源和合成患者交叉身份的已确认设计，实施状态与 Fabric FHIR 入库独立。
 
-- [Healthcare V2：双平台、多数据源与公开展示路线](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)：暂停 Condition，保留 Local OMOP，PG/FHIR/HL7 三条独立 Fabric 输入、双 Portal 可公开只读展示及 OpenSpec→目录迁移→云端 E2E 实施顺序（讨论稿）。
-- [FHIR R4 / HL7 v2 多来源 MVP 设计（已确认目标、未实施）](FHIR-HL7-MULTISOURCE-MVP-DESIGN.md)：共享 Synthea 合成群体、固定部分患者 Crosswalk、FHIR Bundle JSON、OIE 转 HL7 ADT、无 Kafka 的文件发布、Fabric Bronze/Silver 和最小验收门槛；实施需独立 OpenSpec Change。
-- [Fabric 多环境可重建架构（已确认目标、未实施）](FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md)：稳定的本地与 Blob、分环境 Terraform State/身份、Terraform 控制平面、GitHub Actions + fabric-cicd 发布、跨租户前置条件与一键受控部署验收；原生 Workspace GitHub Integration 不是 MVP 依赖。
+## 其他当前组件与工程设计
 
-其他权威入口：[当前总体架构](../SYSTEM-OVERVIEW.md)、[已批准的架构决策](../decisions/README.md)、[Data Platform 组件文档](../../systems/data-platform/README.md)、[Agent 开发规则](../../engineering/development/AGENT-RULES.md)。
+- [Local Portal MVP 收尾与延后追踪](LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)
+- [OpenLineage Spark A4 unknown Job 法证](OPENLINEAGE-SPARK-A4-UNKNOWN-JOB-FORENSICS.md)
+- [OpenLineage Spark RDD Action 生命周期决策](OPENLINEAGE-SPARK-RDD-ACTION-LIFECYCLE-DECISION.md)
+- [Data Platform V2 源码目录迁移设计](DATA-PLATFORM-V2-MIGRATION-DESIGN.md)
+- [OpenSpec 接入和治理设计](OPENSPEC-ADOPTION-DESIGN.md)
+
+## 历史参考，不是当前开发规范
+
+- [Healthcare V2 多来源/双 Portal 早期路线](HEALTHCARE-V2-MULTISOURCE-FABRIC-ROADMAP-DESIGN.md)：有未来方向，但旧实施顺序不得覆盖新 ADR。
+- [Fabric 多环境旧重建架构](FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 与 [旧部署基线](FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)：**SUPERSEDED**，只因账号、旧 State/Storage 和风险分析仍有追溯价值暂留；不能照此重建新环境。
+
+2026-10-31 已从 Main **移除两份已被正式 ADR 替代的 FHIR 草稿**，不再创建第二个 `archive/` 副本。历史快照统一见 [PR #533](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/533) 或 [Medallion ADR 的固定 Git 版本链接](FABRIC-MEDALLION-CANONICAL-ADR-20261030.md#6-历史来源与决策追溯)。
+
+其他权威入口：[当前总体架构](../SYSTEM-OVERVIEW.md)、[已批准决策](../decisions/README.md)、[系统组件文档](../../systems/data-platform/README.md)、[Agent 开发规则](../../engineering/development/AGENT-RULES.md)。

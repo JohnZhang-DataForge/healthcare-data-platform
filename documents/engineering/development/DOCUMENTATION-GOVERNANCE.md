@@ -89,6 +89,10 @@ evidence: []
 | 模块被替换或废弃 | 明确有效范围、替代文档和历史决策；禁用旧操作入口 |
 | 失败、回滚、环境异常 | 保存实际证据、风险和恢复条件；不覆盖先前历史事实 |
 
+### 已采纳设计的去重策略（2026-10-31）
+
+当设计 ADR 已正式合并、原 Draft 与当前权威重复时，可在**独立 docs-only PR** 中移除原 Draft，但必须先完成：提取仍然有效的独有安全/Contract/验收依据；更新 README/CODE/OpenSpec 中的执行链接；将仍需追溯的旧稿指向**固定 commit SHA 或已合并 PR**；执行全仓 Markdown 链接、OpenSpec 与命名检查。**不复制到新的 archive 目录，也不删除仍独立有效的 Terraform State/账号保护、Runbook、已批准跨模块架构或真实历史验收证据。** Git 删除只从当前树退休，历史 Commit 仍可读取。
+
 ## 6. Legacy 与历史归档
 
 - 当前 Healthcare `docs/archive/` 已移除；旧归档已被现有文档指向独立 [Healthcare-Specs/archive](https://github.com/JohnZhang-DataForge/Healthcare-Specs/tree/main/archive)（Private，访问按 GitHub 权限），因此**不要根据旧 Lifecycle 文件中的示例重建 `docs/archive/`**。
