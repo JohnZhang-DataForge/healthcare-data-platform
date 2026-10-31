@@ -51,8 +51,10 @@
 ### P1 verified offline evidence 2026-10-31
 
 - [GitHub Actions Run #41230857875](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41230857875), exact source HEAD `87a8693590ffa81bbb5afdfbed3952088e37150c`: 15/15 synthetic Python/PySpark tests PASS; pinned Python 3.11, Java 17, PySpark 3.5.7, setuptools 75.8.2, wheel 0.45.1; wheel built/installed offline and independently imported outside checkout.
-- Single wheel `healthcare_data_engine-0.1.0-py3-none-any.whl` SHA256: `fd301439cef420cd71c1c3e452b913ab9b3b75232c91375109141eccf5b40bb2`; CI Artifact contains Wheel and SHA256SUMS. This is the PR source HEAD's build, not a Fabric published library.
+- Single wheel `healthcare_data_engine-0.1.0-py3-none-any.whl` SHA256: `603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7` (final reproducible build); CI Artifact contains Wheel and SHA256SUMS. This is the PR source HEAD's build, not a Fabric published library.
 - CI HEAD `87a8693590ffa81bbb5afdfbed3952088e37150c`: CODE-map/Shared boundary, Trusted OpenSpec, OpenSpec validation and documentation links PASS. Cloudflare Workers Builds for unrelated Portal reported failure; not a required Main ruleset context and unchanged by Shared code.
 - No Fabric/Blob/OneLake/Local/PG/Kubernetes/TF writes; Fabric Native Item definition, environment Publish and real Spark Runtime compatibility remain BLOCKED pending new authorization/read-only preflight.
 
 - Wheel reproducibility regression: initial P1 rerun rebuilt unchanged source but generated a different hash (`fd301439...` vs `ab50e5bf...`), owing to ZIP build timestamp instability. Updated CI sets `SOURCE_DATE_EPOCH=1704067200` and builds twice with byte comparison; prior hashes are historical CI evidence, **not canonical release pin**. Replace final SHA only after new reproducibility verification succeeds.
+
+- Final **reproducible** Wheel CI: [Run #41231145393](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41231145393) at `1b45d5ac671076bb86a6102eb29b99f2d2c2d5c3`, 15/15 tests PASS, two consecutive source builds byte-identical via `cmp`, Wheel SHA256 `603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7`, independent offline Wheel import PASS. Fixed `SOURCE_DATE_EPOCH=1704067200`. Any new source version requires its own new hash/evidence, not reuse this pin.
