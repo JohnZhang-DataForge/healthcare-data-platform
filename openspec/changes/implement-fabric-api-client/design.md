@@ -45,3 +45,7 @@ Input is JSON as `workflow_dispatch` string (max 4 KiB), `{"schema_version":"1",
 
 - `getDefinition` is named read but actually POST in Fabric REST: independent reviewed allowlist and GET-definition LRO response handling required.
 - Notebook/Pipeline run, Environment publish, Blob/OneLake independent readback require separate explicit authorization, cost/capacity checks and bounded resource-specific contracts. No generic POST/DELETE surface.
+
+## P0–P2 Readiness verification extension (2026-10-31)
+
+复用正式 `fabric-api-client.yml`，不新建以 `test` 为名的正式 Workflow，不允许任意目标仓库/Branch/Shell 入参。GitHub-hosted Runner checkout 精确绑定的 Healthcare Main SHA，在**没有 OIDC、没有 self-hosted Kubernetes admin 身份**的环境重跑 P0 静态所有权、P1 Wheel/Spark synthetic 与 P2 Notebook/Spark synthetic。只在受信任的 Self-Runner/main `dw-runner-set` 执行 Fabric API GET，已有 `list_items` 返回 Item 类型/数量用于 P2 Native Item 存在性判定。跑到 `BLOCKED_NATIVE_EXPORT` 是预期的 fail-closed 探测结果，不能写作云端 ETL PASS。任何自定义 API POST/Create/Publish/Run Notebook、Fabric Capacity 操作、Blob/OneLake 写入或 Delta 数据表核验不属于这个安全的第一轮验收。两个作业独立记录 exact SHA/Run/Artifact，以避免一次外部 Metadata GET 遮盖 Spark 测试错误。
