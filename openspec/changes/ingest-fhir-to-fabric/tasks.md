@@ -111,7 +111,7 @@
 ### Decision — Fabric Git Integration is portal-managed, NOT Terraform (2026-10-31)
 
 - [x] 用户决定 GitHub 与 `healthcare-omop` Workspace 的 Git Integration **手工通过 Fabric Workspace settings → Git integration → GitHub 配置**，不使用 Terraform，不创建 `fabric_workspace_git` 或 GitHub `fabric_connection` TF resource，也不要求 Terraform Import。既有 Terraform Workspace/Lakehouse/Connection 基础设施保持不变。
-- [ ] 4.5a Workspace Admin 使用仅限 `JohnZhang-DataForge/healthcare-data-platform` 的 Fine-grained GitHub PAT（Contents Read and write），在 Fabric Git integration → Add account 授权；拟连接路径 `/azure-fabric/workspaces/healthcare-omop`，首次使用受审查的初始化分支，不直接向 main 覆盖写入。
-- [ ] 4.5b 人工检查 Connect and sync 的方向，**保留 Fabric 已存在的 Notebook `nb_fhir_ingest`、Pipeline `pl_fhir_ingest`、Environment `env_healthcare` 及 Lakehouse**。先将 Workspace 项目提交到隔离分支，审查生成的真实 `.platform`（非全零 logicalId）和 folder mapping，再 PR 合并 main；禁止先 Update from Git 覆盖已有资源。
-- [ ] 4.5c Git 集成后用正式 Self-Runner 的 GET `/git/connection`、GET Items 和 GitHub PR/Commit 验证连接状态、路径、版本、Item GUID；Provider credentials 与 PAT 不写入 repo、workflow 日志或聊天。
-- [ ] 4.5d 若日后要让 Service Principal 调 Fabric Git REST 同步，需另将 Fabric 中已配置的 GitHub Cloud Connection 共享给现有 SP，并按实际可见的 Connection ID 设置 `ConfiguredConnection`/myGitCredentials；这**不是手工 Git Workspace 连接的前置要求**，也不代表此次应改用 Terraform。
+- [ ] 4.8 Workspace Admin 使用仅限 `JohnZhang-DataForge/healthcare-data-platform` 的 Fine-grained GitHub PAT（Contents Read and write），在 Fabric Git integration → Add account 授权；拟连接路径 `/azure-fabric/workspaces/healthcare-omop`，首次使用受审查的初始化分支，不直接向 main 覆盖写入。
+- [ ] 4.9 人工检查 Connect and sync 的方向，**保留 Fabric 已存在的 Notebook `nb_fhir_ingest`、Pipeline `pl_fhir_ingest`、Environment `env_healthcare` 及 Lakehouse**。先将 Workspace 项目提交到隔离分支，审查生成的真实 `.platform`（非全零 logicalId）和 folder mapping，再 PR 合并 main；禁止先 Update from Git 覆盖已有资源。
+- [ ] 4.10 Git 集成后用正式 Self-Runner 的 GET `/git/connection`、GET Items 和 GitHub PR/Commit 验证连接状态、路径、版本、Item GUID；Provider credentials 与 PAT 不写入 repo、workflow 日志或聊天。
+- [ ] 4.11 若日后要让 Service Principal 调 Fabric Git REST 同步，需另将 Fabric 中已配置的 GitHub Cloud Connection 共享给现有 SP，并按实际可见的 Connection ID 设置 `ConfiguredConnection`/myGitCredentials；这**不是手工 Git Workspace 连接的前置要求**，也不代表此次应改用 Terraform。
