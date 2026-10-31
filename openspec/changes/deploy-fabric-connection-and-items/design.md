@@ -1,3 +1,5 @@
+> **2026-10-31 RETIRED TEST SOURCE:** The `johnzhang-test` Native Notebook/Pipeline and scoped Publisher were deleted from current source following adoption of the 2026-10-31 Fabric Native ADR. The 2026-10-21 deployment facts below remain historical evidence, **not development instructions**. The actually deployed Trial F4 Workspace/Lakehouse and Terraform State must be independently verified and decommissioned before their Terraform Roots are removed. No production `healthcare-omop` resource is in scope.
+
 # Design
 
 ## Baseline / authority

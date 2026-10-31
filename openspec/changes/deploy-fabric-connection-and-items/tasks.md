@@ -1,3 +1,5 @@
+> **2026-10-31 RETIREMENT NOTICE:** Historical Trial `johnzhang-test` Native smoke source, Trial Publisher and Self-Runner workflow requests have been retired (Self-Runner PR #350; current Healthcare cleanup PR). Previously checked off tasks remain historical evidence only and are **not authorization to redeploy**. Retire cloud Workspace/Lakehouse only after inventory + Terraform State preflight and independently reviewed teardown; `healthcare-omop` and shared Trial Capacity are excluded.
+
 # Tasks
 
 > **ACTIVE — 2026-10-21**。接续已完成的 Trial F4 Terraform Workspace/Lakehouse，不重复基础设施部署。新的 `shared-infra/connection` 与 Fabric Item 发布分开测试、分开授权；只有证据到位才能打勾。

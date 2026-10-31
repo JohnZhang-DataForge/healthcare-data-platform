@@ -1,3 +1,5 @@
+> **2026-10-31 RETIRED / CLOUD DECOMMISSION PENDING:** The `johnzhang-test` test deployment workstream is no longer active. Test-only Self-Runner workflows removed in PR #350; Native Smoke source/publisher removed from current Healthcare branch. Historical logs and completed checks below remain for audit. **Previously applied Trial F4 Workspace/Lakehouse still require actual Azure/Fabric inventory and Terraform State readback followed by a reviewed controlled teardown.** Never infer a cloud destroy from code deletion. Shared Trial Capacity, `healthcare-omop` and Storage/State backend are out of scope.
+
 # Tasks
 
 ## 1. Prepare isolated Terraform infrastructure

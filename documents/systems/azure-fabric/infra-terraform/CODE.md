@@ -7,6 +7,9 @@ source_sha: null
 
 # Azure / Fabric Terraform — CODE 源码导航
 
+> **2026-10-31 DECOMMISSION HOLD — johnzhang-test only.** The dedicated Native Trial Notebook/Pipeline source and publisher are removed from mainline; Self-Runner PR #350 removed old Apply/Publish request workflows. **DO NOT RUN** any `johnzhang-test` Terraform Plan/Apply/Destroy until the actual Azure/Fabric inventory, existing Terraform workspace state and downstream bindings are read back and a reviewed teardown plan is approved. Historical Trial F4 evidence confirms this Workspace/Lakehouse **were successfully created**; deleting Git files does not remove cloud resources or clear state. The two `johnzhang-test` Terraform roots and unique state must remain intact until safe teardown is completed. Nothing here authorizes touching shared Trial Capacity, `healthcare-omop`, Blob Landing or remote State Backend.
+
+
 > **最新批准目标架构（2026-10-20）**：按真实 Workspace/资源类型部署，详见 [Fabric Terraform Workspace-scoped Architecture](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 和 [当前 OpenSpec Change](../../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md)。Workspace、OneLake 和 Shared Storage 独立 Roots 已加入源码；Self-Runner Workflow 已切换新目录。旧 `components/` / `fabric-environment/` 保留为历史源码，不迁移旧 State。Storage 已有真实 Plan PASS，Workspace 因缺少 Capacity GUID 在预检阶段阻断；Fabric 资源未 Apply。Notebook/Pipeline 新资源由 `fabric-cicd` 独占创建和发布。
 
 > **CODE.md 按增量列出实际源码；Task 2.1 仅新增 Workspace Root，不代表整体重构完成。**将来基于 [Module-first 新架构](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) 复用已有 Modules、建立统一环境 Root 的源码提交，必须在同 PR 更新本页和相关 CI/Workflow 导航。
@@ -91,7 +94,7 @@ source_sha: null
 ## 免费 Fabric Trial F4 实测入口（Trial-only）
 
 - [`johnzhang-test/workspace/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/workspace/main.tf) → [`johnzhang-test/onelake/`](../../../../azure-fabric/infra-terraform/fabric-workspace/johnzhang-test/onelake/main.tf)：保留已有 Terraform Roots/共享 Modules 和独立 State，Workspace 的 `capacity_id` 在部署时引用已存在免费 Trial F4，**不会创建 Capacity**。
-- [`Trial-only OpenSpec`](../../../../openspec/changes/validate-fabric-trial-free-infrastructure/tasks.md)：追踪 Trial F4 Workspace/Lakehouse 真实 Plan/Apply 和失败边界，不把旧付费 F2 Apply 失败记录当作免费测试通过。执行入口由 Self-Runner 独立 Trial-only Workflow 管理，不使用 `Fabric F2 Controlled E2E Apply`；真实 Runner 结果加入该 Change 后方能宣称部署完成。
+- [`Trial-only OpenSpec`](../../../../openspec/changes/validate-fabric-trial-free-infrastructure/tasks.md)：追踪 Trial F4 Workspace/Lakehouse 真实 Plan/Apply 和失败边界，不把旧付费 F2 Apply 失败记录当作免费测试通过。2026-10-31 起 Trial-only Apply Workflow 已从 Self-Runner 主分支退休；本项为历史验收记录，不再是可执行的测试发布入口。
 
 ## johnzhang-test — 独立的真实收费容量 E2E 测试（源代码）
 
