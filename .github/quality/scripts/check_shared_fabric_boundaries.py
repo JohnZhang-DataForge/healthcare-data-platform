@@ -47,6 +47,11 @@ def owner_for(path: str) -> str | None:
         part = relative.split("/", 1)[0]
         if part in ("notebooks", "pipelines", "environments"):
             return part
+        native_items = {".Notebook": "notebooks", ".DataPipeline": "pipelines",
+                        ".Environment": "environments"}
+        for suffix, owner in native_items.items():
+            if part.endswith(suffix):
+                return owner
     return None
 
 
@@ -145,8 +150,9 @@ def check_layout(path: str, content: str) -> list[str]:
         errors.append("WRONG_SHARED_NAMESPACE:" + path)
     if path.startswith(FABRIC_ROOT):
         if "/.Environment/" in path or ".Environment/" in path:
-            if path.endswith((".py", ".whl")):
-                errors.append("ENVIRONMENT_MUST_INSTALL_WHEEL_NOT_SOURCE:" + path)
+            if path.endswith(".py") or (path.endswith(".whl") and
+                    "/Libraries/CustomLibraries/" not in path):
+                errors.append("ENVIRONMENT_CUSTOM_WHEEL_LAYOUT_REQUIRED:" + path)
         if path.endswith(".py") and ".Notebook/" not in path:
             errors.append("FABRIC_PYTHON_OUTSIDE_NATIVE_NOTEBOOK:" + path)
         if path.endswith(".py") and ".Notebook/" in path:
