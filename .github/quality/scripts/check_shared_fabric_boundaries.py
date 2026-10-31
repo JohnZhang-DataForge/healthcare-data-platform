@@ -209,6 +209,11 @@ def run(base: str, head: str) -> list[str]:
             continue
         if not (is_owned_source(path) or path.endswith(".py")):
             continue
+        # Native Environment CustomLibraries wheel is a binary ZIP, not UTF-8 source.
+        # Its checksum is pinned by the build/stage CI; layout is still enforced.
+        if path.endswith(".whl"):
+            errors.extend(check_layout(path, ""))
+            continue
         body = git("show", head + ":" + path, binary=True).decode("utf-8")
         errors.extend(check_layout(path, body))
         errors.extend(check_imports(path, body))
