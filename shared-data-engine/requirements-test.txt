@@ -1,0 +1,4 @@
+# Pinned GitHub-hosted Python 3.11 / Java 17 test environment.
+pyspark==3.5.7
+setuptools==75.8.2
+wheel==0.45.1
