@@ -49,7 +49,7 @@ Azure Exporter/Fabric = 独立分析副本链路
 
 ### 2026-10-30：独立共享 Python 包的明确例外（新规则）
 
-上述“不要另开重复 `src/`”**仅限制在现有 Local DP 各业务目录内创建第二套重复源码树**。用户已经确认采用跨平台共享引擎，两个真正独立、可安装的 Python Package **允许且必须**采用标准 `src` 布局：`shared-data-engine/src/healthcare_data_engine/` 和 `azure-fabric/ingestion/src/healthcare_fabric/`。现有 `local-data-platform/` 原路径不重构。
+上述“不要另开重复 `src/`”**仅限制在现有 Local DP 各业务目录内创建第二套重复源码树**。用户已经确认采用跨平台共享引擎，当前只新建**一个**可安装 Python Package：`shared-data-engine/src/healthcare_data_engine/`，使用标准 `src` 布局；此前第二只 `azure-fabric/ingestion/src/healthcare_fabric/` Python Wheel 的方案已取消。现有 `local-data-platform/` 原路径不重构。
 
 新增通用 FHIR/HL7/CSV Source + Entity Adapter、Canonical、OMOP Candidate Mapper、Quality、Identity Plan、Reconciliation，归 `shared-data-engine`；Blob/Delta/PG/Warehouse Writer、Airflow/K8s/Notebook/Pipeline/Secrets 则属于对应平台。Source-specific 的 Mapper 禁止另起平台内复制品。共享 DataFrame 函数不产生外部 I/O 和持久化副作用。详细路径与 Code Ownership 以 [Shared Data Engine 规范](SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md) 为准；新业务代码进仓前应同时扩展 CODE-map CI，不能假定已有检查覆盖新顶层目录。
 
@@ -61,3 +61,6 @@ Azure Exporter/Fabric = 独立分析副本链路
 - 任务号允许出现在 PR、OpenSpec Change 的开发追踪、日志、历史证据。新正式脚本和测试**不允许**继续放入新建的 `scripts/taskNNN/` 或 `tests/taskNNN/`。
 - 保持已验收 DAG ID、镜像 Digest、老数据库表/函数 `etl.task004_*`、Batch Identity；涉及兼容变更必须独立设计版本、回退、单测和必要的 Runtime 验收，不自行重放冻结 Batch。
 - 对代码的真正迁移先制作依赖列表，再按模块逐 PR 执行。文档重建与代码重命名**不等于**获得运行 K8s/PG/Azure 的授权。
+
+
+2026-10-31 Fabric 项目最终规范：[Native Notebook/Pipeline/Environment ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。Fabric NB/PL 是必须的原生执行资源，Environment 管共享包构建产物；不额外创建 Fabric I/O/runtime 包。
