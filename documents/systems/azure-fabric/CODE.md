@@ -1,4 +1,6 @@
 ---
+
+> **2026-10-31 Fabric FHIR Source Ownership**：[最终 Native ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。原生 NB/PL/Environment 在 Workspace 对应的 Git Item 目录；唯一新 Python Wheel 是 `shared-data-engine/`；旧独立 Fabric I/O 包方案作废。
 status: active
 scope: azure-fabric-source-map
 last_verified: 2026-10-18
