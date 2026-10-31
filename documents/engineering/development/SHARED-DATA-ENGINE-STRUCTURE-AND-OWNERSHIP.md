@@ -151,6 +151,10 @@ Local Airflow / Local Spark      Fabric Pipeline / thin Notebook
 - **发布**：Local Spark 3.5.7 与 Fabric Runtime 2.0 有版本差异；两边固定共享包版本且独立测试、独立部署，不得 Fabric 变更自动升级 Local。新的真实 File/Item ID 必须从系统生成而非硬编码猜测。
 - **不可迁移**：现有 Local DAG ID、Git 路径、镜像/ConfigMap、PostgreSQL 业务合同与已发布批次不做命名清理；以后任何提取以“旧版本照常运行 → 新实现等价测试 → 显式调用切换 → 独立验收 → 有条件清理”为顺序。
 
+## 5A. Fabric 实战源码与数据落地补充
+
+**在开发具体 Python 源文件、Fabric Native Item、Environment、OneLake Table 或 Warehouse SQL 前，必须按 [实战文件级实施计划](../../architecture/design/FABRIC-FHIR-PRACTICAL-SOURCE-LAYOUT.md) 检查：真实旧文件可提取部分、两只 Wheel 的构建/发布、Live Lakehouse schema 与准确 ID、Silver batch approval/版本策略、Native .platform logicalId、SQL Gold Writer 单一权属。** 该实施计划不能覆盖本文的永久唯一 owner 和禁止依赖规则；与现有已部署事实不一致则 HOLD 并更新计划，禁止盲目创建第二套。
+
 ## 6. Agent 的强制执行顺序
 
 开发 Agent **在新增/改动任何共享/Local/Fabric 数据转换源文件之前**：

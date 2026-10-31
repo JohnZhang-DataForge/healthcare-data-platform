@@ -22,6 +22,10 @@ Blob Manifest + Byte SHA → Intake
 6. MVP 一个 Fabric Pipeline + 薄 Notebook + 可测试 PySpark 包；dbt 暂不引入；Lakehouse SQL Endpoint 只读，不可用其 T-SQL 写 Silver Delta。
 7. Source Batch (hospital/feed/request + manifest SHA)、Processing Version (adapter/contract/mapping/code SHA)、Publication ID (committed target version) 分离；已提交同版本重跑 SKIP、同 request 新 SHA 冲突 HOLD、未知 ACK 先只读核验。
 
+## Concrete repository and Fabric delivery file plan
+
+Practical file-by-file source layout, actual Local files to extract, verified existing Terraform/Trial-native Item paths, target Lakehouse schemas and P0–P5 development slices: [FABRIC-FHIR-PRACTICAL-SOURCE-LAYOUT](../../../documents/architecture/design/FABRIC-FHIR-PRACTICAL-SOURCE-LAYOUT.md). This is an actionable planning artifact, **not a list of files already created**. The currently running Local DP and current Terraform State remain untouched. Before new source: reconcile updated Main, verify Live Lakehouse GUID/schema and extend CODE-map/forbidden-import static tests.
+
 ## Source-directory governance confirmed 2026-10-30
 
 [Authoritative shared package and Agent ownership policy](../../../documents/engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md) fixes one `healthcare_data_engine` package for pure DataFrame Contract/Source Adapter/Canonical/OMOP Mapping/DQ/Identity Plan/Reconciliation; platform I/O/transactions remain in Local or Fabric adapters. The `shared-data-engine/AGENTS.md` scoped instructions and root `AGENTS.md` enforce the read-before-change process for future agents; old Local `spark/contracts/` is still authoritative. Standard `src/` is allowed only for independent installable packages, not for duplicated Local source trees. Existing Local runtime files and currently deployed behavior are unchanged.
