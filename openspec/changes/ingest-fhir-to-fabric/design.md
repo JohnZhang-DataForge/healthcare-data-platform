@@ -58,3 +58,7 @@ After readback: separately review exported .platform/Git integration and CODE ma
 ## Live evidence qualification: Git connection not yet configured
 
 Actual Fabric resource creation and definition export both succeeded in Self-Runner Runs 41242815706 and 41243074326. Follow-up GET `/workspaces/{id}/git/connection` in Run 41243367360 returned `NotConnected`. The REST-exported `.platform` files contain all-zero logicalId; treat as unbound initial Fabric API response, not Git-authoritative source definitions. Native source registration in Healthcare Git and Environment Publish are still pending; no business Spark run/data writes occurred.
+
+## Verified GitHub credential blocker (2026-10-31)
+
+Run 41243652551 independently GET-listed Service Principal-visible Connections: 1 `AzureBlobs` and **zero** GitHub candidates. Workspace Git status remains NotConnected; the three native Items are real and exportable but source control is not yet initialized. No safe automated Git Connect is possible without a real authorized configured connection ID. Continue with Fabric-owned credential setup, then read-only reverify and exact target repo/folder/branch validation before any Git initialization. Native bootstrap is complete; Wheel publish, Notebook content binding, Pipeline activity and Delta runtime remain NOT_RUN.
