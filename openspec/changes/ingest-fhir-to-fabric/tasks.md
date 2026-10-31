@@ -73,3 +73,22 @@
 - GitHub Actions [Run #41231571043](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41231571043) at source commit `b4186e9d1f968b7873c4ec679a4f35a64c05b8ef`: 14/14 synthetic Manifest/PySpark/canonical/Patient-Encounter PK-FK/replay-stability/authorization-negative tests **PASS**; only Shared Wheel 0.1.0 installed with SHA256 `603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7` verified by `sha256sum --check`.
 - Native Notebook/Pipeline/Environment exporter check: `BLOCKED_NATIVE_EXPORT` exit code 2, CI confirms `NATIVE_ITEM_PUBLICATION_BLOCKED_AS_DESIGNED`; no `.platform`, logicalId, pipeline content, Environment format or published runtime invented.
 - Notebook is **unpublished offline working source**; literal Spark native I/O/Delta/write/readback steps are coded but **not executed against Delta or Fabric**. Actual Silver APPROVED/readback, Pipeline E2E, live Git binding, identity/schema/permissions/cost, Environment Publish remain HOLD. P2 offline tests are not Fabric runtime proof.
+
+
+## 4. Authorized Fabric Native Item bootstrap (2026-10-31)
+
+> 用户 2026-10-31 明确授权创建需要的 Fabric 资源，限制在 healthcare-omop Notebook、DataPipeline 和 Environment；不授权 Capacity 收费资源、业务数据覆盖或历史资源销毁。
+
+- [x] 4.1 核对最新 Self-Runner GET Run 41241521584：Lakehouse=1、SQLEndpoint=1；Notebook/Pipeline/Environment=0；核实 Microsoft 官方 Create/GetDefinition API 和 LRO。
+- [x] 4.2 设计固定目标名的 CREATE-IF-ABSENT、真实 Item ID 读回与 getDefinition 导出；先确认证据再保存 .platform；未知 ACK/HOLD，严禁并行 Terraform 所有权。
+- [ ] 4.3 在 Self-Runner 开发正式受控 bootstrap Workflow、Python REST 客户端和无凭据正反单测。经 PR CI 后在 Main 一次性运行实际创建。
+- [ ] 4.4 记录真实创建/读取 HTTP、GUID、Run/Artifact 与 Capacity/权限错误；绝不把空 Item 视为业务 E2E。
+- [ ] 4.5 从真实 Fabric getDefinition 导出 .platform/Item 内容到 Healthcare Git 目录；同步 Notebook/Pipeline/Environment CODE.md，验收 Git Sync/实际 UI 文件夹映射。
+- [ ] 4.6 将唯一固定 SHA Shared Wheel 加入 Environment 并 Publish，接入 P2 Notebook 源码与安全 Pipeline，独立验证版本/引用；不自动运行数据作业。
+- [ ] 4.7 小规模 Synthetic FHIR→Bronze→Silver 实机试运行，独立核验 Delta/权限/费用，仍不得修改历史业务数据或把 Mock 当实机结果。
+
+### Permission & rollback
+
+- 允许仅创建 nb_fhir_ingest (Notebook)、pl_fhir_ingest (DataPipeline)、env_healthcare (Environment)，读取真实定义并记录原始 ID。
+- 不 Resume/创建付费 Capacity，不删除已有资源，不覆盖已有 Item，不执行 Notebook/Pipeline，不修改 Terraform State。首次不明结果先读回，禁止盲目重发 POST。
+- 新资源部分创建也不得自动删除；保留准确 ID 供审核。真实运行与发布属于后续 Tasks，不因创建成功而提前认定 P2 E2E。
