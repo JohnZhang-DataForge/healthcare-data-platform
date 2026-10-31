@@ -109,6 +109,8 @@ Fabric Workspace git folder and native Item GUIDs must be read back from Fabric,
 
 ## 6. 历史来源与决策追溯
 
-- [Fabric FHIR 2026-10-27 初稿](FABRIC-FHIR-BLOB-INGESTION-DRAFT.md)（保留实现细节及 Manifest 协议证据；冲突时以本 ADR 为准）
-- [Local DP → Fabric 代码复盘](LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)（Local 逻辑流程与 NEW_ONLY 实际 DAG 的区分）
+早期两份讨论稿已从当前源码树退休（2026-10-31），**不再参与 Agent 执行规范或新代码设计**；如需追溯，可以访问合并时的固定 Git 快照，而不是在 Main 维护重复草稿：
+
+- [2026-10-27 FHIR Blob 初稿（Git 历史）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/7060cbb673ea9bcea1de9311f58c1a4145316b35/documents/architecture/design/FABRIC-FHIR-BLOB-INGESTION-DRAFT.md)：仅供核查旧 Manifest 和早期设想，当前业务规范以上文 ADR 为准。
+- [2026-10-27 Local DP → Fabric 代码复盘（Git 历史）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/7060cbb673ea9bcea1de9311f58c1a4145316b35/documents/architecture/design/LOCAL-DP-TO-FABRIC-CODE-ARCHITECTURE-DRAFT.md)：旧 DAG/Adapter 源码复盘细节，实际复用文件与步骤以 [Fabric 实战源码清单](FABRIC-FHIR-PRACTICAL-SOURCE-LAYOUT.md) 为准。
 - OpenSpec [proposal](../../../openspec/changes/ingest-fhir-to-fabric/proposal.md)、[design](../../../openspec/changes/ingest-fhir-to-fabric/design.md)、[tasks](../../../openspec/changes/ingest-fhir-to-fabric/tasks.md)。

@@ -13,7 +13,7 @@ runtime_status: no-new-runtime-or-business-code
 
 ## 1. 已核实的实际目录与不可破坏的现状
 
-- 截至本次核对的 Main SHA 为 `95b0d561833088ecceb2b6874fcfce4f298868df`；PR #533 的独立 feature head 与 Main **已分叉**（比较时 ahead 12 / behind 23），因此**开始新的代码 PR 之前先更新/协调最新 main，不在未经审查的分支上强制覆盖其他已合并变更**。
+- 本计划的初始源码静态核查基线为 `95b0d561833088ecceb2b6874fcfce4f298868df`，随后**最终架构已通过 PR #533 合并 main（2026-10-31，merge SHA `7060cbb673ea9bcea1de9311f58c1a4145316b35`）**。该 SHA 是历史证据而非永久最新 Main；所有新业务代码必须从实施当天的最新 main 建分支并重新核对相关源码和 Contract。
 - `local-data-platform/spark/apps/person/synthea_patient_adapter.py`、`visit/synthea_encounter_adapter.py` 同时耦合 Spark Job、S3/Manifest、处理与验证；`person/map_canonical_patient_to_omop.py` 还会从 PostgreSQL JDBC 读取映射。不能整文件复制到 Shared；必须先抽纯 DataFrame 函数。
 - `local-data-platform/spark/apps/visit/map_encounter_to_visit_candidate.py` 是现有仅 DataFrame 输入/输出的独立映射逻辑，适合**优先做有行为对照的提炼**；现有 Patient/Encounter Contract 保持 `local-data-platform/spark/contracts/canonical/` 唯一权威，不在本规划中创建第二套。
 - `azure-fabric/workspaces/healthcare-omop/notebooks/ingestion/.gitkeep` 和 `pipelines/.gitkeep` 目前只是占位；`azure-fabric/workspaces/johnzhang-test/` 已有 Git 原生 Notebook/Pipeline 的 `.platform` 和 `notebook-content.py` / `pipeline-content.json` 实例，可作为**格式参考**，不得复制其 logicalId 以创建新业务 Item。
