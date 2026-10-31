@@ -46,6 +46,7 @@ P1 的实际源码和测试逐文件列在下表，静态 CI 会阻止新增/移
 | [src/healthcare_data_engine/adapters/fhir_r4/patient.py](../../../../shared-data-engine/src/healthcare_data_engine/adapters/fhir_r4/patient.py) | FHIR Patient 到 Canonical v1，缺失值 Quarantine |
 | [src/healthcare_data_engine/adapters/fhir_r4/encounter.py](../../../../shared-data-engine/src/healthcare_data_engine/adapters/fhir_r4/encounter.py) | FHIR Encounter 到 Canonical v1，Reference 拒绝 |
 | [src/healthcare_data_engine/canonical/validation.py](../../../../shared-data-engine/src/healthcare_data_engine/canonical/validation.py) | 原 Local SHA256 pin、逐字段类型与 Spark Schema |
+| [src/healthcare_data_engine/reconciliation/patient_encounter.py](../../../../shared-data-engine/src/healthcare_data_engine/reconciliation/patient_encounter.py) | 纯 Canonical PK/FK/批次一致性和来源隔离 |
 | [src/healthcare_data_engine/reconciliation/replay.py](../../../../shared-data-engine/src/healthcare_data_engine/reconciliation/replay.py) | NEW/SKIP/Conflict/Hold/ACK 只读重试策略 |
 | [tests/fixtures/fhir_r4/patient_encounters_bundle.json](../../../../shared-data-engine/tests/fixtures/fhir_r4/patient_encounters_bundle.json) | 完全合成 FHIR Bundle Fixture |
 | [tests/test_fhir_r4_contract.py](../../../../shared-data-engine/tests/test_fhir_r4_contract.py) | 来源、负向、去重、Contract 和 replay tests |

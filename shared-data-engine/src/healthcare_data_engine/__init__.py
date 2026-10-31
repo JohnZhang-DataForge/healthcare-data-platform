@@ -8,6 +8,7 @@ from healthcare_data_engine.adapters.fhir_r4.patient import normalize_fhir_patie
 from healthcare_data_engine.adapters.fhir_r4.encounter import normalize_fhir_encounter
 from healthcare_data_engine.canonical.validation import load_pinned_contract, canonical_schema, validate_row
 from healthcare_data_engine.quality.result import Finding, ParsedResources, TransformResult
+from healthcare_data_engine.reconciliation.patient_encounter import reconcile_patient_encounter, PatientEncounterReconciliation
 from healthcare_data_engine.reconciliation.replay import PublicationRecord, decide_replay
 
 __version__ = "0.1.0"
@@ -16,5 +17,5 @@ __all__ = [
     "normalize_fhir_patient", "normalize_fhir_encounter",
     "load_pinned_contract", "canonical_schema", "validate_row",
     "Finding", "ParsedResources", "TransformResult",
-    "PublicationRecord", "decide_replay",
+    "PublicationRecord", "decide_replay", "reconcile_patient_encounter", "PatientEncounterReconciliation",
 ]

@@ -10,7 +10,7 @@ import unittest
 
 from healthcare_data_engine import (
     BatchContext, SourceObject, parse_fhir_resources, normalize_fhir_patient,
-    normalize_fhir_encounter, load_pinned_contract, PublicationRecord, decide_replay)
+    normalize_fhir_encounter, load_pinned_contract, PublicationRecord, decide_replay, reconcile_patient_encounter)
 from healthcare_data_engine.canonical.validation import validate_row
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -79,6 +79,31 @@ class FhirCanonicalContractTest(unittest.TestCase):
                 # Encounter FK resolution is syntactic, not approval: caller must
                 # reconcile accepted Patient keys before Silver writes.
                 self.assertEqual(len(e.accepted), 2)
+
+    def test_reconciliation_rejects_fk_to_quarantined_patient(self):
+        data = bundle()
+        data["entry"][0]["resource"].pop("birthDate")
+        _, p, e = outcomes(data)
+        result = reconcile_patient_encounter(p, e, context())
+        self.assertEqual(result.metrics["patient_accepted"], 0)
+        self.assertEqual(result.metrics["encounter_accepted"], 0)
+        self.assertEqual(result.metrics["encounter_rejected"], 2)
+        self.assertEqual({x.reason for x in result.encounter.rejected},
+                         {"ENCOUNTER_PATIENT_NOT_ACCEPTED"})
+
+    def test_reconciliation_rejects_cross_namespace_and_duplicate_pk(self):
+        _, p, e = outcomes()
+        ctx = context()
+        changed = dict(p.accepted[0], source_system="synthetic-fhir:hospital-other:fhir-r4")
+        from healthcare_data_engine.quality.result import TransformResult
+        invalid_p = TransformResult((changed,), (), ())
+        result = reconcile_patient_encounter(invalid_p, e, ctx)
+        self.assertEqual(result.patient.rejected[0].reason, "PATIENT_SOURCE_NAMESPACE_CONFLICT")
+        self.assertEqual(result.metrics["encounter_accepted"], 0)
+        duplicated = TransformResult((p.accepted[0], p.accepted[0]), (), ())
+        duplicate = reconcile_patient_encounter(duplicated, e, ctx)
+        self.assertEqual(sum(x.reason == "PATIENT_DUPLICATE_PRIMARY_KEY"
+                             for x in duplicate.patient.rejected), 2)
 
     def test_encounter_missing_end_is_quarantined_not_fabricated(self):
         data = bundle()
