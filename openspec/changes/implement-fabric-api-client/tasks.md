@@ -13,6 +13,9 @@
 - [x] 2.5 [Run #41240364687, Main cc477ad020d903bfda35a228611d0f897b5f2e11] 真实 Self-Runner/main Push → GitHub OIDC → Fabric list_items GET 已通过，报告 Artifact `fabric-api-client-41240364687`（ID 13057316260）。这只证明固定只读请求在当时成功，不等于手动 workflow_dispatch、自定义参数或业务 E2E。
 - [ ] 2.4 经单独授权评审扩展 Blob/OneLake、getDefinition POST LRO、runNotebook/Pipeline、Environment Publish；不是本次第一版范围。
 
+- [ ] 2.6 在同一正式 `fabric-api-client.yml` 添加 P0–P2 实施验收：GitHub-hosted 按固定 Healthcare Main SHA 重跑 P0 CODE-map/Contract、P1 Wheel/Synthetic/PySpark、P2 Notebook 离线测试/Native Export fail-closed；Self-Runner 保持只读 Fabric `list_items` 并独立统计 Native Notebook/DataPipeline/Environment/Lakehouse 的实际出现情况。所有测试按阶段标记 PASS/HOLD，Native Item/Delta E2E 未上线不得标为 PASS。
+- [ ] 2.7 记录精确 Self-Runner 合并 SHA、Workflow Run/Artifact、P0/P1/P2 测试数量与 Fabric 真实 Item 类型；对未运行或阻断的业务 Gate 保持未勾选，不做云发布。
+
 ## 3. Safety
 
 只允许 OpenSpec/代码/静态测试与只读 GET。未经独立批准，不触发 Spark Job、Notebook Create/Run、Pipeline、Environment Publish、Capacity Resume、Terraform Apply/Destroy、Blob/OneLake 写入或 Local runtime 操作。
