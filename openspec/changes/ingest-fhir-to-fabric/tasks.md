@@ -115,3 +115,9 @@
 - [ ] 4.9 人工检查 Connect and sync 的方向，**保留 Fabric 已存在的 Notebook `nb_fhir_ingest`、Pipeline `pl_fhir_ingest`、Environment `env_healthcare` 及 Lakehouse**。先将 Workspace 项目提交到隔离分支，审查生成的真实 `.platform`（非全零 logicalId）和 folder mapping，再 PR 合并 main；禁止先 Update from Git 覆盖已有资源。
 - [ ] 4.10 Git 集成后用正式 Self-Runner 的 GET `/git/connection`、GET Items 和 GitHub PR/Commit 验证连接状态、路径、版本、Item GUID；Provider credentials 与 PAT 不写入 repo、workflow 日志或聊天。
 - [ ] 4.11 若日后要让 Service Principal 调 Fabric Git REST 同步，需另将 Fabric 中已配置的 GitHub Cloud Connection 共享给现有 SP，并按实际可见的 Connection ID 设置 `ConfiguredConnection`/myGitCredentials；这**不是手工 Git Workspace 连接的前置要求**，也不代表此次应改用 Terraform。
+
+### Fabric Portal first-sync evidence (2026-10-31)
+
+- [x] 4.12 人工从 Fabric Workspace `healthcare-omop` 执行 **Workspace → Git** 首次同步：GitHub 仓库 `JohnZhang-DataForge/healthcare-data-platform`，隔离分支 `fabric/native-bootstrap-20261031`，目录 `azure-fabric/workspaces/healthcare-omop/`。真实 Git Commit [`a6c3d0d6226e0b4084c681104ef9aec6dd3f33c6`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/commit/a6c3d0d6226e0b4084c681104ef9aec6dd3f33c6) 基于当时 main `116d27d74a20860c681e4ac67bfa3681a0739536`，只新增 4 个 Item 的 10 个原生文件，零删除，未修改 `main`。四个 `.platform` logicalId 均非零；Notebook 为 `# No content`、Pipeline 活动为空、Environment 未发布 Wheel。Fabric UI 显示 Source control `0`、Changes 空、Items 为 Synced。
+- [ ] 4.13 经 PR/CI 审查并合并原生定义和同步更新的 Notebook/Pipeline/Environment CODE 源码地图到 `main`；当前 Workspace 仍连接初始化分支，**不自动切换，也不从 Git 更新 Workspace**。
+

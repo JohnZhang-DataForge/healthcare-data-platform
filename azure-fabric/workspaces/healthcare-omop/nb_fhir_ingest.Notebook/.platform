@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "nb_fhir_ingest",
+    "description": "Healthcare Native Item; execution/publishing require separate gate."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "eb751633-bade-8370-4e96-34848311ab6b"
+  }
+}
