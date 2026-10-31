@@ -62,3 +62,11 @@ Actual Fabric resource creation and definition export both succeeded in Self-Run
 ## Verified GitHub credential blocker (2026-10-31)
 
 Run 41243652551 independently GET-listed Service Principal-visible Connections: 1 `AzureBlobs` and **zero** GitHub candidates. Workspace Git status remains NotConnected; the three native Items are real and exportable but source control is not yet initialized. No safe automated Git Connect is possible without a real authorized configured connection ID. Continue with Fabric-owned credential setup, then read-only reverify and exact target repo/folder/branch validation before any Git initialization. Native bootstrap is complete; Wheel publish, Notebook content binding, Pipeline activity and Delta runtime remain NOT_RUN.
+
+## Chosen owner for Workspace Git Integration — manual portal (2026-10-31)
+
+**User decision overrides the earlier suggestion to Terraform-manage Fabric workspace Git.** Workspace-to-Git binding, GitHub PAT credential authorization and first sync are performed in Fabric portal by a Workspace Admin. No `fabric_workspace_git`, GitHub `fabric_connection` Terraform module/state/import or TF Apply for this integration; existing Terraform responsibilities for Workspace/Lakehouse/other infrastructure do not change.
+
+Portal: healthcare-omop → Workspace settings → Git integration → GitHub → Add account (fine-grained PAT scoped to single GitHub repo with Contents: Read and write). Target repo `JohnZhang-DataForge/healthcare-data-platform`; folder `/azure-fabric/workspaces/healthcare-omop`; initial branch should be independently reviewed. Because Fabric already contains 3 Native Items and Lakehouse while Git holds only placeholders, first synchronization is an explicit conflict/overwrite gate. Favor exporting/committing Workspace items into a reviewed isolated branch before any Git-to-Workspace update; do not auto-select any direction.
+
+User-authenticated portal Git connection is distinct from Git API automation by the Self-Runner Service Principal. If future automated Git API operations are requested, its configured GitHub connection must separately be shared with the SP and visible to `GET /connections` (historical result 0 GitHub candidates). No unaudited Git Connect, no Terraform, no token in chat. A manual portal connection alone does not prove SP Git API credentials.
