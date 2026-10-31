@@ -14,7 +14,7 @@
 - [x] 1.11 从 Main 真实源码核对 Local Mapper 与 JDBC 耦合、Terraform Existing Workspace/OneLake、Trial Git Native Items/硬编码 Publisher；制定 Shared/Fabric 两只 Wheel（2026-10-31 已废止，最终只有一只 Shared Wheel） 的精确源码文件名、OneLake schema/table/approval 目录、Environment Publish/Readback、P0–P5 交付顺序与禁止迁移清单（**仅文档提案，所有业务实现与运行仍未开始**）。
 - [x] 1.12 2026-10-31 用户确认最终开发架构：Notebook/Pipeline 必选、Git Native Workspace Item 映射、Environment Publish 唯一 Shared Wheel、原生 Fabric I/O、不预建额外 ingestion/runtime/io Wheel；新增权威 ADR 并更新 Agents/OpenSpec。**只代表设计定版，无源码/云端运行。**
 - [x] 1.13 2026-10-31 设计文档去重：从 main 退休 2026-10-27 Fabric FHIR 初稿与 Local→Fabric Draft（保留固定 Git Commit 历史），修复 ADR/OpenSpec/目录索引引用，加入历史稿去重治理规则；不动 Local 运行代码、Terraform/云资源。
-- [ ] 1.10 [P0 code implemented; CI pending] 首个真实 Python Source PR 前扩展 CODE-map 静态所有权及 shared→platform 禁止 import 检查、配套正负向单元测试；验证冻结 Local Contract 单一权威和跨版本 package pin 后再允许业务代码提交。
+- [x] 1.10 [P0 CI validated; Main merge pending] 首个真实 Python Source PR 前扩展 CODE-map 静态所有权及 shared→platform 禁止 import 检查、配套正负向单元测试；验证冻结 Local Contract 单一权威和跨版本 package pin 后再允许业务代码提交。
 - [ ] 1.7 通过实机/成本验证后，最终敲定 Shortcut/Copy、Warehouse/Delta Writer、ID namespace、Canonical v2 和 Update 政策，完善正式 delta spec/测试及 CODE 导航。
 - [x] 1.8 用户于 2026-10-31 确认正式入库为开发依据；实际 Git 合并仍须 CI/分支保护通过，未来实施另行授权。
 
@@ -37,5 +37,5 @@
 ### 2026-10-31 P0 execution evidence
 
 - 本 PR 新增 `check_shared_fabric_boundaries.py` / 正负向 `test_shared_fabric_boundaries.py` 并接入现有 Component Code Naming CI；冻结 Local Canonical v1 原字节 SHA256。
-- Task 1.10 **只有在 GitHub Actions 检查通过且 PR 合并至 Main 后才能视为 Main 已完成**。本 PR 的 P0 工具自身不等于 Shared Wheel/Fabric 运行验证。
+- Task 1.10 GitHub Actions P0 CODE-map/Shared boundary **PASS** 于 [Component Code Naming Run #41230354918](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41230354918)，151/151 单测（含 11 个新的 Shared 负向/正向单测）PASS、SHARED_FABRIC_BOUNDARY_PASS；PR 合并前仍非 Main 已交付。本 PR 的 P0 工具自身不等于 Shared Wheel/Fabric 运行验证。
 - 后续离线实施：G1 为独立 P1 Shared Engine PR；P2 为 Native Item 发布准备 PR。G2–G7 仍需明确云端授权。
