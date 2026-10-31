@@ -19,7 +19,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 | 原生源码文件 | 功能 |
 | --- | --- |
 | [pl_fhir_ingest.DataPipeline/.platform](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/.platform) | Fabric Git 同步的真实 Pipeline Item 元数据；不要手工改 logicalId |
-| [pl_fhir_ingest.DataPipeline/pipeline-content.json](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/pipeline-content.json) | 首次导出的空 Pipeline（`activities: []`）；尚未连接 Notebook |
+| [pl_fhir_ingest.DataPipeline/pipeline-content.json](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/pipeline-content.json) | 包含一个引用实际 Workspace/Notebook GUID 的受控 TridentNotebook Activity；默认 HALT、无自动重试，尚未手工 Update from Git |
 
 **以后如何更新：**新增真实 Data Pipeline Item 时，应将其实际的 `.platform`、`pipeline-content.json` 及其他生成文件以**逐文件相对 Markdown 链接**登记在上表。静态 CODE-map CI 会检查源码完整性和归属；新增、删除或迁移源码时，必须在同一 PR 更新本 `CODE.md`。
 
