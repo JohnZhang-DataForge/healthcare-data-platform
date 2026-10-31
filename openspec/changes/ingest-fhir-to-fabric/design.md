@@ -42,3 +42,15 @@ Practical file-by-file source layout, actual Local files to extract, verified ex
 - Gold Warehouse T-SQL Writer 在 Trial/费用/并发下的可靠性 POC；如不适用，重新审查全 Delta visibility。
 - Canonical v2、Update/reprocessing policy、ID source namespace/crosswalk，及部署/成本/血缘验收都需独立版本化审查。
 - 本次无云资源、数据、代码构建、Pipeline、Fabric Item 和 paid capacity 变更；未来实施门槛见 [tasks](tasks.md)。
+
+
+## 2026-10-31 Authorized Native bootstrap (narrow permission update)
+
+用户本轮授权创建 healthcare-omop 所需原生 Item；此前无云写许可声明仅对原历史阶段有效。本轮范围仅为三种 Native Item 的受控创建与真实定义导出。
+
+Single writer = trusted Self-Runner/main GitHub OIDC Fabric REST; existing Terraform continues to own Workspace/Lakehouse/Connection and MUST NOT also create the same Items.
+Trust boundary = untrusted PR runs GitHub-hosted mocked tests without id-token; only merged Main fixed-name bootstrap uses OIDC. No arbitrary URL/method/workspace/body.
+Create-if-absent names: nb_fhir_ingest (Notebook), pl_fhir_ingest (DataPipeline), env_healthcare (Environment). GET inventory before every POST; refuse name/type ambiguity; nonidempotent POST never auto-retried; if acknowledgement unclear, mark HOLD and GET inventory.
+LRO: handle HTTP 201/202 and bounded GET /v1/operations/<id>, followed by workspace list + Get Item independent readback. Fabric getDefinition is a POST with read-only semantics; export only real returned bytes to artifact; never guess .platform/logicalId.
+Safety: no paid Capacity operation, Spark execution, Environment Publish, OneLake/Blob write or Terraform state mutation in bootstrap. No automatic delete/rollback after partial create: preserve resource IDs and disclose HOLD.
+After readback: separately review exported .platform/Git integration and CODE maps, publish immutable Shared Wheel, bind Notebook and Pipeline, and only then consider explicitly gated small synthetic runtime validation.
