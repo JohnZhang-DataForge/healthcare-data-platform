@@ -145,11 +145,17 @@ def read_source_objects_native(spark, *, source_root: str, manifest_bytes: bytes
 def _content_publication_id(context: BatchContext, patient_rows: tuple[dict, ...],
                             encounter_rows: tuple[dict, ...]) -> str:
     """Separate deterministic content digest; never confuse with source batch identity."""
+    # Run ID and processed_at change on safe replay; neither defines published
+    # business content. Exclude these volatile provenance fields from identity.
+    stable = lambda rows: [
+        {k: v for k, v in row.items() if k not in ("processing_run_id", "processed_at")}
+        for row in rows
+    ]
     fingerprint = json.dumps({
         "source_batch": context.source_batch_id,
         "processing_version": context.processing_version,
-        "patient": sorted(patient_rows, key=lambda r: r["source_record_id"]),
-        "encounter": sorted(encounter_rows, key=lambda r: r["source_encounter_id"]),
+        "patient": sorted(stable(patient_rows), key=lambda r: r["source_record_id"]),
+        "encounter": sorted(stable(encounter_rows), key=lambda r: r["source_encounter_id"]),
     }, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
     return hashlib.sha256(fingerprint).hexdigest()
 
@@ -160,11 +166,11 @@ def prepare_batch(spark, *, context: BatchContext, manifest_bytes: bytes,
     """Offline-executable conversion using injected SparkSession, no persisted output."""
     if engine_version != "0.1.0":
         raise ValueError("SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH")
-    receipts = verify_source_objects(manifest_bytes, source_objects, context)
+    objects = tuple(source_objects)
+    receipts = verify_source_objects(manifest_bytes, objects, context)
     patient_contract = load_pinned_contract(patient_contract_bytes, "patient")
     encounter_contract = load_pinned_contract(encounter_contract_bytes, "encounter")
     # Parser and converter are owned solely by the installed Shared Engine.
-    objects = tuple(source_objects)
     parsed = parse_fhir_resources(objects, context)
     patient = normalize_fhir_patient(parsed, patient_contract, context)
     encounter = normalize_fhir_encounter(parsed, encounter_contract, context)

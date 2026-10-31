@@ -28,7 +28,7 @@ def check_native_export(workspace_git_root: Path) -> Readiness:
             errors.append("MISSING_REAL_EXPORTED_" + kind.upper() + ":" + name)
     if errors:
         return Readiness("BLOCKED_NATIVE_EXPORT", tuple(errors))
-    return Readiness("READY_FOR_READ_ONLY_FORMAT_AND_ID_VERIFICATION",
+    return Readiness("HOLD_NATIVE_ID_FORMAT_REVIEW",
                      ("not deployment approval; verify exported .platform/logicalIds, "
                       "Git connection, RBAC, capacity/cost, Environment Published versions",))
 
@@ -39,4 +39,4 @@ if __name__ == "__main__":
     print(result.state)
     for reason in result.reasons:
         print(reason)
-    raise SystemExit(0 if result.state == "BLOCKED_NATIVE_EXPORT" else 0)
+    raise SystemExit(2)  # never claim deployability from file presence alone
