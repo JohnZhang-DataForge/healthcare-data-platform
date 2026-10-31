@@ -54,3 +54,5 @@
 - Single wheel `healthcare_data_engine-0.1.0-py3-none-any.whl` SHA256: `fd301439cef420cd71c1c3e452b913ab9b3b75232c91375109141eccf5b40bb2`; CI Artifact contains Wheel and SHA256SUMS. This is the PR source HEAD's build, not a Fabric published library.
 - CI HEAD `87a8693590ffa81bbb5afdfbed3952088e37150c`: CODE-map/Shared boundary, Trusted OpenSpec, OpenSpec validation and documentation links PASS. Cloudflare Workers Builds for unrelated Portal reported failure; not a required Main ruleset context and unchanged by Shared code.
 - No Fabric/Blob/OneLake/Local/PG/Kubernetes/TF writes; Fabric Native Item definition, environment Publish and real Spark Runtime compatibility remain BLOCKED pending new authorization/read-only preflight.
+
+- Wheel reproducibility regression: initial P1 rerun rebuilt unchanged source but generated a different hash (`fd301439...` vs `ab50e5bf...`), owing to ZIP build timestamp instability. Updated CI sets `SOURCE_DATE_EPOCH=1704067200` and builds twice with byte comparison; prior hashes are historical CI evidence, **not canonical release pin**. Replace final SHA only after new reproducibility verification succeeds.

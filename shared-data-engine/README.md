@@ -21,10 +21,12 @@ python -m venv .venv-shared
 .venv-shared/bin/python -m unittest discover -s shared-data-engine/tests -p 'test_*.py' -v
 ```
 
+To make the sole wheel reproducible, set `SOURCE_DATE_EPOCH=1704067200` consistently for each build. CI rebuilds the identical source twice and requires byte-for-byte equality with `cmp`.
+
 Build the sole wheel (`--no-build-isolation` uses pinned build tools already present):
 
 ```sh
-.venv-shared/bin/python -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
+SOURCE_DATE_EPOCH=1704067200 .venv-shared/bin/python -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
 sha256sum dist/*.whl
 .venv-shared/bin/pip install --no-index --no-deps --force-reinstall dist/healthcare_data_engine-0.1.0-*.whl
 ```
