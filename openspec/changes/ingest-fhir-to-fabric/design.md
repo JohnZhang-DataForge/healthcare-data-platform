@@ -54,3 +54,7 @@ Create-if-absent names: nb_fhir_ingest (Notebook), pl_fhir_ingest (DataPipeline)
 LRO: handle HTTP 201/202 and bounded GET /v1/operations/<id>, followed by workspace list + Get Item independent readback. Fabric getDefinition is a POST with read-only semantics; export only real returned bytes to artifact; never guess .platform/logicalId.
 Safety: no paid Capacity operation, Spark execution, Environment Publish, OneLake/Blob write or Terraform state mutation in bootstrap. No automatic delete/rollback after partial create: preserve resource IDs and disclose HOLD.
 After readback: separately review exported .platform/Git integration and CODE maps, publish immutable Shared Wheel, bind Notebook and Pipeline, and only then consider explicitly gated small synthetic runtime validation.
+
+## Live evidence qualification: Git connection not yet configured
+
+Actual Fabric resource creation and definition export both succeeded in Self-Runner Runs 41242815706 and 41243074326. Follow-up GET `/workspaces/{id}/git/connection` in Run 41243367360 returned `NotConnected`. The REST-exported `.platform` files contain all-zero logicalId; treat as unbound initial Fabric API response, not Git-authoritative source definitions. Native source registration in Healthcare Git and Environment Publish are still pending; no business Spark run/data writes occurred.

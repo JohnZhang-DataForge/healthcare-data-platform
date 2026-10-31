@@ -81,8 +81,8 @@
 
 - [x] 4.1 核对最新 Self-Runner GET Run 41241521584：Lakehouse=1、SQLEndpoint=1；Notebook/Pipeline/Environment=0；核实 Microsoft 官方 Create/GetDefinition API 和 LRO。
 - [x] 4.2 设计固定目标名的 CREATE-IF-ABSENT、真实 Item ID 读回与 getDefinition 导出；先确认证据再保存 .platform；未知 ACK/HOLD，严禁并行 Terraform 所有权。
-- [ ] 4.3 在 Self-Runner 开发正式受控 bootstrap Workflow、Python REST 客户端和无凭据正反单测。经 PR CI 后在 Main 一次性运行实际创建。
-- [ ] 4.4 记录真实创建/读取 HTTP、GUID、Run/Artifact 与 Capacity/权限错误；绝不把空 Item 视为业务 E2E。
+- [x] 4.3 [Self-Runner PR #353, Main 5607678ba81c0ff405b741215e69dfaad3191224; PR #354 fixed LRO] 在 Self-Runner 开发正式受控 bootstrap Workflow、Python REST 客户端和无凭据正反单测。经 PR CI 后在 Main 一次性运行实际创建。
+- [x] 4.4 [Run 41242815706 created all three; Run 41243074326 all definitions exported; Run 41243367360 Git=NotConnected] 记录真实创建/读取 HTTP、GUID、Run/Artifact 与 Capacity/权限错误；绝不把空 Item 视为业务 E2E。
 - [ ] 4.5 从真实 Fabric getDefinition 导出 .platform/Item 内容到 Healthcare Git 目录；同步 Notebook/Pipeline/Environment CODE.md，验收 Git Sync/实际 UI 文件夹映射。
 - [ ] 4.6 将唯一固定 SHA Shared Wheel 加入 Environment 并 Publish，接入 P2 Notebook 源码与安全 Pipeline，独立验证版本/引用；不自动运行数据作业。
 - [ ] 4.7 小规模 Synthetic FHIR→Bronze→Silver 实机试运行，独立核验 Delta/权限/费用，仍不得修改历史业务数据或把 Mock 当实机结果。
@@ -92,3 +92,11 @@
 - 允许仅创建 nb_fhir_ingest (Notebook)、pl_fhir_ingest (DataPipeline)、env_healthcare (Environment)，读取真实定义并记录原始 ID。
 - 不 Resume/创建付费 Capacity，不删除已有资源，不覆盖已有 Item，不执行 Notebook/Pipeline，不修改 Terraform State。首次不明结果先读回，禁止盲目重发 POST。
 - 新资源部分创建也不得自动删除；保留准确 ID 供审核。真实运行与发布属于后续 Tasks，不因创建成功而提前认定 P2 E2E。
+
+### Native live verification — 2026-10-31
+
+- Source: trusted Self-Runner/main `fabric-native-items-bootstrap.yml`; [PR #353](https://github.com/JohnZhang-DataForge/Self-Runner/pull/353) initial implementation; [PR #354](https://github.com/JohnZhang-DataForge/Self-Runner/pull/354) async 202 JSON null correction and hidden .platform artifact; [PR #355](https://github.com/JohnZhang-DataForge/Self-Runner/pull/355) GET Git connection.
+- [Run 41242815706](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41242815706) **native creation**: actual HTTP CREATE with independent GET readback confirms Notebook `8311ab6b-3484-4e96-8370-badeeb751633`, DataPipeline `fc67962e-28dd-47eb-8c6e-3104068241c6`, Environment `d85a4218-8da0-46ed-8517-b5eced219dd5` in Workspace `745ce03b-15b6-4870-b0e5-8c5750aa18dc`. First Run ended HOLD_NATIVE_DEFINITION_EXPORT (202 null response handling), not fully green; preserved Artifact 13057803632.
+- [Run 41243074326](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41243074326) **export PASS**: all three exact IDs EXISTING, readback PASS, all native GetDefinition PASS, Artifact `fabric-native-bootstrap-41243074326` ID `13057339472`, includes actual Notebook `.platform`/`notebook-content.py`, Pipeline `.platform`/`pipeline-content.json`, Environment `.platform`/`Setting/Sparkcompute.yml`. No new create, no Spark jobs, no Environment publish or data writes.
+- [Run 41243367360](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41243367360) **Git readback PASS**: `gitConnectionState=NotConnected`, provider empty; all 3 Items EXISTING and definition exports PASS (Artifact `fabric-native-bootstrap-41243367360` ID `13058450410`). REST-exported `.platform` config.logicalId was `00000000-0000-0000-0000-000000000000` for every item. These real REST responses cannot prove Git Integration / valid nonzero Git logical IDs. DO NOT mark Task 4.5 or Native Git Publish PASS.
+- Next blocker: verify a Fabric GitHub configured cloud connection accessible to Service Principal (Git integration Connect API requires `ConfiguredConnection` and Workspace Admin); connect exact GitHub repo/main/folder only after preflight, then initialize/read back without overwriting existing Workspace or Git history. Do not synthesize logicalId.
