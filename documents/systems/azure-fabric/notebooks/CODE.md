@@ -12,11 +12,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 当前 `ingestion/` 只有 `.gitkeep` 占位文件，**尚无真实 Notebook Item 源码**；此处的“未实现”不包括基础设施下现存的 Bootstrap。
 
 
-**2026-10-21：**新增 `johnzhang-test` Trial Smoke 原生 Notebook 源码（Git 中已存在，**未通过 fabric-cicd 云端发布**）。`healthcare-omop` 目录仍只有历史占位项。
-
-- [`nb_trial_smoke.Notebook/.platform`](../../../../azure-fabric/workspaces/johnzhang-test/notebooks/nb_trial_smoke.Notebook/.platform) — 稳定 logicalId / Notebook Item 身份。
-- [`nb_trial_smoke.Notebook/notebook-content.py`](../../../../azure-fabric/workspaces/johnzhang-test/notebooks/nb_trial_smoke.Notebook/notebook-content.py) — PySpark 无数据写入 Smoke，只有日志 PASS，不调用 Azure Blob 或 Delta。
-- [工作空间级源码说明](../../../../azure-fabric/workspaces/johnzhang-test/README.md) · [静态测试](../../../../.github/quality/tests/test_fabric_native_smoke_source.py)。
+**2026-10-31：**旧 `johnzhang-test` Trial Native Notebook/Pipeline Smoke 及其测试已正式从源码树退休（Self-Runner [PR #350](https://github.com/JohnZhang-DataForge/Self-Runner/pull/350)、Healthcare 清理 PR）。不再维护该测试 Workspace 的原生 Item 文件。历史 Item 定义可查阅 [退役前固定 Git 历史](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/e4640eb4ce4edd8570ca60c9ad2c1b6152941743/azure-fabric/workspaces/johnzhang-test)，不得照旧发布。**曾通过 Terraform Apply 的 Workspace/Lakehouse 尚未确认云端删除，等待独立 State-aware teardown。**
 
 ## 实际拥有的 Fabric 原生源码文件
 

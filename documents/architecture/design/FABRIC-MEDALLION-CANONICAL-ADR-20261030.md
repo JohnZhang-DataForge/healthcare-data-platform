@@ -79,7 +79,7 @@ local-data-platform/                           # existing Local DP; unchanged
 
 **Gold Warehouse T-SQL POC**: approved Candidate stages first, then within Warehouse short explicit transaction publishes Person/Visit/IdentityMap/Ledger; failure ROLLBACK. Lakehouse→Warehouse data transfer is outside this transaction, and UNIQUE/FK constraints are NOT ENFORCED, requiring explicit application-level checks. All-Delta committed-visibility is an alternative needing separate evidence.
 
-Fabric Workspace git folder and native Item GUIDs must be read back from Fabric, never guessed; Terraform owns approved Infra/Workspace/Lakehouse/Connection, Fabric Git owns Notebook/Pipeline/Environment. Existing `johnzhang-test` Trial publishing code and Local runtime are untouched. **Full normative details**: [Native Fabric ADR](FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md).
+Fabric Workspace git folder and native Item GUIDs must be read back from Fabric, never guessed; Terraform owns approved Infra/Workspace/Lakehouse/Connection, Fabric Git owns Notebook/Pipeline/Environment. The `johnzhang-test` trial publisher has been retired from current source; any live test Workspace/Lakehouse still requires a verified state-aware decommission. Existing Local runtime is untouched. **Full normative details**: [Native Fabric ADR](FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md).
 
 
 ## 4. Batch / Processing / Publication 三种身份及状态
