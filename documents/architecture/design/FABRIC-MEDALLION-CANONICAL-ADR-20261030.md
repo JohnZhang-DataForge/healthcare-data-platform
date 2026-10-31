@@ -99,6 +99,12 @@ local-data-platform/                            # 当前现有运行路径：不
 - Warehouse multi-table TX: https://learn.microsoft.com/en-us/fabric/data-warehouse/transactions
 - Warehouse NOT ENFORCED constraints: https://learn.microsoft.com/en-us/fabric/data-warehouse/table-constraints
 
+## 3A. Shared Engine 目录和 Agent 归属规范（2026-10-30 确认）
+
+`shared-data-engine/` 的完整目录/功能放置、唯一 owner、禁止的依赖方向、Contract 单一权威、Wheel 固定版本、双端测试和渐进迁移规则已正式确定，见 [Shared Data Engine Directory & Ownership](../../engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md)。根 `AGENTS.md` 和 `shared-data-engine/AGENTS.md` 为开发 Agent 提供必须先读的短规则。
+
+这项决定只确认**未来源码组织和行为约束**：当前只创建 scoped Agent 规则和组件文档导航，尚未创建 Python 包、真实 Shared Wheel、Fabric Notebook/Pipeline 或移动 Local 运行源码。Shared/Local/Fabric 新代码提交之前必须扩展相应 CODE-map CI，进行 Contract/negative/cross-runtime 测试。旧目录候选与此规则冲突时以新规则为准。
+
 ## 4. Batch / Processing / Publication 三种身份及状态
 
 | 身份 | 典型字段 | 稳定规则 |
