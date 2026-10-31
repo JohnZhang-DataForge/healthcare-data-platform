@@ -121,3 +121,13 @@
 - [x] 4.12 人工从 Fabric Workspace `healthcare-omop` 执行 **Workspace → Git** 首次同步：GitHub 仓库 `JohnZhang-DataForge/healthcare-data-platform`，隔离分支 `fabric/native-bootstrap-20261031`，目录 `azure-fabric/workspaces/healthcare-omop/`。真实 Git Commit [`a6c3d0d6226e0b4084c681104ef9aec6dd3f33c6`](https://github.com/JohnZhang-DataForge/healthcare-data-platform/commit/a6c3d0d6226e0b4084c681104ef9aec6dd3f33c6) 基于当时 main `116d27d74a20860c681e4ac67bfa3681a0739536`，只新增 4 个 Item 的 10 个原生文件，零删除，未修改 `main`。四个 `.platform` logicalId 均非零；Notebook 为 `# No content`、Pipeline 活动为空、Environment 未发布 Wheel。Fabric UI 显示 Source control `0`、Changes 空、Items 为 Synced。
 - [ ] 4.13 经 PR/CI 审查并合并原生定义和同步更新的 Notebook/Pipeline/Environment CODE 源码地图到 `main`；当前 Workspace 仍连接初始化分支，**不自动切换，也不从 Git 更新 Workspace**。
 
+
+
+### P2 Git-first authored implementation after verified bootstrap (2026-10-31)
+
+- [x] 4.13 Fabric bootstrap synced four real Native Item definitions (commit a6c3d0d6) and PR #570 merged definitions with CODE ownership into `main` (commit bce1f79e348897c0f2fdd48a6b1dc2bf5f785c1a). Workspace remains linked to `fabric/native-bootstrap-20261031` until the user explicitly switches it.
+- [ ] 4.14 Replace the stale nested Native paths with the verified flat `*.Notebook`, `*.DataPipeline`, and `*.Environment` directories; check real .platform nonzero logicalIds, item type/name, and native file names. A native definition being present can only advance the preflight to HOLD_PENDING_PUBLICATION, not assert Fabric/Spark business deployment.
+- [ ] 4.15 Prepare real FabricGitSource Notebook source from the P2 candidate, preserving Shared Wheel as sole mapper, exact Manifest and SHA/Delta guards. Avoid a second independent business implementation; leave startup fail-closed until explicit runtime and retained-source verification. Validate Python syntax and local PySpark tests without cloud writes.
+- [ ] 4.16 Add a `TridentNotebook` Pipeline activity that references the live Notebook/Workspace IDs, has no automatic retry, safe parameters, no schedule, and no implicit data-write grant. Validate JSON IDs and notebook parameter contract offline.
+- [ ] 4.17 Prepare fixed-SHA Wheel build and Environment CustomLibraries packaging under separate CI/build provenance, publish only after artifact integrity and effective runtime availability checks. Never invent .platform/library metadata or use a PyPI fake wheel.
+- [ ] 4.18 PR/CI merge in GitHub `main` first. Only then request the user manually switch Fabric Git-connected branch to `main` and review Update-from-Git preview; the Agent MUST NOT initiate Git Sync, Environment Publish, Pipeline/Notebook execution, Terraform or data writes in this Git authoring task.
