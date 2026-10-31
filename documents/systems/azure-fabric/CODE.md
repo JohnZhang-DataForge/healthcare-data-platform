@@ -16,8 +16,10 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 | 组件 | 源码目录 | 唯一组件源码地图 | 约束 |
 | --- | --- | --- | --- |
 | Terraform | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | [Terraform CODE.md](infra-terraform/CODE.md) · [安全设计和历史 Plan](infra-terraform/ARCHITECTURE.md) | 七个 Root/Module，IAM、远程 State、Fabric Item Bootstrap；未证明 Apply |
-| Notebooks | [`workspaces/healthcare-omop/notebooks/`](../../../azure-fabric/workspaces/healthcare-omop/notebooks/) | [Notebooks CODE.md](notebooks/CODE.md) | 仅 `.gitkeep` 占位；真实 Item 需保留 Fabric 自动生成的 `.platform` |
-| Pipelines | [`workspaces/healthcare-omop/pipelines/`](../../../azure-fabric/workspaces/healthcare-omop/pipelines/) | [Pipelines CODE.md](pipelines/CODE.md) | 仅 `.gitkeep` 占位；Fabric Pipeline Item 不等于独立 Azure Data Factory Account |
+| Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Fabric Git Item 已导出；Notebook 业务内容仍为空 |
+| Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | 真实 Fabric Git Item 已导出；Shared Wheel 未发布 |
+| Lakehouse | [`lh_omop_analytics.Lakehouse/`](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/) | [Lakehouse native files](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/lakehouse.metadata.json) | 真实原生元数据已导出；不表示 Delta/Silver E2E PASS |
+| Pipelines | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | [Pipelines CODE.md](pipelines/CODE.md) | 真实 Fabric Git Item 已导出；Pipeline activities 仍为空 |
 
 ## 跨组件依赖与源码边界
 

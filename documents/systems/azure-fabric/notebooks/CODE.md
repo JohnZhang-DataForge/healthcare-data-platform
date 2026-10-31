@@ -7,9 +7,9 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 # Fabric Notebooks — CODE 源码地图
 
-**归属源码根目录：**[`azure-fabric/workspaces/healthcare-omop/notebooks/`](../../../../azure-fabric/workspaces/healthcare-omop/notebooks/)。
+**真实 Native Item 归属：** `azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/`（Fabric Git Integration 自动生成的根级目录）。[`notebooks/ingestion/`](../../../../azure-fabric/workspaces/healthcare-omop/notebooks/ingestion/) 为旧占位目录，不是 Native Item 定义。
 
-当前 `ingestion/` 只有 `.gitkeep` 占位文件，**尚无真实 Notebook Item 源码**；此处的“未实现”不包括基础设施下现存的 Bootstrap。
+**2026-10-31 真实初始化完成：** Fabric Portal 将 `nb_fhir_ingest` Item 原生定义同步到 GitHub `fabric/native-bootstrap-20261031`，Commit `a6c3d0d6`；`.platform` 的 logicalId 非零。Notebook 内容当前只有 `# No content`，不意味着 P2 FHIR Spark ETL 已发布。
 
 
 **2026-10-31：**旧 `johnzhang-test` Trial Native Notebook/Pipeline Smoke 及其测试已正式从源码树退休（Self-Runner [PR #350](https://github.com/JohnZhang-DataForge/Self-Runner/pull/350)、Healthcare 清理 PR）。不再维护该测试 Workspace 的原生 Item 文件。历史 Item 定义可查阅 [退役前固定 Git 历史](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/e4640eb4ce4edd8570ca60c9ad2c1b6152941743/azure-fabric/workspaces/johnzhang-test)，不得照旧发布。**曾通过 Terraform Apply 的 Workspace/Lakehouse 尚未确认云端删除，等待独立 State-aware teardown。**
@@ -18,7 +18,8 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 | 原生源码文件 | 功能 |
 | --- | --- |
-| （暂无；待确定 Item 身份、Git Integration 与唯一部署责任方后，再登记真实 `*.Notebook/` 文件） | 尚未实现 |
+| [nb_fhir_ingest.Notebook/.platform](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/.platform) | Fabric Git 同步的真实 Notebook Item 元数据；不要手工改 logicalId |
+| [nb_fhir_ingest.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py) | 首次导出的空 Notebook（`# No content`）；P2 实际代码尚未部署 |
 
 **以后如何更新：**每增加一个真实 Notebook Item，应在上表使用**指向实际文件的相对 Markdown 链接**登记其真实 `.platform`、`notebook-content.py` 及其他生成文件。静态 CODE-map CI 会检查源码完整性、链接归属，并要求新增、删除或迁移文件时在同一个 PR 更新本 `CODE.md`。
 

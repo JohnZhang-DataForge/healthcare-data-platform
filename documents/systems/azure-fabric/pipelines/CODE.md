@@ -7,9 +7,9 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 # Fabric Data Pipelines — CODE 源码地图
 
-**归属源码根目录：**[`azure-fabric/workspaces/healthcare-omop/pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/)。
+**真实 Native Item 归属：** `azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/`（Fabric Git Integration 自动生成的根级目录）。[`pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/) 仅保留旧 `.gitkeep`。
 
-该目录当前只有 `.gitkeep` 占位文件，**尚无真实 Data Pipeline Item 源码**。
+**2026-10-31 真实初始化完成：** Fabric Portal 将 `pl_fhir_ingest` 原生定义同步到 GitHub `fabric/native-bootstrap-20261031`，Commit `a6c3d0d6`；`.platform` logicalId 非零。`pipeline-content.json` 仍为 `activities: []`，不意味着 ETL Orchestration 已部署。
 
 
 **2026-10-31：**旧 `johnzhang-test` Trial Native Notebook/Pipeline Smoke 及其测试已正式从源码树退休（Self-Runner [PR #350](https://github.com/JohnZhang-DataForge/Self-Runner/pull/350)、Healthcare 清理 PR）。不再维护该测试 Workspace 的原生 Item 文件。历史 Item 定义可查阅 [退役前固定 Git 历史](https://github.com/JohnZhang-DataForge/healthcare-data-platform/tree/e4640eb4ce4edd8570ca60c9ad2c1b6152941743/azure-fabric/workspaces/johnzhang-test)，不得照旧发布。**曾通过 Terraform Apply 的 Workspace/Lakehouse 尚未确认云端删除，等待独立 State-aware teardown。**
@@ -18,7 +18,8 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 | 原生源码文件 | 功能 |
 | --- | --- |
-| （暂无；待确认 Item 身份和唯一部署责任方后，再登记真实 `*.DataPipeline/` 文件） | 尚未实现 |
+| [pl_fhir_ingest.DataPipeline/.platform](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/.platform) | Fabric Git 同步的真实 Pipeline Item 元数据；不要手工改 logicalId |
+| [pl_fhir_ingest.DataPipeline/pipeline-content.json](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/pipeline-content.json) | 首次导出的空 Pipeline（`activities: []`）；尚未连接 Notebook |
 
 **以后如何更新：**新增真实 Data Pipeline Item 时，应将其实际的 `.platform`、`pipeline-content.json` 及其他生成文件以**逐文件相对 Markdown 链接**登记在上表。静态 CODE-map CI 会检查源码完整性和归属；新增、删除或迁移源码时，必须在同一 PR 更新本 `CODE.md`。
 
