@@ -1,0 +1,91 @@
+name: Fabric P2 Native Wheel Staging
+
+# This job can only stage an immutable, verified Wheel in a Git REVIEW branch.
+# It has NO Azure/Fabric OIDC, API credentials, or access to running workloads.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fabric-p2-native-wheel-staging.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fabric-p2-native-wheel-staging
+  cancel-in-progress: false
+
+jobs:
+  stage-shared-wheel:
+    if: github.repository == 'JohnZhang-DataForge/healthcare-data-platform' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      SOURCE_DATE_EPOCH: '1704067200'
+      EXPECTED_WHEEL_SHA256: '603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7'
+      STAGED_BRANCH: feature/fabric-p2-wheel-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify exact immutable source and intended Git target
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$(git branch --show-current)" = 'main'
+          test -f 'azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/.platform'
+          test ! -e 'azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.0-py3-none-any.whl'
+          test -f 'shared-data-engine/pyproject.toml'
+      - name: Build with pinned tooling; verify exact Wheel SHA before any write
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip wheel --wheel-dir "$RUNNER_TEMP/fabric-p2-wheel-deps" -r shared-data-engine/requirements-test.txt
+          python -m venv "$RUNNER_TEMP/fabric-p2-wheel-venv"
+          "$RUNNER_TEMP/fabric-p2-wheel-venv/bin/pip" install --no-index --find-links="$RUNNER_TEMP/fabric-p2-wheel-deps" -r shared-data-engine/requirements-test.txt
+          mkdir -p "$RUNNER_TEMP/fabric-p2-wheel-dist"
+          "$RUNNER_TEMP/fabric-p2-wheel-venv/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/fabric-p2-wheel-dist" ./shared-data-engine
+          echo "$EXPECTED_WHEEL_SHA256  $RUNNER_TEMP/fabric-p2-wheel-dist/healthcare_data_engine-0.1.0-py3-none-any.whl" | sha256sum --check
+      - name: Stage verified Wheel and its CODE ownership in review branch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git switch -c "$STAGED_BRANCH"
+          target='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
+          mkdir -p "$target"
+          cp "$RUNNER_TEMP/fabric-p2-wheel-dist/healthcare_data_engine-0.1.0-py3-none-any.whl" "$target/"
+          echo "$EXPECTED_WHEEL_SHA256  $target/healthcare_data_engine-0.1.0-py3-none-any.whl" | sha256sum --check
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('documents/systems/azure-fabric/environments/CODE.md')
+          lines=p.read_text(encoding='utf-8').splitlines()
+          anchors=[i for i,l in enumerate(lines) if l.startswith('| [env_healthcare.Environment/Setting/Sparkcompute.yml]')]
+          if len(anchors)!=1:
+              raise SystemExit('FAIL_CLOSED_ENVIRONMENT_CODE_MAP_ANCHOR')
+          line='| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.0-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.0-py3-none-any.whl) | 唯一 Shared Engine Wheel；SHA256 603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7；尚未在 Fabric 发布 |'
+          if any('CustomLibraries/healthcare_data_engine-' in v for v in lines):
+              raise SystemExit('FAIL_CLOSED_DUPLICATE_ENVIRONMENT_WHEEL_ENTRY')
+          lines.insert(anchors[0]+1,line)
+          lines.extend(['','**Git-first Wheel 已暂存，非 Fabric Publish。** 后续仍需在目标 Workspace 验证 Git 更新、Environment Publish、有效 Wheel 版本及 Notebook Environment 绑定。'])
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          PY
+          git add "$target/healthcare_data_engine-0.1.0-py3-none-any.whl" documents/systems/azure-fabric/environments/CODE.md
+          test "$(git diff --cached --name-only | wc -l)" = 2
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(fabric): stage immutable P2 Shared Wheel in native Environment'
+          git push origin "HEAD:refs/heads/$STAGED_BRANCH"
+          {
+            echo "### P2 Native Environment Wheel staged for PR review"
+            echo "Branch: $STAGED_BRANCH"
+            echo "Base: $GITHUB_SHA"
+            echo "Wheel SHA256: $EXPECTED_WHEEL_SHA256"
+            echo "Cloud writes: none; Environment publish: NOT_RUN"
+          } >> "$GITHUB_STEP_SUMMARY"
