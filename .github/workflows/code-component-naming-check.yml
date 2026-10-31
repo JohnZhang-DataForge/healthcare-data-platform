@@ -19,6 +19,7 @@ on:
       - 'kubernetes/**'
       - 'contracts/**'
       - 'azure-fabric/**'
+      - 'shared-data-engine/**'
       - 'platform-portal/**'
       - 'config/**'
       - '.github/workflows/**'
@@ -41,6 +42,11 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: python3 .github/quality/scripts/check_component_code_map.py --base "$BASE_SHA" --head "$HEAD_SHA"
+      - name: Verify Shared/Fabric ownership, import boundaries and pinned Local contract bytes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/quality/scripts/check_shared_fabric_boundaries.py --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Reject new Task/Step-named code
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
