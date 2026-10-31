@@ -20,8 +20,10 @@
 
 ## 2. Offline implementation authorized; cloud execution remains HOLD
 
+- [ ] 2.1 P1 实现唯一 Shared Engine Wheel v0.1.0、FHIR R4 Patient/Encounter、合成数据、Local v1 Contract、正负/重放/跨源测试、Spark Schema，实际 CI 构建/安装后才能打勾。业务运行、Fabric Publish 尚未授权。
+
 - [ ] G0：只读校验 Manifest 原始字节/对象 SHA/ETag、真实 FHIR Profile、Blob Shortcut RBAC/保留策略。
-- [ ] G1：冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
+- [ ] G1：[P1 source/test/CI coded; verification pending] 冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
 - [ ] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
 - [ ] G3：5–10 新 synthetic Patient → Intake + Bronze raw/ref + receipt，按 Source Batch/Processing Version 验证 replay SKIP 和漂移 HOLD。
 - [ ] G4：100 新 synthetic Patient/Encounter → managed Silver canonical_patient/encounter Delta；PK/FK/DQ/来源/hash/readback、quarantine、approved 证据。
@@ -39,3 +41,9 @@
 - 本 PR 新增 `check_shared_fabric_boundaries.py` / 正负向 `test_shared_fabric_boundaries.py` 并接入现有 Component Code Naming CI；冻结 Local Canonical v1 原字节 SHA256。
 - Task 1.10 GitHub Actions P0 CODE-map/Shared boundary **PASS** 于 [Component Code Naming Run #41230354918](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41230354918)，151/151 单测（含 11 个新的 Shared 负向/正向单测）PASS、SHARED_FABRIC_BOUNDARY_PASS；PR 合并前仍非 Main 已交付。本 PR 的 P0 工具自身不等于 Shared Wheel/Fabric 运行验证。
 - 后续离线实施：G1 为独立 P1 Shared Engine PR；P2 为 Native Item 发布准备 PR。G2–G7 仍需明确云端授权。
+
+### 2026-10-31 P1 scope and dependency boundary
+
+- Owner: `shared-data-engine/src/healthcare_data_engine/`,唯一 Wheel；输入为 caller 提供的精确源字节、独立 receipt、显式 BatchContext 与 Local v1 Contract 原字节；输出为 TransformResult + 可选 caller Spark DataFrame，禁止 Azure/Local/Fabric writer。
+- Contract: Patient v1 SHA256 `e0be146222f13b2f24a84d883d70117fac9aab984c184558dab88726ac5a3dab`、Encounter v1 SHA256 `473ae45225c9063a7560b0092ed7914d71a43623f593d4959c66294e942a5837`；Local 源码原位不动；v2 未获批需 Quarantine。
+- Test/rollback: synthetic fixture/negative/ref/duplicate/cross-hospital/Spark Schema/replay; PR 未部署，回滚仅撤销分支或后续发布版本。CI Wheel hash/readback 提供本轮证据。
