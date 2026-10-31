@@ -1,0 +1,51 @@
+name: Fabric FHIR Notebook Offline Contract
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/notebook-development/**'
+      - '.github/workflows/fabric-fhir-notebook-offline.yml'
+      - 'documents/systems/azure-fabric/CODE.md'
+permissions:
+  contents: read
+jobs:
+  notebook-offline-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_DATE_EPOCH: '1704067200'
+      SPARK_LOCAL_HOSTNAME: localhost
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Pin dependencies and install sole Shared Engine Wheel offline
+        run: |
+          set -euo pipefail
+          python -m pip wheel -w "$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
+          python -m venv "$RUNNER_TEMP/fabric-offline"
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
+          mkdir -p dist
+          "$RUNNER_TEMP/fabric-offline/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
+          echo "603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7  dist/healthcare_data_engine-0.1.0-py3-none-any.whl" | sha256sum --check
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps dist/*.whl
+      - name: Synthetic Manifest plus actual local PySpark readback tests; ZERO cloud writes
+        env:
+          PYTHONPATH: azure-fabric/notebook-development
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/fabric-offline/bin/python" -m unittest discover -s azure-fabric/notebook-development/tests -p 'test_*.py' -v
+      - name: Fail-closed missing native export (expect BLOCKED exit 2)
+        run: |
+          set +e
+          "$RUNNER_TEMP/fabric-offline/bin/python" azure-fabric/notebook-development/native_item_readiness.py
+          result=$?
+          set -e
+          test "$result" = 2 || { echo "EXPECTED_NATIVE_EXPORT_BLOCKED; got $result"; exit 1; }
+          echo "NATIVE_ITEM_PUBLICATION_BLOCKED_AS_DESIGNED"
