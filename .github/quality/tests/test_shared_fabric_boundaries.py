@@ -47,6 +47,18 @@ class SharedFabricGuardTest(unittest.TestCase):
         self.assertTrue(guard.is_owned_source(ENV))
         self.assertFalse(guard.is_owned_source("azure-fabric/workspaces/healthcare-omop/pipelines/.gitkeep"))
 
+    def test_flat_fabric_git_owner_and_libraries_layout(self):
+        notebook = "azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py"
+        pipeline = "azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/pipeline-content.json"
+        environment = "azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Setting/Sparkcompute.yml"
+        wheel = "azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.0-py3-none-any.whl"
+        self.assertEqual(guard.owner_for(notebook), "notebooks")
+        self.assertEqual(guard.owner_for(pipeline), "pipelines")
+        self.assertEqual(guard.owner_for(environment), "environments")
+        self.assertTrue(guard.is_owned_source(wheel))
+        self.assertEqual(guard.check_layout(wheel, ""), [])
+        self.assertTrue(guard.check_layout(environment.replace("Setting/Sparkcompute.yml", "source.py"), ""))
+
     def test_shared_good_imports(self):
         good = "from datetime import datetime\nfrom pyspark.sql import DataFrame\n"
         self.assertEqual(guard.check_imports(SHARED, good), [])

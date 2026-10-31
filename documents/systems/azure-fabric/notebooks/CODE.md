@@ -19,7 +19,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 | 原生源码文件 | 功能 |
 | --- | --- |
 | [nb_fhir_ingest.Notebook/.platform](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/.platform) | Fabric Git 同步的真实 Notebook Item 元数据；不要手工改 logicalId |
-| [nb_fhir_ingest.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py) | 首次导出的空 Notebook（`# No content`）；P2 实际代码尚未部署 |
+| [nb_fhir_ingest.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py) | 已将 P2 单一实现迁入 Git Native Notebook，含 Fabric cell、参数和启动 HOLD；尚未手工 Update from Git |
 
 **以后如何更新：**每增加一个真实 Notebook Item，应在上表使用**指向实际文件的相对 Markdown 链接**登记其真实 `.platform`、`notebook-content.py` 及其他生成文件。静态 CODE-map CI 会检查源码完整性、链接归属，并要求新增、删除或迁移文件时在同一个 PR 更新本 `CODE.md`。
 

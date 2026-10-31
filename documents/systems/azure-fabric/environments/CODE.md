@@ -10,3 +10,5 @@
 | [env_healthcare.Environment/Setting/Sparkcompute.yml](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Setting/Sparkcompute.yml) | Fabric 导出的 Spark compute 配置；Wheel 尚未发布 |
 
 新增原生定义时，每一个真实源文件都必须单独使用 `../../../../azure-fabric/workspaces/healthcare-omop/environments/...` 相对链接列入本表。Shared 源码不可复制到 Environment Item；只能安装发布已构建、固定版本/hash 的唯一 Shared Engine Wheel。
+
+**P2 Git-first 阶段：** Shared Wheel 在独立 GitHub-hosted CI 构建并按固定 SHA256 校验，产生 Artifact；尚未纳入此 Environment 的 CustomLibraries，也没有在 Fabric 发布/读回有效版本。不要把 CI Wheel 当作运行环境已安装。

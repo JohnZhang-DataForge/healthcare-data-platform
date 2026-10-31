@@ -47,12 +47,12 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 
 ## P2 未发布 Notebook 业务源码（2026-10-31；只属于开发阶段）
 
-以下文件属于单个未来 Notebook 的离线候选源码，**不在 Fabric Git Workspace 选定目录内**，也不是第二个 Wheel / Spark Job Definition / Fabric I/O Framework。只有取得 healthcare-omop 真实 .platform/Environment/Pipeline Export 后，才可与真实 Native Item 结合、发布需独立授权。
+**2026-10-31 更新：**P2 唯一业务逻辑已迁入 Fabric Git Native Notebook [notebook-content.py](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py)。下列开发文件只作为离线加载/安全检查/测试工具，不能单独发布为第二个 Notebook 或 Wheel。正式发布仍需 Environment Publish 与独立云验收。
 
 | 源码文件 | 职责 |
 | --- | --- |
-| [fhir_ingest_notebook.py](../../../azure-fabric/notebook-development/fhir_ingest_notebook.py) | Notebook 实际 PySpark Manifest/SHA/Shared/DQ/Delta/readback；云写默认锁定 |
-| [native_item_readiness.py](../../../azure-fabric/notebook-development/native_item_readiness.py) | Fabric 原生 `.platform` 缺失静态检查，BLOCKED exit 2 |
+| [fhir_ingest_notebook.py](../../../azure-fabric/notebook-development/fhir_ingest_notebook.py) | 离线兼容导入 Native Notebook；不含第二套业务实现 |
+| [native_item_readiness.py](../../../azure-fabric/notebook-development/native_item_readiness.py) | Fabric 原生 `.platform` 类型/名称/非零 ID 检查；导出成功仍 HOLD runtime exit 2 |
 | [test_notebook_offline.py](../../../azure-fabric/notebook-development/tests/test_notebook_offline.py) | 真实 PySpark Schema/关联和负向离线测试 |
 | [README.md](../../../azure-fabric/notebook-development/README.md) | 未发布 Notebook 实施边界和执行安全说明 |
 | [fabric-fhir-notebook-offline.yml](../../../.github/workflows/fabric-fhir-notebook-offline.yml) | GitHub-hosted 离线 Wheel 精确 SHA/PySpark 负向 CI |

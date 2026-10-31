@@ -101,11 +101,11 @@ class ManifestGuards(unittest.TestCase):
             patient_contract_bytes=b"forbidden", encounter_contract_bytes=b"forbidden")
         self.assertEqual(result.status, "HOLD_NO_CLOUD_WRITE_AUTHORIZATION")
 
-    def test_current_native_items_correctly_blocked(self):
+    def test_native_items_exported_runtime_still_hold(self):
         root = ROOT / "azure-fabric/workspaces/healthcare-omop"
         result = readiness.check_native_export(root)
-        self.assertEqual(result.state, "BLOCKED_NATIVE_EXPORT")
-        self.assertEqual(len(result.reasons), 3)
+        self.assertEqual(result.state, "HOLD_NATIVE_RUNTIME_DEPLOYMENT")
+        self.assertEqual(len(result.reasons), 1)
 
 
 class OfflineSparkCanonical(unittest.TestCase):

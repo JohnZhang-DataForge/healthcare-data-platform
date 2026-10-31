@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'azure-fabric/notebook-development/**'
+      - 'azure-fabric/workspaces/healthcare-omop/**'
       - '.github/workflows/fabric-fhir-notebook-offline.yml'
       - 'documents/systems/azure-fabric/CODE.md'
 permissions:
@@ -41,11 +42,21 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/fabric-offline/bin/python" -m unittest discover -s azure-fabric/notebook-development/tests -p 'test_*.py' -v
-      - name: Fail-closed missing native export (expect BLOCKED exit 2)
+      - name: Verify Native Git source; runtime remains HOLD
         run: |
           set +e
-          "$RUNNER_TEMP/fabric-offline/bin/python" azure-fabric/notebook-development/native_item_readiness.py
+          "$RUNNER_TEMP/fabric-offline/bin/python" azure-fabric/notebook-development/native_item_readiness.py > "$RUNNER_TEMP/native-gate.txt"
           result=$?
           set -e
-          test "$result" = 2 || { echo "EXPECTED_NATIVE_EXPORT_BLOCKED; got $result"; exit 1; }
-          echo "NATIVE_ITEM_PUBLICATION_BLOCKED_AS_DESIGNED"
+          cat "$RUNNER_TEMP/native-gate.txt"
+          test "$result" = 2 || { echo "EXPECTED_P2_RUNTIME_HOLD; got $result"; exit 1; }
+          grep -q "HOLD_NATIVE_RUNTIME_DEPLOYMENT" "$RUNNER_TEMP/native-gate.txt"
+          echo "NATIVE_GIT_EXPORT_VERIFIED_RUNTIME_HOLD"
+      - name: Archive SHA-verified sole Shared Engine Wheel
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-p2-shared-wheel-${{ github.sha }}
+          path: dist/healthcare_data_engine-0.1.0-py3-none-any.whl
+          if-no-files-found: error
+          retention-days: 30
