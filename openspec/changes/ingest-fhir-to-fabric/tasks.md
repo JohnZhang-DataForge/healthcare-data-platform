@@ -20,7 +20,7 @@
 
 ## 2. Offline implementation authorized; cloud execution remains HOLD
 
-- [ ] 2.2 P2 仅离线 Notebook 业务源码与 Native Export prepublish 静态 Gate：Manifest/source SHA/Retention、Bronze receipt、Shared Engine、Quarantine、受控 Delta、两表独立 readback/approved、幂等/unknown ACK，Fabric Native Item 文件未实际导出时 BLOCKED。完成真实 CI 后才能勾选源码部分，Native Item/E2E 不可打勾。
+- [x] 2.2 P2 仅离线 Notebook 业务源码与 Native Export prepublish 静态 Gate：Manifest/source SHA/Retention、Bronze receipt、Shared Engine、Quarantine、受控 Delta、两表独立 readback/approved、幂等/unknown ACK，Fabric Native Item 文件未实际导出时 BLOCKED。完成真实 CI 后才能勾选源码部分，Native Item/E2E 不可打勾。
 
 - [x] 2.1 P1 实现唯一 Shared Engine Wheel v0.1.0、FHIR R4 Patient/Encounter、合成数据、Local v1 Contract、正负/重放/跨源测试、Spark Schema，实际 CI 构建/安装后才能打勾。业务运行、Fabric Publish 尚未授权。
 
@@ -67,3 +67,9 @@
 - No second framework or package: native `spark.read.format('binaryFile')` and `DataFrame.write/read.format('delta')` only within the future Notebook. Pipeline runtime retry/monitor/status/failure branch still BLOCKED until real Native Pipeline definition; Environment Publish/version readback still BLOCKED.
 - Replay: separate source batch / processing version / publication hash; unknown ACK or partial Delta staging is `VERIFY_READONLY`, no blind writes. `SILVER_APPROVED` only after independent Spark/Delta two-table PK/FK/count/version readback and approval evidence. Never Gold COMMITTED.
 - Offline-only tests and CI cannot establish live Workspace/Git connection/Lakehouse/Capacity/permissions/schema/cost/retention; no cloud mutation authorized.
+
+### P2 offline verified CI evidence (not a Fabric deployment)
+
+- GitHub Actions [Run #41231571043](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41231571043) at source commit `b4186e9d1f968b7873c4ec679a4f35a64c05b8ef`: 14/14 synthetic Manifest/PySpark/canonical/Patient-Encounter PK-FK/replay-stability/authorization-negative tests **PASS**; only Shared Wheel 0.1.0 installed with SHA256 `603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7` verified by `sha256sum --check`.
+- Native Notebook/Pipeline/Environment exporter check: `BLOCKED_NATIVE_EXPORT` exit code 2, CI confirms `NATIVE_ITEM_PUBLICATION_BLOCKED_AS_DESIGNED`; no `.platform`, logicalId, pipeline content, Environment format or published runtime invented.
+- Notebook is **unpublished offline working source**; literal Spark native I/O/Delta/write/readback steps are coded but **not executed against Delta or Fabric**. Actual Silver APPROVED/readback, Pipeline E2E, live Git binding, identity/schema/permissions/cost, Environment Publish remain HOLD. P2 offline tests are not Fabric runtime proof.
