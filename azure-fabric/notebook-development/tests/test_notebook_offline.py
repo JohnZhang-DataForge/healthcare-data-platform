@@ -129,19 +129,6 @@ class OfflineSparkCanonical(unittest.TestCase):
                                     patient_contract_bytes=PATIENT.read_bytes(),
                                     encounter_contract_bytes=ENCOUNTER.read_bytes())
 
-    def test_shared_engine_effective_package_version_is_pinned_to_011(self):
-        from unittest.mock import patch
-        from healthcare_data_engine import __version__ as installed_version
-        self.assertEqual(installed_version, "0.1.1")
-        self.assertEqual(ingest.engine_version, installed_version)
-        # A stale 0.1.0 Spark session must fail *before* constructing any
-        # dataframes. adapter_version remains a distinct canonical wire format.
-        context, manifest, obj = make_batch()
-        with patch.object(ingest, "engine_version", "0.1.0"):
-            with self.assertRaisesRegex(ValueError,
-                                        "SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH"):
-                self.prepared(context, manifest, obj)
-
     def test_engine_011_published_version_required_and_legacy_010_rejected(self):
         # The business Adapter contract remains independently versioned at
         # 0.1.0; the PACKAGE version must match Fabric Environment 0.1.1.
