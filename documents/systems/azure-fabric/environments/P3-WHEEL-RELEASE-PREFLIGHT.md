@@ -1,6 +1,18 @@
 # P3 Wheel 0.1.1 — Fabric live preflight and release decision (2026-11-01)
 
-> **Current verified state: P3 Git Sync + Environment Publish PASS; Notebook binding and Spark import remain HOLD.** This file retains the **historical pre-release snapshot** below for traceability. User explicitly authorized advancing this **development-only** Environment on 2026-11-01, and the two cloud changes were performed independently with exact SHA gates; there is still no patient data write/ETL authorization from this release.
+> **Current verified state: P3 Git Sync + Environment Publish + Notebook declarative binding/readback PASS; actual Spark Runtime import remains HOLD.** This file retains the **historical pre-release snapshot** below for traceability. User explicitly authorized advancing this **development-only** Environment on 2026-11-01, and the two cloud changes were performed independently with exact SHA gates; there is still no patient data write/ETL authorization from this release.
+
+## 最新 2026-11-01 — Notebook 绑定确认与真实 Spark Smoke HOLD
+
+**证据级别**：真实 Notebook metadata/Environment declaration 已验证；不是 Spark Session 动态加载证明。真实 Fabric Job 仍没有一轮 Completed / 精确 0.1.1+PySpark4.1 import exit 的成功结果。**不得将 P3 Runtime、FHIR ETL、Delta write、最终验收标为 PASS**。
+
+- **绑定 PASS（声明 / 云端定义）**：Healthcare [PR #594](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/594) / main `381a23d5024448896f4d530b61a0f03c5ad22a85`，Self-Runner 独立只读 [Run #41341350800](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41341350800)。目标 Published `env_healthcare` 物理 ID `d85a4218-8da0-46ed-8517-b5eced219dd5`；`engine_version=0.1.1`，数据契约 `adapter_version=0.1.0` 保留。已有原业务 Notebook `HALT`/不写保护不变。
+- **失败 1 / 2**：Self-Runner [Run #41342534629](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41342534629) 首次 Job `Failed`；[Run #41343169292](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41343169292) Core Job `Failed/BadRequest`，Artifact `13098322693`，Job `28b01bd9-e065-4398-bffa-bfe3c7f7491b`。Job 的 POST 已被接受（HTTP 202），此 BadRequest 来自**异步执行阶段**，不是最初 POST HTTP 400。
+- **失败 3（更安全诊断）**：Self-Runner [PR #390](https://github.com/JohnZhang-DataForge/Self-Runner/pull/390) / [Run #41353132947](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41353132947)，Artifact `13101689917`，Job `c3a6c7e4-0c12-455f-8494-85e1c0216eff`，`Failed/BadRequest`，Request ID `3a159b16-0f7a-4167-a7a3-b245a4a5d37c`，Root Activity ID `e7c008f3-73a9-4c13-8a49-b32dde37455f`。beta 附加错误详情未获取。
+- **失败 4（显式 Spark + Environment release API）**：Self-Runner [PR #391](https://github.com/JohnZhang-DataForge/Self-Runner/pull/391) / main `d857f2f3e01a35675915cd4b2651aab7d853e5ab` / [Run #41353644397](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41353644397)，Artifact `13101968471`，Job `c14a1ab3-16ee-48a8-a212-37a36ac80907`。按微软 [Notebook release Job 文档](https://learn.microsoft.com/en-us/rest/api/fabric/notebook/background-jobs/run-on-demand-notebook) 使用 `POST /notebooks/{id}/jobs/execute/instances?beta=false`，执行参数固定 `compute=Spark` + Published `attachedEnvironment`，Job 仍 `Failed/InvalidRequest`；Request ID `4821e253-d66e-458b-ba47-6b595e1c4fe4`，Root Activity ID `417d411d-4ef8-473e-ac61-44985544450a`。**不能**据此断定是哪一个执行参数错误。
+- **每轮安全性**：最新两轮发布前的 Git HEAD/Published 0.1.1/Notebook physical Environment 预检 PASS；临时 Notebook 已清理；没有运行 `nb_fhir_ingest`、读取患者数据、写入 Delta/OneLake、重复 Publish。两个执行请求都返回并记录了终态 Failed。Git 自动同步仍安全地 `HOLD/NOTEBOOK_HEADER_OR_ORDER_DIFFERENT`，与 Spark 故障单独处理，禁止绕过保护。
+
+**接下来的动作保持 HOLD**：Fabric 官方 Monitoring hub/Spark diagnostic（如有对应 Job）或 Microsoft Support 以以上 `requestId` 和 `rootActivityId` 跟踪后台真实失败原因；无后端证据不要重复相同 Job。之后才讨论单点修复 + 新独立 Smoke。正式验收必须同时具备新 Session `healthcare_data_engine.__version__ == 0.1.1`、`metadata.version() == 0.1.1`、PySpark 4.1.x、Job Completed、精确 exit 值和临时资源清理。
 
 ## Verified rollout and official Fabric effective-library evidence — 2026-11-01
 
