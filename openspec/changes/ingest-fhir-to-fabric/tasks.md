@@ -176,3 +176,10 @@
 - [x] Link the runbook from Notebook/Environment CODE maps and replace the obsolete “business Notebook not developed / Wheel not in Git” documentation.
 - [x] Preserve existing offline contract checks for canonical separators, PARAMETERS CELL / META JSON, sole business implementation, .platform logicalId and Pipeline HALT; cloud readback remains an independent gate.
 - [ ] Environment latest custom Wheel effective Published listing/hash and Notebook attachment remain HOLD; Spark execution and Delta E2E remain NOT_RUN. Do not infer these from the user-visible Publish success alone.
+
+
+### 4.23 Guarded Git-to-Fabric native Notebook transport smoke — 2026-11-01
+
+- [x] 4.23 Introduce one inert Notebook code-cell comment as a Git Native source transport marker, without changing business logic, .platform identity, Parameters Cell metadata, Pipeline configuration, HALT gates, Environment or any data writes. Source-of-truth remains Healthcare GitHub main.
+- [ ] Prove on trusted Self-Runner that a reviewed GitHub main update is imported by UpdateFromGit after exact last-synced semantic validation of known Fabric serialization-only drift; verify remote Git commit, 3 Notebook code cells, smoke comment, both FabricGitSource/ipynb, Pipeline safe parameters and physical references. Mark HOLD until actual cloud readback succeeds.
+- [ ] Do not infer any Environment Wheel publication, Notebook execution or Spark/Delta E2E success from transport smoke.
