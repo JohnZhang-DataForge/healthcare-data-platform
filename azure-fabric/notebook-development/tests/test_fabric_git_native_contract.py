@@ -33,7 +33,7 @@ class FabricGitNativeContract(unittest.TestCase):
         # Git-aware Notebook parser requires a metadata JSON block per cell.
         # Python syntax alone would not catch a malformed FabricGitSource.
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
-        self.assertTrue(content.startswith("# Fabric notebook source\n# METADATA ********************\n# META {"))
+        self.assertTrue(content.startswith("# Fabric notebook source\n\n# METADATA ********************\n\n# META {"))
         self.assertEqual(content.count("# CELL ********************"), 2)
         self.assertEqual(content.count("# PARAMETERS CELL ********************"), 1)
         chunks = content.split("# METADATA ********************")
@@ -59,6 +59,18 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertIn('# PARAMETERS CELL ********************', chunks[2])
         self.assertIn('run_mode = "HALT"', chunks[2])
         self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', chunks[3])
+
+    def test_fabric_source_section_separators_match_official_samples(self):
+        # This is a serialization preflight, NOT a proof of Fabric round-trip.
+        content = (GIT_ROOT / 'nb_fhir_ingest.Notebook/notebook-content.py').read_text()
+        self.assertTrue(content.startswith('# Fabric notebook source\n\n# METADATA ********************\n\n# META {'))
+        self.assertEqual(content.count('\n\n# METADATA ********************\n\n# META {'), 4)
+        self.assertEqual(content.count('# CELL ********************\n\n'), 2)
+        self.assertEqual(content.count('# PARAMETERS CELL ********************\n\n'), 1)
+        self.assertIn('# META }\n\n# PARAMETERS CELL ********************', content)
+        self.assertIn('# META }\n\n# CELL ********************', content)
+        self.assertIn('def execute_native_notebook(', content)
+        self.assertIn('HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED', content)
 
     def test_pipeline_is_wired_to_existing_notebook_without_retry(self):
         data = json.loads((GIT_ROOT / "pl_fhir_ingest.DataPipeline/pipeline-content.json").read_text())
