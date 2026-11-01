@@ -70,6 +70,8 @@ jobs:
           set -Eeuo pipefail
           git switch -c "$STAGING_BRANCH"
           git rm -- "$WHEEL_DIR/$OLD_WHEEL"
+          # git rm prunes the old sole-wheel directory; recreate it before copy.
+          mkdir -p "$WHEEL_DIR"
           cp "$RUNNER_TEMP/fabric-p3-wheel/$NEW_WHEEL" "$WHEEL_DIR/$NEW_WHEEL"
           echo "$EXPECTED_WHEEL_SHA256  $WHEEL_DIR/$NEW_WHEEL" | sha256sum --check
           python3 - <<'PY'
