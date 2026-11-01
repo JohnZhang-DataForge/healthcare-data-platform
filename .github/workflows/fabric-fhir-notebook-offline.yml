@@ -34,7 +34,13 @@ jobs:
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           mkdir -p dist
           "$RUNNER_TEMP/fabric-offline/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
-          echo "603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7  dist/healthcare_data_engine-0.1.0-py3-none-any.whl" | sha256sum --check
+          echo "4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3  dist/healthcare_data_engine-0.1.1-py3-none-any.whl" | sha256sum --check
+          staged='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.1-py3-none-any.whl'
+          test -f "$staged"
+          test "$(find "$(dirname "$staged")" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
+          echo "4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3  $staged" | sha256sum --check
+          cmp dist/healthcare_data_engine-0.1.1-py3-none-any.whl "$staged"
+          echo 'FABRIC_P3_GIT_WHEEL_EXACT_MATCH=PASS' >> "$GITHUB_STEP_SUMMARY"
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps dist/*.whl
       - name: Synthetic Manifest plus actual local PySpark readback tests; ZERO cloud writes
         env:
@@ -56,7 +62,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-p2-shared-wheel-${{ github.sha }}
-          path: dist/healthcare_data_engine-0.1.0-py3-none-any.whl
+          name: fabric-p3-shared-wheel-${{ github.sha }}
+          path: dist/healthcare_data_engine-0.1.1-py3-none-any.whl
           if-no-files-found: error
           retention-days: 30
