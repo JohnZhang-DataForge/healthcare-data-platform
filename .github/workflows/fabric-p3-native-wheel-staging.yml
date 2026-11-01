@@ -109,39 +109,27 @@ jobs:
           PY
           test "$(find "$WHEEL_DIR" -maxdepth 1 -type f -name '*.whl' | wc -l)" = 1
           git add -A -- "$WHEEL_DIR" documents/systems/azure-fabric/environments/CODE.md openspec/changes/fabric-environment-wheel-release/tasks.md
-          # Be explicit about Git's optional rename detection: two Wheel paths must be A/D.
+          # Check exact staged A/D + docs updates, independent of Git rename detection.
           git diff --cached --name-status --no-renames
-          actual="$(git diff --cached --name-only --no-renames | wc -l)"
-          if [ "$actual" -ne 4 ]; then
-            echo "HOLD_P3_UNEXPECTED_STAGED_PATH_COUNT=$actual" >&2
-            exit 1
-          fi
-          git diff --cached --name-status --no-renames | grep -F 
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'feat(fabric): stage immutable 0.1.1 Wheel in native Environment review branch'
-          git push origin "HEAD:refs/heads/$STAGING_BRANCH"
-          {
-            echo "### P3 immutable Wheel staged in Git review branch"
-            echo "Branch: $STAGING_BRANCH"
-            echo "Source main HEAD: $GITHUB_SHA"
-            echo "Wheel SHA256: $EXPECTED_WHEEL_SHA256"
-            echo "Fabric API calls: none; Environment Publish: NOT_RUN"
-          } >> "$GITHUB_STEP_SUMMARY"
-D\t'"$WHEEL_DIR/$OLD_WHEEL"
-          git diff --cached --name-status --no-renames | grep -F 
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'feat(fabric): stage immutable 0.1.1 Wheel in native Environment review branch'
-          git push origin "HEAD:refs/heads/$STAGING_BRANCH"
-          {
-            echo "### P3 immutable Wheel staged in Git review branch"
-            echo "Branch: $STAGING_BRANCH"
-            echo "Source main HEAD: $GITHUB_SHA"
-            echo "Wheel SHA256: $EXPECTED_WHEEL_SHA256"
-            echo "Fabric API calls: none; Environment Publish: NOT_RUN"
-          } >> "$GITHUB_STEP_SUMMARY"
-A\t'"$WHEEL_DIR/$NEW_WHEEL"
+          python3 - <<'PY'
+          import os
+          import subprocess
+          rows = subprocess.check_output(
+              ["git", "diff", "--cached", "--name-status", "--no-renames"],
+              text=True,
+          ).splitlines()
+          actual = {tuple(line.split("\t", 1)) for line in rows}
+          directory = os.environ["WHEEL_DIR"]
+          expected = {
+              ("D", directory + "/" + os.environ["OLD_WHEEL"]),
+              ("A", directory + "/" + os.environ["NEW_WHEEL"]),
+              ("M", "documents/systems/azure-fabric/environments/CODE.md"),
+              ("M", "openspec/changes/fabric-environment-wheel-release/tasks.md"),
+          }
+          if actual != expected:
+              raise SystemExit("HOLD_P3_UNEXPECTED_STAGED_PATHS: " + repr(sorted(actual)))
+          print("FABRIC_P3_GIT_ONLY_STAGED_PATHS=PASS")
+          PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'feat(fabric): stage immutable 0.1.1 Wheel in native Environment review branch'
