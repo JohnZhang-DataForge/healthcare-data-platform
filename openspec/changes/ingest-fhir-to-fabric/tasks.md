@@ -168,3 +168,11 @@
 - [x] **Read-only publish-metadata inspection completed** via [Self-Runner PR #363](https://github.com/JohnZhang-DataForge/Self-Runner/pull/363) / [Run #41263182097](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41263182097). `GET Environment` returned `publishDetails.state=Success` and `componentPublishInfo.sparkLibraries.state=Success`, but the published libraries endpoint still returned HTTP 404 while the expected Wheel remained in staging. A prior successful publish is NOT evidence that the newly staged Wheel is effective.
 - [ ] **Remaining Task 4.17 release work:** user/reviewer must verify Environment staged dependencies and whether a publish is appropriate; publish as a **separately approved action** (no automated Runner publish was performed), then independently GET published libraries to confirm Wheel filename. The listing API does not expose wheel content hash; verify exact effective package version/SHA and Notebook `env_healthcare` binding through an additional controlled runtime/environment inspection. G2 remains HOLD; G3 Notebook/Spark execution and G4 Bronze/Silver Delta E2E remain NOT_RUN.
 - Notebook readback remains fully PASS with 20,053-byte `FabricGitSource`, 21,689-byte `ipynb`, three code cells, main Git sync `9e667468`, Pipeline safe parameters; the Environment gate is strictly separate.
+
+
+### 4.22 Fabric Native Git authoring lessons and regression prevention — 2026-11-01
+
+- [x] 4.22 Record the actual Fabric Notebook source-loss incident, isolated canonical/compact/ipynb reproduction, corrective PR #576, and live BOTH_FULL GetDefinition readback in [Fabric Native Git Authoring Runbook](../../../../documents/systems/azure-fabric/notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md).
+- [x] Link the runbook from Notebook/Environment CODE maps and replace the obsolete “business Notebook not developed / Wheel not in Git” documentation.
+- [x] Preserve existing offline contract checks for canonical separators, PARAMETERS CELL / META JSON, sole business implementation, .platform logicalId and Pipeline HALT; cloud readback remains an independent gate.
+- [ ] Environment latest custom Wheel effective Published listing/hash and Notebook attachment remain HOLD; Spark execution and Delta E2E remain NOT_RUN. Do not infer these from the user-visible Publish success alone.
