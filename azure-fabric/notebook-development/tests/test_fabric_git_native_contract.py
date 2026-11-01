@@ -33,7 +33,7 @@ class FabricGitNativeContract(unittest.TestCase):
         # Git-aware Notebook parser requires a metadata JSON block per cell.
         # Python syntax alone would not catch a malformed FabricGitSource.
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
-        self.assertTrue(content.startswith("# Fabric notebook source\n# METADATA ********************\n# META {"))
+        self.assertTrue(content.startswith("# Fabric notebook source\n\n# METADATA ********************\n\n# META {"))
         self.assertEqual(content.count("# CELL ********************"), 2)
         self.assertEqual(content.count("# PARAMETERS CELL ********************"), 1)
         chunks = content.split("# METADATA ********************")
@@ -64,7 +64,7 @@ class FabricGitNativeContract(unittest.TestCase):
         # This is a serialization preflight, NOT a proof of Fabric round-trip.
         content = (GIT_ROOT / 'nb_fhir_ingest.Notebook/notebook-content.py').read_text()
         self.assertTrue(content.startswith('# Fabric notebook source\n\n# METADATA ********************\n\n# META {'))
-        self.assertEqual(content.count('\n\n# METADATA ********************\n\n# META {'), 3)
+        self.assertEqual(content.count('\n\n# METADATA ********************\n\n# META {'), 4)
         self.assertEqual(content.count('# CELL ********************\n\n'), 2)
         self.assertEqual(content.count('# PARAMETERS CELL ********************\n\n'), 1)
         self.assertIn('# META }\n\n# PARAMETERS CELL ********************', content)
