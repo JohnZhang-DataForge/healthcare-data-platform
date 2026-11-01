@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0 # read-only access to immutable 0.1.0 source Git object
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -26,7 +27,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Pin dependencies and install sole Shared Engine Wheel offline
+      - name: Compare new 0.1.1 Git staging Wheel, then install pinned legacy 0.1.0 for HALT Notebook tests
         run: |
           set -euo pipefail
           python -m pip wheel -w "$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
@@ -41,7 +42,17 @@ jobs:
           echo "4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3  $staged" | sha256sum --check
           cmp dist/healthcare_data_engine-0.1.1-py3-none-any.whl "$staged"
           echo 'FABRIC_P3_GIT_WHEEL_EXACT_MATCH=PASS' >> "$GITHUB_STEP_SUMMARY"
-          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps dist/*.whl
+          # Candidate P3 Wheel must match the single native Git library byte-for-byte.
+          # Current production Notebook is still pinned to 0.1.0 and HALT: test it
+          # against the immutable legacy Git blob, not the unpublished 0.1.1 Wheel.
+          legacy_commit='10edcc7a149fb4673548c0f71d44ca264c2a85ce'
+          legacy_git_path='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.0-py3-none-any.whl'
+          legacy_dest="$RUNNER_TEMP/healthcare_data_engine-0.1.0-py3-none-any.whl"
+          git cat-file -e "$legacy_commit:$legacy_git_path"
+          git show "$legacy_commit:$legacy_git_path" > "$legacy_dest"
+          echo "603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7  $legacy_dest" | sha256sum --check
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps "$legacy_dest"
+          echo 'FABRIC_P3_NEW_STAGING_WHEEL_MATCH=PASS; NOTEBOOK_LEGACY_010_OFFLINE=VERIFIED' >> "$GITHUB_STEP_SUMMARY"
       - name: Synthetic Manifest plus actual local PySpark readback tests; ZERO cloud writes
         env:
           PYTHONPATH: azure-fabric/notebook-development
