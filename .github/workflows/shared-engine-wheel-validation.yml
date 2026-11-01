@@ -60,3 +60,48 @@ jobs:
             dist/*.whl
             dist/SHA256SUMS
           retention-days: 30
+
+  fabric-runtime2-python313-source-probe:
+    name: Fabric Runtime 2.0 Python 3.13 source compatibility (not release)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Test pure Shared Engine API and synthetic FHIR without Spark
+        shell: bash
+        env:
+          PYTHONPATH: shared-data-engine/src
+        run: |
+          set -euo pipefail
+          python -c 'import healthcare_data_engine as h; print("FABRIC_P3_PY313_PURE_IMPORT_PASS", h.__version__)'
+          python -m unittest discover -s shared-data-engine/tests -p 'test_fhir_r4_contract.py' -v
+          echo 'FABRIC_P3_PY313_PURE_SYNTHETIC_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Inspect packaging metadata separately from source import
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import tomllib
+          project = tomllib.loads(Path("shared-data-engine/pyproject.toml").read_text())["project"]
+          spec = project["requires-python"]
+          print("FABRIC_RUNTIME_2_TARGET_PYTHON=3.13")
+          print("SOURCE_PACKAGE_VERSION=" + project["version"])
+          print("SOURCE_REQUIRES_PYTHON=" + spec)
+          if spec == ">=3.10,<3.13":
+              outcome = "HOLD_PYTHON313_EXCLUDED_BY_PACKAGE_METADATA"
+          else:
+              outcome = "METADATA_CHANGED_REQUIRES_NEW_WHEEL_REVIEW"
+          print("FABRIC_P3_PACKAGE_METADATA=" + outcome)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("Fabric Runtime 2.0 uses Python 3.13.\\n")
+              summary.write("Packaging metadata: **" + outcome + "**.\\n")
+              summary.write("Source import/test PASS is **not** Wheel install, Publish or Notebook runtime PASS.\\n")
+          PY
