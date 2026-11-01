@@ -100,3 +100,20 @@ Manual visual comparison of Fabric Source control `nb_fhir_ingest/notebook-conte
 ### Evidence-driven diagnostic: Native source section separators (2026-11-01)
 
 Read-only deployed GetDefinition check after the user accepted incoming main f0603576 returned 26 bytes, while Git connection head advanced to f0603576732448507835d48922f1fb43a86ddd92. Pipeline safe-parameter readback PASS; Notebook still empty. This is a failed/not-retained Notebook import, not a stale branch HEAD. Programmatic authored source omitted blank separators present in Microsoft's official fabric-task-flows and fabric-cicd Notebook source examples. Hypothesis: malformed section boundaries prevent Notebook cell reconstruction. There is no documented definitive requirement that blank lines are mandatory; this remains an unverified hypothesis. Stage canonical spacing and offline tests in a separate PR; do not merge as a verified fix, or prompt more blind Git sync without a controlled, reversible Fabric round-trip. Any deployed readback <8000 bytes or lacking execute_native_notebook remains HOLD. Never commit Workspace's empty Notebook changes into main.
+
+
+### Confirmed Root Cause and Live Recovery: FabricGitSource cell section separators (2026-11-01)
+
+Status: **definition-import recovery PASS**; not a Spark/Delta runtime or Environment release. The immediately preceding section is historical pre-reproduction reasoning. The subsequent controlled tests supersede the guess that the old compact formatting might be acceptable.
+
+A trusted Self-Runner dual definition readback found both `FabricGitSource` (26 bytes) and Notebook `ipynb` (145 bytes, zero cells) empty while `gitSyncDetails.head` had advanced to `f0603576`; it was not just a UI render defect. An isolated create/readback/delete of three *ephemeral* Notebooks (Self-Runner run 41261920081) then proved a source-format sensitivity: the same marker code was retained with official blank-line separators but lost with compact adjacency; an ipynb control retained code. All temporary item cleanup was confirmed. This isolated REST Create test demonstrated the parser issue without modifying live P2 but did not itself prove Git integration behavior.
+
+Healthcare PR #576 merged only canonical separator formatting and corresponding tests/docs to Git main `9e667468e278f68c3b26f7eb46b81e58b87bf119`. After the user manually reviewed and accepted the one Notebook incoming update, trusted Self-Runner re-run 41262254996, live job 124718913119, obtained:
+- Workspace Git sync head exactly `9e667468e278f68c3b26f7eb46b81e58b87bf119`.
+- Live Notebook `FabricGitSource` 20,053 bytes; standard `ipynb` 21,689 bytes and **3 code cells**.
+- Independent marker checks: business `execute_native_notebook` present, required parameter marker present and runtime HALT preserved; comparison `BOTH_FULL`.
+- Live Pipeline `safe_parameters=True`; combined `FABRIC_P2_READBACK_OUTCOME=PASS`.
+
+Therefore the Notebook Git → Fabric source import incident is **RESOLVED by deployed evidence**. This is more than offline parser tests or the UI Last sync diff. The native REST GetDefinition and Git workspace commit checks agree. The existing GET /git/status call with Service Principal yielded HTTP 400 and cannot currently be used as a separate pending-change inventory; manual Fabric Source control remains the control for Git updates until its permission/credentials are independently verified. Do not use that HTTP 400 to invalidate the successful GetDefinition check, and do not claim it represents a Git import error.
+
+**Separate G2–G4 authorization HOLD:** the custom Shared Engine Wheel in Git does not prove published Environment status or Notebook runtime binding. Evidence of Environment published version/effective dependencies, safe Notebook run against non-writing synthetic input, and tightly controlled Bronze/Silver Delta E2E is still required. Keep defaults `HALT`, `write_authorized=False`, `retention_preflight_verified=False`, zero Pipeline retry and no schedule. No automatic promotion from Git readback PASS to writing real data.
