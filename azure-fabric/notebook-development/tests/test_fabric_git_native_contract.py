@@ -23,11 +23,40 @@ class FabricGitNativeContract(unittest.TestCase):
         candidate = (HERE / "fhir_ingest_notebook.py").read_text()
         self.assertIn("# Fabric notebook source", content)
         self.assertIn("# CELL ********************", content)
-        self.assertIn('"tags": ["parameters"]', content)
+        self.assertIn('"tags": [', content)
         self.assertIn('def execute_native_notebook(', content)
         self.assertIn('HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED', content)
         self.assertNotIn("def execute_native_notebook(", candidate)
         self.assertNotIn("write_authorized = True", content)
+
+    def test_native_notebook_fabric_cell_source_round_trip_structure(self):
+        # Git-aware Notebook parser requires a metadata JSON block per cell.
+        # Python syntax alone would not catch a malformed FabricGitSource.
+        content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
+        self.assertTrue(content.startswith("# Fabric notebook source\n# METADATA ********************\n# META {"))
+        self.assertEqual(content.count("# CELL ********************"), 3)
+        chunks = content.split("# METADATA ********************")
+        self.assertEqual(len(chunks), 5)
+        for i, chunk in enumerate(chunks[1:], start=1):
+            end = chunk.find("# CELL ********************")
+            metadata_lines = chunk if end < 0 else chunk[:end]
+            stripped = [line[len("# META "):] for line in metadata_lines.splitlines()
+                        if line.startswith("# META ")]
+            self.assertTrue(stripped, f"missing Fabric metadata block {i}")
+            self.assertEqual(stripped[0], "{")
+            self.assertEqual(stripped[-1], "}")
+            metadata = json.loads("\n".join(stripped))
+            if i == 1:
+                self.assertEqual(metadata["kernel_info"]["name"], "synapse_pyspark")
+                self.assertIn("lakehouse", metadata["dependencies"])
+            else:
+                self.assertEqual(metadata["language"], "python")
+                self.assertEqual(metadata["language_group"], "synapse_pyspark")
+                if i == 3:
+                    self.assertEqual(metadata.get("tags"), ["parameters"])
+        self.assertIn("def execute_native_notebook(", chunks[1])
+        self.assertIn('run_mode = "HALT"', chunks[2])
+        self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', chunks[3])
 
     def test_pipeline_is_wired_to_existing_notebook_without_retry(self):
         data = json.loads((GIT_ROOT / "pl_fhir_ingest.DataPipeline/pipeline-content.json").read_text())
@@ -35,13 +64,27 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertEqual(len(activities), 1)
         a = activities[0]
         self.assertEqual(a["type"], "TridentNotebook")
-        self.assertEqual(a["typeProperties"]["notebookId"], "8311ab6b-3484-4e96-8370-badeeb751633")
-        self.assertEqual(a["typeProperties"]["workspaceId"], "745ce03b-15b6-4870-b0e5-8c5750aa18dc")
+        notebook_platform = json.loads((GIT_ROOT / "nb_fhir_ingest.Notebook/.platform").read_text())
+        logical_id = notebook_platform["config"]["logicalId"]
+        props = a["typeProperties"]
+        # Native Git references MUST use logicalId and the same-workspace sentinel.
+        self.assertEqual(props["notebookId"], logical_id)
+        self.assertEqual(props["workspaceId"], "00000000-0000-0000-0000-000000000000")
+        self.assertEqual(set(props), {"notebookId", "workspaceId", "parameters"})
+        # Official TridentNotebook REST Schema is typeProperties.parameters.
+        # The unsupported "notebookParameters" field was dropped on Fabric round-trip.
+        self.assertNotIn("notebookParameters", props)
         self.assertEqual(a["policy"]["retry"], 0)
-        p = a["typeProperties"]["notebookParameters"]
-        self.assertEqual(p["run_mode"]["value"], "HALT")
-        self.assertFalse(p["write_authorized"]["value"])
-        self.assertFalse(p["retention_preflight_verified"]["value"])
+        self.assertTrue(a["policy"]["secureInput"])
+        self.assertTrue(a["policy"]["secureOutput"])
+        p = props["parameters"]
+        self.assertEqual(set(p), {"run_mode", "write_authorized", "retention_preflight_verified", "request_id"})
+        self.assertEqual(p["run_mode"], {"value": "HALT", "type": "string"})
+        self.assertEqual(p["write_authorized"], {"value": False, "type": "bool"})
+        self.assertEqual(p["retention_preflight_verified"], {"value": False, "type": "bool"})
+        self.assertEqual(p["request_id"], {"value": "", "type": "string"})
+        self.assertFalse(data["properties"].get("triggers"))
+        self.assertEqual(len(activities), 1)
 
     def test_native_environment_has_exact_hashed_custom_wheel(self):
         import hashlib

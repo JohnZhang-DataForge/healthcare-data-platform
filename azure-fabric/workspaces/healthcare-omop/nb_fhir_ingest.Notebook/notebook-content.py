@@ -1,13 +1,19 @@
 # Fabric notebook source
 # METADATA ********************
 # META {
-# META   "kernel_info": {"name": "synapse_pyspark"},
+# META   "kernel_info": {
+# META     "name": "synapse_pyspark"
+# META   },
 # META   "dependencies": {
 # META     "lakehouse": {
 # META       "default_lakehouse": "e67c42ee-5ab2-4bc8-a013-7bdf9741ef68",
 # META       "default_lakehouse_name": "lh_omop_analytics",
 # META       "default_lakehouse_workspace_id": "745ce03b-15b6-4870-b0e5-8c5750aa18dc",
-# META       "known_lakehouses": [{"id": "e67c42ee-5ab2-4bc8-a013-7bdf9741ef68"}]
+# META       "known_lakehouses": [
+# META         {
+# META           "id": "e67c42ee-5ab2-4bc8-a013-7bdf9741ef68"
+# META         }
+# META       ]
 # META     }
 # META   }
 # META }
@@ -359,7 +365,10 @@ def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: byt
                            batch.processing_version, batch.publication_id, _metrics(batch), ())
 
 # METADATA ********************
-# META {"language": "python", "language_group": "synapse_pyspark"}
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
 # CELL ********************
 run_mode = "HALT"
 write_authorized = False
@@ -369,9 +378,18 @@ manifest_json = ""
 source_root = ""
 silver_root = ""
 # METADATA ********************
-# META {"language": "python", "language_group": "synapse_pyspark", "tags": ["parameters"]}
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark",
+# META   "tags": [
+# META     "parameters"
+# META   ]
+# META }
 # CELL ********************
 if __name__ == "__main__":
     raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
 # METADATA ********************
-# META {"language": "python", "language_group": "synapse_pyspark"}
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
