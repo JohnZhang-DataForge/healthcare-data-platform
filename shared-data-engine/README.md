@@ -1,6 +1,6 @@
 # Shared Data Engine — first offline release
 
-The only new Python package is `healthcare_data_engine`, version **0.1.0**. It contains platform-neutral FHIR R4 Patient/Encounter normalization, Local v1 Contract validation, pure replay decisions and lazy PySpark DataFrame schema building.
+The only new Python package is `healthcare_data_engine`, version **0.1.1**. It contains platform-neutral FHIR R4 Patient/Encounter normalization, Local v1 Contract validation, pure replay decisions and lazy PySpark DataFrame schema building.
 
 ## Ownership and Contract
 
@@ -28,7 +28,17 @@ Build the sole wheel (`--no-build-isolation` uses pinned build tools already pre
 ```sh
 SOURCE_DATE_EPOCH=1704067200 .venv-shared/bin/python -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
 sha256sum dist/*.whl
-.venv-shared/bin/pip install --no-index --no-deps --force-reinstall dist/healthcare_data_engine-0.1.0-*.whl
+.venv-shared/bin/pip install --no-index --no-deps --force-reinstall dist/healthcare_data_engine-0.1.1-*.whl
 ```
 
-The GitHub-hosted CI prepares its dependency wheelhouse, **installs the test environment without the index**, verifies PySpark rows/schema, builds the wheel, then verifies installed import from outside the checkout. CI artifacts include the wheel and SHA256. A green CI result proves **offline synthetic tests**, not Fabric Environment Publish/Notebook execution, Fabric Runtime compatibility or Silver APPROVED.
+The GitHub-hosted CI prepares its dependency wheelhouse, **installs the test environment without the index**, verifies PySpark rows/schema, builds the wheel, then verifies installed import from outside the checkout. CI artifacts include the wheel and SHA256. For Fabric Runtime 2.0 the current target is Python 3.13 / PySpark 4.1.1 / Java 21.
+The separate GitHub-hosted CI job validates both the pure Python 3.13 API and Spark
+4.1 DataFrame behavior, then builds and installs the wheel in a Python 3.13
+environment. The versioned package retains Python 3.11 / PySpark 3.5.7
+compatibility for existing Local workloads; the optional `spark` extras are
+selected by interpreter version. Never force-install old `0.1.0` metadata in
+Fabric Runtime 2.0 or consider the new `0.1.1` installed until actual
+Environment staging/Publish/binding and safe runtime import are verified.
+
+A green CI result proves **offline synthetic compatibility/build/install only**,
+not Fabric Environment Publish, Notebook execution, or Silver APPROVED.

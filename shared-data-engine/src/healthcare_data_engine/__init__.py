@@ -11,7 +11,7 @@ from healthcare_data_engine.quality.result import Finding, ParsedResources, Tran
 from healthcare_data_engine.reconciliation.patient_encounter import reconcile_patient_encounter, PatientEncounterReconciliation
 from healthcare_data_engine.reconciliation.replay import PublicationRecord, decide_replay
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = [
     "BatchContext", "SourceObject", "parse_fhir_resources",
     "normalize_fhir_patient", "normalize_fhir_encounter",
