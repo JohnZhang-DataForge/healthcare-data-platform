@@ -1,6 +1,22 @@
 # P3 Wheel 0.1.1 — Fabric live preflight and release decision (2026-11-01)
 
-> **Current state: HOLD — Git main is NOT Fabric staging/published state.** This is a read-only evidence and rollout decision document; it neither authorizes `UpdateFromGit` nor `Environment Publish`, Notebook binding, Spark execution or data writes.
+> **Current verified state: P3 Git Sync + Environment Publish PASS; Notebook binding and Spark import remain HOLD.** This file retains the **historical pre-release snapshot** below for traceability. User explicitly authorized advancing this **development-only** Environment on 2026-11-01, and the two cloud changes were performed independently with exact SHA gates; there is still no patient data write/ETL authorization from this release.
+
+## Verified rollout and official Fabric effective-library evidence — 2026-11-01
+
+| Release gate | Concrete cloud evidence | Result |
+| --- | --- | --- |
+| Git update / Staging | Self-Runner [PR #384](https://github.com/JohnZhang-DataForge/Self-Runner/pull/384), trusted [Run #41323755874](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41323755874), artifact `fabric-p3-environment-sync-41323755874` ID `13091005258` | `P3_GIT_STAGING_011_VERIFIED`; exact old synced HEAD `8188cddcd79f0654eff1d95b81fd97ad94604f2d` → reviewed Healthcare main `66335f9544217e2109d43061f265f22bab871d0e`; Staging sole Custom Wheel **0.1.1**, legacy 0.1.0 absent |
+| Preserve Workspace-only definitions | Same artifact stores pre/post Notebook `.py`, Notebook `.ipynb`, Pipeline JSON backups | All 3 pre/post content SHA256 exactly equal, local canonicalization against immutable Git baseline PASS; no Notebook/Pipeline overwrite |
+| Independent GA Publish | Self-Runner [PR #385](https://github.com/JohnZhang-DataForge/Self-Runner/pull/385) merged `cd4991a412155467727e8f2812dbeb42777233e3`, trusted [Run #41325158603](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41325158603), artifact `fabric-p3-environment-publish-41325158603` ID `13090879253` | Before publish GA Published list: HTTP 404 UNKNOWN; one POST `/staging/publish?beta=false` → HTTP **202**, LRO ID present, LRO finally **Succeeded** (23 polls), `publishDetails.state=Success`, `sparkLibraries.state=Success`, targetVersion reported |
+| Effective GA published library listing | After LRO, official `GET /libraries?beta=false` | **available=true; sole Custom Wheel `healthcare_data_engine-0.1.1-py3-none-any.whl`; zero External; zero legacy 0.1.0; no duplicate Wheel**. Final status `P3_ENV_011_PUBLISHED_READBACK_PASS`. |
+| Release scope / limitations | Audit report | Git source provenance Wheel SHA256 `4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3`; GA list exposes filename only, **not effective installed wheel file SHA**. `spark_sessions_started=false`, `notebook_executed=false`, `delta_writes=false`, `git_update_attempted=false` in Publish run. |
+
+**Remaining work:** `nb_fhir_ingest` currently pins `engine_version == "0.1.0"`; unlike Shared Engine package `0.1.1`, the `adapter_version == "0.1.0"` business schema check may be intentionally independent and must be reviewed separately. The notebook has not proven effective attachment to `env_healthcare`. Coordinate Notebook source version alignment + binding, and then a fresh nonwriting Spark runtime import smoke. Existing `HALT`/write authorization safeguards remain. Do **not** declare E2E ETL PASS.
+
+## Historical pre-release read-only snapshot (superseded by verified Git sync + Publish)
+
+
 
 ## Provenance and versions
 
