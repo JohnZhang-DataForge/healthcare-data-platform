@@ -25,6 +25,7 @@
 """Git-native P2 FHIR Notebook; staged, not released for cloud writes."""
 from __future__ import annotations
 
+# Git-to-Fabric transport smoke marker (2026-11-01): no runtime/write authorization.
 from dataclasses import dataclass
 import hashlib
 import json
