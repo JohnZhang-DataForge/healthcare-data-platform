@@ -30,7 +30,7 @@
 from __future__ import annotations
 
 # Git-to-Fabric transport smoke marker (2026-11-01): no runtime/write authorization.
-# Event-triggered sync smoke (2026-11-01): inert comment, no runtime behavior change.
+# Git-to-Fabric guarded sync acceptance (2026-11-01): inert comment; HALT unchanged.
 from dataclasses import dataclass
 import hashlib
 import json
