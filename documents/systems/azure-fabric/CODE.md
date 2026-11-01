@@ -56,3 +56,11 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 | [test_notebook_offline.py](../../../azure-fabric/notebook-development/tests/test_notebook_offline.py) | 真实 PySpark Schema/关联和负向离线测试 |
 | [README.md](../../../azure-fabric/notebook-development/README.md) | 未发布 Notebook 实施边界和执行安全说明 |
 | [fabric-fhir-notebook-offline.yml](../../../.github/workflows/fabric-fhir-notebook-offline.yml) | GitHub-hosted 离线 Wheel 精确 SHA/PySpark 负向 CI |
+
+
+## Git-to-Fabric event-driven deployment trigger
+
+- [Healthcare main push workflow](../../../.github/workflows/fabric-git-deploy.yml) — GitHub native Notebook/Pipeline source changes start a guarded trigger (no Azure/Fabric token in this public repo).
+- [GitHub Actions dispatcher](../../../.github/quality/scripts/fabric_git_dispatch.py) — GitHub Actions workflow_dispatch to the private Self-Runner, pinned to exact Healthcare main SHA; no retry or cloud mutation.
+- [Dispatcher offline tests](../../../.github/quality/tests/test_fabric_git_dispatch.py) — validates repo/main/SHA guards, fixed destination and secret-safe error handling.
+- Private Self-Runner continues to own the Fabric OIDC, UpdateFromGit reconciliation, canonicalization analysis and independent deployed-definition readback. This trigger does not grant Environment Publish, Spark or Delta execution.

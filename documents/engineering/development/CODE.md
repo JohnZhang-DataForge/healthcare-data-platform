@@ -13,6 +13,7 @@ source_sha: 8e075bca130429c261a0f2cf245daef83ba8eebf
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
+| [`fabric_git_dispatch.py`](../../../.github/quality/scripts/fabric_git_dispatch.py) | [GITHUB ACTIONS MAIN PUSH] 固定目标 Self-Runner 私有 Workflow；校验 Healthcare main SHA、GitHub credential 不输出，禁止任何 Fabric/数据写入；只触发受保护的远端 CI。 |
 | [`check_shared_fabric_boundaries.py`](../../../.github/quality/scripts/check_shared_fabric_boundaries.py) | [STATIC CI] Shared/Fabric CODE-map ownership, forbidden provider/runtime imports, copied Contract and Local Contract SHA256 integrity |
 | [`check_component_code_map.py`](../../../.github/quality/scripts/check_component_code_map.py) | [STATIC CI] Git diff/tree 组件 CODE.md 全量导航和新增/删除同步 CI Gate（本 PR 扩展） |
 | [`check_documentation_links.py`](../../../.github/quality/scripts/check_documentation_links.py) | [STATIC CI] 所有 tracked Markdown 相对文件/目录链接完整性检测（离线、仅路径） |

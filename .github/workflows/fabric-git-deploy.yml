@@ -1,0 +1,68 @@
+name: Healthcare Fabric Git Deploy
+
+# Healthcare owns *when* to deploy; the private Self-Runner owns the Fabric
+# OIDC identity, immutable-source verification, UpdateFromGit and readback.
+# A public repository CANNOT call a private reusable workflow directly.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py'
+      - 'azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/pipeline-content.json'
+      - '.github/workflows/fabric-git-deploy.yml'
+      - '.github/quality/scripts/fabric_git_dispatch.py'
+      - '.github/quality/tests/test_fabric_git_dispatch.py'
+  pull_request:
+    paths:
+      - '.github/workflows/fabric-git-deploy.yml'
+      - '.github/quality/scripts/fabric_git_dispatch.py'
+      - '.github/quality/tests/test_fabric_git_dispatch.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: healthcare-to-private-fabric-dispatch-main
+  cancel-in-progress: false
+
+jobs:
+  offline-contract:
+    name: Validate dispatch target, main/SHA gate, and secret isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Offline dispatch security tests (no GitHub/Fabric API)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s .github/quality/tests -p 'test_fabric_git_dispatch.py' -v
+
+  dispatch-private-runner:
+    name: Trigger audited Self-Runner Fabric Git deployment
+    if: >-
+      github.repository == 'JohnZhang-DataForge/healthcare-data-platform' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: offline-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted Healthcare main dispatch implementation
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Dispatch exact Healthcare main commit to private Self-Runner
+        shell: bash
+        env:
+          SELF_RUNNER_WORKFLOW_DISPATCH_TOKEN: ${{ secrets.SELF_RUNNER_WORKFLOW_DISPATCH_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          python3 .github/quality/scripts/fabric_git_dispatch.py
