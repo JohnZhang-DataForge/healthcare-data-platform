@@ -52,10 +52,10 @@ jobs:
           set -euo pipefail
           "$RUNNER_TEMP/shared-env/bin/pip" install --no-index --no-deps --force-reinstall dist/*.whl
           cd "$RUNNER_TEMP"
-          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.0"; print("WHEEL_IMPORT_PASS",h.__version__,h.__file__)'
+          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.1"; print("WHEEL_IMPORT_PASS",h.__version__,h.__file__)'
       - uses: actions/upload-artifact@v4
         with:
-          name: healthcare-data-engine-0.1.0-wheel-sha
+          name: healthcare-data-engine-0.1.1-wheel-sha
           path: |
             dist/*.whl
             dist/SHA256SUMS
@@ -97,6 +97,26 @@ jobs:
           python -m pip install 'pyspark==4.1.1'
           python -m unittest discover -s shared-data-engine/tests -p 'test_spark_dataframe.py' -v
           echo 'FABRIC_P3_PY313_SPARK41_OFFLINE_DATAFRAME=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Build and pip-install version 0.1.1 Wheel on Python 3.13
+        shell: bash
+        env:
+          SOURCE_DATE_EPOCH: '1704067200'
+        run: |
+          set -euo pipefail
+          python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1'
+          mkdir -p "$RUNNER_TEMP/fabric-p3-py313-wheel"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/fabric-p3-py313-wheel" ./shared-data-engine
+          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP"/fabric-p3-py313-wheel/healthcare_data_engine-0.1.1-py3-none-any.whl
+          cd "$RUNNER_TEMP"
+          PYTHONPATH= python - <<'PY'
+          import healthcare_data_engine as h
+          from importlib import metadata
+          assert h.__version__ == "0.1.1", h.__version__
+          assert metadata.version("healthcare-data-engine") == "0.1.1"
+          assert metadata.metadata("healthcare-data-engine")["Requires-Python"] == ">=3.10,<3.14"
+          print("FABRIC_P3_PY313_WHEEL_INSTALL_IMPORT=PASS", h.__version__)
+          PY
+          echo 'FABRIC_P3_PY313_WHEEL_INSTALL_IMPORT=PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Inspect packaging metadata separately from source import
         shell: bash
         run: |
@@ -109,11 +129,12 @@ jobs:
           print("FABRIC_RUNTIME_2_TARGET_PYTHON=3.13")
           print("SOURCE_PACKAGE_VERSION=" + project["version"])
           print("SOURCE_REQUIRES_PYTHON=" + spec)
-          if spec == ">=3.10,<3.13":
-              outcome = "HOLD_PYTHON313_EXCLUDED_BY_PACKAGE_METADATA"
+          if spec == ">=3.10,<3.14" and project["version"] == "0.1.1":
+              outcome = "PYTHON313_WHEEL_METADATA_ALLOWED"
           else:
-              outcome = "METADATA_CHANGED_REQUIRES_NEW_WHEEL_REVIEW"
+              outcome = "HOLD_RELEASE_METADATA_UNREVIEWED"
           print("FABRIC_P3_PACKAGE_METADATA=" + outcome)
+          assert outcome == "PYTHON313_WHEEL_METADATA_ALLOWED"
           with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a") as summary:
               summary.write("Fabric Runtime 2.0 uses Python 3.13.\\n")
               summary.write("Packaging metadata: **" + outcome + "**.\\n")
