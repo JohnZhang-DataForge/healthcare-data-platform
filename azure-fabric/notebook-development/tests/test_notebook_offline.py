@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 from pyspark.sql import SparkSession, functions as F
 from healthcare_data_engine import BatchContext, SourceObject
@@ -127,6 +128,20 @@ class OfflineSparkCanonical(unittest.TestCase):
                                     source_objects=(source,),
                                     patient_contract_bytes=PATIENT.read_bytes(),
                                     encounter_contract_bytes=ENCOUNTER.read_bytes())
+
+    def test_engine_011_published_version_required_and_legacy_010_rejected(self):
+        # The business Adapter contract remains independently versioned at
+        # 0.1.0; the PACKAGE version must match Fabric Environment 0.1.1.
+        self.assertEqual(ingest.engine_version, "0.1.1")
+        ctx, manifest, obj = make_batch()
+        with patch.dict(ingest.prepare_batch.__globals__, {"engine_version": "0.1.0"}):
+            with self.assertRaisesRegex(ValueError, "SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH"):
+                self.prepared(ctx, manifest, obj)
+        # Return to actual Wheel 0.1.1, and verify synthetic canonical output
+        # maintains its separate data-record adapter_version contract 0.1.0.
+        batch = self.prepared(ctx, manifest, obj)
+        self.assertEqual(batch.patient_df.select("adapter_version").first()[0], "0.1.0")
+        self.assertEqual(batch.encounter_df.select("adapter_version").first()[0], "0.1.0")
 
     def test_synthetic_patient_encounter_spark_schema_pk_fk_and_readback(self):
         ctx, manifest, source = make_batch()

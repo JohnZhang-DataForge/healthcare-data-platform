@@ -29,6 +29,18 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertNotIn("def execute_native_notebook(", candidate)
         self.assertNotIn("write_authorized = True", content)
 
+    def test_p3_engine_package_011_is_distinct_from_adapter_record_010(self):
+        content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
+        self.assertEqual(content.count('if engine_version != "0.1.1":'), 1)
+        self.assertNotIn('if engine_version != "0.1.0":', content)
+        self.assertIn('(F.col("adapter_version") != "0.1.0")', content)
+        # Engine is a published dependency version; adapter_version is the
+        # serialized FHIR canonical record version, not package metadata.
+        self.assertIn('run_mode = "HALT"', content)
+        self.assertIn('write_authorized = False', content)
+        self.assertIn('retention_preflight_verified = False', content)
+        self.assertIn('HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED', content)
+
     def test_native_notebook_fabric_cell_source_round_trip_structure(self):
         # Git-aware Notebook parser requires a metadata JSON block per cell.
         # Python syntax alone would not catch a malformed FabricGitSource.
