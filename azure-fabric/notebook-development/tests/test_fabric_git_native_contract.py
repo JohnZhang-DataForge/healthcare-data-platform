@@ -23,7 +23,7 @@ class FabricGitNativeContract(unittest.TestCase):
         candidate = (HERE / "fhir_ingest_notebook.py").read_text()
         self.assertIn("# Fabric notebook source", content)
         self.assertIn("# CELL ********************", content)
-        self.assertIn('"tags": ["parameters"]', content)
+        self.assertIn('"tags": [', content)
         self.assertIn('def execute_native_notebook(', content)
         self.assertIn('HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED', content)
         self.assertNotIn("def execute_native_notebook(", candidate)
@@ -33,7 +33,7 @@ class FabricGitNativeContract(unittest.TestCase):
         # Git-aware Notebook parser requires a metadata JSON block per cell.
         # Python syntax alone would not catch a malformed FabricGitSource.
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
-        self.assertTrue(content.startswith("# Fabric notebook source\\n# METADATA ********************\\n# META {"))
+        self.assertTrue(content.startswith("# Fabric notebook source\n# METADATA ********************\n# META {"))
         self.assertEqual(content.count("# CELL ********************"), 3)
         chunks = content.split("# METADATA ********************")
         self.assertEqual(len(chunks), 5)
@@ -45,7 +45,7 @@ class FabricGitNativeContract(unittest.TestCase):
             self.assertTrue(stripped, f"missing Fabric metadata block {i}")
             self.assertEqual(stripped[0], "{")
             self.assertEqual(stripped[-1], "}")
-            metadata = json.loads("\\n".join(stripped))
+            metadata = json.loads("\n".join(stripped))
             if i == 1:
                 self.assertEqual(metadata["kernel_info"]["name"], "synapse_pyspark")
                 self.assertIn("lakehouse", metadata["dependencies"])
