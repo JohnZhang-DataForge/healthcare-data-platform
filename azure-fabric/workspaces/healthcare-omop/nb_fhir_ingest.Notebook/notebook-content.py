@@ -181,7 +181,7 @@ def prepare_batch(spark, *, context: BatchContext, manifest_bytes: bytes,
                   source_objects: Iterable[SourceObject],
                   patient_contract_bytes: bytes, encounter_contract_bytes: bytes) -> PreparedBatch:
     """Offline-executable conversion using injected SparkSession, no persisted output."""
-    if engine_version != "0.1.0":
+    if engine_version != "0.1.1":
         raise ValueError("SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH")
     objects = tuple(source_objects)
     receipts = verify_source_objects(manifest_bytes, objects, context)
