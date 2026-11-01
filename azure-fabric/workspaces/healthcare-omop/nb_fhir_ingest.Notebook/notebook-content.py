@@ -369,7 +369,7 @@ def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: byt
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
-# CELL ********************
+# PARAMETERS CELL ********************
 run_mode = "HALT"
 write_authorized = False
 retention_preflight_verified = False

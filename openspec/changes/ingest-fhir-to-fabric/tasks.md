@@ -143,3 +143,5 @@
 - The review branch must run Native contract SHA/Wheel integrity and owner-map CI, merge by PR to Main, then remain **HOLD_ENVIRONMENT_PUBLISH_AND_EFFECTIVE_LIBRARY_READBACK** until Fabric manual switch/publish and independent API proof.
 
 - [ ] 4.19 [Git-first correction after actual Fabric Workspace main switch] Normalize Native `pl_fhir_ingest.DataPipeline/pipeline-content.json` to Notebook `.platform.config.logicalId` + current-workspace zero GUID + documented `typeProperties.parameters`, add fail-closed unit contracts, review the separate Notebook change, and deploy through Git only after no-conflict verification; do not auto-Commit/Undo workspace changes or execute Spark.
+
+- [ ] 4.20 [2026-10-31 live Fabric Git import investigation] Fix confirmed noncanonical Notebook parameter-cell marker (# PARAMETERS CELL instead of generic # CELL) and offline contract. The live Notebook still exports mostly empty; do NOT interpret this static fix as proof of the missing business-code root cause, and do NOT deploy until read-only GetDefinition and a minimal valid Git-to-Fabric round-trip are verified. Protect Git main from Workspace Changes commits.
