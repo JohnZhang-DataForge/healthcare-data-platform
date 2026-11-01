@@ -1,0 +1,121 @@
+name: Fabric P3 Native Wheel Git Staging (review branch only)
+
+# Trusted main push of this exact workflow creates a Git review branch.
+# No Fabric authentication, Publish API, Notebook run, or data-write scope.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fabric-p3-native-wheel-staging.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fabric-p3-native-wheel-staging
+  cancel-in-progress: false
+
+jobs:
+  stage-wheel-in-review-branch:
+    if: github.repository == 'JohnZhang-DataForge/healthcare-data-platform' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      SOURCE_DATE_EPOCH: '1704067200'
+      OLD_SHA256: '603f1051898ebdd2da1a8127606248dc832af4f64a453386955afcb8dcf945a7'
+      EXPECTED_WHEEL_SHA256: '4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3'
+      STAGING_BRANCH: feature/fabric-p3-native-wheel-${{ github.run_id }}
+      WHEEL_DIR: azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries
+      OLD_WHEEL: healthcare_data_engine-0.1.0-py3-none-any.whl
+      NEW_WHEEL: healthcare_data_engine-0.1.1-py3-none-any.whl
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail closed before any file change
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$(git branch --show-current)" = 'main'
+          test "$(git status --porcelain | wc -l)" = 0
+          test -f "$WHEEL_DIR/$OLD_WHEEL"
+          test ! -e "$WHEEL_DIR/$NEW_WHEEL"
+          test "$(find "$WHEEL_DIR" -maxdepth 1 -type f -name '*.whl' | wc -l)" = 1
+          echo "$OLD_SHA256  $WHEEL_DIR/$OLD_WHEEL" | sha256sum --check
+          grep -q '^version = "0.1.1"$' shared-data-engine/pyproject.toml
+          grep -q '^requires-python = ">=3.10,<3.14"$' shared-data-engine/pyproject.toml
+          test -f documents/systems/azure-fabric/environments/CODE.md
+          test -f openspec/changes/fabric-environment-wheel-release/tasks.md
+      - name: Build reviewed sole 0.1.1 wheel twice and verify immutable digest
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check 'setuptools==75.8.2' 'wheel==0.45.1'
+          mkdir -p "$RUNNER_TEMP/fabric-p3-wheel" "$RUNNER_TEMP/fabric-p3-wheel-repeat"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/fabric-p3-wheel" ./shared-data-engine
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/fabric-p3-wheel-repeat" ./shared-data-engine
+          cmp "$RUNNER_TEMP/fabric-p3-wheel/$NEW_WHEEL" "$RUNNER_TEMP/fabric-p3-wheel-repeat/$NEW_WHEEL"
+          echo "$EXPECTED_WHEEL_SHA256  $RUNNER_TEMP/fabric-p3-wheel/$NEW_WHEEL" | sha256sum --check
+          echo 'FABRIC_P3_STAGING_SOURCE_WHEEL_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Create review-only branch; replace one wheel and update CODE and OpenSpec
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git switch -c "$STAGING_BRANCH"
+          git rm -- "$WHEEL_DIR/$OLD_WHEEL"
+          cp "$RUNNER_TEMP/fabric-p3-wheel/$NEW_WHEEL" "$WHEEL_DIR/$NEW_WHEEL"
+          echo "$EXPECTED_WHEEL_SHA256  $WHEEL_DIR/$NEW_WHEEL" | sha256sum --check
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          old = os.environ["OLD_WHEEL"]
+          new = os.environ["NEW_WHEEL"]
+          old_hash = os.environ["OLD_SHA256"]
+          new_hash = os.environ["EXPECTED_WHEEL_SHA256"]
+          branch = os.environ["STAGING_BRANCH"]
+          code = Path("documents/systems/azure-fabric/environments/CODE.md")
+          s = code.read_text(encoding="utf-8")
+          if s.count(old) != 2 or s.count(old_hash) != 1 or new in s or new_hash in s:
+              raise SystemExit("HOLD_P3_CODE_MAP_UNEXPECTED_CURRENT_STATE")
+          s = s.replace(old, new).replace(old_hash, new_hash)
+          old_state = "Staging 文件名已云端读回，Published 有效文件仍未证实"
+          if s.count(old_state) != 1:
+              raise SystemExit("HOLD_P3_CODE_MAP_STAGING_STATE_MISSING")
+          s = s.replace(old_state, "0.1.1 仅在 Git 审阅分支中；Fabric 0.1.1 Staging/Published 尚未读回")
+          s += "\n**P3 0.1.1 Git-only 审阅候选：** 本分支将旧 0.1.0 Wheel 替换为唯一 0.1.1 Wheel（SHA256 `" + new_hash + "`）。合并前不是 Git main，也不是 Fabric staging；合并后仍需要独立 readback。Environment Publish、Notebook binding 和 Spark import 均保持 HOLD。\n"
+          code.write_text(s, encoding="utf-8")
+          tasks = Path("openspec/changes/fabric-environment-wheel-release/tasks.md")
+          t = tasks.read_text(encoding="utf-8")
+          lines = t.splitlines()
+          found = [i for i, line in enumerate(lines) if line.startswith("- [ ] 2.5 ")]
+          if len(found) != 1:
+              raise SystemExit("HOLD_P3_OPEN_SPEC_TASK_2_5_NOT_UNIQUE")
+          lines[found[0]] = (
+              "- [ ] 2.5 **Git review branch staged, NOT MERGED/NOT PUBLISHED**："
+              + "`" + branch + "` 从 main 以 pinned SHA256 `" + new_hash + "` 构建并替换唯一 CustomLibraries Wheel 0.1.0 → 0.1.1；"
+              + "旧 Wheel SHA 校验通过，新的 CODE map 同步；待独立 PR、CI 和人工核实后合并。"
+              + "即使合并 Git 也只证明声明式 staging，云端 readback/Publish/Notebook binding 仍 HOLD。"
+          )
+          tasks.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+          test "$(find "$WHEEL_DIR" -maxdepth 1 -type f -name '*.whl' | wc -l)" = 1
+          git add -A -- "$WHEEL_DIR" documents/systems/azure-fabric/environments/CODE.md openspec/changes/fabric-environment-wheel-release/tasks.md
+          test "$(git diff --cached --name-only | wc -l)" = 4
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(fabric): stage immutable 0.1.1 Wheel in native Environment review branch'
+          git push origin "HEAD:refs/heads/$STAGING_BRANCH"
+          {
+            echo "### P3 immutable Wheel staged in Git review branch"
+            echo "Branch: $STAGING_BRANCH"
+            echo "Source main HEAD: $GITHUB_SHA"
+            echo "Wheel SHA256: $EXPECTED_WHEEL_SHA256"
+            echo "Fabric API calls: none; Environment Publish: NOT_RUN"
+          } >> "$GITHUB_STEP_SUMMARY"
