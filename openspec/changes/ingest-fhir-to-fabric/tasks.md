@@ -189,3 +189,9 @@
 
 - [x] 4.24 Trigger private Self-Runner on Healthcare main push, with CI and source SHA validation.
 - [ ] Verify the configured dispatch secret with a real private Runner invocation before release.
+
+### 4.25 Healthcare push-to-Fabric event-driven E2E smoke
+
+- [x] 4.25 Add one inert comment to the existing Native Notebook in a review branch to exercise the Healthcare main-push dispatcher without changing runtime logic or HALT safety parameters.
+- [ ] After reviewed merge, verify the Healthcare push dispatches the exact Commit SHA to private Self-Runner, UpdateFromGit succeeds, Fabric Notebook code and Pipeline safe parameters read back, and a repeat is no-write.
+- [ ] Do not infer Environment Publish, Spark execution or Delta data writes from this transport test.
