@@ -184,3 +184,8 @@
 - [ ] Prove on trusted Self-Runner that a reviewed GitHub main update is imported by UpdateFromGit after exact last-synced semantic validation of known Fabric serialization-only drift; verify remote Git commit, 3 Notebook code cells, smoke comment, both FabricGitSource/ipynb, Pipeline safe parameters and physical references. Mark HOLD until actual cloud readback succeeds.
 - [ ] Do not infer any Environment Wheel publication, Notebook execution or Spark/Delta E2E success from transport smoke.
 - [ ] Preserve the Git-first Notebook serialization contract and do not copy the physical runtime Notebook ID into Pipeline Git source during the transport proof.
+
+### 4.24 Git-to-Fabric push dispatch
+
+- [x] 4.24 Trigger private Self-Runner on Healthcare main push, with CI and source SHA validation.
+- [ ] Verify the configured dispatch secret with a real private Runner invocation before release.
