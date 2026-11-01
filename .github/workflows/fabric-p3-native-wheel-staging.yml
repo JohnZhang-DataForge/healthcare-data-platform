@@ -109,7 +109,39 @@ jobs:
           PY
           test "$(find "$WHEEL_DIR" -maxdepth 1 -type f -name '*.whl' | wc -l)" = 1
           git add -A -- "$WHEEL_DIR" documents/systems/azure-fabric/environments/CODE.md openspec/changes/fabric-environment-wheel-release/tasks.md
-          test "$(git diff --cached --name-only | wc -l)" = 4
+          # Be explicit about Git's optional rename detection: two Wheel paths must be A/D.
+          git diff --cached --name-status --no-renames
+          actual="$(git diff --cached --name-only --no-renames | wc -l)"
+          if [ "$actual" -ne 4 ]; then
+            echo "HOLD_P3_UNEXPECTED_STAGED_PATH_COUNT=$actual" >&2
+            exit 1
+          fi
+          git diff --cached --name-status --no-renames | grep -F 
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(fabric): stage immutable 0.1.1 Wheel in native Environment review branch'
+          git push origin "HEAD:refs/heads/$STAGING_BRANCH"
+          {
+            echo "### P3 immutable Wheel staged in Git review branch"
+            echo "Branch: $STAGING_BRANCH"
+            echo "Source main HEAD: $GITHUB_SHA"
+            echo "Wheel SHA256: $EXPECTED_WHEEL_SHA256"
+            echo "Fabric API calls: none; Environment Publish: NOT_RUN"
+          } >> "$GITHUB_STEP_SUMMARY"
+D\t'"$WHEEL_DIR/$OLD_WHEEL"
+          git diff --cached --name-status --no-renames | grep -F 
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(fabric): stage immutable 0.1.1 Wheel in native Environment review branch'
+          git push origin "HEAD:refs/heads/$STAGING_BRANCH"
+          {
+            echo "### P3 immutable Wheel staged in Git review branch"
+            echo "Branch: $STAGING_BRANCH"
+            echo "Source main HEAD: $GITHUB_SHA"
+            echo "Wheel SHA256: $EXPECTED_WHEEL_SHA256"
+            echo "Fabric API calls: none; Environment Publish: NOT_RUN"
+          } >> "$GITHUB_STEP_SUMMARY"
+A\t'"$WHEEL_DIR/$NEW_WHEEL"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'feat(fabric): stage immutable 0.1.1 Wheel in native Environment review branch'
