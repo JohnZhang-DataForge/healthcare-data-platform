@@ -1,26 +1,26 @@
 ---
 status: active
 scope: azure-fabric-notebooks-overview
-last_verified: 2026-10-16
-source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
+last_verified: 2026-11-01
+source_sha: 9e667468e278f68c3b26f7eb46b81e58b87bf119
 ---
 
-# Fabric Notebooks — 快照校验与 Delta 加载
+# Fabric Notebooks — Git-first 原生代码、数据质量与运行门禁
 
-Notebooks 组件属于现有的 `healthcare-omop` Fabric Workspace。未来真正的 Fabric 原生 Notebook Item 源码保存在 [`azure-fabric/workspaces/healthcare-omop/notebooks/`](../../../../azure-fabric/workspaces/healthcare-omop/notebooks/)，其中 `ingestion/` 用于组织云端数据接入 Notebook。
+真实 P2 Notebook 是 Fabric Workspace **healthcare-omop** 的 **nb_fhir_ingest.Notebook**，Git Native 源码位于 [notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py)。它包含 FHIR R4 Patient/Encounter 的 Manifest/SHA 校验、Shared Engine Canonical 处理、Bronze/Silver Delta staging、隔离区、幂等控制与物理读回审查，当前默认 **HALT**，不可直接进行写入业务运行。
 
-## 组件职责
+早期的 notebooks/ingestion/.gitkeep 是遗留占位目录，不是实际 Fabric Native Item。历史 Terraform Notebook Bootstrap 仅用于基础设施占位，不属于现行业务权威代码。
 
-未来 Notebook 从 Data Pipeline 接收 `export_id` 和 `manifest_uri`，读取**已由本地 PostgreSQL 导出**并发布至 Azure Blob 的 OMOP 快照，核验 Manifest 状态、文件哈希、行数、Schema、主键唯一性及外键关系，完成有失败保护、可重跑的 OneLake Delta 加载。
+## 已完成的源文件部署验收
 
-Notebook **不重新执行**本地 Synthea、Canonical 或 OMOP 映射。Pipeline 负责编排；Notebook 负责 PySpark 数据处理和内部数据质量检查；最终跨平台独立对账属于另外的验收能力。
+- Git main 修复提交 **9e667468**（[PR #576](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/576)）仅补全 FabricGitSource 的 13 行规范分隔空行，没有改 P2 业务逻辑。
+- 用户通过 Fabric Source control 选择 incoming changes 并更新；[Self-Runner Run #41262254996](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41262254996) 的真实只读 GetDefinition：FabricGitSource **20,053 B**，ipynb **21,689 B / 3 code cells**，业务函数、参数标记与 HALT 存在，Pipeline 安全参数 PASS。
+- 这是**Notebook 定义同步 PASS**，不代表 Environment 自定义 Wheel 已有效 Published、Notebook 已绑定可运行依赖或 Silver 数据 E2E 已完成。
 
-## 当前状态与未来源码
+## 必须遵守的开发方式
 
-**当前状态：业务 Notebook 尚未开发。** `ingestion/` 目前只有 `.gitkeep`，没有真正的 `*.Notebook/` Item，且仓库目录本身不证明 Fabric Git Integration 已连接。
+新增或修改原生 Notebook 之前，先读 [Fabric Native Git Authoring Runbook](FABRIC-GIT-AUTHORING-RUNBOOK.md)。它记录了 Fabric 在紧凑单元格分隔排版下丢失整个业务代码的已复现故障、规范 Cell/Parameters Cell/META 示例、Pipeline logicalId/参数和 Environment 的 Staging/Published 区别。
 
-现有 [Terraform Notebook Bootstrap](../../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) 会故意抛出 `RuntimeError`，属于基础设施的安全占位代码，**不属于此处未来的业务 Notebook 源码**。
+发布应严格分层：Git 代码/CI → 人工审查 Update from Git → 双格式云端 Definition 读回 → Environment Published Wheel/Notebook Binding → 非写入 Smoke → 经授权的 Delta E2E。禁止将 Git 同步、CI 绿色或 Pipeline success 等同于业务完成。
 
-开始接入真实 Item 时，须保留 Fabric 生成的 `.platform`、`notebook-content.py` 等真实文件，核对现有 Notebook GUID、Runtime 和授权，并确定由 Fabric Git 还是 Terraform 负责部署，避免双重管理。不能为了补齐目录而手工伪造 Item 元数据。
-
-**相关入口：** [Notebooks CODE.md](CODE.md) · [Pipelines](../pipelines/README.md) · [Azure/Fabric 系统](../README.md) · [Azure/Fabric 总源码地图](../CODE.md)。
+**源码和导航：** [Notebooks CODE](CODE.md) · [Pipelines](../pipelines/README.md) · [Environments CODE](../environments/CODE.md) · [Azure/Fabric 总源码地图](../CODE.md) · [OpenSpec P2](../../../../openspec/changes/ingest-fhir-to-fabric/design.md)。
