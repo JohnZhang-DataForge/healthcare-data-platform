@@ -83,6 +83,20 @@ jobs:
           python -c 'import healthcare_data_engine as h; print("FABRIC_P3_PY313_PURE_IMPORT_PASS", h.__version__)'
           python -m unittest discover -s shared-data-engine/tests -p 'test_fhir_r4_contract.py' -v
           echo 'FABRIC_P3_PY313_PURE_SYNTHETIC_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Validate pure package Spark DataFrame contract with PySpark 4.1 and Python 3.13
+        shell: bash
+        env:
+          PYTHONPATH: shared-data-engine/src
+          SPARK_LOCAL_HOSTNAME: localhost
+        run: |
+          set -euo pipefail
+          python -m pip install 'pyspark==4.1.1'
+          python -m unittest discover -s shared-data-engine/tests -p 'test_spark_dataframe.py' -v
+          echo 'FABRIC_P3_PY313_SPARK41_OFFLINE_DATAFRAME=PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Inspect packaging metadata separately from source import
         shell: bash
         run: |
