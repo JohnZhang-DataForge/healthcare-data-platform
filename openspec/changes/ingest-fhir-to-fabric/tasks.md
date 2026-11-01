@@ -172,7 +172,7 @@
 
 ### 4.22 Fabric Native Git authoring lessons and regression prevention — 2026-11-01
 
-- [x] 4.22 Record the actual Fabric Notebook source-loss incident, isolated canonical/compact/ipynb reproduction, corrective PR #576, and live BOTH_FULL GetDefinition readback in [Fabric Native Git Authoring Runbook](../../../../documents/systems/azure-fabric/notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md).
+- [x] 4.22 Record the actual Fabric Notebook source-loss incident, isolated canonical/compact/ipynb reproduction, corrective PR #576, and live BOTH_FULL GetDefinition readback in [Fabric Native Git Authoring Runbook](../../../documents/systems/azure-fabric/notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md).
 - [x] Link the runbook from Notebook/Environment CODE maps and replace the obsolete “business Notebook not developed / Wheel not in Git” documentation.
 - [x] Preserve existing offline contract checks for canonical separators, PARAMETERS CELL / META JSON, sole business implementation, .platform logicalId and Pipeline HALT; cloud readback remains an independent gate.
 - [ ] Environment latest custom Wheel effective Published listing/hash and Notebook attachment remain HOLD; Spark execution and Delta E2E remain NOT_RUN. Do not infer these from the user-visible Publish success alone.
