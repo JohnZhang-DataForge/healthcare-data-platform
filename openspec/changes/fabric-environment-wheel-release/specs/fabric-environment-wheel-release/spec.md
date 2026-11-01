@@ -25,3 +25,11 @@
 - **GIVEN** 使用既有绑定到 Self-Runner/main 的安全 OIDC 只读工作流
 - **WHEN** 收集 Environment 与 Notebook 元数据
 - **THEN** 不得调用 Publish、UpdateDefinition、Run Notebook 或业务数据 I/O；输出不含 Secrets、Wheel 原始字节或 Notebook 正文
+
+### Requirement: Validate package compatibility with the selected Fabric Spark runtime
+当前运行目标 Runtime 2.0 SHALL 与 Wheel `Requires-Python`、Spark/PySpark 和依赖版本相容。源代码可在 Python 3.13 导入不等于可安装 Wheel：版本声明、构建文件及实际运行时测试 MUST 单独验证。若现有 `requires-python = ">=3.10,<3.13"`，Python 3.13 发布 SHALL 被阻断。
+
+#### Scenario: Wheel excludes the target Runtime 2.0 Python
+- **GIVEN** Environment `runtime_version: 2.0` 要求 Python 3.13
+- **WHEN** Git 唯一 Shared Wheel 的 `Requires-Python` 上限小于 3.13
+- **THEN** 系统 MUST 标记发布阻断，并要求通过新的、可追溯的兼容性发行版；不得以旧 Wheel 的 Python 3.11 测试或云端 Staging 名称作为兼容证明
