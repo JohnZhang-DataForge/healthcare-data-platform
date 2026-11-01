@@ -183,3 +183,4 @@
 - [x] 4.23 Introduce one inert Notebook code-cell comment as a Git Native source transport marker, without changing business logic, .platform identity, Parameters Cell metadata, Pipeline configuration, HALT gates, Environment or any data writes. Source-of-truth remains Healthcare GitHub main.
 - [ ] Prove on trusted Self-Runner that a reviewed GitHub main update is imported by UpdateFromGit after exact last-synced semantic validation of known Fabric serialization-only drift; verify remote Git commit, 3 Notebook code cells, smoke comment, both FabricGitSource/ipynb, Pipeline safe parameters and physical references. Mark HOLD until actual cloud readback succeeds.
 - [ ] Do not infer any Environment Wheel publication, Notebook execution or Spark/Delta E2E success from transport smoke.
+- [ ] Preserve the Git-first Notebook serialization contract and do not copy the physical runtime Notebook ID into Pipeline Git source during the transport proof.
