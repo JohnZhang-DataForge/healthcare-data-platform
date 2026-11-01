@@ -18,6 +18,27 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertEqual(result.state, "HOLD_NATIVE_RUNTIME_DEPLOYMENT")
         self.assertEqual(len(result.reasons), 1)
 
+    def test_git_native_notebook_references_published_same_workspace_environment(self):
+        nb = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
+        top = nb.split("# CELL ********************", 1)[0]
+        metadata_lines = [line[len("# META "):] for line in top.splitlines()
+                          if line.startswith("# META ")]
+        metadata = json.loads("\n".join(metadata_lines))
+        binding = metadata["dependencies"]["environment"]
+        env_platform = json.loads(
+            (GIT_ROOT / "env_healthcare.Environment/.platform").read_text())
+        # Fabric Git Integration uses same-workspace logical IDs, not the
+        # physical Environment GUID returned by the REST API.
+        self.assertEqual(binding, {
+            "environmentId": env_platform["config"]["logicalId"],
+            "workspaceId": "00000000-0000-0000-0000-000000000000"
+        })
+        self.assertEqual(env_platform["metadata"]["displayName"], "env_healthcare")
+        self.assertIn('if engine_version != "0.1.1":', nb)
+        self.assertIn('run_mode = "HALT"', nb)
+        self.assertIn("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED", nb)
+        self.assertNotIn("write_authorized = True", nb)
+
     def test_native_notebook_contains_one_business_implementation(self):
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
         candidate = (HERE / "fhir_ingest_notebook.py").read_text()
