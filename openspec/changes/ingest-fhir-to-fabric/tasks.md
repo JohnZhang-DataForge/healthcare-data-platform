@@ -181,17 +181,23 @@
 ### 4.23 Guarded Git-to-Fabric native Notebook transport smoke — 2026-11-01
 
 - [x] 4.23 Introduce one inert Notebook code-cell comment as a Git Native source transport marker, without changing business logic, .platform identity, Parameters Cell metadata, Pipeline configuration, HALT gates, Environment or any data writes. Source-of-truth remains Healthcare GitHub main.
-- [ ] Prove on trusted Self-Runner that a reviewed GitHub main update is imported by UpdateFromGit after exact last-synced semantic validation of known Fabric serialization-only drift; verify remote Git commit, 3 Notebook code cells, smoke comment, both FabricGitSource/ipynb, Pipeline safe parameters and physical references. Mark HOLD until actual cloud readback succeeds.
-- [ ] Do not infer any Environment Wheel publication, Notebook execution or Spark/Delta E2E success from transport smoke.
-- [ ] Preserve the Git-first Notebook serialization contract and do not copy the physical runtime Notebook ID into Pipeline Git source during the transport proof.
+- [x] Trusted Self-Runner completed reviewed GitHub Notebook import with last-synced canonicalization checks, 3 full Notebook code cells, ipynb/FabricGitSource, safe Pipeline parameters and physical references; evidence Run #41304159509 and independent readback Run #41303691776.
+- [x] Maintain release separation: Environment Wheel effective publication, Notebook execution and Spark/Delta E2E were NOT validated by this transport smoke.
+- [x] Preserve Git logical Notebook ID / zero Workspace placeholder and keep physical IDs only in Fabric runtime, verified by cloud definition readback.
 
 ### 4.24 Git-to-Fabric push dispatch
 
 - [x] 4.24 Trigger private Self-Runner on Healthcare main push, with CI and source SHA validation.
-- [ ] Verify the configured dispatch secret with a real private Runner invocation before release.
+- [x] Configured dispatch secret accepted Healthcare push commit d4e7bd80 and started private Self-Runner Run #41311668606; original deployment was no-write for docs-only update.
 
 ### 4.25 Healthcare push-to-Fabric event-driven E2E smoke
 
 - [x] 4.25 Add one inert comment to the existing Native Notebook in a review branch to exercise the Healthcare main-push dispatcher without changing runtime logic or HALT safety parameters.
-- [ ] After reviewed merge, verify the Healthcare push dispatches the exact Commit SHA to private Self-Runner, UpdateFromGit succeeds, Fabric Notebook code and Pipeline safe parameters read back, and a repeat is no-write.
-- [ ] Do not infer Environment Publish, Spark execution or Delta data writes from this transport test.
+- [x] Healthcare main commit 8188cddc auto-dispatched private Self-Runner Run #41311994774; UpdateFromGit and cloud Notebook/Pipeline readback PASS (3 cells, code match, safe parameters); immediate rerun was CANONICAL_SERIALIZATION_ONLY_NO_WRITE.
+- [x] Keep Environment Publish, Spark execution and Delta write release gates separately HOLD; the event-driven transport test performed none of these operations.
+
+### 4.26 Event-driven Git transport closeout — 2026-11-01
+
+- [x] 4.26 Official chain: Healthcare `push main` → SHA-pinned GitHub Actions dispatch → private Self-Runner Fabric Git Auto Update → native definition readback; successful E2E Cloud run #41311994774.
+- [x] Repeat private Runner run was no-write, proving Git-to-Fabric idempotency after deployment; Self-Runner workflow fallback polling reduced from twice hourly to daily in PR #381.
+- [ ] Environment Wheel effective publish, Notebook Spark execution, Fabric capacity/runtime and Delta transformations must use independent approvals and acceptance tests; transport PASS never releases them.
