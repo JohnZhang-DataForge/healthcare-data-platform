@@ -34,7 +34,8 @@ class FabricGitNativeContract(unittest.TestCase):
         # Python syntax alone would not catch a malformed FabricGitSource.
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
         self.assertTrue(content.startswith("# Fabric notebook source\n# METADATA ********************\n# META {"))
-        self.assertEqual(content.count("# CELL ********************"), 3)
+        self.assertEqual(content.count("# CELL ********************"), 2)
+        self.assertEqual(content.count("# PARAMETERS CELL ********************"), 1)
         chunks = content.split("# METADATA ********************")
         self.assertEqual(len(chunks), 5)
         for i, chunk in enumerate(chunks[1:], start=1):
@@ -55,6 +56,7 @@ class FabricGitNativeContract(unittest.TestCase):
                 if i == 3:
                     self.assertEqual(metadata.get("tags"), ["parameters"])
         self.assertIn("def execute_native_notebook(", chunks[1])
+        self.assertIn('# PARAMETERS CELL ********************', chunks[2])
         self.assertIn('run_mode = "HALT"', chunks[2])
         self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', chunks[3])
 
