@@ -1,5 +1,7 @@
 # Fabric notebook source
+
 # METADATA ********************
+
 # META {
 # META   "kernel_info": {
 # META     "name": "synapse_pyspark"
@@ -17,7 +19,9 @@
 # META     }
 # META   }
 # META }
+
 # CELL ********************
+
 """Git-native P2 FHIR Notebook; staged, not released for cloud writes."""
 from __future__ import annotations
 
@@ -365,11 +369,14 @@ def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: byt
                            batch.processing_version, batch.publication_id, _metrics(batch), ())
 
 # METADATA ********************
+
 # META {
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
+
 # PARAMETERS CELL ********************
+
 run_mode = "HALT"
 write_authorized = False
 retention_preflight_verified = False
@@ -377,7 +384,9 @@ request_id = ""
 manifest_json = ""
 source_root = ""
 silver_root = ""
+
 # METADATA ********************
+
 # META {
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark",
@@ -385,10 +394,14 @@ silver_root = ""
 # META     "parameters"
 # META   ]
 # META }
+
 # CELL ********************
+
 if __name__ == "__main__":
     raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
+
 # METADATA ********************
+
 # META {
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
