@@ -37,7 +37,7 @@ P1 的实际源码和测试逐文件列在下表，静态 CI 会阻止新增/移
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，固定版本 0.1.0 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，固定版本 0.1.1，支持 Python 3.13 的新候选版本；Fabric 仍暂存 0.1.0 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -53,5 +53,12 @@ P1 的实际源码和测试逐文件列在下表，静态 CI 会阻止新增/移
 | [tests/test_spark_dataframe.py](../../../../shared-data-engine/tests/test_spark_dataframe.py) | PySpark Schema、输出及两表 FK |
 | [requirements-test.txt](../../../../shared-data-engine/requirements-test.txt) | 固定 Python 3.11/PySpark 3.5.7/构建依赖 |
 | [README.md](../../../../shared-data-engine/README.md) | 构建、无网络安装、测试操作说明 |
+
+## P3 Python 3.13 兼容发行版候选（尚未上传 Fabric）
+
+- 版本候选 `0.1.1` 在 `pyproject.toml` 和公开 API `__version__` 同步，支持 Python 3.13。
+- 本地 Python 3.11 / PySpark 3.5.7 与 Fabric 2.0 Python 3.13 / PySpark 4.1.1 的测试分离执行。
+- 原有 Git Environment CustomLibraries `0.1.0` 是历史暂存版本；在新版源码 PR、确定性 Wheel SHA、离线安装验收、另行的 Wheel Git staging PR 全部通过前，不得直接更换 Fabric 运行环境。
+- 必须确保从旧 Wheel 过渡至新 Wheel 时只有一个 CustomLibraries 文件；任何 Fabric Publish/Notebook Binding 都需独立授权。
 
 CI 见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/shared-engine-wheel-validation.yml)，构建/安装证据只适用于该 PR HEAD 的测试版本；Fabric Publish 未授权。
