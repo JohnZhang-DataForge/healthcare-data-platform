@@ -134,6 +134,12 @@ jobs:
               CONFIG_KEYS, PublisherRuntimeBlocked, main)
           from apps.clinical_producers.azure_blob_publisher import (
               AzureSDKBlobBackend, publish_immutable)
+          from apps.clinical_producers.omop_snapshot_publisher import (
+              BLOB_PREFIX, MANIFEST_VERSION, publish_omop_dump)
+          from apps.clinical_producers.omop_snapshot_runtime import (
+              publish_from_stage)
+          assert BLOB_PREFIX == "omop/snapshots"
+          assert MANIFEST_VERSION == "healthcare-omop-blob-snapshot-v1"
           from apps.clinical_producers.oie_hl7_publisher import prepare_oie_hl7
           from apps.clinical_producers.oie_message_submit import (
               ScopedOIEPoster, submit_new_fhir_request)
@@ -159,6 +165,10 @@ jobs:
           echo "OIE_SCOPED_POST_RUNTIME_CLI_SMOKE=PASS"
           echo "OIE_FIFTY_PATIENT_BOUNDED_EVENTS_RELEASE=PASS"
           echo "PUBLISHER_HL7_RUNTIME_CLI_SMOKE=PASS"
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.omop_snapshot_runtime --help >/dev/null
+          echo "OMOP_SNAPSHOT_PUBLISHER_CLI_SMOKE=PASS"
           echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
           echo "AZURE_BLOB_REAL_UPLOAD=NO"
           echo "DW_SYNTHETIC_PVC_MOUNT=NO"
