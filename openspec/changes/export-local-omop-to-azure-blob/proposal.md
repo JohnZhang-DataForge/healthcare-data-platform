@@ -21,3 +21,7 @@
 - 业务源码与静态 Job 模板均位于 Healthcare `local-data-platform/`；本轮不修改 Self-Runner、现有 FHIR/HL7 Publisher、Fabric Notebook/Pipeline/Environment，也不创建额外 Azure Storage Account。
 - 真实部署需要单独核实 `dw-postgre` 的 PostgreSQL Service、`dw-synthea` 中**独立只读 PG Secret**、Azure 容器权限、镜像 digest、节点/活动 Job、容量及数据范围。Git 中不得保存任何凭据或病人行数据。
 - P1 的 `pg_dump` 是 PG 原生恢复格式；P2 的 Parquet 是面向 Fabric 的表级格式。两者的测试及 Runtime 验收独立，不虚报已完成。
+
+## 2026-11-02 Scoped reader gate
+
+首次真实只读预检证明旧 `cdm_reader` 不足以导出完整 cdm（39 张表中有 37 张缺 SELECT）；本阶段改为按实际 Run 创建短期、仅有 cdm SELECT 权限的独立 Snapshot Reader，独立 Azure/Pg Restore 验收后撤销授权并删除该 Role/Secret，不改变旧 reader 的任何权限。该运行仅允许受控 PG 安全角色 DDL/DCL，不执行业务表 DML/DDL，也不扩大 Azure Resource Scope；任何失败先只读核对，禁止盲目重跑。
