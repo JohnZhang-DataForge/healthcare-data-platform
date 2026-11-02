@@ -316,13 +316,14 @@ def _write_delta(df, path: str) -> None:
 
 
 
-# G3: one request-scoped immutable reference receipt, NOT a Silver publication.
-# This is a Lakehouse Files Delta staging path, not a claim of a managed table.
+# G3: one request-scoped immutable-mode RAW BYTE snapshot + receipt,
+# not a Silver publication or proof of Azure container-level WORM.
+# The exact source bytes and provenance commit atomically into Lakehouse Delta.
 _G3_SOURCE_ROOT = "Files/fhir_landing"
 _G3_BRONZE_ROOT = "Files/bronze/fhir_r4"
 _G3_HOSPITAL = "atlanta-hospital-a"
 _G3_FEED = "atlanta-hospital-a-fhir-r4"
-_G3_PROCESSING = "fhir-bronze-receipt-v1:engine-0.1.1"
+_G3_PROCESSING = "fhir-bronze-raw-snapshot-v1:engine-0.1.1"
 
 
 def _g3_receipt_path(request: str) -> str:
@@ -330,7 +331,7 @@ def _g3_receipt_path(request: str) -> str:
     if not isinstance(request, str) or not re.fullmatch(r"atlanta-fhir-gh-[0-9]{8,14}", request):
         raise RuntimeError("HOLD_G3_UNAPPROVED_REQUEST_NAMESPACE")
     return (f"{_G3_BRONZE_ROOT}/{_G3_HOSPITAL}/{_G3_FEED}/"
-            f"{request}/bronze_source_receipt")
+            f"{request}/bronze_source_snapshot")
 
 
 def _g3_expected_receipts(context: BatchContext, specs: tuple[dict, ...]) -> list[dict]:
@@ -353,29 +354,51 @@ def _g3_delta_exists(spark, path: str) -> bool:
 
 
 def _g3_independent_receipt_readback(spark, path: str, expected: list[dict]) -> bool:
-    """Reopen the stored Delta path; do not trust a DataFrame in memory."""
+    """Reopen durable Delta and verify every saved original byte, not memory."""
     rows = spark.read.format("delta").load(path).collect()
     actual = [r.asDict(recursive=True) for r in rows]
     if (len(actual) != len(expected)
-            or len({r.get("source_path") for r in actual}) != len(actual)
-            or sorted(actual, key=lambda x: x["source_path"])
-            != sorted(expected, key=lambda x: x["source_path"])):
+            or len({r.get("source_path") for r in actual}) != len(actual)):
         return False
+    by_path = {r["source_path"]: r for r in expected}
+    import hashlib
+    for row in actual:
+        name = row.get("source_path")
+        if name not in by_path:
+            return False
+        stored = row.get("source_payload")
+        if not isinstance(stored, (bytes, bytearray, memoryview)):
+            return False
+        raw = bytes(stored)
+        if (len(raw) != row.get("source_size_bytes")
+                or hashlib.sha256(raw).hexdigest() != row.get("source_sha256")):
+            return False
+        advertised = by_path[name]
+        metadata = {k: v for k, v in row.items() if k != "source_payload"}
+        required = {k: v for k, v in advertised.items() if k != "source_payload"}
+        if metadata != required:
+            return False
+        if ("source_payload" in advertised
+                and raw != bytes(advertised["source_payload"])):
+            return False
     return True
 
 
 def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
                           mode: str, allow_write: bool, retention_ok: bool,
                           manifest_override: str, source_override: str,
-                          target_override: str) -> NotebookOutcome:
-    """G3 path-pinned synthetic receipt write, replay and separate readback.
+                          target_override: str, strategy: str) -> NotebookOutcome:
+    """G3 path-pinned raw FHIR Delta snapshot, replay and separate readback.
 
-    Retention flag is evidence from a *separate* trusted Azure RBAC/retention
-    preflight; it is not inferred from the Shortcut or from a Blob SHA alone.
-    This entrypoint never writes Silver/Approval, never overwrites a Delta path,
-    and never treats uncertain write ACK as permission for automatic retry.
+    The external Azure container did NOT show locked WORM/Legal Hold (G0 HOLD).
+    The approved dev alternative *atomically stores original verified bytes*
+    and all receipt metadata in immutable-mode Delta with errorifexists.
+    Retention preflight means this explicit snapshot strategy was authorized,
+    NOT that Azure WORM is enabled. Real independent stored byte readback
+    is required before release. Unknown ACK always needs read-only recovery.
     """
     if (mode not in ("BRONZE_RECEIPT", "BRONZE_READBACK_ONLY")
+            or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or any(x != "" for x in (manifest_override, source_override, target_override))):
         raise RuntimeError("HOLD_G3_UNSAFE_PATH_OR_MODE")
     path = _g3_receipt_path(request)
@@ -437,16 +460,22 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
         verified = verify_source_objects(raw, sources, context)
         if verified != tuple(specs):
             raise ValueError("G3_SOURCE_RECEIPTS_CHANGED")
+        by_path = {obj.source_file: obj.payload for obj in sources}
+        if set(by_path) != {r["source_path"] for r in expected}:
+            raise ValueError("G3_RAW_SNAPSHOT_SOURCE_PATHS_CHANGED")
+        complete = [{**row, "source_payload": by_path[row["source_path"]]}
+                    for row in expected]
         columns = ("source_path string, source_sha256 string, source_size_bytes long, "
                    "source_batch_id string, manifest_sha256 string, "
-                   "processing_version string, request_id string")
+                   "processing_version string, request_id string, source_payload binary")
         values = [tuple(row[k] for k in (
             "source_path", "source_sha256", "source_size_bytes", "source_batch_id",
-            "manifest_sha256", "processing_version", "request_id")) for row in expected]
+            "manifest_sha256", "processing_version", "request_id", "source_payload"))
+            for row in complete]
         bronze_df = spark.createDataFrame(values, columns)
-        _write_delta(bronze_df, path)  # errorifexists, no overwrite/append
-        if not _g3_independent_receipt_readback(spark, path, expected):
-            raise ValueError("G3_POSTWRITE_RECEIPT_READBACK_MISMATCH")
+        _write_delta(bronze_df, path)  # one atomic raw+receipt Delta commit, errorifexists
+        if not _g3_independent_receipt_readback(spark, path, complete):
+            raise ValueError("G3_POSTWRITE_RAW_BYTE_READBACK_MISMATCH")
     except Exception:
         # A write may have committed before a timeout or exception.
         # A new write is forbidden until an independent READBACK_ONLY Job.
@@ -580,6 +609,7 @@ def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: byt
 
 run_mode = "HALT"
 manifest_sha256 = ""
+source_preservation_strategy = "HALT"
 write_authorized = False
 retention_preflight_verified = False
 request_id = ""
@@ -762,7 +792,8 @@ if __name__ == "__main__":
             mode=run_mode, allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
             manifest_override=manifest_json, source_override=source_root,
-            target_override=silver_root)
+            target_override=silver_root,
+            strategy=source_preservation_strategy)
         print("FHIR_G3_BRONZE_STATUS=" + g3.status)
         print("FHIR_G3_BRONZE_SOURCE_BATCH_ID=" + g3.source_batch_id)
         print("FHIR_G3_BRONZE_SOURCE_OBJECTS=" + str(g3.metrics["source_objects"]))
