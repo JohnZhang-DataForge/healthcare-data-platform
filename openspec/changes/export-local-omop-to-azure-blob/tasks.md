@@ -8,10 +8,12 @@
 
 ## 2. P1 — PG CDM snapshot + Blob transport
 
-- [ ] 2.1 编写独立的 OMOP immutable snapshot publisher，复用 AzureSDKBlobBackend；含路径/Blob/Manifest 校验、已提交 preflight、幂等冲突门禁。
-- [ ] 2.2 新增 `dw-synthea` Job 模板：Postgres17 initContainer 只读 `pg_dump -Fc -n cdm` + emptyDir + 既有 Azure Publisher 镜像；使用独立 PG reader Secret、不访问 Generator PVC。
-- [ ] 2.3 新增纯离线 Fake Backend 正负向回归测试，并接入现有 Blob contract CI。
+- [x] 2.1 编写独立的 OMOP immutable snapshot publisher，复用 AzureSDKBlobBackend；含路径/Blob/Manifest 校验、已提交 preflight、幂等冲突门禁。
+- [x] 2.2 新增 `dw-synthea` Job 模板：Postgres17 initContainer 只读 `pg_dump -Fc -n cdm` + emptyDir + 既有 Azure Publisher 镜像；使用独立 PG reader Secret、不访问 Generator PVC。
+- [x] 2.3 新增纯离线 Fake Backend 正负向回归测试，并接入现有 Blob contract CI。
 - [ ] 2.4 同步 CODE.md，运行源检查与 CI，创建可评审 PR；标注 Static/Unit 与未验收 Live 的区别。
+
+> 2.1–2.3 表示源码/模板/离线测试已编写，**CI PASS 尚未确定**；GitHub Actions 结果需要后续按准确 PR HEAD 验证。P1 真实 PG/K8s/Azure 尚未执行。
 
 ## 3. P1 — scoped live validation (separate authorization)
 
