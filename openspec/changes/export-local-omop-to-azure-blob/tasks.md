@@ -4,16 +4,16 @@
 
 - [x] 1.1 核对 `dw-postgre`、`dw-synthea` 现有实现、Publisher backend、静态 Job 模板与安全门槛；确定备份和 Parquet 的分阶段范围。
 - [x] 1.2 建立 Proposal/Design/Task/Delta Spec；单独限定不可变快照、Readback、Schema-only 范围和不影响医院上传的边界。
-- [ ] 1.3 在真实 CI 上校验 OpenSpec strict 与 Trusted PR Change Gate；记录 Run 和精确 SHA。
+- [x] 1.3 在真实 CI 上校验 OpenSpec strict 与 Trusted PR Change Gate；记录 Run 和精确 SHA。
 
 ## 2. P1 — PG CDM snapshot + Blob transport
 
 - [x] 2.1 编写独立的 OMOP immutable snapshot publisher，复用 AzureSDKBlobBackend；含路径/Blob/Manifest 校验、已提交 preflight、幂等冲突门禁。
 - [x] 2.2 新增 `dw-synthea` Job 模板：Postgres17 initContainer 只读 `pg_dump -Fc -n cdm` + emptyDir + 既有 Azure Publisher 镜像；使用独立 PG reader Secret、不访问 Generator PVC。
 - [x] 2.3 新增纯离线 Fake Backend 正负向回归测试，并接入现有 Blob contract CI。
-- [ ] 2.4 同步 CODE.md，运行源检查与 CI，创建可评审 PR；标注 Static/Unit 与未验收 Live 的区别。
+- [x] 2.4 同步 CODE.md，运行源检查与 CI，创建可评审 PR；标注 Static/Unit 与未验收 Live 的区别。
 
-> 2.1–2.3 表示源码/模板/离线测试已编写，**CI PASS 尚未确定**；GitHub Actions 结果需要后续按准确 PR HEAD 验证。P1 真实 PG/K8s/Azure 尚未执行。
+> **P1 静态验证证据（PR #610，HEAD `8886c3a0286bd0e28db6dd928d600547633ce2bc`）：** OpenSpec Strict [Run #41494942113](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494942113) PASS；Trusted Gate [#41494941689](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941689) PASS；Change Gate [#41494941965](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941965) PASS；Blob Fake/Fault + Azurite [#41494942107](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494942107) PASS；Publisher Clean Build/Smoke [#41494941897](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941897) PASS；Component Naming [#41494941774](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941774) PASS；Links [#41494941834](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941834) PASS。Cloudflare `Workers Builds: healthcare-portal` 外部检查失败，未作为本轮 OMOP 单测成功的依据。此记录是前述 SHA 的静态验收；若 Tasks 文档提交引起 HEAD 变化，新 HEAD 应重新检查 Required CI。**P1 真实 PG/K8s/Azure 均未执行**，P2 Parquet 未实现，Change 继续保持 Active。
 
 ## 3. P1 — scoped live validation (separate authorization)
 
