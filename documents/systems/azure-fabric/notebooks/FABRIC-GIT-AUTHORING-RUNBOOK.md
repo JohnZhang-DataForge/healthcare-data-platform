@@ -131,3 +131,14 @@ raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
 - 任何缺失或歧义均保留 HOLD。没有授权不得运行 Notebook/Pipeline、解除 HALT 或写 Bronze/Silver。
 
 **版本约束：** 本规范是现阶段真实测量出来的工程兼容性经验。Fabric 官方格式或 API 改版时先做隔离验证和 CI 迁移，不能为了省事直接修改正式 Item。
+
+
+## 2026-11-02: P3 Runtime outcome and Git-first onboarding
+
+Previous empty REST Notebook + `updateDefinition` returned `InvalidRequest`; the exact failing field was not isolated. The reviewed one-shot full-definition creation and strict import-only Spark 4.1 / Wheel 0.1.1 checks passed; the independent portable template passed [Run 41455241975](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41455241975). This proves isolated runtime import, **not** business `nb_fhir_ingest` E2E. Portal test Notebook_1/2 have been deleted.
+
+For new Notebooks, prefer **Git native + UpdateFromGit**, not manual Portal precreation or the old empty-REST-create approach. Author a unique, root-level `nb_<slug>.Notebook/.platform` and `notebook-content.py` in the configured Fabric Git Folder. Use a unique logicalId, native Notebook kernel/Environment metadata, and the proven Cell separators. The existing main Push dispatcher watches `nb_*.Notebook/**`; the private Self-Runner verifies remote `Added`, no existing same-name item, trusted Git SHA and no unapproved workspace changes before a single UpdateFromGit. An existing onboarded new Notebook can later be updated as exact remote-only `Modified`.
+
+**Agent handoff:** A green dispatch is not a successful deploy; require a private Self-Runner Run with `AUTO_UPDATE_DEPLOYMENT_READBACK_PASS`, exact new Item physical identity and actual `.py`/ipynb cloud definition validation. `Added`, `Modified` and `Deleted` are different Fabric Git status states; only the explicitly validated states are permitted. Unexpected nested folders, duplicate names, other item types, local edits, or conflicting changes must HOLD. Notebook creation does not run a Spark Session, publish an Environment, or grant Bronze/Silver/Delta writes. Source of truth: [onboarding OpenSpec](../../../../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md).
+
+The previously documented Wheel 0.1.0 evidence above is historical; current P3 Environment published Wheel is 0.1.1, independently validated in the isolated import-only Spark Session. Do not blindly reuse old Wheel pins.

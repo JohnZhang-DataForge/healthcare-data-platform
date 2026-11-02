@@ -7,7 +7,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py'
+      # Any root-level Git-native nb_*.Notebook: .platform or notebook-content.py
+      # Actual Added/create authority remains in Self-Runner's fail-closed gate.
+      - 'azure-fabric/workspaces/healthcare-omop/nb_*.Notebook/**'
       - 'azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/pipeline-content.json'
       - '.github/workflows/fabric-git-deploy.yml'
       - '.github/quality/scripts/fabric_git_dispatch.py'

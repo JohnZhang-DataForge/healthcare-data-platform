@@ -74,6 +74,20 @@ class DispatchTests(unittest.TestCase):
         self.assertNotIn(TOKEN,json.dumps(report))
         self.assertNotIn(TOKEN,opener.request.data.decode())
 
+    def test_native_notebook_push_trigger_is_not_hardcoded(self):
+        workflow = (Path(__file__).resolve().parents[2] / "workflows"
+                    / "fabric-git-deploy.yml").read_text(encoding="utf-8")
+        push = workflow.split("  push:", 1)[1].split("  pull_request:", 1)[0]
+        self.assertIn("azure-fabric/workspaces/healthcare-omop/nb_*.Notebook/**", push)
+        self.assertNotIn("nb_fhir_ingest.Notebook/notebook-content.py", push)
+        self.assertIn("pl_fhir_ingest.DataPipeline/pipeline-content.json", push)
+        self.assertIn("branches: [main]", push)
+        self.assertIn("github.ref == 'refs/heads/main'", workflow)
+        self.assertIn("fabric_git_dispatch.py", workflow)
+        self.assertIn("expected_healthcare_sha",
+            (Path(__file__).resolve().parents[1] / "scripts"
+             / "fabric_git_dispatch.py").read_text(encoding="utf-8"))
+
     def test_missing_secret_blocks_without_http_request(self):
         opener=StubOpener()
         with self.assertRaises(dispatch.DispatchHold) as result:
