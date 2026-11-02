@@ -2,7 +2,7 @@
 
 - [x] 1.1 对照当前两仓 main、已验证 P3 Git 运行链及 Microsoft Git Status/UpdateFromGit 文档，明确固定 Allowlist 无法创建新 Notebook 的根因。
 - [x] 1.2 建立本 Change，冻结 Git 主权威、原业务 HALT、独立云端创建验收、失败关闭边界。
-- [ ] 2.1 Healthcare Dispatch Workflow 接受新的 Git-native Notebook 文件变更；相应自动化路径测试及 Notebook CODE/Runbook 更新。
+- [x] 2.1 Healthcare Dispatch Workflow 接受新的 Git-native Notebook 文件变更；相应自动化路径测试及 Notebook CODE/Runbook 更新。
 - [ ] 2.2 Self-Runner 添加 root-level Git Native Notebook 新建的精确身份验证、remote Added、Source/HALT/Environment Gate、混杂状态 HOLD，保留现有固定项逻辑。
 - [ ] 2.3 Self-Runner 增加 UpdateFromGit 后的独立新 Notebook identity/content/env readback，以及负向单测；PR CI PASS。
 - [ ] 3.1 Healthcare PR 与 Self-Runner PR 均完成 Required CI、合并 main；记录准确 SHA、Run 和本次授权范围。
