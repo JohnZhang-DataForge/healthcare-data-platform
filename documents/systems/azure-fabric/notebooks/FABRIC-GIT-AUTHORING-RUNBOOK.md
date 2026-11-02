@@ -1,7 +1,7 @@
 ---
 status: active
 scope: fabric-native-git-notebook-pipeline-environment-authoring
-last_verified: 2026-11-01
+last_verified: 2026-11-02
 verification_method: isolated-Fabric-API-roundtrip-and-live-GetDefinition
 ---
 
@@ -142,3 +142,15 @@ For new Notebooks, prefer **Git native + UpdateFromGit**, not manual Portal prec
 **Agent handoff:** A green dispatch is not a successful deploy; require a private Self-Runner Run with `AUTO_UPDATE_DEPLOYMENT_READBACK_PASS`, exact new Item physical identity and actual `.py`/ipynb cloud definition validation. `Added`, `Modified` and `Deleted` are different Fabric Git status states; only the explicitly validated states are permitted. Unexpected nested folders, duplicate names, other item types, local edits, or conflicting changes must HOLD. Notebook creation does not run a Spark Session, publish an Environment, or grant Bronze/Silver/Delta writes. Source of truth: [onboarding OpenSpec](../../../../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md).
 
 The previously documented Wheel 0.1.0 evidence above is historical; current P3 Environment published Wheel is 0.1.1, independently validated in the isolated import-only Spark Session. Do not blindly reuse old Wheel pins.
+
+## 2026-11-02 Git-first new Notebook — live create/run/delete E2E PASS
+
+**Confirmed outcome:** A brand-new Fabric Notebook can be declared in Healthcare Git main without Portal pre-creation, automatically created by trusted Git UpdateFromGit, independently checked for full Native source and Environment, then executed as a real Spark 4.1 Job with published Shared Wheel 0.1.1. The test resource was subsequently removed through a separately audited Git-native deletion, with business resources and original safety guards verified unchanged.
+
+**Source / runs:** Healthcare [create PR #604](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/604) → [Git-created cloud Readback Run 41478131139](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478131139) → [exact real Spark Job PASS Run 41478807776](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478807776) → Healthcare [test source removal PR #605](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/605) → [physical deletion/Git reconciliation Run 41480424539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41480424539). The new Notebook `nb_git_onboarding_smoke` is **no longer in current Git main or the Workspace**. These exact runs and corresponding UUIDs are in the [OpenSpec acceptance](../../../../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md).
+
+**Important actual Fabric API nuance:** A new `SynapseNotebook` was reported as item-level `remoteChange=Added`, with a correct `logicalId`, but `fileChanges` was *absent even with* `includeFilesDetails=true`. Initial strict guard safely held before writes (Run 41477425791). Self-Runner [PR #422](https://github.com/JohnZhang-DataForge/Self-Runner/pull/422) now permits this omission **only** when the item is Git-source-validated, remote-only `Added`, unique and absent from Workspace; it still requires full definition readback. Never generalize that exception to Modified/Deleted or skip post-update verification.
+
+**Execution-induced local Git status:** Running the disposable Notebook produced a local `Modified` flag, so the ordinary auto-updater intentionally returned `UNAPPROVED_LOCAL_ITEM_PRESENT`. This was expected fail-closed behavior and did **not** indicate the Spark job failed. For deletion of a resource after a run, use an independently approved, exact-resource cleanup path rather than bypassing the ordinary updater's allowlist. The test cleanup verified `test_item_absent`, `git_remote_sha_synced`, `original_business_items_unchanged`, `notebook_business_cells_match_git`, and `pipeline_safe_parameters`.
+
+**Agents going forward:** New Notebook authoring follows reviewed Git Native `.platform` + `notebook-content.py` → PR CI → Healthcare main push dispatch → Self-Runner Git Status/UpdateFromGit → real `.py`/ipynb/Environment readback. Do **not** manually create duplicate Portal Items or reuse the old empty REST Create + updateDefinition approach. Only start Spark jobs under separate runtime authorization; Git sync alone does not authorize business execution. Do not reuse the fixed UUIDs or historical one-shot triggers. The business `nb_fhir_ingest` remains HALT; FHIR/Delta E2E needs its own acceptance.
