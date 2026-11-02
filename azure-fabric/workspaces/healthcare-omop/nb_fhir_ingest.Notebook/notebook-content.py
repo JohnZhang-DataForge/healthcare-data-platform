@@ -315,6 +315,148 @@ def _write_delta(df, path: str) -> None:
     df.write.format("delta").mode("errorifexists").save(path)
 
 
+
+# G3: one request-scoped immutable reference receipt, NOT a Silver publication.
+# This is a Lakehouse Files Delta staging path, not a claim of a managed table.
+_G3_SOURCE_ROOT = "Files/fhir_landing"
+_G3_BRONZE_ROOT = "Files/bronze/fhir_r4"
+_G3_HOSPITAL = "atlanta-hospital-a"
+_G3_FEED = "atlanta-hospital-a-fhir-r4"
+_G3_PROCESSING = "fhir-bronze-receipt-v1:engine-0.1.1"
+
+
+def _g3_receipt_path(request: str) -> str:
+    import re
+    if not isinstance(request, str) or not re.fullmatch(r"atlanta-fhir-gh-[0-9]{8,14}", request):
+        raise RuntimeError("HOLD_G3_UNAPPROVED_REQUEST_NAMESPACE")
+    return (f"{_G3_BRONZE_ROOT}/{_G3_HOSPITAL}/{_G3_FEED}/"
+            f"{request}/bronze_source_receipt")
+
+
+def _g3_expected_receipts(context: BatchContext, specs: tuple[dict, ...]) -> list[dict]:
+    return [
+        {"source_path": x["path"], "source_sha256": x["sha256"],
+         "source_size_bytes": x["size_bytes"],
+         "source_batch_id": context.source_batch_id,
+         "manifest_sha256": context.manifest_sha256.lower(),
+         "processing_version": context.processing_version,
+         "request_id": context.request_id}
+        for x in specs
+    ]
+
+
+def _g3_delta_exists(spark, path: str) -> bool:
+    # False is not permission to overwrite a corrupt or partial directory:
+    # errorifexists below remains the last line of defense.
+    from delta.tables import DeltaTable
+    return DeltaTable.isDeltaTable(spark, path)
+
+
+def _g3_independent_receipt_readback(spark, path: str, expected: list[dict]) -> bool:
+    """Reopen the stored Delta path; do not trust a DataFrame in memory."""
+    rows = spark.read.format("delta").load(path).collect()
+    actual = [r.asDict(recursive=True) for r in rows]
+    if (len(actual) != len(expected)
+            or len({r.get("source_path") for r in actual}) != len(actual)
+            or sorted(actual, key=lambda x: x["source_path"])
+            != sorted(expected, key=lambda x: x["source_path"])):
+        return False
+    return True
+
+
+def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
+                          mode: str, allow_write: bool, retention_ok: bool,
+                          manifest_override: str, source_override: str,
+                          target_override: str) -> NotebookOutcome:
+    """G3 path-pinned synthetic receipt write, replay and separate readback.
+
+    Retention flag is evidence from a *separate* trusted Azure RBAC/retention
+    preflight; it is not inferred from the Shortcut or from a Blob SHA alone.
+    This entrypoint never writes Silver/Approval, never overwrites a Delta path,
+    and never treats uncertain write ACK as permission for automatic retry.
+    """
+    if (mode not in ("BRONZE_RECEIPT", "BRONZE_READBACK_ONLY")
+            or any(x != "" for x in (manifest_override, source_override, target_override))):
+        raise RuntimeError("HOLD_G3_UNSAFE_PATH_OR_MODE")
+    path = _g3_receipt_path(request)
+    if (mode == "BRONZE_RECEIPT" and
+            (allow_write is not True or retention_ok is not True)):
+        raise RuntimeError("HOLD_G3_WRITE_OR_RETENTION_NOT_VERIFIED")
+    if (mode == "BRONZE_READBACK_ONLY" and
+            (allow_write is not False or retention_ok is not False)):
+        raise RuntimeError("HOLD_G3_READBACK_FLAGS_NOT_READONLY")
+    if (engine_version != "0.1.1" or not isinstance(manifest_sha, str)
+            or len(manifest_sha) != 64 or
+            any(c not in "0123456789abcdef" for c in manifest_sha)):
+        raise RuntimeError("HOLD_G3_ENGINE_OR_MANIFEST_PIN_INVALID")
+
+    from datetime import date, datetime, timezone
+    context = BatchContext(
+        hospital_id=_G3_HOSPITAL, feed_id=_G3_FEED,
+        source_system="synthea-fhir", request_id=request,
+        manifest_sha256=manifest_sha, processing_version=_G3_PROCESSING,
+        processing_run_id="g3:" + request, source_version="FHIR_R4",
+        source_ingest_date=date(2026, 11, 2),
+        processed_at=datetime.now(timezone.utc))
+    root = (f"{_G3_SOURCE_ROOT}/clinical/v1/{_G3_HOSPITAL}/"
+            f"{_G3_FEED}/{request}/landing-manifest.json")
+    manifest_rows = spark.read.format("binaryFile").load(root).select("content").collect()
+    if len(manifest_rows) != 1:
+        raise RuntimeError("HOLD_G3_MANIFEST_NOT_ONE_FILE")
+    raw = bytes(manifest_rows[0].content)
+    specs = _manifest_objects(raw, context)   # validates delivered manifest SHA
+    if not 5 <= len(specs) <= 10:
+        raise RuntimeError("HOLD_G3_NOT_A_5_TO_10_OBJECT_BATCH")
+    expected = _g3_expected_receipts(context, specs)
+    metrics = {"patient": 0, "encounter": 0, "quarantine_or_reject": 0,
+               "source_objects": len(specs)}
+    try:
+        exists = _g3_delta_exists(spark, path)
+    except Exception:
+        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                               context.processing_version, None, metrics,
+                               ("Delta existence check uncertain",))
+    if exists:
+        try:
+            correct = _g3_independent_receipt_readback(spark, path, expected)
+        except Exception:
+            return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                                   context.processing_version, None, metrics,
+                                   ("existing receipt unreadable",))
+        return NotebookOutcome(
+            "BRONZE_SKIP_VERIFIED" if correct else "HOLD_REQUEST_DRIFT",
+            context.source_batch_id, context.processing_version, None, metrics,
+            () if correct else ("request has different persisted source/version",))
+    if mode == "BRONZE_READBACK_ONLY":
+        return NotebookOutcome("HOLD_BRONZE_NOT_FOUND", context.source_batch_id,
+                               context.processing_version, None, metrics, ())
+    try:
+        # This reads each original source object and verifies exact object SHA/size.
+        sources = read_source_objects_native(
+            spark, source_root=_G3_SOURCE_ROOT, manifest_bytes=raw, context=context)
+        verified = verify_source_objects(raw, sources, context)
+        if verified != tuple(specs):
+            raise ValueError("G3_SOURCE_RECEIPTS_CHANGED")
+        columns = ("source_path string, source_sha256 string, source_size_bytes long, "
+                   "source_batch_id string, manifest_sha256 string, "
+                   "processing_version string, request_id string")
+        values = [tuple(row[k] for k in (
+            "source_path", "source_sha256", "source_size_bytes", "source_batch_id",
+            "manifest_sha256", "processing_version", "request_id")) for row in expected]
+        bronze_df = spark.createDataFrame(values, columns)
+        _write_delta(bronze_df, path)  # errorifexists, no overwrite/append
+        if not _g3_independent_receipt_readback(spark, path, expected):
+            raise ValueError("G3_POSTWRITE_RECEIPT_READBACK_MISMATCH")
+    except Exception:
+        # A write may have committed before a timeout or exception.
+        # A new write is forbidden until an independent READBACK_ONLY Job.
+        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                               context.processing_version, None, metrics,
+                               ("source/write ACK or Delta readback uncertain",))
+    return NotebookOutcome("BRONZE_WRITTEN", context.source_batch_id,
+                           context.processing_version, None, metrics, ())
+
+
 def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: bytes,
                             patient_contract_bytes: bytes, encounter_contract_bytes: bytes,
                             source_root: str, silver_root: str,
@@ -437,6 +579,7 @@ def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: byt
 # PARAMETERS CELL ********************
 
 run_mode = "HALT"
+manifest_sha256 = ""
 write_authorized = False
 retention_preflight_verified = False
 request_id = ""
@@ -613,6 +756,22 @@ if __name__ == "__main__":
             manifest=manifest_json, source=source_root, target=silver_root,
         )
         notebookutils.notebook.exit(intake_exit)
+    elif run_mode in ("BRONZE_RECEIPT", "BRONZE_READBACK_ONLY"):
+        g3 = verify_fhir_g3_bronze(
+            spark, request=request_id, manifest_sha=manifest_sha256,
+            mode=run_mode, allow_write=write_authorized,
+            retention_ok=retention_preflight_verified,
+            manifest_override=manifest_json, source_override=source_root,
+            target_override=silver_root)
+        print("FHIR_G3_BRONZE_STATUS=" + g3.status)
+        print("FHIR_G3_BRONZE_SOURCE_BATCH_ID=" + g3.source_batch_id)
+        print("FHIR_G3_BRONZE_SOURCE_OBJECTS=" + str(g3.metrics["source_objects"]))
+        print("FHIR_G3_BRONZE_DELTA_PATH=" + _g3_receipt_path(request_id))
+        if g3.status in ("BRONZE_WRITTEN", "BRONZE_SKIP_VERIFIED"):
+            notebookutils.notebook.exit(
+                "FHIR_G3_" + g3.status + "_" +
+                str(g3.metrics["source_objects"]) + "_DELTA_READBACK_PASS_20261102")
+        raise RuntimeError("HOLD_FHIR_G3_" + g3.status)
     elif run_mode == "CANONICAL_READONLY":
         canonical_exit = verify_fhir_canonical_readonly(
             spark, request=request_id, allow_write=write_authorized,
