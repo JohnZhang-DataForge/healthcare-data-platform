@@ -46,3 +46,11 @@ existing Azure Blob container / omop/snapshots/<snapshot_id>/
 ## Rollback
 
 No current OMOP/Producer/Publisher objects are modified by P1. Failed Job can be removed only after ownership check; partial immutable Blob objects are retained for readback/retry. Never delete an existing snapshot or overwite Blob to “repair” a conflict.
+
+## P1 实机权限修正（2026-11-02，Live Attempt #1 失败后）
+
+[首次真实 Job Run #41505288117](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41505288117) 在 K8s 创建/Blob PUT **之前**的权限预检中停止。后续两个只读诊断 [#41505709057](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41505709057) 和 [#41506003341](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41506003341) 独立确认：0 OMOP Job、0 临时 Secret；PG admin 的只读 SELECT 正常。原 `cdm_reader` 对 cdm 39 张表中的 37 张缺少 SELECT，无法完整 `pg_dump -n cdm`。原 sequences 检查将 `has_sequence_privilege` 用于非 Sequence 关系，引发 `pg_toast_16389 is not a sequence`，必须改为先 MATERIALIZED 筛选 `relkind='S'` 再检查。
+
+**安全决策：不得扩大现有 `cdm_reader` 权限，不得把超级用户凭据导入 `dw-synthea`。** 由可信 Self-Runner 对 PG17 Pod 内认证的管理会话，以受控事务创建本次运行专用的 `omop_export_<numeric-run-id>` LOGIN Role，仅给予数据库 CONNECT、`cdm` Schema USAGE、该 Schema 所有现有表/Sequences 的 SELECT，且角色默认事务只读。使用运行内随机生成的凭据创建 `dw-synthea/omop-snapshot-reader` Secret（不打印、不写 Git）；只允许此角色执行现有 PG Dump Job。PG 角色创建及 Grant 属于**安全元数据 DDL/DCL**，需要受控核验；不是业务表 DML、重放或数据修改。
+
+作业完成并独立 Azure GET/ETag/SHA 与 `pg_restore --list` 验收后，Runner 撤销该角色授权并删除该 Role，随后删除且校验本次拥有的 K8s Secret；失败时未提交业务表数据，暂停重试并只读确认实际资源，安全清理必须核实仍未有作业使用相同 Role。拒绝 role 已存在、schema 外授权、任一读取权限缺失、任何 DML 权限、并行 Job 或 URI/SHA 冲突。Job/Blob 原不可变交付仍沿用 P1 契约。P2 不受本次权限修正影响。
