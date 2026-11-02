@@ -19,7 +19,7 @@
 
 ## 3. P1 — scoped live validation (separate authorization)
 
-- [ ] 3.1 核对真实 PG17 Service、只读访问账号、Snapshot 大小、可运行节点、资源负载、Azure container RBAC 和 K8s Secret 状态；未确认则 HOLD。
+- [ ] 3.1 先核对已有 PG17 Service、worker、Azure Secret/RBAC 和 Job 并发；原 cdm_reader 37/39 张表缺 SELECT，改为本次 Run 专用 cdm 只读 ROLE+Secret，校验所有 39 表权限/无 DML；受控 DDL/DCL 之外不修改业务数据。
 - [ ] 3.2 授权后发布 digest-pinned Image，执行一次新 ID 的只读 PG dump / Azure immutable PUT，独立 GET/SHA 和 Manifest commit 读回；仅报告合成数据摘要，不输出记录。
 - [ ] 3.3 对相同快照进行**不重新 dump 数据**的 matching retry；下载并用 `pg_restore --list` 验证备份可被 PostgreSQL 识别。不恢复到当前 CDM。
 
@@ -29,3 +29,9 @@
 - [ ] 4.2 用既有 OMOP Snapshot Publisher 上传独立 Parquet Snapshot；Fake / CI 以及真实少量合成数据 Readback。
 - [ ] 4.3 在 Fabric 使用 Golden Dataset 做 Person/Visit count/key 对账，并记录与 native Delta 差异；这不代替正式 Fabric FHIR 管道。
 - [ ] 4.4 Runtime 完成且有独立证据后同步 Current Spec，单独进行 Archive 审查。
+
+## P1 Live Failure Evidence — 2026-11-02
+
+- First [Self-Runner Run #41505288117](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41505288117) **FAILED BEFORE SNAPSHOT JOB / SECRET**; no Azure Manifest committed.
+- [Read-only forensic Run #41505709057](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41505709057): `OMOP_JOB_COUNT=0`, `OMOP_READER_SECRET_RESIDUAL=NO`, `PG_CATALOG_EXEC_SELECT_1=PASS`.
+- [Catalog audit #41506003341](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41506003341): cdm 39 tables, missing SELECT 37, granted mutation 0, sequence check SQL bug. **No blind retry**. Role provision/cleanup is now an explicit prerequisite for next run.
