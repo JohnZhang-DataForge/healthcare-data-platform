@@ -15,13 +15,14 @@
 
 > **P1 静态验证证据（PR #610，HEAD `8886c3a0286bd0e28db6dd928d600547633ce2bc`）：** OpenSpec Strict [Run #41494942113](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494942113) PASS；Trusted Gate [#41494941689](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941689) PASS；Change Gate [#41494941965](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941965) PASS；Blob Fake/Fault + Azurite [#41494942107](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494942107) PASS；Publisher Clean Build/Smoke [#41494941897](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941897) PASS；Component Naming [#41494941774](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941774) PASS；Links [#41494941834](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941834) PASS。Cloudflare `Workers Builds: healthcare-portal` 外部检查失败，未作为本轮 OMOP 单测成功的依据。此记录是前述 SHA 的静态验收；若 Tasks 文档提交引起 HEAD 变化，新 HEAD 应重新检查 Required CI。**P1 真实 PG/K8s/Azure 均未执行**，P2 Parquet 未实现，Change 继续保持 Active。
 
-- [ ] 2.5 通过单独的 GHCR SHA-only Release Workflow 发布包含 OMOP Runtime 的 Publisher 镜像（精确 Main SHA / Digest），只在镜像确实发布并读回后勾选；PR/离线 build PASS 不等于可部署。
+- [x] 2.5 通过单独的 GHCR SHA-only Release Workflow 发布包含 OMOP Runtime 的 Publisher 镜像（精确 Main SHA / Digest），只在镜像确实发布并读回后勾选；PR/离线 build PASS 不等于可部署。
 
 ## 3. P1 — scoped live validation (separate authorization)
 
-- [ ] 3.1 先核对已有 PG17 Service、worker、Azure Secret/RBAC 和 Job 并发；原 cdm_reader 37/39 张表缺 SELECT，改为本次 Run 专用 cdm 只读 ROLE+Secret，校验所有 39 表权限/无 DML；受控 DDL/DCL 之外不修改业务数据。
-- [ ] 3.2 授权后发布 digest-pinned Image，执行一次新 ID 的只读 PG dump / Azure immutable PUT，独立 GET/SHA 和 Manifest commit 读回；仅报告合成数据摘要，不输出记录。
-- [ ] 3.3 对相同快照进行**不重新 dump 数据**的 matching retry；下载并用 `pg_restore --list` 验证备份可被 PostgreSQL 识别。不恢复到当前 CDM。
+- [x] 3.1 先核对已有 PG17 Service、worker、Azure Secret/RBAC 和 Job 并发；原 cdm_reader 37/39 张表缺 SELECT，改为本次 Run 专用 cdm 只读 ROLE+Secret，校验所有 39 表权限/无 DML；受控 DDL/DCL 之外不修改业务数据。
+- [x] 3.2 授权后发布 digest-pinned Image，执行一次新 ID 的只读 PG dump / Azure immutable PUT，独立 GET/SHA 和 Manifest commit 读回；仅报告合成数据摘要，不输出记录。
+- [x] 3.3 **只读独立验收**：从 Azure 下载原有不可变 Manifest 和 Dump，核验 SHA256/ETag/Size，使用 PostgreSQL17 `pg_restore --list <file>` 验证真实归档 TOC（355 条目、39 个 CDM Table Data），不恢复到当前 CDM。
+- [ ] 3.4 **非阻塞后续强化**：真实相同 staged bytes 的 matching retry（只可使用原始完全相同的 bytes，不可在同一个 ID 下重新 pg_dump）；本轮已经完成一次可验证备份，无需再次 PUT。离线匹配重试测试已 PASS。
 
 ## 4. P2 — OMOP table Parquet (follow-up)
 
@@ -29,6 +30,10 @@
 - [ ] 4.2 用既有 OMOP Snapshot Publisher 上传独立 Parquet Snapshot；Fake / CI 以及真实少量合成数据 Readback。
 - [ ] 4.3 在 Fabric 使用 Golden Dataset 做 Person/Visit count/key 对账，并记录与 native Delta 差异；这不代替正式 Fabric FHIR 管道。
 - [ ] 4.4 Runtime 完成且有独立证据后同步 Current Spec，单独进行 Archive 审查。
+
+## P1 真实备份最终验收 — 2026-11-02
+
+**P1 单次只读 OMOP → Azure Blob 备份与文件格式验收：ACCEPTED**。完整原始运行与独立读回证据见 [P1 real snapshot acceptance](evidence/2026-11-02-omop-p1-azure-blob-archive-acceptance.md)。生产运行 [Self-Runner #41507610557](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41507610557) 的 Workflow 终态仍保留 **FAILURE**，因为历史 stdin-based `pg_restore --list` 失败；但其 PostgreSQL dump/Immutable Azure publish/Publisher Readback 均成功。随后 [独立只读归档验收 #41509750892](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41509750892) **SUCCESS**：从同一已提交对象 Azure GET Manifest 和 Dump、SHA256/metadata/ETag/Size、在 PG17 文件上 `pg_restore --list` 全部通过，39 CDM TABLE DATA entries / 355 TOC objects，文件大小 195,370,142 字节，SHA256 `54c02455f9ae305532209ffed9b90354ca5a652df1220ce418be0f084c9dc2cf`。无新的 pg_dump / K8s Job / Azure Blob PUT / DB Restore，临时 Secret 已独立查证无残留。**真实相同字节重试 3.4、P2 Parquet 和独立数据库恢复演练均未执行**，不得以本次验收替代。
 
 ## P1 Live Failure Evidence — 2026-11-02
 
