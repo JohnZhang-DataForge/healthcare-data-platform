@@ -2,6 +2,8 @@
 
 > **2026-10-31 用户授权 P0–P2 离线源码开发；真实云端发布与写入仍未授权。** 详细权威设计：[ADR](../../../documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)。完成文档不等于运行时验收。
 
+> **2026-11-02 Current live supersession:** G2 正式 `nb_fhir_ingest` Spark 4.1 / `healthcare_data_engine` Wheel 0.1.1 Runtime 已真实 PASS；Task 2.4 的 G0 只读 FHIR Spark Intake **5 人 + 100 人均 PASS**（见下方 2026-11-02 真实报告）。先前历史段落中对 Runtime 的 “HOLD / NOT_RUN” 只描述当时状态，已被后续实机证据取代。**G0 Azure 保留策略与 G3/G4 Bronze/Silver Delta 物理写入仍 OPEN / NOT_RUN；勿把读取验证等同 Delta E2E。**
+
 ## 1. Architecture decisions
 
 - [x] 1.1 2026-10-27 已核查 Local NEW_ONLY 真实 DAG、Canonical/OMOP Contract、Publisher v1 Manifest 和 Fabric 旧 POC 状态（静态）。
@@ -25,9 +27,10 @@
 - [x] 2.1 P1 实现唯一 Shared Engine Wheel v0.1.0、FHIR R4 Patient/Encounter、合成数据、Local v1 Contract、正负/重放/跨源测试、Spark Schema，实际 CI 构建/安装后才能打勾。业务运行、Fabric Publish 尚未授权。
 
 - [x] 2.3 G0 子任务：与真实 Azure Publisher landing-manifest-v1 对齐的 **离线 FHIR Manifest 解析及负向合同**；Notebook Offline Contract CI [#41494321679](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494321679) SUCCESS。此项仅证明离线正负向测试通过；G0 Blob 实机读回、保留策略、权限和 G3/G4 仍 OPEN。
-- [ ] 2.4 G0 Fabric Spark 真实 Intake 只读验收：`nb_fhir_ingest` 的 `INTAKE_READONLY` 模式从已验证的 OneLake `Files/fhir_landing` Shortcut 读取旧 5/100 合成 FHIR Manifest 和逐对象字节，严格校验各自固定 Manifest SHA、对象 SHA、FHIR Patient/Encounter 解析和运行退出标记；无 Silver/Delta 写入。只在实际 Spark Jobs Completed 和准确 exitValue 证据后勾选。\n- [ ] G0：只读校验 Manifest 原始字节/对象 SHA/ETag、真实 FHIR Profile、Blob Shortcut RBAC/保留策略。
+- [x] 2.4 G0 Fabric Spark 真实 Intake 只读验收：`nb_fhir_ingest` 的 `INTAKE_READONLY` 模式从已验证的 OneLake `Files/fhir_landing` Shortcut 读取旧 5/100 合成 FHIR Manifest 和逐对象字节，严格校验各自固定 Manifest SHA、对象 SHA、FHIR Patient/Encounter 解析和运行退出标记；无 Silver/Delta 写入。只在实际 Spark Jobs Completed 和准确 exitValue 证据后勾选。
+- [ ] G0：只读校验 Manifest 原始字节/对象 SHA/ETag、真实 FHIR Profile、Blob Shortcut RBAC/保留策略。
 - [x] G1：[P1 offline tests/wheel verified; Fabric runtime remains HOLD] 冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
-- [ ] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
+- [x] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
 - [ ] G3：5–10 新 synthetic Patient → Intake + Bronze raw/ref + receipt，按 Source Batch/Processing Version 验证 replay SKIP 和漂移 HOLD。
 - [ ] G4：100 新 synthetic Patient/Encounter → managed Silver canonical_patient/encounter Delta；PK/FK/DQ/来源/hash/readback、quarantine、approved 证据。
 - [ ] G5：Shared Silver→OMOP Person/Visit Candidate + Concept/Identity/row reconcile，证明相同输入/版本结果稳定。
@@ -209,3 +212,15 @@
 - Implemented a strict **offline-only** adapter in the **single** Git-native business Notebook, preserving the legacy isolated synthetic test contract: validate publisher schema/version, hospital/feed/request, FHIR_R4, full `clinical/v1/<hospital>/<feed>/<request>/FHIR_R4/fhir/*.json` Blob path namespace, exact object keys, ETag/version shape, SHA256, size and duplicate JSON keys. `source_manifest_sha256` belongs to the upstream generator, not the delivered Manifest SHA captured by BatchContext.
 - Negative offline tests protect cross-hospital, unsupported version/format, unexpected keys, malformed ETag and traversal. These are **not** evidence that Fabric has actual Blob access, retention policy or Shortcut/Copy readback.
 - **G0 remains OPEN** until independent read-only Azure/Fabric permission, real Publisher Manifest SHA/object ETag/retention and exact source bytes are verified. **G3/G4 NOT_RUN**: no Bronze/Silver cloud data writes, 5–10 or 100 Patient job, replay or approval is claimed by this code change.
+
+### 2026-11-02 G0 Task 2.4 real Fabric FHIR Intake acceptance
+
+- 正式业务 Notebook `nb_fhir_ingest`，Workspace `745ce03b-15b6-4870-b0e5-8c5750aa18dc`，Notebook `8311ab6b-3484-4e96-8370-badeeb751633`；Shared Engine Wheel `0.1.1`，Default Lakehouse `lh_omop_analytics`。本验收没有使用临时或 Portal 手工替代 Notebook。
+- **Git-first 真实同步与 Notebook 定义独立读回 PASS**：Runner [Run #41510571554](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41510571554) `FHIR_GIT_RECONCILED_READBACK_PASS`，`ERROR=NONE`，正式云端 .py/.ipynb 源码与当时 Healthcare main `da20a75235af546b98a48c264fda2bba09a5938f` 精确语义校验；Environment/已发布 Wheel 0.1.1、Pipeline HALT 和预存 OneLake Shortcut `fhir_landing` 独立 GET PASS。注意原本 Git Workspace 的三个 Item 本地变化及 Notebook Conflict 经过 last-synced baseline semantic audit 证实，未删除 Lakehouse/Shortcut。
+- **源数据来源**：真实 Azure Publisher 既有不可变合成批次 `atlanta-fhir-gh-40238053772`（5 FHIR 对象）、`atlanta-fhir-gh-40245591533`（100 FHIR 对象）；Azure Blob/Manifest 历史独立 GET/HEAD/SHA/ETag 证据 [Run #41495354432](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41495354432)，Shortcut 读回 [Run #41497778418](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41497778418)。**这些不自动证明 Azure Blob 保留策略。**
+- **5 人真实 Spark PASS**：[Runner Run #41511268873](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41511268873)，Fabric Job `713b934c-1d11-4306-a95d-a2c95d956476`，状态 `Completed`，已通过 Core/Beta 独立读回的准确 `exitValue=FHIR_INTAKE_READONLY_5_SPARK_SOURCE_SHA_PASS_20261102`。Notebook 在返回标记前对 5 个源对象、Manifest/对象 SHA 及 Patient=5、Encounter 至少 5 条的约束进行真实 Spark 校验；这不是精确 Encounter 条数报告。
+- **首次 100 人失败被独立分类，未盲目重试**：同一 Runner Run #41511268873 的 Job `7e39d28f-3258-42ca-aeff-16c9a874ca20` 约 1.2 秒后 Failed，原因 `CAPACITY` / `SPARK_SESSION`，`spark_session_entry=NOT_ESTABLISHED`，未开始 FHIR 业务读取。使用 GET-only [Run #41512895190](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41512895190) 找回确切 Job ID 和 Core/Beta 终态；没有将 GitHub Job 或 POST 成功误认作 Spark 数据 PASS。
+- **100 人真实 Spark PASS**：在重新验证已完成 5 人 Job、先前 100 人失败及无活跃 Notebook Job 后，独立 main-only 一次性 [Runner Run #41513568875](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41513568875) 只提交固定 100 人 request；Fabric Job `36cc44e5-787c-4814-b570-76975bd1815d`，`Completed`，`exitValue=FHIR_INTAKE_READONLY_100_SPARK_SOURCE_SHA_PASS_20261102`。Notebook 精确验证 Manifest SHA、100 对象 SHA、Patient=100、Encounter 至少 100 条；报告 `FHIR_INTAKE_READONLY_5_PREVIOUS_100_NEW_FABRIC_SPARK_PASS`。
+- 当前明确的验收层级：**offline contract PASS**、**Azure Blob GET/HEAD PASS**、**Fabric Git native definition PASS**、**Fabric Spark Intake read-only 5 + 100 PASS**；**Azure 保留策略 G0 余项 OPEN**；**Bronze raw/ref、Silver canonical Delta 物理独立读回/审批、幂等 replay、Quarantine、正式 Pipeline E2E 均 NOT_RUN**。两个受控测试没有修改业务 Delta，也没有执行正式 Pipeline。只有完成 G3/G4 实机写入后才能声称 Delta E2E PASS。
+
+- **Operational regression guard:** capacity/session establishment failures before Spark execution must be investigated with independent Job GET and retried only after verifying the preceding Job terminal state, absence of competing active Notebook jobs, source pin, and idempotency scope. No 5/100 Spark Intake proof releases the separate Bronze/Silver write flags.
