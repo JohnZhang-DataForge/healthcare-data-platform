@@ -3,8 +3,8 @@
 > **2026-10-31 Fabric FHIR Source Ownership**：[最终 Native ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。原生 NB/PL/Environment 在 Workspace 对应的 Git Item 目录；唯一新 Python Wheel 是 `shared-data-engine/`；旧独立 Fabric I/O 包方案作废。
 status: active
 scope: azure-fabric-source-map
-last_verified: 2026-10-18
-source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
+last_verified: 2026-11-02
+source_sha: 9a26bdd1cbb063444b87bbdab4ee33adcd181f7b
 ---
 
 # Azure / Microsoft Fabric — CODE / 源码总导航
@@ -16,10 +16,14 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 | 组件 | 源码目录 | 唯一组件源码地图 | 约束 |
 | --- | --- | --- | --- |
 | Terraform | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | [Terraform CODE.md](infra-terraform/CODE.md) · [安全设计和历史 Plan](infra-terraform/ARCHITECTURE.md) | 七个 Root/Module，IAM、远程 State、Fabric Item Bootstrap；未证明 Apply |
-| Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Fabric Git Item 已导出；Notebook 业务内容仍为空 |
-| Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | 真实 Fabric Git Item 已导出；Shared Wheel 未发布 |
+| Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Git Native 业务 Notebook 已有完整代码并完成云端双格式读回；正式业务 Notebook Runtime / FHIR→Delta E2E 仍 HALT，未验收 |
+| Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | env_healthcare 中 Wheel 0.1.1 已发布；独立 Notebook Spark 4.1 导入真实 PASS，正式业务 Notebook 运行与数据链路仍未验收 |
 | Lakehouse | [`lh_omop_analytics.Lakehouse/`](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/) | [Lakehouse native files](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/lakehouse.metadata.json) | 真实原生元数据已导出；不表示 Delta/Silver E2E PASS |
-| Pipelines | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | [Pipelines CODE.md](pipelines/CODE.md) | 真实 Fabric Git Item 已导出；Pipeline activities 仍为空 |
+| Pipelines | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | [Pipelines CODE.md](pipelines/CODE.md) | 原生 Pipeline 已包含 1 个 TridentNotebook Activity；默认 HALT，未执行业务数据管道 |
+
+## 2026-11-02 Git-first Notebook 实测（未来 Agent 必读）
+
+新原生 Notebook **Git PR → main → GitHub Actions → Fabric UpdateFromGit → 独立代码/Environment 读回 → Spark 4.1/Wheel 0.1.1 导入 → 受控 Git 原生删除** 已全部实测 PASS。全过程证据和踩坑（尤其 `Added` 可能没有 `fileChanges`、运行后 Local Modified 与一次性安全删除）见 [Notebook Git Authoring Runbook](notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md) 与 [OpenSpec 验收](../../../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md)。不能把本次创建运行 Smoke 当作正式 `nb_fhir_ingest` 的 FHIR/Delta 业务验收；业务 HALT 仍在。
 
 ## 跨组件依赖与源码边界
 
