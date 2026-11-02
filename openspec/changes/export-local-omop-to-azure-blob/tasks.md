@@ -15,6 +15,8 @@
 
 > **P1 静态验证证据（PR #610，HEAD `8886c3a0286bd0e28db6dd928d600547633ce2bc`）：** OpenSpec Strict [Run #41494942113](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494942113) PASS；Trusted Gate [#41494941689](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941689) PASS；Change Gate [#41494941965](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941965) PASS；Blob Fake/Fault + Azurite [#41494942107](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494942107) PASS；Publisher Clean Build/Smoke [#41494941897](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941897) PASS；Component Naming [#41494941774](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941774) PASS；Links [#41494941834](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494941834) PASS。Cloudflare `Workers Builds: healthcare-portal` 外部检查失败，未作为本轮 OMOP 单测成功的依据。此记录是前述 SHA 的静态验收；若 Tasks 文档提交引起 HEAD 变化，新 HEAD 应重新检查 Required CI。**P1 真实 PG/K8s/Azure 均未执行**，P2 Parquet 未实现，Change 继续保持 Active。
 
+- [ ] 2.5 通过单独的 GHCR SHA-only Release Workflow 发布包含 OMOP Runtime 的 Publisher 镜像（精确 Main SHA / Digest），只在镜像确实发布并读回后勾选；PR/离线 build PASS 不等于可部署。
+
 ## 3. P1 — scoped live validation (separate authorization)
 
 - [ ] 3.1 核对真实 PG17 Service、只读访问账号、Snapshot 大小、可运行节点、资源负载、Azure container RBAC 和 K8s Secret 状态；未确认则 HOLD。
