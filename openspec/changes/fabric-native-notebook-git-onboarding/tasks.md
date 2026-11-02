@@ -7,7 +7,7 @@
 - [x] 2.3 Self-Runner 增加 UpdateFromGit 后的独立新 Notebook identity/content/env readback，以及负向单测；PR CI PASS。
 - [x] 3.1 Healthcare PR 与 Self-Runner PR 均完成 Required CI、合并 main；记录准确 SHA、Run 和本次授权范围。
 - [x] 3.2 使用新无业务数据的 Git-native Notebook 进行真实 Added → UpdateFromGit → Readback 验收（需要独立 reviewed 验证和审慎清理）。在此之前 `LIVE_NEW_NOTEBOOK_UNVERIFIED`。
-- [ ] 3.3 正式业务 `nb_fhir_ingest` 的受控运行时 Smoke 单独后续处理，保持 HALT；本 Change 不声明业务 ETL PASS。
+- [x] 3.3 正式业务 `nb_fhir_ingest` 的 **无数据读取/无 Delta 写入 Runtime Smoke** 真实通过。Healthcare PR #608 创建参数受限、默认 HALT 的 Smoke 模式，Self-Runner PR #426 经正式业务 Notebook 执行并返回精确 PASS；不声明 FHIR/Delta ETL PASS。
 
 ## Evidence
 
@@ -62,3 +62,11 @@ The user-authorized test passed all three distinct live gates and has now been r
 - A narrowly parameterized `RUNTIME_SMOKE` mode checks published Engine v0.1.1 and Spark 4.1 while rejecting nonblank request/manifest/source/target and any write/retention grant. The default parameter cell `HALT`, the failure on all other modes, and Pipeline `HALT` / false write guards are **unchanged**. No FHIR source/Delta operations are invoked.
 - The Git-native source, negative offline tests and a separate trusted Self-Runner real-execution workflow must each be verified, then Main Git Sync and the cloud business definition should be independently read back before one run. A passing PR CI alone is **not** real Runtime PASS.
 - After this proof, pursue existing `ingest-fhir-to-fabric` G0 (manifest/SHA/retention), G3 5–10 synthetic Patient Bronze, and G4 100 synthetic Patient Silver. Real Delta approval requires physical readback, no duplicate replay, and an independent trusted job report; until then **NOT_RUN**.
+
+## Formal business Notebook runtime-only smoke accepted — 2026-11-02
+
+- Healthcare [PR #608](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/608) / main `fe963ce659792ec77e49729ce5f8b1a4e62f3cad`: added explicit `RUNTIME_SMOKE` to the actual Git-native `nb_fhir_ingest` and negative checks, retained parameters `HALT/write_authorized=False/retention_preflight_verified=False`. Required [Notebook offline CI #41493014219](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41493014219) PASS.
+- Real Git-first deployed source: Healthcare main [dispatch #41493390053](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41493390053) SUCCESS and Self-Runner [#41493475435](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41493475435) `AUTO_UPDATE_DEPLOYMENT_READBACK_PASS`; live `.py` source 22,019 bytes, 3 code cells, `notebook_business_cells_match_git=true`, Pipeline `safe_parameters=true`.
+- Self-Runner [PR #426](https://github.com/JohnZhang-DataForge/Self-Runner/pull/426) / main `b71e66f83989bcf0c2b83367a59c953d6130fe0a` provided exact existing physical Notebook `8311ab6b-3484-4e96-8370-badeeb751633` invocation with only `run_mode=RUNTIME_SMOKE`, independently checked cloud source, Environment 0.1.1 and Pipeline HALT before one Job POST.
+- Actual trusted [Self-Runner Run #41493924827](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41493924827) **completed SUCCESS**. Exact live log records `FHIR_BUSINESS_RUNTIME_OUTCOME=FHIR_BUSINESS_RUNTIME_SMOKE_VERIFIED`, `FHIR_BUSINESS_RUNTIME_JOB_ATTEMPTED=True`, `FHIR_BUSINESS_RUNTIME_ERROR=NONE`. The code returns zero only after exact Fabric Job `Completed` plus `notebook.exit("FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_011_SPARK41_PASS_20261102")`; artifacts archived.
+- **Scope**: no FHIR Azure Blob/Lakehouse data read, no Bronze/Silver Delta persist, no Pipeline business execution, no paid-capacity provisioning or cloud Item create/delete. This accepts **only Notebook business Runtime import smoke**. Continue `ingest-fhir-to-fabric` G0/G3/G4 source access, retention, 5–10 and 100 Patient Silver tasks separately.
