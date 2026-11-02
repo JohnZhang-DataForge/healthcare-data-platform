@@ -109,6 +109,100 @@ class ManifestGuards(unittest.TestCase):
         self.assertEqual(len(result.reasons), 1)
 
 
+class PublisherLandingManifestV1(unittest.TestCase):
+    """Exact real azure_blob_publisher.py v1 delivery wire shape; offline only."""
+
+    def fixture(self):
+        ctx, _, source = make_batch()
+        blob_key = (
+            f"clinical/v1/{ctx.hospital_id}/{ctx.feed_id}/{ctx.request_id}/"
+            f"FHIR_R4/{source.source_file}"
+        )
+        item = {
+            "blob_key": blob_key,
+            "sha256": source.sha256,
+            "size_bytes": source.size_bytes,
+            "source_event_id": None,
+            "etag": '"0x8DF32FA20C8FA9A"',
+            "version_id": None,
+        }
+        manifest = {
+            "schema_version": "healthcare-azure-blob-landing-manifest-v1",
+            "hospital_id": ctx.hospital_id,
+            "feed_id": ctx.feed_id,
+            "request_id": ctx.request_id,
+            "source_manifest_sha256": "a" * 64,
+            "target_format": "FHIR_R4",
+            "skipped_non_admissions": 0,
+            "objects": [item],
+        }
+        return ctx, source, manifest, blob_key
+
+    def read_manifest(self, manifest, ctx):
+        manifest_bytes = json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode()
+        ctx = replace(ctx, manifest_sha256=hashlib.sha256(manifest_bytes).hexdigest())
+        return manifest_bytes, ctx
+
+    def test_real_azure_v1_blob_key_intake_and_source_sha(self):
+        ctx, source, manifest, blob_key = self.fixture()
+        blob, ctx = self.read_manifest(manifest, ctx)
+        receipt = ingest.verify_source_objects(
+            blob, (replace(source, source_file=blob_key),), ctx)
+        self.assertEqual(receipt, ({
+            "path": blob_key, "sha256": source.sha256,
+            "size_bytes": source.size_bytes,
+        },))
+        self.assertNotEqual(ctx.manifest_sha256, manifest["source_manifest_sha256"])
+        # The real Azure Publisher does not have 'path' or 'source_system'
+        # fields. The caller must supply the independent namespaced Context.
+        self.assertNotIn("source_system", manifest)
+        self.assertNotIn("path", manifest["objects"][0])
+
+    def test_exact_publisher_manifest_contract_fail_closed(self):
+        ctx, _, baseline, _ = self.fixture()
+        cases = [
+            ({"schema_version": "unknown-version"}, "UNSUPPORTED_LANDING_MANIFEST_VERSION"),
+            ({"target_format": "HL7_V2"}, "PUBLISHER_FHIR_MANIFEST_CONTRACT_MISMATCH"),
+            ({"skipped_non_admissions": 1}, "PUBLISHER_FHIR_MANIFEST_CONTRACT_MISMATCH"),
+            ({"source_manifest_sha256": "bad"}, "PUBLISHER_FHIR_MANIFEST_CONTRACT_MISMATCH"),
+            ({"hospital_id": "another-hospital"}, "MANIFEST_SOURCE_NAMESPACE_CONFLICT"),
+            ({"unexpected_field": "hidden"}, "PUBLISHER_FHIR_MANIFEST_CONTRACT_MISMATCH"),
+        ]
+        for edit, error in cases:
+            with self.subTest(edit=edit):
+                updated = dict(baseline, **edit)
+                raw, context = self.read_manifest(updated, ctx)
+                with self.assertRaisesRegex(ValueError, error):
+                    ingest._manifest_objects(raw, context)
+
+    def test_exact_publisher_object_contract_and_namespace(self):
+        ctx, _, baseline, _ = self.fixture()
+        cases = [
+            ({"source_event_id": "fake"}, "PUBLISHER_FHIR_OBJECT_CONTRACT_MISMATCH"),
+            ({"etag": ""}, "PUBLISHER_SOURCE_VERSION_OR_ETAG_INVALID"),
+            ({"version_id": 9}, "PUBLISHER_SOURCE_VERSION_OR_ETAG_INVALID"),
+            ({"path": "forbidden"}, "PUBLISHER_FHIR_OBJECT_CONTRACT_MISMATCH"),
+            ({"blob_key": "../escape.json"}, "MANIFEST_OBJECT_PATH_INVALID"),
+            ({"blob_key": "clinical/v1/other-hospital/fhir-r4/offline-request/FHIR_R4/fhir/a.json"},
+             "PUBLISHER_FHIR_BLOB_PREFIX_CONFLICT"),
+        ]
+        for edit, error in cases:
+            with self.subTest(edit=edit):
+                updated = dict(baseline)
+                updated["objects"] = [dict(baseline["objects"][0], **edit)]
+                raw, context = self.read_manifest(updated, ctx)
+                with self.assertRaisesRegex(ValueError, error):
+                    ingest._manifest_objects(raw, context)
+
+    def test_duplicate_manifest_json_keys_are_rejected(self):
+        ctx, _, baseline, _ = self.fixture()
+        blob, _ = self.read_manifest(baseline, ctx)
+        bad = blob[:-1] + b',"objects":[]}'
+        ctx = replace(ctx, manifest_sha256=hashlib.sha256(bad).hexdigest())
+        with self.assertRaisesRegex(ValueError, "INVALID_MANIFEST_JSON"):
+            ingest._manifest_objects(bad, ctx)
+
+
 class OfflineSparkCanonical(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
