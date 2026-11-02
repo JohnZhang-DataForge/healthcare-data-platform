@@ -21,6 +21,10 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 | [nb_fhir_ingest.Notebook/.platform](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/.platform) | Fabric Git 同步的真实 Notebook Item 元数据；不要手工改 logicalId |
 | [nb_fhir_ingest.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py) | P2 单一实现的 Git Native Notebook，含 Fabric Cell/Parameters Cell 与启动 HOLD；已完成手工 Git Sync，并由 Self-Runner 双格式 GetDefinition 证实业务代码保留 |
 
+## Business Notebook gated Runtime smoke (2026-11-02)
+
+The one canonical `nb_fhir_ingest.Notebook/notebook-content.py` now has an explicit import-only `RUNTIME_SMOKE` execution mode for the **existing** Fabric business Notebook. It checks Shared Engine v0.1.1 and PySpark 4.1 and emits a pinned exit marker. The default `HALT`, the independent `execute_native_notebook` write guard, and the Pipeline default remain unchanged. Offline negative checks are in [Native Contract tests](../../../../azure-fabric/notebook-development/tests/test_fabric_git_native_contract.py). Live service-principal execution, exact exit and independent evidence remain required before declaring this code cloud-verified. See [Git onboarding OpenSpec task 3.3](../../../../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md).
+
 ## Git-first new Notebook deployment (2026-11-02)
 
 The trusted Healthcare [Fabric Git Deploy](../../../../.github/workflows/fabric-git-deploy.yml) dispatches on any root-level `nb_*.Notebook/**` change, including new `.platform` files. The Self-Runner updater owns authorization: it requires Git-native identity, remote-only `Added` for creation, and independent workspace item/definition readback. A dispatched workflow is NOT proof of creation. The existing `nb_fhir_ingest` HALT and Pipeline contracts remain pinned. Do not manually precreate a Notebook of the same name in the Portal; do not copy a smoke logicalId.
