@@ -21,6 +21,12 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 | [nb_fhir_ingest.Notebook/.platform](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/.platform) | Fabric Git 同步的真实 Notebook Item 元数据；不要手工改 logicalId |
 | [nb_fhir_ingest.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py) | P2 单一实现的 Git Native Notebook，含 Fabric Cell/Parameters Cell 与启动 HOLD；已完成手工 Git Sync，并由 Self-Runner 双格式 GetDefinition 证实业务代码保留 |
 
+## Git-first new Notebook deployment (2026-11-02)
+
+The trusted Healthcare [Fabric Git Deploy](../../../../.github/workflows/fabric-git-deploy.yml) dispatches on any root-level `nb_*.Notebook/**` change, including new `.platform` files. The Self-Runner updater owns authorization: it requires Git-native identity, remote-only `Added` for creation, and independent workspace item/definition readback. A dispatched workflow is NOT proof of creation. The existing `nb_fhir_ingest` HALT and Pipeline contracts remain pinned. Do not manually precreate a Notebook of the same name in the Portal; do not copy a smoke logicalId.
+
+The initial generic contract accepts root-level `nb_*.Notebook` items only; moving items into a new Fabric UI folder or adding a new Pipeline/Environment requires separate review. See [Notebook onboarding OpenSpec](../../../../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md).
+
 **以后如何更新：**每增加一个真实 Notebook Item，应在上表使用**指向实际文件的相对 Markdown 链接**登记其真实 `.platform`、`notebook-content.py` 及其他生成文件。静态 CODE-map CI 会检查源码完整性、链接归属，并要求新增、删除或迁移文件时在同一个 PR 更新本 `CODE.md`。
 
 现有 [Terraform Notebook Bootstrap](../../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) 故意抛出异常，由 [Azure/Fabric 总 CODE.md](../CODE.md) 导航。不能把它直接改名放入 Workspace 并声称是 Fabric Git 已同步的 Notebook。
