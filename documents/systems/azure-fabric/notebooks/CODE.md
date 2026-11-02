@@ -18,6 +18,8 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 | 原生源码文件 | 功能 |
 | --- | --- |
+| [nb_git_onboarding_smoke.Notebook/.platform](../../../../azure-fabric/workspaces/healthcare-omop/nb_git_onboarding_smoke.Notebook/.platform) | **Ephemeral Git-first create/run/delete integration test only**; unique logicalId; must be removed in teardown PR |
+| [nb_git_onboarding_smoke.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_git_onboarding_smoke.Notebook/notebook-content.py) | Import-only Spark 4.1 and Shared Engine Wheel 0.1.1; no FHIR or Delta I/O; must be removed in teardown PR |
 | [nb_fhir_ingest.Notebook/.platform](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/.platform) | Fabric Git 同步的真实 Notebook Item 元数据；不要手工改 logicalId |
 | [nb_fhir_ingest.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py) | P2 单一实现的 Git Native Notebook，含 Fabric Cell/Parameters Cell 与启动 HOLD；已完成手工 Git Sync，并由 Self-Runner 双格式 GetDefinition 证实业务代码保留 |
 
