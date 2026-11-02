@@ -167,6 +167,40 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', content)
         self.assertIn("notebookutils.notebook.exit(smoke_exit)", content)
 
+    def test_fhir_intake_readonly_requires_frozen_request_no_mutations(self):
+        import inspect
+        import fhir_ingest_notebook as notebook
+        from unittest.mock import Mock
+        good = dict(
+            request="atlanta-fhir-gh-40238053772",
+            allow_write=False, retention_ok=False,
+            manifest="", source="", target="",
+        )
+        guarded = notebook.verify_fhir_intake_readonly
+        for key, value in (
+            ("request", "unknown-request"),
+            ("allow_write", True),
+            ("retention_ok", True),
+            ("manifest", "{}"),
+            ("source", "SomePath"),
+            ("target", "DeltaTables"),
+        ):
+            c = dict(good, **{key: value})
+            dummy = Mock()
+            with self.subTest(key=key), self.assertRaisesRegex(RuntimeError, "HOLD_FHIR"):
+                guarded(dummy, **c)
+            dummy.assert_not_called()
+        source = inspect.getsource(guarded)
+        self.assertIn('spark.read.format("binaryFile")', source)
+        self.assertIn("read_source_objects_native(", source)
+        self.assertIn("parse_fhir_resources(", source)
+        self.assertNotIn(".write(", source)
+        content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
+        self.assertIn('elif run_mode == "INTAKE_READONLY":', content)
+        self.assertIn('run_mode = "HALT"', content)
+        self.assertIn("notebookutils.notebook.exit(intake_exit)", content)
+        self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', content)
+
     def test_native_environment_has_exact_hashed_custom_wheel(self):
         import hashlib
         import zipfile
