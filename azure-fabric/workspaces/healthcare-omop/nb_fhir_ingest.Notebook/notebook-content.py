@@ -403,8 +403,39 @@ silver_root = ""
 
 # CELL ********************
 
+def validate_read_only_runtime_smoke(*, mode: str, allow_write: bool,
+                                     retention_ok: bool, request: str,
+                                     manifest: str, source: str,
+                                     target: str) -> str:
+    """Import-only Fabric smoke. No Spark action, Blob, Lakehouse or Delta I/O.
+
+    This MUST remain distinct from the separately authorized ETL/write mode.
+    HALT stays the default and every non-smoke mode is rejected.
+    """
+    if mode != "RUNTIME_SMOKE":
+        raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
+    if (allow_write is not False or retention_ok is not False
+            or any(value != "" for value in (request, manifest, source, target))):
+        raise RuntimeError("HOLD_RUNTIME_SMOKE_UNSAFE_PARAMETERS")
+    import pyspark
+    if engine_version != "0.1.1":
+        raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION")
+    if not pyspark.__version__.startswith("4.1."):
+        raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_SPARK_VERSION")
+    if not callable(parse_fhir_resources) or not callable(normalize_fhir_patient):
+        raise RuntimeError("HOLD_RUNTIME_SMOKE_ENGINE_IMPORT_INVALID")
+    return "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_011_SPARK41_PASS_20261102"
+
+
 if __name__ == "__main__":
-    raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
+    if run_mode != "RUNTIME_SMOKE":
+        raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
+    smoke_exit = validate_read_only_runtime_smoke(
+        mode=run_mode, allow_write=write_authorized,
+        retention_ok=retention_preflight_verified, request=request_id,
+        manifest=manifest_json, source=source_root, target=silver_root,
+    )
+    notebookutils.notebook.exit(smoke_exit)
 
 # METADATA ********************
 
