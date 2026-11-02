@@ -83,7 +83,10 @@ class DispatchTests(unittest.TestCase):
         self.assertIn("pl_fhir_ingest.DataPipeline/pipeline-content.json", push)
         self.assertIn("branches: [main]", push)
         self.assertIn("github.ref == 'refs/heads/main'", workflow)
-        self.assertIn("expected_healthcare_sha", workflow)
+        self.assertIn("fabric_git_dispatch.py", workflow)
+        self.assertIn("expected_healthcare_sha",
+            (Path(__file__).resolve().parents[1] / "scripts"
+             / "fabric_git_dispatch.py").read_text(encoding="utf-8"))
 
     def test_missing_secret_blocks_without_http_request(self):
         opener=StubOpener()
