@@ -443,6 +443,8 @@ request_id = ""
 manifest_json = ""
 source_root = ""
 silver_root = ""
+patient_contract_json = ""
+encounter_contract_json = ""
 
 # METADATA ********************
 
@@ -480,15 +482,8 @@ def validate_read_only_runtime_smoke(*, mode: str, allow_write: bool,
     return "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_011_SPARK41_PASS_20261102"
 
 
-def verify_fhir_intake_readonly(spark, *, request: str, allow_write: bool,
-                                retention_ok: bool, manifest: str,
-                                source: str, target: str) -> str:
-    """Spark GET of previously SHA-verified Azure FHIR via OneLake Files Shortcut.
-
-    Read only: no Delta/Writer/Notebook state mutation. The two frozen synthetic
-    requests are pinned separately to the actual Publisher Manifest hash.
-    No dynamic URI, source batch or destination is accepted from untrusted jobs.
-    """
+def _frozen_fhir_source_context(spark, request: str):
+    """One pinned source-byte read for both independent read-only runtime modes."""
     from datetime import date, datetime, timezone
 
     frozen = {
@@ -497,23 +492,19 @@ def verify_fhir_intake_readonly(spark, *, request: str, allow_write: bool,
         "atlanta-fhir-gh-40245591533":
             ("7f869bd9e9b9aefa4d6ddfebaf66ce011f53afa143d33b3731bc44dc53fa8c00", 100),
     }
-    if request not in frozen or not isinstance(request, str):
+    if not isinstance(request, str) or request not in frozen:
         raise RuntimeError("HOLD_FHIR_INTAKE_REQUEST_NOT_PINNED")
-    if (allow_write is not False or retention_ok is not False
-            or any(value != "" for value in (manifest, source, target))):
-        raise RuntimeError("HOLD_FHIR_INTAKE_READONLY_PARAMETERS")
     if engine_version != "0.1.1":
         raise RuntimeError("HOLD_FHIR_INTAKE_WHEEL_MISMATCH")
     expected_manifest_sha, expected_objects = frozen[request]
     prefix = "Files/fhir_landing/clinical/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/" + request
-    manifest_path = prefix + "/landing-manifest.json"
-    raw_rows = spark.read.format("binaryFile").load(manifest_path).select("content").collect()
+    raw_rows = spark.read.format("binaryFile").load(
+        prefix + "/landing-manifest.json").select("content").collect()
     if len(raw_rows) != 1:
         raise RuntimeError("HOLD_FHIR_INTAKE_MANIFEST_NOT_ONE_FILE")
     raw_manifest = bytes(raw_rows[0].content)
     if hashlib.sha256(raw_manifest).hexdigest() != expected_manifest_sha:
         raise RuntimeError("HOLD_FHIR_INTAKE_REMOTE_MANIFEST_CHANGED")
-    now = datetime.now(timezone.utc)
     context = BatchContext(
         hospital_id="atlanta-hospital-a", feed_id="atlanta-hospital-a-fhir-r4",
         source_system="synthea-fhir", request_id=request,
@@ -522,27 +513,89 @@ def verify_fhir_intake_readonly(spark, *, request: str, allow_write: bool,
         processing_run_id="read-only:" + request,
         source_version="FHIR_R4",
         source_ingest_date=date(2026, 10, 25),
-        processed_at=now,
+        processed_at=datetime.now(timezone.utc),
     )
-    # Parser verifies exact Publisher v1 object metadata; native Spark GET
-    # independently checks all corresponding bytes and SHA before parsing.
     sources = read_source_objects_native(
-        spark, source_root="Files/fhir_landing", manifest_bytes=raw_manifest, context=context)
+        spark, source_root="Files/fhir_landing",
+        manifest_bytes=raw_manifest, context=context)
     if len(sources) != expected_objects:
         raise RuntimeError("HOLD_FHIR_INTAKE_OBJECT_COUNT_MISMATCH")
+    return context, raw_manifest, sources, expected_objects
+
+
+def verify_fhir_intake_readonly(spark, *, request: str, allow_write: bool,
+                                retention_ok: bool, manifest: str,
+                                source: str, target: str) -> str:
+    """Previously proven exact-byte, read-only FHIR source Intake."""
+    if (allow_write is not False or retention_ok is not False
+            or any(value != "" for value in (manifest, source, target))):
+        raise RuntimeError("HOLD_FHIR_INTAKE_READONLY_PARAMETERS")
+    context, _, sources, expected_objects = _frozen_fhir_source_context(spark, request)
     parsed = parse_fhir_resources(sources, context)
     patients = sum(r.resource_type == "Patient" for r in parsed.accepted)
     encounters = sum(r.resource_type == "Encounter" for r in parsed.accepted)
     if patients != expected_objects or encounters < expected_objects:
         raise RuntimeError("HOLD_FHIR_INTAKE_PATIENT_ENCOUNTER_COUNT")
-    # Rejected unsupported FHIR types are explicitly reported; not a claim
-    # that Silver v1 canonicalization or clinical DQ has been accepted.
     print("FHIR_INTAKE_OBJECTS_SHA_VERIFIED=" + str(len(sources)))
     print("FHIR_INTAKE_PATIENT_RESOURCES=" + str(patients))
     print("FHIR_INTAKE_ENCOUNTER_RESOURCES=" + str(encounters))
     print("FHIR_INTAKE_NONCANONICAL_OR_REJECTED=" + str(len(parsed.rejected)))
     return ("FHIR_INTAKE_READONLY_" + str(expected_objects)
             + "_SPARK_SOURCE_SHA_PASS_20261102")
+
+
+def verify_fhir_canonical_readonly(spark, *, request: str, allow_write: bool,
+                                   retention_ok: bool, manifest: str,
+                                   source: str, target: str,
+                                   patient_contract_json: str,
+                                   encounter_contract_json: str) -> str:
+    """Real native Spark Canonical/DQ probe; NO persistence, Delta, or approval.
+
+    Contracts are supplied from the existing Git-authoritative Local v1 files
+    as exact UTF-8 text, then verified by the Shared Wheel's frozen SHA pins.
+    Never fetch a mutable contract, invent missing clinical fields, or write.
+    """
+    if (allow_write is not False or retention_ok is not False
+            or any(value != "" for value in (manifest, source, target))):
+        raise RuntimeError("HOLD_FHIR_CANONICAL_READONLY_UNSAFE_PARAMETERS")
+    if (not isinstance(patient_contract_json, str)
+            or not isinstance(encounter_contract_json, str)
+            or not 0 < len(patient_contract_json) <= 5000
+            or not 0 < len(encounter_contract_json) <= 5000):
+        raise RuntimeError("HOLD_FHIR_CANONICAL_CONTRACT_INPUT_INVALID")
+    # Verify hashes BEFORE any Blob/Shortcut reads.
+    patient_bytes, encounter_bytes = (
+        patient_contract_json.encode("utf-8"),
+        encounter_contract_json.encode("utf-8"))
+    load_pinned_contract(patient_bytes, "patient")
+    load_pinned_contract(encounter_bytes, "encounter")
+
+    from dataclasses import replace
+    context, manifest_bytes, sources, expected_objects = _frozen_fhir_source_context(
+        spark, request)
+    context = replace(
+        context, processing_version="fhir-canonical-readonly-v1",
+        processing_run_id="canonical-readonly:" + request)
+    batch = prepare_batch(
+        spark, context=context, manifest_bytes=manifest_bytes,
+        source_objects=sources, patient_contract_bytes=patient_bytes,
+        encounter_contract_bytes=encounter_bytes)
+    validate_silver_readback(batch.patient_df, batch.encounter_df, batch, context)
+    summary = {}
+    for finding in batch.findings:
+        summary[finding.reason] = summary.get(finding.reason, 0) + 1
+    print("FHIR_CANONICAL_READONLY_PATIENTS=" + str(batch.patient_count))
+    print("FHIR_CANONICAL_READONLY_ENCOUNTERS=" + str(batch.encounter_count))
+    print("FHIR_CANONICAL_READONLY_QUARANTINE_OR_REJECT=" + str(len(batch.findings)))
+    print("FHIR_CANONICAL_READONLY_REASON_COUNTS="
+          + json.dumps(summary, sort_keys=True, separators=(",", ":")))
+    # DQ HOLD remains a Completed diagnostic, not an approved Silver release.
+    if (batch.findings or batch.patient_count != expected_objects
+            or batch.encounter_count < expected_objects):
+        return (f"FHIR_CANONICAL_READONLY_{expected_objects}_DQ_HOLD_"
+                f"P{batch.patient_count}_E{batch.encounter_count}_"
+                f"Q{len(batch.findings)}_20261102")
+    return f"FHIR_CANONICAL_READONLY_{expected_objects}_SPARK_PK_FK_PASS_20261102"
 
 
 if __name__ == "__main__":
@@ -560,6 +613,15 @@ if __name__ == "__main__":
             manifest=manifest_json, source=source_root, target=silver_root,
         )
         notebookutils.notebook.exit(intake_exit)
+    elif run_mode == "CANONICAL_READONLY":
+        canonical_exit = verify_fhir_canonical_readonly(
+            spark, request=request_id, allow_write=write_authorized,
+            retention_ok=retention_preflight_verified,
+            manifest=manifest_json, source=source_root, target=silver_root,
+            patient_contract_json=patient_contract_json,
+            encounter_contract_json=encounter_contract_json,
+        )
+        notebookutils.notebook.exit(canonical_exit)
     else:
         raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
 
