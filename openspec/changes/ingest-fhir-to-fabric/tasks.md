@@ -201,3 +201,10 @@
 - [x] 4.26 Official chain: Healthcare `push main` → SHA-pinned GitHub Actions dispatch → private Self-Runner Fabric Git Auto Update → native definition readback; successful E2E Cloud run #41311994774.
 - [x] Repeat private Runner run was no-write, proving Git-to-Fabric idempotency after deployment; Self-Runner workflow fallback polling reduced from twice hourly to daily in PR #381.
 - [ ] Environment Wheel effective publish, Notebook Spark execution, Fabric capacity/runtime and Delta transformations must use independent approvals and acceptance tests; transport PASS never releases them.
+
+### G0 offline Publisher-v1 Manifest compatibility — 2026-11-02
+
+- Discovered by comparing real `local-data-platform/apps/clinical_producers/azure_blob_publisher.py` with P2 Fabric `_manifest_objects`: the delivered `healthcare-azure-blob-landing-manifest-v1` uses `objects[].blob_key` (full container-relative path) plus ETag/version, *not* the P2 isolated test fixture's `objects[].path` and `source_system`. Reusing only P2 fixtures would fail real Intake despite a green Spark import test.
+- Implemented a strict **offline-only** adapter in the **single** Git-native business Notebook, preserving the legacy isolated synthetic test contract: validate publisher schema/version, hospital/feed/request, FHIR_R4, full `clinical/v1/<hospital>/<feed>/<request>/FHIR_R4/fhir/*.json` Blob path namespace, exact object keys, ETag/version shape, SHA256, size and duplicate JSON keys. `source_manifest_sha256` belongs to the upstream generator, not the delivered Manifest SHA captured by BatchContext.
+- Negative offline tests protect cross-hospital, unsupported version/format, unexpected keys, malformed ETag and traversal. These are **not** evidence that Fabric has actual Blob access, retention policy or Shortcut/Copy readback.
+- **G0 remains OPEN** until independent read-only Azure/Fabric permission, real Publisher Manifest SHA/object ETag/retention and exact source bytes are verified. **G3/G4 NOT_RUN**: no Bronze/Silver cloud data writes, 5–10 or 100 Patient job, replay or approval is claimed by this code change.
