@@ -80,29 +80,82 @@ def _manifest_objects(manifest_bytes: bytes, context: BatchContext) -> tuple[dic
     if not isinstance(manifest_bytes, bytes) or hashlib.sha256(manifest_bytes).hexdigest() != (
             context.manifest_sha256.lower()):
         raise ValueError("MANIFEST_SHA256_CONFLICT_HOLD")
+    def _unique_json_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("DUPLICATE_MANIFEST_JSON_KEY")
+            result[key] = value
+        return result
+
     try:
-        manifest = json.loads(manifest_bytes.decode("utf-8"))
+        manifest = json.loads(manifest_bytes.decode("utf-8"),
+                              object_pairs_hook=_unique_json_pairs)
     except (UnicodeDecodeError, ValueError) as exc:
         raise ValueError("INVALID_MANIFEST_JSON") from exc
     if not isinstance(manifest, dict):
         raise ValueError("INVALID_MANIFEST_SCHEMA")
-    required_context = ("hospital_id", "feed_id", "source_system", "request_id")
+
+    # The real Azure Publisher v1 emits blob_key (full container-relative URI),
+    # not the old isolated P2 test shape with relative 'path' / source_system.
+    # NEVER infer that source_manifest_sha256 is this delivered Manifest's hash:
+    # it names the upstream Generator manifest, whereas context.manifest_sha256
+    # has already been checked against the actual published Azure Manifest bytes.
+    publisher_v1 = manifest.get("schema_version") == "healthcare-azure-blob-landing-manifest-v1"
+    if "schema_version" in manifest and not publisher_v1:
+        raise ValueError("UNSUPPORTED_LANDING_MANIFEST_VERSION")
+    required_context = (("hospital_id", "feed_id", "request_id")
+                        if publisher_v1 else
+                        ("hospital_id", "feed_id", "source_system", "request_id"))
     if any(manifest.get(key) != getattr(context, key) for key in required_context):
         raise ValueError("MANIFEST_SOURCE_NAMESPACE_CONFLICT")
+    if publisher_v1:
+        required_keys = {
+            "schema_version", "hospital_id", "feed_id", "request_id",
+            "source_manifest_sha256", "target_format",
+            "skipped_non_admissions", "objects",
+        }
+        upstream_sha = manifest.get("source_manifest_sha256")
+        if (set(manifest) != required_keys or manifest.get("target_format") != "FHIR_R4"
+                or context.source_version != "FHIR_R4"
+                or type(manifest.get("skipped_non_admissions")) is not int
+                or manifest["skipped_non_admissions"] != 0
+                or not isinstance(upstream_sha, str) or len(upstream_sha) != 64
+                or any(c not in "0123456789abcdef" for c in upstream_sha)):
+            raise ValueError("PUBLISHER_FHIR_MANIFEST_CONTRACT_MISMATCH")
     objects = manifest.get("objects")
-    if not isinstance(objects, list) or not objects:
+    if not isinstance(objects, list) or not objects or len(objects) > 5000:
         raise ValueError("EMPTY_OR_INVALID_MANIFEST_OBJECTS")
     seen: set[str] = set()
     result = []
     for entry in objects:
         if not isinstance(entry, dict):
             raise ValueError("INVALID_MANIFEST_OBJECT")
-        name, sha, size = entry.get("path"), entry.get("sha256"), entry.get("size_bytes")
+        if publisher_v1:
+            if set(entry) != {
+                    "blob_key", "sha256", "size_bytes", "source_event_id",
+                    "etag", "version_id",
+                } or entry.get("source_event_id") is not None:
+                raise ValueError("PUBLISHER_FHIR_OBJECT_CONTRACT_MISMATCH")
+            etag, version_id = entry.get("etag"), entry.get("version_id")
+            if (not isinstance(etag, str) or not etag
+                    or (version_id is not None and
+                        (not isinstance(version_id, str) or not version_id))):
+                raise ValueError("PUBLISHER_SOURCE_VERSION_OR_ETAG_INVALID")
+        name = entry.get("blob_key" if publisher_v1 else "path")
+        sha, size = entry.get("sha256"), entry.get("size_bytes")
         if not isinstance(name, str) or not name or name.startswith(("/", "\\")) or "\\" in name:
             raise ValueError("MANIFEST_OBJECT_PATH_INVALID")
         parts = PurePosixPath(name).parts
-        if ".." in parts or "." in parts or ":" in name or "*" in name or "?" in name:
+        if (str(PurePosixPath(name)) != name or ".." in parts or "." in parts
+                or any(c in name for c in (":", "*", "?", "#", "%"))):
             raise ValueError("MANIFEST_OBJECT_PATH_INVALID")
+        if publisher_v1:
+            expected = ("clinical", "v1", context.hospital_id, context.feed_id,
+                        context.request_id, "FHIR_R4", "fhir")
+            if (len(parts) != 8 or tuple(parts[:7]) != expected
+                    or not parts[-1].endswith(".json") or len(parts[-1]) > 160):
+                raise ValueError("PUBLISHER_FHIR_BLOB_PREFIX_CONFLICT")
         if name in seen:
             raise ValueError("DUPLICATE_MANIFEST_OBJECT_PATH")
         seen.add(name)
