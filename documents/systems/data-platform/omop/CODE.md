@@ -144,3 +144,16 @@ NEW_ONLY Writer 新 GHCR 包名：`ghcr.io/johnzhang-dataforge/healthcare-data-p
 
 **新增、删除、重命名或移动本组件负责的 `apps/`、`contracts/`、`sql/`、`images/`、`kubernetes/` 或 `scripts/` 源文件，必须在同一个 PR 更新本 CODE.md。** CODE.md 只做导航，不能当作重新执行历史脚本的授权。历史 `taskNNN` 程序仍可能被 Docker COPY、Import 或冻结 Contract 引用；先看 [Legacy 重构计划](../../../engineering/development/LEGACY-CODE-REFACTOR-PLAN.md)。
 
+
+## OMOP Azure Blob snapshot export（新增，静态/离线阶段）
+
+此模块**只复制已存在的 OMOP CDM 数据**，不提交 PostgreSQL 事务、不包含 Airflow/Spark/Writer 代码、不改变 Hospital FHIR/HL7 Landing 合同。规范：[`export-local-omop-to-azure-blob`](../../../../openspec/changes/export-local-omop-to-azure-blob/tasks.md)。MVP 为 `pg_dump -Fc -n cdm`，独立的表级 Parquet/Golden Dataset 尚未实现。
+
+| 实际源码文件 | 作用及使用边界 |
+| --- | --- |
+| [`omop_snapshot_publisher.py`](../../../../local-data-platform/apps/clinical_producers/omop_snapshot_publisher.py) | OMOP-only 不可变 Blob 上传适配器；复用现有 AzureSDKBlobBackend、GET/ETag/SHA256 与 Manifest-last，不改 FHIR/HL7 |
+| [`omop_snapshot_runtime.py`](../../../../local-data-platform/apps/clinical_producers/omop_snapshot_runtime.py) | 只读取同 Pod ephemeral Stage 的 PG custom dump；运行时 Azure 身份；错误脱敏 |
+| [`publish-omop-snapshot-job.yaml.tpl`](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-omop-snapshot-job.yaml.tpl) | **仅静态模板**：`dw-synthea` PG17 `pg_dump` initContainer + immutable Blob Publisher，独立只读 PG Secret、现有 Azure Secret、无 Generator PVC |
+| [`test_omop_snapshot_publisher.py`](../../../../local-data-platform/tests/clinical_producers/test_omop_snapshot_publisher.py) | Fake Azure 正负向、partial retry、认证及静态 K8s Namespace 合同；不是 Azure Live 验收 |
+
+真正运行前需核对读库只读账号和独立 `dw-synthea/omop-snapshot-reader` Secret、PG17 客户端版本、PG Service DNS、Image Digest、容量、Azure 权限及并行作业；必须按 Safe Operations 单独获得真实部署及 Blob PUT 授权。本次 PR 只提供代码、模板和离线测试。
