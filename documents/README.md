@@ -1,5 +1,7 @@
 # Healthcare Data Platform — 文档新入口
 
+> **2026-11-02 Fabric Notebook 创建机制最新实测**：Git Native 新建 → 自动 UpdateFromGit → 云端双格式/Environment 读回 → Spark 4.1 + Wheel 0.1.1 实际运行 → Git 删除并核对恢复，**全部 E2E PASS**。未来 Agent 在新建/修改 Notebook 前必须阅读 [Notebook Runbook](systems/azure-fabric/notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md) 和 [OpenSpec 完整验收](../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md)。这项验收**不代表**正式业务 `nb_fhir_ingest` 已完成 FHIR/Delta ETL；它仍保持 HALT。下方较早的 Fabric 进度段落保留历史编制时点，不得覆盖本项更新。
+
 > **2026-10-31 正式开发设计依据**：[Fabric Notebook + Pipeline + Environment + Shared Engine ADR](architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)、[目录归属规范](engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md)。本次是规范定版，不代表 Fabric 云资源已部署。
 
 > **状态：ACTIVE（经终审的项目文档权威入口）** · 2026-10-16 · **STEP01–STEP08 COMPLETE（PR #174 合并后）**；OpenSpec G0–G4 Bootstrap 已完成，后续工作由 Active Changes 管理（2026-10-18 核对）。
