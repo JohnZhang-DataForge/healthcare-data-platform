@@ -133,6 +133,40 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertFalse(data["properties"].get("triggers"))
         self.assertEqual(len(activities), 1)
 
+    def test_business_runtime_smoke_is_parameterized_and_strictly_read_only(self):
+        # Mocks the Spark version, NOT a claim of an actual Fabric Spark run.
+        from unittest.mock import patch
+        import fhir_ingest_notebook as notebook
+        base = dict(
+            mode="RUNTIME_SMOKE", allow_write=False, retention_ok=False,
+            request="", manifest="", source="", target="",
+        )
+        with patch("pyspark.__version__", "4.1.1"):
+            self.assertEqual(
+                notebook.validate_read_only_runtime_smoke(**base),
+                "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_011_SPARK41_PASS_20261102",
+            )
+            for key, value in (
+                ("mode", "HALT"), ("mode", "ETL"),
+                ("allow_write", True), ("allow_write", "false"),
+                ("retention_ok", True), ("request", "anything"),
+                ("manifest", "{}"), ("source", "Files/source"),
+                ("target", "Tables/silver"),
+            ):
+                case = dict(base)
+                case[key] = value
+                with self.subTest(key=key, value=value):
+                    with self.assertRaisesRegex(RuntimeError, "HOLD_"):
+                        notebook.validate_read_only_runtime_smoke(**case)
+        with patch("pyspark.__version__", "3.5.7"):
+            with self.assertRaisesRegex(RuntimeError, "HOLD_RUNTIME_SMOKE_WRONG_SPARK_VERSION"):
+                notebook.validate_read_only_runtime_smoke(**base)
+        content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
+        self.assertIn('run_mode = "HALT"', content)
+        self.assertIn('write_authorized = False', content)
+        self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', content)
+        self.assertIn("notebookutils.notebook.exit(smoke_exit)", content)
+
     def test_native_environment_has_exact_hashed_custom_wheel(self):
         import hashlib
         import zipfile
