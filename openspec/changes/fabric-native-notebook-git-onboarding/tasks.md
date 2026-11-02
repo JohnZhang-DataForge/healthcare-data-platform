@@ -55,3 +55,10 @@ The user-authorized test passed all three distinct live gates and has now been r
 - 修复 [Fabric 总 CODE](../../../documents/systems/azure-fabric/CODE.md) 早期过期断言：业务 Notebook 已有代码但实际业务 ETL 仍 HALT；Wheel 0.1.1 Published 且已在**独立测试** Notebook 中导入；Pipeline 已包含 1 个 TridentNotebook Activity 但未执行业务 ETL。
 - 修复 [Environment CODE](../../../documents/systems/azure-fabric/environments/CODE.md) 的旧说法「业务 Engine 仍检查 0.1.0」：当前业务代码明确检查 0.1.1；但是正式业务 Notebook Runtime 和 FHIR/Delta 写入依旧未验收，临时 Smoke 不能替代业务验收。
 - [文档总入口](../../../documents/README.md) 增加最新 2026-11-02 E2E 验收导航。此项仅提高规范发现率及事实准确性，不改 Fabric 资源、Notebook/Pipeline 代码或任何云操作；Task 3.3 仍保持未完成。
+
+## Business Notebook runtime-only smoke implementation (2026-11-02)
+
+- Task **3.3 remains OPEN** until a trusted Main-only Service Principal executes the **existing** `nb_fhir_ingest` (physical item `8311ab6b-3484-4e96-8370-badeeb751633`) and independent Fabric Get Job Instance reports `Completed` with the exact `FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_011_SPARK41_PASS_20261102` exit value.
+- A narrowly parameterized `RUNTIME_SMOKE` mode checks published Engine v0.1.1 and Spark 4.1 while rejecting nonblank request/manifest/source/target and any write/retention grant. The default parameter cell `HALT`, the failure on all other modes, and Pipeline `HALT` / false write guards are **unchanged**. No FHIR source/Delta operations are invoked.
+- The Git-native source, negative offline tests and a separate trusted Self-Runner real-execution workflow must each be verified, then Main Git Sync and the cloud business definition should be independently read back before one run. A passing PR CI alone is **not** real Runtime PASS.
+- After this proof, pursue existing `ingest-fhir-to-fabric` G0 (manifest/SHA/retention), G3 5–10 synthetic Patient Bronze, and G4 100 synthetic Patient Silver. Real Delta approval requires physical readback, no duplicate replay, and an independent trusted job report; until then **NOT_RUN**.
