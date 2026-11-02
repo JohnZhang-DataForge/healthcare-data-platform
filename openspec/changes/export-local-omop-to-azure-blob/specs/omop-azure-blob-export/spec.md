@@ -56,3 +56,12 @@ Merge 或 OpenSpec 设计批准 MUST NOT 自动部署 K8s Job、增加 Secret、
 - **GIVEN** 未确认 PG reader Secret 或未批准 Azure PUT
 - **WHEN** 离线 CI 通过
 - **THEN** 系统 MUST 保持真实 K8s/PG/Azure 工作负载未执行
+
+### Requirement: Bounded export-only PostgreSQL identity lifecycle
+
+导出 SHALL 使用本次 Run 专用的 cdm READ-ONLY Role，绝不扩大共享 `cdm_reader` 或传送 PG 超级用户身份给 `dw-synthea`。若实际运行中创建临时 Role/Secret，系统 MUST 限制为 cdm USAGE/SELECT，并在作业完成和读回后撤销授权并清理 Role/Secret；失败必须核对活动作业和未知状态，不能直接重新使用身份或 Snapshot ID。
+
+#### Scenario: Existing reader cannot access all OMOP tables
+- **GIVEN** 共享只读 Role 仅有部分 cdm SELECT 权限
+- **WHEN** 请求完整 `pg_dump -n cdm`
+- **THEN** MUST 不扩大共享 Role 的权限，而是使用经过完整权限核验的受限 Snapshot 专用身份；若无法建立则 HOLD，不能使用数据库 admin 凭证执行 Publisher Job。
