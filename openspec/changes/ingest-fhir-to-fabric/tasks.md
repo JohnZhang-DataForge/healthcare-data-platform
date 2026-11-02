@@ -31,6 +31,7 @@
 - [ ] G0：只读校验 Manifest 原始字节/对象 SHA/ETag、真实 FHIR Profile、Blob Shortcut RBAC/保留策略。
 - [x] G1：[P1 offline tests/wheel verified; Fabric runtime remains HOLD] 冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
 - [x] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
+- [ ] 2.5 G3 前置只读 Canonical Spark 探针：复用同一冻结 5/100 FHIR Manifest/Shortcut、真实 v1 Patient/Encounter Contract **原字节 SHA**，调用唯一 Shared Wheel 0.1.1 完成 Canonical Transform、PK/FK、DQ 分组汇总；不触发 Delta/Approval/正式 Pipeline，实际 Fabric Job Completed + 精确 exitValue 和 read-only 证据后才能勾选。此项不替代 G3 新合成批次及物理 Bronze 写入。
 - [ ] G3：5–10 新 synthetic Patient → Intake + Bronze raw/ref + receipt，按 Source Batch/Processing Version 验证 replay SKIP 和漂移 HOLD。
 - [ ] G4：100 新 synthetic Patient/Encounter → managed Silver canonical_patient/encounter Delta；PK/FK/DQ/来源/hash/readback、quarantine、approved 证据。
 - [ ] G5：Shared Silver→OMOP Person/Visit Candidate + Concept/Identity/row reconcile，证明相同输入/版本结果稳定。
@@ -224,3 +225,9 @@
 - 当前明确的验收层级：**offline contract PASS**、**Azure Blob GET/HEAD PASS**、**Fabric Git native definition PASS**、**Fabric Spark Intake read-only 5 + 100 PASS**；**Azure 保留策略 G0 余项 OPEN**；**Bronze raw/ref、Silver canonical Delta 物理独立读回/审批、幂等 replay、Quarantine、正式 Pipeline E2E 均 NOT_RUN**。两个受控测试没有修改业务 Delta，也没有执行正式 Pipeline。只有完成 G3/G4 实机写入后才能声称 Delta E2E PASS。
 
 - **Operational regression guard:** capacity/session establishment failures before Spark execution must be investigated with independent Job GET and retried only after verifying the preceding Job terminal state, absence of competing active Notebook jobs, source pin, and idempotency scope. No 5/100 Spark Intake proof releases the separate Bronze/Silver write flags.
+
+### 2026-11-02 G3 prerequisite: Canonical read-only Spark source change
+
+- Native Notebook 新增单独 `CANONICAL_READONLY` 受限模式；仅接受既有固定 5/100 FHIR Request，不允许任意 URI/Manifest/root、禁止开启 `write_authorized` 或 `retention_preflight_verified`；Notebook 参数里的两个 Canonical Contract 必须分别匹配 **Local 原始 JSON 文件 SHA256**（Shared Wheel `load_pinned_contract`）后才读取云端源数据。
+- 仅执行真实 Spark Source GET、Shared Engine Canonical Patient/Encounter 转换与内存 DataFrame 的 PK/FK/DQ 检查；`FHIR_CANONICAL_READONLY_*_SPARK_PK_FK_PASS_20261102` 才代表转换合格；`FHIR_CANONICAL_READONLY_*_DQ_HOLD_*` 是未获准写 Silver 的诊断结果。源解析及 Manifest SHA 仍然使用 Task 2.4 固定历史证据。
+- 此处代码/Offline CI 提交不等于实机通过；需要单独 Runner 主分支授权执行、Spark 精确 exit 读回及 OpenSpec 更新才勾选 Task 2.5。保留默认 `HALT`、`write_authorized=False`、`retention_preflight_verified=False`，不开放正式 Delta 写入。

@@ -191,10 +191,14 @@ class FabricGitNativeContract(unittest.TestCase):
                 guarded(dummy, **c)
             dummy.assert_not_called()
         source = inspect.getsource(guarded)
-        self.assertIn('spark.read.format("binaryFile")', source)
-        self.assertIn("read_source_objects_native(", source)
+        frozen_source = inspect.getsource(notebook._frozen_fhir_source_context)
+        # Physical native GET moved to shared frozen-source helper, used by
+        # both existing Intake and new no-write Canonical runtime probes.
+        self.assertIn('_frozen_fhir_source_context(', source)
+        self.assertIn('spark.read.format("binaryFile")', frozen_source)
+        self.assertIn("read_source_objects_native(", frozen_source)
         self.assertIn("parse_fhir_resources(", source)
-        self.assertNotIn(".write(", source)
+        self.assertNotIn(".write(", source + frozen_source)
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
         self.assertIn('elif run_mode == "INTAKE_READONLY":', content)
         self.assertIn('run_mode = "HALT"', content)

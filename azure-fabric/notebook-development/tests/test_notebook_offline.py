@@ -300,5 +300,50 @@ class OfflineSparkCanonical(unittest.TestCase):
                          ["source_encounter_id", "source_person_id", "start_datetime"])
 
 
+    def test_canonical_readonly_uses_exact_local_contracts_and_no_delta_write(self):
+        ctx, manifest, obj = make_batch()
+        safe_globals = ingest.verify_fhir_canonical_readonly.__globals__
+        with patch.dict(safe_globals, {
+            "_frozen_fhir_source_context": lambda spark, request: (
+                ctx, manifest, (obj,), 1),
+            "_write_delta": lambda *args, **kwargs: self.fail("Delta write forbidden"),
+        }):
+            actual = ingest.verify_fhir_canonical_readonly(
+                self.spark, request="atlanta-fhir-gh-40238053772",
+                allow_write=False, retention_ok=False, manifest="",
+                source="", target="",
+                patient_contract_json=PATIENT.read_text(),
+                encounter_contract_json=ENCOUNTER.read_text(),
+            )
+            self.assertEqual(
+                actual, "FHIR_CANONICAL_READONLY_1_SPARK_PK_FK_PASS_20261102")
+
+    def test_canonical_readonly_negative_guard_precedes_spark_read(self):
+        base = dict(
+            request="atlanta-fhir-gh-40238053772",
+            allow_write=False, retention_ok=False, manifest="",
+            source="", target="",
+            patient_contract_json=PATIENT.read_text(),
+            encounter_contract_json=ENCOUNTER.read_text(),
+        )
+        for key, value in [
+            ("allow_write", True),
+            ("retention_ok", True),
+            ("manifest", "{}"),
+            ("source", "Files/fhir_landing"),
+            ("target", "Tables/foo"),
+            ("patient_contract_json", ""),
+            ("encounter_contract_json", "wrong-contract"),
+        ]:
+            case = dict(base, **{key: value})
+            with self.subTest(key=key):
+                with patch.dict(ingest.verify_fhir_canonical_readonly.__globals__, {
+                    "_frozen_fhir_source_context": lambda *args, **kw: self.fail(
+                        "Spark source read forbidden before contract/flag checks"),
+                }):
+                    with self.assertRaises((RuntimeError, ValueError)):
+                        ingest.verify_fhir_canonical_readonly(self.spark, **case)
+
+
 if __name__ == "__main__":
     unittest.main()
