@@ -6,7 +6,7 @@
 - [x] 2.2 Self-Runner 添加 root-level Git Native Notebook 新建的精确身份验证、remote Added、Source/HALT/Environment Gate、混杂状态 HOLD，保留现有固定项逻辑。
 - [x] 2.3 Self-Runner 增加 UpdateFromGit 后的独立新 Notebook identity/content/env readback，以及负向单测；PR CI PASS。
 - [x] 3.1 Healthcare PR 与 Self-Runner PR 均完成 Required CI、合并 main；记录准确 SHA、Run 和本次授权范围。
-- [ ] 3.2 使用新无业务数据的 Git-native Notebook 进行真实 Added → UpdateFromGit → Readback 验收（需要独立 reviewed 验证和审慎清理）。在此之前 `LIVE_NEW_NOTEBOOK_UNVERIFIED`。
+- [x] 3.2 使用新无业务数据的 Git-native Notebook 进行真实 Added → UpdateFromGit → Readback 验收（需要独立 reviewed 验证和审慎清理）。在此之前 `LIVE_NEW_NOTEBOOK_UNVERIFIED`。
 - [ ] 3.3 正式业务 `nb_fhir_ingest` 的受控运行时 Smoke 单独后续处理，保持 HALT；本 Change 不声明业务 ETL PASS。
 
 ## Evidence
@@ -34,3 +34,17 @@
 - **Git-created item really deployed**: Self-Runner [Run 41478131139](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478131139) `AUTO_UPDATE_DEPLOYMENT_READBACK_PASS`, `new_notebook_definitions_equal_git=true`, unchanged business Notebook cells and Pipeline HALT parameters. Physical ID `32fee30f-6787-4a04-a8c7-ca7c579dbd69`, logicalId `9d256d25-6f0a-4d73-9ca2-2206f874a501`.
 - **Actual Spark execution PASS**: Self-Runner [Run 41478807776](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478807776) executed the **same Git-created Notebook**. Job `d7f4e84b-2752-4356-be04-914862edadb3` `Completed`, exact `exitValue=FABRIC_GIT_NEW_NB_ENGINE_011_SPARK41_PASS_20261102`; Spark 4.1 + Wheel 0.1.1 import; `business_data_reads=false`, `delta_writes=false`.
 - **Observed drift after execution**: existing general auto-updater reports `UNAPPROVED_LOCAL_ITEM_PRESENT` for the disposable Notebook. This is not a failed Spark Job; clean up via exact-item `remoteChange=Deleted`, independently readback pinned business item identities, and restore Git status. Until cleanup is truly PASS, task 3.2 remains unchecked. [Self-Runner cleanup PR #424](https://github.com/JohnZhang-DataForge/Self-Runner/pull/424) implements this guarded one-time path.
+
+## Final E2E acceptance and cleanup — 2026-11-02
+
+The user-authorized test passed all three distinct live gates and has now been removed. **This is Notebook onboarding E2E, NOT clinical/FHIR/Delta ETL E2E.**
+
+| Gate | Exact independent evidence | Result |
+| --- | --- | --- |
+| Git `Added` -> Fabric create -> source/env readback | Healthcare PR #604 main `624b9e7664205447d77ce5f845564d2995f4ea23`; Self-Runner [Run 41478131139](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478131139), `AUTO_UPDATE_DEPLOYMENT_READBACK_PASS`, cloud `.py` / ipynb equality, published Environment physical ID | **PASS** |
+| Run **the same Git-created Notebook** | Self-Runner [Run 41478807776](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478807776); Notebook `32fee30f-6787-4a04-a8c7-ca7c579dbd69`, Job `d7f4e84b-2752-4356-be04-914862edadb3` `Completed`, exact exit `FABRIC_GIT_NEW_NB_ENGINE_011_SPARK41_PASS_20261102`, Wheel 0.1.1 / PySpark 4.1, no business reads/Delta writes | **PASS** |
+| Remove Git-native source -> Fabric remote `Deleted` -> readback | Healthcare PR #605 main `c5dff9117a055f5dcbb31ace83adba8915fe1e3b`; Self-Runner [Run 41480424539](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41480424539), report `GIT_NOTEBOOK_DELETED_AND_GIT_CLEAN_PASS` with `verified_previous_job=true`, `test_item_absent=true`, `git_remote_sha_synced=true`, `original_business_items_unchanged=true`, `notebook_business_cells_match_git=true`, `pipeline_safe_parameters=true` | **PASS** |
+
+**Key new compatibility fact:** When `git/status?includeFilesDetails=true` reported a new `SynapseNotebook` item with `remoteChange=Added` and logicalId, the `fileChanges` field was absent (Run 41477425791). Self-Runner PR #422 fixed only this exact newly-added case while preserving fail-closed Modified/Delete/Conflict validation. After running, Fabric labeled the temporary Notebook as locally Modified, so the ordinary auto-updater correctly refused to overwrite it; a separately scoped, exact-ID and prior-success-Job gated deletion reconciled this case. Do not reintroduce an unconditional `fileChanges` requirement for newly added Items or silently permit broad remote deletions.
+
+**Teardown facts:** The temporary `nb_git_onboarding_smoke.Notebook` .platform and code have been removed from Healthcare `main` and its physical cloud Item is absent. The production `nb_fhir_ingest`, `pl_fhir_ingest` and `env_healthcare` are intact, with original business HALT/readback protections still in force. **Task 3.3 remains separate**: running the actual business `nb_fhir_ingest` and any FHIR/Delta pipeline is *not* authorized or proven by this onboarding test.
