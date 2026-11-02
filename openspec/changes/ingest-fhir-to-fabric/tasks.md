@@ -25,7 +25,7 @@
 - [x] 2.1 P1 实现唯一 Shared Engine Wheel v0.1.0、FHIR R4 Patient/Encounter、合成数据、Local v1 Contract、正负/重放/跨源测试、Spark Schema，实际 CI 构建/安装后才能打勾。业务运行、Fabric Publish 尚未授权。
 
 - [x] 2.3 G0 子任务：与真实 Azure Publisher landing-manifest-v1 对齐的 **离线 FHIR Manifest 解析及负向合同**；Notebook Offline Contract CI [#41494321679](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41494321679) SUCCESS。此项仅证明离线正负向测试通过；G0 Blob 实机读回、保留策略、权限和 G3/G4 仍 OPEN。
-- [ ] G0：只读校验 Manifest 原始字节/对象 SHA/ETag、真实 FHIR Profile、Blob Shortcut RBAC/保留策略。
+- [ ] 2.4 G0 Fabric Spark 真实 Intake 只读验收：`nb_fhir_ingest` 的 `INTAKE_READONLY` 模式从已验证的 OneLake `Files/fhir_landing` Shortcut 读取旧 5/100 合成 FHIR Manifest 和逐对象字节，严格校验各自固定 Manifest SHA、对象 SHA、FHIR Patient/Encounter 解析和运行退出标记；无 Silver/Delta 写入。只在实际 Spark Jobs Completed 和准确 exitValue 证据后勾选。\n- [ ] G0：只读校验 Manifest 原始字节/对象 SHA/ETag、真实 FHIR Profile、Blob Shortcut RBAC/保留策略。
 - [x] G1：[P1 offline tests/wheel verified; Fabric runtime remains HOLD] 冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
 - [ ] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
 - [ ] G3：5–10 新 synthetic Patient → Intake + Bronze raw/ref + receipt，按 Source Batch/Processing Version 验证 replay SKIP 和漂移 HOLD。
