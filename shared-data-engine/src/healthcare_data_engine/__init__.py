@@ -11,7 +11,7 @@ from healthcare_data_engine.quality.result import Finding, ParsedResources, Tran
 from healthcare_data_engine.reconciliation.patient_encounter import reconcile_patient_encounter, PatientEncounterReconciliation
 from healthcare_data_engine.reconciliation.replay import PublicationRecord, decide_replay
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __all__ = [
     "BatchContext", "SourceObject", "parse_fhir_resources",
     "normalize_fhir_patient", "normalize_fhir_encounter",
@@ -19,3 +19,9 @@ __all__ = [
     "Finding", "ParsedResources", "TransformResult",
     "PublicationRecord", "decide_replay", "reconcile_patient_encounter", "PatientEncounterReconciliation",
 ]
+
+# G5 OMOP mapping API is pure PySpark and has no platform I/O.
+from healthcare_data_engine.mapping.omop.candidates import (
+    OmopCandidates, load_omop_mapping_profile, build_omop_candidates,
+)
+__all__ += ["OmopCandidates", "load_omop_mapping_profile", "build_omop_candidates"]
