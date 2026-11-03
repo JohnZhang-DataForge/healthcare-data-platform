@@ -759,6 +759,10 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
 
 
 
+_G3_NEGATIVE_REQUEST = "atlanta-fhir-gh-41539769718"
+_G3_NEGATIVE_MANIFEST_SHA = "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
+
+
 def verify_fhir_g3_negative_readonly(spark, *, request: str,
                                      manifest_sha: str, scenario: str,
                                      allow_write: bool, retention_ok: bool,
@@ -774,9 +778,8 @@ def verify_fhir_g3_negative_readonly(spark, *, request: str,
     recovery *mechanism*, not a real intercepted network ACK.
     """
     if (scenario not in ("BRONZE_DRIFT_PROBE", "BRONZE_ACK_RECOVERY_PROBE")
-            or request != "atlanta-fhir-gh-41539769718"
-            or manifest_sha !=
-                "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
+            or request != _G3_NEGATIVE_REQUEST
+            or manifest_sha != _G3_NEGATIVE_MANIFEST_SHA
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or allow_write is not False or retention_ok is not False
             or any(x != "" for x in (
