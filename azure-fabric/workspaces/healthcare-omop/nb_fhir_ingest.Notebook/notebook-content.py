@@ -758,6 +758,52 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
                            metrics, ())
 
 
+
+def verify_fhir_g3_negative_readonly(spark, *, request: str,
+                                     manifest_sha: str, scenario: str,
+                                     allow_write: bool, retention_ok: bool,
+                                     strategy: str, manifest_override: str,
+                                     source_override: str,
+                                     target_override: str) -> str:
+    """G3 synthetic counterfactual same-request drift and recovery probes.
+
+    This does NOT mutate Azure Blob or Delta, nor claim actual Blob corruption.
+    It applies a deliberately altered receipt to the ALREADY persisted real
+    Fabric Delta path, after verifying the real original source bytes first.
+    An independent readback after a hypothetical unknown ACK tests the
+    recovery *mechanism*, not a real intercepted network ACK.
+    """
+    if (scenario not in ("BRONZE_DRIFT_PROBE", "BRONZE_ACK_RECOVERY_PROBE")
+            or request != "atlanta-fhir-gh-41539769718"
+            or manifest_sha !=
+                "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
+            or strategy != "DELTA_RAW_SNAPSHOT_V1"
+            or allow_write is not False or retention_ok is not False
+            or any(x != "" for x in (
+                manifest_override, source_override, target_override))):
+        raise RuntimeError("HOLD_G3_NEGATIVE_READONLY_GATES")
+    original = verify_fhir_g3_bronze(
+        spark, request=request, manifest_sha=manifest_sha,
+        mode="BRONZE_READBACK_ONLY", allow_write=False,
+        retention_ok=False, manifest_override="", source_override="",
+        target_override="", strategy=strategy)
+    if original.status != "BRONZE_SKIP_VERIFIED" or original.metrics["source_objects"] != 5:
+        raise RuntimeError("HOLD_G3_NEGATIVE_BASELINE_DELTA_NOT_VERIFIED")
+    path = _g3_receipt_path(request)
+    if scenario == "BRONZE_ACK_RECOVERY_PROBE":
+        return "FHIR_G3_READONLY_ACK_RECOVERY_PATH_VERIFIED_5_DELTA_PASS_20261102"
+    # Exercise the *physical* persisted row/byte comparison with an altered
+    # receipt for this SAME request, not by mutating the Azure source object.
+    rows = spark.read.format("delta").load(path).collect()
+    expected = [{k: v for k, v in r.asDict(recursive=True).items()
+                 if k != "source_payload"} for r in rows]
+    altered = [{**r, "manifest_sha256": "f" * 64,
+                "source_batch_id": "f" * 64} for r in expected]
+    if _g3_independent_receipt_readback(spark, path, altered):
+        raise RuntimeError("HOLD_G3_DRIFT_WAS_NOT_REJECTED")
+    return "FHIR_G3_COUNTERFACTUAL_REQUEST_DRIFT_HOLD_5_DELTA_PASS_20261102"
+
+
 def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: bytes,
                             patient_contract_bytes: bytes, encounter_contract_bytes: bytes,
                             source_root: str, silver_root: str,
@@ -1099,6 +1145,15 @@ if __name__ == "__main__":
                 f"E{g4.metrics['encounter']}_"
                 f"Q{g4.metrics['quarantine_or_reject']}_DELTA_PASS_20261102")
         raise RuntimeError("HOLD_FHIR_G4_" + g4.status)
+    elif run_mode in ("BRONZE_DRIFT_PROBE", "BRONZE_ACK_RECOVERY_PROBE"):
+        result = verify_fhir_g3_negative_readonly(
+            spark, request=request_id, manifest_sha=manifest_sha256,
+            scenario=run_mode, allow_write=write_authorized,
+            retention_ok=retention_preflight_verified,
+            strategy=source_preservation_strategy,
+            manifest_override=manifest_json, source_override=source_root,
+            target_override=silver_root)
+        notebookutils.notebook.exit(result)
     elif run_mode == "CANONICAL_READONLY":
         canonical_exit = verify_fhir_canonical_readonly(
             spark, request=request_id, allow_write=write_authorized,
