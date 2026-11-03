@@ -46,6 +46,7 @@ class G3PhysicalProbe(unittest.TestCase):
     def execute(self, **diff):
         g = nb.verify_fhir_g3_negative_readonly.__globals__
         with patch.dict(g, {
+            "_G3_NEGATIVE_MANIFEST_SHA": self.args["manifest_sha"],
             "_g3_delta_exists": lambda spark, path: path in spark.delta,
             "_write_delta": lambda df, path: self.fail("read-only probe attempted a write"),
         }):
