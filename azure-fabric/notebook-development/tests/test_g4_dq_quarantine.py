@@ -11,12 +11,14 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "azure-fabric/notebook-development"))
 import fhir_ingest_notebook as nb
 from test_g4_silver_delta import G4Offline, Frame
+import test_g4_silver_delta as source_fixture_module
 
 
 class G4DQOffline(unittest.TestCase):
     def setUp(self):
-        self.fixture = G4Offline()
-        self.fixture.setUp()
+        with patch.object(source_fixture_module, "REQUEST", "atlanta-fhir-gh-41599999999"):
+            self.fixture = G4Offline()
+            self.fixture.setUp()
         self.spark = self.fixture.spark
         self.finding = SimpleNamespace(
             classification="QUARANTINED",
