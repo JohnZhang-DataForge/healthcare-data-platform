@@ -19,7 +19,7 @@ source_sha: 9a26bdd1cbb063444b87bbdab4ee33adcd181f7b
 | Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Git Native 业务 Notebook 已有完整代码并完成云端双格式读回；正式业务 Notebook Runtime / FHIR→Delta E2E 仍 HALT，未验收 |
 | Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | env_healthcare 中 Wheel 0.1.1 已发布；独立 Notebook Spark 4.1 导入真实 PASS，正式业务 Notebook 运行与数据链路仍未验收 |
 | Lakehouse | [`lh_omop_analytics.Lakehouse/`](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/) | [Lakehouse native files](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/lakehouse.metadata.json) | 真实原生元数据已导出；不表示 Delta/Silver E2E PASS |
-| Warehouse (planned DDL, NOT deployed) | [`omop-cdm-5.4/`](../../../azure-fabric/warehouse/omop-cdm-5.4/) | [Warehouse CODE.md](warehouse/CODE.md) | Official OHDSI 5.4 39 tables / 431 fields compiled to Fabric-compatible T-SQL; source-only and **no real DDL executed** |
+| Warehouse (planned DDL, NOT deployed) | [`omop-cdm-5.4/`](../../../azure-fabric/warehouse/omop-cdm-5.4/) | [Warehouse CODE.md](warehouse/CODE.md) | Official OHDSI 5.4 39 tables / 432 fields compiled to Fabric-compatible T-SQL; source-only and **no real DDL executed** |
 | Pipelines | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | [Pipelines CODE.md](pipelines/CODE.md) | 原生 Pipeline 已包含 1 个 TridentNotebook Activity；默认 HALT，未执行业务数据管道 |
 
 ## 2026-11-02 Git-first Notebook 实测（未来 Agent 必读）

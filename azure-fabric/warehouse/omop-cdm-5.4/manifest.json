@@ -12,7 +12,7 @@
   },
   "constraints": "not included in upstream base DDL; SQL Server PK/FK separate files, Fabric DQ required",
   "table_count": 39,
-  "column_count": 431,
+  "column_count": 432,
   "tables": [
     {
       "table": "person",
@@ -64,7 +64,7 @@
     },
     {
       "table": "note_nlp",
-      "columns": 13
+      "columns": 14
     },
     {
       "table": "specimen",
