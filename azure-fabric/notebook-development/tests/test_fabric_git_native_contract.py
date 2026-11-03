@@ -125,11 +125,18 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertTrue(a["policy"]["secureInput"])
         self.assertTrue(a["policy"]["secureOutput"])
         p = props["parameters"]
-        self.assertEqual(set(p), {"run_mode", "write_authorized", "retention_preflight_verified", "request_id"})
-        self.assertEqual(p["run_mode"], {"value": "HALT", "type": "string"})
+        forwarded = {"run_mode", "request_id", "manifest_sha256",
+                     "source_preservation_strategy", "patient_contract_json",
+                     "encounter_contract_json"}
+        self.assertEqual(set(p), forwarded |
+                         {"write_authorized", "retention_preflight_verified"})
+        for key in forwarded:
+            self.assertEqual(p[key], {
+                "value": {"value": f"@pipeline().parameters.{key}",
+                          "type": "Expression"}, "type": "string"})
+        self.assertEqual(data["properties"]["parameters"]["run_mode"]["defaultValue"], "HALT")
         self.assertEqual(p["write_authorized"], {"value": False, "type": "bool"})
         self.assertEqual(p["retention_preflight_verified"], {"value": False, "type": "bool"})
-        self.assertEqual(p["request_id"], {"value": "", "type": "string"})
         self.assertFalse(data["properties"].get("triggers"))
         self.assertEqual(len(activities), 1)
 
