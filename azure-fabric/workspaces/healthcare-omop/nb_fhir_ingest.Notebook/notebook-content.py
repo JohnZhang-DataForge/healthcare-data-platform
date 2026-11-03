@@ -582,6 +582,134 @@ def _g4_independent_silver_readback(spark, paths: dict[str, str],
     return batch
 
 
+
+# G4.c physical Delta rejection of isolated synthetic missing-DOB source.
+# Transform/conversion remains wholly inside Shared Engine 0.1.1.
+def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
+                               derivation_sha: str, mode: str,
+                               allow_write: bool, retention_ok: bool,
+                               strategy: str, manifest_override: str,
+                               source_override: str, target_override: str,
+                               patient_contract_json: str,
+                               encounter_contract_json: str) -> NotebookOutcome:
+    if (mode not in ("SILVER_DQ_QUARANTINE_WRITE", "SILVER_DQ_READBACK_ONLY")
+            or strategy != "DELTA_RAW_SNAPSHOT_V1"
+            or request in ("atlanta-fhir-gh-41552666929",
+                           "atlanta-fhir-gh-41539769718")
+            or any(x != "" for x in (
+                manifest_override, source_override, target_override))):
+        raise RuntimeError("HOLD_G4_DQ_MODE_NAMESPACE_OR_OVERRIDE")
+    paths = _g4_paths(request)
+    writable = mode == "SILVER_DQ_QUARANTINE_WRITE"
+    if (allow_write is not writable or retention_ok is not writable
+            or engine_version != "0.1.1"
+            or not isinstance(manifest_sha, str)
+            or not isinstance(derivation_sha, str)
+            or len(manifest_sha) != 64 or len(derivation_sha) != 64
+            or any(c not in "0123456789abcdef"
+                   for c in manifest_sha + derivation_sha)):
+        raise RuntimeError("HOLD_G4_DQ_SHA_AND_BOOLEAN_GATES")
+    if (not isinstance(patient_contract_json, str)
+            or not isinstance(encounter_contract_json, str)
+            or not 0 < len(patient_contract_json) <= 5000
+            or not 0 < len(encounter_contract_json) <= 5000):
+        raise RuntimeError("HOLD_G4_DQ_CONTRACT_PARAMETERS")
+    pb, eb = patient_contract_json.encode(), encounter_contract_json.encode()
+    load_pinned_contract(pb, "patient")
+    load_pinned_contract(eb, "encounter")
+    from datetime import datetime, date, timezone
+    context = BatchContext(
+        hospital_id=_G3_HOSPITAL, feed_id=_G3_FEED,
+        source_system="synthea-fhir", request_id=request,
+        manifest_sha256=manifest_sha, processing_version=_G4_PROCESSING,
+        processing_run_id="g4:" + request, source_version="FHIR_R4",
+        source_ingest_date=date(2026, 11, 2),
+        processed_at=datetime.now(timezone.utc))
+    source_file = (f"{_G3_SOURCE_ROOT}/clinical/v1/{_G3_HOSPITAL}/"
+                   f"{_G3_FEED}/{request}/landing-manifest.json")
+    raw = spark.read.format("binaryFile").load(
+        source_file).select("content").collect()
+    if len(raw) != 1:
+        raise RuntimeError("HOLD_G4_DQ_SOURCE_MANIFEST_MISSING")
+    manifest_bytes = bytes(raw[0].content)
+    specs = _manifest_objects(manifest_bytes, context)
+    if len(specs) != 100 or json.loads(
+            manifest_bytes).get("source_manifest_sha256") != derivation_sha:
+        raise RuntimeError("HOLD_G4_DQ_100_SOURCE_OR_RECIPE_SHA")
+    zeros = {"patient": 0, "encounter": 0, "quarantine_or_reject": 0,
+             "source_objects": 100}
+    try:
+        exists = {key: _g3_delta_exists(spark, value)
+                  for key, value in paths.items()}
+    except Exception:
+        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                               context.processing_version, None, zeros,
+                               ("DQ Delta state uncertain",))
+    if any(exists[k] for k in ("bronze", "patient", "encounter", "approval")):
+        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                               context.processing_version, None, zeros,
+                               ("unapproved DQ request has partial Silver data",))
+    if not exists["quarantine"] and not writable:
+        return NotebookOutcome("HOLD_DQ_NOT_PERSISTED",
+                               context.source_batch_id, context.processing_version,
+                               None, zeros, ())
+    if not exists["quarantine"]:
+        # Invoke EXISTING native Silver writer, not a second converter/writer.
+        # That writer persists only Quarantine when any DQ finding exists.
+        result = verify_fhir_g4_silver(
+            spark, request=request, manifest_sha=manifest_sha,
+            mode="SILVER_WRITE", allow_write=True, retention_ok=True,
+            strategy=strategy, manifest_override="", source_override="",
+            target_override="", patient_contract_json=patient_contract_json,
+            encounter_contract_json=encounter_contract_json)
+        if result.status != "HOLD_DQ":
+            return NotebookOutcome("HOLD_DQ_NEGATIVE_NOT_PROVEN",
+                                   context.source_batch_id, context.processing_version,
+                                   None, result.metrics, ())
+    try:
+        # Separate Spark reads and independent Shared Engine recomputation.
+        sources = read_source_objects_native(
+            spark, source_root=_G3_SOURCE_ROOT,
+            manifest_bytes=manifest_bytes, context=context)
+        batch = prepare_batch(
+            spark, context=context, manifest_bytes=manifest_bytes,
+            source_objects=sources, patient_contract_bytes=pb,
+            encounter_contract_bytes=eb)
+        found = [f for f in batch.findings
+                 if f.reason == "PATIENT_CANONICAL_V1_INCOMPATIBLE"
+                 and f.resource_type == "Patient"
+                 and "FHIR_DATE_REQUIRED" in f.detail]
+        if (batch.patient_count != 99 or len(found) != 1
+                or not batch.findings or len(batch.source_receipts) != 100):
+            raise ValueError("G4_DQ_MISSING_ONE_BIRTHDATE_NOT_CONFIRMED")
+        cols = ("classification", "reason", "detail", "resource_type",
+                "resource_id", "source_file", "source_batch_id",
+                "processing_version")
+        expected = sorted((
+            x.classification, x.reason, x.detail, x.resource_type,
+            x.resource_id, x.source_file, batch.source_batch_id,
+            batch.processing_version) for x in batch.findings)
+        rows = spark.read.format("delta").load(
+            paths["quarantine"]).select(*cols).collect()
+        actual = sorted(tuple(getattr(row, k) for k in cols) for row in rows)
+        if actual != expected:
+            raise ValueError("G4_DQ_QUARANTINE_PHYSICAL_ROWS_OR_REASON_CHANGED")
+        for k in ("bronze", "patient", "encounter", "approval"):
+            if _g3_delta_exists(spark, paths[k]):
+                raise ValueError("G4_DQ_FORBIDDEN_APPROVAL_OR_SILVER_EXISTS")
+    except Exception:
+        return NotebookOutcome("VERIFY_READONLY",
+                               context.source_batch_id,
+                               context.processing_version, None, zeros,
+                               ("stored Quarantine mismatch or Approval exists",))
+    status = ("DQ_QUARANTINED" if writable and not exists["quarantine"]
+              else "DQ_SKIP_VERIFIED" if writable
+              else "DQ_READBACK_VERIFIED")
+    return NotebookOutcome(status, batch.source_batch_id,
+                           batch.processing_version, None, _metrics(batch), ())
+
+
+
 def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
                           mode: str, allow_write: bool, retention_ok: bool,
                           strategy: str, manifest_override: str,
@@ -939,6 +1067,7 @@ source_root = ""
 silver_root = ""
 patient_contract_json = ""
 encounter_contract_json = ""
+dq_derivation_sha256 = ""
 
 # METADATA ********************
 
@@ -1124,6 +1253,29 @@ if __name__ == "__main__":
                 "FHIR_G3_" + g3.status + "_" +
                 str(g3.metrics["source_objects"]) + "_DELTA_READBACK_PASS_20261102")
         raise RuntimeError("HOLD_FHIR_G3_" + g3.status)
+    elif run_mode in ("SILVER_DQ_QUARANTINE_WRITE", "SILVER_DQ_READBACK_ONLY"):
+        dq = verify_fhir_g4_dq_negative(
+            spark, request=request_id, manifest_sha=manifest_sha256,
+            derivation_sha=dq_derivation_sha256, mode=run_mode,
+            allow_write=write_authorized,
+            retention_ok=retention_preflight_verified,
+            strategy=source_preservation_strategy,
+            manifest_override=manifest_json, source_override=source_root,
+            target_override=silver_root, patient_contract_json=patient_contract_json,
+            encounter_contract_json=encounter_contract_json)
+        print("FHIR_G4_DQ_STATUS=" + dq.status)
+        print("FHIR_G4_DQ_PATIENTS=" + str(dq.metrics["patient"]))
+        print("FHIR_G4_DQ_ENCOUNTERS=" + str(dq.metrics["encounter"]))
+        print("FHIR_G4_DQ_QUARANTINED=" +
+              str(dq.metrics["quarantine_or_reject"]))
+        print("FHIR_G4_DQ_PHYSICAL_PATH=" + _g4_paths(request_id)["quarantine"])
+        if dq.status in ("DQ_QUARANTINED", "DQ_READBACK_VERIFIED",
+                         "DQ_SKIP_VERIFIED"):
+            notebookutils.notebook.exit(
+                f"FHIR_G4_{dq.status}_P{dq.metrics['patient']}_"
+                f"E{dq.metrics['encounter']}_Q{dq.metrics['quarantine_or_reject']}_"
+                "APPROVAL_DENIED_DELTA_PASS_20261102")
+        raise RuntimeError("HOLD_FHIR_G4_" + dq.status)
     elif run_mode in ("SILVER_WRITE", "SILVER_READBACK_ONLY"):
         g4 = verify_fhir_g4_silver(
             spark, request=request_id, manifest_sha=manifest_sha256,
