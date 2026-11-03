@@ -32,7 +32,7 @@
 - [x] G1：[P1 offline tests/wheel verified; Fabric runtime remains HOLD] 冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
 - [x] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
 - [x] 2.5 G3 前置只读 Canonical Spark 探针：复用同一冻结 5/100 FHIR Manifest/Shortcut、真实 v1 Patient/Encounter Contract **原字节 SHA**，调用唯一 Shared Wheel 0.1.1 完成 Canonical Transform、PK/FK、DQ 分组汇总；不触发 Delta/Approval/正式 Pipeline，实际 Fabric Job Completed + 精确 exitValue 和 read-only 证据后才能勾选。此项不替代 G3 新合成批次及物理 Bronze 写入。
-- [ ] 2.10 G4 guarded Silver first implementation + offline CI (NOT real cloud acceptance).
+- [x] 2.10 G4 guarded Silver first implementation + offline CI (NOT real cloud acceptance).
 - [x] 2.8 G3 real persisted positive acceptance: 5 FHIR source objects written as raw byte Delta snapshot; independent Spark readback and same-request replay SKIP PASS in three real Fabric Notebook Jobs. Live drift-HOLD/unknown-ACK negative tests, G0 Azure WORM, and G4 Silver remain open.
 - [x] 2.7 G3 raw source snapshot retention alternative after real G0 strict WORM HOLD; independently verify original bytes, Delta readback and replay. Does NOT assert Azure WORM or physical Delta PASS.
 - [x] 2.6 G3 first implementation slice: reviewed Git-native Notebook Bronze request-scoped Delta receipt/independent readback/replay/drift/unknown ACK and offline negative/positive CI; **does not count as G3 real Delta PASS**.
@@ -283,3 +283,5 @@
 - [ ] **G4.c real negative:** source drift HOLD, DQ quarantine/Approval-denied and unknown ACK read-only recovery; never infer tests from mock. G0 source Azure WORM remains open even if synthetic Fabric raw snapshot passes.
 
 - **G4 synthetic source verified (not Silver acceptance):** [Self-Runner #41552666929](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41552666929) `ATLANTA_DIRECT_FHIR_AZURE_BLOB_E2E=PASS`, 100 independently verified original FHIR objects, request `atlanta-fhir-gh-41552666929`, delivered raw Manifest SHA256 `425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1`, upstream source Manifest SHA256 `7e4ee4e2676e42d91e955754b7fc4f600838047c17195a630aca851b7204f9d9`. This does NOT attest G4 Delta writes or Azure WORM.
+
+- **G4 Task 2.10 offline evidence only:** [Healthcare Notebook Offline Contract #41553628801](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41553628801) SUCCESS, 53 Notebook tests including 10 new G4 100-person raw-byte/Delta Approval, replay, source drift, partial state, DQ quarantine and contract/path guard cases; OpenSpec Static, Change, Trusted Change, Code Naming and Documentation checks PASS on same head. This does **not** mean an actual G4 Fabric Spark write Job or independent Silver Delta readback has completed; G4.b/G4.c remain open, Azure strict WORM remains HOLD.
