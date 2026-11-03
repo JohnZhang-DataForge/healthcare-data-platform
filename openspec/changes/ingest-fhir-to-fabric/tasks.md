@@ -32,6 +32,13 @@
 - [x] G1：[P1 offline tests/wheel verified; Fabric runtime remains HOLD] 冻结 synthetic FHIR fixtures；离线 Bundle/ref/Patient/Encounter、Contract/Quarantine/缺失/重复/冲突负向测试。
 - [x] G2：独立解决三次 Trial Notebook Create/GetDefinition LRO/exitValue HOLD；得到新授权后才进行免费受控的真实结果 SHA Smoke。
 - [x] 2.5 G3 前置只读 Canonical Spark 探针：复用同一冻结 5/100 FHIR Manifest/Shortcut、真实 v1 Patient/Encounter Contract **原字节 SHA**，调用唯一 Shared Wheel 0.1.1 完成 Canonical Transform、PK/FK、DQ 分组汇总；不触发 Delta/Approval/正式 Pipeline，实际 Fabric Job Completed + 精确 exitValue 和 read-only 证据后才能勾选。此项不替代 G3 新合成批次及物理 Bronze 写入。
+
+### G4.c isolated real malformed-source Quarantine test (2026-11-02)
+
+- [ ] 2.12 Exact new 100-object derived synthetic malformed FHIR source: original verified 100 source bytes copied into isolated request, exactly one Patient DOB removed, immutable Blob source/Manifest last and independent Azure GET/HEAD/SHA/ETag acceptance, no mutation to G4 accepted request.
+- [ ] 2.13 New negative-mode G4 source/DQ persistence: guarded Notebook `SILVER_DQ_QUARANTINE_WRITE`, `SILVER_DQ_READBACK_ONLY`, original Shared Engine Canonical Patient/Encounter, exact reason-code Quarantine Delta, Approval/Patient/Encounter absent and idempotent replay; offline negative and CI PASS.
+- [ ] 2.14 Real Fabric three-job negative acceptance: exact new request Manifest SHA, Quarantine writer, independent Delta readback, replay SKIP with distinct physical Job IDs and exact exit values, reason/count/source/approval fence proof; never claim Azure WORM or true network ACK fault injection.
+
 - [x] 2.11 Real G4 Silver 100-patient/5918-encounter persisted positive acceptance: first write, independent readback, one same-request replay SKIP after diagnosed capacity recovery. Source SHA/physical Lakehouse/PK/FK/DQ/Approval and all Job UUIDs recorded; **COMPLETED** after separate exact Replay SKIP Job `dbe59499-9a17-4bd3-b338-5ea9b3cf5dd8` under [Run #41556246924](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41556246924).
 - [x] 2.10 G4 guarded Silver first implementation + offline CI (NOT real cloud acceptance).
 - [x] 2.9 G3 actual persisted Bronze Delta read-only counterfactual same-request drift rejection and hypothetical unknown-ACK recovery-path real proof, two distinct Fabric Spark Completed Jobs after exact raw-source verification; **no** source mutation or real network fault injection claim.
