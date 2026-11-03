@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **状态：P1 Shared Engine 0.1.0 已进入 main 并完成离线 CI；P3 0.1.1 为 Python 3.13 兼容候选，尚未替换 Fabric Environment 里的旧 Wheel。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **状态：G4 已验证并发布 Fabric Shared Wheel 0.1.1；G5 Feature Branch 中 0.1.2 是仅含纯 OMOP Candidate Mapper 的离线发布候选，尚未发布到 Fabric Environment。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -38,6 +38,8 @@
 | [tests/test_fhir_r4_contract.py](../../../../shared-data-engine/tests/test_fhir_r4_contract.py) | 来源、负向、去重、Contract 和 replay tests |
 | [tests/test_spark_dataframe.py](../../../../shared-data-engine/tests/test_spark_dataframe.py) | PySpark Schema、输出及两表 FK |
 | [requirements-test.txt](../../../../shared-data-engine/requirements-test.txt) | 固定 Python 3.11/PySpark 3.5.7/构建依赖 |
+| [src/healthcare_data_engine/mapping/omop/candidates.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/candidates.py) | G5 Silver Approval/Concept + 外部 stable ID Map 保护的纯 Spark OMOP Person/Visit Candidate；不负责 Writer/Gold COMMIT |
+| [tests/test_omop_candidates.py](../../../../shared-data-engine/tests/test_omop_candidates.py) | G5 真实本地 PySpark Schema/FK/DQ/Unknown Concept/Approval 拒绝/确定性 Replay 正负测试 |
 | [README.md](../../../../shared-data-engine/README.md) | 构建、无网络安装、测试操作说明 |
 
 ## P3 Python 3.13 兼容发行版候选（尚未上传 Fabric）
@@ -48,3 +50,9 @@
 - 必须确保从旧 Wheel 过渡至新 Wheel 时只有一个 CustomLibraries 文件；任何 Fabric Publish/Notebook Binding 都需独立授权。
 
 CI 见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/shared-engine-wheel-validation.yml)，构建/安装证据只适用于该 PR HEAD 的测试版本；Fabric Publish 未授权。
+
+## G5 0.1.2 候选（2026-11-03）
+
+- 源码中首次提供 `build_omop_candidates` 与 `load_omop_mapping_profile`。独立从已验收的物理 Delta 获取 Silver Approval、稳定 ID Map、标准/有效 OMOP Concept Lookup、Profile 原字节及 SHA 都是运行方的责任；模块本身没有 Fabric/PG/I/O，也不生成 ID。
+- 新 Wheel 必须先经 GitHub CI 确认 SHA/安装/PySpark 3.5.7+4.1.1，**不自动更新现有 Git Native Environment 的 0.1.1 Wheel**。未经独立发布/读回，不允许 Notebook 导入 0.1.2 或声称 Candidate 已物理写入。
+- Local 人口统计 Synthea 编码不同于 FHIR 源码语义；测试所用假 Profile 仅用于正负回归，绝不视为经过 OHDSI Concept 审核的 Fabric 运行时 Profile。
