@@ -35,17 +35,20 @@ jobs:
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           mkdir -p dist
           "$RUNNER_TEMP/fabric-offline/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
-          echo "4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3  dist/healthcare_data_engine-0.1.1-py3-none-any.whl" | sha256sum --check
+          # A new 0.1.2 candidate source must NEVER be equated with the still
+          # Published Fabric 0.1.1 Environment wheel. Verify the two independently.
+          echo "378fd1c19261d78190fb9fc0c42e055140eabac72fe6a5ada1edde819f62f748  dist/healthcare_data_engine-0.1.2-py3-none-any.whl" | sha256sum --check
           staged='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.1-py3-none-any.whl'
           test -f "$staged"
           test "$(find "$(dirname "$staged")" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
           echo "4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3  $staged" | sha256sum --check
-          cmp dist/healthcare_data_engine-0.1.1-py3-none-any.whl "$staged"
-          echo 'FABRIC_P3_GIT_WHEEL_EXACT_MATCH=PASS' >> "$GITHUB_STEP_SUMMARY"
+          test ! -f dist/healthcare_data_engine-0.1.1-py3-none-any.whl
+          echo 'FABRIC_G5_CANDIDATE_012_NOT_PUBLISHED=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'FABRIC_P3_PUBLISHED_011_PIN_VERIFIED_AND_NEW_012_CANDIDATE_SEPARATE=PASS' >> "$GITHUB_STEP_SUMMARY"
           # Reviewed Git Artifact is now GA Published in Fabric Environment, but
           # Git Wheel byte-identity alone does not imply Notebook attachment.
           # Run the existing HALT Notebook tests with the exact published version.
-          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps dist/healthcare_data_engine-0.1.1-py3-none-any.whl
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps "$staged"
           "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.1"'
           echo 'FABRIC_P3_NEW_WHEEL_011_NOTEBOOK_TEST_DEPENDENCY=PASS; RUNTIME_BINDING=NOT_RUN' >> "$GITHUB_STEP_SUMMARY"
       - name: Synthetic Manifest plus actual local PySpark readback tests; ZERO cloud writes
@@ -68,7 +71,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-p3-shared-wheel-${{ github.sha }}
-          path: dist/healthcare_data_engine-0.1.1-py3-none-any.whl
+          name: fabric-g5-shared-wheel-candidate-${{ github.sha }}
+          path: dist/healthcare_data_engine-0.1.2-py3-none-any.whl
           if-no-files-found: error
           retention-days: 30
