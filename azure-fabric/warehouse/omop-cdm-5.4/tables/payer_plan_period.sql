@@ -1,0 +1,18 @@
+CREATE TABLE cdm.payer_plan_period (
+			payer_plan_period_id int NOT NULL,
+			person_id int NOT NULL,
+			payer_plan_period_start_date date NOT NULL,
+			payer_plan_period_end_date date NOT NULL,
+			payer_concept_id int NULL,
+			payer_source_value varchar(50) NULL,
+			payer_source_concept_id int NULL,
+			plan_concept_id int NULL,
+			plan_source_value varchar(50) NULL,
+			plan_source_concept_id int NULL,
+			sponsor_concept_id int NULL,
+			sponsor_source_value varchar(50) NULL,
+			sponsor_source_concept_id int NULL,
+			family_source_value varchar(50) NULL,
+			stop_reason_concept_id int NULL,
+			stop_reason_source_value varchar(50) NULL,
+			stop_reason_source_concept_id int NULL );

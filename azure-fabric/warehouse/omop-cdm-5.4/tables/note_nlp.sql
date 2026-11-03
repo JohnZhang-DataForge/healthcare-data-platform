@@ -1,0 +1,15 @@
+CREATE TABLE cdm.note_nlp (
+			note_nlp_id int NOT NULL,
+			note_id int NOT NULL,
+			section_concept_id int NULL,
+			snippet varchar(250) NULL,
+			"offset" varchar(50) NULL,
+			lexical_variant varchar(250) NOT NULL,
+			note_nlp_concept_id int NULL,
+			note_nlp_source_concept_id int NULL,
+			nlp_system varchar(250) NULL,
+			nlp_date date NOT NULL,
+			nlp_datetime datetime2(6) NULL,
+			term_exists varchar(1) NULL,
+			term_temporal varchar(50) NULL,
+			term_modifiers varchar(2000) NULL );

@@ -1,0 +1,17 @@
+CREATE TABLE cdm.condition_occurrence (
+			condition_occurrence_id int NOT NULL,
+			person_id int NOT NULL,
+			condition_concept_id int NOT NULL,
+			condition_start_date date NOT NULL,
+			condition_start_datetime datetime2(6) NULL,
+			condition_end_date date NULL,
+			condition_end_datetime datetime2(6) NULL,
+			condition_type_concept_id int NOT NULL,
+			condition_status_concept_id int NULL,
+			stop_reason varchar(20) NULL,
+			provider_id int NULL,
+			visit_occurrence_id int NULL,
+			visit_detail_id int NULL,
+			condition_source_value varchar(50) NULL,
+			condition_source_concept_id int NULL,
+			condition_status_source_value varchar(50) NULL );

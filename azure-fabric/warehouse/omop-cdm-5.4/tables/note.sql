@@ -1,0 +1,17 @@
+CREATE TABLE cdm.note (
+			note_id int NOT NULL,
+			person_id int NOT NULL,
+			note_date date NOT NULL,
+			note_datetime datetime2(6) NULL,
+			note_type_concept_id int NOT NULL,
+			note_class_concept_id int NOT NULL,
+			note_title varchar(250) NULL,
+			note_text varchar(MAX) NOT NULL,
+			encoding_concept_id int NOT NULL,
+			language_concept_id int NOT NULL,
+			provider_id int NULL,
+			visit_occurrence_id int NULL,
+			visit_detail_id int NULL,
+			note_source_value varchar(50) NULL,
+			note_event_id int NULL,
+			note_event_field_concept_id int NULL );

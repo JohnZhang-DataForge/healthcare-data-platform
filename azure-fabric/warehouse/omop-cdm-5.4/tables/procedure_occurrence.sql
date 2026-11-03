@@ -1,0 +1,17 @@
+CREATE TABLE cdm.procedure_occurrence (
+			procedure_occurrence_id int NOT NULL,
+			person_id int NOT NULL,
+			procedure_concept_id int NOT NULL,
+			procedure_date date NOT NULL,
+			procedure_datetime datetime2(6) NULL,
+			procedure_end_date date NULL,
+			procedure_end_datetime datetime2(6) NULL,
+			procedure_type_concept_id int NOT NULL,
+			modifier_concept_id int NULL,
+			quantity int NULL,
+			provider_id int NULL,
+			visit_occurrence_id int NULL,
+			visit_detail_id int NULL,
+			procedure_source_value varchar(50) NULL,
+			procedure_source_concept_id int NULL,
+			modifier_source_value varchar(50) NULL );
