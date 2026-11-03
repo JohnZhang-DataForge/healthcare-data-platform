@@ -1,6 +1,6 @@
 {
   "properties": {
-    "description": "FHIR R4 P2 staged Notebook orchestration. Default HALT; native ETL not released.",
+    "description": "G5 read-only approved Silver physical Delta verification. Default HALT; no Candidate/Gold writes or auto-run.",
     "activities": [
       {
         "type": "TridentNotebook",
@@ -9,7 +9,10 @@
           "workspaceId": "00000000-0000-0000-0000-000000000000",
           "parameters": {
             "run_mode": {
-              "value": "HALT",
+              "value": {
+                "value": "@pipeline().parameters.run_mode",
+                "type": "Expression"
+              },
               "type": "string"
             },
             "write_authorized": {
@@ -21,7 +24,38 @@
               "type": "bool"
             },
             "request_id": {
-              "value": "",
+              "value": {
+                "value": "@pipeline().parameters.request_id",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "manifest_sha256": {
+              "value": {
+                "value": "@pipeline().parameters.manifest_sha256",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "source_preservation_strategy": {
+              "value": {
+                "value": "@pipeline().parameters.source_preservation_strategy",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "patient_contract_json": {
+              "value": {
+                "value": "@pipeline().parameters.patient_contract_json",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "encounter_contract_json": {
+              "value": {
+                "value": "@pipeline().parameters.encounter_contract_json",
+                "type": "Expression"
+              },
               "type": "string"
             }
           }
@@ -45,10 +79,28 @@
       "request_id": {
         "type": "String",
         "defaultValue": ""
+      },
+      "manifest_sha256": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "source_preservation_strategy": {
+        "type": "String",
+        "defaultValue": "HALT"
+      },
+      "patient_contract_json": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "encounter_contract_json": {
+        "type": "String",
+        "defaultValue": ""
       }
     },
     "annotations": [
-      "P2_STAGED_NOT_RELEASED",
+      "G5_READONLY_SILVER_APPROVAL_PREFLIGHT",
+      "DEFAULT_HALT",
+      "NO_CANDIDATE_OR_GOLD_WRITE",
       "NO_AUTO_RETRY",
       "NO_SCHEDULE"
     ]
