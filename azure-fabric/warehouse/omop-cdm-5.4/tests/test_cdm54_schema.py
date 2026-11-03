@@ -9,17 +9,17 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 MANIFEST = json.loads((ROOT / "manifest.json").read_text())
 UPSTREAM = (ROOT / "upstream" / "OMOPCDM_sql_server_5.4_ddl.sql").read_bytes()
 SOURCE_PATTERN = re.compile(
-    r"CREATE TABLE @cdmDatabaseSchema\\.([a-z0-9_]+)\\s*\\(([\\s\\S]*?)\\)\\s*;", re.I
+    r"CREATE TABLE @cdmDatabaseSchema\.([a-z0-9_]+)\s*\(([\s\S]*?)\)\s*;", re.I
 )
 COLUMN_PATTERN = re.compile(
-    r"^\\s*([a-z][a-z0-9_]*)\\s+(integer|datetime|date|float|varchar\\((?:max|\\d+)\\))\\s+(?:NOT\\s+)?NULL\\b",
+    r"^\s*([a-z][a-z0-9_]*)\s+(integer|datetime|date|float|varchar\((?:max|\d+)\))\s+(?:NOT\s+)?NULL\b",
     re.I | re.M,
 )
 
 
 class CDM54SchemaSource(unittest.TestCase):
     def test_upstream_blob_pinned(self):
-        git_object = b"blob " + str(len(UPSTREAM)).encode() + b"\\0" + UPSTREAM
+        git_object = b"blob " + str(len(UPSTREAM)).encode() + b"\0" + UPSTREAM
         self.assertEqual(hashlib.sha1(git_object).hexdigest(), MANIFEST["upstream_blob_sha1"])
         self.assertEqual(MANIFEST["upstream_commit"], "b90ae94430e9a266891890a549ac188137fd7f00")
 
@@ -36,13 +36,13 @@ class CDM54SchemaSource(unittest.TestCase):
             with self.subTest(table=item["table"]):
                 self.assertEqual(len(COLUMN_PATTERN.findall(match.group(2))), item["columns"])
                 expected = match.group(0).replace("CREATE TABLE @cdmDatabaseSchema.", "CREATE TABLE cdm.")
-                expected = re.sub(r"\\bdatetime\\b", "datetime2(6)", expected, flags=re.I)
-                expected = re.sub(r"\\binteger\\b", "int", expected, flags=re.I)
+                expected = re.sub(r"\bdatetime\b", "datetime2(6)", expected, flags=re.I)
+                expected = re.sub(r"\binteger\b", "int", expected, flags=re.I)
                 actual = (ROOT / "tables" / (item["table"] + ".sql")).read_text()
-                self.assertEqual(actual, expected + "\\n")
+                self.assertEqual(actual, expected + "\n")
                 self.assertNotIn("@cdmDatabaseSchema", actual)
-                self.assertFalse(re.search(r"\\bdatetime\\b", actual, flags=re.I))
-                self.assertFalse(re.search(r"\\binteger\\b", actual, flags=re.I))
+                self.assertFalse(re.search(r"\bdatetime\b", actual, flags=re.I))
+                self.assertFalse(re.search(r"\binteger\b", actual, flags=re.I))
                 self.assertNotIn("DROP TABLE", actual.upper())
                 self.assertNotIn("INSERT INTO", actual.upper())
 
