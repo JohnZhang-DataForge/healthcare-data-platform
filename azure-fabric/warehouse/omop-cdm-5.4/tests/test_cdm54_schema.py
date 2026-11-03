@@ -12,7 +12,7 @@ SOURCE_PATTERN = re.compile(
     r"CREATE TABLE @cdmDatabaseSchema\.([a-z0-9_]+)\s*\(([\s\S]*?)\)\s*;", re.I
 )
 COLUMN_PATTERN = re.compile(
-    r"^\s*([a-z][a-z0-9_]*)\s+(integer|datetime|date|float|varchar\((?:max|\d+)\))\s+(?:NOT\s+)?NULL\b",
+    r'^\s*([a-z][a-z0-9_]*|"offset")\s+(integer|datetime|date|float|varchar\((?:max|\d+)\))\s+(?:NOT\s+)?NULL\b',
     re.I | re.M,
 )
 
@@ -28,7 +28,9 @@ class CDM54SchemaSource(unittest.TestCase):
         matches = list(SOURCE_PATTERN.finditer(source))
         self.assertEqual(len(matches), MANIFEST["table_count"])
         self.assertEqual(len(matches), 39)
-        self.assertEqual(sum(len(COLUMN_PATTERN.findall(x.group(2))) for x in matches), 431)
+        self.assertEqual(sum(len(COLUMN_PATTERN.findall(x.group(2))) for x in matches), 432)
+        self.assertIn('"offset"', next(x.group(2) for x in matches if x.group(1) == "note_nlp"))
+        self.assertEqual(next(x for x in MANIFEST["tables"] if x["table"] == "note_nlp")["columns"], 14)
         self.assertEqual([x.group(1).lower() for x in matches], [x["table"] for x in MANIFEST["tables"]])
         self.assertEqual(sorted(p.stem for p in (ROOT / "tables").glob("*.sql")),
                          sorted(x["table"] for x in MANIFEST["tables"]))
