@@ -31,3 +31,8 @@
 - [PR #629](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/629) on feature branch; Python 3.11 + PySpark 3.5.7 synthetic **23/23 PASS**, independent built Wheel 0.1.2 reproducible byte comparison and isolated package import PASS; Python 3.13 + PySpark 4.1.1 added G5 Candidate **8/8 PASS**, installed Wheel 0.1.2 import PASS.
 - [GitHub Actions Shared Engine Wheel Offline Validation #41619656145](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41619656145), exact source head `b11be171d787abd73f40e2540a87d65fe87b78b6`, both jobs SUCCESS. Earlier #41619502401 Python3.13 workflow failed due literal shell `\\n` between commands; fixed in `b11be171...`; original failure not a candidate mapper failure and remains historical.
 - Verified tests use a synthetic-only profile, not a reviewed live FHIR→OMOP clinical Concept profile. Real Fabric environment is **still Wheel 0.1.1**, Notebook/PL default HALT and Candidate physical Write/Readback NOT_RUN. This OpenSpec change remains ACTIVE and unchecked tasks MUST NOT be inferred PASS by main merge.
+
+## G5 read-only Pipeline candidate (design + code only; NOT deployed)
+
+- 第二批独立 PR 预备：原有 `pl_fhir_ingest` 单 Activity 通过 Fabric Pipeline expression 显式传递读回所需 exact request、Manifest、Local Contract，write_authorized 和 retention_preflight_verified 永久 false，默认 HALT / retry=0 / no schedule。离线测试见 `azure-fabric/notebook-development/tests/test_g5_pipeline_readonly.py`。
+- 设计对应 Task 3.3 的**只读预备片段**，不标记完整任务成功；真实 Notebook/ Pipeline E2E + Candidate/Gold 尚未执行。Workflow 对 candidate Wheel 0.1.2 vs Fabric Published 0.1.1 分别检查，严禁把包 hash 混为一谈。
