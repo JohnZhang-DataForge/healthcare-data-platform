@@ -1,0 +1,174 @@
+{
+  "schema_version": "OMOP_CDM_5.4",
+  "upstream_repository": "OHDSI/CommonDataModel",
+  "upstream_commit": "b90ae94430e9a266891890a549ac188137fd7f00",
+  "upstream_path": "inst/ddl/5.4/sql_server/OMOPCDM_sql_server_5.4_ddl.sql",
+  "upstream_blob_sha1": "a77fcad931eef37fe113a79fc266f09cb13e9ed0",
+  "warehouse": "dw-omop-5.4",
+  "schema": "cdm",
+  "type_adaptations": {
+    "integer": "int",
+    "datetime": "datetime2(6)"
+  },
+  "constraints": "not included in upstream base DDL; SQL Server PK/FK separate files, Fabric DQ required",
+  "table_count": 39,
+  "column_count": 431,
+  "tables": [
+    {
+      "table": "person",
+      "columns": 18
+    },
+    {
+      "table": "observation_period",
+      "columns": 5
+    },
+    {
+      "table": "visit_occurrence",
+      "columns": 17
+    },
+    {
+      "table": "visit_detail",
+      "columns": 19
+    },
+    {
+      "table": "condition_occurrence",
+      "columns": 16
+    },
+    {
+      "table": "drug_exposure",
+      "columns": 23
+    },
+    {
+      "table": "procedure_occurrence",
+      "columns": 16
+    },
+    {
+      "table": "device_exposure",
+      "columns": 19
+    },
+    {
+      "table": "measurement",
+      "columns": 23
+    },
+    {
+      "table": "observation",
+      "columns": 21
+    },
+    {
+      "table": "death",
+      "columns": 7
+    },
+    {
+      "table": "note",
+      "columns": 16
+    },
+    {
+      "table": "note_nlp",
+      "columns": 13
+    },
+    {
+      "table": "specimen",
+      "columns": 15
+    },
+    {
+      "table": "fact_relationship",
+      "columns": 5
+    },
+    {
+      "table": "location",
+      "columns": 12
+    },
+    {
+      "table": "care_site",
+      "columns": 6
+    },
+    {
+      "table": "provider",
+      "columns": 13
+    },
+    {
+      "table": "payer_plan_period",
+      "columns": 17
+    },
+    {
+      "table": "cost",
+      "columns": 22
+    },
+    {
+      "table": "drug_era",
+      "columns": 7
+    },
+    {
+      "table": "dose_era",
+      "columns": 7
+    },
+    {
+      "table": "condition_era",
+      "columns": 6
+    },
+    {
+      "table": "episode",
+      "columns": 13
+    },
+    {
+      "table": "episode_event",
+      "columns": 3
+    },
+    {
+      "table": "metadata",
+      "columns": 9
+    },
+    {
+      "table": "cdm_source",
+      "columns": 11
+    },
+    {
+      "table": "concept",
+      "columns": 10
+    },
+    {
+      "table": "vocabulary",
+      "columns": 5
+    },
+    {
+      "table": "domain",
+      "columns": 3
+    },
+    {
+      "table": "concept_class",
+      "columns": 3
+    },
+    {
+      "table": "concept_relationship",
+      "columns": 6
+    },
+    {
+      "table": "relationship",
+      "columns": 6
+    },
+    {
+      "table": "concept_synonym",
+      "columns": 3
+    },
+    {
+      "table": "concept_ancestor",
+      "columns": 4
+    },
+    {
+      "table": "source_to_concept_map",
+      "columns": 9
+    },
+    {
+      "table": "drug_strength",
+      "columns": 12
+    },
+    {
+      "table": "cohort",
+      "columns": 4
+    },
+    {
+      "table": "cohort_definition",
+      "columns": 7
+    }
+  ]
+}

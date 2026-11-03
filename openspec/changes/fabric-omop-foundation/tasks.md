@@ -29,3 +29,9 @@
 - [Self-Runner probe PR #483](https://github.com/JohnZhang-DataForge/Self-Runner/pull/483) merged SHA `a72932e3f0044e58ae5f08cec94fa35fe8cdd9fe`. First [Run #41645029049](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41645029049) **FAIL** before REST/SQL due `python3 -m pip` unavailable on self-hosted Runner; Warehouse SQL auth was not yet tested. Original failure preserved.
 - [Self-Runner fix PR #484](https://github.com/JohnZhang-DataForge/Self-Runner/pull/484) merged SHA `ef9a0ef224c09a037452e3a9e016a0baf62431e9`. Two-stage job: no-pip self-hosted REST + ephemeral hosted ODBC SQL SELECT. [Run #41645575691](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41645575691) completed **SUCCESS**: offline unit tests PASS; REST `FABRIC_WAREHOUSE_REST_VISIBLE=PASS` for exact Warehouse GUID; SQL encrypted TDS `SQL_SELECT_PASS=TRUE`, target DB match, authenticated SP observed. Logs contain no OMOP business rows.
 - **Bounded PASS**: Workspace item visibility + SQL connectivity only. **NOT_YET_DONE**: official CDM 5.4 SQL Project, DDL deployment, schema physical readback, Vocabulary, Identity Map, Writer and Gold transactions. These remain explicit tasks 0.5/0.6, F1/F2/F3.
+
+## F0 OHDSI schema-source implementation (design/code, not deployed)
+
+- Official upstream OHDSI `CommonDataModel` pinned commit `b90ae94430e9a266891890a549ac188137fd7f00`, source blob `a77fcad931eef37fe113a79fc266f09cb13e9ed0`; canonical SQL Server 5.4 Base DDL (39 tables, 431 fields).
+- SQL source/manifest generated in `azure-fabric/warehouse/omop-cdm-5.4/` with only Fabric-supported type adaptations `datetime`→`datetime2(6)`, `integer`→`int`. An offline PR build verifies fidelity; `0.5` remains OPEN until required CI and reviewed DDL deployment package criteria are satisfied.
+- No `CREATE SCHEMA`, no real Warehouse DDL/SQL write, no Vocabulary content or Gold rows have been executed in this schema-source slice. `0.6` remains OPEN.

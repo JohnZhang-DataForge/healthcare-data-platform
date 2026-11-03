@@ -1,0 +1,18 @@
+CREATE TABLE cdm.visit_occurrence (
+			visit_occurrence_id int NOT NULL,
+			person_id int NOT NULL,
+			visit_concept_id int NOT NULL,
+			visit_start_date date NOT NULL,
+			visit_start_datetime datetime2(6) NULL,
+			visit_end_date date NOT NULL,
+			visit_end_datetime datetime2(6) NULL,
+			visit_type_concept_id int NOT NULL,
+			provider_id int NULL,
+			care_site_id int NULL,
+			visit_source_value varchar(50) NULL,
+			visit_source_concept_id int NULL,
+			admitted_from_concept_id int NULL,
+			admitted_from_source_value varchar(50) NULL,
+			discharged_to_concept_id int NULL,
+			discharged_to_source_value varchar(50) NULL,
+			preceding_visit_occurrence_id int NULL );

@@ -1,0 +1,16 @@
+CREATE TABLE cdm.specimen (
+			specimen_id int NOT NULL,
+			person_id int NOT NULL,
+			specimen_concept_id int NOT NULL,
+			specimen_type_concept_id int NOT NULL,
+			specimen_date date NOT NULL,
+			specimen_datetime datetime2(6) NULL,
+			quantity float NULL,
+			unit_concept_id int NULL,
+			anatomic_site_concept_id int NULL,
+			disease_status_concept_id int NULL,
+			specimen_source_id varchar(50) NULL,
+			specimen_source_value varchar(50) NULL,
+			unit_source_value varchar(50) NULL,
+			anatomic_site_source_value varchar(50) NULL,
+			disease_status_source_value varchar(50) NULL );
