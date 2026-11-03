@@ -17,6 +17,10 @@ source_sha: 7060cbb673ea9bcea1de9311f58c1a4145316b35
 - [Fabric Terraform Workspace-scoped 架构](FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)：仍有效的 IaC 目标和 State 保护；实际变更以 [对应 OpenSpec](../../../openspec/changes/organize-fabric-terraform-by-workspace/tasks.md) 和真实 State 为准。
 - [FHIR R4 / HL7 v2 多来源 MVP](FHIR-HL7-MULTISOURCE-MVP-DESIGN.md)：医院模拟来源和合成患者交叉身份的已确认设计，实施状态与 Fabric FHIR 入库独立。
 
+## 待评估架构讨论稿（不作为当前开发指令）
+
+- **[Fabric 按需 Capacity + 定时批处理 + 独立 Marquez 血缘](FABRIC-ON-DEMAND-BATCH-CAPACITY-DISCUSSION.md)** — **DRAFT / DEFERRED**；仅讨论未来付费 F SKU 的 Runner/Local Airflow/Fabric Pipeline 批处理、真实血缘采集与完工暂停。**Fabric Trial 过期后再评估是否实施**；不改 G5/OMOP 原生开发、现有手工 Capacity Workflow 或任何云资源。
+
 ## 其他当前组件与工程设计
 
 - [Local Portal MVP 收尾与延后追踪](LOCAL-PORTAL-MVP-CLOSEOUT-AND-DEFERRED-FOLLOWUPS.md)
