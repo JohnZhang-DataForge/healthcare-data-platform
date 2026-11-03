@@ -98,7 +98,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install 'pyspark==4.1.1'
-          python -m unittest discover -s shared-data-engine/tests -p 'test_spark_dataframe.py' -v\n          python -m unittest discover -s shared-data-engine/tests -p 'test_omop_candidates.py' -v
+          python -m unittest discover -s shared-data-engine/tests -p 'test_spark_dataframe.py' -v
+          python -m unittest discover -s shared-data-engine/tests -p 'test_omop_candidates.py' -v
           echo 'FABRIC_P3_PY313_SPARK41_OFFLINE_DATAFRAME_AND_OMOP=PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Build and pip-install version 0.1.2 Wheel on Python 3.13
         shell: bash
