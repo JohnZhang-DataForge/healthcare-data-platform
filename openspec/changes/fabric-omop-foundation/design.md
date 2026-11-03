@@ -1,0 +1,51 @@
+# Design — Fabric OMOP Foundation
+
+## 1. Boundaries and deployment ownership
+
+- Existing Workspace: `healthcare-omop`; user-created Warehouse: `dw-omop-5.4` (do not recreate).
+- Existing Lakehouse `lh_omop_analytics`: Bronze, Silver, Approved and G5 Candidate remain Delta tables **in the same Lakehouse**. No second staging Lakehouse and no extra Blob roundtrip.
+- Warehouse Gold: `cdm.*` for **official OHDSI CDM 5.4**; `etl.*` for stable identity mapping, batch fence and idempotency ledger; `audit.*` for independent reconciliation.
+- Shared Engine: pure transformations without Fabric/Local PG I/O. The Fabric writer MUST NOT reach Local DP Postgres, Local ID Map or local vocabulary at runtime.
+- Git-first: Terraform only for provisioning infrastructure not already created. SQL project / migrations manage Warehouse schema; authenticated Self-Runner applies approved schema and verifies independent SQL readback. Fabric Pipeline later orchestrates Spark Candidate → Warehouse Commit.
+- Warehouse service does not execute SQL or expose TDS when Capacity is paused. F0 probe MUST NOT resume Capacity automatically.
+
+## 2. F0 read-only permission and endpoint probe
+
+Fixed server supplied by user:
+`5acjvcj5rvwercfbppplelk7di-hpqfy5fwcvyermhfrrlvbkqy3q.datawarehouse.fabric.microsoft.com`, TCP 1433, Initial Catalog `dw-omop-5.4`.
+
+A separate Self-Runner GitHub Actions workflow, main-branch-only and explicitly dispatched, MUST:
+1. Pin the checked-out controller code to Self-Runner main and refuse PR code execution in privileged jobs.
+2. Use GitHub OIDC federated assertion (no Client Secret) for existing `FABRIC_CLIENT_ID`/`FABRIC_TENANT_ID`; obtain Fabric REST and SQL resource tokens with distinct audiences.
+3. GET exact Warehouse item from Workspace by its fixed GUID `745ce03b-15b6-4870-b0e5-8c5750aa18dc`, matching item type/name (GET only).
+4. Connect with SQL Server TDS, encryption and `DATABASE=dw-omop-5.4`; execute a **fixed SELECT only** returning DB_NAME(), CURRENT_USER and 1. No arbitrary SQL inputs.
+5. Check result database exactly; output diagnostic category, not tokens, assertion, connection details or row data. Driver missing, network, capacity, service principal permission and catalog mismatch are distinct HOLD outcomes.
+
+A successful Fabric REST GET does **not** imply SQL endpoint permission. SQL probe SUCCESS does **not** imply CDM schema exists.
+
+## 3. F0 schema
+
+- Follow official OHDSI `CommonDataModel` v5.4 definitions, full column/type/nullability list, no invented abbreviated Person/Visit tables. Record source tag/commit, schema version, checksum and executed deployment SHA.
+- Compile SQL Project and review DacFx drift plan before applying. Initial readback includes `sys.schemas`, `sys.tables`, `sys.columns`, type/nullability and CDM 5.4 inventory; schema deploy remains separate from first connectivity probe.
+- Fabric Warehouse PK/FK/UNIQUE constraints may not be enforced: implement explicit DQ and identity uniqueness checks; do not assume PG-like enforcement.
+
+## 4. F1–F3 boundaries
+
+- F1: `etl.identity_map` uses immutable hospital/source patient and encounter keys with documented scope and stable assigned OMOP IDs. Vocabulary requires official concept IDs and matching release metadata/validity; fail closed on unknown concepts.
+- F2: Spark Candidate generation can materialize same Lakehouse Delta for reproducibility. Gold writes in Warehouse use a single controlled transaction (identity, Person/Visit, ledger) with explicit commit fence and replay skip.
+- F3: exact approved G4 request/manifest/processing hash; 100 Patient / 5,918 Encounter source input count does not assert equivalent `visit_occurrence` row count unless mapping/DQ justify it. Independent SQL readback checks person/visit IDs, FK, DQ, replay and ledger.
+- No new Fabric Workspace, no Local PG runtime dependency, no edits to G5 `nb_fhir_ingest` / `pl_fhir_ingest` in this Change.
+
+## 5. Security and operations
+
+Never store identity tokens, secrets or synthetic PHI in repository/logs. On unknown shared runtime contention or Capacity state, HOLD rather than resume or force-write. A Portal-created Warehouse must not be represented as Terraform state-managed; any future import is a separately reviewed action. Fabric workspace Git sync of an `Added` Warehouse item can affect other items, so no unrestricted UpdateAll; review drift before incorporating its native definition.
+
+Official references:
+- https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity
+- https://learn.microsoft.com/en-us/fabric/data-warehouse/service-principals
+- https://learn.microsoft.com/en-us/fabric/data-warehouse/git-integration
+- https://github.com/OHDSI/CommonDataModel
+
+## 6. Acceptance evidence
+
+Distinguish SOURCE/STATIC_PASS, REST_VISIBLE, SQL_SELECT_PASS, SCHEMA_DEPLOYED, SCHEMA_READBACK_PASS, GOLD_COMMITTED and REPLAY_PASS. Record Git SHA, Actions Run ID, actual observed object IDs and checksums. Do not infer later gates from earlier status.
