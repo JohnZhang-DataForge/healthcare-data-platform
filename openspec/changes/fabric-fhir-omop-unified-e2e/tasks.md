@@ -22,6 +22,11 @@
 - [ ] 4.1 Warehouse 单事务 Map/Allocator/Person/Visit/Ledger/Audit COMMIT；独立 SQL 新连接读回、Rollback/Unknown-ACK/Replay/DQ 负向验证。
 - [ ] 5.1 原生 Pipeline 实际 FHIR→OMOP E2E：默认 HALT/无自动 Schedule/retry=0；记录 Job、Spark、SQL 三类独立证据。
 
+## P1 native Notebook offline verification
+
+- [Notebook CI #41918612581](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41918612581) PASS for the first source head of this PR. This is a **local PySpark fixture test** of the new `G5_CONCEPT_SOURCE_INVENTORY_READONLY` mode, not evidence of actual Fabric execution. The follow-up PR check-gate correction uses numeric task `1.6`.
+- Mode is read-only, G5 original physical source gate still required, and G4 P100/E5918 code frequencies must later be independently obtained by an explicit real Spark Job. Neither P1 clinical approval nor Candidate/Gold have been achieved.
+
 ## Evidence
 
 - Offline P1 pure-profile CI initial [Run #41917799155](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41917799155): 31/31 OMOP Foundation unit tests PASS (9 new Concept Profile tests included), no cloud writes. PR gate checks are tracked separately; initial PR body omitted required OpenSpec tags, corrected before re-run.
