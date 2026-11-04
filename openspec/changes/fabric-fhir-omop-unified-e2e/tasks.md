@@ -23,5 +23,6 @@
 
 ## Evidence
 
+- Offline P1 pure-profile CI initial [Run #41917799155](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41917799155): 31/31 OMOP Foundation unit tests PASS (9 new Concept Profile tests included), no cloud writes. PR gate checks are tracked separately; initial PR body omitted required OpenSpec tags, corrected before re-run.
 - Source-only [Run #41874126635](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41874126635) PASS；G4 request `atlanta-fhir-gh-41552666929`，Manifest `425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1`。
 - F0/F1 DDL / Vocabulary、F2 ROLLBACK 维持历史真实验收；**P1 real concept mapping / Candidate / Gold COMMITTED / E2E 均未通过**。
