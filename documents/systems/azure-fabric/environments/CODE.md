@@ -30,3 +30,8 @@
 - [Self-Runner #41834029745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745): official GA `POST /staging/publish?beta=false` single-call HTTP202, LRO/Publish Success, independent **Published sole Custom Wheel 0.1.3** readback and Runtime 2.0 PASS.
 - **Runtime Spark 0.1.3 import and business Notebook/FHIR/Gold E2E remain separate acceptance gates**. Native business Notebook still checks `engine_version == 0.1.1` and remains HALT. Do not run business Notebook until its package version and safeguards are reviewed.
 
+
+
+### G5 实机 0.1.3 Spark Runtime Import 验收 — 2026-11-04
+
+[Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) completed SUCCESS: published `env_healthcare` 0.1.3 preflight PASS; ephemeral Notebook exact definition readback PASS, Spark Job **Completed** with `G5_ENGINE_013_SPARK41_IMPORT_PASS`; temporary Notebook cleanup independently PASS. This supersedes previous 0.1.3 import HOLD, **not** the separate G5 business Notebook HALT/Gold COMMIT/Replay gates. Native business `nb_fhir_ingest` continues source-guard 0.1.1 and must be explicitly updated and redeployed before authorized G5 execution.
