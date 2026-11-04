@@ -8,7 +8,7 @@
   var publicHeaders = ['DATASET', 'BATCH', 'INGEST DATE'];
   var choosing = false;
 
-  function onDatasetsRoute() { return /^\\/datasets\\/?$/.test(window.location.pathname); }
+  function onDatasetsRoute() { return window.location.pathname === '/datasets' || window.location.pathname === '/datasets/'; }
 
   // Only exact root visits take visitors to the Landing-first home. The one-shot
   // marker overrides a previously saved Processing choice for this navigation,
