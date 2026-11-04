@@ -145,3 +145,10 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 - `run_mode = "HALT"`, `write_authorized = False`, DQ/approval/manifest/readback gates and existing physical resource IDs are unchanged. G5 Candidate and F2 Gold writes are **not** enabled.
 - Offline CI **is not** real Fabric Git status protection, UpdateFromGit or independent Native Notebook definition readback. Accept only a separate real, fail-closed Self-Runner verification preserving workspace-only items.
 - Formal Concept Mapping Profile, stable Warehouse Identity Map allocation, physical G4 100/5918 Candidate Delta, Gold COMMIT and F3 Replay remain **NOT DONE**.
+
+## F2/G5 canonical Silver → Person/Visit identity preview bridge — 2026-11-04
+
+- The pure `writer/silver_identity.py` bridge derives canonical v1 `PERSON` and `VISIT_OCCURRENCE` source keys from independently verified G4 Silver Patient/Encounter rows, requires exact hospital/source/batch namespaces, source FK closure and physical Approval field/count/manifest equality, then invokes the **existing** Warehouse-global INT `plan_ids` logic.
+- It emits deterministic `person_id` and `visit_occurrence_id` **proposals** plus visit-to-person ID references. A cross-hospital reused external key must never alias a Warehouse OMOP INT ID. Duplicate/casefold keys, foreign Visit FKs, manifest/count drift, Map/Gold drift and allocator collision/overflow fail closed.
+- Status remains `F2_ID_PREVIEW_ONLY_NOT_PERSISTED`: no Warehouse writes, no fabricated Mapping Profile, no official Concept lookup, no fabricated Gold COMMIT / Replay receipt. Physical Approval, Snapshot, mapping and Candidate Delta live readback are separate pending gates.
+- The physical Warehouse Identity Map must be updated **only** in the later authorized single-writer transaction with the Person/Visit/Allocator/Ledger COMMIT, not pre-seeded as a disconnected durable map.
