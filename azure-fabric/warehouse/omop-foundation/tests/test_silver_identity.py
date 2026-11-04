@@ -132,6 +132,10 @@ class SilverToOmopIdentityPreview(unittest.TestCase):
 
     def test_duplicate_and_casefold_identity_holds(self):
         args = fixture(people=2, visits=3)
+        # Keep all Encounter FKs valid, so duplicate/collation is the first hold.
+        args["encounters"] = [
+            {**row, "source_person_id": "patient-0000"} for row in args["encounters"]
+        ]
         with self.assertRaisesRegex(PlanningHold, "DUPLICATE_SOURCE"):
             plan_silver_identity(**{
                 **args, "patients": [args["patients"][0]] * 2,
