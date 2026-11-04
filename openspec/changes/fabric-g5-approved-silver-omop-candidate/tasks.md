@@ -42,3 +42,9 @@
 - `build_omop_candidates` now requires independently verified hospital_id and checks it against the existing canonical v1 namespaced `source_system`; does **not** change G4 canonical schema or existing approved Silver.
 - F1 Warehouse map `entity_type/hospital_id/source_system/source_business_key/omop_id` replaces the old hypothetical `source_person_id/person_id` fixture contract. Global Person ID, hospital scoped namespace and casefold collision validation are covered by new offline PySpark positive/negative tests.
 - Shared Wheel candidate version is 0.1.3, offline-only until separately published and read back in Fabric. G5 2.3 and native runtime acceptance remain OPEN. No Candidate Delta or Gold data write occurred.
+
+## 2026-11-04 — Hospital-scoped G5 Candidate source CI
+
+- [PR #647](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/647) merged SHA `13da96a9bc82463c8be23e3d5f8be385a9655ad4`; [Wheel Validation Run #41827968535](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41827968535) SUCCESS both Python 3.11/PySpark 3.5.7 and Python 3.13/PySpark 4.1.1 jobs. Built, reproducible, independently installed candidate Wheel 0.1.3 PASS offline.
+- The real F1 Identity Map columns and hospital-scoped join are now implemented, synthetic cross-hospital and duplicate/foreign ID tests PASS. No existing G4 Canonical schema mutation, no Fabric Environment update or real Gold insert.
+- Wheel publish/import, approved Concept Profile, G4 100/5918 real Silver readback, physical Candidate and Warehouse Gold remain explicitly NOT_DONE.
