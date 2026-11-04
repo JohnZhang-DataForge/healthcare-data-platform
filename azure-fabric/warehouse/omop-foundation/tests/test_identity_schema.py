@@ -37,6 +37,19 @@ class F1IdentitySchema(unittest.TestCase):
                 self.assertEqual(len(columns),len([x for x in sql.splitlines()[1:-1] if x.strip()]))
                 self.assertEqual(len({x[0] for x in columns}),len(columns))
 
+    def test_source_contract_fields_and_negative_identity_policy(self):
+        contract=json.loads((ROOT/"identity-key-v1.json").read_text())
+        self.assertEqual(contract["version"],"v1")
+        self.assertEqual(contract["id_type"],"int")
+        self.assertEqual(contract["min_id"],1)
+        self.assertEqual(contract["max_id"],2147483647)
+        self.assertEqual(contract["source_key_scope"],["hospital_id","source_system"])
+        self.assertEqual(contract["entities"]["PERSON"]["source_id_field"],"source_record_id")
+        self.assertEqual(contract["entities"]["VISIT_OCCURRENCE"]["source_id_field"],"source_encounter_id")
+        self.assertEqual(contract["entities"]["VISIT_OCCURRENCE"]["source_person_id_field"],"source_person_id")
+        self.assertTrue(contract["single_writer_required"])
+        self.assertFalse(contract["auto_identity_allowed"])
+
     def test_int_ids_and_warehouse_global_allocator(self):
         text=(ROOT/"sql"/"etl.identity_map.sql").read_text()
         self.assertIn("omop_id int NOT NULL",text)
