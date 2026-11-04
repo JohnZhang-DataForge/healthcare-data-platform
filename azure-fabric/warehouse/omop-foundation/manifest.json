@@ -1,0 +1,17 @@
+{
+  "schema_version": "fabric-omop-foundation-f1-identity-v1",
+  "warehouse": "dw-omop-5.4",
+  "warehouse_item_id": "7a6d08da-278d-4603-8a3b-28640110984c",
+  "schemas": [
+    "etl",
+    "audit"
+  ],
+  "tables": [
+    "audit.omop_commit_check.sql",
+    "audit.vocabulary_source_file.sql",
+    "etl.batch_ledger.sql",
+    "etl.id_allocator.sql",
+    "etl.identity_map.sql"
+  ],
+  "scope": "empty management schemas only; no row writes, OMOP ID allocation, or live deployment until dedicated Runner review"
+}

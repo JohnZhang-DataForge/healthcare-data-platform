@@ -1,0 +1,28 @@
+name: Fabric OMOP Identity Schema Offline
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/warehouse/omop-foundation/**'
+      - '.github/workflows/fabric-omop-foundation-identity-schema-offline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'azure-fabric/warehouse/omop-foundation/**'
+      - '.github/workflows/fabric-omop-foundation-identity-schema-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-identity-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate source-only schema and INT identity boundaries
+        run: python3 -m unittest discover -s azure-fabric/warehouse/omop-foundation/tests -p 'test_*.py' -v
+      - name: Confirm no cloud mutations
+        run: echo "IDENTITY_SCHEMA_SOURCE_ONLY=PASS DDL_APPLY=NO ROW_WRITES=NO"

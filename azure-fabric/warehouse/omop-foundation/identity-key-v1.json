@@ -1,0 +1,35 @@
+{
+  "contract_name": "fabric.omop-identity-key",
+  "version": "v1",
+  "workspace": "healthcare-omop",
+  "warehouse": "dw-omop-5.4",
+  "id_type": "int",
+  "min_id": 1,
+  "max_id": 2147483647,
+  "source_key_scope": [
+    "hospital_id",
+    "source_system"
+  ],
+  "entities": {
+    "PERSON": {
+      "canonical_contract": "canonical.patient",
+      "source_id_field": "source_record_id",
+      "target_id_field": "person_id"
+    },
+    "VISIT_OCCURRENCE": {
+      "canonical_contract": "canonical-encounter-v1",
+      "source_id_field": "source_encounter_id",
+      "source_person_id_field": "source_person_id",
+      "target_id_field": "visit_occurrence_id"
+    }
+  },
+  "replay_fence": [
+    "hospital_id",
+    "source_system",
+    "batch_id",
+    "source_manifest_sha256",
+    "mapping_profile_sha256"
+  ],
+  "single_writer_required": true,
+  "auto_identity_allowed": false
+}
