@@ -27,5 +27,13 @@ A NEW Patient / Encounter / Reconcile lineage run SHALL consume an independently
 ### Requirement: Real business graph readback must inspect action-level lineage
 The acceptance SHALL query genuine newly executed Spark Job / Run and action-level child Jobs, not only top-level application Jobs; SHALL verify Patient and Encounter Landing Input and Processing Output DatasetVersions, and SHALL require Reconcile's two inputs match those exact output versions. Column-level claims MUST be backed by actual OpenLineage column lineage facets and MUST NOT infer missing RDD COMPLETE events.
 
+#### Scenario: An action Run contains the input/output versions but an RDD Run is START-only
+- **WHEN** actual Spark processing and Reconcile complete and independent GET readback identifies child Job datasets plus a nonterminal RDD Run
+- **THEN** the accepted DatasetVersion graph SHALL be reported with the RDD lifecycle gap explicitly preserved; no synthetic terminal event shall be sent
+
 ### Requirement: Independent no-business-mutation evidence
 A controlled business Spark-only run SHALL capture protected OMOP PostgreSQL read-only baseline and post-run state, original paused state, exact source SHA, manifests, real Job/Run IDs and actual workflow conclusions. Any mismatch, incomplete readback or unknown commit status MUST remain HOLD, and MUST NOT trigger automatic retry or synthetic /lineage events.
+
+#### Scenario: OMOP post-run counts or fingerprints do not match the baseline
+- **WHEN** the protected business tables or ledger readbacks differ, or the comparison is unavailable
+- **THEN** the acceptance SHALL be HOLD and SHALL NOT report no business mutation or rerun a Writer
