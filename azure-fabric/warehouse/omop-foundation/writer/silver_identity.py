@@ -84,25 +84,25 @@ def plan_silver_identity(
     patient_keys = [key_of(row, "PERSON", "source_record_id") for row in patients]
     visit_keys = [key_of(row, "VISIT_OCCURRENCE", "source_encounter_id") for row in encounters]
 
-    # Compare casefolded keys too: Warehouse collation may be case-insensitive.
-    person_sources = {key.source_business_key.casefold() for key in patient_keys}
+    # Canonical FK is exact; casefold collisions are rejected by plan_ids.
+    person_sources = {key.source_business_key for key in patient_keys}
     for row in encounters:
         parent = row.get("source_person_id")
         clean(parent, "source_business_key")
-        if parent.casefold() not in person_sources:
+        if parent not in person_sources:
             raise PlanningHold("SILVER_ENCOUNTER_PERSON_FK_MISSING")
     allocation = plan_ids(
         [*patient_keys, *visit_keys], existing, next_free, gold_ids,
     )
     assigned = dict(allocation.assigned)
-    person_by_folded = {
-        key.source_business_key.casefold(): assigned[key] for key in patient_keys
+    person_by_source = {
+        key.source_business_key: assigned[key] for key in patient_keys
     }
     persons = tuple(sorted(
         (key.source_business_key, assigned[key]) for key in patient_keys
     ))
     visits = tuple(sorted(
-        (key.source_business_key, assigned[key], person_by_folded[row["source_person_id"].casefold()])
+        (key.source_business_key, assigned[key], person_by_source[row["source_person_id"]])
         for key, row in zip(visit_keys, encounters)
     ))
     if (
