@@ -1,0 +1,178 @@
+{
+  "contract_id": "healthcare.fabric.fhir-approved-silver-to-omop",
+  "contract_version": "1.0.0",
+  "status": "CONTRACT_ONLY_NO_WRITE",
+  "producer": "fabric-g4-approved-silver",
+  "consumer": "fabric-omop-foundation",
+  "fabric": {
+    "workspace_id": "745ce03b-15b6-4870-b0e5-8c5750aa18dc",
+    "lakehouse_id": "e67c42ee-5ab2-4bc8-a013-7bdf9741ef68",
+    "warehouse_item_id": "7a6d08da-278d-4603-8a3b-28640110984c",
+    "warehouse_name": "dw-omop-5.4"
+  },
+  "silver": {
+    "root": "Files/silver/fhir_r4",
+    "processing_version": "fhir-silver-canonical-v1:engine-0.1.1",
+    "processing_path_digest": "SHA256_UTF8_PROCESSING_VERSION",
+    "source_batch_id_algorithm": "SHA256_COMPACT_JSON_HOSPITAL_FEED_RAW_SOURCE_REQUEST_MANIFEST",
+    "canonical_source_system_format": "raw_source_system:hospital_id:feed_id",
+    "source_preservation_strategy": "DELTA_RAW_SNAPSHOT_V1",
+    "patient_directory": "canonical_patient",
+    "encounter_directory": "canonical_encounter",
+    "approval_directory": "silver_approval",
+    "approval_required_fields": [
+      "source_batch_id",
+      "manifest_sha256",
+      "processing_version",
+      "publication_id",
+      "patient_count",
+      "encounter_count",
+      "quarantine_count",
+      "patient_contract_sha256",
+      "encounter_contract_sha256",
+      "source_preservation_strategy",
+      "status"
+    ],
+    "approved_status": "SILVER_APPROVED",
+    "approval_row_count": 1,
+    "approved_quarantine_count": 0
+  },
+  "canonical_contracts": {
+    "patient": {
+      "source_path": "local-data-platform/spark/contracts/canonical/patient-v1.json",
+      "raw_sha256": "e0be146222f13b2f24a84d883d70117fac9aab984c184558dab88726ac5a3dab",
+      "contract_version": "v1",
+      "source_primary_key": [
+        "source_system",
+        "source_record_id"
+      ],
+      "required_fields": [
+        "source_record_id",
+        "birth_date",
+        "death_date",
+        "gender_code",
+        "race_code",
+        "ethnicity_code",
+        "source_system",
+        "source_version",
+        "source_batch_id",
+        "source_ingest_date",
+        "source_file",
+        "source_file_sha256",
+        "source_file_size_bytes",
+        "adapter_name",
+        "adapter_version",
+        "canonical_version",
+        "processing_run_id",
+        "processed_at"
+      ]
+    },
+    "encounter": {
+      "source_path": "local-data-platform/spark/contracts/canonical/encounter-v1.json",
+      "raw_sha256": "473ae45225c9063a7560b0092ed7914d71a43623f593d4959c66294e942a5837",
+      "contract_version": "v1",
+      "source_primary_key": [
+        "source_system",
+        "source_encounter_id"
+      ],
+      "person_fk_field": "source_person_id",
+      "person_reference_field": "source_record_id",
+      "required_fields": [
+        "source_encounter_id",
+        "source_person_id",
+        "start_datetime",
+        "end_datetime",
+        "encounter_class",
+        "source_code",
+        "source_description",
+        "source_organization_id",
+        "source_provider_id",
+        "source_payer_id",
+        "base_encounter_cost",
+        "total_claim_cost",
+        "payer_coverage",
+        "reason_code",
+        "reason_description",
+        "source_system",
+        "source_version",
+        "source_batch_id",
+        "source_ingest_date",
+        "source_file",
+        "source_file_sha256",
+        "source_file_size_bytes",
+        "adapter_name",
+        "adapter_version",
+        "canonical_version",
+        "processing_run_id",
+        "processed_at"
+      ]
+    }
+  },
+  "identity": {
+    "person_source_scope": [
+      "hospital_id",
+      "feed_id",
+      "raw_source_system",
+      "source_record_id"
+    ],
+    "visit_source_scope": [
+      "hospital_id",
+      "feed_id",
+      "raw_source_system",
+      "source_encounter_id"
+    ],
+    "omop_person_id_owner": "FABRIC_WAREHOUSE_F1",
+    "omop_visit_id_owner": "FABRIC_WAREHOUSE_F2",
+    "omop_person_id_type": "INT32_POSITIVE",
+    "current_f1_status": "PENDING_REAL_VALIDATION",
+    "forbidden": [
+      "LOCAL_POSTGRES_RUNTIME",
+      "UNSCOPED_SOURCE_ID_JOIN",
+      "HASH_AS_FINAL_OMOP_ID",
+      "ROW_NUMBER_AS_FINAL_OMOP_ID",
+      "NAME_DOB_FUZZY_MATCH"
+    ]
+  },
+  "vocabulary": {
+    "owner": "FABRIC_OMOP_FOUNDATION_F1",
+    "required_release_metadata": [
+      "vocabulary_release_id",
+      "vocabulary_sha256",
+      "vocabulary_effective_date",
+      "concept_mapping_profile_sha256"
+    ],
+    "requires_valid_standard_concepts": true,
+    "current_f1_status": "PENDING_REAL_VALIDATION"
+  },
+  "output": {
+    "candidate_state": "OMOP_CANDIDATE_ONLY_NOT_PUBLISHED",
+    "gold_state": "NOT_AUTHORIZED_BY_HANDOFF",
+    "person_target": "cdm.person",
+    "visit_target": "cdm.visit_occurrence",
+    "visit_id_provided_by_silver": false,
+    "source_value_max_length": 50,
+    "must_reject_truncation": true
+  },
+  "evidence": {
+    "structural_validation_result": "STRUCTURAL_PASS_PHYSICAL_READBACK_REQUIRED",
+    "required_real_gates": [
+      "PINNED_GIT_AND_WHEEL",
+      "INDEPENDENT_SILVER_DELTA_AND_APPROVAL_READBACK",
+      "FABRIC_IDENTITY_MAP_F1_ACCEPTED",
+      "OFFICIAL_VOCABULARY_F1_ACCEPTED",
+      "WRITER_TRANSACTION_F2_APPROVED",
+      "INDEPENDENT_WAREHOUSE_SQL_READBACK",
+      "REPLAY_SKIPPED_WITH_SAME_IDS"
+    ],
+    "stage1_performs_cloud_reads": false,
+    "stage1_performs_writes": false
+  },
+  "reference_approved_batch": {
+    "request_id": "atlanta-fhir-gh-41552666929",
+    "delivered_manifest_sha256": "425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1",
+    "expected_patient_count": 100,
+    "expected_encounter_count": 5918,
+    "expected_quarantine_count": 0,
+    "historical_evidence": "https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41636454542"
+  }
+}

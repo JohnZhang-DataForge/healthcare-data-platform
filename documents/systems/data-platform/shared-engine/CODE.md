@@ -40,6 +40,9 @@
 | [requirements-test.txt](../../../../shared-data-engine/requirements-test.txt) | 固定 Python 3.11/PySpark 3.5.7/构建依赖 |
 | [src/healthcare_data_engine/mapping/omop/candidates.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/candidates.py) | G5 Silver Approval/Concept + 外部 stable ID Map 保护的纯 Spark OMOP Person/Visit Candidate；不负责 Writer/Gold COMMIT |
 | [tests/test_omop_candidates.py](../../../../shared-data-engine/tests/test_omop_candidates.py) | G5 真实本地 PySpark Schema/FK/DQ/Unknown Concept/Approval 拒绝/确定性 Replay 正负测试 |
+| [contracts/fabric-fhir-omop-handoff-v1.json](../../../../shared-data-engine/contracts/fabric-fhir-omop-handoff-v1.json) | FHIR Approved Silver → Fabric OMOP F1 机器可读版本化交接规范；不授权 Gold 写入 |
+| [src/healthcare_data_engine/models/fabric_omop_handoff.py](../../../../shared-data-engine/src/healthcare_data_engine/models/fabric_omop_handoff.py) | 无 I/O 的原始 SHA、来源命名空间、Approval/路径元数据校验；始终要求另行物理 Delta 读回 |
+| [tests/test_fabric_omop_handoff.py](../../../../shared-data-engine/tests/test_fabric_omop_handoff.py) | 仓库 Canonical 原始 SHA、自定义 F1 作用域、拒绝跨医院/Quarantine/篡改/不可信路径的 Python 3.11/3.13 无云端测试 |
 | [README.md](../../../../shared-data-engine/README.md) | 构建、无网络安装、测试操作说明 |
 
 ## P3 Python 3.13 兼容发行版候选（尚未上传 Fabric）
