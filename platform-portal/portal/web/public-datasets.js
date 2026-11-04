@@ -1,33 +1,58 @@
 /* Marquez 0.51.1 public Datasets presentation. No API/data changes. */
 (function () {
   'use strict';
-  var preferred = 's3://health-processing';
+  var preferred = 's3://health-landing';
+  var processingNamespace = 's3://health-processing';
+  var rootLandingKey = 'publicMarquezRootLandingOnce';
   var originalHeaders = ['NAME', 'NAMESPACE', 'SOURCE'];
   var publicHeaders = ['DATASET', 'BATCH', 'INGEST DATE'];
   var choosing = false;
 
-  function onDatasetsRoute() { return /^\/datasets\/?$/.test(window.location.pathname); }
+  function onDatasetsRoute() { return window.location.pathname === '/datasets' || window.location.pathname === '/datasets/'; }
+
+  // Only exact root visits take visitors to the Landing-first home. The one-shot
+  // marker overrides a previously saved Processing choice for this navigation,
+  // without resetting manual Namespace choices during later browsing.
+  function navigateRootToLanding() {
+    if (window.location.pathname !== '/') return false;
+    try { window.sessionStorage.setItem(rootLandingKey, '1'); } catch (_) {}
+    window.location.replace('/datasets' + (window.location.search || '') + (window.location.hash || ''));
+    return true;
+  }
+  if (navigateRootToLanding()) return;
+
+  function clearRootLandingMarker() {
+    try { window.sessionStorage.removeItem(rootLandingKey); } catch (_) {}
+  }
 
   function selectFirstUsefulNamespace() {
-    // Only on Datasets, and only if the visitor never selected any namespace.
+    // Only on Datasets; never touch the original Jobs or lineage deep links.
     if (!onDatasetsRoute() || choosing) return;
-    try {
-      if (window.localStorage.getItem('selectedNamespace') !== null) return;
-    } catch (_) { return; }
+    var fromRoot = false;
+    try { fromRoot = window.sessionStorage.getItem(rootLandingKey) === '1'; } catch (_) {}
+    if (!fromRoot) {
+      try {
+        if (window.localStorage.getItem('selectedNamespace') !== null) return;
+      } catch (_) { return; }
+    }
     var selector = document.getElementById('namespace-select');
-    if (!selector || (selector.textContent || '').indexOf(preferred) !== -1) return;
+    if (!selector) return;
+    if ((selector.textContent || '').trim() === preferred) {
+      if (fromRoot) clearRootLandingMarker();
+      return;
+    }
     var options = document.querySelectorAll('[role="option"]');
     for (var i = 0; i < options.length; i++) {
       if ((options[i].textContent || '').trim() === preferred) {
         choosing = true;
-        options[i].click(); // Upstream MUI Select -> Redux selection.
-        choosing = false;
+        try { options[i].click(); } finally { choosing = false; }
+        if (fromRoot) clearRootLandingMarker();
         return;
       }
     }
     if (selector.getAttribute('data-public-default-opened') !== 'true') {
       selector.setAttribute('data-public-default-opened', 'true');
-      selector.click(); // Open options once; no direct Redux/localStorage mutation.
+      selector.click(); // Open MUI menu once; no direct Redux write.
     }
   }
 
@@ -41,7 +66,7 @@
       var namespace = decodeURIComponent(match[1]);
       var rawName = decodeURIComponent(match[2]);
       var isLanding = namespace === 's3://health-landing';
-      if (!isLanding && namespace !== preferred) return null;
+      if (!isLanding && namespace !== processingNamespace) return null;
       var segments = rawName.split('/');
       var params = {};
       segments.forEach(function (part) {
@@ -102,7 +127,7 @@
     var rows = table.querySelectorAll('tbody tr');
     var selector = document.getElementById('namespace-select');
     var activeNamespace = selector && (selector.textContent || '').trim();
-    var eligible = (activeNamespace === preferred || activeNamespace === 's3://health-landing') &&
+    var eligible = (activeNamespace === preferred || activeNamespace === processingNamespace) &&
       rows.length > 0;
     var parsed = [];
     for (var i = 0; i < rows.length; i++) {

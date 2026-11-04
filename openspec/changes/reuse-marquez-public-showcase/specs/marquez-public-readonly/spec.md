@@ -51,3 +51,15 @@ Source review and offline gateway tests SHALL not be represented as real externa
 - **GIVEN** P6 historical LAN UI screenshots and GET-only validation exist
 - **WHEN** only a design or offline test PR is merged
 - **THEN** public Deployment/External Browser status SHALL remain NOT_VERIFIED
+
+### Requirement: Public root navigation opens Landing Datasets without breaking manual namespace choice
+The dedicated public Marquez Web overlay SHALL route an exact root visit (`/`) to `/datasets` and select the real `s3://health-landing` namespace for that visit, even if an earlier session had selected Processing. It SHALL NOT redirect unrelated paths, modify the original private Marquez Web, bypass the GET-only Gateway, or change stored dataset names and lineage identifiers.
+
+#### Scenario: User opens the public domain root after selecting Processing earlier
+- **WHEN** a visitor opens `/` with `selectedNamespace=s3://health-processing` saved
+- **THEN** the browser SHALL navigate to `/datasets` and choose `s3://health-landing` through the existing namespace selector
+- **AND** a later user selection of Processing SHALL remain in effect without being reset
+
+#### Scenario: User follows a direct dataset or lineage link
+- **WHEN** the visitor opens `/datasets`, `/datasets/`, Jobs, or a Lineage deep link rather than root
+- **THEN** existing namespace selection and routes SHALL remain intact and no root redirect SHALL occur
