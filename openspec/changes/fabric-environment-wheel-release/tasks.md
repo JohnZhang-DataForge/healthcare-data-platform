@@ -32,17 +32,24 @@
 
 ## G5 0.1.3 Native Environment Git review staging (2026-11-04)
 
-- [ ] 4.1 Create a strictly scoped Git REVIEW branch containing only reproducible pinned Wheel 0.1.3 replacing sole 0.1.1, CODE map and OpenSpec tasks. CI must check source-tree SHA, both old/new Wheel SHA256 and exact four staged paths. No Fabric OIDC, UpdateFromGit, Environment Publish or Notebook execution in this step. Physical staging and Publish are separately verified gates.
+- [x] 4.1 Create a strictly scoped Git REVIEW branch containing only reproducible pinned Wheel 0.1.3 replacing sole 0.1.1, CODE map and OpenSpec tasks. CI must check source-tree SHA, both old/new Wheel SHA256 and exact four staged paths. No Fabric OIDC, UpdateFromGit, Environment Publish or Notebook execution in this step. Physical staging and Publish are separately verified gates.
 
-Task 4.1 is deliberately open until the generated Git-native Wheel branch is reviewed and merged; cloud staging, publish and runtime tests are further separate gates. The workflow never obtains a Fabric OIDC token.
+Task 4.1 DONE after [Run #41830905303](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41830905303) generated exact review branch, reviewed/merged in [PR #652](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/652). Later cloud operations are separate gates. The workflow never obtains a Fabric OIDC token.
 
 
 ## G5 Wheel 0.1.3 Git review only
 
-- [ ] 4.2 Reviewed Git Wheel staging branch feature/fabric-g5-native-wheel-013-41830905303 includes exact SHA256 6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59. It has NOT been synced to Fabric or Published. Await new PR, CI, then independent cloud readback before enabling Notebook runtime.
+- [x] 4.2 Reviewed Git Wheel staging branch feature/fabric-g5-native-wheel-013-41830905303 includes exact SHA256 6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59. **At this earlier Git-only stage** it had not been synced or Published; these downstream gates have since passed as recorded in 4.3a–c.
 
-- [ ] 4.3 Independently verify exact Git main native Wheel version, controlled Fabric UpdateFromGit/Staging, single Library Publish, and isolated Runtime 2.0 Notebook import for 0.1.3. No Gold commit authority from this task.
+- [x] 4.3 Independently verify exact Git main native Wheel version, controlled Fabric UpdateFromGit/Staging, single Library Publish, and isolated Runtime 2.0 Notebook import for 0.1.3. No Gold commit authority from this task.
 
 The G5 Git-only PR additionally updates the offline Notebook Wheel test to verify rebuilt 0.1.3 against Git-native 0.1.3 byte-for-byte while reading immutable historical 0.1.1 from Git for the unchanged business HALT Notebook regression. This is intentional dual-version testing, not a claim of concurrent Published versions in Fabric.
 
 The Native Notebook static contract test is also updated to assert the new Git 0.1.3 binary hash, while the existing HALT Notebook engine-version check stays pinned to effective 0.1.1 until a separately verified Fabric Publish. Do not mix Git-staged Wheel and Fabric-effective runtime claims.
+
+## G5 0.1.3 real Git sync and GA Published acceptance — 2026-11-04
+
+- [x] 4.3a **REAL GIT SYNC PASS**: Self-Runner [PR #499](https://github.com/JohnZhang-DataForge/Self-Runner/pull/499), [Run #41833502954](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954) verified exact old Git head `494a5d781e511d039d74ed3b868ae39d7629b0a9`, target Healthcare SHA `70a2b26d6d145d6d6ae66835dda82bf0bf1cac6b`; Workspace had one remote-only Environment Modified plus 4 user local-only items. Exactly one Fabric UpdateFromGit POST 202, independent Staging sole 0.1.3 Wheel, Published still 0.1.1, and all four local-only items unchanged.
+- [x] 4.3b **REAL ENVIRONMENT PUBLISH PASS**: Self-Runner [PR #500](https://github.com/JohnZhang-DataForge/Self-Runner/pull/500), [Run #41834029745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745) verified Git + Staging 0.1.3 and previous Published 0.1.1 before single official GA Publish POST (202), then independent readback `publishDetails=Success`, Spark library state Success, exactly one effective `0.1.3` custom Wheel, Runtime 2.0. No Notebook Spark was executed by Publish.
+- [x] 4.3c **REAL ISOLATED SPARK 0.1.3 IMPORT**: Self-Runner [PR #501](https://github.com/JohnZhang-DataForge/Self-Runner/pull/501)/[Run #41835221514](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835221514) confirmed Published 0.1.3 and temp Notebook cleanup; held on overly strict `.platform` metadata readback **before submitting a Spark Job**. Canonicalization fix [PR #502](https://github.com/JohnZhang-DataForge/Self-Runner/pull/502), real rerun [#41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) **real PASS**: Job `Completed`, exact exit `G5_ENGINE_013_SPARK41_IMPORT_PASS`, temporary Notebook independently cleaned; [Run #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) has all final log markers. The isolated import is not an authorization for any clinical Gold write.
+- [ ] 4.3d Business Notebook source version guard is still 0.1.1/HALT. Its alignment with Published 0.1.3, real Silver Candidate/Gold approval and end-to-end run are independent gated work; isolated import alone does not authorize changing the HALT run mode.

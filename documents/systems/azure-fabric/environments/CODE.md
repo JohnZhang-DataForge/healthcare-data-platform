@@ -1,6 +1,6 @@
 # Fabric Environments — CODE / 唯一原生源码地图
 
-**当前验收（2026-11-01）：** `healthcare-omop` 的原生 `env_healthcare.Environment` 已通过可信 Git 更新部署 Wheel **0.1.1** 到云端 Staging，且已完成 **Fabric Environment 正式 Publish**，GA Published Libraries API 独立读回唯一 0.1.1 Wheel。Git/云端的库**文件名/发布状态**已验收；另在独立、由 Git 新建的临时 Notebook 中，**Environment 绑定和 Spark 4.1/Wheel 0.1.1 导入已真实运行 PASS**（[Run 41478807776](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478807776)）。**正式业务 `nb_fhir_ingest` 的 Runtime/患者数据 E2E 尚未运行验收**；该临时 Notebook 已受控删除。
+**历史 P3 验收（2026-11-01；已被下方 G5 0.1.3 发布覆盖）：** `healthcare-omop` 的原生 `env_healthcare.Environment` 已通过可信 Git 更新部署 Wheel **0.1.1** 到云端 Staging，且已完成 **Fabric Environment 正式 Publish**，GA Published Libraries API 独立读回唯一 0.1.1 Wheel。Git/云端的库**文件名/发布状态**已验收；另在独立、由 Git 新建的临时 Notebook 中，**Environment 绑定和 Spark 4.1/Wheel 0.1.1 导入已真实运行 PASS**（[Run 41478807776](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41478807776)）。**正式业务 `nb_fhir_ingest` 的 Runtime/患者数据 E2E 尚未运行验收**；该临时 Notebook 已受控删除。
 
 ## 原生 Git 来源
 
@@ -8,7 +8,7 @@
 | --- | --- |
 | [env_healthcare.Environment/.platform](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/.platform) | Fabric Git 原生 Environment 元数据，保持 `logicalId` 不变 |
 | [env_healthcare.Environment/Setting/Sparkcompute.yml](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Setting/Sparkcompute.yml) | Spark compute 声明；真实 Staging 读回 Runtime 2.0 |
-| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl) | 唯一 0.1.1 Wheel；Git/CI SHA256 `6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59`，发布后的 Library List 只验证**库名称**，不直接提供 Wheel 文件内容 SHA |
+| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl) | 唯一 0.1.3 Wheel；Git/CI SHA256 `6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59`，发布后的 Library List 只验证**库名称**，不直接提供 Wheel 文件内容 SHA |
 
 新增原生定义要在 CODE 映射中注册。Shared 源码只能在 `shared-data-engine/` 维护，Environment 的 `CustomLibraries/` 仅保存已构建版本制品；避免复制源码或同时保留多个 Wheel。
 
@@ -22,7 +22,16 @@
 
 详细受控发布记录见 [P3 Wheel Release Preflight](P3-WHEEL-RELEASE-PREFLIGHT.md)，Notebook/Environment Git-first 机制见 [Fabric Runbook](../notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md)。
 
-## G5 0.1.3 staged only in a Git review branch
-This 0.1.3 Wheel replaces 0.1.1 in the Git review branch.
-It is NOT Fabric staged, NOT Environment Published and NOT Notebook imported.
-A separately reviewed Git main sync and Publish is needed.
+## G5 0.1.3 正式 Environment Published — 2026-11-04
+
+- [Healthcare PR #652](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/652): exact 0.1.3 Native Git Wheel with immutable SHA256 `6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59`. Old 0.1.1 was replaced in Git, not duplicated.
+- [Self-Runner #41832838614](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41832838614) read-only verified **five** Fabric Git changes: one remote-only Environment and four local-only Warehouse/Lakehouse/Notebook/Pipeline changes. No conflicts; preserve all four local items.
+- [Self-Runner #41833502954](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954): exact 0.1.3 Wheel **real Staging sync PASS**, local-only items preserved.
+- [Self-Runner #41834029745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745): official GA `POST /staging/publish?beta=false` single-call HTTP202, LRO/Publish Success, independent **Published sole Custom Wheel 0.1.3** readback and Runtime 2.0 PASS.
+- **Runtime Spark 0.1.3 import and business Notebook/FHIR/Gold E2E remain separate acceptance gates**. Native business Notebook still checks `engine_version == 0.1.1` and remains HALT. Do not run business Notebook until its package version and safeguards are reviewed.
+
+
+
+### G5 实机 0.1.3 Spark Runtime Import 验收 — 2026-11-04
+
+[Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) completed SUCCESS: published `env_healthcare` 0.1.3 preflight PASS; ephemeral Notebook exact definition readback PASS, Spark Job **Completed** with `G5_ENGINE_013_SPARK41_IMPORT_PASS`; temporary Notebook cleanup independently PASS. This supersedes previous 0.1.3 import HOLD, **not** the separate G5 business Notebook HALT/Gold COMMIT/Replay gates. Native business `nb_fhir_ingest` continues source-guard 0.1.1 and must be explicitly updated and redeployed before authorized G5 execution.
