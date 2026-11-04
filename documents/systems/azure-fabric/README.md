@@ -39,21 +39,24 @@ Azure/Fabric 与本地 [Data Platform](../data-platform/README.md) 平级。本�
 | 组件 | 组件说明 / 源码地图 | 当前实际源码 | 实现与验收边界 |
 | --- | --- | --- | --- |
 | **Terraform Infrastructure** | [README](infra-terraform/README.md) · [CODE](infra-terraform/CODE.md) · [ARCHITECTURE](infra-terraform/ARCHITECTURE.md) | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | 七个 Root/Module、IAM、OIDC、Remote State；只有 Plan-only 证据 |
-| **Fabric Notebooks** | [README](notebooks/README.md) · [CODE](notebooks/CODE.md) | [`workspaces/healthcare-omop/notebooks/`](../../../azure-fabric/workspaces/healthcare-omop/notebooks/) | 目前只有 `.gitkeep`，没有 `*.Notebook/` 原生 Item |
-| **Fabric Pipelines** | [README](pipelines/README.md) · [CODE](pipelines/CODE.md) | [`workspaces/healthcare-omop/pipelines/`](../../../azure-fabric/workspaces/healthcare-omop/pipelines/) | 目前只有 `.gitkeep`，没有 `*.DataPipeline/` 原生 Item |
+| **Fabric Notebooks** | [README](notebooks/README.md) · [CODE](notebooks/CODE.md) | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | 真实 Git-native Notebook 已存在，默认 HALT；G4 / G5 Source Readonly 已实际验收 |
+| **Fabric Pipelines** | [README](pipelines/README.md) · [CODE](pipelines/CODE.md) | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | 真实 Git-native Pipeline 已存在，受控参数默认 HALT；完整 Gold E2E 尚未验收 |
+| **Fabric Warehouse** | [CODE](warehouse/CODE.md) | [`omop-cdm-5.4/`](../../../azure-fabric/warehouse/omop-cdm-5.4/) · [`omop-foundation/`](../../../azure-fabric/warehouse/omop-foundation/) | 已有 `healthcare-omop` Workspace 内 **`dw-omop-5.4`** (GUID `7a6d08da-278d-4603-8a3b-28640110984c`)；Workspace-only Git 保护；SQL 源码独立于 Native Item Git 根目录 |
 
 `healthcare-omop` 是**已有 Fabric Workspace 的名称**，不是本次要创建的新 Workspace。源码结构分为基础设施 `infra-terraform/` 与未来 Fabric 原生业务 Item 的 `workspaces/healthcare-omop/`；建 Git 目录**不会**自动创建 Fabric Item 或连通 Fabric Git。
 
 ```text
 azure-fabric/
 ├── infra-terraform/
-│   ├── components/               # 七个独立 Terraform Root
-│   └── modules/                  # 对应实现模块及权限定义
+├── warehouse/                        # 现有 Workspace-only Warehouse 的 SQL/Writer/测试源码
+│   ├── omop-cdm-5.4/
+│   └── omop-foundation/
 └── workspaces/
-    └── healthcare-omop/
-        ├── notebooks/
-        │   └── ingestion/        # 未来 *.Notebook Item 归类
-        └── pipelines/            # 未来 *.DataPipeline Item
+    └── healthcare-omop/              # 真实 Fabric Git-native Item 根
+        ├── nb_fhir_ingest.Notebook/
+        ├── pl_fhir_ingest.DataPipeline/
+        ├── env_healthcare.Environment/
+        └── lh_omop_analytics.Lakehouse/
 ```
 
 ## Terraform 与 Fabric Git 的交付所有权
