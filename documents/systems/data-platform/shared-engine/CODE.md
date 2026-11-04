@@ -65,3 +65,7 @@ CI 见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/sh
 - Pure mapper `build_omop_candidates(..., hospital_id=...)` **requires explicit verified hospital ID** and a `BatchContext.namespaced_source_system` matching `raw_source:hospital_id:feed_id`. Canonical v1 Patient/Encounter source tables do not carry a separate hospital column; do **not** silently alter their frozen schemas.
 - F1 Warehouse `etl.identity_map` supplies columns `entity_type,hospital_id,source_system,source_business_key,omop_id`. Only `entity_type='PERSON'` is used to map Patient and Encounter's Person reference. Joins require exact hospital + source namespace + canonical source key; uniqueness/collation/INT checks span **all hospitals**, not only the selected one.
 - G5 Candidate remains **Candidate-only**. A freshly planned F2 ID is not persisted, and a real Fabric Gold COMMIT is not implied. Version 0.1.3 wheel is an offline candidate until new Fabric Environment bind/publish/Notebook readback; do not state runtime import PASS from CI alone.
+
+## 0.1.3 offline Wheel evidence
+
+- [Shared Engine validation Run #41827968535](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41827968535) on [PR #647](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/647) passed Python 3.11 and Python 3.13 Spark suites, reproducible wheel SHA equality and independent installed 0.1.3 import. **This is not Fabric Environment publish or Notebook import evidence.**
