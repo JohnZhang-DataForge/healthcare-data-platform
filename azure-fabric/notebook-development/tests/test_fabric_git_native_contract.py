@@ -215,10 +215,13 @@ class FabricGitNativeContract(unittest.TestCase):
     def test_native_environment_has_exact_hashed_custom_wheel(self):
         import hashlib
         import zipfile
-        lib = GIT_ROOT / "env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.1-py3-none-any.whl"
+        # Git native artifact is a 0.1.3 *staging candidate*; the actual
+        # business Notebook remains intentionally pinned to published 0.1.1
+        # until a separately accepted Fabric Environment Publish.
+        lib = GIT_ROOT / "env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl"
         self.assertTrue(lib.is_file())
         self.assertEqual(hashlib.sha256(lib.read_bytes()).hexdigest(),
-                         "4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3")
+                         "6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59")
         self.assertEqual([p.name for p in lib.parent.glob("*.whl")], [lib.name])
         with zipfile.ZipFile(lib) as wheel:
             names = wheel.namelist()

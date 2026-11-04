@@ -35,3 +35,14 @@
 - [ ] 4.1 Create a strictly scoped Git REVIEW branch containing only reproducible pinned Wheel 0.1.3 replacing sole 0.1.1, CODE map and OpenSpec tasks. CI must check source-tree SHA, both old/new Wheel SHA256 and exact four staged paths. No Fabric OIDC, UpdateFromGit, Environment Publish or Notebook execution in this step. Physical staging and Publish are separately verified gates.
 
 Task 4.1 is deliberately open until the generated Git-native Wheel branch is reviewed and merged; cloud staging, publish and runtime tests are further separate gates. The workflow never obtains a Fabric OIDC token.
+
+
+## G5 Wheel 0.1.3 Git review only
+
+- [ ] 4.2 Reviewed Git Wheel staging branch feature/fabric-g5-native-wheel-013-41830905303 includes exact SHA256 6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59. It has NOT been synced to Fabric or Published. Await new PR, CI, then independent cloud readback before enabling Notebook runtime.
+
+- [ ] 4.3 Independently verify exact Git main native Wheel version, controlled Fabric UpdateFromGit/Staging, single Library Publish, and isolated Runtime 2.0 Notebook import for 0.1.3. No Gold commit authority from this task.
+
+The G5 Git-only PR additionally updates the offline Notebook Wheel test to verify rebuilt 0.1.3 against Git-native 0.1.3 byte-for-byte while reading immutable historical 0.1.1 from Git for the unchanged business HALT Notebook regression. This is intentional dual-version testing, not a claim of concurrent Published versions in Fabric.
+
+The Native Notebook static contract test is also updated to assert the new Git 0.1.3 binary hash, while the existing HALT Notebook engine-version check stays pinned to effective 0.1.1 until a separately verified Fabric Publish. Do not mix Git-staged Wheel and Fabric-effective runtime claims.
