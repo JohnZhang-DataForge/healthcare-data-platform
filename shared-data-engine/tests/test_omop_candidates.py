@@ -154,11 +154,17 @@ class OmopCandidateSparkTest(unittest.TestCase):
             ({"mapping_profile_sha256": "0" * 64}, "G5_MAPPING_PROFILE_SHA_CONFLICT"),
             ({"mapping_profile_sha256": ""}, "G5_MAPPING_PROFILE_PIN_MISSING"),
             ({"source_system": "synthetic:hospital-b:fhir-r4"},
-             "G5_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH"),
+             "G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH"),
         ):
             with self.subTest(kwargs=kwargs):
                 with self.assertRaisesRegex(ValueError, expected):
                     self.build(**kwargs)
+        foreign_profile = deepcopy(self.profile)
+        foreign_profile["source_system"] = "synthetic:hospital-b:fhir-r4"
+        foreign_raw = json.dumps(foreign_profile, sort_keys=True).encode()
+        with self.assertRaisesRegex(ValueError, "G5_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH"):
+            self.build(mapping_profile_bytes=foreign_raw,
+                       mapping_profile_sha256=hashlib.sha256(foreign_raw).hexdigest())
         duplicate = (b'{"mapping_name":"one","mapping_name":"two"}')
         with self.assertRaisesRegex(ValueError, "G5_MAPPING_PROFILE_SHA_CONFLICT"):
             load_omop_mapping_profile(
