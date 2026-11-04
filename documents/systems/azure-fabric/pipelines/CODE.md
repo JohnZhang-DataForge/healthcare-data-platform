@@ -33,3 +33,9 @@ Terraform 中的[默认失败保护定义](../../../../azure-fabric/infra-terraf
 - `run_mode` 默认 `HALT`，`source_preservation_strategy` 默认 `HALT`，所有请求和 Contract 字段默认空；`write_authorized=false`、`retention_preflight_verified=false` 不允许 Pipeline 参数覆盖；`retry=0`，无 schedule。
 - 不允许以 Pipeline SUCCESS 代替实际 Notebook exitValue 或 Approval、两张 Delta 的独立物理读回。真正 Candidate/Gold E2E 尚未包含在本静态变更内；Fabric Workspace UpdateFromGit / getDefinition / Pipeline Job Instance / 原始 G4 Replay 需要单独实际验收。
 - 本分支 CI 对新版 `healthcare_data_engine` 0.1.2 候选 Wheel SHA 与**仍已发布的** 0.1.1 原生 Environment Wheel SHA 作**两个独立检查**，Native Notebook 回归继续用 0.1.1。任何用 0.1.2 的 Notebook 真运行必须先独立 publish/readback。
+
+## FHIR → Fabric OMOP stage-1 interface (2026-11-03, versioned)
+
+- [FHIR–OMOP Handoff v1 decision, ownership and acceptance](FHIR-OMOP-HANDOFF-V1.md): G5 approved Silver → independent Fabric Warehouse OMOP F1/F2/F3; **contract-only, no writes**.
+- [Machine handoff contract](../../../../shared-data-engine/contracts/fabric-fhir-omop-handoff-v1.json), [pure structural-only validator](../../../../shared-data-engine/src/healthcare_data_engine/models/fabric_omop_handoff.py), [negative tests](../../../../shared-data-engine/tests/test_fabric_omop_handoff.py), [OpenSpec](../../../../openspec/changes/fabric-fhir-omop-handoff-v1/design.md).
+- Live read-only G5 Pipeline/physical Silver acceptance: [Self-Runner #41636454542](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41636454542). Existing OMOP F0 39/432 empty base schema physical PASS: [#41648858578](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41648858578). OMOP F1 Identity + Vocabulary and Gold Writer remain separate work; **no Gold COMMITTED claim**.
