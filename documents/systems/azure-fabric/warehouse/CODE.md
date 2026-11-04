@@ -13,3 +13,5 @@
 - [Fabric OMOP Foundation identity schema source](../../../../azure-fabric/warehouse/omop-foundation/): 5 empty management table SQL files, Warehouse-wide INT allocator, idempotency ledger and audit contracts; **physically created and independently read back in [Self-Runner #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817); all management tables empty**.
 
 - **F1 Vocabulary semantic DQ (real):** [Self-Runner #41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379), 11/11 cross-table links unresolved=0; vocabulary_version blank in 28/47 rows remains an explicit version/licensing review item.
+
+- [F2 pure source-to-INT-ID preview and replay planner](../../../../azure-fabric/warehouse/omop-foundation/writer/identity_plan.py) with [offline collision/overflow/replay tests](../../../../azure-fabric/warehouse/omop-foundation/tests/test_identity_plan.py). This code is SOURCE-ONLY; it does not write Warehouse Gold.
