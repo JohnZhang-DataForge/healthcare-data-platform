@@ -7,6 +7,13 @@ postgresql:
 marquez:
   existingSecretName: marquez-db
   migrateOnStartup: true
+  # Keep ALL Marquez Jobs, Datasets, Runs, and OpenLineage events indefinitely.
+  # Marquez 0.51.1 chart has an upstream bug: its ConfigMap checks whether
+  # dbRetention is a nonempty object, NOT dbRetention.enabled. Setting
+  # enabled: false still enables 7-day deletion. Null removes the entire
+  # dbRetention section from rendered config.yml; never change to {} or
+  # enabled: false without fixing the upstream Helm template and testing.
+  dbRetention: null
   db:
     host: dw-postgre14.dw-postgre14.svc.cluster.local
     port: 5432

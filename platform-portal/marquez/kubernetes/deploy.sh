@@ -82,15 +82,31 @@ assert 'kind: StatefulSet' not in txt
 assert 'image: postgres:' not in txt
 assert 'nodePort: 30999' not in txt
 assert 'marquez-db' in txt
-print('MARQUEZ_HELM_RENDER_NO_BUNDLED_DB_NO_NODEPORT=PASS')
+assert 'dbRetention:' not in txt, 'MARQUEZ_RETENTION_MUST_BE_ABSENT_FROM_RENDERED_CONFIG'
+print('MARQUEZ_HELM_RENDER_NO_BUNDLED_DB_NO_NODEPORT_NO_RETENTION=PASS')
 PY
 
 helm upgrade --install "$RELEASE" "$CHART_DIR" \
   --namespace "$NAMESPACE" \
-  -f "$VALUES" --wait --timeout 9m \
+  -f "$VALUES" --reset-values --wait --timeout 9m \
   --history-max 5
 echo MARQUEZ_HELM_RELEASE_APPLIED=YES
+
+# Regression gate: the real API config must have NO retention policy at all.
+# A chart value of enabled:false is unsafe in upstream Marquez 0.51.1.
+kubectl get configmap marquez-config -n "$NAMESPACE" -o json |
+  python3 -c 'import json,sys; x=json.load(sys.stdin); cfg=x["data"]["config.yml"]; assert "dbRetention:" not in cfg, "MARQUEZ_RETENTION_STILL_ENABLED"; print("MARQUEZ_LIVE_CONFIG_NO_RETENTION=PASS")'
+
+# Helm updates the ConfigMap but does not automatically restart Pods when only
+# mounted ConfigMap contents changed. Restart the API only, never the database.
+kubectl rollout restart deployment/marquez -n "$NAMESPACE"
 kubectl rollout status deployment/marquez -n "$NAMESPACE" --timeout=180s
+if kubectl logs -n "$NAMESPACE" deployment/marquez --since=5m --tail=1000 |
+    grep -F 'Started db retention job'; then
+  echo MARQUEZ_RETENTION_JOB_STILL_STARTED=FAIL
+  exit 1
+fi
+echo MARQUEZ_RETENTION_JOB_NOT_STARTED=PASS
 kubectl rollout status deployment/marquez-web -n "$NAMESPACE" --timeout=180s
 test "$(kubectl get svc marquez -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
 test "$(kubectl get svc marquez-web -n "$NAMESPACE" -o jsonpath='{.spec.type}')" = ClusterIP
