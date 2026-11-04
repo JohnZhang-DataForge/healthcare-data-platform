@@ -1,3 +1,32 @@
+## Actual Warehouse ownership vs Git SQL source
+
+**Physical Workspace:** `healthcare-omop`, ID `745ce03b-15b6-4870-b0e5-8c5750aa18dc`.
+**Existing Warehouse:** `dw-omop-5.4`, physical Item GUID
+`7a6d08da-278d-4603-8a3b-28640110984c`. It is in **the same**
+Workspace as the root-level Git-native items
+[`nb_fhir_ingest.Notebook/`](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/),
+[`pl_fhir_ingest.DataPipeline/`](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/),
+[`env_healthcare.Environment/`](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/),
+and [`lh_omop_analytics.Lakehouse/`](../../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/).
+
+**Git layout distinction:** The Warehouse was created manually and remains
+a **Workspace-only, Git UpdateFromGit-protected item**. It currently has no
+native `workspaces/healthcare-omop/dw-omop-5.4.Warehouse/` directory.
+The existing `azure-fabric/warehouse/omop-cdm-5.4/` and
+`azure-fabric/warehouse/omop-foundation/` are versioned SQL DDL, Writer,
+identity/audit and test sources used by separately authorized migrations;
+they are **not** the Warehouse's Fabric Git-native item definition. The two
+empty legacy Notebook/Pipeline folder placeholders have been removed in
+favor of the real root-level `*.Notebook/` / `*.DataPipeline/` items.
+
+Do not relocate the Warehouse sources or introduce a `*.Warehouse/` Git
+item without a separate OpenSpec, dependency/CI path migration, physical
+GUID/type verification and revision of the existing Workspace-only
+protection. No data, Warehouse schema, or Fabric resource was changed in
+this directory cleanup.
+
+---
+
 # Fabric Warehouse / OMOP CDM Schema — Source Map
 
 - [Official OHDSI 5.4 DDL mirror](../../../../azure-fabric/warehouse/omop-cdm-5.4/upstream/OMOPCDM_sql_server_5.4_ddl.sql): source blob pinned and offline verified.
