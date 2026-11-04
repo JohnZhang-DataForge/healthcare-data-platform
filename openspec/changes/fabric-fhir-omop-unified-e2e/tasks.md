@@ -13,6 +13,7 @@
 - [x] 1.6 正式 Notebook 新增 `G5_CONCEPT_SOURCE_INVENTORY_READONLY` 模式，复用 G5 真实物理 Approval Reader 后获取五组源代码/频数和源值长度，带 SHA、来源身份、行数的受控 JSON read-only receipt；仅 CODE/OFFLINE，真实云端仍待执行。
 - [x] 1.3 从已批准 G4 Silver 真实独立读回五组 code/count；Patient=100、Encounter=5918、源 SHA/Hospital/Source Batch 保持一致：真实 Runner #41920328470、Spark Job `082a5fac-f3f4-4e06-8d0c-0c606e1d1b23` PASS、ERROR=NONE；实际代码数和有争议的源值见下方证据。
 - [ ] 1.4 从真实 F1 Warehouse 读回这些 Concept 明细；核对九文件 release/manifest、许可、有效日期、Domain、Vocabulary 审计。
+- [x] 1.7 真实 F1 Warehouse **SQL SELECT-only** lexical discovery PASS：Self-Runner Run `41922120812`，源为固定 G4 Runner `41920328470` 的 59 个真实代码；报告清楚区分 Concept Domain/Standard/Invalid/Validity 与正式临床映射。**不是** 1.4 的 release/license 复核通过，也不是 1.5 Profile 审批。
 - [ ] 1.5 临床映射审查与正式版本 SHA 冻结；未知、不合法、无授权的全部 HOLD；禁止发布伪 Profile。
 
 ## P2–P5 — 候选、事务、管线
@@ -41,3 +42,15 @@
 - Gender **2** 代码 / **100** 行：female=54, male=46；Race **6** / **100**：2054-5=53, 2106-3=38, 2028-9=5, UNK=2, 1002-5=1, 2076-8=1；Ethnicity **2** / **100**：2186-5=92, 2135-2=8。
 - Encounter Class **5** / **5918**：ambulatory=5684, emergency=164, inpatient=55, virtual=11, home=4；Encounter Source Code **44** / **5918**：最多的 185347001=2149, 185349003=815, 162673000=736, 410620009=417, 185345009=331。完整 44 项及频数必须直接从归档 Artifact 读取；不靠抽样推断。
 - 下一步 P1.4/P1.5：物理 Warehouse Vocabulary Domain、validity、映射与版本固定和人工审查。Race `UNK`、Encounter `virtual`/`home` 需要显式规则或 HOLD；**源代码频率读取通过不等于 Concept Profile 临床审批，也不等于 Candidate/Gold 写入**。
+
+## 2026-11-04 — 真实 F1 Vocabulary lexical discovery (not clinical approval)
+
+- [Self-Runner Vocabulary Deep DQ Run #41922120812](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41922120812) 实际 SQL 只读查询：`P1_VOCABULARY_REAL_SQL_READONLY_PASS`，`ERROR=NONE`，原有 11 项 DQ 再次 PASS，`GOLD_WRITE_ATTEMPTED=False`，`CLINICAL_MAPPING_APPROVED=False`。归档 Artifact：`fabric-p1-vocabulary-candidates-41922120812`，`report.json` SHA256 `a64a3819eb35697977ee41465d40b92b54fdd628312426d189507e8945d7d767`。
+- 查询针对真实物理 Warehouse `7a6d08da-278d-4603-8a3b-28640110984c` 的 `cdm.concept`、`cdm.vocabulary`、`audit.vocabulary_source_file`；来源输入来自已验收 G4 Run #41920328470 的 canonical receipt SHA256 `1a89a7d575997ed6ed94ff5a77589f514d32c4b876180961e220bd2cdeff2925`，源 5 类共 59 distinct codes。
+- **已确认的真正标准 Domain Gender**：female → Person gender_concept_id 候选 8532；male → 候选 8507（两者为标准有效，待版本/Profile 正式批准）。
+- **Race 不能直接转换**：5 个 LOINC 源值匹配的 SQL Concepts 是 `Measurement` Domain（虽 `S` 但不能用于 Person Race）；`UNK` 字面匹配 Race Concept 8552 已于 2014-07-31 失效，`standard_concept=NULL`，2 条源记录必须 HOLD/明确策略。
+- **Ethnicity 不能直接转换**：两种 LOINC 源值 2135-2 / 2186-5 对应 `Measurement` Domain Concept 3034757 / 3021104，不得写作 `ethnicity_concept_id`。
+- **Visit 不能直接转换**：5 个 `encounter_class` 仅 `home` 字面匹配 `Visit` Domain 42627966，但其 `standard_concept=NULL` 且 vocabulary=CPT4，存在许可/非标准阻断；其余 4 类无字面匹配。
+- 全部 44 个 `source_code` 均找到词表记录，但 **36 个 Observation + 8 个 Procedure**，没有任何一个直接是有效标准 Visit Domain；候选覆盖率不能冒充目标 Domain 合规通过。
+- `cdm.vocabulary` 行数 47、`vocabulary_version` 空 28；`audit.vocabulary_source_file` 行数 0，F1 release/license/audit 任务仍须独立完成。
+- **禁止**将词法命中冒充临床标准映射或将 Wrong Domain Concept 充作正式 OMOP Gold；P1.4/P1.5、P2、P3 Candidate、P4 Gold COMMIT、P5 Pipeline E2E 依旧 OPEN。
