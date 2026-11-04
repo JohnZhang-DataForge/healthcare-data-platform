@@ -77,3 +77,7 @@ Distinguish SOURCE/STATIC_PASS, REST_VISIBLE, SQL_SELECT_PASS, SCHEMA_DEPLOYED, 
 The newly added pure `writer/identity_plan.py` gives deterministic proposed IDs under a fully verified state snapshot. It is not a reservation: `etl.id_allocator` and `etl.identity_map` must only be updated in the Gold commit transaction. Before COMMIT, a single-writer controlled Warehouse executor must re-read the full map/counters/ledger and compare with its previously planned values. Any drift/HOLD, no silent remapping. Fabric Warehouse snapshot isolation and un-enforced key constraints mean lock assumptions are unsafe; conflict-handling and independently verified receipts are mandatory.
 
 Existing G5 Candidate mapper lacks a `hospital_id` join and assumes the stable identity mapping exists already. Live F2 must resolve this contract/interface gap without mutating G4 approved Silver inputs or silently creating fake IDs. A physical SQL ROLLBACK rehearsal is the next checkpoint, not a Gold Commit.
+
+## 12. Real six-table rollback proof
+
+Self-Runner [#41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608) performed an explicit multi-table SQL transaction with synthetic IDs and proved rollback; independently reopened all six Warehouse tables as empty. This verifies native Fabric transaction semantics for our actual schemas, not a Gold commit. F2 must still implement fully reviewed commit handling, conflict/recovery, batch-pinned source data, G5 hospital ID scope and real Replay. No SQL `COMMIT` path has been authorized yet.

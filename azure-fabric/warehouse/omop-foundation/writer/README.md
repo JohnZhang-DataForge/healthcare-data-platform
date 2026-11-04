@@ -16,3 +16,9 @@ References:
 - https://learn.microsoft.com/en-us/fabric/data-warehouse/transactions
 - https://learn.microsoft.com/en-us/fabric/data-warehouse/identity
 - https://learn.microsoft.com/en-us/fabric/data-warehouse/ingest-data-tsql
+
+## Real transaction rehearsal — 2026-11-04
+
+- [Self-Runner PR #496](https://github.com/JohnZhang-DataForge/Self-Runner/pull/496): source-controlled synthetic/no-PHI transaction test.
+- [Run #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608): real `BEGIN TRANSACTION`; six tables contained exactly the expected synthetic rows within one transaction; explicit `ROLLBACK TRANSACTION`; independent new SQL connection verified all six zero rows. **PASS, NO GOLD COMMIT**.
+- The remaining task is an authorized Writer that rechecks verified Candidate inputs and commits stable IDs, clinical rows and Ledger atomically, then reads back for Replay; this rehearsal is not that writer.
