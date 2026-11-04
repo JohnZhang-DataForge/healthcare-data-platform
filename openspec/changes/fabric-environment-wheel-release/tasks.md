@@ -42,3 +42,5 @@ Task 4.1 is deliberately open until the generated Git-native Wheel branch is rev
 - [ ] 4.2 Reviewed Git Wheel staging branch feature/fabric-g5-native-wheel-013-41830905303 includes exact SHA256 6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59. It has NOT been synced to Fabric or Published. Await new PR, CI, then independent cloud readback before enabling Notebook runtime.
 
 - [ ] 4.3 Independently verify exact Git main native Wheel version, controlled Fabric UpdateFromGit/Staging, single Library Publish, and isolated Runtime 2.0 Notebook import for 0.1.3. No Gold commit authority from this task.
+
+The G5 Git-only PR additionally updates the offline Notebook Wheel test to verify rebuilt 0.1.3 against Git-native 0.1.3 byte-for-byte while reading immutable historical 0.1.1 from Git for the unchanged business HALT Notebook regression. This is intentional dual-version testing, not a claim of concurrent Published versions in Fabric.
