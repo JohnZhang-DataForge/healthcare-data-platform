@@ -1,0 +1,43 @@
+name: Fabric FHIR to OMOP handoff contract v1 offline
+
+on:
+  pull_request:
+    paths:
+      - 'shared-data-engine/contracts/fabric-fhir-omop-handoff-v1.json'
+      - 'shared-data-engine/src/healthcare_data_engine/models/fabric_omop_handoff.py'
+      - 'shared-data-engine/tests/test_fabric_omop_handoff.py'
+      - '.github/workflows/fabric-fhir-omop-handoff-offline.yml'
+      - 'openspec/changes/fabric-fhir-omop-handoff-v1/**'
+  push:
+    branches: [main]
+    paths:
+      - 'shared-data-engine/contracts/fabric-fhir-omop-handoff-v1.json'
+      - 'shared-data-engine/src/healthcare_data_engine/models/fabric_omop_handoff.py'
+      - 'shared-data-engine/tests/test_fabric_omop_handoff.py'
+      - '.github/workflows/fabric-fhir-omop-handoff-offline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  no-cloud-contract:
+    name: Offline FHIR/OMOP v1 contract Python ${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run raw SHA, multi-hospital namespace, approval and negative contracts
+        run: |
+          set -Eeuo pipefail
+          python -m unittest discover -s shared-data-engine/tests -p 'test_fabric_omop_handoff.py' -v
+          python -m py_compile shared-data-engine/src/healthcare_data_engine/models/fabric_omop_handoff.py
