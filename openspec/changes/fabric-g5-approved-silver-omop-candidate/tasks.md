@@ -61,3 +61,10 @@
 
 - [Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) confirms Published 0.1.3, full temporary Notebook definition readback, real Spark Job **Completed**, exact exit `G5_ENGINE_013_SPARK41_IMPORT_PASS`, and successful temp Notebook cleanup. Runtime package acceptance is **PASS**.
 - Source/Environment release is now genuinely complete, but this **does not complete G5 tasks 2.3, 3.1–3.4, or 4.1–4.4**: business `nb_fhir_ingest` remains HALT and still checks 0.1.1; approved Concept Profile, P100/E5918 Silver readback, physical Candidate Delta, Warehouse Gold COMMIT and Replay have not been accepted.
+
+## 2026-11-04 — G5 Stage 3.1a Silver physical preflight (no writes)
+
+- [ ] 3.1a Add a distinct, strictly read-only `G5_CANDIDATE_SOURCE_READONLY` native Notebook mode that reuses actual G4 frozen source/Manifest/Approval/Canonical Delta readback; re-open independent Delta Patient, Encounter and approval paths; validate exact accepted P100/E5918/Q0, source batch SHA, source namespace, historical processing 0.1.1, pinned Canonical contract raw bytes, unique keys and FK. This is **source-only**, not Candidate or Gold.
+- [ ] 3.1b Offline negative tests must reject changed Manifest, rejected G4 request, unexpected write authorization, unknown path overrides, partial/duplicate Approval, patient/encounter tampering and silent non-approval; run required CI and merge reviewed PR.
+- [ ] 3.1c Actual G5 mode live Spark execution and exact exit / independent physical readback remain a separately scheduled, explicitly authorized stage. No assertion of PASS based on deployment or offline tests.
+- [ ] 3.2 Physical Candidate requires real approved Concept Mapping Profile and independently verified persisted Warehouse Identity Map; do not synthesize missing IDs, fake clinically approved Concepts, or publish Candidate using `silver_identity.py`'s preview.
