@@ -10,4 +10,6 @@
 
 - **F1 physical Vocabulary 9/9 real import:** [Self-Runner #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994) — 28,703,753 exact source rows loaded into the existing nine `cdm` tables, independent count/Concept ID/date/vocabulary uniqueness checks PASS. Domain/concept relation semantic QA and release metadata audit remain a separate task.
 
-- [Fabric OMOP Foundation identity schema source](../../../../azure-fabric/warehouse/omop-foundation/): 5 empty management table SQL files, Warehouse-wide INT allocator, idempotency ledger and audit contracts; **offline source only until a separate real deployment/readback is recorded**.
+- [Fabric OMOP Foundation identity schema source](../../../../azure-fabric/warehouse/omop-foundation/): 5 empty management table SQL files, Warehouse-wide INT allocator, idempotency ledger and audit contracts; **physically created and independently read back in [Self-Runner #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817); all management tables empty**.
+
+- **F1 Vocabulary semantic DQ (real):** [Self-Runner #41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379), 11/11 cross-table links unresolved=0; vocabulary_version blank in 28/47 rows remains an explicit version/licensing review item.
