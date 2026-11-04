@@ -8,7 +8,10 @@ Check that live `dw-marquez/marquez-config` has no `dbRetention`. Verify the iso
 
 If a precondition fails, stop without mutating. No full NEW_ONLY E2E, Spark job, or Writer is triggered by this P1.
 
-## P2 Patient/Encounter recovery (future)
+## P2 tiny real Spark fixture lineage (optional and separate from history)
+To verify true dataset graph recovery after successful Airflow probe, use the existing checked-in `platform-portal/openlineage/spark/` static renderer and self-contained 3-row fixture. Gate the resource names, source SHA, no live TASK004 processing, isolated SparkApplication + 1 Gi per-run PVC, and Marquez no-retention. Write only to the newly created probe PVC, never to healthcare business S3 or PostgreSQL OMOP. Require live Completed SparkApplication, and independent Marquez dataset/job/event row-count increase before accepting.
+
+## P3 Patient/Encounter recovery (future)
 Only use actual saved lineage event bytes, or a separately approved real Spark-only test with immutable input manifest, no Writer/OMOP mutation and explicit new run identity. Never fabricate COMPLETE for known START-only Spark action or claim original historical Run UUID as recovered.
 
 ## Evidence
