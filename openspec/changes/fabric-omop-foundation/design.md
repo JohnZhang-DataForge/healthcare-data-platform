@@ -71,3 +71,9 @@ Distinguish SOURCE/STATIC_PASS, REST_VISIBLE, SQL_SELECT_PASS, SCHEMA_DEPLOYED, 
 - The five ETL/Audit table DDL definitions were genuinely applied and independently read back PASS in [Self-Runner #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817). They were empty, not a functioning ID allocator or ledger yet.
 - Vocabulary DQ (real [#41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379)) found zero missing references in eleven distinct joins over the complete nine-table export; date and reverse relationship checks also PASS. Twenty-eight `vocabulary_version` values are blank, requiring separate release and licensed terminology review. Never fill with fabricated version values.
 - The next gate is F2: prove allocation under Warehouse snapshot isolation, Person/Visit FK resolution, and exact batch manifest Replay. No automated F1 schema run authorized business writes.
+
+## 11. F2 Preview–Gold transaction boundary
+
+The newly added pure `writer/identity_plan.py` gives deterministic proposed IDs under a fully verified state snapshot. It is not a reservation: `etl.id_allocator` and `etl.identity_map` must only be updated in the Gold commit transaction. Before COMMIT, a single-writer controlled Warehouse executor must re-read the full map/counters/ledger and compare with its previously planned values. Any drift/HOLD, no silent remapping. Fabric Warehouse snapshot isolation and un-enforced key constraints mean lock assumptions are unsafe; conflict-handling and independently verified receipts are mandatory.
+
+Existing G5 Candidate mapper lacks a `hospital_id` join and assumes the stable identity mapping exists already. Live F2 must resolve this contract/interface gap without mutating G4 approved Silver inputs or silently creating fake IDs. A physical SQL ROLLBACK rehearsal is the next checkpoint, not a Gold Commit.

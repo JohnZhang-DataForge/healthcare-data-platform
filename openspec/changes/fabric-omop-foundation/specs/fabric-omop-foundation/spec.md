@@ -77,3 +77,19 @@ The system SHALL link source manifest SHA256, OMOP mapping profile SHA256, batch
 - **GIVEN** a recorded completed batch
 - **WHEN** the same batch with unchanged hashes is requested
 - **THEN** an independently verified replay must SKIP; a changed hash must fail without mutating Gold.
+
+### Requirement: F2 ID preview cannot grant commit permission
+
+The system SHALL treat deterministic Source-to-INT-ID planning as an uncommitted proposal. Only a target-verified single-writer Warehouse transaction with full Snapshot/Map/Gold revalidation MAY persist the ID Map, Person/Visit and COMMITTED Batch Ledger.
+
+#### Scenario: Preview changes before Warehouse commit
+
+- **GIVEN** the persisted Map, Gold row inventory or allocator differs from the verified preview
+- **WHEN** the F2 Writer begins its transaction
+- **THEN** it MUST reject the batch without exposing a GOLD_COMMITTED receipt or silently replacing any stable ID.
+
+#### Scenario: Case-insensitive source identity collision
+
+- **GIVEN** differently cased external source keys that may collide under Warehouse collation
+- **WHEN** a preview is generated
+- **THEN** the planner MUST HOLD before DML, rather than allocate two surrogate IDs to one effective source key.

@@ -24,7 +24,11 @@
 
 ## F2 — Transactional Gold writer
 
-- [ ] 2.1 实现 Warehouse Writer、Ledger 与原子事务；Person/Visit 真实插入、重放及负向校验。
+- [ ] 2.1 实现 Warehouse Writer、Ledger 与原子事务；Person/Visit 真实插入、重放及负向校验（整项仍 OPEN）。
+- [x] 2.1a 实现纯 F2 INT ID Preview Planner + Ledger Replay Fence；离线正负向测试覆盖跨医院、同源重跑、冲突、溢出、Snapshot Map/Gold 不一致。**仅 CODE/STATIC，不是实际 Warehouse 分配或 Gold COMMIT。**
+- [ ] 2.1b 在 DW 验证 BEGIN TRANSACTION/ROLLBACK 的真实事务行为，独立重连接确认零持久化记录，测试失败不盲目重试。
+- [ ] 2.1c 实现真实单写入者 Gold 事务：重查 Snapshot → Map/Allocator/Person/Visit/Ledger 原子提交 → 独立读回与 Replay。
+- [ ] 2.1d 补齐 G5 Candidate 的 hospital_id Join 与真实 Vocabulary Mapping Profile，验证后才允许 F2 clinical writes。
 
 ## F3 — Approved G4 to Gold E2E
 
@@ -102,3 +106,11 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 - [Self-Runner PR #494](https://github.com/JohnZhang-DataForge/Self-Runner/pull/494) merged SHA `c578582df3406b2ba3a45522820656f9db6fbd79`. [Run #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817) **SUCCESS**: precheck `EMPTY TABLES=5`, actual `CREATE TABLE` five times (`etl.identity_map`, `etl.id_allocator`, `etl.batch_ledger`, `audit.omop_commit_check`, `audit.vocabulary_source_file`), independently read-back schema, five tables all zero rows. NO Person/Visit ID allocation or clinical inserts.
 - [Self-Runner PR #492](https://github.com/JohnZhang-DataForge/Self-Runner/pull/492) initial DQ Run #41818140654 failed in client before first count (ODBC cursor timeout misuse); [PR #493](https://github.com/JohnZhang-DataForge/Self-Runner/pull/493) removed unsupported cursor assignment. [PR #495](https://github.com/JohnZhang-DataForge/Self-Runner/pull/495) added bounded progress and triggered [real DQ Run #41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379), **SUCCESS**.
 - DQ: nine table COUNT_BIG values exactly match 28,703,753 source rows, all 11 fixed referential checks `UNRESOLVED=0`. `RELATIONSHIP_REVERSE_MISSING=0`, `CONCEPT_INVALID_DATE_RANGE=0`. `VOCABULARY_VERSION_BLANK=28/47` flagged **REVIEW**, not import failure. Semantic linkage PASS does **not** establish license/release validity; no clinical business rows have been committed.
+
+
+## F2 deterministic Identity/Replay plan — 2026-11-04
+
+- Pure writer planning code lives in `azure-fabric/warehouse/omop-foundation/writer/identity_plan.py`. It **does not** obtain Fabric tokens, insert/allocate durable IDs, operate Spark, or create a Gold receipt.
+- Canonical key is `(entity_type,hospital_id,source_system,source_business_key)`. Person Source Key uses G4 canonical `source_record_id`, Encounter uses `source_encounter_id`. Preview IDs positive official CDM 5.4 INT and globally scoped by **entity** in Warehouse, never per-hospital counters.
+- Original G5 Candidate mapper requires injected stable `person_id` and still joins source on `(source_system,source_person_id)` without `hospital_id`. This interface mismatch is a **live Gold HOLD**, not a reason to invent a temporary ID. Preview must be revalidated inside a single Warehouse transaction before Map+Person+Visit+Ledger commit.
+- Tests cover deterministic order, exact source key replay, hospital namespace separation, casefold/collation collisions, persisted Map/Gold drift, counter rewind/INT overflow, duplicate ledger, conflicting SHA and unverified replay. GitHub CI is source-only; live SQL transaction acceptance is task 2.1b and not yet claimed.
