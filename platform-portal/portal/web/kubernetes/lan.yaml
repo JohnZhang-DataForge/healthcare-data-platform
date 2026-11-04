@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: public-web
-          image: ghcr.io/johnzhang-dataforge/healthcare-portal-public-web@sha256:ea2daeb285810e95ae0a212a987cd3238ec16b1feb7acb4720de9319d21b9b7b
+          image: ghcr.io/johnzhang-dataforge/healthcare-portal-public-web@sha256:df64a79936d7c3cd951e34308d3750af68a531e43c13bb646d1d4a96bf03c5fb
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
