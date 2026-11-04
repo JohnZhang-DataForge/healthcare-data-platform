@@ -119,6 +119,16 @@ These links go directly to implementation and build locations.
 | Azure and Microsoft Fabric provisioning | [Terraform modules](azure-fabric/infra-terraform/) |
 | Automated builds and checks | [GitHub Actions](.github/workflows/) |
 
+## Copyright and usage restrictions
+
+**Copyright © 2026 JohnZhang-DataForge. All rights reserved.**
+
+This is an independent portfolio and demonstration project, **not an open-source project**. Unless expressly stated otherwise for third-party material, no license or permission is granted to use, copy, modify, distribute, sublicense, or create derivative works from this repository's code, documentation, configurations, or other original materials without the copyright holder's **prior written authorization**.
+
+**Please do not fork, mirror, or copy this repository for reuse or independent development without prior written permission.** GitHub's Terms of Service may permit viewing and platform-native forking of public repositories; those platform permissions do **not** grant additional rights to use, modify, redistribute, or commercially exploit the project.
+
+For permission requests, contact the repository owner.
+
 ---
 
 *Independent data engineering project · Synthetic clinical data · Verified local processing, with multi-source and Fabric ingestion under development.*
