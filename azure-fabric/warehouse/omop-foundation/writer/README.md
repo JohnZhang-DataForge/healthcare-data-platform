@@ -22,3 +22,11 @@ References:
 - [Self-Runner PR #496](https://github.com/JohnZhang-DataForge/Self-Runner/pull/496): source-controlled synthetic/no-PHI transaction test.
 - [Run #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608): real `BEGIN TRANSACTION`; six tables contained exactly the expected synthetic rows within one transaction; explicit `ROLLBACK TRANSACTION`; independent new SQL connection verified all six zero rows. **PASS, NO GOLD COMMIT**.
 - The remaining task is an authorized Writer that rechecks verified Candidate inputs and commits stable IDs, clinical rows and Ledger atomically, then reads back for Replay; this rehearsal is not that writer.
+
+## Canonical G4 Silver → F2 Identity preview bridge (source-only)
+
+`silver_identity.py` consumes only independently verified canonical Silver Person/Encounter source key columns, exact hospital/source/batch namespace, physical Silver approval and zero-quarantine confirmation. It validates Visit-to-Patient FK, then calls the unchanged global `identity_plan.plan_ids` against a trusted complete Warehouse Map/Gold/Allocator snapshot. Output proposes both `person_id` and `visit_occurrence_id` with each Visit's linked Person INT.
+
+Synthetic tests include 100 Patient / 5,918 Encounter, deterministic ordering, exact replay, cross-hospital same business keys, duplicate/casefold collision, foreign FK, approval drift, Map/Gold drift and allocator rewind.
+
+**Do not mistake preview for allocation or Gold.** This helper neither connects to Fabric nor persists an Identity Map, Candidate Delta, Person/Visit, audit or Ledger. The existing published 0.1.3 Candidate Wheel still needs integration of verified Visit IDs and the formal Concept Mapping Profile. A future single-writer SQL transaction must independently reload all Warehouse state and commit everything atomically, followed by independent SQL/DQ/readback and Replay SKIP verification.
