@@ -50,3 +50,9 @@
 - Wheel publish/import, approved Concept Profile, G4 100/5918 real Silver readback, physical Candidate and Warehouse Gold remain explicitly NOT_DONE.
 
 - CI linkage: this documentation-only PR records the previous real SUCCESS #41827968535 and does not run a new Fabric Environment publish; OpenSpec-Change `fabric-omop-foundation` task `2.1` remains a source-contract milestone, not a clinical Gold closeout.
+
+## G5 Wheel 0.1.3 effective cloud release — 2026-11-04
+
+- [Self-Runner #41833502954](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954) real Staging sync preserved all user Workspace-only resources; [Self-Runner #41834029745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745) real Environment Published **sole 0.1.3 Custom Library** PASS. Prior historical statement “still 0.1.1 Published” describes the 2026-11-03 baseline, now superseded.
+- Isolated Runtime import from separate temporary Notebook [#41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) is distinct. Until exact Completed + exitValue PASS and cleanup are recorded, **Wheel runtime not accepted**.
+- G5 Candidate 100/5918 physical readback and Gold Writer COMMIT are still **NOT_DONE**.
