@@ -26,7 +26,7 @@ Actual Spark fixture: [Self-Runner #41858844788](https://github.com/JohnZhang-Da
 
 
 ## 5. New Patient / Encounter / Reconcile Spark-only regeneration (P3)
-- [ ] 5.1 Read-only live preflight: current SHAs, DAG GitSync, no-retention, active Airflow/Spark/Actions, READY Manifest identity and Claim/Ledger/Fence; record evidence and select only genuinely unclaimed input.
+- [x] 5.1 Read-only live preflight: current SHAs, DAG GitSync, no-retention, active Airflow/Spark/Actions, READY Manifest identity and Claim/Ledger/Fence; record evidence and select only genuinely unclaimed input.
 - [ ] 5.2 Independently record protected PG17 OMOP state before running; verify source digest, no Writer COMMIT flag, exact manual DAG route and original pause state.
 - [ ] 5.3 Run exactly one uniquely identified real Patient + Encounter + Reconcile Spark-only flow under shared concurrency gate, without OMOP Writer or old Batch replay.
 - [ ] 5.4 Independently GET Marquez action-level Job/Run/Input+Output DatasetVersions, Reconcile's two exact inputs, column facets where real, and public read-only graph. Preserve START-only / missing facets.
@@ -34,3 +34,10 @@ Actual Spark fixture: [Self-Runner #41858844788](https://github.com/JohnZhang-Da
 - [ ] 5.6 Run required CI, review and merge scope-limited PRs only after required gates pass; mark unexecuted/blocked tasks honestly.
 
 **Status 2026-11-04:** this plan is not proof of business Spark execution or graph restoration. The verified 3-row portal P2 fixture remains separate from real Patient/Encounter.
+
+### P3 live preflight evidence (new run; not historical recovery)
+
+- [Self-Runner #41866921442](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41866921442) **SUCCESS**. Healthcare exact source `3d2c30486814e8a14151eefd7bec724e1c215b47`; Self-Runner source `a34e371acb4bb445820a168e98fc5fd613c923c3`.
+- Marquez no `dbRetention`, no active SparkApplications, zero active Airflow TaskInstances and business DagRuns, installed three consumer DAG files match Healthcare Git SHA, original DAG paused=True.
+- S3 inventory: READY 38, quarantined 1. Selected S3-validated immutable uncommitted input: `synthea-new-only-gh-40194178133` (2026-10-25, 18 files), manifest SHA256 `4617b030fec9eb6446a7672cf58db9a4b8364262af74e6d570bb421416f1a533`. PostgreSQL `landing_claim_worker` read-only check found zero Claim rows and zero Writer Ledger entries for this candidate.
+- The new business Spark-only run [Self-Runner #41868276334](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41868276334) is separate. This preflight alone does **not** prove Patient/Encounter graph regeneration or OMOP unchanged post-run.
