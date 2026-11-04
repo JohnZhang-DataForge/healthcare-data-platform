@@ -13,7 +13,7 @@ function el(text=''){
     removeAttribute:k=>attributes.delete(k),
     querySelector:()=>null,querySelectorAll:()=>[],click:()=>{}};
 }
-function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[encounter,patient],options=[]}={}){
+function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[encounter,patient],options=[],fromHome=false}={}){
   const headers=['NAME','NAMESPACE','SOURCE','UPDATED AT','QUALITY','COLUMN LINEAGE'].map(el);
   const rows=data.map(name=>{
     const cells=Array.from({length:6},(_,i)=>el(i===1||i===2?ns:''));
@@ -25,17 +25,25 @@ function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[
   });
   const table={querySelector:q=>q==='thead tr'?{querySelectorAll:()=>headers}:null,
     querySelectorAll:q=>q==='tbody tr'?rows:[]};
-  const selector=el(ns),saved=new Map(),selected=[];let opened=0;
+  const selector=el(ns),saved=new Map(),session=new Map(),selected=[],redirected=[];let opened=0;
+  if(fromHome)session.set('publicMarquezRootLandingOnce','1');
   if(chosen!==null)saved.set('selectedNamespace',chosen);
   selector.click=()=>opened++;
   const opt=options.map(o=>{const e=el(o);e.click=()=>{selected.push(o);saved.set('selectedNamespace',o)};return e;});
   const doc={readyState:'complete',body:{},getElementById:id=>id==='namespace-select'?selector:null,
     querySelectorAll:q=>q==='table'?[table]:q==='[role="option"]'?opt:[],addEventListener(){}};
-  const win={location:{pathname:route,href:'http://local'+route},
-    localStorage:{getItem:k=>saved.has(k)?saved.get(k):null},addEventListener(){}};
+  const win={location:{pathname:route.split('?')[0],href:'http://local'+route,
+    search:route.includes('?')?'?'+route.split('?').slice(1).join('?'):'',hash:'',
+    replace:u=>redirected.push(u)},
+    localStorage:{getItem:k=>saved.has(k)?saved.get(k):null},
+    sessionStorage:{
+      getItem:k=>session.has(k)?session.get(k):null,
+      setItem:(k,v)=>session.set(k,v),
+      removeItem:k=>session.delete(k)
+    },addEventListener(){}};
   let update;class Observer{constructor(fn){update=fn}observe(){}}
   vm.runInNewContext(src,{window:win,document:doc,URL,MutationObserver:Observer});
-  return {headers,rows,selector,saved,selected,opened:()=>opened,update};
+  return {headers,rows,selector,saved,session,selected,redirected,opened:()=>opened,update};
 }
 test('public trailing slash route displays Processing and Landing, with exact preserved dataset hrefs',()=>{
   for(const route of ['/datasets','/datasets/']){
@@ -63,13 +71,41 @@ test('public trailing slash route displays Processing and Landing, with exact pr
   }
 });
 
-test('first-visit DataSets picks real processing data; prior selection and Jobs remain untouched',()=>{
+test('first-visit Datasets picks real Landing data; prior manual selection and Jobs remain untouched',()=>{
   const a=setup({ns:'default'});assert.equal(a.opened(),1);a.update();assert.equal(a.opened(),1);
-  const b=setup({ns:'default',options:['default','s3://health-processing']});
-  assert.deepEqual(b.selected,['s3://health-processing']);
-  assert.equal(b.saved.get('selectedNamespace'),'s3://health-processing');
+  const b=setup({ns:'default',options:['default','s3://health-landing']});
+  assert.deepEqual(b.selected,['s3://health-landing']);
+  assert.equal(b.saved.get('selectedNamespace'),'s3://health-landing');
   assert.equal(setup({ns:'default',chosen:'default'}).opened(),0);
   assert.equal(setup({route:'/jobs',ns:'default'}).opened(),0);
+});
+
+test('exact public root redirects to Datasets and arms one-time Landing choice, preserving UTM',()=>{
+  const r=setup({route:'/',chosen:'s3://health-processing'});
+  assert.deepEqual(r.redirected,['/datasets']);
+  assert.equal(r.session.get('publicMarquezRootLandingOnce'),'1');
+  const utm=setup({route:'/?utm_source=chatgpt.com',chosen:'s3://health-processing'});
+  assert.deepEqual(utm.redirected,['/datasets?utm_source=chatgpt.com']);
+  for(const route of ['/datasets','/datasets/','/jobs','/lineage/dataset/x/y','/datasets/column-level/foo']){
+    assert.deepEqual(setup({route,chosen:'s3://health-processing'}).redirected,[],route);
+  }
+});
+test('root arrival overrides saved Processing exactly once, then keeps manual choices',()=>{
+  const x=setup({route:'/datasets',chosen:'s3://health-processing',ns:'s3://health-processing',
+    fromHome:true,options:['default','s3://health-processing','s3://health-landing']});
+  assert.deepEqual(x.selected,['s3://health-landing']);
+  assert.equal(x.saved.get('selectedNamespace'),'s3://health-landing');
+  assert.equal(x.session.has('publicMarquezRootLandingOnce'),false);
+  x.saved.set('selectedNamespace','s3://health-processing');
+  x.selector.textContent='s3://health-processing';
+  x.update();
+  assert.deepEqual(x.selected,['s3://health-landing'],'must not forcibly switch back after manual selection');
+  const direct=setup({route:'/datasets',chosen:'s3://health-processing',
+    ns:'s3://health-processing',options:['s3://health-landing']});
+  assert.equal(direct.selected.length,0,'direct bookmark keeps prior Processing choice');
+  const active=setup({route:'/datasets',chosen:'s3://health-processing',
+    ns:'s3://health-landing',fromHome:true});
+  assert.equal(active.session.has('publicMarquezRootLandingOnce'),false,'landing already active consumes marker');
 });
 test('show real Encounter and Patient, exact Batch/date/Run, unmodified lineage hrefs, original source tooltip',()=>{
   const x=setup({chosen:'s3://health-processing'});
