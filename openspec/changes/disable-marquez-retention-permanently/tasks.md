@@ -8,7 +8,7 @@
 - [x] 2.1 Set `marquez.dbRetention: null` in the pinned Helm overrides, with comments explaining why `enabled: false` is unsafe.
 - [x] 2.2 Add Helm rendering and live ConfigMap fail-closed gates and API-only restart/verification in the existing deploy script.
 - [x] 2.3 Verify actual Helm upgrade: no retention in rendered ConfigMap or API process; API healthy; original PostgreSQL PV and metadata counts unchanged. Evidence: [Run #41846708576](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41846708576).
-- [ ] 2.4 Merge verified fix to protected Healthcare main through CI.
+- [x] 2.4 Merge verified fix to protected Healthcare main through CI: [PR #654](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/654), merged main `5f5cafae568cbfb682d969e4f5eec1f6b26aba9b`; OpenSpec Trusted Change, Change Gate, Static Validation, Naming and Relative Links checks PASS.
 
 ## 3. Out of scope
 - [ ] 3.1 Recover already-deleted historical Marquez data (future separate change).
