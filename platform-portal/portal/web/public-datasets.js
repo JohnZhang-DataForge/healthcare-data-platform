@@ -127,7 +127,7 @@
     var rows = table.querySelectorAll('tbody tr');
     var selector = document.getElementById('namespace-select');
     var activeNamespace = selector && (selector.textContent || '').trim();
-    var eligible = (activeNamespace === preferred || activeNamespace === 's3://health-landing') &&
+    var eligible = (activeNamespace === preferred || activeNamespace === processingNamespace) &&
       rows.length > 0;
     var parsed = [];
     for (var i = 0; i < rows.length; i++) {
