@@ -76,8 +76,9 @@ class OmopCandidateSparkTest(unittest.TestCase):
             self.profile, sort_keys=True, separators=(",", ":")).encode()
         self.profile_sha = hashlib.sha256(self.profile_raw).hexdigest()
         self.identity = self.spark.createDataFrame(
-            [(self.system, p["source_record_id"], 123456)],
-            "source_system string, source_person_id string, person_id int")
+            [("PERSON", self.ctx.hospital_id, self.system, p["source_record_id"], 123456)],
+            "entity_type string, hospital_id string, source_system string, "
+            "source_business_key string, omop_id int")
         concept_ids = set([8507, 8527, 38003564, 9202, 32827])
         self.concepts = self.spark.createDataFrame(
             [(cid, "S", None) for cid in sorted(concept_ids)],
@@ -95,8 +96,8 @@ class OmopCandidateSparkTest(unittest.TestCase):
         args = dict(
             patients=self.patients, encounters=self.encounters,
             identity_map=self.identity, concepts=self.concepts,
-            approval=self.approval, source_system=self.system,
-            source_batch_id=self.ctx.source_batch_id,
+            approval=self.approval, hospital_id=self.ctx.hospital_id,
+            source_system=self.system, source_batch_id=self.ctx.source_batch_id,
             manifest_sha256=self.ctx.manifest_sha256,
             processing_version=self.ctx.processing_version,
             mapping_profile_bytes=self.profile_raw,
@@ -189,7 +190,7 @@ class OmopCandidateSparkTest(unittest.TestCase):
         missing = self.identity.filter("1 = 0")
         duplicate = self.identity.unionByName(self.identity)
         cross = self.identity.withColumn(
-            "source_system", F.lit("synthetic:hospital-b:fhir-r4"))
+            "hospital_id", F.lit("hospital-b"))
         for ids, diagnostic in (
             (missing, "G5_STABLE_PERSON_ID_NOT_FOUND"),
             (duplicate, "G5_STABLE_ID_MAP_DUPLICATE_SOURCE"),
@@ -198,6 +199,44 @@ class OmopCandidateSparkTest(unittest.TestCase):
             with self.subTest(diagnostic=diagnostic):
                 with self.assertRaisesRegex(ValueError, diagnostic):
                     self.build(identity_map=ids)
+
+    def test_explicit_hospital_scope_is_required_and_consistent(self):
+        for proposed in ("hospital-b", "", "hospital-a ", "hospital-a:fhir-r4"):
+            with self.subTest(proposed=proposed):
+                with self.assertRaisesRegex(
+                        ValueError, "G5_HOSPITAL_(ID_REQUIRED|SOURCE_CONTEXT_MISMATCH)"):
+                    self.build(hospital_id=proposed)
+        with self.assertRaisesRegex(ValueError, "G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH"):
+            self.build(source_system="synthetic:hospital-b:fhir-r4")
+
+    def test_real_f1_warehouse_schema_and_global_person_id_uniqueness(self):
+        # A different hospital may reuse the SAME external patient key,
+        # but must have a different global Warehouse Person ID.
+        another = self.identity.withColumn(
+            "hospital_id", F.lit("hospital-b")).withColumn(
+            "omop_id", F.lit(987654))
+        self.assertEqual(self.build(
+            identity_map=self.identity.unionByName(another)).person.first().person_id,
+            123456)
+        same_id = another.withColumn("omop_id", F.lit(123456))
+        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_DUPLICATE_PERSON_ID"):
+            self.build(identity_map=self.identity.unionByName(same_id))
+        collision = another.withColumn(
+            "hospital_id", F.lit("HOSPITAL-A")).withColumn(
+            "source_business_key",
+            F.upper(F.col("source_business_key")))
+        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_COLLATION_COLLISION"):
+            self.build(identity_map=self.identity.unionByName(collision))
+
+    def test_wrong_entity_or_missing_map_fields_cannot_publish(self):
+        visit_only = self.identity.withColumn("entity_type", F.lit("VISIT_OCCURRENCE"))
+        with self.assertRaisesRegex(ValueError, "G5_STABLE_PERSON_ID_NOT_FOUND"):
+            self.build(identity_map=visit_only)
+        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_SCHEMA_INVALID"):
+            self.build(identity_map=self.identity.drop("hospital_id"))
+        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_INVALID_SOURCE"):
+            self.build(identity_map=self.identity.withColumn(
+                "source_business_key", F.lit(None).cast("string")))
 
     def test_invalid_fk_and_duplicate_encounter_hold(self):
         foreign = self.encounters.withColumn(
