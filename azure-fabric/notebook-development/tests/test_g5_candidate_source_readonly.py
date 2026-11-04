@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import json
 from pathlib import Path
 import runpy
 import unittest
@@ -20,6 +21,7 @@ PATIENT = ROOT / "local-data-platform/spark/contracts/canonical/patient-v1.json"
 ENCOUNTER = ROOT / "local-data-platform/spark/contracts/canonical/encounter-v1.json"
 CODE = runpy.run_path(str(NB), run_name="_g5_synthetic_no_fabric_execution")
 CHECK = CODE["verify_fhir_g5_candidate_source_readonly"]
+INVENTORY = CODE["verify_fhir_g5_concept_source_inventory_readonly"]
 PATHS = CODE["_g4_paths"]("atlanta-fhir-gh-41552666929")
 BATCH = "a" * 64
 SOURCE = "synthea-fhir:atlanta-hospital-a:atlanta-hospital-a-fhir-r4"
@@ -220,6 +222,68 @@ class SyntheticDeltaFrames(unittest.TestCase):
              .otherwise(F.col("source_batch_id")))
         with self.assertRaisesRegex(RuntimeError, "HOLD_G5_PATIENT_NAMESPACE_OR_KEY"):
             self.invoke(self.frames(patient=changed))
+
+
+    def _code_frames(self):
+        from pyspark.sql import functions as F
+        patient = (self.patient.withColumn("gender_code", F.lit("synthetic-g"))
+                   .withColumn("race_code", F.lit("synthetic-r"))
+                   .withColumn("ethnicity_code", F.lit("synthetic-e")))
+        encounter = (self.encounter.withColumn("encounter_class", F.lit("synthetic-v"))
+                     .withColumn("source_code", F.lit("synthetic-source-code")))
+        return self.frames(patient=patient, encounter=encounter)
+
+    def _inventory(self, frames, **parameters):
+        verified = Mock(return_value=(
+            "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
+            "APPROVAL_DELTA_PASS_20261104"))
+        with patch.dict(INVENTORY.__globals__, {
+            "verify_fhir_g5_candidate_source_readonly": verified
+        }):
+            result = INVENTORY(OnlyReads(frames), **dict(args(), **parameters))
+        self.assertEqual(verified.call_count, 1)
+        self.assertIs(verified.call_args.kwargs["allow_write"], False)
+        self.assertIs(verified.call_args.kwargs["retention_ok"], False)
+        return result
+
+    def test_p1_inventory_extracts_real_dataframe_codes_but_no_gold(self):
+        result = self._inventory(self._code_frames())
+        prefix = "FHIR_G5_CONCEPT_SOURCE_INVENTORY_READONLY_PASS|"
+        self.assertTrue(result.startswith(prefix))
+        info = json.loads(result[len(prefix):])
+        self.assertEqual(info["status"], "P1_G4_CODE_INVENTORY_PHYSICAL_READONLY_ONLY")
+        self.assertEqual((info["patient_count"], info["encounter_count"]), (100, 5918))
+        self.assertEqual(info["code_counts"]["gender_code"], {"synthetic-g": 100})
+        self.assertEqual(info["code_counts"]["encounter_class"], {"synthetic-v": 5918})
+        self.assertEqual(info["code_counts"]["source_code"], {"synthetic-source-code": 5918})
+        self.assertNotIn("GOLD_COMMITTED", result)
+        self.assertNotIn("person_id", result)
+
+    def test_p1_inventory_denies_tampered_approval_and_person_source_width(self):
+        from pyspark.sql import functions as F
+        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_APPROVAL_CHANGED"):
+            self._inventory(self.frames(**{
+                **{"patient": self._code_frames()[PATHS["patient"]],
+                   "encounter": self._code_frames()[PATHS["encounter"]]},
+                "approval": {"manifest_sha256": "0"*64},
+            }))
+        frames = self._code_frames()
+        frames[PATHS["patient"]] = frames[PATHS["patient"]].withColumn(
+            "source_record_id",
+            F.when(F.col("source_record_id") == "p000", F.lit("p" * 51))
+             .otherwise(F.col("source_record_id")))
+        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_PERSON_SOURCE_VALUE_TOO_LONG"):
+            self._inventory(frames)
+
+    def test_p1_inventory_denies_unmapped_or_casefold_ambiguous_codes(self):
+        from pyspark.sql import functions as F
+        frames = self._code_frames()
+        frames[PATHS["encounter"]] = frames[PATHS["encounter"]].withColumn(
+            "encounter_class",
+            F.when(F.col("source_encounter_id") == "e00000", F.lit("SYNTHETIC-V"))
+             .otherwise(F.col("encounter_class")))
+        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_SOURCE_CODE_COLLATION_CONFLICT"):
+            self._inventory(frames)
 
 
 if __name__ == "__main__":
