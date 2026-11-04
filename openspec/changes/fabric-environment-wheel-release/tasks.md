@@ -35,3 +35,8 @@
 - [ ] 4.1 Create a strictly scoped Git REVIEW branch containing only reproducible pinned Wheel 0.1.3 replacing sole 0.1.1, CODE map and OpenSpec tasks. CI must check source-tree SHA, both old/new Wheel SHA256 and exact four staged paths. No Fabric OIDC, UpdateFromGit, Environment Publish or Notebook execution in this step. Physical staging and Publish are separately verified gates.
 
 Task 4.1 is deliberately open until the generated Git-native Wheel branch is reviewed and merged; cloud staging, publish and runtime tests are further separate gates. The workflow never obtains a Fabric OIDC token.
+
+
+## G5 Wheel 0.1.3 Git review only
+
+- [ ] G5.1 Reviewed Git Wheel staging branch feature/fabric-g5-native-wheel-013-41830905303 includes exact SHA256 6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59. It has NOT been synced to Fabric or Published. Await new PR, CI, then independent cloud readback before enabling Notebook runtime.
