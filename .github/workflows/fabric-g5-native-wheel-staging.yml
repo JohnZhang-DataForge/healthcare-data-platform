@@ -1,0 +1,143 @@
+name: Fabric G5 Native Wheel 0.1.3 Git Review Staging
+# Git review branch only: no Fabric token, Git updateFromGit or Environment Publish.
+on:
+  pull_request:
+    paths: ['.github/workflows/fabric-g5-native-wheel-staging.yml']
+  push:
+    branches: [main]
+    paths: ['.github/workflows/fabric-g5-native-wheel-staging.yml']
+permissions:
+  contents: read
+concurrency:
+  group: fabric-g5-wheel-013-git-staging
+  cancel-in-progress: false
+env:
+  SOURCE_DATE_EPOCH: '1704067200'
+  SOURCE_TREE: '992a2376253e20f704d685978aba3494f1124886'
+  OLD_SHA: '4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3'
+  NEW_SHA: '6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59'
+  OLD_WHEEL: 'healthcare_data_engine-0.1.1-py3-none-any.whl'
+  NEW_WHEEL: 'healthcare_data_engine-0.1.3-py3-none-any.whl'
+  LIBS: 'azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
+
+jobs:
+  offline-wheel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fail closed on unreviewed package and existing single-wheel state
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REPOSITORY" = 'JohnZhang-DataForge/healthcare-data-platform'
+          test "$(git rev-parse HEAD:shared-data-engine)" = "$SOURCE_TREE"
+          grep -qx 'version = "0.1.3"' shared-data-engine/pyproject.toml
+          test "$(find "$LIBS" -maxdepth 1 -type f -name '*.whl' | wc -l)" = 1
+          test ! -e "$LIBS/$NEW_WHEEL"
+          echo "$OLD_SHA  $LIBS/$OLD_WHEEL" | sha256sum -c -
+      - name: Reproducible Wheel build and pinned independent SHA256
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --disable-pip-version-check 'setuptools==75.8.2' 'wheel==0.45.1'
+          mkdir -p wheel-a wheel-b
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir wheel-a ./shared-data-engine
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir wheel-b ./shared-data-engine
+          cmp "wheel-a/$NEW_WHEEL" "wheel-b/$NEW_WHEEL"
+          echo "$NEW_SHA  wheel-a/$NEW_WHEEL" | sha256sum -c -
+          echo 'G5_WHEEL_013_REPRODUCIBLE_SHA=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-013-wheel
+          path: wheel-a/*.whl
+          if-no-files-found: error
+          retention-days: 14
+
+  generate-review-branch:
+    if: github.repository == 'JohnZhang-DataForge/healthcare-data-platform' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: offline-wheel
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      STAGING_BRANCH: feature/fabric-g5-native-wheel-013-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: reviewed-013-wheel
+          path: new-wheel
+      - name: Verify exact source and only one existing Wheel
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$(git rev-parse HEAD:shared-data-engine)" = "$SOURCE_TREE"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          test "$(find "$LIBS" -maxdepth 1 -type f -name '*.whl' | wc -l)" = 1
+          echo "$OLD_SHA  $LIBS/$OLD_WHEEL" | sha256sum -c -
+          echo "$NEW_SHA  new-wheel/$NEW_WHEEL" | sha256sum -c -
+          test "$(find new-wheel -maxdepth 1 -name '*.whl' | wc -l)" = 1
+      - name: Create reviewed native Environment Wheel Git branch only
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git switch -c "$STAGING_BRANCH"
+          git rm -- "$LIBS/$OLD_WHEEL"
+          mkdir -p "$LIBS"
+          cp "new-wheel/$NEW_WHEEL" "$LIBS/$NEW_WHEEL"
+          echo "$NEW_SHA  $LIBS/$NEW_WHEEL" | sha256sum -c -
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          code=Path("documents/systems/azure-fabric/environments/CODE.md")
+          lines=code.read_text().splitlines()
+          old,new=os.environ["OLD_WHEEL"],os.environ["NEW_WHEEL"]
+          old_sha,new_sha=os.environ["OLD_SHA"],os.environ["NEW_SHA"]
+          indexes=[i for i,line in enumerate(lines) if line.startswith("| [env_healthcare.Environment/Libraries/CustomLibraries/")]
+          if len(indexes)!=1 or old not in lines[indexes[0]] or old_sha not in lines[indexes[0]]:
+              raise SystemExit("HOLD_G5_UNEXPECTED_ENVIRONMENT_SOURCE_MAP")
+          lines[indexes[0]]=lines[indexes[0]].replace(old,new).replace(old_sha,new_sha)
+          lines += ["", "## G5 0.1.3 staged only in a Git review branch",
+                    "This 0.1.3 Wheel replaces 0.1.1 in the Git review branch.",
+                    "It is NOT Fabric staged, NOT Environment Published and NOT Notebook imported.",
+                    "A separately reviewed Git main sync and Publish is needed."]
+          code.write_text("\n".join(lines)+"\n")
+          tasks=Path("openspec/changes/fabric-environment-wheel-release/tasks.md")
+          tasks.write_text(tasks.read_text()+"\n\n## G5 Wheel 0.1.3 Git review only\n\n"
+              +"- [ ] G5.1 Reviewed Git Wheel staging branch "
+              +os.environ["STAGING_BRANCH"]+" includes exact SHA256 "+new_sha
+              +". It has NOT been synced to Fabric or Published. Await new PR, CI, "
+              +"then independent cloud readback before enabling Notebook runtime.\n")
+          PY
+          test "$(find "$LIBS" -maxdepth 1 -type f -name '*.whl' | wc -l)" = 1
+          git add -A -- "$LIBS" documents/systems/azure-fabric/environments/CODE.md openspec/changes/fabric-environment-wheel-release/tasks.md
+          python3 - <<'PY'
+          import os,subprocess
+          lib=os.environ["LIBS"]
+          got={tuple(x.split("\t",1)) for x in subprocess.check_output(
+              ["git","diff","--cached","--name-status","--no-renames"],text=True).splitlines()}
+          expected={
+              ("D",lib+"/"+os.environ["OLD_WHEEL"]),
+              ("A",lib+"/"+os.environ["NEW_WHEEL"]),
+              ("M","documents/systems/azure-fabric/environments/CODE.md"),
+              ("M","openspec/changes/fabric-environment-wheel-release/tasks.md"),
+          }
+          if got!=expected:raise SystemExit("HOLD_G5_STAGED_PATHS_CHANGED")
+          print("G5_GIT_ONLY_STAGING_PATHS=PASS")
+          PY
+          git config user.name github-actions
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(fabric): stage only reviewed 0.1.3 Wheel in native Environment'
+          git push origin "HEAD:refs/heads/$STAGING_BRANCH"
+          echo "STAGED_REVIEW_BRANCH=$STAGING_BRANCH FABRIC_WRITES=NONE" >> "$GITHUB_STEP_SUMMARY"
