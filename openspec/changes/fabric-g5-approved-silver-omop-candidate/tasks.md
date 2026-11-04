@@ -56,3 +56,8 @@
 - [Self-Runner #41833502954](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954) real Staging sync preserved all user Workspace-only resources; [Self-Runner #41834029745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745) real Environment Published **sole 0.1.3 Custom Library** PASS. Prior historical statement “still 0.1.1 Published” describes the 2026-11-03 baseline, now superseded.
 - Isolated Runtime import from separate temporary Notebook [#41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) is distinct. Until exact Completed + exitValue PASS and cleanup are recorded, **Wheel runtime not accepted**.
 - G5 Candidate 100/5918 physical readback and Gold Writer COMMIT are still **NOT_DONE**.
+
+## G5 0.1.3 real isolated Spark import PASSED — 2026-11-04
+
+- [Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) confirms Published 0.1.3, full temporary Notebook definition readback, real Spark Job **Completed**, exact exit `G5_ENGINE_013_SPARK41_IMPORT_PASS`, and successful temp Notebook cleanup. Runtime package acceptance is **PASS**.
+- Source/Environment release is now genuinely complete, but this **does not complete G5 tasks 2.3, 3.1–3.4, or 4.1–4.4**: business `nb_fhir_ingest` remains HALT and still checks 0.1.1; approved Concept Profile, P100/E5918 Silver readback, physical Candidate Delta, Warehouse Gold COMMIT and Replay have not been accepted.
