@@ -26,7 +26,7 @@
 
 - [ ] 2.1 实现 Warehouse Writer、Ledger 与原子事务；Person/Visit 真实插入、重放及负向校验（整项仍 OPEN）。
 - [x] 2.1a 实现纯 F2 INT ID Preview Planner + Ledger Replay Fence；离线正负向测试覆盖跨医院、同源重跑、冲突、溢出、Snapshot Map/Gold 不一致。**仅 CODE/STATIC，不是实际 Warehouse 分配或 Gold COMMIT。**
-- [ ] 2.1b 在 DW 验证 BEGIN TRANSACTION/ROLLBACK 的真实事务行为，独立重连接确认零持久化记录，测试失败不盲目重试。
+- [x] 2.1b **真实多表事务 ROLLBACK PASS**：Self-Runner [Run #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608) 在现有 Fabric DW 验证六张表 BEGIN→合成非 PHI 数据写入→事务内独立行数检查→ROLLBACK→新 SQL 连接六表均为零。实际 SQL SUCCESS，**无 COMMIT、无 Gold 数据持久化**。
 - [ ] 2.1c 实现真实单写入者 Gold 事务：重查 Snapshot → Map/Allocator/Person/Visit/Ledger 原子提交 → 独立读回与 Replay。
 - [ ] 2.1d 补齐 G5 Candidate 的 hospital_id Join 与真实 Vocabulary Mapping Profile，验证后才允许 F2 clinical writes。
 
@@ -114,3 +114,10 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 - Canonical key is `(entity_type,hospital_id,source_system,source_business_key)`. Person Source Key uses G4 canonical `source_record_id`, Encounter uses `source_encounter_id`. Preview IDs positive official CDM 5.4 INT and globally scoped by **entity** in Warehouse, never per-hospital counters.
 - Original G5 Candidate mapper requires injected stable `person_id` and still joins source on `(source_system,source_person_id)` without `hospital_id`. This interface mismatch is a **live Gold HOLD**, not a reason to invent a temporary ID. Preview must be revalidated inside a single Warehouse transaction before Map+Person+Visit+Ledger commit.
 - Tests cover deterministic order, exact source key replay, hospital namespace separation, casefold/collation collisions, persisted Map/Gold drift, counter rewind/INT overflow, duplicate ledger, conflicting SHA and unverified replay. GitHub CI is source-only; live SQL transaction acceptance is task 2.1b and not yet claimed.
+
+
+## F2 live transaction rollback rehearsal — 2026-11-04 ET
+
+- [Healthcare PR #645](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/645) merged SHA `ede02cdaf3ff8b41fc39455be387233f538fa8f9`, implements source-only positive INT preview planner and ledger replay negative tests (not a database ID reservation).
+- [Self-Runner PR #496](https://github.com/JohnZhang-DataForge/Self-Runner/pull/496) merged SHA `4951bb7cfa0f49d550da727a5838dd3da3eba64d`. [Real Run #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608) completed SUCCESS on pinned existing Warehouse: target and DB identity match; all six touched tables empty before run; real Vocabulary Concepts confirmed; synthetic non-PHI rows written inside one explicit transaction to `etl.identity_map` (2), `etl.id_allocator` (2), `etl.batch_ledger` (1), `cdm.person` (1), `cdm.visit_occurrence` (1), `audit.omop_commit_check` (1); `ROLLBACK TRANSACTION` executed; reopened SQL connection independently and verified **zero persisted rows in all six**.
+- Explicit scope: actual transaction/rollback behavior verified, not a clinical Gold COMMIT. There was **no** insertion of real G4/FHIR Patients or Encounters, no Capacity resume, no Terraform, and no changes to Vocabulary or Local PostgreSQL. Next is source-scoped G5 hospital join and real Writer Commit/Replay (tasks 2.1c/2.1d).
