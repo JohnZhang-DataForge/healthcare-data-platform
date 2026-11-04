@@ -31,6 +31,8 @@
 
 - [ ] 1.13 **Versioned Web assets rollout and real browser cache validation (RUNTIME PENDING)**：用户确认 `/datasets/?utm_source=chatgpt.com` 即使上次 Chrome 测试 PASS 仍显示旧版名称，实际诊断发现 public overlay JS 的 HTTP Cache-Control `max-age=14400`（4 小时），且此前每次镜像复用相同静态路径。修复源码 PR #555 Main `7c4acff066d70e79187774b99fda31c14d676a77`，GHCR [#40777202286](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/40777202286) SUCCESS，新镜像不可变 Digest `sha256:ea2daeb285810e95ae0a212a987cd3238ec16b1feb7acb4720de9319d21b9b7b`，其 HTML 使用各自 SHA-256 `?v=` 的 overlay asset URL。仅在安全检查后更新 `dw-marquez/Deployment/marquez-public-web` 镜像，保持其余 Service/原 30999/Gateway/Cloudflare/PG14 完全不变。真实公网 Chrome 必须检查 `?utm_source=chatgpt.com`、版本化资源 URL 与内容哈希、长期 DOM/Namespace 切换、Landing 12 和 Processing 8 条均有语义清晰的表头和名称；未完成前不打勾。
 
+- [ ] 1.14 **Public root → Landing Dataset homepage (CODE + LIVE GATED)**: 访问公开域名根路径 `/` 时，只在公共 Marquez Web 的 Overlay 中跳转至 `/datasets`，并在此次入口打开时选择 `s3://health-landing`，包括访客此前曾选过 Processing 的情况。直接访问 `/datasets` 或历史血缘深链接应尊重已有 Namespace 选择；首页跳转不能导致循环，首次选择成功后可正常手动切到 Processing。保留 UTM 查询参数、现有只读 Gateway 与原版私有 Marquez 30999 不变。仅发布新 Public Web 镜像，实际 Deployment 版本切换须检查/获准并用可回退固定 Digest；真实 Chrome 根路径、Landing、Processing、深链接和缓存验收完成才可勾选。
+
 ## 2. Read-only Showcase Gateway (Agent M2)
 - [ ] 2.1 在 `platform-portal/marquez/showcase-gateway/**` 实现独立轻量 HTTP 网关，转发已审核的 HTML/资源/GET(HEAD) 请求，默认拒绝全部修改方法/未许可路径；只访问现有内网 Marquez Web，不连接 PG14，不改业务运行。
 - [ ] 2.2 完成标准/负向测试与无真实外网依赖的 Fake Web：POST/PUT/PATCH/DELETE、GraphQL/admin、URL 双重编码/目录穿越、错误时 fail closed、不能通过页面或直连绕过 Gateway；审计敏感 GET 元数据披露，不将“请求只读”当作“输出字段已经审核”。
