@@ -138,3 +138,10 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 ### Wheel 0.1.3 isolated live Spark import acceptance — 2026-11-04
 
 - [Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) verified **Completed + exact exit `G5_ENGINE_013_SPARK41_IMPORT_PASS` + temporary Notebook cleanup PASS** after the previously verified Git sync and Publish. The Wheel/Environment prerequisite is **PASS**. Still **NOT DONE**: formal Concept mapping profile, real hospital-scoped Candidate write/readback, F2 Gold Writer `cdm.person` / `cdm.visit_occurrence` COMMIT and idempotent Replay.
+
+## G5 Notebook 0.1.3 source alignment — 2026-11-04
+
+- Source guard in `nb_fhir_ingest.Notebook/notebook-content.py` now matches Shared Wheel `0.1.3` (independently published and imported in earlier real Fabric smoke); offline PySpark dependency and version tests change together. Historic `_G3_PROCESSING` and `_G4_PROCESSING` strings remain immutable (`engine-0.1.1`) so existing Delta paths/replay identities are not rewritten. They identify past publications, **not** the runtime package pin.
+- `run_mode = "HALT"`, `write_authorized = False`, DQ/approval/manifest/readback gates and existing physical resource IDs are unchanged. G5 Candidate and F2 Gold writes are **not** enabled.
+- Offline CI **is not** real Fabric Git status protection, UpdateFromGit or independent Native Notebook definition readback. Accept only a separate real, fail-closed Self-Runner verification preserving workspace-only items.
+- Formal Concept Mapping Profile, stable Warehouse Identity Map allocation, physical G4 100/5918 Candidate Delta, Gold COMMIT and F3 Replay remain **NOT DONE**.
