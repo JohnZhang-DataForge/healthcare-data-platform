@@ -10,7 +10,7 @@
 
 - [x] 1.1 建立不硬编码临床值的来源代码/词表 Concept 校验函数（仅纯函数/离线），包含有效日期、Domain、标准标记、SHA、防截断和异常 HOLD。
 - [x] 1.2 P1 离线正负向 CI 完成并合并 main：Healthcare PR #662 / 合并 commit `5a67d12cb13dbea98b732e5a80e1a1f3fda3eef4`，6 项 PR checks SUCCESS、31/31 Python Tests PASS。仅证明 P1 纯函数预检。
-- [x] 1.3a 正式 Notebook 新增 `G5_CONCEPT_SOURCE_INVENTORY_READONLY` 模式，复用 G5 真实物理 Approval Reader 后获取五组源代码/频数和源值长度，带 SHA、来源身份、行数的受控 JSON read-only receipt；仅 CODE/OFFLINE，真实云端仍待执行。
+- [x] 1.6 正式 Notebook 新增 `G5_CONCEPT_SOURCE_INVENTORY_READONLY` 模式，复用 G5 真实物理 Approval Reader 后获取五组源代码/频数和源值长度，带 SHA、来源身份、行数的受控 JSON read-only receipt；仅 CODE/OFFLINE，真实云端仍待执行。
 - [ ] 1.3 从已批准 G4 Silver 真实独立读回四组 code/count；对账 Patient=100、Encounter=5918，核验 source_system/hospital。
 - [ ] 1.4 从真实 F1 Warehouse 读回这些 Concept 明细；核对九文件 release/manifest、许可、有效日期、Domain、Vocabulary 审计。
 - [ ] 1.5 临床映射审查与正式版本 SHA 冻结；未知、不合法、无授权的全部 HOLD；禁止发布伪 Profile。
