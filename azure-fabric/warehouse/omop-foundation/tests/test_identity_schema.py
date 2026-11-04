@@ -25,8 +25,9 @@ class F1IdentitySchema(unittest.TestCase):
                 prefix=filename.removesuffix(".sql")
                 self.assertTrue(sql.startswith("CREATE TABLE "+prefix+" ("))
                 self.assertEqual(sql.count("CREATE TABLE"),1)
-                for clause in ("DROP ","TRUNCATE ","INSERT ","DELETE ","MERGE ","UPDATE ","IDENTITY","PRIMARY KEY","FOREIGN KEY","UNIQUE"):
+                for clause in ("DROP ","TRUNCATE ","INSERT ","DELETE ","MERGE ","UPDATE ","PRIMARY KEY","FOREIGN KEY","UNIQUE"):
                     self.assertNotIn(clause,sql.upper())
+                self.assertNotRegex(sql.upper(),r"\bBIGINT\s+IDENTITY\b")
                 self.assertTrue(sql.rstrip().endswith(");"))
                 columns=re.findall(
                     r"^\s+([a-z][a-z0-9_]*)\s+("+ALLOWED_TYPE+r")\s+(NOT NULL|NULL)\s*,?\s*$",
