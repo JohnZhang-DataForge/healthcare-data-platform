@@ -9,7 +9,7 @@ source_sha: 9e667468e278f68c3b26f7eb46b81e58b87bf119
 
 真实 P2 Notebook 是 Fabric Workspace **healthcare-omop** 的 **nb_fhir_ingest.Notebook**，Git Native 源码位于 [notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py)。它包含 FHIR R4 Patient/Encounter 的 Manifest/SHA 校验、Shared Engine Canonical 处理、Bronze/Silver Delta staging、隔离区、幂等控制与物理读回审查，当前默认 **HALT**，不可直接进行写入业务运行。
 
-早期的 notebooks/ingestion/.gitkeep 是遗留占位目录，不是实际 Fabric Native Item。历史 Terraform Notebook Bootstrap 仅用于基础设施占位，不属于现行业务权威代码。
+早期的 `notebooks/ingestion/.gitkeep` 是遗留占位目录，现已删除；真实 Fabric Native Item 保留在根级 `nb_fhir_ingest.Notebook/`。历史 Terraform Notebook Bootstrap 仅用于基础设施占位，不属于现行业务权威代码。
 
 ## 已完成的源文件部署验收
 
