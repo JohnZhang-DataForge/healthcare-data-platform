@@ -134,3 +134,7 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 
 - [Self-Runner #41833502954](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954) Staging 0.1.3 and [#41834029745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745) Published 0.1.3 real PASS. No clinical data writes.
 - Temporary import-only Spark runtime verification [#41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) is a separate open acceptance gate; actual F2 ID allocation, Gold transaction COMMIT and Replay remain open.
+
+### Wheel 0.1.3 isolated live Spark import acceptance — 2026-11-04
+
+- [Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) verified **Completed + exact exit `G5_ENGINE_013_SPARK41_IMPORT_PASS` + temporary Notebook cleanup PASS** after the previously verified Git sync and Publish. The Wheel/Environment prerequisite is **PASS**. Still **NOT DONE**: formal Concept mapping profile, real hospital-scoped Candidate write/readback, F2 Gold Writer `cdm.person` / `cdm.visit_occurrence` COMMIT and idempotent Replay.
