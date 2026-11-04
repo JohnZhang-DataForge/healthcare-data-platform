@@ -42,3 +42,10 @@ Environment staging/Publish/binding and safe runtime import are verified.
 
 A green CI result proves **offline synthetic compatibility/build/install only**,
 not Fabric Environment Publish, Notebook execution, or Silver APPROVED.
+
+## Stage-1 FHIR Approved Silver → Fabric OMOP handoff v1 (contract only)
+
+- [Versioned machine-readable handoff v1](contracts/fabric-fhir-omop-handoff-v1.json) references original pinned Local Canonical v1 **SHA** and Fabric physical Item IDs; no copy of the original Local DP JSON contracts is put in the Python package.
+- [Pure immutable-envelope validator](src/healthcare_data_engine/models/fabric_omop_handoff.py) accepts caller-provided reviewed Git contract bytes + SHA and metadata only, returns `STRUCTURAL_PASS_PHYSICAL_READBACK_REQUIRED`; it **does not** read physical Delta, prove Silver Approval, allocate OMOP IDs or grant Gold writes.
+- [No-cloud Python 3.11/3.13 tests](tests/test_fabric_omop_handoff.py) and [offline CI](../.github/workflows/fabric-fhir-omop-handoff-offline.yml). Changes to this contract must keep source field coverage and approved SHA hashes exact.
+- [Fabric FHIR–OMOP boundary doc](../documents/systems/azure-fabric/pipelines/FHIR-OMOP-HANDOFF-V1.md) and [OpenSpec](../openspec/changes/fabric-fhir-omop-handoff-v1/design.md). Shared Engine 0.1.2 Candidate is **not yet Fabric-published**; Fabric currently uses 0.1.1, while OMOP F1 identity/vocabulary is independently in progress.
