@@ -15,8 +15,10 @@ Actual Airflow live evidence: [Self-Runner Run #41858128218](https://github.com/
 ## 3. Bounded real Spark fixture lineage (not historical Patient/Encounter)
 - [x] 3.1 Preflight no active TASK004 Spark, the pinned local fixture, and permanent no-retention.
 - [x] 3.2 Execute one isolated portal-a4 Spark probe with synthetic 3-row CSV, unique ConfigMap/PVC and no S3 or OMOP access.
-- [ ] 3.3 Verify genuine Spark Job/Event + Input CSV / Output Parquet Datasets are durably stored in Marquez; record exact run and PV.
+- [x] 3.3 Verify genuine Spark Job/Event + Input CSV / Output Parquet Datasets are durably stored in Marquez; record exact run and PV.
 - [x] 3.4 Do not label synthetic probe datasets as previously deleted Patient/Encounter lineage.
+
+Actual Spark fixture: [Self-Runner #41858844788](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41858844788), 2026-11-04 15:34 UTC: 3-row synthetic input, isolated PVC `portal-a4-r41858844788-output`, SparkApplication `portal-a4-r41858844788` COMPLETED, PG14 Jobs 3→7, Datasets 0→2, Events 6→18. No S3, OMOP or Writer mutation. THIS IS NOT ORIGINAL OCTOBER PATIENT/ENCOUNTER HISTORY.
 
 ## 4. Future historical Patient/Encounter recovery
 - [ ] 4.1 If original committed raw events / verified PG14 dump found, replay/restore in provenance-controlled fashion with independent readback.
