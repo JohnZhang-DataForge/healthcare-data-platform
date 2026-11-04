@@ -887,6 +887,138 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
 
 
 
+# G5 source boundary only. This does NOT query an OMOP identity map, map
+# clinical Concepts, persist Candidate Delta or authorize Warehouse Gold.
+# Historical G4 processing=engine-0.1.1 MUST stay pinned for existing Delta.
+_G5_APPROVED_REQUEST = "atlanta-fhir-gh-41552666929"
+_G5_APPROVED_MANIFEST_SHA = (
+    "425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1")
+_G5_APPROVED_PATIENTS = 100
+_G5_APPROVED_ENCOUNTERS = 5918
+
+
+def verify_fhir_g5_candidate_source_readonly(
+    spark, *, request: str, manifest_sha: str, allow_write: bool,
+    retention_ok: bool, strategy: str, manifest_override: str,
+    source_override: str, target_override: str,
+    patient_contract_json: str, encounter_contract_json: str,
+) -> str:
+    """Physically re-open G4 Approved Silver; NO Candidate/Gold permissions.
+
+    G4's verified source-byte and independent Delta readback remain the
+    single authoritative source of clinical approval. G5 *then* reopens
+    all three persisted Delta tables to check this handoff's exact batch,
+    namespace, counts, uniqueness and Encounter-to-Patient FK. The result
+    means SOURCE_READONLY_PASS, not an OMOP mapping/commit receipt.
+    """
+    if (request != _G5_APPROVED_REQUEST
+            or manifest_sha != _G5_APPROVED_MANIFEST_SHA
+            or engine_version != "0.1.3"
+            or strategy != "DELTA_RAW_SNAPSHOT_V1"
+            or allow_write is not False
+            or retention_ok is not False
+            or any(x != "" for x in (
+                manifest_override, source_override, target_override))):
+        raise RuntimeError("HOLD_G5_SOURCE_PIN_OR_READONLY_GATE")
+    # Only the supplied exact Local canonical original bytes are accepted.
+    if (not isinstance(patient_contract_json, str)
+            or not isinstance(encounter_contract_json, str)
+            or not 0 < len(patient_contract_json) <= 5000
+            or not 0 < len(encounter_contract_json) <= 5000):
+        raise RuntimeError("HOLD_G5_CANONICAL_CONTRACTS_REQUIRED")
+    patient_bytes = patient_contract_json.encode("utf-8")
+    encounter_bytes = encounter_contract_json.encode("utf-8")
+    load_pinned_contract(patient_bytes, "patient")
+    load_pinned_contract(encounter_bytes, "encounter")
+
+    # G4 independently verifies delivered manifest bytes, Bronze snapshot,
+    # re-computed canonical data, persisted Approval and Quarantine fence.
+    # Existing approved G4 physical data is NEVER written/overwritten.
+    g4 = verify_fhir_g4_silver(
+        spark, request=request, manifest_sha=manifest_sha,
+        mode="SILVER_READBACK_ONLY", allow_write=False,
+        retention_ok=False, strategy=strategy,
+        manifest_override="", source_override="", target_override="",
+        patient_contract_json=patient_contract_json,
+        encounter_contract_json=encounter_contract_json)
+    if (g4.status != "SILVER_SKIP_VERIFIED"
+            or g4.processing_version != _G4_PROCESSING
+            or g4.metrics.get("patient") != _G5_APPROVED_PATIENTS
+            or g4.metrics.get("encounter") != _G5_APPROVED_ENCOUNTERS
+            or g4.metrics.get("quarantine_or_reject") != 0
+            or not isinstance(g4.publication_id, str)
+            or not g4.publication_id):
+        raise RuntimeError("HOLD_G5_G4_PHYSICAL_APPROVAL_NOT_VERIFIED")
+
+    # Independent new Spark physical scans, not the G4 in-memory frames.
+    from pyspark.sql import functions as F
+    paths = _g4_paths(request)
+    patient = spark.read.format("delta").load(paths["patient"])
+    encounter = spark.read.format("delta").load(paths["encounter"])
+    approvals = spark.read.format("delta").load(paths["approval"]).collect()
+    if len(approvals) != 1:
+        raise RuntimeError("HOLD_G5_APPROVAL_ROW_CARDINALITY")
+    approval = approvals[0].asDict(recursive=True)
+    expected = {
+        "status": "SILVER_APPROVED",
+        "source_batch_id": g4.source_batch_id,
+        "manifest_sha256": manifest_sha,
+        "processing_version": _G4_PROCESSING,
+        "publication_id": g4.publication_id,
+        "patient_count": _G5_APPROVED_PATIENTS,
+        "encounter_count": _G5_APPROVED_ENCOUNTERS,
+        "quarantine_count": 0,
+        "patient_contract_sha256": hashlib.sha256(patient_bytes).hexdigest(),
+        "encounter_contract_sha256": hashlib.sha256(encounter_bytes).hexdigest(),
+        "source_preservation_strategy": "DELTA_RAW_SNAPSHOT_V1",
+    }
+    if approval != expected:
+        raise RuntimeError("HOLD_G5_APPROVAL_FENCE_CHANGED")
+    required_patient = {"source_system", "source_batch_id", "source_record_id"}
+    required_encounter = {"source_system", "source_batch_id",
+                          "source_encounter_id", "source_person_id"}
+    if (not required_patient.issubset(patient.columns)
+            or not required_encounter.issubset(encounter.columns)):
+        raise RuntimeError("HOLD_G5_CANONICAL_COLUMNS_DRIFT")
+    if (patient.count() != _G5_APPROVED_PATIENTS
+            or encounter.count() != _G5_APPROVED_ENCOUNTERS):
+        raise RuntimeError("HOLD_G5_SILVER_COUNTS_DRIFT")
+    source_system = "synthea-fhir:" + _G3_HOSPITAL + ":" + _G3_FEED
+    for frame, key, name in (
+        (patient, "source_record_id", "PATIENT"),
+        (encounter, "source_encounter_id", "ENCOUNTER"),
+    ):
+        if frame.filter(
+            F.col("source_system").isNull()
+            | (F.col("source_system") != source_system)
+            | F.col("source_batch_id").isNull()
+            | (F.col("source_batch_id") != g4.source_batch_id)
+            | F.col(key).isNull()
+            | (F.trim(F.col(key)) == "")
+        ).limit(1).count():
+            raise RuntimeError("HOLD_G5_" + name + "_NAMESPACE_OR_KEY")
+        if frame.groupBy("source_system", key).count().filter(
+            "count != 1").limit(1).count():
+            raise RuntimeError("HOLD_G5_" + name + "_DUPLICATE_SOURCE_KEY")
+    if encounter.filter(
+        F.col("source_person_id").isNull()
+        | (F.trim(F.col("source_person_id")) == "")
+    ).limit(1).count():
+        raise RuntimeError("HOLD_G5_ENCOUNTER_PERSON_KEY_MISSING")
+    if encounter.join(
+        patient.select(
+            F.col("source_system").alias("p_source_system"),
+            F.col("source_record_id").alias("p_record_id")),
+        (F.col("source_system") == F.col("p_source_system"))
+        & (F.col("source_person_id") == F.col("p_record_id")),
+        "left_anti"
+    ).limit(1).count():
+        raise RuntimeError("HOLD_G5_ENCOUNTER_PERSON_FK_ORPHAN")
+
+    # Intentionally no Candidate Delta or Warehouse/ID/Concept access.
+    return "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_APPROVAL_DELTA_PASS_20261104"
+
+
 _G3_NEGATIVE_REQUEST = "atlanta-fhir-gh-41539769718"
 _G3_NEGATIVE_MANIFEST_SHA = "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
 
@@ -1300,6 +1432,18 @@ if __name__ == "__main__":
                 f"E{g4.metrics['encounter']}_"
                 f"Q{g4.metrics['quarantine_or_reject']}_DELTA_PASS_20261102")
         raise RuntimeError("HOLD_FHIR_G4_" + g4.status)
+    elif run_mode == "G5_CANDIDATE_SOURCE_READONLY":
+        g5_exit = verify_fhir_g5_candidate_source_readonly(
+            spark, request=request_id, manifest_sha=manifest_sha256,
+            allow_write=write_authorized,
+            retention_ok=retention_preflight_verified,
+            strategy=source_preservation_strategy,
+            manifest_override=manifest_json,
+            source_override=source_root,
+            target_override=silver_root,
+            patient_contract_json=patient_contract_json,
+            encounter_contract_json=encounter_contract_json)
+        notebookutils.notebook.exit(g5_exit)
     elif run_mode in ("BRONZE_DRIFT_PROBE", "BRONZE_ACK_RECOVERY_PROBE"):
         result = verify_fhir_g3_negative_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,

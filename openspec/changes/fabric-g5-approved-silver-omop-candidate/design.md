@@ -26,3 +26,10 @@ Normal 100/5918; 99/5893/26 rejected; missing approval, mismatched SHA/processin
 ## Data protection
 
 Existing G4 normal and rejected request Delta folders are read-only to G5. Do not change existing Azure Blob policy, Local PG, Terraform, Capacity or Wheel 0.1.1 until a reviewed release; Candidate namespace is new. All live operations follow SAFE-OPERATIONS and SESSION-COORDINATION.
+
+## 2026-11-04 controlled preflight implementation slice
+
+- The first native Notebook G5 run mode is `G5_CANDIDATE_SOURCE_READONLY`, not `G5_CANDIDATE_WRITE`. It consumes **only** the existing accepted G4 request, delivered SHA and exact unmodified Local v1 Canonical contracts; default HALT and both write flags false. `_G4_PROCESSING = ...engine-0.1.1` must remain unchanged because it is the physical namespace of already approved G4 source data, even though the executing Notebook/Published Environment uses engine 0.1.3.
+- Physical source verification must reuse `verify_fhir_g4_silver(mode=SILVER_READBACK_ONLY)` which independently checks manifest bytes, Bronze receipts, source regeneration, both Delta tables and single persisted Approval row. Then reopen the persisted Patient/Encounter/Approval for G5-specific P100/E5918/Q0, consistent namespace/batch and anti-join FK. G4 DQ-rejected requests, incomplete approvals, Spark exceptions and any strange override MUST HOLD, never emit success markers.
+- Source-only exit `FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_APPROVAL_DELTA_PASS_20261104` means **Silver physical read-only verification only**. It is not OMOP Candidate, F1 Concept approval, durable ID assignment, Warehouse Gold COMMIT or F3 E2E. No OMOP ID Map/Concept queries or writes are performed in this change.
+- The existing `pl_fhir_ingest` read-only one-activity Pipeline remains default HALT, no schedule or retry, no writer parameters. Later F1/F2 integration must be a separately reviewed PR, pinned real Warehouse snapshots, approved Concept Mapping Profile and Candidate staging with error-if-exists + independent readback/approval-last.
