@@ -7,7 +7,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 # Fabric Notebooks — CODE 源码地图
 
-**真实 Native Item 归属：** `azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/`（Fabric Git Integration 自动生成的根级目录）。[`notebooks/ingestion/`](../../../../azure-fabric/workspaces/healthcare-omop/notebooks/ingestion/) 为旧占位目录，不是 Native Item 定义。
+**真实 Native Item 归属：** [`nb_fhir_ingest.Notebook/`](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/)（Fabric Git Integration 自动生成的根级目录）。早期 `notebooks/ingestion/.gitkeep` 只是占位，已从当前 Git 清理，不是 Native Item 定义。
 
 **2026-10-31 真实初始化完成：** Fabric Portal 将 `nb_fhir_ingest` Item 原生定义同步到 GitHub `fabric/native-bootstrap-20261031`，Commit `a6c3d0d6`；`.platform` 的 logicalId 非零。这是最初的空壳初始化历史；当前 Git 主文件已恢复完整 P2 业务代码，并经两种真实 Fabric 定义读回验收。
 
