@@ -123,7 +123,7 @@ def _concept_expr(F, column: str, lookup: Mapping[str, int]):
 def build_omop_candidates(
     patients, encounters, identity_map, concepts, *,
     approval: Mapping[str, Any],
-    source_system: str, source_batch_id: str, manifest_sha256: str,
+    hospital_id: str, source_system: str, source_batch_id: str, manifest_sha256: str,
     processing_version: str, mapping_profile_bytes: bytes,
     mapping_profile_sha256: str, raw_publish_run_id: str,
 ) -> OmopCandidates:
@@ -134,6 +134,17 @@ def build_omop_candidates(
     and fail closed before invoking this mapping.
     """
     from pyspark.sql import functions as F
+
+    # Canonical v1 Person/Encounter tables deliberately do not duplicate
+    # hospital_id: they carry BatchContext.namespaced_source_system instead.
+    # Verify the exact hospital from the *independently approved* batch context
+    # and then join to the real Warehouse F1 map on all namespace dimensions.
+    if (not isinstance(hospital_id, str) or not hospital_id
+            or hospital_id != hospital_id.strip()):
+        raise ValueError("G5_HOSPITAL_ID_REQUIRED")
+    parts = source_system.split(":") if isinstance(source_system, str) else []
+    if (len(parts) != 3 or not all(parts) or parts[1] != hospital_id):
+        raise ValueError("G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH")
 
     profile = load_omop_mapping_profile(
         mapping_profile_bytes, mapping_profile_sha256, source_system)
@@ -191,35 +202,65 @@ def build_omop_candidates(
         _verify_codes(df, column, mapping)
     _verify_concepts(concepts, profile)
 
-    if not {"source_system", "source_person_id", "person_id"}.issubset(identity_map.columns):
+    required_map = {"entity_type", "hospital_id", "source_system",
+                    "source_business_key", "omop_id"}
+    if not required_map.issubset(identity_map.columns):
         raise ValueError("G5_STABLE_ID_MAP_SCHEMA_INVALID")
-    # Existing ID map may include other feeds/hospitals; never join across them.
-    ids = identity_map.filter(F.col("source_system") == source_system).select(
-        "source_system", "source_person_id", "person_id")
-    if ids.groupBy("source_system", "source_person_id").count().filter(
-            "count != 1").limit(1).count():
+    if identity_map.filter(
+        F.col("entity_type").isNull() |
+        ~F.col("entity_type").isin("PERSON", "VISIT_OCCURRENCE") |
+        F.col("hospital_id").isNull() |
+        (F.trim(F.col("hospital_id")) == "") |
+        F.col("source_system").isNull() |
+        (F.trim(F.col("source_system")) == "") |
+        F.col("source_business_key").isNull() |
+        (F.trim(F.col("source_business_key")) == "")
+    ).limit(1).count():
+        raise ValueError("G5_STABLE_ID_MAP_INVALID_SOURCE")
+
+    # Global Person ID uniqueness is not guaranteed by Fabric Warehouse's
+    # NOT ENFORCED unique constraints. Check all hospitals, not just ours.
+    persons_all = identity_map.filter(F.col("entity_type") == "PERSON")
+    if persons_all.groupBy(
+        "hospital_id", "source_system", "source_business_key"
+    ).count().filter("count != 1").limit(1).count():
         raise ValueError("G5_STABLE_ID_MAP_DUPLICATE_SOURCE")
-    if ids.filter(
-        F.col("person_id").isNull() |
-        (F.col("person_id") <= 0) | (F.col("person_id") > 2147483647) |
-        (F.col("person_id") != F.col("person_id").cast("int"))
+    if persons_all.groupBy(
+        F.lower(F.col("hospital_id")), F.lower(F.col("source_system")),
+        F.lower(F.col("source_business_key"))
+    ).count().filter("count != 1").limit(1).count():
+        raise ValueError("G5_STABLE_ID_MAP_COLLATION_COLLISION")
+    if persons_all.filter(
+        F.col("omop_id").isNull() |
+        (F.col("omop_id") <= 0) | (F.col("omop_id") > 2147483647) |
+        (F.col("omop_id") != F.col("omop_id").cast("int"))
     ).limit(1).count():
         raise ValueError("G5_STABLE_ID_MAP_INVALID_PERSON_ID")
-    if ids.groupBy("person_id").count().filter("count != 1").limit(1).count():
+    if persons_all.groupBy("omop_id").count().filter(
+            "count != 1").limit(1).count():
         raise ValueError("G5_STABLE_ID_MAP_DUPLICATE_PERSON_ID")
 
+    ids = persons_all.filter(
+        (F.col("hospital_id") == hospital_id) &
+        (F.col("source_system") == source_system)
+    ).select(
+        "hospital_id", "source_system",
+        F.col("source_business_key").alias("source_person_id"),
+        F.col("omop_id").cast("int").alias("person_id"),
+    )
     joined_p = patients.alias("p").join(
         ids.alias("i"),
+        (F.col("i.hospital_id") == F.lit(hospital_id)) &
         (F.col("p.source_system") == F.col("i.source_system")) &
         (F.col("p.source_record_id") == F.col("i.source_person_id")), "left")
     if joined_p.count() != pc or joined_p.filter(
             F.col("i.person_id").isNull()).limit(1).count():
         raise ValueError("G5_STABLE_PERSON_ID_NOT_FOUND")
-    reference = ids.alias("i").select(
-        F.col("i.source_system"), F.col("i.source_person_id"),
-        F.col("i.person_id"))
+    reference = ids.select(
+        "hospital_id", "source_system", "source_person_id", "person_id")
     joined_e = encounters.alias("e").join(
         reference.alias("i"),
+        (F.col("i.hospital_id") == F.lit(hospital_id)) &
         (F.col("e.source_system") == F.col("i.source_system")) &
         (F.col("e.source_person_id") == F.col("i.source_person_id")), "left")
     if joined_e.count() != ec or joined_e.filter(

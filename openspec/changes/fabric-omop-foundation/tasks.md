@@ -28,7 +28,9 @@
 - [x] 2.1a 实现纯 F2 INT ID Preview Planner + Ledger Replay Fence；离线正负向测试覆盖跨医院、同源重跑、冲突、溢出、Snapshot Map/Gold 不一致。**仅 CODE/STATIC，不是实际 Warehouse 分配或 Gold COMMIT。**
 - [x] 2.1b **真实多表事务 ROLLBACK PASS**：Self-Runner [Run #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608) 在现有 Fabric DW 验证六张表 BEGIN→合成非 PHI 数据写入→事务内独立行数检查→ROLLBACK→新 SQL 连接六表均为零。实际 SQL SUCCESS，**无 COMMIT、无 Gold 数据持久化**。
 - [ ] 2.1c 实现真实单写入者 Gold 事务：重查 Snapshot → Map/Allocator/Person/Visit/Ledger 原子提交 → 独立读回与 Replay。
-- [ ] 2.1d 补齐 G5 Candidate 的 hospital_id Join 与真实 Vocabulary Mapping Profile，验证后才允许 F2 clinical writes。
+- [ ] 2.1d 补齐 G5 Candidate 的 hospital_id Join 与真实 Vocabulary Mapping Profile，验证后才允许 F2 clinical writes（包含 2.1d.1 与 2.1d.2）。
+- [x] 2.1d.1 修复 G5 Candidate 源码：显式已验证医院 ID + 当前 F1 Warehouse Identity Map 物理字段，跨医院/全局 Person INT 唯一/大小写碰撞负向测试；仅离线 Wheel 0.1.3，不代表 Gold 读写。
+- [ ] 2.1d.2 审批真实 Concept Mapping Profile，使用经独立读回的 G4 Silver + Warehouse ID Map/正式 Wheel 实机 Candidate / Gold 集成。
 
 ## F3 — Approved G4 to Gold E2E
 

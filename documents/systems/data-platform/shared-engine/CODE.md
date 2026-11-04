@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **状态：G4 已验证并发布 Fabric Shared Wheel 0.1.1；G5 Feature Branch 中 0.1.2 是仅含纯 OMOP Candidate Mapper 的离线发布候选，尚未发布到 Fabric Environment。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **状态：G4 已验证并发布 Fabric Shared Wheel 0.1.1；G5 的 0.1.3 是医院隔离版纯 OMOP Candidate Mapper 的离线发布候选，尚未发布到 Fabric Environment。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，固定版本 0.1.1，支持 Python 3.13 的新候选版本；Fabric 仍暂存 0.1.0 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，版本已演进到 0.1.3（仅源代码/离线 Wheel 候选，Fabric 运行环境仍需独立 Publish 验收）；Fabric 仍暂存 0.1.0 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -59,3 +59,9 @@ CI 见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/sh
 - 源码中首次提供 `build_omop_candidates` 与 `load_omop_mapping_profile`。独立从已验收的物理 Delta 获取 Silver Approval、稳定 ID Map、标准/有效 OMOP Concept Lookup、Profile 原字节及 SHA 都是运行方的责任；模块本身没有 Fabric/PG/I/O，也不生成 ID。
 - 新 Wheel 必须先经 GitHub CI 确认 SHA/安装/PySpark 3.5.7+4.1.1，**不自动更新现有 Git Native Environment 的 0.1.1 Wheel**。未经独立发布/读回，不允许 Notebook 导入 0.1.2 或声称 Candidate 已物理写入。
 - Local 人口统计 Synthea 编码不同于 FHIR 源码语义；测试所用假 Profile 仅用于正负回归，绝不视为经过 OHDSI Concept 审核的 Fabric 运行时 Profile。
+
+## G5 Hospital-scoped F1 Identity Map interface (2026-11-04)
+
+- Pure mapper `build_omop_candidates(..., hospital_id=...)` **requires explicit verified hospital ID** and a `BatchContext.namespaced_source_system` matching `raw_source:hospital_id:feed_id`. Canonical v1 Patient/Encounter source tables do not carry a separate hospital column; do **not** silently alter their frozen schemas.
+- F1 Warehouse `etl.identity_map` supplies columns `entity_type,hospital_id,source_system,source_business_key,omop_id`. Only `entity_type='PERSON'` is used to map Patient and Encounter's Person reference. Joins require exact hospital + source namespace + canonical source key; uniqueness/collation/INT checks span **all hospitals**, not only the selected one.
+- G5 Candidate remains **Candidate-only**. A freshly planned F2 ID is not persisted, and a real Fabric Gold COMMIT is not implied. Version 0.1.3 wheel is an offline candidate until new Fabric Environment bind/publish/Notebook readback; do not state runtime import PASS from CI alone.
