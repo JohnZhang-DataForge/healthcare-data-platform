@@ -45,3 +45,35 @@ The system SHALL use a batch-fenced Warehouse transaction for ID-map, Person, Vi
 - **GIVEN** a prior accepted batch was durably committed
 - **WHEN** the exact same batch is replayed
 - **THEN** the writer SHALL leave Gold row identities unchanged and report a verified SKIP.
+
+### Requirement: Stable Fabric-only clinical entity identities
+
+The system SHALL allocate persisted positive INT OMOP Person and Visit Occurrence IDs from a Warehouse-wide, single-writer guarded allocator and persist the exact hospital/source business key to ID mapping. It SHALL not use row ordinal, temporary hash, name/DOB matching, external PostgreSQL runtime, or unsupported Fabric BIGINT IDENTITY as the OMOP INT ID.
+
+#### Scenario: Same source key across batches
+
+- **GIVEN** an already committed patient key `(hospital_id,source_system,source_record_id)`
+- **WHEN** an approved replay arrives
+- **THEN** the same `cdm.person.person_id` must be returned without allocating a new ID.
+
+#### Scenario: Distinct hospitals with identical source keys
+
+- **GIVEN** two different `hospital_id` values and identical external patient identifiers
+- **WHEN** their mapping requests are validated
+- **THEN** they must map to distinct Warehouse-global INT IDs, with no cross-hospital collision.
+
+#### Scenario: Concurrent writer or INT overflow
+
+- **GIVEN** a concurrent allocation attempt, allocator drift, or a projected value outside positive INT range
+- **WHEN** a writer plans ID allocation
+- **THEN** the writer must HOLD without partial `cdm` or ledger COMMIT and without assuming Fabric SERIALIZABLE isolation.
+
+### Requirement: Ledger-scoped replay fence
+
+The system SHALL link source manifest SHA256, OMOP mapping profile SHA256, batch ID and committed Person/Visit counts atomically with mapping and clinical writes.
+
+#### Scenario: Identical versus conflicting replay
+
+- **GIVEN** a recorded completed batch
+- **WHEN** the same batch with unchanged hashes is requested
+- **THEN** an independently verified replay must SKIP; a changed hash must fail without mutating Gold.

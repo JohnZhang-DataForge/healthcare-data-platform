@@ -13,7 +13,9 @@
 
 ## F1 — Independent identity and vocabulary
 
-- [ ] 1.1 设计 Fabric-only Identity Map、稳定分配策略、院区隔离、唯一键、并发与恢复语义。
+- [x] 1.1a 设计 Fabric-only Identity Map、仓库级 INT 分配器、医院/来源隔离、Ledger 与快照隔离并发 Gate；提出 SQL Schema/CI（代码与设计就绪，不等于已部署）。
+- [ ] 1.1b 实体 `etl`/`audit` 管理 Schema 的首次实际部署、独立 readback 和空表检验。
+- [ ] 1.1c 真正分配稳定 Person/Visit INT IDs、两层唯一性检验、跨医院/跨来源负向和 Replay 验收。
 - [x] 1.2 **九张 Vocabulary 文件真实导入 PASS**：Blob 9/9 SHA256，精确字段匹配、源 TSV 解析逐行计数、全部 `COPY INTO` 或严格幂等 SKIP、独立 SQL `COUNT_BIG` 9/9 与源一致，总计 **28,703,753 行**。另外 `concept_id` 唯一性、Concept 日期区间、`vocabulary_id` 唯一性 PASS。Self-Runner [Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994) Completed SUCCESS。
 - [ ] 1.3 后续完整 Vocabulary 语义质量门禁：Concept→Domain/Class/Vocabulary 引用有效性、关系和祖先引用覆盖、`VOCABULARY.csv` release/version 元数据持久化及 CPT4 许可/后处理适用性。**1.2 物理入库通过不代表这些深层语义检查已经通过。**
 
@@ -83,3 +85,10 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 - Error correction: original source `CONCEPT.csv` uses literal doublequotes inside medical names. Source parser `csv.QUOTE_NONE` and Fabric Warehouse `FIELDQUOTE='0x08'` are used only on CONCEPT / CONCEPT_SYNONYM. This mirrors established OHDSI Athena import guidance. Previous five successful loads preserved and exact-count replay SKIP validated; no `DROP`, `DELETE`, `TRUNCATE` or duplicate re-import.
 - Import performs strict source header checks, OAuth private Blob access, immutable-length + ETag checks, source TSV row counts and Warehouse independent `COUNT_BIG` matches for each table. `CONCEPT_UNIQUENESS_AND_VALIDITY=PASS`, `VOCABULARY_ID_UNIQUENESS=PASS`.
 - **Outside the accepted boundary:** CPT4 `CONCEPT_CPT4.csv` name post-processing/licensing (not uploaded to the nine standard tables); Identity Map/ledger; Person/Visit Gold data; semantic FK/Domain and release version audit. These remain separate work and are NOT silently declared complete.
+
+## F1 Identity Map / audit design milestone — 2026-11-04
+
+- F1 Schema source under `azure-fabric/warehouse/omop-foundation/` specifies 5 empty tables across `etl`/`audit`, pinned existing Warehouse GUID. Only code/offline CI in this slice; no cloud DDL or patient data writes.
+- Canonical patient source PK `(source_system, source_record_id)`, encounter PK `(source_system, source_encounter_id)`. Add hospital scope to both mappings to prevent tenant collision; use a **global per-entity INT allocator** for Person and Visit within Warehouse, never per-hospital counters.
+- Fabric `BIGINT IDENTITY` is incompatible with OHDSI CDM 5.4 `person_id int` and `visit_occurrence_id int`. Stable allocation uses an explicit table and controlled transaction with preflight overflow checks.
+- Fabric Warehouse snapshot isolation cannot be overridden with SERIALIZABLE; concurrently allocating from `MAX(id)` without a single-writer gate is unsafe. F2 must enforce single-writer scheduling, detect write conflict and use bounded retry; PK/FK/UNIQUE may be NOT ENFORCED.
