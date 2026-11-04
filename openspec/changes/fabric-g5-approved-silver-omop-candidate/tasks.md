@@ -36,3 +36,9 @@
 
 - 第二批独立 PR 预备：原有 `pl_fhir_ingest` 单 Activity 通过 Fabric Pipeline expression 显式传递读回所需 exact request、Manifest、Local Contract，write_authorized 和 retention_preflight_verified 永久 false，默认 HALT / retry=0 / no schedule。离线测试见 `azure-fabric/notebook-development/tests/test_g5_pipeline_readonly.py`。
 - 设计对应 Task 3.3 的**只读预备片段**，不标记完整任务成功；真实 Notebook/ Pipeline E2E + Candidate/Gold 尚未执行。Workflow 对 candidate Wheel 0.1.2 vs Fabric Published 0.1.1 分别检查，严禁把包 hash 混为一谈。
+
+## G5 hospital-scoped identity mapper correction (2026-11-04, source-only)
+
+- `build_omop_candidates` now requires independently verified hospital_id and checks it against the existing canonical v1 namespaced `source_system`; does **not** change G4 canonical schema or existing approved Silver.
+- F1 Warehouse map `entity_type/hospital_id/source_system/source_business_key/omop_id` replaces the old hypothetical `source_person_id/person_id` fixture contract. Global Person ID, hospital scoped namespace and casefold collision validation are covered by new offline PySpark positive/negative tests.
+- Shared Wheel candidate version is 0.1.3, offline-only until separately published and read back in Fabric. G5 2.3 and native runtime acceptance remain OPEN. No Candidate Delta or Gold data write occurred.
