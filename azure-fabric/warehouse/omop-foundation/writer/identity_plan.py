@@ -94,6 +94,8 @@ def plan_ids(incoming: Sequence[IdentityKey], existing: Sequence[tuple[IdentityK
     for key in incoming:
         if not isinstance(key, IdentityKey):
             raise PlanningHold("SOURCE_KEY_INVALID")
+        if key.folded() in old_folded and key not in old:
+            raise PlanningHold("SOURCE_PERSISTED_COLLATION_COLLISION")
         if key in pending:
             raise PlanningHold("DUPLICATE_SOURCE")
         if key.folded() in folded:
