@@ -7,7 +7,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 # Fabric Data Pipelines — CODE 源码地图
 
-**真实 Native Item 归属：** `azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/`（Fabric Git Integration 自动生成的根级目录）。[`pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/) 仅保留旧 `.gitkeep`。
+**真实 Native Item 归属：** [`pl_fhir_ingest.DataPipeline/`](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/)（Fabric Git Integration 自动生成的根级目录）。旧 `pipelines/.gitkeep` 占位已经删除；正式 Pipeline 不在子目录内。
 
 **2026-10-31 真实初始化完成：** Fabric Portal 将 `pl_fhir_ingest` 原生定义同步到 GitHub `fabric/native-bootstrap-20261031`，Commit `a6c3d0d6`；`.platform` logicalId 非零。`pipeline-content.json` 仍为 `activities: []`，不意味着 ETL Orchestration 已部署。
 

@@ -7,7 +7,7 @@ source_sha: ddc111db235f9788a08e1b7a6132730e3857707c
 
 # Fabric Data Pipelines — 编排与失败控制
 
-Pipelines 组件属于现有的 `healthcare-omop` Fabric Workspace。未来 Fabric 原生 Data Pipeline Item 的源码保存在 [`azure-fabric/workspaces/healthcare-omop/pipelines/`](../../../../azure-fabric/workspaces/healthcare-omop/pipelines/)。
+Pipelines 组件属于现有的 `healthcare-omop` Fabric Workspace。正式 Data Pipeline Item 的 Git 原生源码保存在 [`pl_fhir_ingest.DataPipeline/`](../../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/)；原 `pipelines/.gitkeep` 占位目录已删除。
 
 ## 组件职责
 
@@ -17,7 +17,7 @@ Pipelines 组件属于现有的 `healthcare-omop` Fabric Workspace。未来 Fabr
 
 ## 当前状态与未来源码
 
-**当前状态：业务 Pipeline 尚未开发。** 本目录现在只有 `.gitkeep` 占位，没有 `*.DataPipeline/` Item，也没有通过目录操作建立 Fabric Git Integration。
+**当前状态：真实 `pl_fhir_ingest` 原生 Pipeline 已存在**，包含受控 Notebook Activity 和版本化定义，已完成 Git/云端定义同步。默认 `HALT`、`retry=0`、无自动 Schedule；完整 FHIR → Candidate → Warehouse Gold Pipeline E2E **尚未完成**。删除空占位目录不触发部署或资源删除。
 
 Terraform 目前保存了[默认 Fail Activity 定义](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)和[未实际执行的 Notebook Activity 模板](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json)。真实 Notebook GUID 与处理程序到位前，必须保留失败保护，不能改成空的成功执行。
 
