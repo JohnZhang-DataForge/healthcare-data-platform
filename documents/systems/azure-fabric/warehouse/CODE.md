@@ -5,3 +5,5 @@
 - [Fabric-compatible table SQL](../../../../azure-fabric/warehouse/omop-cdm-5.4/tables/): 39 `cdm` CREATE TABLE definitions, no runtime execution.
 - [Offline contract tests](../../../../azure-fabric/warehouse/omop-cdm-5.4/tests/test_cdm54_schema.py), [workflow](../../../../.github/workflows/fabric-omop-cdm54-schema-offline.yml).
 - Cloud execution is NOT part of this commit. Warehouse connectivity proven separately by Self-Runner [#41645575691](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41645575691). Do not confuse with Schema readback or CDM COMMIT.
+
+- [F1 Vocabulary Blob header / empty-table preflight](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/src/ci/fabric_omop_vocabulary_preflight.py), [F1 replay-safe native COPY loader](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/src/ci/fabric_omop_vocabulary_load.py), and [Self-Runner Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-omop-vocabulary-import.yml). Execution evidence and current state tracked in [OMOP OpenSpec Tasks](../../../../openspec/changes/fabric-omop-foundation/tasks.md).

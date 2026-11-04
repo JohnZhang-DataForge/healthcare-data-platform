@@ -14,7 +14,7 @@
 ## F1 — Independent identity and vocabulary
 
 - [ ] 1.1 设计 Fabric-only Identity Map、稳定分配策略、院区隔离、唯一键、并发与恢复语义。
-- [ ] 1.2 导入有版本与校验的正式 Vocabulary；Concept/有效日期/域验证真实 PASS。
+- [ ] 1.2 导入有版本与校验的正式 Vocabulary；Concept/有效日期/域验证真实 PASS。当前已完成 Blob 9/9 SHA256 + 只读格式/空表预检 + 首批四张表真实 COPY / 独立行数读回；**已有五表成功、其他四表仍待最终验收，不可声明全部 PASS**。
 
 ## F2 — Transactional Gold writer
 
@@ -53,3 +53,11 @@
 - Earlier evidence blocks are historical as of their respective PRs; this live acceptance supersedes only the earlier `schema NOT_DONE` status, not pending F1–F3.
 
 - CI linkage note: this evidence PR uses the existing numeric OpenSpec task `0.6`; follow-up tasks `0.7` and `0.8` remain explicitly open and must not be inferred complete by an empty-table readback.
+
+## F1 Vocabulary Azure Blob → Warehouse execution evidence — 2026-11-03
+
+- Source private container: `johnzhang/omop-vocabulary` (nine root-level files; no GCS/S3/extra Lakehouse). Source verified by [Self-Runner #41768413775](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41768413775): **9/9 exact byte lengths and SHA256 PASS**, OIDC Entra SP direct Blob read PASS. Do not commit raw vocabulary text or CPT4 redistributable content.
+- [Self-Runner PR #487](https://github.com/JohnZhang-DataForge/Self-Runner/pull/487) / [Run #41769357041](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41769357041): **readonly F1 preflight PASS**: all nine headers exactly match OHDSI table field order; `FIELDTERMINATOR=0x09`, `ROWTERMINATOR=0x0A` (LF), exact fixed Blob size, nine Warehouse tables empty before first load.
+- [Self-Runner PR #488](https://github.com/JohnZhang-DataForge/Self-Runner/pull/488) / [Run #41769826858](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41769826858): **actual Fabric Warehouse COPY INTO PASS** for `cdm.domain=50`, `cdm.concept_class=433`, `cdm.relationship=722`, `cdm.vocabulary=47`. Each row count reconciled with independently streamed source TSV parser; `vocabulary_id` uniqueness PASS.
+- [Self-Runner PR #489](https://github.com/JohnZhang-DataForge/Self-Runner/pull/489) / [Run #41770012720](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770012720): deployment switched to **all nine** with immutable storage source ETag, exact row-count replay skip and independent SQL readback. [Run #41770012720](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770012720) loaded **cdm.drug_strength=208,802 rows** and safely skipped the prior four; then held before copying `CONCEPT.csv` due Athena literal-doublequote parse error. [PR #490](https://github.com/JohnZhang-DataForge/Self-Runner/pull/490) proved parser issue at source line 4437, no business data write for CONCEPT. [PR #491](https://github.com/JohnZhang-DataForge/Self-Runner/pull/491) changed CONCEPT and CONCEPT_SYNONYM to literal quote semantics; [Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994) currently running. **Nine-table PASS is not yet established**.
+- Warehouse item `7a6d08da-278d-4603-8a3b-28640110984c` already existed and 39 CDM tables were deployed in F0; no DDL or Capacity resume in F1. `etl.identity_map` and OMOP Person/Visit Gold remain NOT_YET_DONE.

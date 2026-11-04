@@ -49,3 +49,11 @@ Official references:
 ## 6. Acceptance evidence
 
 Distinguish SOURCE/STATIC_PASS, REST_VISIBLE, SQL_SELECT_PASS, SCHEMA_DEPLOYED, SCHEMA_READBACK_PASS, GOLD_COMMITTED and REPLAY_PASS. Record Git SHA, Actions Run ID, actual observed object IDs and checksums. Do not infer later gates from earlier status.
+
+## 7. F1 Blob-to-Warehouse vocabulary first-load implementation
+
+- Direct source: private Azure Storage `johnzhang.blob.core.windows.net/omop-vocabulary` root, exactly nine OHDSI Athena tab-separated CSVs. No new Lakehouse or Terraform-managed DW resource. Pin names / byte size / SHA256 (verified by independent 9/9 scan), inspect header field names/order against official CDM 5.4 schema, and match source ETag around COPY.
+- Self-Runner authenticates using existing Entra/GitHub federated OIDC. SQL token audience `https://database.windows.net/.default`; the same principal has independent Azure Storage Blob Data Reader authorization. Never use account keys or log tokens/SAS.
+- Use native Fabric Warehouse `COPY INTO cdm.<allowlisted_table>` with `FILE_TYPE='CSV'`, `FIRSTROW=2`, `FIELDTERMINATOR='0x09'`, `ROWTERMINATOR='0x0A'`, `FIELDQUOTE='"'` and `MAXERRORS=0`. No FHIR Pipeline involvement.
+- Stream source TSV using a strict CSV parser to obtain exact row count, ensure correct column count, issue a single COPY statement per table, then separately establish a new SQL connection for exact COUNT_BIG comparison. Non-empty target is accepted only as a replay SKIP if its count exactly matches immutable source; otherwise HOLD, no TRUNCATE/DROP/DELETE and no blind retry.
+- Pilot first uses four small tables; only after live verification does a separate PR switch to all nine. After all-nine readback, validate Concept ID uniqueness, vocabulary ID uniqueness, Concept validity dates and version; only then close task 1.2. A successful COPY is **not** by itself proof of complete domain correctness or an enforced FK.
