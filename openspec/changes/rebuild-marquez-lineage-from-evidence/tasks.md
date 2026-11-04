@@ -17,5 +17,5 @@
 - [ ] 3.4 Do not label synthetic probe datasets as previously deleted Patient/Encounter lineage.
 
 ## 4. Future historical Patient/Encounter recovery
-- [ ] 3.1 If original committed raw events / verified PG14 dump found, replay/restore in provenance-controlled fashion with independent readback.
-- [ ] 3.2 Rebuild Patient/Encounter graph only from actual new Spark execution or byte-exact old OpenLineage, under a separate stage gate; never re-run committed Writer.
+- [ ] 4.1 If original committed raw events / verified PG14 dump found, replay/restore in provenance-controlled fashion with independent readback.
+- [ ] 4.2 Rebuild Patient/Encounter graph only from actual new Spark execution or byte-exact old OpenLineage, under a separate stage gate; never re-run committed Writer.
