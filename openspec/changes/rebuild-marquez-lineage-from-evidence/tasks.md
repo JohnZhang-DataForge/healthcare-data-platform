@@ -10,6 +10,12 @@
 - [ ] 2.2 Execute exactly one opt-in Airflow real two-task run with unique ID; no synthetic `/lineage` HTTP POST.
 - [ ] 2.3 Independently verify Marquez Job/Event counts and linked task records; report success or failure without rewriting historical proof.
 
-## 3. Future recovery
+## 3. Bounded real Spark fixture lineage (not historical Patient/Encounter)
+- [ ] 3.1 Preflight no active TASK004 Spark, the pinned local fixture, and permanent no-retention.
+- [ ] 3.2 Execute one isolated portal-a4 Spark probe with synthetic 3-row CSV, unique ConfigMap/PVC and no S3 or OMOP access.
+- [ ] 3.3 Verify genuine Spark Job/Event + Input CSV / Output Parquet Datasets are durably stored in Marquez; record exact run and PV.
+- [ ] 3.4 Do not label synthetic probe datasets as previously deleted Patient/Encounter lineage.
+
+## 4. Future historical Patient/Encounter recovery
 - [ ] 3.1 If original committed raw events / verified PG14 dump found, replay/restore in provenance-controlled fashion with independent readback.
 - [ ] 3.2 Rebuild Patient/Encounter graph only from actual new Spark execution or byte-exact old OpenLineage, under a separate stage gate; never re-run committed Writer.
