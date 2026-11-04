@@ -44,3 +44,5 @@ Task 4.1 is deliberately open until the generated Git-native Wheel branch is rev
 - [ ] 4.3 Independently verify exact Git main native Wheel version, controlled Fabric UpdateFromGit/Staging, single Library Publish, and isolated Runtime 2.0 Notebook import for 0.1.3. No Gold commit authority from this task.
 
 The G5 Git-only PR additionally updates the offline Notebook Wheel test to verify rebuilt 0.1.3 against Git-native 0.1.3 byte-for-byte while reading immutable historical 0.1.1 from Git for the unchanged business HALT Notebook regression. This is intentional dual-version testing, not a claim of concurrent Published versions in Fabric.
+
+The Native Notebook static contract test is also updated to assert the new Git 0.1.3 binary hash, while the existing HALT Notebook engine-version check stays pinned to effective 0.1.1 until a separately verified Fabric Publish. Do not mix Git-staged Wheel and Fabric-effective runtime claims.
