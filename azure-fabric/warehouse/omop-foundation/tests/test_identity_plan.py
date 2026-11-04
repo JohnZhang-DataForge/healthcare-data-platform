@@ -50,6 +50,13 @@ class F2PlannerTest(unittest.TestCase):
                  nextid={"PERSON":3,"VISIT_OCCURRENCE":1},
                  gold={"PERSON":[1,2],"VISIT_OCCURRENCE":[]})
 
+    def test_new_source_key_casefold_collides_with_persisted(self):
+        with self.assertRaisesRegex(PlanningHold,"SOURCE_PERSISTED_COLLATION_COLLISION"):
+            plan([person(key="patient")],
+                 old=[(person(key="PATIENT"),1)],
+                 nextid={"PERSON":2,"VISIT_OCCURRENCE":1},
+                 gold={"PERSON":[1],"VISIT_OCCURRENCE":[]})
+
     def test_missing_keys_and_incorrect_entity(self):
         for value in ("", " key ", "bad\nkey", "x"*257):
             with self.assertRaises(PlanningHold):
