@@ -6,15 +6,17 @@
 - [x] 1.3 Record strict distinction between exact restored history and newly executed genuine events.
 
 ## 2. Bounded actual OpenLineage run
-- [ ] 2.1 Preflight existing Airflow `platform_portal_openlineage_probe` DAG and no-retention live config.
-- [ ] 2.2 Execute exactly one opt-in Airflow real two-task run with unique ID; no synthetic `/lineage` HTTP POST.
-- [ ] 2.3 Independently verify Marquez Job/Event counts and linked task records; report success or failure without rewriting historical proof.
+- [x] 2.1 Preflight existing Airflow `platform_portal_openlineage_probe` DAG and no-retention live config.
+- [x] 2.2 Execute exactly one opt-in Airflow real two-task run with unique ID; no synthetic `/lineage` HTTP POST.
+- [x] 2.3 Independently verify Marquez Job/Event counts and linked task records; report success or failure without rewriting historical proof.
+
+Actual Airflow live evidence: [Self-Runner Run #41858128218](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41858128218), 2026-11-04 15:29 UTC: retention off, source SHA, no active DAG, true DagRun SUCCESS, Marquez PG14 counts Jobs 0→3, Lineage Events 0→6, Datasets 0→0. These are newly executed Airflow events, NOT recovered historical Patient/Encounter events.
 
 ## 3. Bounded real Spark fixture lineage (not historical Patient/Encounter)
-- [ ] 3.1 Preflight no active TASK004 Spark, the pinned local fixture, and permanent no-retention.
-- [ ] 3.2 Execute one isolated portal-a4 Spark probe with synthetic 3-row CSV, unique ConfigMap/PVC and no S3 or OMOP access.
+- [x] 3.1 Preflight no active TASK004 Spark, the pinned local fixture, and permanent no-retention.
+- [x] 3.2 Execute one isolated portal-a4 Spark probe with synthetic 3-row CSV, unique ConfigMap/PVC and no S3 or OMOP access.
 - [ ] 3.3 Verify genuine Spark Job/Event + Input CSV / Output Parquet Datasets are durably stored in Marquez; record exact run and PV.
-- [ ] 3.4 Do not label synthetic probe datasets as previously deleted Patient/Encounter lineage.
+- [x] 3.4 Do not label synthetic probe datasets as previously deleted Patient/Encounter lineage.
 
 ## 4. Future historical Patient/Encounter recovery
 - [ ] 4.1 If original committed raw events / verified PG14 dump found, replay/restore in provenance-controlled fashion with independent readback.
