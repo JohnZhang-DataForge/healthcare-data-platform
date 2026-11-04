@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # reviewed 0.1.1 source and one exact native CustomLibraries Wheel
+          fetch-depth: 0 # pinned old 0.1.1 historical Wheel plus current 0.1.3 Native Git artifact
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -27,30 +27,34 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Compare reviewed sole 0.1.1 Git Wheel and install it for HALT Notebook tests
+      - name: Verify 0.1.3 native Wheel and install historical 0.1.1 for unchanged HALT Notebook
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
           python -m pip wheel -w "$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           python -m venv "$RUNNER_TEMP/fabric-offline"
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           mkdir -p dist
           "$RUNNER_TEMP/fabric-offline/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
-          # A new 0.1.2 candidate source must NEVER be equated with the still
-          # Published Fabric 0.1.1 Environment wheel. Verify the two independently.
-          echo "378fd1c19261d78190fb9fc0c42e055140eabac72fe6a5ada1edde819f62f748  dist/healthcare_data_engine-0.1.2-py3-none-any.whl" | sha256sum --check
-          staged='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.1-py3-none-any.whl'
-          test -f "$staged"
-          test "$(find "$(dirname "$staged")" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
-          echo "4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3  $staged" | sha256sum --check
-          test ! -f dist/healthcare_data_engine-0.1.1-py3-none-any.whl
-          echo 'FABRIC_G5_CANDIDATE_012_NOT_PUBLISHED=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'FABRIC_P3_PUBLISHED_011_PIN_VERIFIED_AND_NEW_012_CANDIDATE_SEPARATE=PASS' >> "$GITHUB_STEP_SUMMARY"
-          # Reviewed Git Artifact is now GA Published in Fabric Environment, but
-          # Git Wheel byte-identity alone does not imply Notebook attachment.
-          # Run the existing HALT Notebook tests with the exact published version.
-          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps "$staged"
+          NEW='healthcare_data_engine-0.1.3-py3-none-any.whl'
+          NEW_SHA='6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59'
+          STAGED="azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/$NEW"
+          test "$(find "$(dirname "$STAGED")" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
+          echo "$NEW_SHA  dist/$NEW" | sha256sum -c -
+          echo "$NEW_SHA  $STAGED" | sha256sum -c -
+          cmp "dist/$NEW" "$STAGED"
+          echo 'G5_013_SOURCE_NATIVE_GIT_WHEEL_BYTE_IDENTICAL=PASS' >> "$GITHUB_STEP_SUMMARY"
+          # The business Native Notebook has NOT switched from its 0.1.1
+          # package expectation. Test that unchanged HALT Notebook with exactly
+          # the historical 0.1.1 Wheel, not with the new Candidate.
+          OLD='healthcare_data_engine-0.1.1-py3-none-any.whl'
+          OLD_SHA='4a914830b4835f784ddae9f8f075279325550fd7f7a4b0aa345be26ef3f7a2a3'
+          BASE='536fca011384d0fe8d3c05a5c7700934d8968456'
+          git show "$BASE:azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/$OLD" > "$RUNNER_TEMP/$OLD"
+          echo "$OLD_SHA  $RUNNER_TEMP/$OLD" | sha256sum -c -
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$RUNNER_TEMP/$OLD"
           "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.1"'
-          echo 'FABRIC_P3_NEW_WHEEL_011_NOTEBOOK_TEST_DEPENDENCY=PASS; RUNTIME_BINDING=NOT_RUN' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G5_NATIVE_GIT_013_NOT_YET_FABRIC_PUBLISHED=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'EXISTING_BUSINESS_NOTEBOOK_011_HALT_REGRESSION_DEPENDENCY=PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Synthetic Manifest plus actual local PySpark readback tests; ZERO cloud writes
         env:
           PYTHONPATH: azure-fabric/notebook-development
@@ -71,7 +75,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-g5-shared-wheel-candidate-${{ github.sha }}
-          path: dist/healthcare_data_engine-0.1.2-py3-none-any.whl
+          name: fabric-g5-shared-wheel-013-candidate-${{ github.sha }}
+          path: dist/healthcare_data_engine-0.1.3-py3-none-any.whl
           if-no-files-found: error
           retention-days: 30
