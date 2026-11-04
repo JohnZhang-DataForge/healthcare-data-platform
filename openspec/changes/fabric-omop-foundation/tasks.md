@@ -14,7 +14,8 @@
 ## F1 — Independent identity and vocabulary
 
 - [ ] 1.1 设计 Fabric-only Identity Map、稳定分配策略、院区隔离、唯一键、并发与恢复语义。
-- [ ] 1.2 导入有版本与校验的正式 Vocabulary；Concept/有效日期/域验证真实 PASS。当前已完成 Blob 9/9 SHA256 + 只读格式/空表预检 + 首批四张表真实 COPY / 独立行数读回；**已有五表成功、其他四表仍待最终验收，不可声明全部 PASS**。
+- [x] 1.2 **九张 Vocabulary 文件真实导入 PASS**：Blob 9/9 SHA256，精确字段匹配、源 TSV 解析逐行计数、全部 `COPY INTO` 或严格幂等 SKIP、独立 SQL `COUNT_BIG` 9/9 与源一致，总计 **28,703,753 行**。另外 `concept_id` 唯一性、Concept 日期区间、`vocabulary_id` 唯一性 PASS。Self-Runner [Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994) Completed SUCCESS。
+- [ ] 1.3 后续完整 Vocabulary 语义质量门禁：Concept→Domain/Class/Vocabulary 引用有效性、关系和祖先引用覆盖、`VOCABULARY.csv` release/version 元数据持久化及 CPT4 许可/后处理适用性。**1.2 物理入库通过不代表这些深层语义检查已经通过。**
 
 ## F2 — Transactional Gold writer
 
@@ -59,5 +60,26 @@
 - Source private container: `johnzhang/omop-vocabulary` (nine root-level files; no GCS/S3/extra Lakehouse). Source verified by [Self-Runner #41768413775](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41768413775): **9/9 exact byte lengths and SHA256 PASS**, OIDC Entra SP direct Blob read PASS. Do not commit raw vocabulary text or CPT4 redistributable content.
 - [Self-Runner PR #487](https://github.com/JohnZhang-DataForge/Self-Runner/pull/487) / [Run #41769357041](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41769357041): **readonly F1 preflight PASS**: all nine headers exactly match OHDSI table field order; `FIELDTERMINATOR=0x09`, `ROWTERMINATOR=0x0A` (LF), exact fixed Blob size, nine Warehouse tables empty before first load.
 - [Self-Runner PR #488](https://github.com/JohnZhang-DataForge/Self-Runner/pull/488) / [Run #41769826858](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41769826858): **actual Fabric Warehouse COPY INTO PASS** for `cdm.domain=50`, `cdm.concept_class=433`, `cdm.relationship=722`, `cdm.vocabulary=47`. Each row count reconciled with independently streamed source TSV parser; `vocabulary_id` uniqueness PASS.
-- [Self-Runner PR #489](https://github.com/JohnZhang-DataForge/Self-Runner/pull/489) / [Run #41770012720](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770012720): deployment switched to **all nine** with immutable storage source ETag, exact row-count replay skip and independent SQL readback. [Run #41770012720](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770012720) loaded **cdm.drug_strength=208,802 rows** and safely skipped the prior four; then held before copying `CONCEPT.csv` due Athena literal-doublequote parse error. [PR #490](https://github.com/JohnZhang-DataForge/Self-Runner/pull/490) proved parser issue at source line 4437, no business data write for CONCEPT. [PR #491](https://github.com/JohnZhang-DataForge/Self-Runner/pull/491) changed CONCEPT and CONCEPT_SYNONYM to literal quote semantics; [Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994) currently running. **Nine-table PASS is not yet established**.
+- [Self-Runner PR #489](https://github.com/JohnZhang-DataForge/Self-Runner/pull/489) / [Run #41770012720](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770012720): deployment switched to **all nine** with immutable storage source ETag, exact row-count replay skip and independent SQL readback. [Run #41770012720](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770012720) loaded **cdm.drug_strength=208,802 rows** and safely skipped the prior four; then held before copying `CONCEPT.csv` due Athena literal-doublequote parse error. [PR #490](https://github.com/JohnZhang-DataForge/Self-Runner/pull/490) proved parser issue at source line 4437, no business data write for CONCEPT. [PR #491](https://github.com/JohnZhang-DataForge/Self-Runner/pull/491) changed CONCEPT and CONCEPT_SYNONYM to literal quote semantics; [Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994) **completed SUCCESS** after the literal-quote fix. Nine-table source row counts and independent SQL readbacks all PASS.
 - Warehouse item `7a6d08da-278d-4603-8a3b-28640110984c` already existed and 39 CDM tables were deployed in F0; no DDL or Capacity resume in F1. `etl.identity_map` and OMOP Person/Visit Gold remain NOT_YET_DONE.
+
+## F1 9/9 final physical import acceptance — 2026-11-03 ET
+
+Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994), main controller SHA `61c279ffa469028f4b46047acaa34319e64ea970`, exact existing Warehouse GUID `7a6d08da-278d-4603-8a3b-28640110984c`.
+
+| Table under `cdm` | Source rows | Warehouse independent SQL rows | Status |
+|---|---:|---:|---|
+| domain | 50 | 50 | PASS / replay skip |
+| concept_class | 433 | 433 | PASS / replay skip |
+| relationship | 722 | 722 | PASS / replay skip |
+| vocabulary | 47 | 47 | PASS / replay skip |
+| drug_strength | 208,802 | 208,802 | PASS / replay skip |
+| concept | 1,952,609 | 1,952,609 | PASS / new COPY |
+| concept_ancestor | 10,958,071 | 10,958,071 | PASS / new COPY |
+| concept_relationship | 13,150,960 | 13,150,960 | PASS / new COPY |
+| concept_synonym | 2,432,059 | 2,432,059 | PASS / new COPY |
+| **Total** | **28,703,753** | **28,703,753** | **9/9 PASS** |
+
+- Error correction: original source `CONCEPT.csv` uses literal doublequotes inside medical names. Source parser `csv.QUOTE_NONE` and Fabric Warehouse `FIELDQUOTE='0x08'` are used only on CONCEPT / CONCEPT_SYNONYM. This mirrors established OHDSI Athena import guidance. Previous five successful loads preserved and exact-count replay SKIP validated; no `DROP`, `DELETE`, `TRUNCATE` or duplicate re-import.
+- Import performs strict source header checks, OAuth private Blob access, immutable-length + ETag checks, source TSV row counts and Warehouse independent `COUNT_BIG` matches for each table. `CONCEPT_UNIQUENESS_AND_VALIDITY=PASS`, `VOCABULARY_ID_UNIQUENESS=PASS`.
+- **Outside the accepted boundary:** CPT4 `CONCEPT_CPT4.csv` name post-processing/licensing (not uploaded to the nine standard tables); Identity Map/ledger; Person/Visit Gold data; semantic FK/Domain and release version audit. These remain separate work and are NOT silently declared complete.
