@@ -31,7 +31,7 @@ Actual Spark fixture: [Self-Runner #41858844788](https://github.com/JohnZhang-Da
 - [x] 5.3 Run exactly one uniquely identified real Patient + Encounter + Reconcile Spark-only flow under shared concurrency gate, without OMOP Writer or old Batch replay.
 - [x] 5.4 Independently GET Marquez action-level Job/Run/Input+Output DatasetVersions, Reconcile's two exact inputs, column facets where real, and public read-only graph. Preserve START-only / missing facets.
 - [x] 5.5 Independently read back PG17 and prove protected state unchanged; attach exact source SHA, workflow Run, actual Spark IDs, Airflow tasks, Marquez details and failures to evidence.
-- [ ] 5.6 Run required CI, review and merge scope-limited PRs only after required gates pass; mark unexecuted/blocked tasks honestly.
+- [x] 5.6 Run required CI, review and merge scope-limited PRs only after required gates pass; mark unexecuted/blocked tasks honestly.
 
 **Status 2026-11-04:** this plan is not proof of business Spark execution or graph restoration. The verified 3-row portal P2 fixture remains separate from real Patient/Encounter.
 
@@ -52,4 +52,4 @@ Actual Spark fixture: [Self-Runner #41858844788](https://github.com/JohnZhang-Da
 - **字段血缘**：直接查询 Marquez `/api/v1/namespaces/{namespace}/datasets/{dataset}` 的 `facets.columnLineage.fields`，而不是 Run Detail 的 `outputDatasetVersions[].facets`。Patient：18 个 Processing 字段，6 条真实映射（`Id→source_record_id`、`BIRTHDATE→birth_date`、`DEATHDATE→death_date`、`GENDER→gender_code`、`RACE→race_code`、`ETHNICITY→ethnicity_code`）；Encounter：27 个 Processing 字段，15 条真实映射（例如 `PATIENT→source_person_id`、`START→start_datetime`、`STOP→end_datetime`）。Run #41923297428 对两者数量及每条真实输入字段关联进行了只读断言。
 - **公网 UI**：用户于 2026-11-04 在 `https://lineage.johnzhang-dataforge.site` 实际浏览截图确认 Landing 3 数据集、Processing 2 数据集、Patient 表级图以及 6 条字段级连接。Runner 内部通过 `urllib` 对公网 `/`、`/api/v1/namespaces` 两次探测返回 `HTTPError`；该探测 **不构成公网 HTTP API 自动验收 PASS**。公网浏览器页面正常显示、内网 GET 严格验收 PASS，二者须独立报告。
 - **保留缺口**：同一窗口 14 个 child Runs 中有 7 个 parent/RDD action 仍显示 `RUNNING` / START-only，不能写入假的 COMPLETE；旧历史 RunEvent / Run UUID 并未全量找回，Task 4.1 保持未完成。任何未来真实 Writer/已提交批次 Replay 都需新的单独批准。
-- **Git status**：Healthcare [PR #660](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/660) 已合并 OpenSpec P3 设计；Self-Runner [PR #506](https://github.com/JohnZhang-DataForge/Self-Runner/pull/506) 已合并执行与独立读回脚本。本次文档更新的适用 PR/CI/合并应在完成后核对，未完成的 5.6 不得提前打勾。
+- **Git / CI**：Healthcare [PR #660](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/660) 已合并 OpenSpec P3 设计；Self-Runner [PR #506](https://github.com/JohnZhang-DataForge/Self-Runner/pull/506) 已合并执行与独立读回脚本；本验收证据文档见 Healthcare [PR #666](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/666)，其初次 CI `require-trusted-change`、`validate-openspec`、`check-links`、`require-change` 四项 PASS，最终合并结果以该 PR metadata 为准。历史事件归档恢复（4.1）仍未完成，不属于本轮 P3 合并验收。
