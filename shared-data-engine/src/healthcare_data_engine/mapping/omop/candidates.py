@@ -135,6 +135,17 @@ def build_omop_candidates(
     """
     from pyspark.sql import functions as F
 
+    # Canonical v1 Person/Encounter tables deliberately do not duplicate
+    # hospital_id: they carry BatchContext.namespaced_source_system instead.
+    # Verify the exact hospital from the *independently approved* batch context
+    # and then join to the real Warehouse F1 map on all namespace dimensions.
+    if (not isinstance(hospital_id, str) or not hospital_id
+            or hospital_id != hospital_id.strip()):
+        raise ValueError("G5_HOSPITAL_ID_REQUIRED")
+    parts = source_system.split(":") if isinstance(source_system, str) else []
+    if (len(parts) != 3 or not all(parts) or parts[1] != hospital_id):
+        raise ValueError("G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH")
+
     profile = load_omop_mapping_profile(
         mapping_profile_bytes, mapping_profile_sha256, source_system)
     if (not source_batch_id or not raw_publish_run_id or
@@ -190,17 +201,6 @@ def build_omop_candidates(
     ):
         _verify_codes(df, column, mapping)
     _verify_concepts(concepts, profile)
-
-    # Canonical v1 Person/Encounter tables deliberately do not duplicate
-    # hospital_id: they carry BatchContext.namespaced_source_system instead.
-    # Verify the exact hospital from the *independently approved* batch context
-    # and then join to the real Warehouse F1 map on all namespace dimensions.
-    if (not isinstance(hospital_id, str) or not hospital_id
-            or hospital_id != hospital_id.strip()):
-        raise ValueError("G5_HOSPITAL_ID_REQUIRED")
-    parts = source_system.split(":") if isinstance(source_system, str) else []
-    if (len(parts) != 3 or not all(parts) or parts[1] != hospital_id):
-        raise ValueError("G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH")
 
     required_map = {"entity_type", "hospital_id", "source_system",
                     "source_business_key", "omop_id"}
