@@ -1019,6 +1019,95 @@ def verify_fhir_g5_candidate_source_readonly(
     return "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_APPROVAL_DELTA_PASS_20261104"
 
 
+
+def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) -> str:
+    """P1 real G4 Silver code inventory; NEVER maps IDs, Concepts or writes.
+
+    Only run AFTER the exact G5 source physical gate has independently verified
+    the G4 Manifest, Delta Patient/Encounter, one Approval and P100/E5918/Q0.
+    Raw patient/encounter identifiers are NOT returned. Source codes are
+    synthetic G4 terminology data, with bounded output and no clinical IDs.
+    """
+    accepted = verify_fhir_g5_candidate_source_readonly(
+        spark, **read_only_args)
+    if accepted != (
+        "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
+        "APPROVAL_DELTA_PASS_20261104"
+    ):
+        raise RuntimeError("HOLD_P1_SOURCE_PHYSICAL_GATE_NOT_VERIFIED")
+    from pyspark.sql import functions as F
+    paths = _g4_paths(read_only_args["request"])
+    patient = spark.read.format("delta").load(paths["patient"])
+    encounter = spark.read.format("delta").load(paths["encounter"])
+    approvals = spark.read.format("delta").load(paths["approval"]).collect()
+    if len(approvals) != 1:
+        raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
+    approval = approvals[0].asDict(recursive=True)
+    if (approval.get("status") != "SILVER_APPROVED"
+            or approval.get("manifest_sha256") != _G5_APPROVED_MANIFEST_SHA
+            or approval.get("processing_version") != _G4_PROCESSING
+            or approval.get("patient_count") != _G5_APPROVED_PATIENTS
+            or approval.get("encounter_count") != _G5_APPROVED_ENCOUNTERS
+            or approval.get("quarantine_count") != 0):
+        raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
+    if patient.count() != _G5_APPROVED_PATIENTS or (
+            encounter.count() != _G5_APPROVED_ENCOUNTERS):
+        raise RuntimeError("HOLD_P1_SOURCE_ROW_COUNT_CHANGED")
+
+    if "source_record_id" not in patient.columns or patient.filter(
+        F.col("source_record_id").isNull()
+        | (F.length(F.col("source_record_id")) > 50)
+    ).limit(1).count():
+        # Person.person_source_value in official CDM 5.4 is VARCHAR(50).
+        raise RuntimeError("HOLD_P1_PERSON_SOURCE_VALUE_TOO_LONG_OR_NULL")
+    roles = (
+        ("gender_code", patient, _G5_APPROVED_PATIENTS),
+        ("race_code", patient, _G5_APPROVED_PATIENTS),
+        ("ethnicity_code", patient, _G5_APPROVED_PATIENTS),
+        ("encounter_class", encounter, _G5_APPROVED_ENCOUNTERS),
+        ("source_code", encounter, _G5_APPROVED_ENCOUNTERS),
+    )
+    counts = {}
+    for field, frame, expected in roles:
+        if field not in frame.columns:
+            raise RuntimeError("HOLD_P1_CANONICAL_CODE_COLUMN_MISSING")
+        pairs = frame.groupBy(field).count().collect()
+        if not pairs or len(pairs) > 128:
+            raise RuntimeError("HOLD_P1_SOURCE_CODE_CARDINALITY_UNBOUNDED")
+        values, total, folded = {}, 0, set()
+        for row in pairs:
+            code, frequency = row[field], row["count"]
+            if (not isinstance(code, str) or not code or code != code.strip()
+                    or len(code) > 50 or any(ord(ch) < 32 for ch in code)):
+                raise RuntimeError("HOLD_P1_SOURCE_CODE_INVALID_OR_TOO_LONG")
+            if code.casefold() in folded:
+                raise RuntimeError("HOLD_P1_SOURCE_CODE_COLLATION_CONFLICT")
+            folded.add(code.casefold())
+            if type(frequency) is not int or frequency <= 0:
+                raise RuntimeError("HOLD_P1_SOURCE_CODE_FREQUENCY_INVALID")
+            values[code] = frequency
+            total += frequency
+        if total != expected:
+            raise RuntimeError("HOLD_P1_SOURCE_CODE_FREQUENCY_COUNT_DRIFT")
+        counts[field] = dict(sorted(values.items()))
+
+    source_system = "synthea-fhir:" + _G3_HOSPITAL + ":" + _G3_FEED
+    payload = json.dumps({
+        "status": "P1_G4_CODE_INVENTORY_PHYSICAL_READONLY_ONLY",
+        "request_id": read_only_args["request"],
+        "delivered_manifest_sha256": _G5_APPROVED_MANIFEST_SHA,
+        "source_batch_id": approval["source_batch_id"],
+        "processing_version": _G4_PROCESSING,
+        "source_system": source_system,
+        "hospital_id": _G3_HOSPITAL,
+        "patient_count": _G5_APPROVED_PATIENTS,
+        "encounter_count": _G5_APPROVED_ENCOUNTERS,
+        "code_counts": counts,
+    }, sort_keys=True, separators=(",", ":"))
+    if len(payload.encode("utf-8")) > 16000:
+        raise RuntimeError("HOLD_P1_SOURCE_INVENTORY_RECEIPT_TOO_LARGE")
+    return "FHIR_G5_CONCEPT_SOURCE_INVENTORY_READONLY_PASS|" + payload
+
 _G3_NEGATIVE_REQUEST = "atlanta-fhir-gh-41539769718"
 _G3_NEGATIVE_MANIFEST_SHA = "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
 
@@ -1444,6 +1533,18 @@ if __name__ == "__main__":
             patient_contract_json=patient_contract_json,
             encounter_contract_json=encounter_contract_json)
         notebookutils.notebook.exit(g5_exit)
+    elif run_mode == "G5_CONCEPT_SOURCE_INVENTORY_READONLY":
+        inventory_exit = verify_fhir_g5_concept_source_inventory_readonly(
+            spark, request=request_id, manifest_sha=manifest_sha256,
+            allow_write=write_authorized,
+            retention_ok=retention_preflight_verified,
+            strategy=source_preservation_strategy,
+            manifest_override=manifest_json,
+            source_override=source_root,
+            target_override=silver_root,
+            patient_contract_json=patient_contract_json,
+            encounter_contract_json=encounter_contract_json)
+        notebookutils.notebook.exit(inventory_exit)
     elif run_mode in ("BRONZE_DRIFT_PROBE", "BRONZE_ACK_RECOVERY_PROBE"):
         result = verify_fhir_g3_negative_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,
