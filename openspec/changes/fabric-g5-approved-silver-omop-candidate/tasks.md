@@ -48,3 +48,5 @@
 - [PR #647](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/647) merged SHA `13da96a9bc82463c8be23e3d5f8be385a9655ad4`; [Wheel Validation Run #41827968535](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41827968535) SUCCESS both Python 3.11/PySpark 3.5.7 and Python 3.13/PySpark 4.1.1 jobs. Built, reproducible, independently installed candidate Wheel 0.1.3 PASS offline.
 - The real F1 Identity Map columns and hospital-scoped join are now implemented, synthetic cross-hospital and duplicate/foreign ID tests PASS. No existing G4 Canonical schema mutation, no Fabric Environment update or real Gold insert.
 - Wheel publish/import, approved Concept Profile, G4 100/5918 real Silver readback, physical Candidate and Warehouse Gold remain explicitly NOT_DONE.
+
+- CI linkage: this documentation-only PR records the previous real SUCCESS #41827968535 and does not run a new Fabric Environment publish; OpenSpec-Change `fabric-omop-foundation` task `2.1` remains a source-contract milestone, not a clinical Gold closeout.
