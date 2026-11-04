@@ -23,3 +23,14 @@ Actual Spark fixture: [Self-Runner #41858844788](https://github.com/JohnZhang-Da
 ## 4. Future historical Patient/Encounter recovery
 - [ ] 4.1 If original committed raw events / verified PG14 dump found, replay/restore in provenance-controlled fashion with independent readback.
 - [ ] 4.2 Rebuild Patient/Encounter graph only from actual new Spark execution or byte-exact old OpenLineage, under a separate stage gate; never re-run committed Writer.
+
+
+## 5. New Patient / Encounter / Reconcile Spark-only regeneration (P3)
+- [ ] 5.1 Read-only live preflight: current SHAs, DAG GitSync, no-retention, active Airflow/Spark/Actions, READY Manifest identity and Claim/Ledger/Fence; record evidence and select only genuinely unclaimed input.
+- [ ] 5.2 Independently record protected PG17 OMOP state before running; verify source digest, no Writer COMMIT flag, exact manual DAG route and original pause state.
+- [ ] 5.3 Run exactly one uniquely identified real Patient + Encounter + Reconcile Spark-only flow under shared concurrency gate, without OMOP Writer or old Batch replay.
+- [ ] 5.4 Independently GET Marquez action-level Job/Run/Input+Output DatasetVersions, Reconcile's two exact inputs, column facets where real, and public read-only graph. Preserve START-only / missing facets.
+- [ ] 5.5 Independently read back PG17 and prove protected state unchanged; attach exact source SHA, workflow Run, actual Spark IDs, Airflow tasks, Marquez details and failures to evidence.
+- [ ] 5.6 Run required CI, review and merge scope-limited PRs only after required gates pass; mark unexecuted/blocked tasks honestly.
+
+**Status 2026-11-04:** this plan is not proof of business Spark execution or graph restoration. The verified 3-row portal P2 fixture remains separate from real Patient/Encounter.
