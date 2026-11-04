@@ -129,3 +129,8 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 - [Healthcare PR #647](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/647) merged SHA `13da96a9bc82463c8be23e3d5f8be385a9655ad4`. [Shared Wheel Offline Validation #41827968535](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41827968535) SUCCESS: 3.11/PySpark 3.5.7 complete synthetic tests and reproducible version **0.1.3** Wheel import; 3.13/PySpark 4.1.1 Spark/OMOP tests plus independent installed Wheel import PASS.
 - Explicit batch-authoritative `hospital_id` reconciles the actual canonical v1 `source_system` namespace `raw:hospital:feed`, without changing approved Silver v1 columns. G5 accepts F1 physical Map columns `entity_type/hospital_id/source_system/source_business_key/omop_id`, rejects same-key cross-hospital use, Warehouse-global duplicate Person IDs, case-insensitive collisions, unknown entity and missing source mapping.
 - Source-only acceptance. **Fabric Environment 0.1.3 publish/runtime import NOT DONE**, Candidate Delta real write NOT DONE, Gold transaction COMMIT and independent Replay NOT DONE; tasks 2.1c/2.1d.2 remain OPEN.
+
+## G5 Wheel 0.1.3 release prerequisite — 2026-11-04
+
+- [Self-Runner #41833502954](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954) Staging 0.1.3 and [#41834029745](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745) Published 0.1.3 real PASS. No clinical data writes.
+- Temporary import-only Spark runtime verification [#41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) is a separate open acceptance gate; actual F2 ID allocation, Gold transaction COMMIT and Replay remain open.
