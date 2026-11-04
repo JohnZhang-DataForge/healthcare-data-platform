@@ -92,6 +92,8 @@ def load_handoff_contract(raw: bytes, expected_sha256: str) -> Mapping[str, Any]
         raise HandoffHold("HANDOFF_CONTRACT_SHA_MISMATCH")
     try:
         contract = json.loads(raw.decode("utf-8"), object_pairs_hook=_no_duplicate_json)
+    except HandoffHold:
+        raise  # preserve the specific duplicate-key safety diagnostic
     except (UnicodeError, ValueError) as exc:
         raise HandoffHold("HANDOFF_CONTRACT_JSON_INVALID") from exc
     if (not isinstance(contract, dict)
