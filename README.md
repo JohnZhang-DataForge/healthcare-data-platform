@@ -2,6 +2,8 @@
 
 **A working vertical slice of a unified data platform — from source-specific ingestion to trusted, traceable data.**
 
+> **Copyright notice:** All rights reserved. This repository is not open source; reuse or redistribution requires prior written authorization. See [Copyright and usage restrictions](#copyright-and-usage-restrictions).
+
 Different systems rarely agree on schemas, identifiers, or delivery formats. The engineering challenge is not just moving their data into one place; it is preserving where it came from, applying consistent rules, detecting bad or incomplete loads, and making the results safe to reuse.
 
 This independent project tackles those problems with synthetic healthcare data. It has a **verified local CSV-to-OMOP pipeline**, working Airflow/Spark lineage, and separately developing FHIR R4, HL7 v2, and Microsoft Fabric integrations. It is an engineering lab, not a hospital integration or a production EHR system.
@@ -118,6 +120,16 @@ These links go directly to implementation and build locations.
 | Airflow/Spark lineage emitters | [OpenLineage integration](platform-portal/openlineage/) |
 | Azure and Microsoft Fabric provisioning | [Terraform modules](azure-fabric/infra-terraform/) |
 | Automated builds and checks | [GitHub Actions](.github/workflows/) |
+
+## Copyright and usage restrictions
+
+**Copyright © 2026 JohnZhang-DataForge. All rights reserved.**
+
+This is an independent portfolio and demonstration project, **not an open-source project**. Unless expressly stated otherwise for third-party material, no license or permission is granted to use, copy, modify, distribute, sublicense, or create derivative works from this repository's code, documentation, configurations, or other original materials without the copyright holder's **prior written authorization**.
+
+**Please do not fork, mirror, or copy this repository for reuse or independent development without prior written permission.** GitHub's Terms of Service may permit viewing and platform-native forking of public repositories; those platform permissions do **not** grant additional rights to use, modify, redistribute, or commercially exploit the project.
+
+For permission requests, contact the repository owner.
 
 ---
 
