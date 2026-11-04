@@ -65,3 +65,9 @@ Distinguish SOURCE/STATIC_PASS, REST_VISIBLE, SQL_SELECT_PASS, SCHEMA_DEPLOYED, 
 - **No automatic Fabric `IDENTITY` for official Person/Visit IDs:** Fabric Warehouse only supports BIGINT IDENTITY, while CDM 5.4 Person/Visit IDs are INT. Explicitly validate 1..2,147,483,647 overflow bounds and dense candidate-to-map FK resolution; source IDs and hash/modulo are forbidden as surrogate OMOP IDs.
 - Snapshot isolation is always applied by Fabric Warehouse even if T-SQL requests higher isolation. F2 writer must be single-writer within target Warehouse, use an explicit atomic transaction for allocator+ID map+Person+Visit+committed ledger, verify collisions and treat write conflicts as HOLD or bounded replay-safe retry. Do not claim SQL constraints are enforced.
 - The current change only creates versioned **empty-schema source**; independent migration readback and real Person/Visit Writer are separate acceptance gates.
+
+## 9. Observed F1 state after physical acceptance (2026-11-04)
+
+- The five ETL/Audit table DDL definitions were genuinely applied and independently read back PASS in [Self-Runner #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817). They were empty, not a functioning ID allocator or ledger yet.
+- Vocabulary DQ (real [#41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379)) found zero missing references in eleven distinct joins over the complete nine-table export; date and reverse relationship checks also PASS. Twenty-eight `vocabulary_version` values are blank, requiring separate release and licensed terminology review. Never fill with fabricated version values.
+- The next gate is F2: prove allocation under Warehouse snapshot isolation, Person/Visit FK resolution, and exact batch manifest Replay. No automated F1 schema run authorized business writes.

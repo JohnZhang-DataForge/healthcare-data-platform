@@ -9,16 +9,18 @@
 - [x] 0.5 绑定官方 OHDSI CommonDataModel v5.4 固定 Commit / Blob，39 张表、432 字段清单、Fabric 类型适配与 Source-fidelity CI PASS（PR #634/#635）。
 - [ ] 0.7 完整 SQL Project / DacFx Schema 迁移、版本升级策略及 Drift Plan 仍须后续独立交付；源文件与首次 CREATE TABLE 不代表已具备 DacFx 升级链路。
 - [x] 0.6 已有 Warehouse 首次创建 `cdm` Schema 和 **39 张空 OMOP CDM 5.4 基础表、432 字段**，新建 SQL 连接独立 `INFORMATION_SCHEMA.COLUMNS` 精确读回 PASS；Self-Runner [Run #41648858578](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41648858578)，controller main SHA `d71cab50f25a01b4b245b915b22400f9d99250c6`，Healthcare pinned schema SHA `860af51ca3c1f7389c2276b68494eab274888f94`。
-- [ ] 0.8 `etl`/`audit` 管理 Schema、Identity Map、版本元数据、Vocabulary 和部署升级管线尚未创建/验收；独立 F1 实施。
+- [ ] 0.8 已创建 `etl`/`audit` 两个 Schema 和 5 张空管理表；**实际 Identity Map 赋值、版本元数据落库、版本升级管线仍未完成**。F1.1b 只证明空表部署，不证明真实临床身份。
 
 ## F1 — Independent identity and vocabulary
 
 - [x] 1.1 设计并落地 Fabric-only Identity Map 的 Git SQL 空表结构与源代码测试（不代表云端部署或实际 ID 分配）。
 - [x] 1.1a 设计 Fabric-only Identity Map、仓库级 INT 分配器、医院/来源隔离、Ledger 与快照隔离并发 Gate；提出 SQL Schema/CI（代码与设计就绪，不等于已部署）。
-- [ ] 1.1b 实体 `etl`/`audit` 管理 Schema 的首次实际部署、独立 readback 和空表检验。
+- [x] 1.1b **真实部署成功**：`etl`/`audit` 两个 Schema 下 5 张空管理表真实创建，第二条 SQL 连接独立 `INFORMATION_SCHEMA.COLUMNS` 读回匹配且五表全部为空；[Self-Runner Run #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817) SUCCESS。
 - [ ] 1.1c 真正分配稳定 Person/Visit INT IDs、两层唯一性检验、跨医院/跨来源负向和 Replay 验收。
 - [x] 1.2 **九张 Vocabulary 文件真实导入 PASS**：Blob 9/9 SHA256，精确字段匹配、源 TSV 解析逐行计数、全部 `COPY INTO` 或严格幂等 SKIP、独立 SQL `COUNT_BIG` 9/9 与源一致，总计 **28,703,753 行**。另外 `concept_id` 唯一性、Concept 日期区间、`vocabulary_id` 唯一性 PASS。Self-Runner [Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994) Completed SUCCESS。
-- [ ] 1.3 后续完整 Vocabulary 语义质量门禁：Concept→Domain/Class/Vocabulary 引用有效性、关系和祖先引用覆盖、`VOCABULARY.csv` release/version 元数据持久化及 CPT4 许可/后处理适用性。**1.2 物理入库通过不代表这些深层语义检查已经通过。**
+- [ ] 1.3 Vocabulary 深度 DQ 完整收尾（包含正式版本/许可审计）。
+- [x] 1.3a **真实跨表引用 DQ PASS**：9/9 表源行数一致，11/11 Concept/Domain/Class/Vocabulary/Relationship/Ancestor/Synonym/Drug 强度引用检查未发现缺失；Relationship reverse 与 Concept 日期有效期亦 PASS。[Self-Runner Run #41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379) SUCCESS。
+- [ ] 1.3b **版本与许可审计仍 OPEN**：`cdm.vocabulary` 47 行中 28 行 `vocabulary_version` 为空，需核查实际 Athena release、CPT4 许可/后处理适用性；`audit.vocabulary_source_file` 目前空表，尚未写入审计 Manifest。不要把 11 项引用 PASS 扩大解释为整个 Vocabulary 版本治理结项。
 
 ## F2 — Transactional Gold writer
 
@@ -93,3 +95,10 @@ Actual immutable evidence: [Self-Runner Run #41770643994](https://github.com/Joh
 - Canonical patient source PK `(source_system, source_record_id)`, encounter PK `(source_system, source_encounter_id)`. Add hospital scope to both mappings to prevent tenant collision; use a **global per-entity INT allocator** for Person and Visit within Warehouse, never per-hospital counters.
 - Fabric `BIGINT IDENTITY` is incompatible with OHDSI CDM 5.4 `person_id int` and `visit_occurrence_id int`. Stable allocation uses an explicit table and controlled transaction with preflight overflow checks.
 - Fabric Warehouse snapshot isolation cannot be overridden with SERIALIZABLE; concurrently allocating from `MAX(id)` without a single-writer gate is unsafe. F2 must enforce single-writer scheduling, detect write conflict and use bounded retry; PK/FK/UNIQUE may be NOT ENFORCED.
+
+## F1 live schema and semantic reference acceptance — 2026-11-04
+
+- [Healthcare PR #643](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/643) merged SHA `195b1f9a387e3393c47cbc298b1110fc34ba52d5`: approved F1 SQL source, 5-table manifest, schema contract, INT identity source-key contract and offline CI PASS.
+- [Self-Runner PR #494](https://github.com/JohnZhang-DataForge/Self-Runner/pull/494) merged SHA `c578582df3406b2ba3a45522820656f9db6fbd79`. [Run #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817) **SUCCESS**: precheck `EMPTY TABLES=5`, actual `CREATE TABLE` five times (`etl.identity_map`, `etl.id_allocator`, `etl.batch_ledger`, `audit.omop_commit_check`, `audit.vocabulary_source_file`), independently read-back schema, five tables all zero rows. NO Person/Visit ID allocation or clinical inserts.
+- [Self-Runner PR #492](https://github.com/JohnZhang-DataForge/Self-Runner/pull/492) initial DQ Run #41818140654 failed in client before first count (ODBC cursor timeout misuse); [PR #493](https://github.com/JohnZhang-DataForge/Self-Runner/pull/493) removed unsupported cursor assignment. [PR #495](https://github.com/JohnZhang-DataForge/Self-Runner/pull/495) added bounded progress and triggered [real DQ Run #41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379), **SUCCESS**.
+- DQ: nine table COUNT_BIG values exactly match 28,703,753 source rows, all 11 fixed referential checks `UNRESOLVED=0`. `RELATIONSHIP_REVERSE_MISSING=0`, `CONCEPT_INVALID_DATE_RANGE=0`. `VOCABULARY_VERSION_BLANK=28/47` flagged **REVIEW**, not import failure. Semantic linkage PASS does **not** establish license/release validity; no clinical business rows have been committed.
