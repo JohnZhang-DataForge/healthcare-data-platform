@@ -13,6 +13,7 @@
 
 ## F1 — Independent identity and vocabulary
 
+- [x] 1.1 设计并落地 Fabric-only Identity Map 的 Git SQL 空表结构与源代码测试（不代表云端部署或实际 ID 分配）。
 - [x] 1.1a 设计 Fabric-only Identity Map、仓库级 INT 分配器、医院/来源隔离、Ledger 与快照隔离并发 Gate；提出 SQL Schema/CI（代码与设计就绪，不等于已部署）。
 - [ ] 1.1b 实体 `etl`/`audit` 管理 Schema 的首次实际部署、独立 readback 和空表检验。
 - [ ] 1.1c 真正分配稳定 Person/Visit INT IDs、两层唯一性检验、跨医院/跨来源负向和 Replay 验收。
