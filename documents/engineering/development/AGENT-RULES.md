@@ -6,7 +6,7 @@
 
 ## 1. 开工前必须确认
 
-1. 读取 `documents/README.md`、本规则、`documents/engineering/migration/MIGRATION-STATUS.md`，确定模块文档是否已迁移。
+1. 读取根 `AGENTS.md`、`documents/README.md` 和本规则；按任务沿 [Active OpenSpec Changes](../../../openspec/changes/) 和组件 README/CODE 进入相关 `tasks.md`，如需追溯旧文档迁移再查 `documents/engineering/migration/MIGRATION-STATUS.md`。`PROJECT-STATUS.md` 仅为兼容导航，不是第二份 CURRENT/NEXT。
 2. 查询当前 `main` **准确完整 40 位 SHA**，确认本轮工作范围、已有 PR/未合并代码、相关模块及冻结 Contract。
 3. 只读查看实际代码/配置、已合并 PR、测试和最终验收；旧 Handoff 的 CURRENT/NEXT 只能代表其记录时点。
 4. 明确改动类别：**仅文档 / 代码 / Workflow / Terraform plan / 运行环境操作**；逐项列明副作用和是否需要授权。
