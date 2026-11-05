@@ -60,4 +60,6 @@
 
 当 `documents/` 与旧资料冲突：先在迁移追踪里登记源/差异/证据，再修订候选，未经审核不擅自改运行环境。涉及权限或安全，选择更保守的行为并请求必要授权。
 
+**Local DP forward-only（2026-11-05）**：现有 TASK001–TASK004/历史 TASK005、`task004_*` DAG/SQL/Writer、旧测试、已验收 Run/Batch 和有效合同均按原地事实保留；**不**为 OpenSpec 重建旧业务实现、重写历史 PASS/FAIL 或清理旧任务代码。今后新增 Local DP 业务域（如 Condition）、行为/接口/Runtime 配置的实质性变更，必须事前使用一个对应 Active OpenSpec Change，并由其 `tasks.md` 独占进度；旧 TASK 文件只能作历史技术参考，禁止新的人工 CURRENT/NEXT。已有 [Local DP relocation Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) 仅管理迁移收尾，不是新 Condition 的工作项；具体 Owner 路由见 [Local DP README](../../systems/data-platform/README.md)。新增测试仍按 `.github/quality/tests/<system>/<component>/` 放置，原位 Legacy 文件冻结保护，任何业务运行与数据修改均须独立授权。
+
 > **OpenSpec 强制关联（2026-10-18 已验证）**：实质性代码/Workflow/架构/治理变更应在实施前创建或使用 Active Change，PR Body 声明 `OpenSpec-Change` 与 `OpenSpec-Task`，同 PR 更新该 Change 的 `tasks.md`。[Trusted Change Gate](../../../.github/workflows/openspec-trusted-change-gate.yml) 和 Main Ruleset #25365902 已通过真实正反 PR；文档和 Engineering 不再记录平行实施 Tasks。业务目录已物理迁移到 `local-data-platform/`，但运行路径和 E2E 尚未验收。真正共享环境操作仍需单独授权，未经证实行为不得进入 Current Specs。
