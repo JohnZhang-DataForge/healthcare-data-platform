@@ -22,7 +22,7 @@ NATIVE_OWNERS = {
     "lh_omop_analytics.Lakehouse": "documents/systems/azure-fabric/CODE.md",
 }
 SOURCE_ROOTS = ("azure-fabric", "local-data-platform", "platform-portal", "shared-data-engine")
-ALLOWED_TOP_LEVEL = frozenset((".github", "azure-fabric", "documents", "local-data-platform", "openspec", "platform-portal", "shared-data-engine", "AGENTS.md", "README.md"))
+ALLOWED_TOP_LEVEL = frozenset((".github", ".gitignore", "azure-fabric", "documents", "local-data-platform", "openspec", "platform-portal", "shared-data-engine", "AGENTS.md", "README.md"))
 GUARD_FILES = frozenset((
     ".github/quality/scripts/check_repository_layout.py",
     ".github/quality/scripts/check_component_code_map.py",
