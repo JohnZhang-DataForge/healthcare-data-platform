@@ -1,12 +1,12 @@
 ---
 status: adopted-final-development-design
 decision_date: 2026-10-31
-implementation_status: not-started
+implementation_status: evolved-see-current-source-and-openspec
 ---
 
 # ADR 2026-10-31 — Fabric-native Notebook, Pipeline, Environment and Shared Engine
 
-**Final and authoritative source/execution design** for Healthcare Fabric. This supersedes all earlier standalone `azure-fabric/ingestion/`, `runtime/`, `libraries/healthcare-fabric-io/`, and second `healthcare_fabric` wheel proposals. The [2026-10-30 Medallion ADR](FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) remains authoritative for Bronze/Silver/Gold semantics, clinical contracts and batch publication. No actual Fabric resource or application source has been created by this design decision.
+**Final and authoritative source/execution design** for Healthcare Fabric. This supersedes all earlier standalone `azure-fabric/ingestion/`, `runtime/`, `libraries/healthcare-fabric-io/`, and second `healthcare_fabric` wheel proposals. The [2026-10-30 Medallion ADR](FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) remains authoritative for Bronze/Silver/Gold semantics, clinical contracts and batch publication. This ADR was a design-only decision on 2026-10-31. Later actual root-level Fabric Git Items and Shared Wheel sources supersede the proposed tree below; the current Git tree and approved P1 govern ownership. The ADR alone never establishes live business E2E acceptance.
 
 ## Required owners and execution responsibilities
 
@@ -22,36 +22,25 @@ implementation_status: not-started
 
 **Important**: Pipeline handles *workflow orchestration*; Notebook performs the *single Spark application's ETL*. Shared handles *platform-neutral domain algorithms*. A generic Fabric I/O wrapper class or second wheel is **not** an initial prerequisite. Manifest SHA256, quarantine, replay/approval, PK/FK and two-table independent readback are still required correctness behaviors and do not disappear merely because the platform uses native reads/writes.
 
-## Chosen Git source and Fabric Workspace mapping
+## Adopted Git source and actual Fabric Workspace mapping
 
-~~~text
-healthcare-data-platform/
-├── shared-data-engine/
-│   ├── AGENTS.md                              # existing
-│   ├── pyproject.toml                         # planned single shared wheel
-│   ├── src/healthcare_data_engine/            # adapters, canonical, omop, DQ, identity
-│   └── tests/                                 # synthetic and cross-runtime tests
-├── local-data-platform/                       # existing; no mass migration
-└── azure-fabric/
-    ├── workspaces/
-    │   ├── healthcare-omop/                   # intended Fabric Git Folder root
-    │   │   ├── notebooks/                    # our chosen Fabric UI folder
-    │   │   │   └── ingestion/
-    │   │   │       └── nb_fhir_ingest.Notebook/
-    │   │   │           ├── .platform
-    │   │   │           └── notebook-content.py
-    │   │   ├── pipelines/
-    │   │   │   └── pl_fhir_ingest.DataPipeline/
-    │   │   │       ├── .platform
-    │   │   │       └── pipeline-content.json
-    │   │   └── environments/
-    │   │       └── env_healthcare.Environment/  # files from actual Fabric export
-    ├── infra-terraform/                       # existing modules/state, untouched
-    ├── deployment/                            # existing scoped publishing tools
-    └── openlineage/                           # existing integration
-~~~
+```text
+shared-data-engine/src/healthcare_data_engine/      # single Shared Wheel source
+shared-data-engine/tests/                          # frozen old tests only
+azure-fabric/
+  workspaces/healthcare-omop/
+    nb_fhir_ingest.Notebook/                       # actual root-level Item
+    pl_fhir_ingest.DataPipeline/                   # actual root-level Item
+    env_healthcare.Environment/                    # actual root-level Item
+    lh_omop_analytics.Lakehouse/                   # actual root-level Item
+  warehouse/                                      # existing OMOP SQL/Writer source
+  infra-terraform/                               # existing infra source
+.github/quality/tests/                           # all new tests
+.github/quality/scripts/                         # new quality checkers
+documents/systems/azure-fabric/                   # human technical docs
+```
 
-**All business Native Items above are FUTURE items.** Current `healthcare-omop` source tree only contains placeholders. Fabric Git Integration must use `azure-fabric/workspaces/healthcare-omop/` as the selected repository folder and verify actual workspace branch, UI folders and current item inventory *before* sync. `notebooks/`, `pipelines/`, `environments/` are our **chosen taxonomy**, not a Microsoft-mandated type hierarchy. They correspond to real Workspace UI folders, while `*.Notebook/`, `*.DataPipeline/`, `*.Environment/` are Fabric native Item definitions. Use real, exported `.platform` IDs, never copy Smoke logicalIds. Ordinary `.py` files do **not** become Notebook Items by being in Git. Lakehouse Files/Tables data is separate from Git.
+The former `notebooks/`, `pipelines/`, and `environments/` subdirectories were prospective UI-folder examples, **not actual Git Native locations**. The real `dw-omop-5.4` is Workspace-only and its SQL/Writer is maintained under `azure-fabric/warehouse/`; do not fabricate a `*.Warehouse/` mirror. Native Git identity is supplied by Fabric, not generated by the layout policy. Existing source README and tests are exact-path frozen; changes under P2–P5 require separate PRs. Canonical current rules: [P1 OpenSpec](../../../openspec/changes/standardize-fabric-source-test-document-layout/tasks.md) and [Documentation Governance](../../engineering/development/DOCUMENTATION-GOVERNANCE.md).
 
 ## Notebook and Pipeline implementation contract
 

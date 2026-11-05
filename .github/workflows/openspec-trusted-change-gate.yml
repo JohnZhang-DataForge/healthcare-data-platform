@@ -31,6 +31,18 @@ jobs:
           fetch-depth: 0
       - name: Run trusted policy unit tests
         run: python3 -m unittest discover -s policy/.github/quality/tests -p 'test_openspec_change_gate.py' -v
+      - name: Run trusted Repository Layout Gate positive and negative tests
+        run: python3 -m unittest discover -s policy/.github/quality/tests -p 'test_repository_layout.py' -v
+      - name: Repository Layout Gate — enforce default-branch policy on untrusted Git paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 policy/.github/quality/scripts/check_repository_layout.py \
+            --repo-root "$GITHUB_WORKSPACE/candidate" \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA"
       - name: Check PR candidate using only trusted base policy
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
