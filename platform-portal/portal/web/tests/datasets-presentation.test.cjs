@@ -113,6 +113,7 @@ test('root arrival overrides saved Processing exactly once, then keeps manual ch
   const x=setup({route:'/datasets',chosen:'s3://health-processing',ns:'s3://health-processing',
     fromHome:true,options:['default','s3://health-processing','s3://health-landing']});
   assert.deepEqual(x.selected,['s3://health-landing']);
+  x.update(); // React/MUI completes the new selected label asynchronously.
   assert.equal(x.saved.get('selectedNamespace'),'s3://health-landing');
   assert.equal(x.session.has('publicMarquezRootLandingOnce'),false);
   x.saved.set('selectedNamespace','s3://health-processing');
