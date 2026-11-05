@@ -36,7 +36,7 @@ OpenSpec-Task: 2.3
 
 ## 新 Session 的恢复流程
 
-读取 AGENTS.md → documents/README.md → PROJECT-STATUS.md → relevant component CODE.md 和本页。再次核对 Healthcare 和 Self-Runner 最新 Main SHA、开放 PR、Branch/HEAD、目标 Change/Tasks、相关 Run/Artifact 及历史 PR/Issue 评论。旧聊天摘要只供线索，不能代替准确 Git/Run 证据。没有正式 Change（包括 G4）则继续使用 PR/Issue 接力，不创建虚假 Change。
+读取 AGENTS.md → [Active OpenSpec Changes](../../../openspec/changes/) 中的目标 Change/Tasks → relevant system README/CODE 和本页；[PROJECT-STATUS](../status/PROJECT-STATUS.md) 仅兼容导航，勿再通读它的历史快照。再次核对 Healthcare 和 Self-Runner 最新 Main SHA、开放 PR、Branch/HEAD、目标 Change/Tasks、相关 Run/Artifact 及历史 PR/Issue 评论。旧聊天摘要只供线索，不能代替准确 Git/Run 证据。没有正式 Change（包括 G4）则继续使用 PR/Issue 接力，不创建虚假 Change。
 
 PR/Issue 的最小可恢复记录：Done / Not Done / Next，Repo、Branch、Base/HEAD 完整 SHA，受影响文件、成功与失败 Run/Artifact 链接、每个问题的当前尝试次数、风险、环境副作用、HOLD 条件、下一安全动作。跨 Session 必须继承已有失败次数。一个变更不再另建一份按 Session 编号的 Handoff Markdown。
 
