@@ -65,8 +65,8 @@ jobs:
               raise SystemExit(f"FABRIC_NOTEBOOK_TEST_FILE_COUNT_INVALID={len(test_files)}; expected=8")
           suite = unittest.TestLoader().discover(start_dir=start, pattern="test_*.py")
           found = suite.countTestCases()
-          print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=77; files={len(test_files)}", flush=True)
-          if found < 77:
+          print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=87; files={len(test_files)}", flush=True)
+          if found < 87:
               raise SystemExit("FABRIC_NOTEBOOK_TEST_DISCOVERY_FAIL")
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():

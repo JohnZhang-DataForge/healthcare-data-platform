@@ -59,4 +59,4 @@ The initial generic contract accepts root-level `nb_*.Notebook` items only; movi
 
 ## P3 统一测试归属（2026-11-04）
 
-上述 Notebook、G3、G4、G5 的离线测试文件现仅在 `.github/quality/tests/azure-fabric/notebook/` 维护；`azure-fabric/notebook-development/` 中的 `fhir_ingest_notebook.py` 和 `native_item_readiness.py` **仍是实际离线辅助源码**，不因测试迁移而移动。CI 执行文件是 [Fabric Notebook Offline Contract](../../../../.github/workflows/fabric-fhir-notebook-offline.yml)，必须断言 8 个测试文件与至少 77 个可发现用例，避免空测试集 PASS。
+上述 Notebook、G3、G4、G5 的离线测试文件现仅在 `.github/quality/tests/azure-fabric/notebook/` 维护；`azure-fabric/notebook-development/` 中的 `fhir_ingest_notebook.py` 和 `native_item_readiness.py` **仍是实际离线辅助源码**，不因测试迁移而移动。CI 执行文件是 [Fabric Notebook Offline Contract](../../../../.github/workflows/fabric-fhir-notebook-offline.yml)，必须断言 8 个测试文件与至少 87 个可发现用例，避免空测试集 PASS。
