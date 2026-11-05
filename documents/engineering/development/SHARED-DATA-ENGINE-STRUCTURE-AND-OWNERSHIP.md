@@ -40,7 +40,7 @@ azure-fabric/warehouse/                            # 原有 Warehouse SQL/Writer
 documents/systems/azure-fabric/                     # 权威说明文档与 CODE Map
 ```
 
-这些真实 Git 位置不意味着全部业务 Runtime 验收完成；不存在所建议的 `notebooks/`、`pipelines/`、`environments/` 物理中间目录。实际 `dw-omop-5.4` 为 Workspace-only Warehouse，绝不以 `*.Warehouse/` 假项代替；现有源码、15 个 Fabric 测试、8 份 README 不在 P1 搬运。详见 [批准 Change](../../../openspec/changes/standardize-fabric-source-test-document-layout/tasks.md)。
+这些真实 Git 位置不意味着全部业务 Runtime 验收完成；不存在所建议的 `notebooks/`、`pipelines/`、`environments/` 物理中间目录。实际 `dw-omop-5.4` 为 Workspace-only Warehouse，绝不以 `*.Warehouse/` 假项代替；现有源码、15 个 Fabric 测试、8 份 README 不在 P1 搬运。详见 [批准 Change](../../../openspec/changes/archive/2026-11-05-standardize-fabric-source-test-document-layout/tasks.md)。
 
 ## 3. 业务功能落点与依赖方向
 
