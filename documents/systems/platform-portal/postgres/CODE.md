@@ -16,6 +16,8 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 | [`statefulset.yaml`](../../../../platform-portal/postgres/statefulset.yaml) | PostgreSQL14 单副本 StatefulSet，读取现存 `postgres-secret`；不是 OMOP PG17 |
 | [`clusterip-service.yaml`](../../../../platform-portal/postgres/clusterip-service.yaml) | PG14 API/数据库访问 Service |
 | [`headless-service.yaml`](../../../../platform-portal/postgres/headless-service.yaml) | StatefulSet headless Service |
+| [`backup/marquez-pg14-backup-cronjob.yaml`](../../../../platform-portal/postgres/backup/marquez-pg14-backup-cronjob.yaml) | Dev-only 每天美东 03:00 PG14 `pg_dump -Fc`，复用 `dw-postgre14-data`，7 天保留；**创建 CronJob 有 K8s 持久副作用，需受控部署** |
+| [`tests/test_marquez_backup_static.py`](../../../../platform-portal/postgres/tests/test_marquez_backup_static.py) | CronJob 挂载隔离、7 天清理白名单、环境密钥引用与 Bash 语法的离线测试 |
 
 **不在 Git 的外部依赖**：LocalPath `local-path-config` nodePathMap 和 Kubernetes `postgres-secret`；不得从空白仓库假设可以直接重建数据库。实际 K8s 安全规则：[Safe Operations](../../../engineering/operations/SAFE-OPERATIONS.md)。
 
