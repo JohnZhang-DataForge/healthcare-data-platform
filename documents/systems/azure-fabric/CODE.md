@@ -94,3 +94,9 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 - [fhir_ingest_notebook.py](../../../azure-fabric/notebook-development/fhir_ingest_notebook.py) 只有 **17 行**，通过 `importlib` 按确定路径加载唯一 Git Native Notebook，并供 8 个已迁移测试中的多组作为兼容导入入口；它**不是第二个 ETL 实现**。搬到 `.github/quality/scripts/` 会改变模块导入、`PYTHONPATH` 和 Git Native 源码定位，当前无收益，保留原路径。
 - [native_item_readiness.py](../../../azure-fabric/notebook-development/native_item_readiness.py) **63 行**，供 Native Contract/PySpark 离线测试及 [Fabric Notebook Offline Workflow](../../../.github/workflows/fabric-fhir-notebook-offline.yml) 直接调用（预期 exit 2 / HALT）。将其迁移需同步修改 Workflow 和模块相对路径，既无消除重复实现的收益，也会扩大发布风险；保持原位。
 - **业务 Owner 冻结**：`azure-fabric/workspaces/healthcare-omop/` 继续包含真实 Notebook/Pipeline/Environment/Lakehouse Native Git Item；`azure-fabric/warehouse/` 是 CDM/Identity/Writer SQL 和 Python 源码（非 Git Native Warehouse）；`azure-fabric/openlineage/` 是 Publisher/Compatibility 业务实现。只有离线 **test_*.py** 归 `.github/quality/tests/azure-fabric/`。本阶段不创建 `src/` 镜像树、另一个 Wheel 或假 Warehouse Item。
+
+## Fabric deployment owners (P1 architecture; no deployment execution)
+
+- [Deployment component owner registry](../../../azure-fabric/deployment/owners.json) reserves the official `notebook`, `pipeline`, `environment`, `lakehouse`, `warehouse`, `openlineage`, and `common` destinations; the [Deployment CODE](deployment/CODE.md) defines the source-vs-deployment split.
+- The registry is **not** seven empty directories; Git tracks actual files only. Warehouse SQL and Listener candidate migration remain separate controlled OpenSpec tasks until Self-Runner compatibility and offline tests pass.
+- The initial ownership validator is offline PR CI and is **not assumed to be a Ruleset Required trusted check**. The protected trusted checker and historical 185-entry baseline are unchanged.
