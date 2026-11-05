@@ -17,4 +17,4 @@ source_sha: f16e652ce0018fed5bb5d485f6eebe21c96d6603
 
 **验收边界**：Person/Visit NEW_ONLY 真正下游 OMOP 结果已得到数据库独立确认；这不代表所有其他 OMOP Domain 已有 Spark/Writer。Portal A4 的独立 Spark OpenLineage Smoke 也不能直接证明业务数据集血缘完成。
 
-**下一功能命名例子（建议、文件尚不存在）**：`spark/apps/condition/synthea_condition_adapter.py`、`map_condition_to_omop.py`、`validate_condition_fk.py`。优先复用现有稳定 Gate/Manifest 代码；Condition 实现和业务写入仍需要另行批准。参考 [TASK005 STEP00 只读计划](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)。
+**下一功能命名例子（建议、文件尚不存在）**：`spark/apps/condition/synthea_condition_adapter.py`、`map_condition_to_omop.py`、`validate_condition_fk.py`。优先复用现有稳定 Gate/Manifest 代码；Condition 实现和业务写入仍需要另行批准。参考 [TASK005 STEP00 历史只读设计（不再维护开发进度）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md)；**真正实施前必须先查找/建立专门的 Active OpenSpec Change**，并沿 [Local DP 新开发入口](../README.md) 复用既有组件，不将旧 TASK 当 CURRENT。
