@@ -33,6 +33,15 @@ source_sha: 9a26bdd1cbb063444b87bbdab4ee33adcd181f7b
 - 本地只读 OMOP Exporter、不可变 Manifest、云端 Delta Loader、独立对账尚待开发；过去空的 `exporter/` 和 `tests/` 占位已删除，未来源码归属须依据真实运行位置另行确定。
 - Terraform State、已有 Workspace/Blob/Entra 角色以及 Fabric Item GUID 应单独核验。历史七 Root Plan-only [验收记录](infra-terraform/ARCHITECTURE.md#verified-plan-evidence)不代表云端业务 E2E。
 
+## Lakehouse 根级 Native 文件完整 CODE Map
+
+| 原生源码文件 | 用途 |
+| --- | --- |
+| [lh_omop_analytics.Lakehouse/.platform](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/.platform) | 原生 Item 元数据，保留现有 ID |
+| [lh_omop_analytics.Lakehouse/alm.settings.json](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/alm.settings.json) | 原生设置 |
+| [lh_omop_analytics.Lakehouse/lakehouse.metadata.json](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/lakehouse.metadata.json) | Lakehouse 元数据；不代表业务数据已经验收 |
+| [lh_omop_analytics.Lakehouse/shortcuts.metadata.json](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/shortcuts.metadata.json) | 原生 Shortcut 定义 |
+
 ## CODE.md 维护要求
 
 Fabric Notebook/Pipeline 新增、删除、移动或改名源码时，**同一 PR** 修改所属 [Notebooks CODE](notebooks/CODE.md) 或 [Pipelines CODE](pipelines/CODE.md)，使用现有 CODE-map CI 验证。Terraform Root/Module、Provider、权限和主要执行入口改变时同步更新 [Terraform CODE](infra-terraform/CODE.md) 并审查 IAM/State/Import；现有 CI **不保证逐一覆盖每个 .tf 文件**。
