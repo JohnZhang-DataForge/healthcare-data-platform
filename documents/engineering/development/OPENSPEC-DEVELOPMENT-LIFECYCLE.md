@@ -17,6 +17,10 @@
 | Archive | 相应功能已实施、经适用测试/真实读回、验收条件满足并审查 Archive PR | 单独 CLI Validate PASS 或 PR Merge 不能自动 Archive；G5 设计阶段不得归档 |
 
 
+## Local DP 的 forward-only 兼容策略（2026-11-05）
+
+新业务/新 OMOP Domain 或任何现有 Local DP 组件的实质性行为、Contract、配置变更，按本页事前 Active OpenSpec → PR → CI/验收流程执行；既有 TASK001–TASK004/历史 TASK005 只做不可变事实和设计参照，不同步当前任务状态，不迁移旧源码或强制重新验收。原 [relocate-local-data-platform](../../../openspec/changes/relocate-local-data-platform/tasks.md) 保持迁移收尾任务原样；新域应在核对 Active 列表后建立独立业务 Change。详细代码 Owner 和新测试位置看 [Local DP README](../../systems/data-platform/README.md)，历史 TASK005 参考须以固定 Git SHA 加载并重新验证，不得把旧路径或过期 CURRENT 作为执行指令。共享运行安全权限不因此改变。
+
 ## OpenSpec Change Gate（2026-10-18 治理改造）
 
 对 **代码、GitHub Workflow、架构、OpenSpec / AGENTS 治理、CODE.md 与运行配置**的变更，Agent 应先创建或选定 `openspec/changes/<id>/` 的 Active Change，再进入实施 PR。PR Body 必须在独立行写：

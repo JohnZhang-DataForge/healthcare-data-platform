@@ -15,4 +15,4 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 **最重要的兼容边界**：现有镜像仍 COPY `task004_cdm_*.py` 到 `/opt/task004`，Python/PG 使用 `etl.task004_*` 和 Fence 函数。它们是运行依赖与持久化契约，**绝不全局 Rename**；镜像重构时必须验证基镜像 Digest/Overlay 全部版本及 Writer 安全闸门。详见 [Legacy Refactor Plan](../../../engineering/development/LEGACY-CODE-REFACTOR-PLAN.md)。
 
-**未来命名**：新增 Condition Writer 使用 `apps/omop_writer/condition_writer.py`、`tests/omop_writer/test_condition_idempotency.py`；必须复用既有安全与幂等原则，不以 TASK005 命名代码，也不能借文档重构去执行真实数据库写入。
+**未来命名（仅候选路径，文件尚未创建）**：按 [Local DP OpenSpec Forward-Only](../README.md) 新建专属业务 Change、核验现有事务和 Runtime Gate 后，新增 Condition Writer 使用 `apps/omop_writer/condition_writer.py`、`.github/quality/tests/data-platform/omop/test_condition_idempotency.py`；必须复用既有安全与幂等原则，不以 TASK005 命名代码，也不能借文档重构去执行真实数据库写入。
