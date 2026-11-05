@@ -22,7 +22,7 @@
 - 不跳过失败步骤、不把 Mock/Static PASS 解释成 Live 验证；不为普通功能额外建设与需求无关的大型 CI、锁服务或平台。
 - 当前已验收 Person/Visit、TASK001–TASK003 冻结范围及旧系统持久化数据不得因开发新功能而擅自重新生成、回放或写入。
 
-**新增文件唯一归属（OpenSpec P1）**：新自动化测试 `.github/quality/tests/<system>/<component>/`；新静态质量检查 `.github/quality/scripts/`；Fixture `.github/quality/fixtures/`；人类技术说明 `documents/`。不能新建源码区 README/CODE/ARCHITECTURE/PUBLISHER，也不能在现存 `shared-data-engine/tests/`、`azure-fabric/**/tests/`、`local-data-platform/tests/` 或 `platform-portal/**/tests/` 新增自动化测试；这些目录只按原有精确路径作为过渡例外。Workspace Git Native Item 在真实根级 `*.Notebook` / `*.DataPipeline` / `*.Environment` / `*.Lakehouse`；Warehouse SQL/Writer 仍位于 `azure-fabric/warehouse/`。查看 [权威 Change](../../../openspec/changes/standardize-fabric-source-test-document-layout/tasks.md)，P1 不搬现有文件。
+**新增文件唯一归属（OpenSpec P1）**：新自动化测试 `.github/quality/tests/<system>/<component>/`；新静态质量检查 `.github/quality/scripts/`；Fixture `.github/quality/fixtures/`；人类技术说明 `documents/`。不能新建源码区 README/CODE/ARCHITECTURE/PUBLISHER，也不能在现存 `shared-data-engine/tests/`、`azure-fabric/**/tests/`、`local-data-platform/tests/` 或 `platform-portal/**/tests/` 新增自动化测试；这些目录只按原有精确路径作为过渡例外。Workspace Git Native Item 在真实根级 `*.Notebook` / `*.DataPipeline` / `*.Environment` / `*.Lakehouse`；Warehouse SQL/Writer 仍位于 `azure-fabric/warehouse/`。查看 [权威 Change](../../../openspec/changes/archive/2026-11-05-standardize-fabric-source-test-document-layout/tasks.md)，P1 不搬现有文件。
 
 ## 3. 新代码目录和命名强制规则
 
