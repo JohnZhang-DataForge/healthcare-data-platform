@@ -232,52 +232,42 @@ class CodeMapSyncTests(unittest.TestCase):
 
 
     def test_fabric_native_source_filter(self):
-        self.assertTrue(policy.is_fabric_native_source(
-            "azure-fabric/workspaces/healthcare-omop/notebooks/ingestion/omop.Notebook/.platform"
-        ))
-        self.assertTrue(policy.is_fabric_native_source(
-            "azure-fabric/workspaces/healthcare-omop/pipelines/run.DataPipeline/pipeline-content.json"
-        ))
-        self.assertFalse(policy.is_fabric_native_source(
-            "azure-fabric/workspaces/healthcare-omop/pipelines/.gitkeep"
-        ))
-        self.assertFalse(policy.is_fabric_native_source(
-            "azure-fabric/workspaces/healthcare-omop/notebooks/README.md"
-        ))
-        self.assertFalse(policy.is_fabric_native_source(
-            "azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py"
-        ))
+        root = "azure-fabric/workspaces/healthcare-omop/"
+        for item in ["nb_fhir_ingest.Notebook/.platform", "pl_fhir_ingest.DataPipeline/pipeline-content.json",
+                     "env_healthcare.Environment/Setting/Sparkcompute.yml", "lh_omop_analytics.Lakehouse/lakehouse.metadata.json"]:
+            self.assertTrue(policy.is_fabric_native_source(root + item))
+        self.assertFalse(policy.is_fabric_native_source(root + "notebooks/ingestion/omop.Notebook/.platform"))
+        self.assertFalse(policy.is_fabric_native_source(root + "fake.Warehouse/.platform"))
+        self.assertFalse(policy.is_fabric_native_source(root + "nb_fhir_ingest.Notebook/README.md"))
 
     def test_fabric_native_map_missing_stale_duplicate_wrong_owner(self):
-        notebooks, pipelines = policy.FABRIC_NATIVE_MAP_PATHS
-        notebook = "azure-fabric/workspaces/healthcare-omop/notebooks/ingestion/omop.Notebook/notebook-content.py"
-        pipeline = "azure-fabric/workspaces/healthcare-omop/pipelines/load.DataPipeline/pipeline-content.json"
-        old = "azure-fabric/workspaces/healthcare-omop/notebooks/old.Notebook/.platform"
-        docs = {
-            notebooks: f"| [notebook](../../../../{notebook}) | source |\n| [old](../../../../{old}) | stale |",
-            pipelines: f"| [wrong](../../../../{notebook}) | duplicate and wrong owner |",
-        }
-        missing, stale, duplicate, wrong = policy.validate_fabric_native_maps(
-            docs, {notebook, pipeline}
-        )
+        root = "azure-fabric/workspaces/healthcare-omop/"
+        nb = policy.FABRIC_NATIVE_ITEM_OWNERS["nb_fhir_ingest.Notebook"]
+        pl = policy.FABRIC_NATIVE_ITEM_OWNERS["pl_fhir_ingest.DataPipeline"]
+        notebook = root + "nb_fhir_ingest.Notebook/notebook-content.py"
+        pipeline = root + "pl_fhir_ingest.DataPipeline/pipeline-content.json"
+        stale = root + "nb_fhir_ingest.Notebook/retired.py"
+        docs = {doc: "" for doc in policy.FABRIC_NATIVE_MAP_PATHS}
+        docs[nb] = f"| [nb](../../../../{notebook}) | owner |\n| [stale](../../../../{stale}) | old |"
+        docs[pl] = f"| [wrong](../../../../{notebook}) | wrong |"
+        missing, old, duplicate, wrong = policy.validate_fabric_native_maps(docs, {notebook, pipeline})
         self.assertEqual(missing, [pipeline])
-        self.assertEqual(stale, [old])
+        self.assertEqual(old, [stale])
         self.assertEqual(duplicate, [notebook])
         self.assertEqual(wrong, [notebook])
 
     def test_fabric_native_same_pr_sync_across_owner_move(self):
-        notebooks, pipelines = policy.FABRIC_NATIVE_MAP_PATHS
-        old_path = "azure-fabric/workspaces/healthcare-omop/notebooks/old.Notebook/.platform"
-        new_path = "azure-fabric/workspaces/healthcare-omop/pipelines/new.DataPipeline/.platform"
-        before = {notebooks: f"| [old](../../../../{old_path}) | metadata |", pipelines: ""}
-        after = {notebooks: "", pipelines: f"| [new](../../../../{new_path}) | metadata |"}
-        self.assertEqual(
-            policy.required_fabric_native_updates({old_path, new_path}, before, after),
-            {notebooks, pipelines}
-        )
+        root = "azure-fabric/workspaces/healthcare-omop/"
+        nb = policy.FABRIC_NATIVE_ITEM_OWNERS["nb_fhir_ingest.Notebook"]
+        pl = policy.FABRIC_NATIVE_ITEM_OWNERS["pl_fhir_ingest.DataPipeline"]
+        old_path = root + "nb_fhir_ingest.Notebook/retired.py"
+        new_path = root + "pl_fhir_ingest.DataPipeline/new.json"
+        before = {doc: "" for doc in policy.FABRIC_NATIVE_MAP_PATHS}
+        after = dict(before)
+        before[nb] = f"| [old](../../../../{old_path}) | metadata |"
+        after[pl] = f"| [new](../../../../{new_path}) | metadata |"
+        self.assertEqual(policy.required_fabric_native_updates({old_path, new_path}, before, after), {nb, pl})
         self.assertEqual(policy.required_fabric_native_updates(set(), before, after), set())
-
-
 
     def test_future_data_platform_uses_existing_code_map_ownership(self):
         self.assertTrue(policy.is_guarded_source("data-platform/airflow/dags/main.py"))

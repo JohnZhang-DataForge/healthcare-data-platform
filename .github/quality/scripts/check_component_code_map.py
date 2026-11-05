@@ -262,23 +262,26 @@ def required_script_config_updates(
 
 
 FABRIC_NATIVE_ROOT = "azure-fabric/workspaces/healthcare-omop/"
-FABRIC_NATIVE_MAP_PATHS = (
-    "documents/systems/azure-fabric/notebooks/CODE.md",
-    "documents/systems/azure-fabric/pipelines/CODE.md",
-)
+FABRIC_NATIVE_ITEM_OWNERS = {
+    "nb_fhir_ingest.Notebook": "documents/systems/azure-fabric/notebooks/CODE.md",
+    "pl_fhir_ingest.DataPipeline": "documents/systems/azure-fabric/pipelines/CODE.md",
+    "env_healthcare.Environment": "documents/systems/azure-fabric/environments/CODE.md",
+    "lh_omop_analytics.Lakehouse": "documents/systems/azure-fabric/CODE.md",
+}
+FABRIC_NATIVE_MAP_PATHS = tuple(dict.fromkeys(FABRIC_NATIVE_ITEM_OWNERS.values()))
 FABRIC_NATIVE_ROW_RE = re.compile(
-    r"^\|\s*\[[^\]]+\]\((?:\.\./){4}(azure-fabric/workspaces/healthcare-omop/(?:notebooks|pipelines)/[^)\s#?]+)\)\s*\|",
+    r"^\|\s*\[[^\]]+\]\((?:\.\./){3,4}(azure-fabric/workspaces/healthcare-omop/[^)\s#?]+)\)\s*\|",
     re.MULTILINE,
 )
 
 
 def is_fabric_native_source(path: str) -> bool:
-    """Track actual Fabric Git item files, not placeholder or reader docs."""
+    """Only actual root-level Git Native Item files, never pseudo-folders."""
+    if not path.startswith(FABRIC_NATIVE_ROOT):
+        return False
+    rest = path[len(FABRIC_NATIVE_ROOT):]
     return (
-        path.startswith((
-            FABRIC_NATIVE_ROOT + "notebooks/",
-            FABRIC_NATIVE_ROOT + "pipelines/",
-        ))
+        "/" in rest and rest.split("/", 1)[0] in FABRIC_NATIVE_ITEM_OWNERS
         and not path.endswith(("/.gitkeep", ".md", ".mdx", ".rst", ".txt"))
     )
 
@@ -288,8 +291,8 @@ def fabric_native_owned_links(contents: str) -> set[str]:
 
 
 def fabric_native_expected_owner(path: str) -> str:
-    segment = "notebooks" if path.startswith(FABRIC_NATIVE_ROOT + "notebooks/") else "pipelines"
-    return "documents/systems/azure-fabric/" + segment + "/CODE.md"
+    item = path[len(FABRIC_NATIVE_ROOT):].split("/", 1)[0]
+    return FABRIC_NATIVE_ITEM_OWNERS[item]
 
 
 def validate_fabric_native_maps(
@@ -317,6 +320,7 @@ def required_fabric_native_updates(
             | fabric_native_owned_links(after.get(doc, ""))
         )
     }
+
 
 
 def main() -> int:

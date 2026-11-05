@@ -5,14 +5,14 @@
 - [x] 0.1 只读审计 Healthcare main `8d8ba3f9fa4593430550c3e8906c8fc089ef17fa` 与开放 PR：Fabric 15 测试、8 README、2 份其他说明性 MD，确认真实 Fabric Native Items 和 Warehouse Workspace-only 所有权。
 - [x] 0.2 依据用户确认缩小范围：先统一规范和 Gate，仅清理 Fabric 存量，不迁移 Local DP、Portal、Shared Engine 的测试或业务源码；不得新建 `azure-fabric/src/` 或为漂亮目录移动 Warehouse。
 - [x] 0.3 建立包含确切存量、阶段 PR、正负向门禁测试、兼容性、回滚及验收条件的 OpenSpec Proposal、Design、Delta Specs、Tasks。
-- [ ] 0.4 本**纯 OpenSpec 计划 PR** 通过 `validate-openspec`、可信/普通 Change Gate、文档链接等适用 CI，按最终 HEAD 审核合并；独立 main 读回；确保 1–5 阶段仍 OPEN。
+- [x] 0.4 本**纯 OpenSpec 计划 PR** 通过 `validate-openspec`、可信/普通 Change Gate、文档链接等适用 CI，按最终 HEAD 审核合并；独立 main 读回；确保 1–5 阶段仍 OPEN。
 
 ## 1 — 先防止新违规（独立实现 PR）
 
-- [ ] 1.1 将本 Change 的最终文件所有权规则落实至 `AGENTS.md`、`DOCUMENTATION-GOVERNANCE.md`、`AGENT-RULES.md` 和受影响的 Shared Data Engine / Fabric ADR；明确旧路径冻结例外、未来新文件唯一位置与规范优先级。
-- [ ] 1.2 在 `.github/quality/scripts/` 编写**只读、按确切路径**的布局门禁；检查源区新增 README/说明 MD、测试归属、Native Fabric Item、未批准的新模块及 CODE.md 同步；现存 Local/Portal/Shared 文件严格 allowlist。
-- [ ] 1.3 在 `.github/quality/tests/` 加完整正向/负向单测，模拟旧存量编辑、新违规新增、路径穿越/绕过、伪 Fabric Warehouse Item、未更新 CODE.md，明示 `path + rule + expected owner`。
-- [ ] 1.4 修复 `check_component_code_map.py` 对 Fabric Native 项的旧 `notebooks/` / `pipelines/` 子路径假设，覆盖实际根级 `*.Notebook/`、`*.DataPipeline/`、`*.Environment/`、`*.Lakehouse/` 的合规范围，不触碰 Native 内容本身。
+- [x] 1.1 将本 Change 的最终文件所有权规则落实至 `AGENTS.md`、`DOCUMENTATION-GOVERNANCE.md`、`AGENT-RULES.md` 和受影响的 Shared Data Engine / Fabric ADR；明确旧路径冻结例外、未来新文件唯一位置与规范优先级。
+- [x] 1.2 在 `.github/quality/scripts/` 编写**只读、按确切路径**的布局门禁；检查源区新增 README/说明 MD、测试归属、Native Fabric Item、未批准的新模块及 CODE.md 同步；现存 Local/Portal/Shared 文件严格 allowlist。
+- [x] 1.3 在 `.github/quality/tests/` 加完整正向/负向单测，模拟旧存量编辑、新违规新增、路径穿越/绕过、伪 Fabric Warehouse Item、未更新 CODE.md，明示 `path + rule + expected owner`。
+- [x] 1.4 修复 `check_component_code_map.py` 对 Fabric Native 项的旧 `notebooks/` / `pipelines/` 子路径假设，覆盖实际根级 `*.Notebook/`、`*.DataPipeline/`、`*.Environment/`、`*.Lakehouse/` 的合规范围，不触碰 Native 内容本身。
 - [ ] 1.5 将布局检查接到可靠的 PR Gate，与现有 Trusted Change Gate 兼容；真实正向 PR 可合并、真实负向 PR 被 GitHub Ruleset **Required Check** 阻止。如果缺少仓库管理权限，留明确 HOLD，不将 CI green 冒称规则生效。
 
 ## 2 — Azure Fabric 文档清理（独立 Docs PR）
@@ -44,3 +44,9 @@
 ## Stop / HOLD
 
 任何阶段发现需要修改 G4/G5 历史数据、真实 Warehouse Schema/Gold、Fabric Native Item metadata、已通过的 Wheel 版本、Local DP/Portal/Shared 的测试物理路径，立即 HOLD 并另开获批 Change。相同原因 3 次修改验证仍失败停止自动尝试；不用无限重试方式扩大目录迁移。
+
+### P1 implementation audit (2026-11-04)
+
+- Source baseline: `ee435d8720cfed698e239f767f313addf36a924e`; PR #671 merged. P1 branch `governance/p1-repository-layout-gate-20261104`.
+- Tasks 1.1–1.4 implemented in branch pending PR CI. The layout baseline freezes **185 exact existing paths** only. All Fabric 15 source tests / 8 README remain untouched.
+- Task 1.5 remains OPEN until required-check and real negative PR block evidence is independently verified. No P2–P5 runtime, migration, or other work is in P1.
