@@ -3,7 +3,6 @@
   'use strict';
   var preferred = 's3://health-landing';
   var processingNamespace = 's3://health-processing';
-  var rootLandingKey = 'publicMarquezRootLandingOnce';
   // The native Marquez Redux/localStorage selector is global across routes.
   // Keep the PUBLIC presentation preference per section instead.
   var jobsPreferred = 'healthcare-platform-airflow';
@@ -18,19 +17,59 @@
 
   function onDatasetsRoute() { return window.location.pathname === '/datasets' || window.location.pathname === '/datasets/'; }
 
-  // Only exact root visits take visitors to the Landing-first home. The one-shot
-  // marker overrides a previously saved Processing choice for this navigation,
-  // without resetting manual Namespace choices during later browsing.
-  function navigateRootToLanding() {
-    if (window.location.pathname !== '/') return false;
-    try { window.sessionStorage.setItem(rootLandingKey, '1'); } catch (_) {}
-    window.location.replace('/datasets' + (window.location.search || '') + (window.location.hash || ''));
-    return true;
-  }
-  if (navigateRootToLanding()) return;
+  // Keep '/' as the native Marquez Dashboard. Never force a redirect to
+  // Datasets: visitors should see the original nonempty landing experience.
+  // Jobs and Datasets are selected only after the visitor enters their lists.
+  var navigationEpoch = 0;
+  var refreshTarget = null;
+  var refreshTimer = null;
+  var refreshedKey = null;
+  var manualPending = null;
 
-  function clearRootLandingMarker() {
-    try { window.sessionStorage.removeItem(rootLandingKey); } catch (_) {}
+  function cancelRefresh() {
+    if (refreshTimer !== null) window.clearTimeout(refreshTimer);
+    refreshTimer = null;
+    refreshTarget = null;
+  }
+  function queueRefreshForEmpty(section, namespace) {
+    if (!section || !namespace) return;
+    refreshTarget = { section: section, namespace: namespace, epoch: navigationEpoch };
+  }
+  function findEmptyStateRefresh() {
+    // Marquez 0.51.1 Jobs.tsx / Datasets.tsx MqEmpty render a native
+    // <Button>Refresh</Button> only when the list is empty. Reuse its real
+    // Redux fetch action; do not synthesize data or call private React APIs.
+    var buttons = document.querySelectorAll('button');
+    for (var i = 0; i < buttons.length; i++) {
+      if ((buttons[i].textContent || '').trim().toLowerCase() === 'refresh') return buttons[i];
+    }
+    return null;
+  }
+  function refreshEmptyListOnce() {
+    var target = refreshTarget;
+    if (!target || target.epoch !== navigationEpoch ||
+        sectionForPath() !== target.section) return;
+    var selector = document.getElementById('namespace-select');
+    if (!selector || (selector.textContent || '').trim() !== target.namespace) return;
+    var key = target.epoch + '|' + target.section + '|' + target.namespace;
+    if (refreshedKey === key) return;
+    var button = findEmptyStateRefresh();
+    if (!button) return; // Wait for list fetch/empty-state DOM to settle.
+    if (refreshTimer !== null) return;
+    refreshTimer = window.setTimeout(function () {
+      refreshTimer = null;
+      var t = refreshTarget;
+      var current = document.getElementById('namespace-select');
+      if (!t || t.epoch !== navigationEpoch || sectionForPath() !== t.section ||
+          !current || (current.textContent || '').trim() !== t.namespace) return;
+      var emptyRefresh = findEmptyStateRefresh();
+      if (!emptyRefresh) return; // Data appeared; no extra request needed.
+      var once = t.epoch + '|' + t.section + '|' + t.namespace;
+      if (refreshedKey === once) return;
+      refreshedKey = once; // Mark BEFORE clicking (MutationObserver may fire).
+      refreshTarget = null;
+      emptyRefresh.click();
+    }, 350);
   }
   function sectionForPath() {
     if (onDatasetsRoute()) return 'datasets';
@@ -44,10 +83,6 @@
     if (!section || !value) return;
     try { window.sessionStorage.setItem(sectionKeys[section], value); } catch (_) {}
   }
-  function rootLandingRequested() {
-    try { return window.sessionStorage.getItem(rootLandingKey) === '1'; } catch (_) { return false; }
-  }
-
   function onManualNamespaceOption(event) {
     // The owner-selected MUI option is authoritative. Auto-selection clicks
     // are deliberately excluded, so the observer won't undo a manual switch.
@@ -65,7 +100,9 @@
     rememberSectionChoice(section, value);
     pendingChoice = null;
     requestedChoice = false;
-    if (section === 'datasets') clearRootLandingMarker();
+    manualPending = value;
+    cancelRefresh();
+    queueRefreshForEmpty(section, value);
   }
 
   function selectFirstUsefulNamespace() {
@@ -73,6 +110,10 @@
     if (section !== lastSection) {
       var previous = lastSection;
       lastSection = section;
+      navigationEpoch++;
+      cancelRefresh();
+      refreshedKey = null;
+      manualPending = null;
       pendingChoice = null;
       requestedChoice = false;
       if (section) {
@@ -86,9 +127,8 @@
           try { persisted = window.localStorage.getItem('selectedNamespace'); } catch (_) {}
           // Preserve an explicit direct Dataset bookmark's known useful
           // selection; section navigation always returns to its own choice.
-          pendingChoice = rootLandingRequested() ? preferred :
-            (saved || (previous === null &&
-              (persisted === preferred || persisted === processingNamespace) ? persisted : preferred));
+          pendingChoice = saved || (previous === null &&
+              (persisted === preferred || persisted === processingNamespace) ? persisted : preferred);
         }
         var newSelector = document.getElementById('namespace-select');
         if (newSelector) newSelector.removeAttribute('data-public-default-opened');
@@ -99,15 +139,21 @@
     if (!selector) return;
     var active = (selector.textContent || '').trim();
     if (!pendingChoice) {
-      // A visitor may use keyboard navigation; observe the rendered selection.
+      // The native selector renders after the MUI click. Do not overwrite
+      // a just-clicked manual choice with the previous displayed label.
+      if (manualPending && active !== manualPending) return;
+      if (manualPending && active === manualPending) {
+        queueRefreshForEmpty(section, active);
+        manualPending = null;
+      }
       rememberSectionChoice(section, active);
       return;
     }
     if (active === pendingChoice) {
       rememberSectionChoice(section, pendingChoice);
+      queueRefreshForEmpty(section, active);
       pendingChoice = null;
       requestedChoice = false;
-      if (section === 'datasets') clearRootLandingMarker();
       return;
     }
     var options = document.querySelectorAll('[role="option"]');
@@ -282,6 +328,7 @@
 
   function update() {
     selectFirstUsefulNamespace();
+    refreshEmptyListOnce();
     if (!onDatasetsRoute()) return;
     document.querySelectorAll('table').forEach(datasetTable);
   }
