@@ -25,6 +25,7 @@ SOURCE_ROOTS = ("azure-fabric", "local-data-platform", "platform-portal", "share
 ALLOWED_TOP_LEVEL = frozenset((".github", "azure-fabric", "documents", "local-data-platform", "openspec", "platform-portal", "shared-data-engine", "AGENTS.md", "README.md"))
 GUARD_FILES = frozenset((
     ".github/quality/scripts/check_repository_layout.py",
+    ".github/quality/scripts/check_component_code_map.py",
     ".github/quality/repository-layout-legacy-baseline.txt",
     ".github/workflows/openspec-trusted-change-gate.yml",
 ))
@@ -47,7 +48,7 @@ def legacy_violation(path: str) -> bool:
         return False
     if DOC_NAME.fullmatch(parts[-1]) or parts[-1].lower().endswith((".md", ".mdx", ".rst")):
         return True
-    if "tests" in parts[1:-1] or "test" in parts[1:-1] or TEST_NAME.fullmatch(parts[-1]):
+    if any(part.lower() in ("test", "tests") or part.lower().endswith("_tests") for part in parts[1:-1]) or TEST_NAME.fullmatch(parts[-1]):
         return True
     return False
 
@@ -94,7 +95,7 @@ def check_layout(base_paths: set[str], head_paths: set[str], changed: set[str], 
                 errors.add(violation(path, "fabric-code-map-sync", NATIVE_OWNERS[item]))
         if legacy_violation(path):
             if path not in baseline or path not in base_paths:
-                expected = ".github/quality/tests/" if "tests" in parts[1:-1] or TEST_NAME.fullmatch(parts[-1]) else "documents/"
+                expected = ".github/quality/tests/" if any(part.lower() in ("test", "tests") or part.lower().endswith("_tests") for part in parts[1:-1]) or TEST_NAME.fullmatch(parts[-1]) else "documents/"
                 rule = "new-test-outside-quality" if expected.startswith(".github") else "new-source-document"
                 errors.add(violation(path, rule, expected))
         if path.startswith(".github/quality/scripts/") and TEST_NAME.fullmatch(parts[-1]):

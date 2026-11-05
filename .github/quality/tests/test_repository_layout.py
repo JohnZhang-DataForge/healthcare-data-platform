@@ -58,6 +58,15 @@ class LayoutGateTests(unittest.TestCase):
         p = "local-data-platform/tests/spark/test_new_pipeline.py"
         self.assert_rule(self.check(additions=[p]), "new-test-outside-quality", p, ".github/quality/tests/")
 
+    def test_integration_tests_folder_cannot_bypass_owner(self):
+        p = "azure-fabric/warehouse/integration_tests/helper.py"
+        self.assert_rule(self.check(additions=[p]), "new-test-outside-quality", p, ".github/quality/tests/")
+
+    def test_code_map_checker_mutation_rejected(self):
+        p = ".github/quality/scripts/check_component_code_map.py"
+        self.old.add(p)
+        self.assert_rule(self.check(changed=[p]), "trusted-policy-mutation", p, "separate approved governance/bootstrap procedure")
+
     def test_top_level_module_rejected(self):
         p = "brand-new-system/api.py"
         self.assert_rule(self.check(additions=[p]), "unapproved-top-level-module", p, "approved root module and OpenSpec architecture approval")

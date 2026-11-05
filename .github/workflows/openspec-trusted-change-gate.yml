@@ -43,6 +43,15 @@ jobs:
             --repo-root "$GITHUB_WORKSPACE/candidate" \
             --base "$BASE_SHA" \
             --head "$HEAD_SHA"
+      - name: Enforce trusted CODE-map on candidate Git tree and passive Markdown
+        working-directory: candidate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 ../policy/.github/quality/scripts/check_component_code_map.py \
+            --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Check PR candidate using only trusted base policy
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
