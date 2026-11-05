@@ -35,3 +35,7 @@
 ## P1.3 trusted workflow security
 
 The new job always runs on pull requests without path filters. It checks out main policy and test code separately, treating the candidate checkout only as passive Git file data, and rejects ordinary PR modifications to its registry/checker/test/workflow after bootstrap. It has `contents: read`, no secrets and no deployment actions. **Do not mark P1.3 complete until exact GitHub Ruleset readback and negative PR blocked evidence.**
+
+## P1.3 genuine PR check trials
+
+- Trusted workflow introduced by [PR #702](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/702), merged main `2abba5b3f51056235c7967f9e2ef3a131c943d70`. This PR is the expected-allow path used to independently verify its default-branch `require-trusted-fabric-deployment-owner` job. Evidence is not accepted until actual check run readback.
