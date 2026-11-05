@@ -13,7 +13,7 @@
 - [x] 1.2 在 `.github/quality/scripts/` 编写**只读、按确切路径**的布局门禁；检查源区新增 README/说明 MD、测试归属、Native Fabric Item、未批准的新模块及 CODE.md 同步；现存 Local/Portal/Shared 文件严格 allowlist。
 - [x] 1.3 在 `.github/quality/tests/` 加完整正向/负向单测，模拟旧存量编辑、新违规新增、路径穿越/绕过、伪 Fabric Warehouse Item、未更新 CODE.md，明示 `path + rule + expected owner`。
 - [x] 1.4 修复 `check_component_code_map.py` 对 Fabric Native 项的旧 `notebooks/` / `pipelines/` 子路径假设，覆盖实际根级 `*.Notebook/`、`*.DataPipeline/`、`*.Environment/`、`*.Lakehouse/` 的合规范围，不触碰 Native 内容本身。
-- [ ] 1.5 将布局检查接到可靠的 PR Gate，与现有 Trusted Change Gate 兼容；真实正向 PR 可合并、真实负向 PR 被 GitHub Ruleset **Required Check** 阻止。如果缺少仓库管理权限，留明确 HOLD，不将 CI green 冒称规则生效。
+- [x] 1.5 将布局检查接到可靠的 PR Gate，与现有 Trusted Change Gate 兼容；真实正向 PR 可合并、真实负向 PR 被 GitHub Ruleset **Required Check** 阻止。如果缺少仓库管理权限，留明确 HOLD，不将 CI green 冒称规则生效。
 
 ## 2 — Azure Fabric 文档清理（独立 Docs PR）
 
@@ -48,10 +48,10 @@
 ### P1 implementation audit (2026-11-04)
 
 - Source baseline: `ee435d8720cfed698e239f767f313addf36a924e`; PR #671 merged. P1 branch `governance/p1-repository-layout-gate-20261104`.
-- Tasks 1.1–1.4 implemented in branch pending PR CI. The layout baseline freezes **185 exact existing paths** only. All Fabric 15 source tests / 8 README remain untouched.
-- Task 1.5 remains OPEN until required-check and real negative PR block evidence is independently verified. No P2–P5 runtime, migration, or other work is in P1.
+- Tasks 1.1–1.4 implemented and merged via PR #672; the original checker bug was corrected in merged PR #674. The layout baseline freezes **185 exact existing paths** only. All Fabric 15 source tests / 8 README remain untouched.
+- Task 1.5 is completed based on real post-fix protected green #676 and blocked negative #675; see final acceptance evidence below. No P2–P5 runtime, migration, or other work is in P1.
 
-- **Post-merge 1.5 verification HOLD:** [controlled negative PR #673](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/673), required job [41943842231](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41943842231), was correctly BLOCKED by `require-trusted-change`, but revealed a false positive: pre-existing root `.gitignore` was not in `ALLOWED_TOP_LEVEL`. Do not mark P1 COMPLETE. Fix requires a one-time approved Ruleset maintenance window because the trusted policy is deliberately frozen and runs from `main` for every PR; do not bypass silently. Verified exact main tree: adding `.gitignore` to allowed root entries yields no other root or legacy baseline violations.
+- **Historical post-merge 1.5 HOLD (resolved by merged PR #674):** [controlled negative PR #673](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/673), required job [41943842231](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41943842231), was correctly BLOCKED by `require-trusted-change`, but revealed a false positive: pre-existing root `.gitignore` was not in `ALLOWED_TOP_LEVEL`. At that time, Task 1.5 remained OPEN. The subsequent one-time approved Ruleset maintenance window was completed because the trusted policy is deliberately frozen and runs from `main` for every PR; do not bypass silently. Verified exact main tree: adding `.gitignore` to allowed root entries yields no other root or legacy baseline violations.
 
 ### P1 final post-fix Required Check audit (2026-11-04 ET)
 
@@ -59,4 +59,4 @@
 - Ruleset `25365902` is **active** with `require-trusted-change` and `validate-openspec` required (GitHub Actions integration `15368` for both), without bypass actors.
 - Post-fix **negative** [#675](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/675) at `cf03a3dea67b79baeea1c1930af10f40623d4707` was rejected by the actual Required Check: [run 41947587388](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41947587388), job `126983525823`, `PATH=azure-fabric/warehouse/p1-postfix-negative/README.md RULE=new-source-document EXPECTED_OWNER=documents/`, `REPOSITORY_LAYOUT_GATE=FAIL`; GitHub `mergeable_state=blocked`. PR closed **unmerged**.
 - Independent Git-tree SHA inventory: all **34** protected pre-P1 paths are byte-identical to `ee435d8720cfed698e239f767f313addf36a924e`: 11 Fabric Native Git Item files, 15 Fabric tests, and 8 source README files. The frozen legacy baseline remains exactly **185 paths**; **P2–P5 not started**.
-- Post-fix **positive** acceptance is pending: confirm this docs-only PR passes both actual Ruleset Required Checks and can merge; update Task 1.5 only after verified PASS evidence.
+- Post-fix **positive** [#676](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/676) proved actual trusted enforcement **PASS** on first valid PR body edit: [run 41947856108](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41947856108), job `126984406775`; explicit `REPOSITORY_LAYOUT_GATE=PASS` (`legacy_exact_paths=185`), `CODE_MAP_GATE=PASS` (`mapped_fabric_native_files=11`), and `OPENSPEC_CHANGE_GATE=PASS`. `validate-openspec` also succeeded. The final acceptance-record commit requires its own successful Required checks before merging #676. All normal branch protection stays enabled.
