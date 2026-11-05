@@ -5,7 +5,7 @@ import pathlib
 import re
 import unittest
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[6] / "azure-fabric/warehouse/omop-cdm-5.4"
 MANIFEST = json.loads((ROOT / "manifest.json").read_text())
 UPSTREAM = (ROOT / "upstream" / "OMOPCDM_sql_server_5.4_ddl.sql").read_bytes()
 SOURCE_PATTERN = re.compile(

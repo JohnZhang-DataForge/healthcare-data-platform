@@ -26,8 +26,8 @@
 
 - [x] 3.1 Notebook 8 个测试迁至 `.github/quality/tests/azure-fabric/notebook/`：修正 `fabric-fhir-notebook-offline.yml`、测试 Import/PYTHONPATH、Fixture/Native Contract、关联 CODE.md，确保旧/新用例集及断言等价。
 - [x] 3.2 OpenLineage 2 个测试迁至 `.github/quality/tests/azure-fabric/openlineage/`：保留 Blob Publisher 的安全负向测试、Mock 和已固定协议，修复所有调用方路径。
-- [ ] 3.3 Warehouse 5 个测试迁至 `.github/quality/tests/azure-fabric/warehouse/` 的 CDM/OMOP 子目录；修复 `fabric-omop-cdm54-schema-offline.yml`、`fabric-omop-foundation-identity-schema-offline.yml` 路径与发现规则，保持原 DDL 来源 SHA、Identity/Mapping 防护不变。
-- [ ] 3.4 按实际 Git 搜索/Workflow 内容逐一核对 Self-Runner 对旧路径的引用；若依赖不可验证则 HOLD，不删旧入口；每组运行适用测试及构建、OpenSpec/Docs/Code Gate 后才合并。
+- [x] 3.3 Warehouse 5 个测试迁至 `.github/quality/tests/azure-fabric/warehouse/` 的 CDM/OMOP 子目录；修复 `fabric-omop-cdm54-schema-offline.yml`、`fabric-omop-foundation-identity-schema-offline.yml` 路径与发现规则，保持原 DDL 来源 SHA、Identity/Mapping 防护不变。
+- [x] 3.4 按实际 Git 搜索/Workflow 内容逐一核对 Self-Runner 对旧路径的引用；若依赖不可验证则 HOLD，不删旧入口；每组运行适用测试及构建、OpenSpec/Docs/Code Gate 后才合并。
 
 ## 4 — 可选辅助源码归属，不再另起大迁移
 
@@ -94,3 +94,15 @@
 ### P3.2 OpenLineage audit (pending protected CI)
 
 - Retained both useful offline tests (Spark/Scala incompatibility and authenticated immutable Blob Publisher FAIL-CLOSED/partial retry), 8 explicit unittest methods; moved paths only with equivalent Python importlib target path. Added a dedicated read-only GitHub Hosted workflow with strict >=8 test discovery, exactly two source test files, and fail-on-test-error. Runtime publisher/compatibility implementations unchanged. Task 3.2 passed actual dedicated CI discovery/runner evidence at [Run #41956789788](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41956789788), job `127013507494`: `FABRIC_OPENLINEAGE_DISCOVERED=8; required_min=8; files=2`, `Ran 8 tests`, `FABRIC_OPENLINEAGE_OFFLINE_CONTRACT=PASS; CLOUD_WRITES=0`. Check-links, trusted Required Check and validate-openspec succeeded on initial PR head; verify final evidence-only HEAD before merging.
+
+### P3.3 Warehouse audit (pending protected CI)
+
+- Five source-area Warehouse regression test files with **33 explicitly declared test methods** remain valuable and are only relocated: CDM54 1/2 plus Foundation 4/31 (Concept Profile, F1 Schema, INT-ID Replay and Silver-to-Identity preview). Upstream OHDSI fixed SHA, global positive INT, single-writer/snapshot safety, Concept rejection, no Gold writes preserved. Both existing offline workflows are updated with exact file inventory and minimum test-discovery checks. Final P3.3 task status requires real CI proof, no static-only assertion.
+
+
+### P3.3/P3.4 verified execution and cross-repo source audit (2026-11-04 ET)
+
+- Warehouse actual tests at PR [#680](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/680) source head `48f84f776d956ec5039d6c0bebad9dd2d4b6719a`: [CDM54 offline PR checks](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/680/checks) job `127015303829` reported `FABRIC_CDM54_DISCOVERED=2; required_min=2; files=1`, `Ran 2 tests`, `FABRIC_CDM54_OFFLINE_TESTS=PASS; CLOUD_WRITES=0`; Identity job `127015304074` reported `FABRIC_FOUNDATION_DISCOVERED=31; required_min=31; files=4`, `Ran 31 tests`, `FABRIC_FOUNDATION_OFFLINE_TESTS=PASS; CLOUD_WRITES=0`. Combined **5 source files / 33 executed methods**. Validate final evidence commit's actual Required checks before merging.
+- P3.4 independently re-read Self-Runner main at SHA `10ef1321fd7a191c2a418700e331551ba523ce2e` and scanned the content of **all 170 tracked GitHub workflow files**; the only four legacy Fabric test path mentions were in `.github/workflows/fabric-api-client.yml`, `fabric-omop-cdm54-schema-deploy.yml`, `fabric-omop-f2-transaction-rollback.yml`, and `fabric-omop-identity-schema-deploy.yml`. All four explicitly check out **immutable historical Healthcare SHAs** (`dde06bf86f7a5390709b66d95ea07e086595385d`, `860af51ca3c1f7389c2276b68494eab274888f94`, `ede02cdaf3ff8b41fc39455be387233f538fa8f9`, `195b1f9a387e3393c47cbc298b1110fc34ba52d5`). Independent recursive Git-tree fetch for **each exact SHA** confirmed the expected original path+test files actually exist. Do not rewrite these fixed historical references to today's test folders; no unpinned Self-Runner workflow reference to removed test paths was found among those workflow files.
+- Also searched all **59** current Healthcare GitHub workflow file bodies at the P3.3 PR head; none contains old `azure-fabric/*/tests` execution entrypoints. Explicit new centralized test start dirs are in their respective Notebook/CDM/Foundation/OpenLineage workflows. Offline code-only tests have zero Azure/Git/SQL/Spark persistent side effects.
+- Note: These workflow body scans prove only tracked workflow references, **not uninspected arbitrary Self-Runner Python/scripts or external consumers**. Historical source pins are intentionally untouched. P3/P4/P5 remain distinct; P5 must still independently reconcile the exact legacy baseline and true Ruleset enforcement.

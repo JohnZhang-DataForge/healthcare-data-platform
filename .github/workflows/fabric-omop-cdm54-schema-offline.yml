@@ -4,11 +4,13 @@ on:
   pull_request:
     paths:
       - 'azure-fabric/warehouse/omop-cdm-5.4/**'
+      - '.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/**'
       - '.github/workflows/fabric-omop-cdm54-schema-offline.yml'
   push:
     branches: [main]
     paths:
       - 'azure-fabric/warehouse/omop-cdm-5.4/**'
+      - '.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/**'
       - '.github/workflows/fabric-omop-cdm54-schema-offline.yml'
 
 permissions:
@@ -23,6 +25,25 @@ jobs:
         with:
           persist-credentials: false
       - name: OHDSI 5.4 exact DDL + Fabric type transform contract
-        run: python3 -m unittest discover -s azure-fabric/warehouse/omop-cdm-5.4/tests -p 'test_*.py' -v
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import sys
+          import unittest
+          start = ".github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4"
+          files = sorted(Path(start).glob("test_*.py"))
+          if len(files) != 1:
+              raise SystemExit(f"FABRIC_CDM54_TEST_FILE_COUNT_INVALID={len(files)}; expected=1")
+          suite = unittest.TestLoader().discover(start_dir=start, pattern="test_*.py")
+          count = suite.countTestCases()
+          print(f"FABRIC_CDM54_DISCOVERED={count}; required_min=2; files={len(files)}", flush=True)
+          if count < 2:
+              raise SystemExit("FABRIC_CDM54_TEST_DISCOVERY_FAIL")
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful():
+              sys.exit(1)
+          print("FABRIC_CDM54_OFFLINE_TESTS=PASS; CLOUD_WRITES=0")
+          PY
       - name: Explicit runtime scope
         run: echo "FABRIC_WAREHOUSE_DDL_APPLY=NO; DATAPLANE_WRITE=NO; SOURCE_ONLY=PASS"
