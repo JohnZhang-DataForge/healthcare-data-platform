@@ -1,0 +1,42 @@
+name: Fabric Deployment Ownership Trusted Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  require-trusted-fabric-deployment-owner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout trusted default-branch policy
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: policy
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Checkout candidate PR as passive Git data
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Test only trusted main policy and registry
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s policy/.github/quality/tests/azure-fabric/deployment -p 'test_fabric_deployment_ownership.py' -v
+      - name: Check candidate paths against default-branch rules
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 policy/.github/quality/scripts/check_fabric_deployment_ownership.py \
+            --policy-root "$GITHUB_WORKSPACE/policy" \
+            --repo-root "$GITHUB_WORKSPACE/candidate" \
+            --base "$BASE_SHA" --head "$HEAD_SHA"

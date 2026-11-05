@@ -32,6 +32,29 @@ class DeploymentOwnerTests(unittest.TestCase):
         self.assertTrue(any("source-document" in e for e in errors))
         self.assertTrue(any("test-belongs-in-quality" in e for e in errors))
         self.assertTrue(any("wrong-deployment-owner" in e for e in errors))
+
+    def test_trusted_policy_mutation_forbidden_after_bootstrap(self):
+        base = {checker.TRUSTED_WORKFLOW, checker.OWNER_FILE}
+        for protected in checker.PROTECTED_POLICY:
+            errors = checker.evaluate({protected: "M"}, REGISTRY, base_paths=base)
+            self.assertTrue(any("trusted-owner-policy-mutation" in e for e in errors), protected)
+
+    def test_first_workflow_introduction_is_allowed(self):
+        self.assertEqual(checker.evaluate(
+            {checker.TRUSTED_WORKFLOW: "A"}, REGISTRY, base_paths=set()), [])
+
+    def test_added_deploy_source_needs_exact_code_map_link(self):
+        path = "azure-fabric/deployment/warehouse/schema_apply.py"
+        changes = {path: "A", checker.CODE_MAP: "M"}
+        self.assertEqual(checker.evaluate(changes, REGISTRY, code_map_text=path), [])
+        self.assertTrue(any("missing-exact-code-map-source-link" in e for e in
+            checker.evaluate(changes, REGISTRY, code_map_text="not linked")))
+
+    def test_unregistered_existing_head_is_rejected(self):
+        paths = {checker.OWNER_FILE, checker.CODE_MAP,
+                 "azure-fabric/deployment/unknown/not_allowed.py"}
+        errors = checker.evaluate({}, REGISTRY, head_paths=paths)
+        self.assertTrue(any("unregistered-deployment-component" in e for e in errors))
     def test_retired_paths_are_not_reintroduced(self):
         self.assertEqual(checker.evaluate({}, REGISTRY), [])
 
