@@ -39,7 +39,7 @@
 - [x] 5.1 独立 QA 读取最终 main 和合并 PR、CI、文件 inventory：核实 Fabric 15/15 测试按规划归位，8/8 源码 README 退役，2 份其他 MD 已治理、历史例外清单准确。
 - [x] 5.2 独立检查正向与负向 PR、真实 Ruleset Required 状态；未做到实际 blocked 则保持任务 OPEN 并报告管理权限阻断。
 - [x] 5.3 对关键 Native Item / Warehouse / Pipeline 的 Git 树 SHA 与整改前固定 SHA 独立对账；确认**没有任何 Fabric/Azure/Local Runtime 操作**或业务数据变更。记录准确 main SHA、PR、Run、保留的 Legacy 例外。
-- [ ] 5.4 全部要求和负向测试通过后再审查 Current Spec/Archive；OpenSpec `validate --all --strict` 不是实际实施或运行时验收。
+- [x] 5.4 依据 2026-11-05 用户批准的设计收口，保留 185 条不可变历史记录，明确有效例外为基线与 PR base tree 的交集；核实真实负向 PR #689 已阻止退役 Fabric 路径复活。当前实施规范纳入 Current Spec，并将本 Change 归档；最终效果以本收口 PR 的真实 Required Checks、合并及 main 读回为准，OpenSpec 静态 PASS 不等于业务 Runtime 验收。
 
 ## Stop / HOLD
 
@@ -117,4 +117,4 @@
 ### P5 independent audit results (2026-11-04 ET)
 
 - Tasks 5.1–5.3 independently verified and recorded in [P5 Acceptance Evidence](P5-ACCEPTANCE-EVIDENCE.md), using actual final Git trees, 15/15 method-inventory matching (118/118 method names), 128 executed regression cases, 10/10 source Markdown retirements, 11/11 Native SHA integrity and 209/209 non-test/non-Markdown Fabric source SHA integrity; active Ruleset, protected positives and fresh explicitly blocked [negative PR #689](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/689).
-- Task 5.4 **HOLD** for one narrow governance decision: the protected original exact-path inventory remains at 185 historical rows with 25 expired Fabric paths; active legacy exceptions are only 160 because the checker requires presence in PR base. The blocked P5 negative PR proved no reintroduction loophole. The original design said to prune those 25 literal policy rows, but changing a trusted `GUARD_FILES` entry cannot pass the existing Required Check without separately authorized maintenance. Do not silently bypass GitHub protection or claim Current Spec archive complete.
+- Task 5.4 **DECISION APPROVED 2026-11-05 ET**: preserve 185 frozen historical rows; 25 retired Fabric paths are no longer effective because the trusted checker requires existence in the PR base. The valid 160 rows are the audited snapshot, not a permanently fixed quota. Negative PR #689 demonstrated that deleted paths cannot be reintroduced. This user's approved design amendment supersedes physical pruning, avoids `GUARD_FILES`/Ruleset maintenance, and is implemented by this Current Spec + Archive docs-only PR; final completion is conditional on ordinary Required Checks and protected merge.

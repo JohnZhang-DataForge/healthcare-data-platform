@@ -84,7 +84,7 @@
 | **P2 Fabric docs** | 迁移 8 README 和 2 份说明性 Markdown 到权威文档，按知识领域去重；原代码文件在文档读回和链接 CI 通过后删除 | 8/8 README 内容对账、所有反向链接修正、OpenSpec/文档测试 PASS，历史临床/事务/许可边界不变 |
 | **P3 Fabric tests** | 15 个测试按 Notebook 8、OpenLineage 2、Warehouse 5 三组顺序迁移；一个组只在当前 PR CI PASS 并合并后处理下一组 | 旧/新 unittest 相同用例收集量、正负向断言、Fixture、build/import、CODE.md、被影响 workflow paths、Self-Runner path 引用核对；失败即回滚该组，不影响别组 |
 | **P4 Optional** | 只在证据确认 `notebook-development/` 2 个工具可以安全退役时移动；否则留存并在任务说明理由 | 不改变正式 Notebook 实现、Wheel、Gateway、Delta 或任何资源路径 |
-| **P5 Audit** | 清理精确例外基线中已完成迁移的旧 Fabric 路径，独立 QA 检查 PR 禁止新违规可真实阻止 merge | 新旧路径扫描、6+ 类门禁、全部受影响 CI、final main SHA、文档/测试库存对账、独立负向 PR blocked；未通过保持 Change Active |
+| **P5 Audit** | 保留精确例外基线的 185 条不可变历史记录，以 `baseline ∩ PR base tree` 作为真正有效例外；独立 QA 检查门禁真实阻止违规 PR | 已退役的 25 条 Fabric 路径不得复活，实存例外为 160 条（按验收快照），负向 #689 必须被 Required Check 阻止；完成 Current Spec 及 Archive 后才关闭 P5.4 |
 
 P1 结束后可以同时准备不同模块的*只读审计或文档草稿*，但是涉及共享文档/规则/Workflow 的真实改动串行集成。默认不进行大规模并行 Git 文件搬迁。
 
@@ -115,3 +115,14 @@ P1 结束后可以同时准备不同模块的*只读审计或文档草稿*，但
 - 仅变更 Git、静态检查与离线测试；**不运行**任何 Fabric Spark/Delta/Warehouse/DW、Azure Capacity、Terraform Apply/Destroy、Self-Runner 的云端流程，不修改任何过去已批准的数据分区/批次/事务。
 - 回滚单组 PR 用对应 Git revert，并恢复旧 CI 路径与文档链接；保持从一开始的 P1 Guard 防止产生新违规。
 - 最终独立验收必须核实并报告原始目标：Fabric 15/15 测试迁移、8/8 README 退休和 2/2 MD 去重/有据保留、源代码/Native Item SHA 未变、旧数据未触碰、Rule required 真正阻止新违规。任何未满足项目标记 OPEN，不宣称整体 DONE。
+
+## 7. P5.4 经批准的收口设计变更（2026-11-05 ET）
+
+用户批准将第 4 节 P5 阶段原定的「物理删除 25 条旧 Fabric 例外」调整为**保留 P1 精确历史库存的 185 条不可变路径**，但**这不是 185 条可用豁免**。本段覆盖原方案中的物理删除动作，不改变 P1/P2/P3/P4 的验收结果或任何运行时边界。
+
+- 历史来源：`.github/quality/repository-layout-legacy-baseline.txt` 固定 185 个 P1 原始路径，保持字节内容不变；此文件及 trusted checker 都在 `GUARD_FILES` 保护内，普通 PR 无法改写。以后追查旧版本时仍能查看当时允许的具体路径。
+- 有效例外的唯一判定：只有在 `path in baseline` **且** `path in base_paths`（当前 PR 的 Git base tree）时，已存在的历史源码区测试或文档才可继续修改。基线条目本身不会给已删除文件授予重新创建的权限。按 P5 审计快照，25 条 Fabric 文件均已退役，其余 160 条仍然存在；这个 160 是随仓库未来合法删除而单调减少的**快照值**，不能硬编码为永远固定。
+- 删除/重建语义：对历史文件的删除允许；以后即使原路径仍列在 185 条库存里，重新新增也属于违规。若要在旧源码目录重新引入，必须另走审查并修改正式治理规则，不能利用历史基线。
+- 已有真实证明：负向 PR [#689](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/689) 恢复两个已经退役且仍在历史清单中的 Notebook 路径，`require-trusted-change` 对其分别给出 `new-source-document` 和 `new-test-outside-quality`，GitHub 阻止合并；PR 已关闭、未合并。相关测试/文件库存及 Git blob 不变性的完整证据见 [P5 验收](P5-ACCEPTANCE-EVIDENCE.md)。
+- 批准范围：本次仅更新 OpenSpec 决策、验收报告、Current Spec 并 Archive Change，不触碰历史基线、任何 Ruleset、GitHub Actions、测试/生产代码、Fabric Native Item、Local DP/Portal/Marquez、实际云资源或数据。
+- 关闭条件：独立验收 P5.1–5.3 已通过；本变更被记录、Current Spec 已采用、原 Active Change 被归档，且最终 PR 的 `require-trusted-change`、`validate-openspec` 必须在未绕过分支保护的前提下成功并合并。OpenSpec static PASS 不代表业务 Runtime 验收。

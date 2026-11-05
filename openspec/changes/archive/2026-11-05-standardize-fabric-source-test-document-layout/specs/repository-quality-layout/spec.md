@@ -69,3 +69,17 @@
 
 - **WHEN** 本 Change 的计划 PR CI 成功并合并 main，但目录 Gate 与测试/文档迁移尚未实施
 - **THEN** 状态 SHALL 明确保持 `PLAN_APPROVED / IMPLEMENTATION_OPEN`，不得报告 15 个测试或 8 份 README 已整改完成
+
+### Requirement: 冻结的历史例外基线不得使已删除路径重新获得豁免
+
+源码目录存量豁免 MUST 同时要求路径列于 P1 的 185 条不可变精确历史清单，并且该路径**确实存在于当前 PR base Git tree**。不得把单纯存在于历史清单视为新文件豁免，也不得为了归档本 Change 而临时关闭 GitHub Required Checks。有效例外数量由交集计算，不是永久固定数值。
+
+#### Scenario: 退役 Fabric 文件试图重新引入
+
+- **WHEN** PR 新增已从 base tree 删除、但仍列于历史清单中的 `azure-fabric/notebook-development/README.md` 或旧 `tests/test_notebook_offline.py`
+- **THEN** 可信 Gate SHALL 按新增源码文档或新增测试违规拒绝，并由 Required Check 阻止合并
+
+#### Scenario: 仍存在的 Local DP 历史文件合法维护
+
+- **WHEN** PR 仅修改一个同时位于历史清单和 PR base tree 的既有 Local DP 测试，且没有其他违规变更
+- **THEN** 布局 Gate SHALL 不因其历史测试目录而拒绝该文件；未来若该文件被删除，则同一旧路径重新引入不再享有该豁免

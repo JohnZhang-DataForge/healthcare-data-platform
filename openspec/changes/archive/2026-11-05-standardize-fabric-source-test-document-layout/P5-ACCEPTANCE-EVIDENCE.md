@@ -1,6 +1,6 @@
 # P5 Independent Governance QA — 2026-11-04 ET
 
-> **Scope:** Healthcare repository layout only; no Fabric/Azure/Local runtime tests or production writes. P5 tasks 5.1–5.3 are evidence-accepted. **P5.4 remains OPEN** while the intentionally immutable policy-baseline retirement decision is unresolved.
+> **Scope:** Healthcare repository layout only; no Fabric/Azure/Local runtime tests or production writes. P5 tasks 5.1–5.3 were independently evidence-accepted. On 2026-11-05 the user approved P5.4's immutable-history design adjustment; final closure depends on this docs-only Current Spec + Archive PR passing its actual Required Checks and merging to main.
 
 ## Main / PR lineage
 
@@ -30,15 +30,22 @@
 - P4 independent review and normal protected merge verified; other agents' Marquez/Portal PRs were not modified by these Fabric moves.
 - The unrelated external Cloudflare `Workers Builds: healthcare-portal` check sometimes FAILED on Fabric-only docs/test PRs. It is not a Ruleset Required Check and remains a separately owned investigation; no portal changes were made to silence it.
 
-## Immutable P1 baseline / P5.4 outstanding governance decision
+## Immutable P1 baseline / P5.4 approved closeout
 
 - Current file `.github/quality/repository-layout-legacy-baseline.txt` is an **immutable P1 historical inventory** containing 185 exact originally approved exceptions.
 - Only **160/185** entries correspond to still-present paths in the audited main; the remaining **25/185** are **all the retired Fabric test/doc paths**, and no other baseline entry is missing.
 - Crucially, the trusted checker requires **both** `path in baseline` **and** `path in PR base tree` for a legacy path to remain eligible. Therefore the 25 retired entries are **not an active reintroduction privilege**. The real negative #689 proves this under enforced branch rules.
 - The approved Design originally proposed **removing those 25 entries from the literal frozen policy file** during P5. That file itself is in trusted `GUARD_FILES`: a normal PR editing it yields `trusted-policy-mutation` and cannot pass `require-trusted-change`. We **have not modified the protected policy** or bypassed any Ruleset.
-- **Decision still needed for 5.4:** either preserve this auditable frozen 185-row historical snapshot as-is (effective active exceptions are 160, with real negative proof) through an explicitly approved OpenSpec design adjustment; **or** perform a separately approved one-time GitHub Ruleset maintenance window to prune 25 rows (never silently bypass checks). Until one of those is approved/closed, **P5.4 and archive remain OPEN**, even though no functional loophole was found.
+- **Decision approved on 2026-11-05:** preserve all 185 historical entries as a byte-stable audit trail and consider only `baseline ∩ PR base tree` to be effective exceptions. All 25 retired Fabric paths therefore remain non-exempt; current 160 effective paths are a point-in-time count, not a fixed entitlement. The user explicitly chose this over the original physical-pruning proposal. No separate Ruleset maintenance or bypass is authorized or needed. The approved amendment is recorded in `design.md`, the Current Spec, and this archived Change; PR checks/merge are the final closeout gate.
 
 ## Source safety and future follow-up
 
 - Our P1–P5 Git work had no Azure/Fabric Spark execution, Warehouse DDL/DML, GHCR publish, local K8s/Marquez modification or data replay; CI runs cited above are offline/static. Other independent Marquez/Portal agents may perform separate runtime work, which this audit does not assess.
-- The detailed placement and fixture policy is in [Testing & Evidence](../../../documents/engineering/development/TESTING-AND-EVIDENCE.md). Dedicated Fabric CI groups now enforce actual nonzero test discovery/counts. This does **not** yet establish a universal future auto-discovery gate for every possible new Local/Portal/Shared test component; treat that as a separate governance improvement, not as current P5 proof.
+- The detailed placement and fixture policy is in [Testing & Evidence](../../../../documents/engineering/development/TESTING-AND-EVIDENCE.md). Dedicated Fabric CI groups now enforce actual nonzero test discovery/counts. This does **not** yet establish a universal future auto-discovery gate for every possible new Local/Portal/Shared test component; treat that as a separate governance improvement, not as current P5 proof.
+
+## P5.4 closing scope and audit limits (2026-11-05 ET)
+
+- Final handoff base: healthcare main `00968d67f67ee7d3b5b29080ce2b2dd408285454`; this is later than original P5 audit merge `d1bf0b7ad9bdd8d2805fc1629b67907c2d11a4bb` by one Portal documentation-only commit. This base has no overlapping Fabric governance changes.
+- P5.4 closure changes are **documentation/specification only**: archive the original Change under `openspec/changes/archive/2026-11-05-standardize-fabric-source-test-document-layout/` and adopt `openspec/specs/repository-quality-layout/spec.md`. The P1 trusted checker, frozen 185-line baseline, workflows, Ruleset and runtime assets remain unchanged.
+- Original source-data evidence for 15/15 migrated tests, 128 executed regression cases, 11/11 Native blobs, 209/209 other source blobs and 25 removed Fabric paths remains the P5.1–5.3 inventory; these results are **not** represented as having been rerun against the latest unrelated Portal commit. No cloud runtime or data activity is claimed.
+- Official closure requires the PR's actual Required Checks and protected merge, followed by an independent main readback. If any required check fails or the merge is blocked, the change must not be presented as fully complete.
