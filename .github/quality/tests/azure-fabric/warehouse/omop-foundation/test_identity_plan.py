@@ -3,7 +3,7 @@ import pathlib
 import sys
 import unittest
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "writer"))
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[6] / "azure-fabric/warehouse/omop-foundation/writer"))
 from identity_plan import (MAX_ID, IdentityKey, BatchFence, Receipt, PlanningHold, plan_ids, replay)
 
 def person(h="hospital-A", key="patient-1"):

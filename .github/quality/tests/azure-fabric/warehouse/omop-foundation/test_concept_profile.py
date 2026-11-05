@@ -7,9 +7,9 @@ from pathlib import Path
 import sys
 import unittest
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[6]
 sys.path.insert(0, str(ROOT / "shared-data-engine/src"))
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "writer"))
+sys.path.insert(0, str(ROOT / "azure-fabric/warehouse/omop-foundation/writer"))
 from concept_profile import ConceptProfileHold, inspect_mapping_profile
 
 

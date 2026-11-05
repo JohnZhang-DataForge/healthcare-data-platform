@@ -94,3 +94,7 @@
 ### P3.2 OpenLineage audit (pending protected CI)
 
 - Retained both useful offline tests (Spark/Scala incompatibility and authenticated immutable Blob Publisher FAIL-CLOSED/partial retry), 8 explicit unittest methods; moved paths only with equivalent Python importlib target path. Added a dedicated read-only GitHub Hosted workflow with strict >=8 test discovery, exactly two source test files, and fail-on-test-error. Runtime publisher/compatibility implementations unchanged. Task 3.2 passed actual dedicated CI discovery/runner evidence at [Run #41956789788](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41956789788), job `127013507494`: `FABRIC_OPENLINEAGE_DISCOVERED=8; required_min=8; files=2`, `Ran 8 tests`, `FABRIC_OPENLINEAGE_OFFLINE_CONTRACT=PASS; CLOUD_WRITES=0`. Check-links, trusted Required Check and validate-openspec succeeded on initial PR head; verify final evidence-only HEAD before merging.
+
+### P3.3 Warehouse audit (pending protected CI)
+
+- Five source-area Warehouse regression test files with **33 explicitly declared test methods** remain valuable and are only relocated: CDM54 1/2 plus Foundation 4/31 (Concept Profile, F1 Schema, INT-ID Replay and Silver-to-Identity preview). Upstream OHDSI fixed SHA, global positive INT, single-writer/snapshot safety, Concept rejection, no Gold writes preserved. Both existing offline workflows are updated with exact file inventory and minimum test-discovery checks. Final P3.3 task status requires real CI proof, no static-only assertion.
