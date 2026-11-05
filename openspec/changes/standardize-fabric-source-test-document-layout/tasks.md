@@ -17,7 +17,7 @@
 
 ## 2 — Azure Fabric 文档清理（独立 Docs PR）
 
-- [ ] 2.1 对账 `azure-fabric/infra-terraform/` 3 份 README；保留 Capacity、OIDC、Remote State、IAM、已创建/未创建区分和真实 Run 的独有内容到 `documents/systems/azure-fabric/`。
+- [x] 2.1 对账 `azure-fabric/infra-terraform/` 3 份 README；保留 Capacity、OIDC、Remote State、IAM、已创建/未创建区分和真实 Run 的独有内容到 `documents/systems/azure-fabric/`。
 - [ ] 2.2 对账 Notebook 1 份与 OpenLineage 1 份 README，以及 `openlineage/PUBLISHER.md`；保留 HOLD、真实运行边界、只读协议、源代码唯一性。
 - [ ] 2.3 对账 Warehouse 3 份 README（包含 `writer/README.md`）及 `ID-ALLOCATION-STATE-MACHINE.md`；保留 INT allocator、单写入者事务、ROLLBACK、G4/G5 概念映射与 `NOT GOLD_COMMITTED` 约束。
 - [ ] 2.4 重建所有反向链接及权威 CODE.md，完成内容一一核对之后删除旧说明性文件；8 份 README 无遗漏、2 份其他 MD 有明确处理结果；文档链接/CI PASS。
@@ -60,3 +60,9 @@
 - Post-fix **negative** [#675](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/675) at `cf03a3dea67b79baeea1c1930af10f40623d4707` was rejected by the actual Required Check: [run 41947587388](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41947587388), job `126983525823`, `PATH=azure-fabric/warehouse/p1-postfix-negative/README.md RULE=new-source-document EXPECTED_OWNER=documents/`, `REPOSITORY_LAYOUT_GATE=FAIL`; GitHub `mergeable_state=blocked`. PR closed **unmerged**.
 - Independent Git-tree SHA inventory: all **34** protected pre-P1 paths are byte-identical to `ee435d8720cfed698e239f767f313addf36a924e`: 11 Fabric Native Git Item files, 15 Fabric tests, and 8 source README files. The frozen legacy baseline remains exactly **185 paths**; **P2–P5 not started**.
 - Post-fix **positive** [#676](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/676) proved actual trusted enforcement **PASS** on first valid PR body edit: [run 41947856108](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41947856108), job `126984406775`; explicit `REPOSITORY_LAYOUT_GATE=PASS` (`legacy_exact_paths=185`), `CODE_MAP_GATE=PASS` (`mapped_fabric_native_files=11`), and `OPENSPEC_CHANGE_GATE=PASS`. `validate-openspec` also succeeded. The final acceptance-record commit requires its own successful Required checks before merging #676. All normal branch protection stays enabled.
+
+
+### P2 Terraform documentation migration (2026-11-04 ET)
+
+- Task 2.1: consolidated three exact source README files into `documents/systems/azure-fabric/infra-terraform/{FABRIC-ENVIRONMENT-ADOPTION,CAPACITY-LIFECYCLE,LANDING-CONNECTION}.md`, preserving original command references, OIDC/State/Import/RBAC constraints, Trial-vs-paid capacity behavior and actual 2026-10-22 Reader/Connection Run evidence. The three old README source files are retired in this PR; Terraform files and State are unchanged.
+- Explicitly distinguished the original 2026-10-16 seven-Root Plan-only evidence from later Control Plane Apply/GET; neither is Blob data-plane read or Runtime acceptance.
