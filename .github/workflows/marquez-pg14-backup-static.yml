@@ -1,0 +1,23 @@
+name: Marquez PG14 Backup Static
+on:
+  pull_request:
+    paths:
+      - "platform-portal/postgres/backup/**"
+      - "platform-portal/postgres/tests/**"
+      - ".github/workflows/marquez-pg14-backup-static.yml"
+  push:
+    branches: [main]
+    paths:
+      - "platform-portal/postgres/backup/**"
+      - "platform-portal/postgres/tests/**"
+      - ".github/workflows/marquez-pg14-backup-static.yml"
+permissions:
+  contents: read
+jobs:
+  backup-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate safe cron, same PVC, and shell syntax offline
+        run: python3 -m unittest discover -s platform-portal/postgres/tests -p "test_marquez_backup_static.py" -v
