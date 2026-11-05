@@ -34,7 +34,7 @@ this directory cleanup.
 - [Official OHDSI 5.4 DDL mirror](../../../../azure-fabric/deployment/warehouse/omop-cdm-5.4/upstream/OMOPCDM_sql_server_5.4_ddl.sql): source blob pinned and offline verified.
 - [Source manifest](../../../../azure-fabric/deployment/warehouse/omop-cdm-5.4/manifest.json): source commit, 39 table names, 432 fields, Fabric-only datatype mappings.
 - [Fabric-compatible table SQL](../../../../azure-fabric/deployment/warehouse/omop-cdm-5.4/tables/): 39 `cdm` CREATE TABLE definitions, no runtime execution.
-- [Offline contract tests](../../../../.github/quality/tests/azure-fabric/deployment/warehouse/omop-cdm-5.4/test_cdm54_schema.py), [workflow](../../../../.github/workflows/fabric-omop-cdm54-schema-offline.yml).
+- [Offline contract tests](../../../../.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/test_cdm54_schema.py), [workflow](../../../../.github/workflows/fabric-omop-cdm54-schema-offline.yml).
 - These are Git source definitions; actual CDM 5.4 empty tables were deployed and read back in [#41648858578](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41648858578). Warehouse connectivity was proven separately by Self-Runner [#41645575691](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41645575691). Do not confuse with Schema readback or CDM COMMIT.
 
 - [F1 Vocabulary Blob header / empty-table preflight](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/src/ci/fabric_omop_vocabulary_preflight.py), [F1 replay-safe native COPY loader](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/src/ci/fabric_omop_vocabulary_load.py), and [Self-Runner Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-omop-vocabulary-import.yml). Execution evidence and current state tracked in [OMOP OpenSpec Tasks](../../../../openspec/changes/fabric-omop-foundation/tasks.md).
@@ -45,13 +45,13 @@ this directory cleanup.
 
 - **F1 Vocabulary semantic DQ (real):** [Self-Runner #41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379), 11/11 cross-table links unresolved=0; vocabulary_version blank in 28/47 rows remains an explicit version/licensing review item.
 
-- [F2 pure source-to-INT-ID preview and replay planner](../../../../azure-fabric/warehouse/omop-foundation/writer/identity_plan.py) with [offline collision/overflow/replay tests](../../../../.github/quality/tests/azure-fabric/deployment/warehouse/omop-foundation/test_identity_plan.py). This code is SOURCE-ONLY; it does not write Warehouse Gold.
+- [F2 pure source-to-INT-ID preview and replay planner](../../../../azure-fabric/warehouse/omop-foundation/writer/identity_plan.py) with [offline collision/overflow/replay tests](../../../../.github/quality/tests/azure-fabric/warehouse/omop-foundation/test_identity_plan.py). This code is SOURCE-ONLY; it does not write Warehouse Gold.
 
 - **F2 real rollback rehearsal:** [Self-Runner #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608), six Warehouse tables real synthetic DML within one transaction, explicit rollback and independently confirmed zero row persistence, PASS. No actual Person/Visit Gold COMMIT.
 
 
 ## P3.3 统一 Warehouse 回归测试位置（2026-11-04）
 
-- [OHDSI CDM54 schema](../../../../.github/quality/tests/azure-fabric/deployment/warehouse/omop-cdm-5.4/test_cdm54_schema.py)：固定上游 Blob SHA 和 39/432 DDL 结构；[CDM Schema Offline CI](../../../../.github/workflows/fabric-omop-cdm54-schema-offline.yml) 至少发现/运行 2 个测试。
-- [F1/F2 OMOP Foundation tests](../../../../.github/quality/tests/azure-fabric/deployment/warehouse/omop-foundation/)：Concept negative/DQ/Identity/Replay/Silver ID 预演；[Identity Schema Offline CI](../../../../.github/workflows/fabric-omop-foundation-identity-schema-offline.yml) 必须准确发现 4 文件、至少运行 31 个测试。
+- [OHDSI CDM54 schema](../../../../.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/test_cdm54_schema.py)：固定上游 Blob SHA 和 39/432 DDL 结构；[CDM Schema Offline CI](../../../../.github/workflows/fabric-omop-cdm54-schema-offline.yml) 至少发现/运行 2 个测试。
+- [F1/F2 OMOP Foundation tests](../../../../.github/quality/tests/azure-fabric/warehouse/omop-foundation/)：Concept negative/DQ/Identity/Replay/Silver ID 预演；[Identity Schema Offline CI](../../../../.github/workflows/fabric-omop-foundation-identity-schema-offline.yml) 必须准确发现 4 文件、至少运行 31 个测试。
 - Schema SQL/Manifest 已由本次有界 OpenSpec 搬至 `deployment/warehouse/`，Writer Python 原位保留；测试不得自动触发 DDL/DML/Schema Apply，真实 F2 Gold COMMIT 仍未验收。

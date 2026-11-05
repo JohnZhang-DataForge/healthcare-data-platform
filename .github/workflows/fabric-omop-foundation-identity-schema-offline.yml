@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - 'azure-fabric/deployment/warehouse/omop-foundation/**'
-      - '.github/quality/tests/azure-fabric/deployment/warehouse/omop-foundation/**'
+      - '.github/quality/tests/azure-fabric/warehouse/omop-foundation/**'
       - '.github/workflows/fabric-omop-foundation-identity-schema-offline.yml'
   push:
     branches: [main]
     paths:
       - 'azure-fabric/deployment/warehouse/omop-foundation/**'
-      - '.github/quality/tests/azure-fabric/deployment/warehouse/omop-foundation/**'
+      - '.github/quality/tests/azure-fabric/warehouse/omop-foundation/**'
       - '.github/workflows/fabric-omop-foundation-identity-schema-offline.yml'
 
 permissions:
@@ -31,7 +31,7 @@ jobs:
           from pathlib import Path
           import sys
           import unittest
-          start = ".github/quality/tests/azure-fabric/deployment/warehouse/omop-foundation"
+          start = ".github/quality/tests/azure-fabric/warehouse/omop-foundation"
           files = sorted(Path(start).glob("test_*.py"))
           if len(files) != 4:
               raise SystemExit(f"FABRIC_FOUNDATION_TEST_FILE_COUNT_INVALID={len(files)}; expected=4")
