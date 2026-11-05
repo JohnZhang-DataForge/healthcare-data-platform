@@ -52,17 +52,31 @@ Source review and offline gateway tests SHALL not be represented as real externa
 - **WHEN** only a design or offline test PR is merged
 - **THEN** public Deployment/External Browser status SHALL remain NOT_VERIFIED
 
-### Requirement: Public root navigation opens Landing Datasets without breaking manual namespace choice
-The dedicated public Marquez Web overlay SHALL route an exact root visit (`/`) to `/datasets` and select the real `s3://health-landing` namespace for that visit, even if an earlier session had selected Processing. It SHALL NOT redirect unrelated paths, modify the original private Marquez Web, bypass the GET-only Gateway, or change stored dataset names and lineage identifiers.
+### Requirement: Public root SHALL preserve the native Marquez Dashboard
+The public Web overlay SHALL leave the root URL `/` on the original Marquez Dashboard without client-side redirection. Jobs and Datasets SHALL keep their own list routes and real namespace selections.
 
-#### Scenario: User opens the public domain root after selecting Processing earlier
-- **WHEN** a visitor opens `/` with `selectedNamespace=s3://health-processing` saved
-- **THEN** the browser SHALL navigate to `/datasets` and choose `s3://health-landing` through the existing namespace selector
-- **AND** a later user selection of Processing SHALL remain in effect without being reset
+#### Scenario: Visitor opens public domain homepage
+- **WHEN** a visitor opens `/`, including with UTM parameters or an existing saved namespace
+- **THEN** the browser SHALL render the native Marquez Dashboard and SHALL NOT redirect to `/datasets`
+- **AND** it SHALL NOT automatically click namespace selector options or empty-state Refresh on Dashboard
 
-#### Scenario: User follows a direct dataset or lineage link
-- **WHEN** the visitor opens `/datasets`, `/datasets/`, Jobs, or a Lineage deep link rather than root
-- **THEN** existing namespace selection and routes SHALL remain intact and no root redirect SHALL occur
+#### Scenario: Visitor opens Jobs, Datasets, or real lineage detail
+- **WHEN** the visitor navigates to `/jobs`, `/jobs/`, `/datasets`, `/datasets/`, or a lineage deep link
+- **THEN** route-specific defaults and native links SHALL remain operational, with no new page redirect
+
+### Requirement: Empty first list after namespace selection SHALL recover without manual Refresh
+When entering Jobs or Datasets, the public Web overlay SHALL use the official native Marquez Refresh button at most once per section/namespace visit if the target namespace is selected but the list still renders the native empty state. It MUST NOT create artificial Jobs or Datasets, repeat refresh indefinitely, or trigger refresh on native Dashboard and lineage detail pages.
+
+#### Scenario: Native selection settles but target list still shows zero
+- **GIVEN** the nonempty target namespace has been selected for Jobs or Datasets
+- **WHEN** the React list renders its empty-state Refresh action
+- **THEN** a single delayed native Refresh SHALL be invoked without visitor interaction
+- **AND** after records appear, it SHALL not send additional list refresh requests
+
+#### Scenario: API stays empty or user navigates away
+- **WHEN** a native Refresh returns no records, or the visitor switches route before the delayed retry
+- **THEN** the overlay SHALL NOT loop or refresh a previous page
+- **AND** it SHALL preserve native error behavior and the visitor's manual namespace preference
 
 ### Requirement: Public Jobs and Datasets SHALL default to independently useful namespaces
 The public Marquez overlay SHALL give Jobs and Datasets independent, nonempty default namespaces. Visitor-selected namespaces MUST persist within their respective list sections. Native lineage data, deep links, metadata APIs and the read-only Gateway MUST remain unchanged.

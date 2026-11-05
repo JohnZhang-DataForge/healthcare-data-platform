@@ -13,7 +13,8 @@ function el(text=''){
     removeAttribute:k=>attributes.delete(k),
     querySelector:()=>null,querySelectorAll:()=>[],click:()=>{}};
 }
-function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[encounter,patient],options=[],fromHome=false}={}){
+function setup({route='/datasets',chosen=null,ns='s3://health-processing',
+               data=[encounter,patient],options=[],showEmpty=false,refreshLoadsContent=true}={}){
   const headers=['NAME','NAMESPACE','SOURCE','UPDATED AT','QUALITY','COLUMN LINEAGE'].map(el);
   const rows=data.map(name=>{
     const cells=Array.from({length:6},(_,i)=>el(i===1||i===2?ns:''));
@@ -25,18 +26,22 @@ function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[
   });
   const table={querySelector:q=>q==='thead tr'?{querySelectorAll:()=>headers}:null,
     querySelectorAll:q=>q==='tbody tr'?rows:[]};
-  const selector=el(ns),saved=new Map(),session=new Map(),selected=[],redirected=[];let opened=0;
-  if(fromHome)session.set('publicMarquezRootLandingOnce','1');
+  const selector=el(ns),saved=new Map(),session=new Map(),selected=[],redirected=[],timers=[];
+  let opened=0,refreshClicks=0,emptyVisible=showEmpty;
   if(chosen!==null)saved.set('selectedNamespace',chosen);
   selector.click=()=>opened++;
   const opt=options.map(o=>{const e=el(o);e.click=()=>{selected.push(o);saved.set('selectedNamespace',o);selector.textContent=o};return e;});
+  const emptyButton=el('Refresh');
+  emptyButton.click=()=>{refreshClicks++;if(refreshLoadsContent)emptyVisible=false};
   const listeners={};
   const doc={readyState:'complete',body:{},getElementById:id=>id==='namespace-select'?selector:null,
-    querySelectorAll:q=>q==='table'?[table]:q==='[role="option"]'?opt:[],
+    querySelectorAll:q=>q==='table'?[table]:q==='[role="option"]'?opt:q==='button'?(emptyVisible?[emptyButton]:[]):[],
     addEventListener:(type,handler)=>{listeners[type]=handler}};
   const win={location:{pathname:route.split('?')[0],href:'http://local'+route,
     search:route.includes('?')?'?'+route.split('?').slice(1).join('?'):'',hash:'',
     replace:u=>redirected.push(u)},
+    setTimeout:fn=>{timers.push(fn);return timers.length},
+    clearTimeout:id=>{timers[id-1]=null},
     localStorage:{getItem:k=>saved.has(k)?saved.get(k):null},
     sessionStorage:{
       getItem:k=>session.has(k)?session.get(k):null,
@@ -52,7 +57,12 @@ function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[
     option.click();
     update();
   };
-  return {headers,rows,selector,saved,session,selected,redirected,opened:()=>opened,update,win,manualChoose};
+  const flushTimers=()=>{
+    const tasks=timers.splice(0,timers.length);
+    tasks.forEach(fn=>{if(fn)fn()});
+  };
+  return {headers,rows,selector,saved,session,selected,redirected,
+    opened:()=>opened,refreshClicks:()=>refreshClicks,flushTimers,update,win,manualChoose};
 }
 test('public trailing slash route displays Processing and Landing, with exact preserved dataset hrefs',()=>{
   for(const route of ['/datasets','/datasets/']){
@@ -99,35 +109,30 @@ test('first-visit Datasets picks Landing and Jobs picks actual Airflow separatel
   assert.equal(jobs.headers[0].textContent,'NAME','native Jobs table untouched');
 });
 
-test('exact public root redirects to Datasets and arms one-time Landing choice, preserving UTM',()=>{
-  const r=setup({route:'/',chosen:'s3://health-processing'});
-  assert.deepEqual(r.redirected,['/datasets']);
-  assert.equal(r.session.get('publicMarquezRootLandingOnce'),'1');
-  const utm=setup({route:'/?utm_source=chatgpt.com',chosen:'s3://health-processing'});
-  assert.deepEqual(utm.redirected,['/datasets?utm_source=chatgpt.com']);
-  for(const route of ['/datasets','/datasets/','/jobs','/lineage/dataset/x/y','/datasets/column-level/foo']){
-    assert.deepEqual(setup({route,chosen:'s3://health-processing'}).redirected,[],route);
+test('public root is native Marquez Dashboard, never redirects or mutates namespace',()=>{
+  for(const route of ['/','/?utm_source=chatgpt.com']){
+    const native=setup({route,chosen:'healthcare-platform-airflow',
+      ns:'healthcare-platform-airflow',options:['s3://health-landing']});
+    assert.deepEqual(native.redirected,[],route+' retains native Dashboard');
+    assert.equal(native.opened(),0);
+    assert.equal(native.selected.length,0);
+    assert.equal(native.session.size,0);
+  }
+  for(const route of ['/jobs','/datasets','/lineage/job/x/y','/datasets/column-level/foo']){
+    assert.deepEqual(setup({route,chosen:'s3://health-processing'}).redirected,[]);
   }
 });
-test('root arrival overrides saved Processing exactly once, then keeps manual choices',()=>{
-  const x=setup({route:'/datasets',chosen:'s3://health-processing',ns:'s3://health-processing',
-    fromHome:true,options:['default','s3://health-processing','s3://health-landing']});
+test('return to Datasets independently selects Landing; direct useful Processing bookmark remains valid',()=>{
+  const x=setup({route:'/datasets',chosen:'healthcare-platform-airflow',
+    ns:'healthcare-platform-airflow',options:['s3://health-landing']});
   assert.deepEqual(x.selected,['s3://health-landing']);
-  x.update(); // React/MUI completes the new selected label asynchronously.
-  assert.equal(x.saved.get('selectedNamespace'),'s3://health-landing');
-  assert.equal(x.session.has('publicMarquezRootLandingOnce'),false);
-  x.saved.set('selectedNamespace','s3://health-processing');
-  x.selector.textContent='s3://health-processing';
   x.update();
-  assert.deepEqual(x.selected,['s3://health-landing'],'must not forcibly switch back after manual selection');
+  assert.equal(x.session.get('publicMarquezDatasetsNamespace'),'s3://health-landing');
   const direct=setup({route:'/datasets',chosen:'s3://health-processing',
     ns:'s3://health-processing',options:['s3://health-landing']});
-  assert.equal(direct.selected.length,0,'direct bookmark keeps prior Processing choice');
-  const active=setup({route:'/datasets',chosen:'s3://health-processing',
-    ns:'s3://health-landing',fromHome:true});
-  assert.equal(active.session.has('publicMarquezRootLandingOnce'),false,'landing already active consumes marker');
+  assert.equal(direct.selected.length,0);
+  assert.equal(direct.session.get('publicMarquezDatasetsNamespace'),'s3://health-processing');
 });
-
 test('live-proven Jobs namespace is preferred; fallback Spark Business never chooses empty Landing',()=>{
   const first=setup({route:'/jobs/',ns:'s3://health-landing',chosen:'s3://health-landing',
     options:['default','s3://health-landing','healthcare-platform-airflow','healthcare-platform-spark-business']});
@@ -184,6 +189,51 @@ test('direct Dataset bookmark retains useful Processing but stale Jobs choice ca
     assert.equal(detail.opened(),0);
     assert.equal(detail.selected.length,0);
   }
+});
+test('native Refresh is automatically invoked once for actual empty Jobs after namespace switch',()=>{
+  const x=setup({route:'/jobs',chosen:'s3://health-landing',ns:'s3://health-landing',
+    options:['s3://health-landing','healthcare-platform-airflow'],showEmpty:true});
+  assert.deepEqual(x.selected,['healthcare-platform-airflow']);
+  assert.equal(x.refreshClicks(),0,'wait until the selected Namespace is rendered');
+  x.update();
+  assert.equal(x.refreshClicks(),0,'the existing Redux fetch gets its first opportunity');
+  x.flushTimers();
+  assert.equal(x.refreshClicks(),1,'native MUI empty-state Refresh invoked without user click');
+  x.update();x.flushTimers();
+  assert.equal(x.refreshClicks(),1,'no duplicate HTTP requests or refresh loop');
+});
+test('Landing Datasets also self-refreshes once after native render when list incorrectly remains empty',()=>{
+  const x=setup({route:'/datasets',chosen:'healthcare-platform-airflow',
+    ns:'healthcare-platform-airflow',options:['s3://health-landing'],showEmpty:true});
+  x.update();x.flushTimers();
+  assert.deepEqual(x.selected,['s3://health-landing']);
+  assert.equal(x.refreshClicks(),1);
+  x.update();x.flushTimers();
+  assert.equal(x.refreshClicks(),1);
+});
+test('empty-state retry is strictly bounded even if network data stays unavailable',()=>{
+  const x=setup({route:'/jobs',chosen:'healthcare-platform-airflow',
+    ns:'healthcare-platform-airflow',showEmpty:true,refreshLoadsContent:false});
+  x.flushTimers();x.update();x.flushTimers();x.update();x.flushTimers();
+  assert.equal(x.refreshClicks(),1,'genuinely empty API does not trigger repeated requests');
+});
+test('existing populated list never refreshes, including native Dashboard and detail routes',()=>{
+  for(const route of ['/datasets','/jobs','/']){
+    const x=setup({route,chosen:route==='/jobs'?'healthcare-platform-airflow':'s3://health-landing',
+      ns:route==='/jobs'?'healthcare-platform-airflow':'s3://health-landing'});
+    x.flushTimers();x.update();x.flushTimers();
+    assert.equal(x.refreshClicks(),0,route+' must not generate an unnecessary request');
+  }
+  const deep=setup({route:'/lineage/job/n/id',showEmpty:true,
+    chosen:'healthcare-platform-airflow',ns:'healthcare-platform-airflow'});
+  deep.flushTimers();
+  assert.equal(deep.refreshClicks(),0,'never click refresh on a lineage detail');
+});
+test('switching away before pending refresh fires cancels the stale refresh',()=>{
+  const x=setup({route:'/jobs',chosen:'healthcare-platform-airflow',
+    ns:'healthcare-platform-airflow',showEmpty:true});
+  x.win.location.pathname='/';x.update();x.flushTimers();
+  assert.equal(x.refreshClicks(),0,'no Jobs request after navigating to native Dashboard');
 });
 test('show real Encounter and Patient, exact Batch/date/Run, unmodified lineage hrefs, original source tooltip',()=>{
   const x=setup({chosen:'s3://health-processing'});

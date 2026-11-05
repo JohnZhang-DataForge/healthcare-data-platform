@@ -28,8 +28,14 @@ After an authorized preflight, run the pinned manifest with `kubectl apply -f pl
 
 ## Public Datasets presentation (Marquez 0.51.1)
 
-Opening the public site root `/` navigates in the browser to `/datasets` and selects the real `s3://health-landing` Namespace, including a visitor who previously selected Processing. A one-shot same-tab session marker is consumed after the Landing dropdown choice; the visitor can then manually select `s3://health-processing` without being switched back. A direct `/datasets` or `/datasets/` visit without a prior section choice defaults to Landing; a direct bookmark with a previously chosen useful `s3://health-processing` still respects that selection. Jobs, dataset/column-level lineage deep links, and other routes do not redirect. Root query parameters such as UTM are preserved. This is an overlay browser navigation, **not an HTTP 3xx at the Gateway**, and does not change any dataset identity or API.
+The public domain root `/` now keeps the **native Marquez Dashboard** (including UTM parameters and existing bookmarks) rather than redirecting to `/datasets`. The previous Landing-first homepage was reverted after real iOS Safari screenshots showed both default Landing Datasets and default Airflow Jobs with `0 total` and a manual `REFRESH` requirement. The list routes `/datasets` and `/jobs` are still available and retain independent nonempty defaults; a direct Datasets bookmark respects an existing Processing selection.
 
+
+### Native Marquez list fetch correction (2026-11-04 iOS incident)
+
+The native Marquez 0.51.1 Jobs/Datasets components fetch when the selected namespace changes, but a real iOS screenshot showed that even after an automatic namespace switch to a known-populated Airflow/Landing namespace, both lists could still show `0 total` and the upstream `REFRESH` button. After the default namespace is displayed, the public overlay now waits briefly and **clicks the native empty-state Refresh button at most once** if the list is still empty. It does not directly query Marquez API or create any fake result rows. The logic is canceled on route changes, respects manual Namespace changes, and never triggers for the Dashboard, lineage detail pages, or lists that already show records. A genuinely empty or failed backend is left in native error/empty state after one attempt.
+
+This is a frontend convenience fallback, not a guarantee of browser E2E success. Node tests and an immutable GHCR rollout are necessary; final acceptance requires an actual mobile Safari/Chrome first-visit navigation test showing real Jobs and Datasets **without tapping Refresh**.
 
 ### Section-specific nonempty namespace defaults (Jobs / Datasets)
 
