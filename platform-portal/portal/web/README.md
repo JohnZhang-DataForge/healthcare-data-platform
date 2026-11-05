@@ -4,6 +4,13 @@ Source of the public UI overlay and dedicated image, derived from official Marqu
 
 The public variant hides Delete Job/Dataset, Edit Tag, Tag Submit/deletion, Tag editing input and raw Events navigation (currently denied by Gateway). Dashboard, Jobs, Datasets, Run History, Table/Column Lineage, filters, refresh, zoom and navigation stay available.
 
+## Current production showcase behavior — verified 2026-11-05
+
+The public root `https://lineage.johnzhang-dataforge.site/` now retains **the original Marquez DataOps Dashboard**, not the earlier Datasets redirect. On the list pages, the public-only overlay selects **Datasets → `s3://health-landing`** and **Jobs → `healthcare-platform-airflow`** independently, preserving user choices. If the native Marquez React list temporarily remains at `0 total` after the correct Namespace is selected, the overlay triggers the native empty-state Refresh **at most once** (no fabricated data or unbounded polling).
+
+Live [image rollout #41964675838](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41964675838) SUCCESS deployed `sha256:c1f8b2f8e2c174b83cfb026edee696ec6bec3515c67e7a626ace65fabeda0e9f`; source [Healthcare #688](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/688) and canonical image manifest pin [#690](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/690) are merged. **Actual remote browser acceptance** [Self-Runner #41965389280](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41965389280) SUCCESS used Playwright real Chromium and WebKit with mobile-sized touch contexts: native Dashboard → Landing Datasets 3 rows → Airflow Jobs 10 rows → Landing Datasets 3 rows, with zero manual Refresh clicks. This confirms browser-rendered records, not just GET/API presence. Physical iPhone in-app Safari, old-cache behavior, and all manual Namespace combinations are separate from this passing test. Public Gateway restrictions remain in place.
+
+
 **UI hiding is not authorization.** A visitor can bypass browser JavaScript. Gateway must still reject all writing methods and unapproved endpoints and sensitive GET content must be reviewed.
 
 Test: node --test platform-portal/portal/web/tests/*.test.cjs
