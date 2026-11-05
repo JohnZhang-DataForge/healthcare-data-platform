@@ -63,3 +63,22 @@ The dedicated public Marquez Web overlay SHALL route an exact root visit (`/`) t
 #### Scenario: User follows a direct dataset or lineage link
 - **WHEN** the visitor opens `/datasets`, `/datasets/`, Jobs, or a Lineage deep link rather than root
 - **THEN** existing namespace selection and routes SHALL remain intact and no root redirect SHALL occur
+
+### Requirement: Public Jobs and Datasets SHALL default to independently useful namespaces
+The public Marquez overlay SHALL give Jobs and Datasets independent, nonempty default namespaces. Visitor-selected namespaces MUST persist within their respective list sections. Native lineage data, deep links, metadata APIs and the read-only Gateway MUST remain unchanged.
+
+#### Scenario: Visitor opens Jobs after Landing Datasets
+- **GIVEN** `s3://health-landing` is selected and has no Jobs
+- **WHEN** visitor clicks Jobs
+- **THEN** the public browser SHALL select `healthcare-platform-airflow` (or verified nonempty Spark Business when Airflow absent) and display real Jobs without carrying over Landing
+- **AND** switching back to Datasets SHALL display the prior Dataset preference (Landing by default), not the Airflow namespace
+
+#### Scenario: Visitor manually selects another registered namespace
+- **WHEN** the visitor chooses `healthcare-platform-spark-business` on Jobs or `s3://health-processing` on Datasets
+- **THEN** subsequent navigation within that browser tab SHALL preserve the selected section-specific choice
+- **AND** automatic defaults SHALL NOT override that explicit choice while visiting a Job/Dataset/Lineage detail
+
+#### Scenario: New visitor, deep link, or missing namespace
+- **WHEN** the visitor opens the root, a native list URL, or a direct lineage detail URL
+- **THEN** root SHALL still open Landing, the Jobs list SHALL not inherit a Datasets-only namespace, and deep links SHALL keep native routing
+- **AND** the overlay SHALL fail safely if expected namespace data is unavailable, without fake Jobs, silent API mutations, redirects on unrelated paths, or loops
