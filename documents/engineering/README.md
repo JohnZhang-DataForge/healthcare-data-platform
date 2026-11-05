@@ -5,7 +5,7 @@
 - [Development Workflow](development/DEVELOPMENT-WORKFLOW.md) — source-first implementation, PR, testing and evidence processes; [Agent Rules](development/AGENT-RULES.md), [OpenSpec Lifecycle](development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md), naming, session coordination and documentation governance are standing rules.
 - [Developer CODE](development/CODE.md) — repository-wide quality scripts and environment example navigation.
 - [Operations](operations/README.md) — safety, recovery and shared-runtime guardrails.
-- [Project Status](status/PROJECT-STATUS.md) — **only** cross-project CURRENT / NEXT summary, linking to active Changes instead of duplicating their Tasks.
+- [OpenSpec Active Changes](../../openspec/changes/) — sole maintained per-change OPEN/DONE tasks; [Project Status](status/PROJECT-STATUS.md) is a short routing page, and [historical snapshot](status/PROJECT-STATUS-HISTORY-20261105.md) preserves old evidence.
 - [Historical documentation migration](migration/MIGRATION-STATUS.md) and [G0–G7 bootstrap evidence](migration/OPENSPEC-IMPLEMENTATION-PLAN.md) — source provenance and dated audit only; **neither is the ongoing task ledger**.
 - [Legacy code inventory (historical)](development/LEGACY-CODE-REFACTOR-PLAN.md) — preserved pre-relocation snapshot; future R2–R5 development is tracked, without authorization to implement, by the [Legacy modernization Change](../../openspec/changes/modernize-legacy-task-code/tasks.md).
 - [Active Local DP relocation](../../openspec/changes/relocate-local-data-platform/tasks.md) — new-root Import/Docker/Airflow/Spark/E2E tasks pending.
