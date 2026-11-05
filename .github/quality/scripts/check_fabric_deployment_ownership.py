@@ -105,7 +105,7 @@ def git_changes(base: str, head: str, repo: Path = Path(".")) -> dict[str, str]:
 def git_paths(repo: Path, ref: str) -> set[str]:
     raw = subprocess.check_output(
         ["git", "-C", str(repo), "ls-tree", "-r", "--name-only", "-z", ref])
-    return {p.decode("utf-8") for p in raw.split(b"\\0") if p}
+    return {p.decode("utf-8") for p in raw.split(b"\0") if p}
 
 
 def git_content(repo: Path, ref: str, path: str) -> str:
@@ -134,7 +134,7 @@ def main() -> int:
         return 1
     for err in errors:
         print("FABRIC_DEPLOYMENT_OWNER_VIOLATION=" + err)
-    print("FABRIC_DEPLOYMENT_OWNERSHIP=" + ("FAIL" if errors else "PASS")
+    print("FABRIC_DEPLOYMENT_OWNER_TRUSTED=" + ("FAIL" if errors else "PASS")
           + "; cloud_actions=0")
     return 1 if errors else 0
 
