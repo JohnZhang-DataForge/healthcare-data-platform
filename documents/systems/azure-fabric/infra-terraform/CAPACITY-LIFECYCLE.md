@@ -1,3 +1,12 @@
+---
+status: active
+scope: azure-fabric-capacity-lifecycle
+last_verified: 2026-11-04
+source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
+---
+
+> **P2 文档归属**：由原源码路径 `azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/README.md` 原文迁入。保留历史证据和安全边界；本文是文档/源码合同，不代表本次执行云端读取或 Terraform Apply。最新真实状态以 [系统 CODE Map](../CODE.md)、[Terraform CODE Map](CODE.md) 和对应 Run 为准。
+
 # Fabric Capacity lifecycle REST interface (Healthcare OMOP)
 
 这里是**Capacity 的运行态控制**，不是 Workspace 的 REST API。Workspace 的创建、配置及 `capacity_id` 关联仍**完全由 `../workspace/` Terraform Root 管理**；不得由本接口创建/删除/assign Fabric Workspace。
@@ -17,7 +26,7 @@
 
 ## 权限与计费边界
 
-当前试用 F4 是免费 60 天 Capacity，**没有暂停/恢复开关的自动化需求**，使用 Fabric REST API 只读查询现有容量。Service Principal 需额外获得 Capacity Admin/Contributor，才可使用 GET；Workspace 管理员身份不一定等价于 Capacity 权限。
+在 2026-11-04 P2 文档迁移时，历史试用 F4 的控制平面采用只读检查合同，**没有暂停/恢复开关的自动化需求**，使用 Fabric REST API 只读查询现有容量。Service Principal 需额外获得 Capacity Admin/Contributor，才可使用 GET；Workspace 管理员身份不一定等价于 Capacity 权限。
 
 正式 F SKU 的定义/规格由未来另行审批的 Terraform Root 管理；ARM REST 调用仅改变运行态，Terraform 不修改容量规格。Azure 最小 RBAC actions：`Microsoft.Fabric/capacities/read`、`write`、`suspend/action`、`resume/action`。**恢复计费，暂停可能影响全部 Workspace，已有超额计算可能结算，OneLake Storage 计费仍继续**。对共享 Capacity 操作前检查无正在进行的 DAG/查询/用户会话；没有实时确认和批准时不要触发写操作。
 

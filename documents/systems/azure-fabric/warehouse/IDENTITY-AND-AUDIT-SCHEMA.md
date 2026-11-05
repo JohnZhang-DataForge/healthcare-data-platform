@@ -1,3 +1,12 @@
+---
+status: active
+scope: fabric-omop-foundation-identity-audit
+last_verified: 2026-11-04
+source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
+---
+
+> **P2 文档归属**：由源码文件 `azure-fabric/warehouse/omop-foundation/README.md` 迁入；原证据、ID/事务/FK/Replay/授权边界保留。F0/F1 Schema/Vocabulary 及 F2 Synthetic ROLLBACK 的真实 Run 仅证明各自范围，**不等于 Person/Visit Gold COMMIT**。本 PR 不执行 Warehouse SQL。
+
 # Fabric OMOP Foundation — F1 identity and audit schema source
 
 The management **schema source is versioned and physically deployed**; Fabric Warehouse readback succeeded in [Self-Runner #41820260817](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820260817). Five tables remain empty (no patient or encounter rows, no allocated OMOP IDs).
@@ -16,7 +25,7 @@ Target: existing `healthcare-omop/dw-omop-5.4`; Warehouse Item ID `7a6d08da-278d
 
 Source references: [Microsoft Fabric Warehouse IDENTITY](https://learn.microsoft.com/en-us/fabric/data-warehouse/identity) and [Fabric Warehouse transactions](https://learn.microsoft.com/en-us/fabric/data-warehouse/transactions).
 
-Next gates: source/SQL offline CI → PR review → trusted Self-Runner empty schema deployment + independent readback → separately reviewed F2 mapping and batch commits. There are **no Patient/Visit inserts** in this change.
+Historical F1 gate sequence: source/SQL offline CI → PR review → trusted Self-Runner empty schema deployment + independent readback (achieved in #41820260817) → separately reviewed F2 mapping and batch commits (not implied by this schema readback). There are **no Patient/Visit inserts** in this change.
 
 ## Actual live milestone (2026-11-04)
 

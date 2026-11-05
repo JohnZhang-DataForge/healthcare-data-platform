@@ -1,3 +1,12 @@
+---
+status: active
+scope: azure-fabric-landing-blob-connection
+last_verified: 2026-11-04
+source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
+---
+
+> **P2 文档归属**：由原源码路径 `azure-fabric/infra-terraform/shared-infra/connection/README.md` 原文迁入。保留历史证据和安全边界；本文是文档/源码合同，不代表本次执行云端读取或 Terraform Apply。最新真实状态以 [系统 CODE Map](../CODE.md)、[Terraform CODE Map](CODE.md) 和对应 Run 为准。
+
 # Shared Fabric Azure Blob Connection
 
 Standalone, optional Terraform Root reusing `../../modules/connection`. Backend base key `shared-infra/connection.tfstate`, **default Terraform CLI Workspace**; no Workspace/OneLake/Capacity ownership.

@@ -29,6 +29,9 @@ this directory cleanup.
 
 # Fabric Warehouse / OMOP CDM Schema — Source Map
 
+**业务与验收概览**：[Warehouse README](README.md)。唯一详细技术合同：[CDM/Vocabulary](CDM54-SCHEMA-AND-VOCABULARY.md)、[F1 Identity/Audit](IDENTITY-AND-AUDIT-SCHEMA.md)、[F2 Writer](WRITER-PREVIEW-TO-COMMIT.md)、[INT Allocation](ID-ALLOCATION-STATE-MACHINE.md)。这些文档来自原源码 README/PUBLISHER 类文件，仅说明源码与受控证据；不授权执行 Gold。
+
+
 - [Official OHDSI 5.4 DDL mirror](../../../../azure-fabric/warehouse/omop-cdm-5.4/upstream/OMOPCDM_sql_server_5.4_ddl.sql): source blob pinned and offline verified.
 - [Source manifest](../../../../azure-fabric/warehouse/omop-cdm-5.4/manifest.json): source commit, 39 table names, 432 fields, Fabric-only datatype mappings.
 - [Fabric-compatible table SQL](../../../../azure-fabric/warehouse/omop-cdm-5.4/tables/): 39 `cdm` CREATE TABLE definitions, no runtime execution.

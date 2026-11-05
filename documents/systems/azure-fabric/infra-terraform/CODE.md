@@ -38,7 +38,7 @@ source_sha: null
 ## Shared account-level Connection — 2026-10-21 (source/static only)
 
 - [`shared-infra/connection/main.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/main.tf) calls existing [`modules/connection`](../../../../azure-fabric/infra-terraform/modules/connection/main.tf) with `connection=null` by default; no resource is created unless separately approved.
-- [`versions.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/versions.tf) owns independent `shared-infra/connection.tfstate`; [`variables.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/variables.tf), [`providers.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/providers.tf), [`outputs.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/outputs.tf), [`terraform.tfvars`](../../../../azure-fabric/infra-terraform/shared-infra/connection/terraform.tfvars) and [`README.md`](../../../../azure-fabric/infra-terraform/shared-infra/connection/README.md) document the fail-closed optional component.
+- [`versions.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/versions.tf) owns independent `shared-infra/connection.tfstate`; [`variables.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/variables.tf), [`providers.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/providers.tf), [`outputs.tf`](../../../../azure-fabric/infra-terraform/shared-infra/connection/outputs.tf), [`terraform.tfvars`](../../../../azure-fabric/infra-terraform/shared-infra/connection/terraform.tfvars) and [`README.md`](LANDING-CONNECTION.md) document the fail-closed optional component.
 - [`test_fabric_shared_connection_contract.py`](../../../../.github/quality/tests/test_fabric_shared_connection_contract.py) checks independent State, Module-first ownership, disabled default, no paid Capacity/Notebook/Pipeline. [OpenSpec](../../../../openspec/changes/deploy-fabric-connection-and-items/tasks.md). **This does not prove a live Connection was created or an Azure Blob Reader was granted.**
 
 ## healthcare-omop 首次部署前检查 — 2026-10-21
@@ -79,7 +79,7 @@ source_sha: null
 ## Fabric Capacity REST runtime controller（Trial 只读、Paid 暂停/恢复）
 
 - [`healthcare-omop/capacity-api/capacity_lifecycle.py`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/capacity_lifecycle.py)：与 `workspace/` 平级的**非 Terraform Root** Python REST 组件；Trial 仅 GET，Paid 仅检查/暂停/恢复现有 Azure F SKU，绝不创建 Workspace 或改变 Workspace Capacity 绑定。
-- [`capacity.json`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/capacity.json) / [`README.md`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/README.md)：非秘密 Trial ID 和权限、计费、OIDC/操作门禁合同。
+- [`capacity.json`](../../../../azure-fabric/infra-terraform/fabric-workspace/healthcare-omop/capacity-api/capacity.json) / [`README.md`](CAPACITY-LIFECYCLE.md)：非秘密 Trial ID 和权限、计费、OIDC/操作门禁合同。
 - [`Capacity REST 单测`](../../../../.github/quality/tests/test_fabric_capacity_lifecycle.py)：纯 Mock，不做云端写入；[Self-Runner Capacity Workflow](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/fabric-capacity-lifecycle.yml) 已上线，手动 `mode=trial|paid`、`operation=inspect|suspend|resume`，默认 `trial/inspect`。Paid 写入额外要求 `FABRIC_PAID_CAPACITY_ARM_ID`、`ENABLE_PAID_CAPACITY_OPERATIONS=true` 与匹配 `confirmation`，不自动操作。Workspace 永远只由 Terraform `workspace/` 管理。
 - [`OpenSpec Change`](../../../../openspec/changes/manage-fabric-capacity-lifecycle-api/tasks.md)：记录 Trial 与 Paid 两种 API 模式和运行验收，不与 Terraform Workspace/OneLake State 混用。
 
@@ -142,7 +142,7 @@ source_sha: null
 
 ## 历史组合 Root（保留源码，但不作为新部署入口）
 
-- [`components/fabric-environment/`](../../../../azure-fabric/infra-terraform/components/fabric-environment/README.md)：一个 Fabric/Terraform 同名 Workspace 的组合 Root；首个已有目标是 `healthcare-omop`。不重建现有 Workspace，首次真实部署前必须核对历史 State 并显式 Import。
+- [`components/fabric-environment/`](../../../../azure-fabric/infra-terraform/components/fabric-environment/) · [State adoption contract](FABRIC-ENVIRONMENT-ADOPTION.md)：一个 Fabric/Terraform 同名 Workspace 的组合 Root；首个已有目标是 `healthcare-omop`。不重建现有 Workspace，首次真实部署前必须核对历史 State 并显式 Import。
 - [`main.tf`](../../../../azure-fabric/infra-terraform/components/fabric-environment/main.tf)：调用原 `modules/workspace`、`modules/onelake` 与新 Connection Module，且通过 `terraform.workspace` 命名。
 - [`outputs.tf`](../../../../azure-fabric/infra-terraform/components/fabric-environment/outputs.tf)：Workspace 名称、真实 Workspace/Lakehouse/Connection IDs 和 OneLake 路径。
 - [`healthcare-omop.tfvars.example`](../../../../azure-fabric/infra-terraform/components/fabric-environment/environments/healthcare-omop.tfvars.example)：**非可直接 Apply** 的示例。真实 Capacity、Reader 权限和既有 Workspace Import 均未验证。
@@ -190,3 +190,10 @@ source_sha: null
 - 角色的 Azure 管理操作已由用户完成。原 Terraform [Self-Runner #40205455766](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40205455766) 因已有 Reader-only ABAC 委派条件在尝试新建 Contributor 时 403；后续只读 [#40205946610](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40205946610) 发现 Publisher 的 Landing Contributor 授权**已存在**。
 - [Self-Runner PR #290](https://github.com/JohnZhang-DataForge/Self-Runner/pull/290) 与 [Run #40207100424](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40207100424) 将该现存 Role Assignment 安全导入 `shared-infra/storage.tfstate` 的 `module.storage.azurerm_role_assignment.landing["healthcare_blob_publisher"]`，ID 独立读回匹配，最终 Terraform **no drift**；绝不能重复 Terraform Create。没有其他 Azure/K8s/Blob 修改。
 - 独立 Publisher 的 Client Secret 在 Self-Runner GitHub Secrets 中，不在 Terraform State；Kubernetes `dw-synthea/azure-blob-publisher-identity` 仍待实际创建、验收和轮换。
+
+
+## P2 权威运行边界文档
+
+- [既有 Workspace 和 Terraform State 采用](FABRIC-ENVIRONMENT-ADOPTION.md)：不得假设自动 Import。
+- [Capacity 生命周期](CAPACITY-LIFECYCLE.md)：付费暂停/恢复操作必须单独授权并核验费用和共享使用。
+- [Landing Connection 读回](LANDING-CONNECTION.md)：Reader/Fabric Connection 控制平面成功不等于 Blob 数据平面访问成功。

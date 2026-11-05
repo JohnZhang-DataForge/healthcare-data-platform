@@ -13,6 +13,14 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 > **已完成组件文档收口（ACTIVE）**：本组件参照 [Data Platform 组件双入口](../../data-platform/README.md) 整理。**README 说明职责与边界， [CODE.md](CODE.md) 是 Terraform 唯一组件级源码导航**；深入的 IAM、OIDC、State 与历史 Plan 证据见 [ARCHITECTURE.md](ARCHITECTURE.md)。源码区旧说明文件在完成引用修复后退役；本次没有修改 Terraform 执行入口。
 
+## 从源码 README 收口的独立技术合同
+
+- [Fabric Environment State 采用与 Import](FABRIC-ENVIRONMENT-ADOPTION.md)：历史 Root、CLI Workspace、State 归属与自动接管禁令。
+- [Capacity 生命周期和费用权限](CAPACITY-LIFECYCLE.md)：Trial inspect 与付费 F SKU suspend/resume 的严格授权边界。
+- [Shared Landing Connection](LANDING-CONNECTION.md)：WorkspaceIdentity、OIDC、Reader/RBAC、Fabric GET 与未完成 Blob data-plane 验收。
+
+**证据层级**：2026-10-16 七个 Root 的 Plan-only 不覆盖 2026-10-22 单独完成的 Landing Reader/Fabric Connection Apply+GET。既有 Workspace/Notebook/Pipeline/Warehouse 的当前状态按各自独立证据和 [系统 CODE Map](../CODE.md) 判断，不能从旧 Terraform Plan-only 文段推导资源不存在。
+
 ## 当前目标：基于现有 Components 和 Modules 开发
 
 > **2026-10-20 用户批准集中清理**：`bootstrap/`、`tests/`、`tools/`、`new-environments/` 及相关旧 Preflight 示例已经退出 Git 工作树。现有七个 `components/` 和全部 `modules/`、环境 `dev.tfvars`、原有 Self-Runner `azure-infra.yaml` 继续保留。真实源码见 [CODE.md](CODE.md)，新架构见 [Module-first](../../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md)。这不是已执行云端 Apply 的证据。

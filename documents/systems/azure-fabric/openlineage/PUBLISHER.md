@@ -1,6 +1,15 @@
+---
+status: active
+scope: fabric-openlineage-immutable-blob-publisher
+last_verified: 2026-11-04
+source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
+---
+
+> **P2 文档归属**：完整保留原 `azure-fabric/openlineage/PUBLISHER.md` 的独有安全约束与历史试验结论。下面按原版本的运行范围解释；最新 Fabric 业务与环境验收需核对 [总 CODE](../CODE.md)、正式 Notebook/Environment CODE 与真实 Runs。本次没有访问或修改任何云端资源。
+
 # Immutable OpenLineage Blob Publisher
 
-Offline source entrypoint: [publisher.py](publisher.py). Test: `python -m unittest discover -s azure-fabric/openlineage/tests -p 'test_publisher.py' -v`. **No production execution and no Azure credentials are configured.**
+Offline source entrypoint: [publisher.py](../../../../azure-fabric/openlineage/publisher.py). Test: `python -m unittest discover -s azure-fabric/openlineage/tests -p 'test_publisher.py' -v`. **This P2 documentation relocation performs no production execution and configures no Azure credentials. The original publisher implementation remains a source-only/offline candidate.**
 
 A caller supplies actual OpenLineage RunEvent JSON objects, one batch ID, backend (`local` or `fabric`) and a *verified* SHA256 of its upstream Source Manifest. The protocol is `openlineage.blob-manifest.v1`. Events are encoded as canonical UTF-8 JSON + final newline; stable Event IDs bind exact Run UUID/Job namespace/name/Event Type/Time, and each event is placed at `openlineage/v1/batches/<batch>/events/<event-id>.json`. The distinct payload SHA256 is recorded in the committed `manifest.json`.
 

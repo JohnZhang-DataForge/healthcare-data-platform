@@ -59,7 +59,7 @@ OIDC Federated Identity 绑定的是 **Self-Runner** 身份及相应 ref，而�
 
 目前 Terraform 能描述的是 **Fabric Item 的基础壳与失败保护**，不是可工作的业务 ETL。[Notebook module](../../../../azure-fabric/infra-terraform/modules/notebook/main.tf) 引用 [`notebook-content.py`](../../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py)，使用 `export_id` / `manifest_uri` 参数但故意抛出 `RuntimeError`。Data Pipeline module [`main.tf`](../../../../azure-fabric/infra-terraform/modules/data-factory/main.tf) 在 `notebook_id=""` 时使用 [Fail Activity](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)，真实 GUID 存在时可选择 [Notebook Activity 模板](../../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json)，但这仍**不代表已实现 Notebook 业务入库**。
 
-`azure-fabric/workspaces/healthcare-omop/` 是留给 Fabric Git 原生 Item 的源码区域，真实 Item 必须保留 Fabric 生成的 `.platform` 等文件，并明确 Git Integration 与 Terraform Item 的**唯一交付权属**，避免两个机制覆盖相同 Item。仓库中尚未实现本地 PG Exporter、Blob 不可变 READY 发布、云端幂等 Delta Loader 或独立跨平台对账；Warehouse 可选，Fabric Trial Capacity 也不是这些 Root 所负责创建。
+`azure-fabric/workspaces/healthcare-omop/` 现已包含真实的 Fabric Git 原生 Notebook/Pipeline/Environment/Lakehouse Item（后续 2026-10-31～11-04 独立验收），真实 Item 必须保留 Fabric 生成的 `.platform` 等文件，并明确 Git Integration 与 Terraform Item 的**唯一交付权属**，避免两个机制覆盖相同 Item。该历史 2026-10-18 Terraform 方案尚不能证明本地 PG Exporter、Blob READY 发布、云端幂等 Delta Loader 或独立跨平台对账已完成；后续运行验证应由各自最新 OpenSpec 与真实 Run 判定。Warehouse 可选，Fabric Trial Capacity 也不是这些 Root 所负责创建。
 
 ## Verified Plan evidence
 
@@ -92,3 +92,10 @@ OIDC Federated Identity 绑定的是 **Self-Runner** 身份及相应 ref，而�
 - 只读 Exporter 需要一致性快照、不可变 Manifest/Hash；Fabric Workspace 权限不自动赋予 Azure Blob 数据读取权限。
 - 完成标准必须有真实 PostgreSQL 导出、Azure Blob READY 发布、Notebook/Delta 幂等写入及独立对账的可审计证据；Plan、Item 壳或部分 Git 文件均不代表 E2E。
 - 任何实际运行操作均遵守 [Safe Operations](../../../engineering/operations/SAFE-OPERATIONS.md)，本文件本身不构成操作许可。
+
+
+## P2 分领域操作/证据文档（不替代基础 Terraform 历史 Plan）
+
+- [Workspace State Import 与禁止自动采用](FABRIC-ENVIRONMENT-ADOPTION.md)
+- [Trial vs Paid Capacity 控制与费用约束](CAPACITY-LIFECYCLE.md)
+- [Landing Reader/Fabric Connection 实际控制平面验收及未完成 Data-plane](LANDING-CONNECTION.md)
