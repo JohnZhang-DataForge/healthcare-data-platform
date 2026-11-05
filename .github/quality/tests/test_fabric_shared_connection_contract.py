@@ -10,8 +10,14 @@ MODULE = ROOT / "azure-fabric/infra-terraform/modules/connection"
 class SharedFabricConnectionContract(unittest.TestCase):
     def test_files_and_backend_isolation(self):
         required = {"main.tf", "variables.tf", "versions.tf", "providers.tf",
-                    "outputs.tf", "terraform.tfvars", "README.md"}
+                    "outputs.tf", "terraform.tfvars"}
         self.assertTrue(all((SHARED / x).is_file() for x in required))
+        # P2 centralized source documentation: no duplicate source README.
+        self.assertFalse((SHARED / "README.md").exists())
+        authoritative_doc = ROOT / "documents/systems/azure-fabric/infra-terraform/LANDING-CONNECTION.md"
+        self.assertTrue(authoritative_doc.is_file())
+        self.assertIn("shared-infra/connection.tfstate", authoritative_doc.read_text())
+        self.assertIn("WorkspaceIdentity", authoritative_doc.read_text())
         versions = (SHARED / "versions.tf").read_text()
         self.assertIn('key = "shared-infra/connection.tfstate"', versions)
         self.assertNotIn("fabric-workspace/", versions)
