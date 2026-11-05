@@ -1,0 +1,50 @@
+name: Fabric OpenLineage Offline Contract
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/openlineage/**'
+      - '.github/quality/tests/azure-fabric/openlineage/**'
+      - '.github/workflows/fabric-openlineage-offline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'azure-fabric/openlineage/**'
+      - '.github/quality/tests/azure-fabric/openlineage/**'
+      - '.github/workflows/fabric-openlineage-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-openlineage-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Assert test discovery and run immutable Publisher / Spark compatibility contracts
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          import unittest
+          start = ".github/quality/tests/azure-fabric/openlineage"
+          files = sorted(Path(start).glob("test_*.py"))
+          if len(files) != 2:
+              raise SystemExit(f"FABRIC_OPENLINEAGE_TEST_FILES_INVALID={len(files)}; expected=2")
+          suite = unittest.TestLoader().discover(start_dir=start, pattern="test_*.py")
+          count = suite.countTestCases()
+          print(f"FABRIC_OPENLINEAGE_DISCOVERED={count}; required_min=8; files={len(files)}", flush=True)
+          if count < 8:
+              raise SystemExit("FABRIC_OPENLINEAGE_TEST_DISCOVERY_FAIL")
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful():
+              sys.exit(1)
+          print("FABRIC_OPENLINEAGE_OFFLINE_CONTRACT=PASS; CLOUD_WRITES=0")
+          PY

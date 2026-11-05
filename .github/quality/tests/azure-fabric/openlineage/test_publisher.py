@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 import unittest
 
-file = Path(__file__).resolve().parents[1] / "publisher.py"
+file = Path(__file__).resolve().parents[5] / "azure-fabric/openlineage/publisher.py"
 spec = importlib.util.spec_from_file_location("publisher", file)
 p = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = p

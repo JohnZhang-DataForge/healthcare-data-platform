@@ -56,10 +56,10 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 
 **唯一文档 Owner**：[OpenLineage README](openlineage/README.md) · [CODE](openlineage/CODE.md) · [Publisher Protocol](openlineage/PUBLISHER.md)。
 
-- [Candidate Listener config](../../../azure-fabric/openlineage/compatibility.py) · [Offline tests](../../../azure-fabric/openlineage/tests/test_compatibility.py) · [compatibility/authorization notes](openlineage/README.md). Scala 2.12 local and Scala 2.13 Fabric artifacts are not interchangeable. This source has no live Fabric test authorization; current Fabric Notebook HOLD remains.
+- [Candidate Listener config](../../../azure-fabric/openlineage/compatibility.py) · [Offline tests](../../../.github/quality/tests/azure-fabric/openlineage/test_compatibility.py) · [compatibility/authorization notes](openlineage/README.md). Scala 2.12 local and Scala 2.13 Fabric artifacts are not interchangeable. This source has no live Fabric test authorization; current Fabric Notebook HOLD remains.
 ## Immutable OpenLineage Blob Publisher (offline only)
 
-- [Publisher entrypoint](../../../azure-fabric/openlineage/publisher.py) · [Fake Azure and recovery tests](../../../azure-fabric/openlineage/tests/test_publisher.py) · [publisher protocol](openlineage/PUBLISHER.md). Independently verified immutable event readback before committed Manifest; Azure live operations unapproved.
+- [Publisher entrypoint](../../../azure-fabric/openlineage/publisher.py) · [Fake Azure and recovery tests](../../../.github/quality/tests/azure-fabric/openlineage/test_publisher.py) · [publisher protocol](openlineage/PUBLISHER.md). Independently verified immutable event readback before committed Manifest; Azure live operations unapproved.
 
 ## 历史 P2 Notebook 开发阶段（2026-10-31 记录；非当前云端实时状态）
 

@@ -25,7 +25,7 @@
 ## 3 — 仅 Azure Fabric 的 15 个测试迁移（可按 3 个小 PR 串行）
 
 - [x] 3.1 Notebook 8 个测试迁至 `.github/quality/tests/azure-fabric/notebook/`：修正 `fabric-fhir-notebook-offline.yml`、测试 Import/PYTHONPATH、Fixture/Native Contract、关联 CODE.md，确保旧/新用例集及断言等价。
-- [ ] 3.2 OpenLineage 2 个测试迁至 `.github/quality/tests/azure-fabric/openlineage/`：保留 Blob Publisher 的安全负向测试、Mock 和已固定协议，修复所有调用方路径。
+- [x] 3.2 OpenLineage 2 个测试迁至 `.github/quality/tests/azure-fabric/openlineage/`：保留 Blob Publisher 的安全负向测试、Mock 和已固定协议，修复所有调用方路径。
 - [ ] 3.3 Warehouse 5 个测试迁至 `.github/quality/tests/azure-fabric/warehouse/` 的 CDM/OMOP 子目录；修复 `fabric-omop-cdm54-schema-offline.yml`、`fabric-omop-foundation-identity-schema-offline.yml` 路径与发现规则，保持原 DDL 来源 SHA、Identity/Mapping 防护不变。
 - [ ] 3.4 按实际 Git 搜索/Workflow 内容逐一核对 Self-Runner 对旧路径的引用；若依赖不可验证则 HOLD，不删旧入口；每组运行适用测试及构建、OpenSpec/Docs/Code Gate 后才合并。
 
@@ -90,3 +90,7 @@
 - Task 3.1 actual regression execution verified: [GitHub Actions Run #41955947551](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41955947551), job `127010747129` emitted `FABRIC_NOTEBOOK_DISCOVERED=87; required_min=77; files=8` and `Ran 87 tests in 17.359s` → `OK`, Wheel 0.1.3 byte-identical, runtime HALT expected. The original inventory had **77 explicit test-method definitions**; unittest discovers 87 due to inherited/parameterized cases. First draft's single outdated Runbook link was fixed in the next branch commit; final protected CI/link tests must again PASS before #678 merge. P3.2/P3.3/P3.4 independently gated.
 
 - Count guard tightened after first real migration run: **77 explicitly declared test methods yielded 87 discovered unittest test cases**. The final Notebook CI must require >=87 discovered/executed cases and exactly 8 files. Historical Run #41955947551 accurately logged the former `required_min=77`; final CI is reverified under new threshold. No runtime, writer or data mutation.
+
+### P3.2 OpenLineage audit (pending protected CI)
+
+- Retained both useful offline tests (Spark/Scala incompatibility and authenticated immutable Blob Publisher FAIL-CLOSED/partial retry), 8 explicit unittest methods; moved paths only with equivalent Python importlib target path. Added a dedicated read-only GitHub Hosted workflow with strict >=8 test discovery, exactly two source test files, and fail-on-test-error. Runtime publisher/compatibility implementations unchanged. Task 3.2 passed actual dedicated CI discovery/runner evidence at [Run #41956789788](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41956789788), job `127013507494`: `FABRIC_OPENLINEAGE_DISCOVERED=8; required_min=8; files=2`, `Ran 8 tests`, `FABRIC_OPENLINEAGE_OFFLINE_CONTRACT=PASS; CLOUD_WRITES=0`. Check-links, trusted Required Check and validate-openspec succeeded on initial PR head; verify final evidence-only HEAD before merging.
