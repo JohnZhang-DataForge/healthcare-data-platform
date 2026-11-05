@@ -18,7 +18,7 @@
 #### Scenario: 保存 Workspace-only Warehouse 的正式 SQL
 
 - **WHEN** 变更维护现有 Fabric Workspace 的 OMOP DDL/Writer 源码
-- **THEN** SHALL 保留已有 `azure-fabric/warehouse/` 归属，不得仅因为 Warehouse 是 Workspace 成员而自动创建 `*.Warehouse/` 的 Git Native 项
+- **THEN** SHALL 维护 Writer Python 在 `azure-fabric/warehouse/` 的业务归属，以及受控 DDL/Schema 在 `azure-fabric/deployment/warehouse/` 的部署资产归属；不得自动创建 `*.Warehouse/` 的 Git Native 项
 
 ### Requirement: 源码区新说明性文档必须被拒绝
 

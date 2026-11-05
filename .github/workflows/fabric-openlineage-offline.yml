@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - 'azure-fabric/openlineage/**'
+      - 'azure-fabric/deployment/openlineage/**'
       - '.github/quality/tests/azure-fabric/openlineage/**'
       - '.github/workflows/fabric-openlineage-offline.yml'
   push:
     branches: [main]
     paths:
       - 'azure-fabric/openlineage/**'
+      - 'azure-fabric/deployment/openlineage/**'
       - '.github/quality/tests/azure-fabric/openlineage/**'
       - '.github/workflows/fabric-openlineage-offline.yml'
 

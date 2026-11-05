@@ -4,7 +4,7 @@ import pathlib
 import re
 import unittest
 
-ROOT=pathlib.Path(__file__).resolve().parents[6] / "azure-fabric/warehouse/omop-foundation"
+ROOT=pathlib.Path(__file__).resolve().parents[6] / "azure-fabric/deployment/warehouse/omop-foundation"
 M=json.loads((ROOT/"manifest.json").read_text())
 ALLOWED_TYPE=r"(?:int|bigint|varchar\([0-9]+\)|datetime2\(6\))"
 

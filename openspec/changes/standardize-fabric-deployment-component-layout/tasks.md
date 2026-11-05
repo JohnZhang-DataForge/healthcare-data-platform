@@ -11,12 +11,12 @@
 - [ ] 1.3 Verify that the applicable PR check is actually Required; if trusted checker cannot be updated under repository protection, preserve a HOLD and use the approved governance path rather than weakening protections.
 
 ## P2 — Self-Runner compatibility first
-- [ ] 2.1 Inventory all current-main and SHA-pinned Self-Runner Warehouse/OpenLineage consumer paths.
-- [ ] 2.2 Add safe old/new-path read compatibility to current-main consumers with offline tests and independent SHA-pinned workflow safeguards.
-- [ ] 2.3 Record a merged, successful Self-Runner compatibility PR; no real SQL or cloud operations.
+- [x] 2.1 Inventory current-main and historical SHA-pinned Schema/Vocabulary consumers; historical workflows checkout fixed Healthcare SHA and keep historical paths.
+- [x] 2.2 Add safe old/new-path read compatibility to current-main consumers with offline tests and independent SHA-pinned workflow safeguards.
+- [x] 2.3 Self-Runner PR #524 merged main `e70f08afeb96a2665341ea4c687977662ca9c34b`; offline tests PASS, deployment jobs skipped, no Fabric SQL or cloud writes.
 
 ## P3 — Physical Warehouse/OpenLineage migration
-- [ ] 3.1 Move reviewed SQL/metadata and Listener candidate configuration to deployment owners, byte-identical; retain Warehouse Writer and OpenLineage Publisher in component-source owners.
+- [x] 3.1 Move 49 reviewed SQL/metadata/Listener Git blobs byte-identically into deployment owners; Warehouse Writer and OpenLineage Publisher remain in component-source owners. Physical PR acceptance pending.
 - [ ] 3.2 Update all Healthcare imports/tests/CI paths, CODE owner maps and current docs/OpenSpec references in the same bounded PRs.
 - [ ] 3.3 Run 2 CDM + 31 Foundation + 8 OpenLineage offline cases, static link and trusted layout checks; verify SHA/blobs, no native item or runtime mutation.
 - [ ] 3.4 Merge only with Required Checks passing and all unpinned consumer paths compatible.

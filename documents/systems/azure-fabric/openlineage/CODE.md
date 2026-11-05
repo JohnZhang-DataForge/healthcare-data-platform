@@ -7,11 +7,11 @@ source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 
 # Fabric OpenLineage — CODE 源码地图
 
-唯一实现位于 `azure-fabric/openlineage/`；不得复制至 Fabric Git Notebook 或建立新的 Publisher 业务模块。本次 P2 仅移动说明文件，保留现有业务源码、15 个 Fabric 测试及 CI 路径。
+Publisher 业务实现仍位于 `azure-fabric/openlineage/`，Listener 部署配置位于 `azure-fabric/deployment/openlineage/`；不得复制至 Native Notebook 或建立第二个 Publisher。本次 P2 仅移动说明文件，保留现有业务源码、15 个 Fabric 测试及 CI 路径。
 
 | 源码/测试 | 目的 |
 | --- | --- |
-| [compatibility.py](../../../../azure-fabric/openlineage/compatibility.py) | Fabric Spark 4.1/Scala 2.13 Listener 候选配置，未通过 Live Fabric 验收 |
+| [compatibility.py](../../../../azure-fabric/deployment/openlineage/compatibility.py) | Fabric Spark 4.1/Scala 2.13 Listener 候选配置，未通过 Live Fabric 验收 |
 | [publisher.py](../../../../azure-fabric/openlineage/publisher.py) | 本地注入 ContainerClient 的不可变 Blob Event Publisher |
 | [test_compatibility.py](../../../../.github/quality/tests/azure-fabric/openlineage/test_compatibility.py) | 迁移后统一 CI 兼容性回归测试；仍为离线候选 |
 | [test_publisher.py](../../../../.github/quality/tests/azure-fabric/openlineage/test_publisher.py) | 迁移后统一 CI 的 Fake SDK/不可变上传/恢复安全测试 |

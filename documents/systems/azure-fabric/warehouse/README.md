@@ -7,7 +7,7 @@ source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 
 # Fabric OMOP Warehouse — 组件职责与文档导航
 
-当前 Warehouse 为 Fabric Workspace `healthcare-omop` 的实际 **Workspace-only** Item `dw-omop-5.4`（GUID `7a6d08da-278d-4603-8a3b-28640110984c`）。Git 中没有、也不得伪造 `*.Warehouse/` Native Item 目录。DDL/Identity/Writer 的唯一源码归 `azure-fabric/warehouse/`，源文件导航由 [CODE.md](CODE.md) 管理。
+当前 Warehouse 为 Fabric Workspace `healthcare-omop` 的实际 **Workspace-only** Item `dw-omop-5.4`（GUID `7a6d08da-278d-4603-8a3b-28640110984c`）。Git 中没有、也不得伪造 `*.Warehouse/` Native Item 目录。DDL/Identity Schema 资产归 `azure-fabric/deployment/warehouse/`，Writer/Identity 业务 Python 仍归 `azure-fabric/warehouse/omop-foundation/writer/`。完整导航由 [CODE.md](CODE.md) 管理。
 
 ## 当前已实证与未完成边界
 

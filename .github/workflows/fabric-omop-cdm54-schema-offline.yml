@@ -3,14 +3,14 @@ name: Fabric OMOP CDM54 Schema Offline
 on:
   pull_request:
     paths:
-      - 'azure-fabric/warehouse/omop-cdm-5.4/**'
-      - '.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/**'
+      - 'azure-fabric/deployment/warehouse/omop-cdm-5.4/**'
+      - '.github/quality/tests/azure-fabric/deployment/warehouse/omop-cdm-5.4/**'
       - '.github/workflows/fabric-omop-cdm54-schema-offline.yml'
   push:
     branches: [main]
     paths:
-      - 'azure-fabric/warehouse/omop-cdm-5.4/**'
-      - '.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/**'
+      - 'azure-fabric/deployment/warehouse/omop-cdm-5.4/**'
+      - '.github/quality/tests/azure-fabric/deployment/warehouse/omop-cdm-5.4/**'
       - '.github/workflows/fabric-omop-cdm54-schema-offline.yml'
 
 permissions:
@@ -31,7 +31,7 @@ jobs:
           from pathlib import Path
           import sys
           import unittest
-          start = ".github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4"
+          start = ".github/quality/tests/azure-fabric/deployment/warehouse/omop-cdm-5.4"
           files = sorted(Path(start).glob("test_*.py"))
           if len(files) != 1:
               raise SystemExit(f"FABRIC_CDM54_TEST_FILE_COUNT_INVALID={len(files)}; expected=1")
