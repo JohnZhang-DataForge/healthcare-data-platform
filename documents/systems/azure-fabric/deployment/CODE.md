@@ -32,3 +32,6 @@ The [static ownership checker](../../../../.github/quality/scripts/check_fabric_
 ## Trusted PR ownership checking
 
 The [trusted owner workflow](../../../../.github/workflows/fabric-deployment-ownership-trusted.yml) uses `pull_request_target` and loads policy, registry and test code solely from the default branch; candidate PR Git paths and CODE map are passive data. Its stable job name is `require-trusted-fabric-deployment-owner`. Until that job is added to GitHub Ruleset #25365902 (GitHub Actions integration ID 15368) **and** a negative PR is actually blocked, the owner policy is `TRUSTED_CHECK_NOT_REQUIRED`. The existing `ownership-offline` job is useful for feedback, not a security boundary.
+
+<!-- Deliberate negative PR-only probe; must never merge. -->
+[NEGATIVE ONLY unauthorized deployment component](../../../../azure-fabric/deployment/rogue/probe.py)
