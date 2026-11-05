@@ -21,6 +21,23 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 **横切边界（已于 STEP06 完成专项说明）**：[Portal / Marquez](../platform-portal/README.md) 是观测子系统，[Azure/Fabric](../azure-fabric/README.md) 是本地 PG 的云端分析副本，不属于这五个模块的事务 Writer。总体图见 [System Overview](../../architecture/SYSTEM-OVERVIEW.md)。
 
+## 新开发：OpenSpec Forward-Only（2026-11-05 起）
+
+**历史保留，新任务统一 OpenSpec。** TASK001–TASK004 的既有源码、目录、已验收 Person/Visit 结果、Run/PR/Batch/Contract 与历史文档原样保留，不为采用 OpenSpec 追溯重建任务或迁移旧代码。历史 TASK005 Condition 仍是设计参考，不是当前开发状态；旧 TASK 文档不再写新的 CURRENT/NEXT。
+
+新功能、其他 OMOP 域（如 Condition/Drug/Procedure/Measurement）、实质性代码行为变更、DAG/Writer/Contract/Runtime 配置改动：先核对最新 main 和开放 PR，按下表找到组件唯一 README/CODE、现行源码及合同；再查询 [Active OpenSpec Changes](../../../openspec/changes/) 是否已有该功能的业务 Change，**没有则先创建一个**，由其 `tasks.md` 独占 OPEN/DONE。关联 PR 使用 `OpenSpec-Change` 和 `OpenSpec-Task`，同 PR 更新 Tasks。不得另建 TASK006 文档或第二份平行任务表。
+
+| 新能力 Owner | 读取的源码导航 | 现有代码根目录 / 新域应继承的职责 |
+| --- | --- | --- |
+| Source / Landing / Manifest / Claim | [Synthea CODE](synthea/CODE.md) · [Landing CODE](landing/CODE.md) | `local-data-platform/apps/synthea/`、`apps/landing_discovery/`、`apps/landing_claim/`；复用 Manifest/Claim Fence |
+| Spark Canonical / Candidate / DQ | [Spark CODE](spark/CODE.md) | `local-data-platform/spark/apps/person/`、`apps/visit/` 与 `spark/common/`；新 Condition 可在 `spark/apps/condition/` 按功能增加源码（**尚未实施**） |
+| PostgreSQL OMOP / Identity / Ledger / Commit | [OMOP CODE](omop/CODE.md) | `local-data-platform/apps/omop_writer/`、`local-data-platform/sql/`；禁止绕过现有事务、ID/FK 与幂等保护 |
+| Airflow Orchestration | [Airflow CODE](airflow/CODE.md) | `local-data-platform/airflow/dags/`；新功能先隔离测试，不直接破坏已验收 Person/Visit Consumer |
+
+历史 [TASK005 Condition 设计（只读 Git 快照）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-005-CONDITION-DEVELOPMENT-PLAN-v1.0.zh-CN.md) 的 Source/FK/Vocabulary/Occurrence Key 等约束须结合当前代码与真实 Contract 重新核验；它所述旧 `tests/task005/`、`scripts/task005/`、`docs/tasks/` 已被新布局规则取代。所有新自动化测试位于 `.github/quality/tests/data-platform/<component>/`（组件名按实际 Owner），并随新增/迁移源码在**同一 PR** 更新组件唯一 CODE.md。
+
+已有 [relocate-local-data-platform OpenSpec](../../../openspec/changes/relocate-local-data-platform/tasks.md) 继续专责旧目录迁移/兼容/清理的既定收尾；**不得**用它管理新增 Condition 等业务功能。OpenSpec/PR 的存在不等于授权 K8s/S3/PG 写入：真实新批次、Schema/COMMIT、历史 Batch replay 必须遵守 [Safe Operations](../../engineering/operations/SAFE-OPERATIONS.md)、实际资源互斥和独立读回。业务代码、固定执行标识、Legacy Contracts/测试在本次治理中均不修改。
+
 ## 组件职责与依赖方向
 
 ```text
