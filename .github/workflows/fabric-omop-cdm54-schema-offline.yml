@@ -3,13 +3,13 @@ name: Fabric OMOP CDM54 Schema Offline
 on:
   pull_request:
     paths:
-      - 'azure-fabric/warehouse/omop-cdm-5.4/**'
+      - 'azure-fabric/deployment/warehouse/omop-cdm-5.4/**'
       - '.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/**'
       - '.github/workflows/fabric-omop-cdm54-schema-offline.yml'
   push:
     branches: [main]
     paths:
-      - 'azure-fabric/warehouse/omop-cdm-5.4/**'
+      - 'azure-fabric/deployment/warehouse/omop-cdm-5.4/**'
       - '.github/quality/tests/azure-fabric/warehouse/omop-cdm-5.4/**'
       - '.github/workflows/fabric-omop-cdm54-schema-offline.yml'
 

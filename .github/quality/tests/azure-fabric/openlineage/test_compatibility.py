@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import unittest
 
-file = Path(__file__).resolve().parents[5] / "azure-fabric/openlineage/compatibility.py"
+file = Path(__file__).resolve().parents[5] / "azure-fabric/deployment/openlineage/compatibility.py"
 spec = importlib.util.spec_from_file_location("compatibility", file)
 mod = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = mod

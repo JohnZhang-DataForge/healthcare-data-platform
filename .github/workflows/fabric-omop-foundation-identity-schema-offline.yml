@@ -3,13 +3,13 @@ name: Fabric OMOP Identity Schema Offline
 on:
   pull_request:
     paths:
-      - 'azure-fabric/warehouse/omop-foundation/**'
+      - 'azure-fabric/deployment/warehouse/omop-foundation/**'
       - '.github/quality/tests/azure-fabric/warehouse/omop-foundation/**'
       - '.github/workflows/fabric-omop-foundation-identity-schema-offline.yml'
   push:
     branches: [main]
     paths:
-      - 'azure-fabric/warehouse/omop-foundation/**'
+      - 'azure-fabric/deployment/warehouse/omop-foundation/**'
       - '.github/quality/tests/azure-fabric/warehouse/omop-foundation/**'
       - '.github/workflows/fabric-omop-foundation-identity-schema-offline.yml'
 

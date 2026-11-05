@@ -5,7 +5,7 @@ last_verified: 2026-11-04
 source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 ---
 
-> **P2 文档归属**：由源码文件 `azure-fabric/warehouse/omop-foundation/README.md` 迁入；原证据、ID/事务/FK/Replay/授权边界保留。F0/F1 Schema/Vocabulary 及 F2 Synthetic ROLLBACK 的真实 Run 仅证明各自范围，**不等于 Person/Visit Gold COMMIT**。本 PR 不执行 Warehouse SQL。
+> **P2 文档归属**：由源码文件 `azure-fabric/deployment/warehouse/omop-foundation/README.md` 迁入；原证据、ID/事务/FK/Replay/授权边界保留。F0/F1 Schema/Vocabulary 及 F2 Synthetic ROLLBACK 的真实 Run 仅证明各自范围，**不等于 Person/Visit Gold COMMIT**。本 PR 不执行 Warehouse SQL。
 
 # Fabric OMOP Foundation — F1 identity and audit schema source
 
