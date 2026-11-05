@@ -41,4 +41,4 @@
 ## Source safety and future follow-up
 
 - Our P1–P5 Git work had no Azure/Fabric Spark execution, Warehouse DDL/DML, GHCR publish, local K8s/Marquez modification or data replay; CI runs cited above are offline/static. Other independent Marquez/Portal agents may perform separate runtime work, which this audit does not assess.
-- The detailed placement and fixture policy is in [Testing & Evidence](../../../../documents/engineering/development/TESTING-AND-EVIDENCE.md). Dedicated Fabric CI groups now enforce actual nonzero test discovery/counts. This does **not** yet establish a universal future auto-discovery gate for every possible new Local/Portal/Shared test component; treat that as a separate governance improvement, not as current P5 proof.
+- The detailed placement and fixture policy is in [Testing & Evidence](../../../documents/engineering/development/TESTING-AND-EVIDENCE.md). Dedicated Fabric CI groups now enforce actual nonzero test discovery/counts. This does **not** yet establish a universal future auto-discovery gate for every possible new Local/Portal/Shared test component; treat that as a separate governance improvement, not as current P5 proof.
