@@ -1,3 +1,12 @@
+---
+status: active
+scope: fabric-omop-f2-writer-preview-gate
+last_verified: 2026-11-04
+source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
+---
+
+> **P2 文档归属**：由源码文件 `azure-fabric/warehouse/omop-foundation/writer/README.md` 迁入；原证据、ID/事务/FK/Replay/授权边界保留。F0/F1 Schema/Vocabulary 及 F2 Synthetic ROLLBACK 的真实 Run 仅证明各自范围，**不等于 Person/Visit Gold COMMIT**。本 PR 不执行 Warehouse SQL。
+
 # F2 preview-to-commit contract
 
 **Status: SOURCE_ONLY / NOT GOLD_COMMITTED.** This module is a deterministic ID preview, not a Warehouse write or a persistent reservation.

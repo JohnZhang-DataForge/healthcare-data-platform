@@ -19,7 +19,7 @@
 
 - [x] 2.1 对账 `azure-fabric/infra-terraform/` 3 份 README；保留 Capacity、OIDC、Remote State、IAM、已创建/未创建区分和真实 Run 的独有内容到 `documents/systems/azure-fabric/`。
 - [x] 2.2 对账 Notebook 1 份与 OpenLineage 1 份 README，以及 `openlineage/PUBLISHER.md`；保留 HOLD、真实运行边界、只读协议、源代码唯一性。
-- [ ] 2.3 对账 Warehouse 3 份 README（包含 `writer/README.md`）及 `ID-ALLOCATION-STATE-MACHINE.md`；保留 INT allocator、单写入者事务、ROLLBACK、G4/G5 概念映射与 `NOT GOLD_COMMITTED` 约束。
+- [x] 2.3 对账 Warehouse 3 份 README（包含 `writer/README.md`）及 `ID-ALLOCATION-STATE-MACHINE.md`；保留 INT allocator、单写入者事务、ROLLBACK、G4/G5 概念映射与 `NOT GOLD_COMMITTED` 约束。
 - [ ] 2.4 重建所有反向链接及权威 CODE.md，完成内容一一核对之后删除旧说明性文件；8 份 README 无遗漏、2 份其他 MD 有明确处理结果；文档链接/CI PASS。
 
 ## 3 — 仅 Azure Fabric 的 15 个测试迁移（可按 3 个小 PR 串行）
@@ -68,3 +68,5 @@
 - Explicitly distinguished the original 2026-10-16 seven-Root Plan-only evidence from later Control Plane Apply/GET; neither is Blob data-plane read or Runtime acceptance.
 
 - Task 2.2: migrated Notebook's Git-first/HALT/old Wheel checkpoint to `notebooks/GIT-FIRST-OFFLINE-VALIDATION.md` and preserved complete OpenLineage compatibility+Publisher protocol under `openlineage/{README,CODE,PUBLISHER}.md`. Retired the two source README and source PUBLISHER Markdown; **no Notebook/Pipeline/Environment/Publisher Python/test was moved or executed**. Historical 0.1.0 Wheel and trial runs are labeled historical, not current environment release.
+
+- Task 2.3: retired the three Warehouse source README files plus the source ID allocation state-machine Markdown, moved all four unique technical/evidence contracts into `documents/systems/azure-fabric/warehouse/`, added one owner README and refreshed Warehouse CODE navigation. Pinned upstream OHDSI SHA, Fabric INT/identity caveats, snapshot isolation, global writer fence, six-table rollback #41824079608, and NOT GOLD_COMMITTED are preserved. No SQL/test/Writer runtime files were changed or executed.
