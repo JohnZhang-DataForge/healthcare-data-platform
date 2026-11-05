@@ -2,6 +2,10 @@
 
 > Governance policy adopted through [PR #696](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/696); legacy Person/Visit implementation and evidence were not rewritten and no Condition/other OMOP domain business runtime was developed or accepted.
 
+## Purpose
+
+本规范定义 Local Data Platform 的 OpenSpec Forward-Only 开发治理：不迁移或改写 Legacy TASK、已验收 Person/Visit、既有运行代码、合同和历史证据；后续新增业务域或实质性行为/配置变更统一由 Active OpenSpec 管理。该规范只约束开发过程，不代表任何新业务实体已经实施或获得共享运行环境写入授权。
+
 ## Requirements
 
 ### Requirement: Local DP 未来实质性变更仅用 OpenSpec 管理
