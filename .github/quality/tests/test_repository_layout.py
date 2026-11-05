@@ -31,6 +31,15 @@ class LayoutGateTests(unittest.TestCase):
     def assert_rule(self, result, rule, path, owner):
         self.assertTrue(any(f"PATH={path} RULE={rule} EXPECTED_OWNER={owner}" in s for s in result), result)
 
+    def test_existing_root_gitignore_is_valid(self):
+        self.old.add(".gitignore")
+        self.assertEqual([], self.check())
+
+    def test_unapproved_new_root_dotfile_is_rejected(self):
+        p = ".unexpected-config"
+        self.assert_rule(self.check(additions=[p]), "unapproved-top-level-module", p,
+                         "approved root module and OpenSpec architecture approval")
+
     def test_historical_readme_and_test_edits_pass(self):
         self.assertEqual([], self.check(changed=["shared-data-engine/tests/test_fhir_r4_contract.py", "azure-fabric/warehouse/omop-foundation/writer/README.md"]))
 
