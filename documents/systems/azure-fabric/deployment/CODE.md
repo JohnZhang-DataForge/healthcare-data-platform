@@ -28,3 +28,7 @@ The [static ownership checker](../../../../.github/quality/scripts/check_fabric_
 - [OMOP Foundation Manifest](../../../../azure-fabric/deployment/warehouse/omop-foundation/manifest.json), [INT identity contract](../../../../azure-fabric/deployment/warehouse/omop-foundation/identity-key-v1.json), [5 audit/etl DDL files](../../../../azure-fabric/deployment/warehouse/omop-foundation/sql/).
 - [OpenLineage Spark listener compatibility plan](../../../../azure-fabric/deployment/openlineage/compatibility.py).
 - Python source that **did not move**: [Warehouse identity planner](../../../../azure-fabric/warehouse/omop-foundation/writer/identity_plan.py) and [OpenLineage publisher](../../../../azure-fabric/openlineage/publisher.py).
+
+## Trusted PR ownership checking
+
+The [trusted owner workflow](../../../../.github/workflows/fabric-deployment-ownership-trusted.yml) uses `pull_request_target` and loads policy, registry and test code solely from the default branch; candidate PR Git paths and CODE map are passive data. Its stable job name is `require-trusted-fabric-deployment-owner`. Until that job is added to GitHub Ruleset #25365902 (GitHub Actions integration ID 15368) **and** a negative PR is actually blocked, the owner policy is `TRUSTED_CHECK_NOT_REQUIRED`. The existing `ownership-offline` job is useful for feedback, not a security boundary.

@@ -8,7 +8,7 @@
 ## P1 — Enforce stable owner contract
 - [x] 1.1 Publish one tracked registry defining all seven deployment components and code/source/test/doc ownership; do not create fake empty Git directories or a second Wheel.
 - [x] 1.2 Extend applicable architecture docs, CODE map, Agent entrypoints and compatible non-protected layout checks; test positive and negative path cases.
-- [ ] 1.3 **HOLD — the new `ownership-offline` check passes but is NOT in the GitHub Required/trusted policy.** Keep protected `check_repository_layout.py`, the immutable 185-entry baseline and Ruleset unchanged; obtain separate authorized trusted-policy/Ruleset upgrade with negative blocking proof. The existing Required trusted layout/CODE-map checks still pass.
+- [ ] 1.3 **IN PROGRESS — add `require-trusted-fabric-deployment-owner` via default-branch-only `pull_request_target` workflow. Must verify actual negative PR FAIL, then configure GitHub Ruleset #25365902 Required context (integration 15368), then prove GitHub merge-blocked; existing optional `ownership-offline` check is insufficient.** Keep protected `check_repository_layout.py`, the immutable 185-entry baseline and Ruleset unchanged; obtain separate authorized trusted-policy/Ruleset upgrade with negative blocking proof. The existing Required trusted layout/CODE-map checks still pass.
 
 ## P2 — Self-Runner compatibility first
 - [x] 2.1 Inventory current-main and historical SHA-pinned Schema/Vocabulary consumers; historical workflows checkout fixed Healthcare SHA and keep historical paths.
@@ -31,3 +31,7 @@
 - Private Self-Runner [#524](https://github.com/JohnZhang-DataForge/Self-Runner/pull/524) old/new exact schema source compatibility merged `e70f08afeb96a2665341ea4c687977662ca9c34b`; all offline checks PASS, real deploy jobs were skipped and original fixed historical Healthcare SHAs preserved.
 - Healthcare [#700](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/700) 49 unchanged blob moves and dependent test/workflow/CODE references merged `8250b9b37cd4db3290569d2b4ea38f5296b38a88`. Offline CDM 2, Foundation 31 and OpenLineage 8 ran and passed; the required trusted check confirmed `REPOSITORY_LAYOUT_GATE=PASS` and `CODE_MAP_GATE=PASS` and all documentation links passed. No Azure/Fabric/SQL/Marquez runtime used for migration.
 - Remaining is narrowly scoped **trusted Required enforcement of the newly introduced deployment ownership registry** (task 1.3, and thus archive 4.2). Do not present the optional head-branch ownership workflow alone as unbypassable. Existing source and test locations are already stable and can be used for ongoing development under the current enforced checks.
+
+## P1.3 trusted workflow security
+
+The new job always runs on pull requests without path filters. It checks out main policy and test code separately, treating the candidate checkout only as passive Git file data, and rejects ordinary PR modifications to its registry/checker/test/workflow after bootstrap. It has `contents: read`, no secrets and no deployment actions. **Do not mark P1.3 complete until exact GitHub Ruleset readback and negative PR blocked evidence.**
