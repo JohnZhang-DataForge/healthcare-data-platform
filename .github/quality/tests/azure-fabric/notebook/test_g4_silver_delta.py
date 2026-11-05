@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from healthcare_data_engine import SourceObject
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "azure-fabric/notebook-development"))
 import fhir_ingest_notebook as nb
 

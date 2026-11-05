@@ -69,7 +69,7 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 | --- | --- |
 | [fhir_ingest_notebook.py](../../../azure-fabric/notebook-development/fhir_ingest_notebook.py) | 离线兼容导入 Native Notebook；不含第二套业务实现 |
 | [native_item_readiness.py](../../../azure-fabric/notebook-development/native_item_readiness.py) | Fabric 原生 `.platform` 类型/名称/非零 ID 检查；导出成功仍 HOLD runtime exit 2 |
-| [test_notebook_offline.py](../../../azure-fabric/notebook-development/tests/test_notebook_offline.py) | 真实 PySpark Schema/关联和负向离线测试 |
+| [test_notebook_offline.py](../../../.github/quality/tests/azure-fabric/notebook/test_notebook_offline.py) | 真实 PySpark Schema/关联和负向离线测试 |
 | [README.md](notebooks/GIT-FIRST-OFFLINE-VALIDATION.md) | 未发布 Notebook 实施边界和执行安全说明 |
 | [fabric-fhir-notebook-offline.yml](../../../.github/workflows/fabric-fhir-notebook-offline.yml) | GitHub-hosted 离线 Wheel 精确 SHA/PySpark 负向 CI |
 

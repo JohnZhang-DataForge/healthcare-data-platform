@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'azure-fabric/notebook-development/**'
+      - '.github/quality/tests/azure-fabric/notebook/**'
       - 'azure-fabric/workspaces/healthcare-omop/**'
       - '.github/workflows/fabric-fhir-notebook-offline.yml'
       - 'documents/systems/azure-fabric/CODE.md'
@@ -49,12 +50,28 @@ jobs:
           "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.3"'
           echo 'G5_013_NOTEBOOK_OFFLINE_PIN_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
           echo 'G5_013_NOTEBOOK_RUNTIME_GIT_READBACK_PENDING=YES' >> "$GITHUB_STEP_SUMMARY"
-      - name: Synthetic Manifest plus actual local PySpark readback tests; ZERO cloud writes
+      - name: Synthetic Manifest plus local PySpark readback tests; ZERO cloud writes
         env:
           PYTHONPATH: azure-fabric/notebook-development
         run: |
           set -euo pipefail
-          "$RUNNER_TEMP/fabric-offline/bin/python" -m unittest discover -s azure-fabric/notebook-development/tests -p 'test_*.py' -v
+          "$RUNNER_TEMP/fabric-offline/bin/python" - <<'PY'
+          from pathlib import Path
+          import sys
+          import unittest
+          start = ".github/quality/tests/azure-fabric/notebook"
+          test_files = sorted(Path(start).glob("test_*.py"))
+          if len(test_files) != 8:
+              raise SystemExit(f"FABRIC_NOTEBOOK_TEST_FILE_COUNT_INVALID={len(test_files)}; expected=8")
+          suite = unittest.TestLoader().discover(start_dir=start, pattern="test_*.py")
+          found = suite.countTestCases()
+          print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=77; files={len(test_files)}", flush=True)
+          if found < 77:
+              raise SystemExit("FABRIC_NOTEBOOK_TEST_DISCOVERY_FAIL")
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.wasSuccessful():
+              sys.exit(1)
+          PY
       - name: Verify Native Git source; runtime remains HOLD
         run: |
           set +e

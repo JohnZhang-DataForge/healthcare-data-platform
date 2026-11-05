@@ -66,3 +66,14 @@ E2E 最终验收必须说明具体运行范围：版本/Manifest/Batch、实际 
 - 未满足则 `BLOCKED` / `PARTIAL`，明确阻塞点、已核实数据、下一步；不因准备了计划而宣布 COMPLETE。
 - 失败后先区分测试代码缺陷、资源状态不符、环境中断、权限/凭据、真正业务处理错误。非幂等 COMMIT 或未知状态**先只读审计再决策是否恢复**。
 - 不要求每个小型 STEP 都新建 Closeout：普通结果存 GitHub Run/Artifact 并在 PR 索引；重大里程碑及独立验收用简洁证据文档。
+
+
+## 6. 新增自动化测试的唯一目录和 CI 实际发现门禁（P3）
+
+- **唯一新路径**：`.github/quality/tests/<system>/<component>/test_<behavior>.py`；复杂组件可在 `<component>/` 下按真实能力再分层。系统例：`azure-fabric/notebook`、`azure-fabric/openlineage`、`azure-fabric/warehouse/omop-foundation`、`local-data-platform/spark`、`platform-portal/api`、`shared-data-engine/canonical`。测试归属以**被测代码实际唯一 owner** 而不是开发任务号 G3/G5/TASK 决定。
+- **Fixture**：只将新建的非敏感合成测试数据放 `.github/quality/fixtures/<system>/<component>/`；已存在的源码路径 Fixture 不在 P3 未获批准的情况下移动。不得提交患者真实数据、密钥或账户数据。
+- **正式质量脚本**：新增静态检测放 `.github/quality/scripts/`，并同步 [Developer CODE](CODE.md)；业务运行代码仍属于原组件，不能放到质量脚本目录。
+- **现有历史例外**：Legacy 源码 `tests/` 仅能按 P1 精确 baseline 维护旧文件；迁移后旧路径必须删除，不能在旧目录复建。P3 不自动触及 Local/Portal/Shared 既存文件。
+- **CI 必须发现并执行**：每组 workflow 的 `paths` 要覆盖新测试位置；运行时使用指定 `start_dir` 的 `unittest.TestLoader().discover()`，断言 `countTestCases() >=` 已验收基线、应有测试文件数符合库存、无导入错误，随后执行 `unittest.TextTestRunner` 并按结果使 job FAIL。不能以 `0 tests`、纯文件存在或全局根级发现 179 tests 证明子目录测试已运行。
+- **迁移与退休**：先确认源码和真实调用方，再在同一 PR 同步目标 CODE.md、Workflow、文档与 OpenSpec；固定原始方法/文件清单和 Git SHA。仅在已证实重复/停用且不减少必需回归断言时才允许删测试，旧版本用 Git SHA/PR 追溯，不另建 `archive/tests/`。
+- **执行边界**：GitHub Hosted 单测/离线 PySpark 不代表真实 Fabric DataPlane/DW 写入成功；真实云端测试、历史 Batch 回放或持久数据变更仍须独立授权及读回。
