@@ -36,9 +36,9 @@
 
 ## 5 — 最终独立审计和收口
 
-- [ ] 5.1 独立 QA 读取最终 main 和合并 PR、CI、文件 inventory：核实 Fabric 15/15 测试按规划归位，8/8 源码 README 退役，2 份其他 MD 已治理、历史例外清单准确。
-- [ ] 5.2 独立检查正向与负向 PR、真实 Ruleset Required 状态；未做到实际 blocked 则保持任务 OPEN 并报告管理权限阻断。
-- [ ] 5.3 对关键 Native Item / Warehouse / Pipeline 的 Git 树 SHA 与整改前固定 SHA 独立对账；确认**没有任何 Fabric/Azure/Local Runtime 操作**或业务数据变更。记录准确 main SHA、PR、Run、保留的 Legacy 例外。
+- [x] 5.1 独立 QA 读取最终 main 和合并 PR、CI、文件 inventory：核实 Fabric 15/15 测试按规划归位，8/8 源码 README 退役，2 份其他 MD 已治理、历史例外清单准确。
+- [x] 5.2 独立检查正向与负向 PR、真实 Ruleset Required 状态；未做到实际 blocked 则保持任务 OPEN 并报告管理权限阻断。
+- [x] 5.3 对关键 Native Item / Warehouse / Pipeline 的 Git 树 SHA 与整改前固定 SHA 独立对账；确认**没有任何 Fabric/Azure/Local Runtime 操作**或业务数据变更。记录准确 main SHA、PR、Run、保留的 Legacy 例外。
 - [ ] 5.4 全部要求和负向测试通过后再审查 Current Spec/Archive；OpenSpec `validate --all --strict` 不是实际实施或运行时验收。
 
 ## Stop / HOLD
@@ -112,3 +112,9 @@
 
 - Task 4.1: inspected the exact `azure-fabric/notebook-development/fhir_ingest_notebook.py` (17-line `importlib` compatibility shim resolving the one true Native Notebook) and `native_item_readiness.py` (63-line read-only native export/HALT checker). The centralized Notebook 87-case offline suite still imports those names through source `PYTHONPATH=azure-fabric/notebook-development`; [Fabric Notebook Offline Workflow](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/main/.github/workflows/fabric-fhir-notebook-offline.yml) directly invokes `native_item_readiness.py` and demands expected exit 2. Relocating them would break imports/relative paths without any approved runtime or maintenance benefit. **Accepted optional decision: keep both in the existing development helper location.** No business source copied/moved.
 - Task 4.2: verified the exclusive owners: Git Native Notebook/Pipeline/Environment/Lakehouse remain directly in `azure-fabric/workspaces/healthcare-omop/`; Workspace-only `dw-omop-5.4` has no fabricated `*.Warehouse/` Git Item; `azure-fabric/warehouse/` owns OMOP CDM/Writer, `azure-fabric/openlineage/` owns immutable Publisher and compatibility adapter. After P3, all 15 Fabric `test_*.py` files reside only in `.github/quality/tests/azure-fabric/`. No mirrored code tree, shared Wheel change, production run or cloud mutation performed.
+
+
+### P5 independent audit results (2026-11-04 ET)
+
+- Tasks 5.1–5.3 independently verified and recorded in [P5 Acceptance Evidence](P5-ACCEPTANCE-EVIDENCE.md), using actual final Git trees, 15/15 method-inventory matching (118/118 method names), 128 executed regression cases, 10/10 source Markdown retirements, 11/11 Native SHA integrity and 209/209 non-test/non-Markdown Fabric source SHA integrity; active Ruleset, protected positives and fresh explicitly blocked [negative PR #689](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/689).
+- Task 5.4 **HOLD** for one narrow governance decision: the protected original exact-path inventory remains at 185 historical rows with 25 expired Fabric paths; active legacy exceptions are only 160 because the checker requires presence in PR base. The blocked P5 negative PR proved no reintroduction loophole. The original design said to prune those 25 literal policy rows, but changing a trusted `GUARD_FILES` entry cannot pass the existing Required Check without separately authorized maintenance. Do not silently bypass GitHub protection or claim Current Spec archive complete.
