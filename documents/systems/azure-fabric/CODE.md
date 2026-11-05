@@ -1,13 +1,13 @@
 ---
-
-> **2026-10-31 Fabric FHIR Source Ownership**：[最终 Native ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。原生 NB/PL/Environment 在 Workspace 对应的 Git Item 目录；唯一新 Python Wheel 是 `shared-data-engine/`；旧独立 Fabric I/O 包方案作废。
 status: active
 scope: azure-fabric-source-map
-last_verified: 2026-11-02
-source_sha: 9a26bdd1cbb063444b87bbdab4ee33adcd181f7b
+last_verified: 2026-11-04
+source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 ---
 
 # Azure / Microsoft Fabric — CODE / 源码总导航
+
+> **2026-10-31 Fabric FHIR Source Ownership**：[最终 Native ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。根级 Native NB/PL/Environment；唯一新 Shared Wheel；不创建第二个 Fabric I/O 包。目录位置以已合并的 P1 OpenSpec 为准。
 
 > **系统级 CODE 只负责跨组件源码归属；详细源文件导航放在对应组件 CODE.md。** 功能和架构见 [系统 README](README.md)，真实进度只看 [PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md)。源码位置存在不代表资源已 Apply 或业务端到端成功。
 
@@ -18,7 +18,7 @@ source_sha: 9a26bdd1cbb063444b87bbdab4ee33adcd181f7b
 | Terraform | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | [Terraform CODE.md](infra-terraform/CODE.md) · [安全设计和历史 Plan](infra-terraform/ARCHITECTURE.md) | 七个 Root/Module，IAM、远程 State、Fabric Item Bootstrap；未证明 Apply |
 | Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Git Native 业务 Notebook 已有完整代码并完成云端双格式读回；正式业务 Notebook Runtime / FHIR→Delta E2E 仍 HALT，未验收 |
 | Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | env_healthcare 中 Wheel 0.1.3 已发布且 Spark 4.1 真实 Import PASS；正式 G4 Silver 与 G5 Source/P1 只读验收有独立证据，Candidate/Gold Pipeline E2E 尚未完成 |
-| Lakehouse | [`lh_omop_analytics.Lakehouse/`](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/) | [Lakehouse native files](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/lakehouse.metadata.json) | 真实原生元数据已导出；不表示 Delta/Silver E2E PASS |
+| Lakehouse | [`lh_omop_analytics.Lakehouse/`](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/) | [Lakehouse native files](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/lakehouse.metadata.json) | Native 元数据导出本身不证明 Delta；G4 Silver 与 G5 Source Readonly 的受控业务读回另见相应 OpenSpec，不能外推 Gold E2E |
 | Warehouse (`healthcare-omop` Workspace-only actual item) | [`omop-cdm-5.4/`](../../../azure-fabric/warehouse/omop-cdm-5.4/) · [`omop-foundation/`](../../../azure-fabric/warehouse/omop-foundation/) | [Warehouse CODE.md](warehouse/CODE.md) | Existing physical `dw-omop-5.4` Warehouse GUID `7a6d08da-278d-4603-8a3b-28640110984c` in same Workspace. F0 schema 39/432 and F1 Vocabulary 9/9 true SQL readback PASS; these are **SQL/Writer sources, not a `.Warehouse/` Git Native Item**. Protected from Git UpdateFromGit; Gold COMMITTED still not done |
 | Pipelines | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | [Pipelines CODE.md](pipelines/CODE.md) | 原生 Pipeline 已包含 1 个 TridentNotebook Activity；默认 HALT，未执行业务数据管道 |
 
@@ -54,12 +54,14 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 
 ## OpenLineage compatibility adapter (offline candidate)
 
+**唯一文档 Owner**：[OpenLineage README](openlineage/README.md) · [CODE](openlineage/CODE.md) · [Publisher Protocol](openlineage/PUBLISHER.md)。
+
 - [Candidate Listener config](../../../azure-fabric/openlineage/compatibility.py) · [Offline tests](../../../azure-fabric/openlineage/tests/test_compatibility.py) · [compatibility/authorization notes](openlineage/README.md). Scala 2.12 local and Scala 2.13 Fabric artifacts are not interchangeable. This source has no live Fabric test authorization; current Fabric Notebook HOLD remains.
 ## Immutable OpenLineage Blob Publisher (offline only)
 
 - [Publisher entrypoint](../../../azure-fabric/openlineage/publisher.py) · [Fake Azure and recovery tests](../../../azure-fabric/openlineage/tests/test_publisher.py) · [publisher protocol](openlineage/PUBLISHER.md). Independently verified immutable event readback before committed Manifest; Azure live operations unapproved.
 
-## P2 未发布 Notebook 业务源码（2026-10-31；只属于开发阶段）
+## 历史 P2 Notebook 开发阶段（2026-10-31 记录；非当前云端实时状态）
 
 **2026-10-31 更新：**P2 唯一业务逻辑已迁入 Fabric Git Native Notebook [notebook-content.py](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py)。下列开发文件只作为离线加载/安全检查/测试工具，不能单独发布为第二个 Notebook 或 Wheel。正式发布仍需 Environment Publish 与独立云验收。
 

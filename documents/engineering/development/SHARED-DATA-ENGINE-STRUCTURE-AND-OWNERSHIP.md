@@ -74,7 +74,7 @@ documents/systems/azure-fabric/                     # 权威说明文档与 CODE
 2. 在当前 OpenSpec Change 中先列明 **业务职责、目标 owner 路径、允许依赖、公开 API、Contract SHA、测试/回滚计划**；没有唯一归属或发现两个实现时标记 HOLD，不自行复制新实现。
 3. 首先新增**薄的必要文件**和 contract/unit/negative/replay 测试，不建立未来所有实体/医院的空脚手架，不以大规模移动旧代码作为第一步。
 4. 同一 PR 更新唯一组件 CODE.md 和必要 README/ADR/OpenSpec tasks；文件/部署不越界。Fabric Native Item 文件应与 `fabric-cicd` 唯一权属一致，不交 Terraform 与 fabric-cicd 双重管理。
-5. 应运行现有命名、OpenSpec、DOC-link、CODE-map 检查。**目前旧 CODE-map 只覆盖已列明的 Local/部分 Fabric 原生路径，对新 shared/Fabric Native Notebook/Pipeline/Environment/warehouse 并非自动覆盖**；新增源码前必须扩展静态校验的路径归属、依赖边界和重复实现负向测试。没有 CI 证据不能声称 Agent 路径边界已有自动保护。
+5. 应运行现有命名、OpenSpec、DOC-link、CODE-map 检查。**P1 已通过真实 Required Check 覆盖当前 11 个 Fabric Native 文件**（Notebook/Pipeline/Environment/Lakehouse）及现有 Local 源码清单；但新的未注册 Native Item 名称、任意 Terraform 源文件与 Shared 业务 import 边界不能据此声称完全自动受保护。新增受控 Item 必须先在独立获批的治理 Change 中扩展可信 owner map/负向测试并验证实际 PR Gate。CI 静态通过不代表 Fabric Runtime 授权。
 6. 真实 Blob/Fabric/K8s/PG 操作必须逐项授权并核验资源/费用/并行任务；PR 合并与静态测试不代表业务运行成功。
 
 ## 7. 本轮落地状态（避免 Agent 错认）

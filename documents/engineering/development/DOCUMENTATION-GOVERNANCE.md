@@ -32,6 +32,8 @@ Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`
 
 现有源码中的 `local-data-platform/contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
 
+**可信 Gate 维护例外**：`.github/quality/scripts/check_repository_layout.py`、CODE Map Checker、精确 legacy baseline 和受保护 workflow 是禁止普通 PR 自修改的策略文件。2026-11-04 的 #674 误报修复通过经批准的一次性 Ruleset 维护窗口完成，并立即恢复两项 Required Check；今后应先提交独立治理 OpenSpec、验证正负用例并采用明确的管理员维护窗口，而不是静默绕过保护、删除 CI 或将业务修复混入规则变更。
+
 ### P1 文件所有权与精确存量冻结
 
 [已批准的 OpenSpec Change](../../../openspec/changes/standardize-fabric-source-test-document-layout/tasks.md) 是新增文件的权威目录规则：新增自动化测试仅放 `.github/quality/tests/<system>/<component>/`，新增质量检查程序仅放 `.github/quality/scripts/`，测试静态样本按需放 `.github/quality/fixtures/`。正式人类技术文档归 `documents/`；源码目录不再新增说明性 README/CODE/ARCHITECTURE/PUBLISHER/Runbook Markdown。仓库根 README、各级 AGENTS、真实 SQL/DDL、运行配置和 Fabric 原生机器元数据保留。
@@ -41,7 +43,7 @@ Local DP、Portal、Shared Engine、Azure Fabric 现存的旧测试和说明文�
 ### Component README / CODE 双入口约定
 
 - `documents/systems/data-platform/<component>/README.md`：组件职责、主要数据流、架构边界、当前能力范围和其它权威文档导航；避免在这里重复完整的源码表。
-- `documents/systems/data-platform/<component>/CODE.md`：**唯一组件级源码导航入口**，直接链接实际源文件/目录、主要测试、Contract 和构建/部署入口；不复制 CURRENT/NEXT、架构全文或 Runbook。跨组件源码按功能所有权分别登记，不机械复制每个代码目录的 README。
+- `documents/systems/<system>/<component>/CODE.md`（按 Data Platform、Azure Fabric、Portal 分系统；Native Lakehouse 等使用本系统上级 CODE.md）：**唯一组件级源码导航入口**，直接链接实际源文件/目录、主要测试、Contract 和构建/部署入口；不复制 CURRENT/NEXT、架构全文或 Runbook。跨组件源码按功能所有权分别登记，不机械复制每个代码目录的 README。
 - 原代码目录 README 若只有导航或已有信息，在核对后迁移独有知识、修复所有反向链接、通过路径检查即可逐步删除；不改源码、Runtime、冻结契约或历史证据。
 - **Platform Portal 的 README/CODE 收口**：`documents/systems/platform-portal/` 是唯一系统文档入口；Marquez、PostgreSQL14、Airflow OpenLineage、Spark OpenLineage 四个组件各自以 `README.md` 管职责/验收边界，以 `CODE.md` 管真实源码/配置/测试。`platform-portal/` 源码目录不再维护同义 README；真实 Helm、YAML、Shell、Python、CSV 和测试原位保留。新增/删除/移动 Portal 真实源码时，同一个 PR 检查对应 CODE.md；不要混淆 A3/A4 历史分项验收与未批准的 Spark 业务集成，删除 README 不授权部署或 PG14 重装。
 - **Azure/Fabric 源码/文档分离**：`documents/systems/azure-fabric/` 是该系统的唯一正式文档入口；`infra-terraform/`、`notebooks/`、`pipelines/` 子组件分别以 `README.md`（职责）和 `CODE.md`（源码）管理。Terraform 详细 IAM/OIDC/Remote State/验收说明集中于 `infra-terraform/ARCHITECTURE.md`。`azure-fabric/` 源码区禁止重复维护说明性 README、CODE 或 ARCHITECTURE；`.tf`、`.tfvars`、JSON、Python 及 Fabric Item 的 `.platform` 等机器可读源码和元数据必须仍放在实际运行源码目录。文档迁移不得改变 Terraform 资源定义、Remote State、Workflow 的部署行为或 Fabric Item 所有权。

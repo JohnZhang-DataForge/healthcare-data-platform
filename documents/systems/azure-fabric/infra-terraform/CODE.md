@@ -142,7 +142,7 @@ source_sha: null
 
 ## 历史组合 Root（保留源码，但不作为新部署入口）
 
-- [`components/fabric-environment/`](FABRIC-ENVIRONMENT-ADOPTION.md)：一个 Fabric/Terraform 同名 Workspace 的组合 Root；首个已有目标是 `healthcare-omop`。不重建现有 Workspace，首次真实部署前必须核对历史 State 并显式 Import。
+- [`components/fabric-environment/`](../../../../azure-fabric/infra-terraform/components/fabric-environment/) · [State adoption contract](FABRIC-ENVIRONMENT-ADOPTION.md)：一个 Fabric/Terraform 同名 Workspace 的组合 Root；首个已有目标是 `healthcare-omop`。不重建现有 Workspace，首次真实部署前必须核对历史 State 并显式 Import。
 - [`main.tf`](../../../../azure-fabric/infra-terraform/components/fabric-environment/main.tf)：调用原 `modules/workspace`、`modules/onelake` 与新 Connection Module，且通过 `terraform.workspace` 命名。
 - [`outputs.tf`](../../../../azure-fabric/infra-terraform/components/fabric-environment/outputs.tf)：Workspace 名称、真实 Workspace/Lakehouse/Connection IDs 和 OneLake 路径。
 - [`healthcare-omop.tfvars.example`](../../../../azure-fabric/infra-terraform/components/fabric-environment/environments/healthcare-omop.tfvars.example)：**非可直接 Apply** 的示例。真实 Capacity、Reader 权限和既有 Workspace Import 均未验证。

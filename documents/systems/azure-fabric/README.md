@@ -19,7 +19,7 @@ source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
 
 ## 系统目标与真实边界
 
-> **新确认的目标设计（尚未实施）**：[Fabric 多环境可重建架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 已确定采用 Terraform + Self-Runner GitHub Actions + fabric-cicd，复用现有 Blob/Backend，Fabric 环境使用独立身份和 State Key；**这不会改变下文的 Plan-only、Workspace 手工建立与业务 Item 尚未完成的当前事实**。
+> **2026-10-20 历史目标设计（各云资源后续部署状态另行核实）**：[Fabric 多环境可重建架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 已确定采用 Terraform + Self-Runner GitHub Actions + fabric-cicd，复用现有 Blob/Backend，Fabric 环境使用独立身份和 State Key；**这不会改变下文的 Plan-only、Workspace 手工建立与业务 Item 尚未完成的当前事实**。
 
 Azure/Fabric 与本地 [Data Platform](../data-platform/README.md) 平级。本地 PostgreSQL OMOP 是权威数据源，Azure/Fabric 用于构建可重建的云端分析副本。现阶段批准的 OneLake-first 数据流：
 
@@ -32,16 +32,17 @@ Azure/Fabric 与本地 [Data Platform](../data-platform/README.md) 平级。本�
   → OneLake Lakehouse / Delta（分析副本）
 ```
 
-**现状不能误报为 E2E 完成**：已存在 Terraform 基础设施定义；七个独立 Root 曾于 2026-10-16 在新路径下完成 **Plan-only** 验证，未据此证明 Apply、Fabric Item 已创建或实际数据已装载。Warehouse 是可选能力而非 MVP 前置条件。详细证据见 [Terraform 技术架构](infra-terraform/ARCHITECTURE.md#verified-plan-evidence)。
+**2026-10-16 七 Root 历史 Plan-only ≠ 后续真实资源状态**：该时点只证实旧 Root 的 Plan，不代表 2026-11-04 仍没有 Fabric Item 或 Warehouse。当前 Native Notebook/Pipeline/Environment/Lakehouse 已存在；Warehouse F0 39/432、F1 Vocabulary 9/9 及 F1 Management Schema 有独立真实 Run 读回；这些也**不代表临床 Gold E2E 已完成**。详情见 [总 CODE](CODE.md)、[Warehouse README](warehouse/README.md)、[Terraform 技术架构](infra-terraform/ARCHITECTURE.md#verified-plan-evidence)。
 
 ## 组件总表
 
 | 组件 | 组件说明 / 源码地图 | 当前实际源码 | 实现与验收边界 |
 | --- | --- | --- | --- |
-| **Terraform Infrastructure** | [README](infra-terraform/README.md) · [CODE](infra-terraform/CODE.md) · [ARCHITECTURE](infra-terraform/ARCHITECTURE.md) | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | 七个 Root/Module、IAM、OIDC、Remote State；只有 Plan-only 证据 |
+| **Terraform Infrastructure** | [README](infra-terraform/README.md) · [CODE](infra-terraform/CODE.md) · [ARCHITECTURE](infra-terraform/ARCHITECTURE.md) | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | 七个历史 Root Plan-only；Reader/Connection 及后续独立 Fabric 资源有另外的 Apply/GET/Runtime 证据，详见 [Terraform README](infra-terraform/README.md) |
 | **Fabric Notebooks** | [README](notebooks/README.md) · [CODE](notebooks/CODE.md) | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | 真实 Git-native Notebook 已存在，默认 HALT；G4 / G5 Source Readonly 已实际验收 |
+| **Fabric OpenLineage** | [README](openlineage/README.md) · [CODE](openlineage/CODE.md) · [Publisher](openlineage/PUBLISHER.md) | [`openlineage/`](../../../azure-fabric/openlineage/) | 离线兼容性与不可变 Publisher 源码；Fabric listener、私有采集和 Azure 实时发布仍需独立授权 |
 | **Fabric Pipelines** | [README](pipelines/README.md) · [CODE](pipelines/CODE.md) | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | 真实 Git-native Pipeline 已存在，受控参数默认 HALT；完整 Gold E2E 尚未验收 |
-| **Fabric Warehouse** | [CODE](warehouse/CODE.md) | [`omop-cdm-5.4/`](../../../azure-fabric/warehouse/omop-cdm-5.4/) · [`omop-foundation/`](../../../azure-fabric/warehouse/omop-foundation/) | 已有 `healthcare-omop` Workspace 内 **`dw-omop-5.4`** (GUID `7a6d08da-278d-4603-8a3b-28640110984c`)；Workspace-only Git 保护；SQL 源码独立于 Native Item Git 根目录 |
+| **Fabric Warehouse** | [README](warehouse/README.md) · [CODE](warehouse/CODE.md) | [`omop-cdm-5.4/`](../../../azure-fabric/warehouse/omop-cdm-5.4/) · [`omop-foundation/`](../../../azure-fabric/warehouse/omop-foundation/) | 已有 `healthcare-omop` Workspace 内 **`dw-omop-5.4`** (GUID `7a6d08da-278d-4603-8a3b-28640110984c`)；Workspace-only Git 保护；SQL 源码独立于 Native Item Git 根目录 |
 
 `healthcare-omop` 是**已有 Fabric Workspace 的名称**，不是本次要创建的新 Workspace。源码结构分为基础设施 `infra-terraform/` 与未来 Fabric 原生业务 Item 的 `workspaces/healthcare-omop/`；建 Git 目录**不会**自动创建 Fabric Item 或连通 Fabric Git。
 
