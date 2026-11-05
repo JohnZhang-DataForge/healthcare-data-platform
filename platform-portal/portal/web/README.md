@@ -37,6 +37,9 @@ The native Marquez 0.51.1 Jobs/Datasets components fetch when the selected names
 
 This is a frontend convenience fallback, not a guarantee of browser E2E success. Node tests and an immutable GHCR rollout are necessary; final acceptance requires an actual mobile Safari/Chrome first-visit navigation test showing real Jobs and Datasets **without tapping Refresh**.
 
+**Live deployment evidence** (2026-11-04 US Eastern): [Healthcare #688](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/688) main `388a593f`, [GHCR image #41964498235](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41964498235) digest `sha256:c1f8b2f8e2c174b83cfb026edee696ec6bec3515c67e7a626ace65fabeda0e9f`, controlled image-only [Self-Runner deployment #41964675838](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41964675838) SUCCESS. The deployed Public Web and Gateway both serve the new overlay without root redirect; Airflow Jobs and Landing Dataset GET endpoints are nonempty; Gateway write methods remain denied. **Mobile Safari interaction still requires a fresh user/browser acceptance test**; past screenshot failure is retained as evidence and not marked resolved by HTTP alone.
+
+
 ### Section-specific nonempty namespace defaults (Jobs / Datasets)
 
 The stock Marquez 0.51.1 namespace selector stores a **single global** `selectedNamespace`. This caused first-time visitors to see an empty Jobs page after arriving at the default Landing Datasets. Live GET-only [Self-Runner #41960755696](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41960755696) confirmed `s3://health-landing` has Datasets but no Jobs, while `healthcare-platform-airflow` has real Jobs (including `new_only_omop_consumer`); `healthcare-platform-spark-business` is another nonempty Jobs fallback.
