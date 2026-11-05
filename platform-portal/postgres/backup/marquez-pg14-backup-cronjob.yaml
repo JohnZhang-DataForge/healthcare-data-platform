@@ -1,0 +1,108 @@
+# Marquez development-only backup; data stays on the SAME dw-postgre14-data PVC.
+# Retention here is for backup FILES only; never enable Marquez dbRetention.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: marquez-pg14-local-backup
+  namespace: dw-postgre14
+  labels:
+    app.kubernetes.io/name: marquez-pg14-local-backup
+    app.kubernetes.io/part-of: marquez
+spec:
+  schedule: "0 3 * * *"
+  timeZone: America/New_York
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: marquez-pg14-local-backup
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          # The PVC is RWO/local: the backup MUST run on the existing PG14 node.
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: dw-postgre14-database
+                  topologyKey: kubernetes.io/hostname
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              image: postgres:14
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_PASSWORD
+                - name: POSTGRES_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_DB
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -Eeuo pipefail
+                  umask 077
+                  backup_dir=/backup/marquez-backups
+                  mkdir -p -- "$backup_dir"
+                  chmod 0700 "$backup_dir"
+                  stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  pending="$backup_dir/.marquez-$stamp.partial"
+                  complete="$backup_dir/marquez-$stamp.dump"
+                  test ! -e "$complete"
+                  cleanup() { rm -f -- "$pending"; }
+                  trap cleanup EXIT
+                  export PGPASSWORD="$POSTGRES_PASSWORD"
+                  pg_dump --host=dw-postgre14.dw-postgre14.svc.cluster.local --port=5432                     --username="$POSTGRES_USER" --dbname="$POSTGRES_DB" --no-password                     --format=custom --compress=3 --file="$pending"
+                  test -s "$pending"
+                  pg_restore --list "$pending" >/dev/null
+                  chmod 0600 "$pending"
+                  mv -- "$pending" "$complete"
+                  sha256sum "$complete" | awk '{print "MARQUEZ_PG14_BACKUP_SHA256="$1}'
+                  echo "MARQUEZ_PG14_BACKUP_FILE=$(basename "$complete")"
+                  echo "MARQUEZ_PG14_BACKUP_BYTES=$(stat -c %s "$complete")"
+                  # Only prune our own complete .dump files; never database files.
+                  # Files older than seven full 24-hour periods are removed only
+                  # AFTER the newly produced backup passed format checks.
+                  find "$backup_dir" -maxdepth 1 -type f -name 'marquez-*.dump'                     -mmin +10080 -delete
+                  echo "MARQUEZ_PG14_BACKUP_KEEP_DAYS=7"
+                  echo "MARQUEZ_PG14_BACKUP_SUCCESS=PASS"
+              volumeMounts:
+                - name: pg14-data
+                  mountPath: /backup
+          volumes:
+            - name: pg14-data
+              persistentVolumeClaim:
+                claimName: dw-postgre14-data
