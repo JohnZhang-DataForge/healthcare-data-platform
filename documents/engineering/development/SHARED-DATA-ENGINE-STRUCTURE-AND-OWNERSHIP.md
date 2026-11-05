@@ -18,41 +18,29 @@ runtime: none
 | --- | --- | --- |
 | `shared-data-engine/src/healthcare_data_engine/` | 本期唯一新 Python Wheel；FHIR/CSV/HL7 Source/Entity Adapter、Canonical、OMOP Candidate/DQ/Identity Plan/Reconciliation | Azure/OneLake/S3/PG/Delta 物理 I/O，Pipeline/Airflow |
 | `local-data-platform/` | 已有 Spark/Airflow/SeaweedFS/PG 运行环境；逐模块测试后才改用 Shared | 大规模移动旧代码/合同、复制新的核心 Mapper |
-| `azure-fabric/workspaces/healthcare-omop/notebooks/` | 实际 Fabric Notebook PySpark 应用：Spark 读取、转换调用、DQ、Delta、读回 | 复制 Shared 算法、只提供空启动壳 |
-| `azure-fabric/workspaces/healthcare-omop/pipelines/` | Fabric 原生工作流：依赖/参数/失败分支/重试/调度 | 另建 Python Airflow-like 调度层 |
-| `azure-fabric/workspaces/healthcare-omop/environments/` | Fabric 原生 Environment Item：安装并 Publish 固定版本 Shared Wheel | 直接放入 Shared 可编辑 Python 源码，双发布者竞争 |
+| `azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/` | 实际 Fabric Notebook PySpark 应用：Spark 读取、转换调用、DQ、Delta、读回 | 复制 Shared 算法、只提供空启动壳 |
+| `azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/` | Fabric 原生工作流：依赖/参数/失败分支/重试/调度 | 另建 Python Airflow-like 调度层 |
+| `azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/` | Fabric 原生 Environment Item：安装并 Publish 固定版本 Shared Wheel | 直接放入 Shared 可编辑 Python 源码，双发布者竞争 |
 | `azure-fabric/infra-terraform/` | 已有 Infrastructure Terraform Modules/State | 同时写 native Notebook/Pipeline/Environment Item |
 | `azure-fabric/deployment/`, `openlineage/` | 现有发布脚本和 Lineage 能力，路径保留 | 随意扩大 Trial Smoke 发布范围 |
 
-## 2. 真实目录规划（未创建的 Native Items 仅为目标）
+## 2. 真实目录归属（2026-11-04）
 
-~~~text
-healthcare-data-platform/
-├── shared-data-engine/
-│   ├── AGENTS.md                              # exists
-│   ├── pyproject.toml                         # one future Wheel
-│   ├── src/healthcare_data_engine/
-│   │   ├── adapters/fhir_r4/
-│   │   ├── canonical/
-│   │   ├── mapping/omop/
-│   │   ├── identity/
-│   │   ├── quality/
-│   │   └── reconciliation/
-│   └── tests/
-├── local-data-platform/                       # unchanged
-└── azure-fabric/
-    ├── workspaces/
-    │   ├── healthcare-omop/
-    │   │   ├── notebooks/ingestion/nb_fhir_ingest.Notebook/
-    │   │   ├── pipelines/pl_fhir_ingest.DataPipeline/
-    │   │   └── environments/env_healthcare.Environment/
-    │   └── johnzhang-test/                    # existing Smoke
-    ├── infra-terraform/                       # existing
-    ├── deployment/                            # existing
-    └── openlineage/                           # existing
-~~~
+```text
+shared-data-engine/src/healthcare_data_engine/       # 唯一 Shared Wheel 源码
+shared-data-engine/tests/                           # 精确冻结旧测试
+azure-fabric/workspaces/healthcare-omop/
+  nb_fhir_ingest.Notebook/                         # 真实根级 Notebook
+  pl_fhir_ingest.DataPipeline/                     # 真实根级 Pipeline
+  env_healthcare.Environment/                      # 真实根级 Environment
+  lh_omop_analytics.Lakehouse/                     # 真实根级 Lakehouse
+azure-fabric/warehouse/                            # 原有 Warehouse SQL/Writer
+.github/quality/tests/                             # 所有新增自动化测试
+.github/quality/scripts/                           # 新增质量检查脚本
+documents/systems/azure-fabric/                     # 权威说明文档与 CODE Map
+```
 
-`azure-fabric/workspaces/healthcare-omop/` is the chosen Fabric Git Folder root. The `notebooks/`, `pipelines/`, `environments/` subfolders **must correspond to actual Fabric UI folders**, but the names are our project convention, not Microsoft-mandated. Native Item definitions (`.platform`, Notebook content, Pipeline JSON) must come from actual Fabric exports, not manually invented identifiers. No `shared-data-engine/` Python source under native Environment; Environment consumes the **built, versioned, hash-pinned shared wheel**. One selected release writer + Environment Publish + Notebook version readback.
+这些真实 Git 位置不意味着全部业务 Runtime 验收完成；不存在所建议的 `notebooks/`、`pipelines/`、`environments/` 物理中间目录。实际 `dw-omop-5.4` 为 Workspace-only Warehouse，绝不以 `*.Warehouse/` 假项代替；现有源码、15 个 Fabric 测试、8 份 README 不在 P1 搬运。详见 [批准 Change](../../../openspec/changes/standardize-fabric-source-test-document-layout/tasks.md)。
 
 ## 3. 业务功能落点与依赖方向
 
@@ -68,7 +56,7 @@ healthcare-data-platform/
 - **命名**：新源码按组件+业务能力命名，snake_case 文件、PascalCase 类型；禁止新增 taskNNN/stepNNN、v2_final、misc、utils2；禁止按医院/时间/开发任务号创建顶层目录。业务版本在 Contract/Mapping Profile/包版本中体现，不通过复制目录代替升级。
 - **固定 package namespace**：`healthcare_data_engine` 只对应 `shared-data-engine/src/healthcare_data_engine/`；不再建立第二只 Fabric I/O wheel。建议 PEP 621 + `pyproject.toml` 的共享 wheel，Local/Fabric 安装**经过测试的指定版本/哈希**，不使用浮动 `latest`、共享工作目录 PYTHONPATH 作为长期集成接口。
 - **Contract Source of Truth**：当前 Local Contract 原位不动，包构建/测试读固定 hash 的确切版本。未来有明确影响矩阵、回滚和双端测试后，再用单独 PR 迁移权威 Contract，不在同一个 PR 同时修改 Schema 和移动运行代码。
-- **测试归属**：Shared 函数及失败/幂等/缺字段测试在 `shared-data-engine/tests/`；Fabric I/O 和 Warehouse SQL 的 mock/静态测试分别在 Fabric 自己的 `tests/`；真实 Trial/Local 接口测试额外提供 frozen synthetic fixtures 及跨 Spark 版本比较。禁止真实患者数据/Secret 进入 Git。
+- **测试归属**：所有新增自动化测试必须放在 `.github/quality/tests/<system>/<component>/`；静态样本可放 `.github/quality/fixtures/`。原 Shared、Local、Portal 和 Fabric 源码 `tests/` 仅维护精确冻结的旧文件；P1 不搬迁、不关闭旧 CI。禁止真实患者数据/Secret 进入 Git。
 - **Data identity**：Source Batch（hospital/feed/request/manifest SHA）、Processing Version（adapter/contract/map/code SHA）、Publication ID（approved commit）的数据模型在 shared；状态的物理持久化由各平台独占。不同医院身份不得按姓名/生日自动合并。
 - **Schema edge case**：Local Canonical v1 的非空约束不一定适用于真实 FHIR；只允许匹配 profile 的合成 MVP，缺字段 quarantine 或经独立审批推出 v2；不得默填生日、种族、Encounter 结束时间。
 - **发布**：Local Spark 3.5.7 与 Fabric Runtime 2.0 有版本差异；两边固定共享包版本且独立测试、独立部署，不得 Fabric 变更自动升级 Local。新的真实 File/Item ID 必须从系统生成而非硬编码猜测。
@@ -93,5 +81,5 @@ healthcare-data-platform/
 
 - **已定版**：唯一 Shared Wheel、Fabric NB/PL 必选、Environment 安装发布、原生 Spark I/O、Contract 唯一权威、CODE map、渐进迁移策略。
 - **已建立**：`shared-data-engine/AGENTS.md` 的 scoped Agent 指令和文档 Code Ownership 入口。
-- **尚未建立**：`pyproject.toml`、任意 `src/*.py`、Wheel 构建、Contract 复制/迁移、Native Notebook、Warehouse Gold Writer、Delta/Shortcut 云端资源。
+- **当前实施状态以 Git/CI/云端独立读回为准**：Shared Wheel、业务 Native Git Items 已有真实版本；不能据此宣称 Gold COMMITTED。此 P1 不进行任何运行时验收。
 - **独立未来 Gate**：按原 PR 的 OpenSpec tasks 分阶段建设自动静态边界检查、Shared Python 包、合同与 Spark 跨版本测试；不能把本轮文件夹治理视为业务功能 PASS。

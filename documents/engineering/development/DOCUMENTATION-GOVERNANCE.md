@@ -32,6 +32,12 @@ Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`
 
 现有源码中的 `local-data-platform/contracts/`、真正运行的 SQL/YAML/Workflow 是实现依据，不因文档重建而移动。
 
+### P1 文件所有权与精确存量冻结
+
+[已批准的 OpenSpec Change](../../../openspec/changes/standardize-fabric-source-test-document-layout/tasks.md) 是新增文件的权威目录规则：新增自动化测试仅放 `.github/quality/tests/<system>/<component>/`，新增质量检查程序仅放 `.github/quality/scripts/`，测试静态样本按需放 `.github/quality/fixtures/`。正式人类技术文档归 `documents/`；源码目录不再新增说明性 README/CODE/ARCHITECTURE/PUBLISHER/Runbook Markdown。仓库根 README、各级 AGENTS、真实 SQL/DDL、运行配置和 Fabric 原生机器元数据保留。
+
+Local DP、Portal、Shared Engine、Azure Fabric 现存的旧测试和说明文档全部**按精确路径冻结**（`.github/quality/repository-layout-legacy-baseline.txt`）；允许原位维护已有文件，但不能在同目录新增测试或说明文件。P1 不进行物理迁移。当前 Native Item 在 `azure-fabric/workspaces/healthcare-omop/<real-item>.<type>/` 根级；不建立虚构 `notebooks/` / `pipelines/` / `*.Warehouse/`；Workspace-only Warehouse 的 SQL/Writer 仍在 `azure-fabric/warehouse/`。Native Git Item 文件新增/删除时，同一 PR 同步唯一 CODE Map。与旧设计文字冲突时，以当前 Git 实物路径和该 OpenSpec 规则为准；安全/授权边界不放宽。
+
 ### Component README / CODE 双入口约定
 
 - `documents/systems/data-platform/<component>/README.md`：组件职责、主要数据流、架构边界、当前能力范围和其它权威文档导航；避免在这里重复完整的源码表。
