@@ -25,7 +25,7 @@ source_sha: d1962f79e1c7337c372de1aebfaaec87dfc7d1c8
 
 ## Session 接力（不需要新 Handoff 文件）
 
-新 Agent 读取：`AGENTS.md` → [项目状态](../status/PROJECT-STATUS.md) → 相关组件 →（已有正式 OpenSpec Change 时）相关 Change/Tasks → 当前 PR/Main SHA → 相关 Run/独立读回 → **实际共享资源状态**。
+新 Agent 读取：`AGENTS.md` → [Active OpenSpec](../../../openspec/changes/) 的目标 Change/Tasks → 相关组件 README/CODE → 当前 PR/Main SHA → 相关 Run/独立读回 → **实际共享资源状态**。`PROJECT-STATUS` 只用来导航或追溯历史，不再维护独立的实时任务表。
 
 实质性变更必须先关联 Active OpenSpec Change；Change/Tasks 与 PR/Run 提供 Done / Not Done / SHA / Run / Blocker / Next 的接力。普通只读审计与经门禁允许的 docs-only 修正可通过 PR/Issue 记录；历史 G5 尚未开始的说明仅适用于原先 Bootstrap 阶段。单个 Session 的时间、窗口、Agent 名称不写入长期规范；无人持有的活跃 Job 不能因 Session 离线被自动接管。
 

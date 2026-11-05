@@ -9,7 +9,7 @@ source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 
 > **2026-10-31 Fabric FHIR Source Ownership**：[最终 Native ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。根级 Native NB/PL/Environment；唯一新 Shared Wheel；不创建第二个 Fabric I/O 包。目录位置以已合并的 P1 OpenSpec 为准。
 
-> **系统级 CODE 只负责跨组件源码归属；详细源文件导航放在对应组件 CODE.md。** 功能和架构见 [系统 README](README.md)，真实进度只看 [PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md)。源码位置存在不代表资源已 Apply 或业务端到端成功。
+> **系统级 CODE 只负责跨组件源码归属；详细源文件导航放在对应组件 CODE.md。** 功能和架构见 [系统 README](README.md)，实施任务看 [Active OpenSpec](../../../openspec/changes/) 的对应 `tasks.md`；[PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md) 仅导航。源码位置存在不代表资源已 Apply 或业务端到端成功。
 
 ## 组件源码归属
 

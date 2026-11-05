@@ -1,0 +1,44 @@
+name: OpenSpec Active Index Readonly
+on:
+  pull_request:
+    paths:
+      - 'openspec/changes/**'
+      - '.github/quality/scripts/active_openspec_index.py'
+      - '.github/quality/tests/test_active_openspec_index.py'
+      - '.github/workflows/openspec-active-index.yml'
+      - 'AGENTS.md'
+      - 'documents/engineering/status/**'
+  push:
+    branches: [main]
+    paths:
+      - 'openspec/changes/**'
+      - '.github/quality/scripts/active_openspec_index.py'
+      - '.github/quality/tests/test_active_openspec_index.py'
+      - '.github/workflows/openspec-active-index.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-active-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check pure index behavior against isolated fixtures
+        run: python3 -m unittest discover -s .github/quality/tests -p 'test_active_openspec_index.py' -v
+      - name: Verify live repository index is readable without external services
+        run: |
+          set -euo pipefail
+          python3 .github/quality/scripts/active_openspec_index.py --format markdown > /tmp/active-openspec-index.md
+          python3 .github/quality/scripts/active_openspec_index.py --format json > /tmp/active-openspec-index.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          records = json.loads(Path('/tmp/active-openspec-index.json').read_text())['active_changes']
+          assert isinstance(records, list)
+          assert '# Active OpenSpec Changes' in Path('/tmp/active-openspec-index.md').read_text()
+          print(f'OPENSPEC_ACTIVE_INDEX=PASS; changes={len(records)}; mode=READ_ONLY')
+          PY

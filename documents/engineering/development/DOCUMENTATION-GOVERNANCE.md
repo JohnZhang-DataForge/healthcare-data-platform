@@ -12,7 +12,7 @@
 4. **设计与实现分离**：Target Architecture 与已部署/已验收实现明确标注适用范围和证据，部分上线时允许并存。
 5. **渐进式切换**：原 `docs/` 通过固定 Git 历史快照作为 Legacy 参考；某领域经核对及 PR 合并后，才在迁移表标记 `MIGRATED/ACTIVE`。未迁移领域现有有效合同、技术知识和安全规则继续使用。
 6. **避免文档膨胀**：同一个 STEP 的小型结果尽量链接 GitHub Run/Artifacts；仅重大变更、独立验收、架构决策保留必要的独立文档。
-7. **最小上下文**：新的 Agent 先读 `documents/README.md` 和迁移表，再只读与任务相关的有效文件。
+7. **最小上下文**：新的 Agent 先读 `AGENTS.md`，按 [Active OpenSpec Changes](../../../openspec/changes/) 与组件 README/CODE 路由；只有涉及历史迁移时再读迁移表，不自动加载全部 Project Status/历史文档。
 
 ## 2. 最终信息职责
 
@@ -23,7 +23,7 @@
 | Systems / Data Platform | `documents/systems/data-platform/<component>/` | 代码路径、依赖、集成方式、实现范围 |
 | Engineering / Development | `documents/engineering/development/` | Agent、PR/Self-Runner、测试、文档规则 |
 | Engineering / Operations | `documents/engineering/operations/` | 部署、恢复、故障排查、安全操作 |
-| Engineering / Status | `documents/engineering/status/PROJECT-STATUS.md` | 跨项目 CURRENT/NEXT 摘要；链接 Change，不重复执行 Tasks |
+| Engineering / Status | `documents/engineering/status/PROJECT-STATUS.md` | 兼容导航及动态 Active OpenSpec 索引命令；旧状态完整历史见同目录 `PROJECT-STATUS-HISTORY-20261105.md`；不再维护任何人工 CURRENT/NEXT |
 | Architecture Decisions | `documents/architecture/decisions/` | 重大已批准设计决定、理由、影响和旧方案关系 |
 | Evidence | 原 Closeout / GitHub Actions / 已核验的证据索引 | 真实历史验收，不盲目复制日志 |
 | OpenSpec（已正式使用） | `openspec/changes/`、`openspec/specs/` | 每个实质性变更的唯一 Proposal/Design/Tasks/验收，和已确认采用的可验证行为要求 |

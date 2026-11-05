@@ -22,7 +22,7 @@
 
 ## Agent 开工入口
 
-**先读 [AGENTS.md](../AGENTS.md)、[Agent 规则](engineering/development/AGENT-RULES.md) 和 [当前项目状态](engineering/status/PROJECT-STATUS.md)。** 根目录 `AGENTS.md` 是唯一按任务分流入口：它会根据代码开发、测试、文档或共享环境操作指向必要的详细规范。不要每次通读全部工程文档，也不在本目录维护第二套任务分类表。
+**先读 [AGENTS.md](../AGENTS.md) 和 [Agent 规则](engineering/development/AGENT-RULES.md)，再通过 [Active OpenSpec Changes](../openspec/changes/) 定位当前任务；[PROJECT-STATUS](engineering/status/PROJECT-STATUS.md) 仅作为兼容导航。** 根目录 `AGENTS.md` 是唯一按任务分流入口：它会根据代码开发、测试、文档或共享环境操作指向必要的详细规范。不要每次通读全部工程文档，也不在本目录维护第二套任务分类表。
 
 当前采用 **直接维护 Git 正式源码 + Self-Runner / GitHub Actions 受控验证** 的开发模式。**正式功能、治理与重构变更以 [OpenSpec 开发生命周期](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md) 和 [Active Changes](../openspec/changes/relocate-local-data-platform/tasks.md) 为具体设计/Tasks 入口，遵守 Main Required CI；历史 [G0–G7 计划](engineering/migration/OPENSPEC-IMPLEMENTATION-PLAN.md) 仅供 Bootstrap 审计，不再指挥当前 G5/G6。** 原 `documents/` 保留架构、组件、人类可读开发/运维规范的权威，不被 OpenSpec 替代。具体实施参见 [Development Workflow](engineering/development/DEVELOPMENT-WORKFLOW.md)；需要真实 Runtime 操作时必须遵守 [Safe Operations](engineering/operations/SAFE-OPERATIONS.md)。旧 Skill 和零散排障经验只保留在 [历史 Git 快照](engineering/migration/LEGACY-DOCS-SNAPSHOT.md)，不作为现行开发流程。
 
@@ -52,9 +52,9 @@
 - [Data Platform 组件目录与职责](systems/data-platform/README.md) — Synthea、Landing、Airflow、Spark、OMOP 五个可长期维护的业务模块。
 - [Legacy Task-named 代码重构计划](engineering/development/LEGACY-CODE-REFACTOR-PLAN.md) — 旧 `task004` 依赖、兼容门槛、逐阶段源码迁移计划（尚未实际 Rename）。
 
-## 当前项目状态（由 PROJECT-STATUS 维护）
+## 当前变更进度（由 Active OpenSpec Tasks 唯一维护）
 
-- **[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md)** — 跨项目唯一 CURRENT/NEXT 总览：TASK004 历史验收冻结、TASK005 暂缓、目录源码迁移运行兼容仍待办、OpenSpec 门禁已真实通过 Ruleset 正反验证、Portal/Azure 分别保留待办；各变更具体进度链接到对应 OpenSpec Change。
+- **[Active OpenSpec Changes](../openspec/changes/)** — 各变更 `tasks.md` 是唯一 OPEN/DONE 任务来源；[PROJECT-STATUS.md](engineering/status/PROJECT-STATUS.md) 为简短导航和动态只读索引命令，不再保存人工 CURRENT/NEXT。旧状态全文保留在 [历史快照](engineering/status/PROJECT-STATUS-HISTORY-20261105.md) 供证据核查，不作为当前事实。
 
 ## 当前整体架构（STEP03 审核基线）
 
@@ -91,4 +91,4 @@
 
 我们采取 **逐领域分析 → 核对源码/运行证据 → 消除矛盾 → 新建简洁文档 → 审核切换权威** 的方式。现有历史证据不批量覆盖，不修改 `docs/` 正文来伪造一致性。
 
-**当前权威分工**：`AGENTS.md` 是 Agent 开工入口；`documents/` 管长期架构、系统、开发规范、运维和跨系统状态；`openspec/changes/` 是具体变更及任务进度的唯一记录，`openspec/specs/` 只管理已核实采用的行为；代码/Contract 与 GitHub PR/Run 是实际实现及验收依据。不要在 Engineering 维护平行 Tasks。
+**当前权威分工**：`AGENTS.md` 是 Agent 开工入口；`documents/` 管长期架构、系统、开发规范、运维及到 OpenSpec 的导航；`openspec/changes/` 是具体变更及任务进度的唯一记录，`openspec/specs/` 只管理已核实采用的行为；代码/Contract 与 GitHub PR/Run 是实际实现及验收依据。不要在 Engineering 维护平行 Tasks。
