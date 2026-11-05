@@ -50,3 +50,5 @@
 - Source baseline: `ee435d8720cfed698e239f767f313addf36a924e`; PR #671 merged. P1 branch `governance/p1-repository-layout-gate-20261104`.
 - Tasks 1.1–1.4 implemented in branch pending PR CI. The layout baseline freezes **185 exact existing paths** only. All Fabric 15 source tests / 8 README remain untouched.
 - Task 1.5 remains OPEN until required-check and real negative PR block evidence is independently verified. No P2–P5 runtime, migration, or other work is in P1.
+
+> CONTROLLED NEGATIVE PR PROBE (do not merge): this text exists only on the test branch to link Task 1.5 to a forbidden-source-path scenario. The test PR must be closed, not merged.
