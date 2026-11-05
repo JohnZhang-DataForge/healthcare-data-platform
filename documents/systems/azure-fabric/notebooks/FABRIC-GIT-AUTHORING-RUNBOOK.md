@@ -122,7 +122,7 @@ raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
 
 ## 已实现的防回归检查与 Agent 接手清单
 
-- [Notebook Native Contract tests](../../../../azure-fabric/notebook-development/tests/test_fabric_git_native_contract.py) 已检查 Header、四个 META 块、2 个普通 CELL + 1 个 PARAMETERS CELL、规范分隔空行、业务函数和 HALT。
+- [Notebook Native Contract tests](../../../../.github/quality/tests/azure-fabric/notebook/test_fabric_git_native_contract.py) 已检查 Header、四个 META 块、2 个普通 CELL + 1 个 PARAMETERS CELL、规范分隔空行、业务函数和 HALT。
 - [Fabric FHIR Notebook offline CI](../../../../.github/workflows/fabric-fhir-notebook-offline.yml) 执行离线单测与 Wheel SHA 验证；这些仅证明 A/B Gate。
 - Self-Runner 的 fabric_p2_native_readback.py / fabric-api-client.yml 做真实云端定义双格式只读验收；只有它通过才可以说 C Gate PASS。
 - Self-Runner Environment Staging/Published 只读 API 对比用于 D Gate；不自动 Publish。
