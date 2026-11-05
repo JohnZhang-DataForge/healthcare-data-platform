@@ -58,7 +58,10 @@
     var section = sectionForPath();
     if (!section || !document.getElementById('namespace-select')) return;
     var value = (option.textContent || '').trim();
-    if (!value) return;
+    // Do not confuse other page filters' MUI options with Namespace choices.
+    var known = ['default', 'file', preferred, processingNamespace,
+      jobsPreferred, jobsFallback, 'healthcare-platform-spark-probe'];
+    if (known.indexOf(value) < 0) return;
     rememberSectionChoice(section, value);
     pendingChoice = null;
     requestedChoice = false;
