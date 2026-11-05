@@ -1,0 +1,45 @@
+{
+  "schema_version": "fabric-deployment-ownership-v1",
+  "system": "azure-fabric",
+  "owner_document": "documents/systems/azure-fabric/deployment/CODE.md",
+  "components": {
+    "notebook": {
+      "path": "azure-fabric/deployment/notebook/",
+      "purpose": "Notebook deployment and definition readback only",
+      "native_item_source": "azure-fabric/workspaces/healthcare-omop/"
+    },
+    "pipeline": {
+      "path": "azure-fabric/deployment/pipeline/",
+      "purpose": "DataPipeline deployment and verification only",
+      "native_item_source": "azure-fabric/workspaces/healthcare-omop/"
+    },
+    "environment": {
+      "path": "azure-fabric/deployment/environment/",
+      "purpose": "Fabric Environment/Wheel publish and readback only",
+      "package_source": "shared-data-engine/src/"
+    },
+    "lakehouse": {
+      "path": "azure-fabric/deployment/lakehouse/",
+      "purpose": "Lakehouse deployment/config validation only",
+      "native_item_source": "azure-fabric/workspaces/healthcare-omop/"
+    },
+    "warehouse": {
+      "path": "azure-fabric/deployment/warehouse/",
+      "purpose": "Versioned Warehouse DDL, manifests, schema migration and deployment validation",
+      "business_source": "azure-fabric/warehouse/"
+    },
+    "openlineage": {
+      "path": "azure-fabric/deployment/openlineage/",
+      "purpose": "Listener/collector deployment configuration and verification",
+      "integration_source": "azure-fabric/openlineage/"
+    },
+    "common": {
+      "path": "azure-fabric/deployment/common/",
+      "purpose": "Approved cross-component deploy helpers; never a second Fabric SDK or Wheel"
+    }
+  },
+  "quality_tests": ".github/quality/tests/azure-fabric/deployment/",
+  "workflows": ".github/workflows/",
+  "infrastructure": "azure-fabric/infra-terraform/",
+  "notes": "Reserved future folders intentionally absent from Git until actual deployable content is added. Warehouse SQL and listener source migration requires P2 Self-Runner compatibility."
+}

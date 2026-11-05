@@ -34,3 +34,7 @@
 **Fabric invariant:** actual Git-native Notebook/Pipeline/Environment/Lakehouse items live under `azure-fabric/workspaces/healthcare-omop/`; the existing `dw-omop-5.4` Warehouse is **Workspace-only**, and its versioned SQL/Writer source stays in `azure-fabric/warehouse/`. Keep only **one** new shared Python Wheel in `shared-data-engine/`; do not create a second `healthcare_fabric` or mimic a `*.Warehouse/` Native Item. Notebook/Pipeline native workflows preserve real logical IDs, approved Environment binding and HALT/runtime safety boundaries; a Git-native smoke does **not** prove business FHIR/Gold E2E.
 
 For documentation-only work use the narrow docs-only exemption only where the Trusted Change Gate explicitly allows it. These instructions do not grant runtime permissions. Historical `docs/` and handoffs are references from Git history, not a new source of CURRENT/NEXT.
+
+## Fabric deployment directory owner contract (2026-11-05)
+
+Before adding a Fabric deployment source, consult `azure-fabric/deployment/owners.json` and `documents/systems/azure-fabric/deployment/CODE.md`. Workflow triggers remain in `.github/workflows/`, test/quality tools in `.github/quality/`, Terraform in `azure-fabric/infra-terraform/`, and Native Notebook implementation in the real Fabric Git `workspaces/` item. Do not invent unregistered `deployment/<component>/` folders or duplicate Warehouse Writer/OpenLineage Publisher under deployment. The new offline owner check is not a substitute for the protected trusted Required Gate.

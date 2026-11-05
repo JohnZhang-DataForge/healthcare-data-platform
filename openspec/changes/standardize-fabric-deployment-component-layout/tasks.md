@@ -3,11 +3,11 @@
 ## P0 — Inspect and approve architecture
 - [x] 0.1 Verify latest Healthcare main `9fbed5a4d4995af53b2f7ab08426f9b1312192e1`, no open Healthcare PRs; inspect the 51 Warehouse and 2 OpenLineage source files, adopted repository-layout spec, existing Fabric CI and CODE maps.
 - [x] 0.2 Inspect private Self-Runner current main `2fcbbb16344d845d124e66804eea4a2bbae8dc6d`: its active Schema/Identity/Vocabulary deploy Python consumers reference old Warehouse paths; some historical workflows use frozen old Healthcare SHA. Record migration ordering and HOLD requirements.
-- [ ] 0.3 Approve and merge this OpenSpec design/plan through actual Required Checks; planning is not source migration.
+- [x] 0.3 PR #698 merged to main `997b48d775a48844cdcd9a337d0490bd4eacc6d4` after Required `require-trusted-change` and `validate-openspec` SUCCESS; planning is not source migration.
 
 ## P1 — Enforce stable owner contract
-- [ ] 1.1 Publish one tracked registry defining all seven deployment components and code/source/test/doc ownership; do not create fake empty Git directories or a second Wheel.
-- [ ] 1.2 Extend applicable architecture docs, CODE map, Agent entrypoints and compatible non-protected layout checks; test positive and negative path cases.
+- [x] 1.1 Publish one tracked registry defining all seven deployment components and code/source/test/doc ownership; do not create fake empty Git directories or a second Wheel.
+- [x] 1.2 Extend applicable architecture docs, CODE map, Agent entrypoints and compatible non-protected layout checks; test positive and negative path cases.
 - [ ] 1.3 Verify that the applicable PR check is actually Required; if trusted checker cannot be updated under repository protection, preserve a HOLD and use the approved governance path rather than weakening protections.
 
 ## P2 — Self-Runner compatibility first
