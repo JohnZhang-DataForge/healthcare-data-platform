@@ -20,7 +20,7 @@
 - [x] 2.1 对账 `azure-fabric/infra-terraform/` 3 份 README；保留 Capacity、OIDC、Remote State、IAM、已创建/未创建区分和真实 Run 的独有内容到 `documents/systems/azure-fabric/`。
 - [x] 2.2 对账 Notebook 1 份与 OpenLineage 1 份 README，以及 `openlineage/PUBLISHER.md`；保留 HOLD、真实运行边界、只读协议、源代码唯一性。
 - [x] 2.3 对账 Warehouse 3 份 README（包含 `writer/README.md`）及 `ID-ALLOCATION-STATE-MACHINE.md`；保留 INT allocator、单写入者事务、ROLLBACK、G4/G5 概念映射与 `NOT GOLD_COMMITTED` 约束。
-- [ ] 2.4 重建所有反向链接及权威 CODE.md，完成内容一一核对之后删除旧说明性文件；8 份 README 无遗漏、2 份其他 MD 有明确处理结果；文档链接/CI PASS。
+- [x] 2.4 重建所有反向链接及权威 CODE.md，完成内容一一核对之后删除旧说明性文件；8 份 README 无遗漏、2 份其他 MD 有明确处理结果；文档链接/CI PASS。
 
 ## 3 — 仅 Azure Fabric 的 15 个测试迁移（可按 3 个小 PR 串行）
 
@@ -70,3 +70,13 @@
 - Task 2.2: migrated Notebook's Git-first/HALT/old Wheel checkpoint to `notebooks/GIT-FIRST-OFFLINE-VALIDATION.md` and preserved complete OpenLineage compatibility+Publisher protocol under `openlineage/{README,CODE,PUBLISHER}.md`. Retired the two source README and source PUBLISHER Markdown; **no Notebook/Pipeline/Environment/Publisher Python/test was moved or executed**. Historical 0.1.0 Wheel and trial runs are labeled historical, not current environment release.
 
 - Task 2.3: retired the three Warehouse source README files plus the source ID allocation state-machine Markdown, moved all four unique technical/evidence contracts into `documents/systems/azure-fabric/warehouse/`, added one owner README and refreshed Warehouse CODE navigation. Pinned upstream OHDSI SHA, Fabric INT/identity caveats, snapshot isolation, global writer fence, six-table rollback #41824079608, and NOT GOLD_COMMITTED are preserved. No SQL/test/Writer runtime files were changed or executed.
+
+
+### P2.4 final source-path and CI evidence — 2026-11-04 ET
+
+- Review PR [#677](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/677) at verified pre-closeout HEAD `0b3a293cab7049c2cfc2c359f9ffdc03b88380b7`. **All ten** Azure-Fabric source-area Markdown files (8 README + 2 technical MD) were retired from the branch, with ten relocated detailed documents plus system-specific README/CODE additions. No source-area Markdown remains under `azure-fabric/`.
+- **Reverse link gate:** [Documentation Relative Links Run #41951371069](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41951371069), job `126995847564`: `DOCUMENTATION_LINKS_GATE=PASS; files=338; checked=1911; missing=0`.
+- **Central quality/ownership CI:** [Run #41951371217](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41951371217), job `126995847886`: `Ran 179 tests` PASS and `CODE_MAP_GATE=PASS; mapped_fabric_native_files=11`. The existing central quality contract `.github/quality/tests/test_fabric_shared_connection_contract.py` was minimally updated to require the authoritative new Landing Connection doc instead of source `README.md`; its Terraform/IAM assertions remain intact. This is **not** one of the 15 source-area Fabric test migrations scheduled for P3.
+- **Trusted Required Check:** [Run #41951366537](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41951366537), job `126995834821`: 25 OpenSpec + 19 Layout unit tests PASS, `REPOSITORY_LAYOUT_GATE=PASS` for exact 185-path baseline, `CODE_MAP_GATE=PASS` (11 native mapped), `OPENSPEC_CHANGE_GATE=PASS`. `validate-openspec` separately succeeded at HEAD; all 24 reported GitHub checks completed SUCCESS before this evidence-only commit.
+- **Independent tree hash comparison** vs pre-P2 main `5a7bd15977b307c358ff50155888a58f813e06ed`: all 11 Fabric Native item blobs, all 15 source-area Fabric test blobs, and all non-Markdown Fabric blobs unchanged; no SQL, Writer logic, Env/Wheel, runtime data or Terraform definitions altered.
+- P2 is a **docs/quality-test migration only**, not cloud Runtime verification, Vocabulary license closeout or clinical Gold COMMIT. P3 test move remains **OPEN**. Merge only after latest closeout HEAD again passes actual protected PR checks, then independently read back main.
