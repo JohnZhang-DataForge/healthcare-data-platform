@@ -65,7 +65,7 @@ The dedicated public Marquez Web overlay SHALL route an exact root visit (`/`) t
 - **THEN** existing namespace selection and routes SHALL remain intact and no root redirect SHALL occur
 
 ### Requirement: Public Jobs and Datasets SHALL default to independently useful namespaces
-The public Marquez overlay SHALL select an actually registered nonempty Jobs namespace on entry to the Jobs list, independently of the saved Dataset namespace. The native Datasets list SHALL default to `s3://health-landing`, or preserve a directly bookmarked useful Processing selection. Route-local visitor selections MUST remain usable and reappear when switching back. Missing records MUST NOT be synthesized. The original Marquez Web, metadata API, links, read-only Gateway, namespace names, and stored lineage MUST remain unchanged.
+The public Marquez overlay SHALL give Jobs and Datasets independent, nonempty default namespaces. Visitor-selected namespaces MUST persist within their respective list sections. Native lineage data, deep links, metadata APIs and the read-only Gateway MUST remain unchanged.
 
 #### Scenario: Visitor opens Jobs after Landing Datasets
 - **GIVEN** `s3://health-landing` is selected and has no Jobs
