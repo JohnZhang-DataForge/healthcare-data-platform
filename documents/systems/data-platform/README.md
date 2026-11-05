@@ -9,7 +9,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 > **2026-10-18 源码目录迁移后导航更新**：物理源码位置已由 PR #225 调整，本页引用新路径；运行逻辑尚未经新位置回归验证，旧 STEP05 组件分类与历史业务验收不因此变更。
 >
-> **STEP05 的组件说明入口**：基于 Main `2c85b485381a72425506829fd321d93b164a231d` 的静态源码与现有 TASK004 Final E2E 验收。按**长期功能**而非 Task/Step 组织知识；没有执行任何 Runtime 操作。项目总体 CURRENT/NEXT 见 [PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md)，命名硬规则见 [Code Naming](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md)。
+> **STEP05 的组件说明入口**：基于 Main `2c85b485381a72425506829fd321d93b164a231d` 的静态源码与现有 TASK004 Final E2E 验收。按**长期功能**而非 Task/Step 组织知识；没有执行任何 Runtime 操作。项目尚在实施的任务见 [Active OpenSpec](../../../openspec/changes/) 的对应 `tasks.md`（[PROJECT-STATUS](../../engineering/status/PROJECT-STATUS.md) 仅导航），命名硬规则见 [Code Naming](../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md)。
 
 | 组件 | 权威组件说明 | 当前源码与边界 |
 | --- | --- | --- |
