@@ -1,9 +1,9 @@
 ---
-status: approved-directory-policy-implementation-pending
+status: active-implemented-source-ownership
 decision_date: 2026-10-31
 scope: shared-data-engine-and-fabric-ownership
 authority: code-structure-and-agent-rules
-runtime: none
+runtime: not-a-runtime-acceptance
 ---
 
 # Shared Data Engine — 目录结构、唯一代码归属及 Agent 开发规范
@@ -22,7 +22,7 @@ runtime: none
 | `azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/` | Fabric 原生工作流：依赖/参数/失败分支/重试/调度 | 另建 Python Airflow-like 调度层 |
 | `azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/` | Fabric 原生 Environment Item：安装并 Publish 固定版本 Shared Wheel | 直接放入 Shared 可编辑 Python 源码，双发布者竞争 |
 | `azure-fabric/infra-terraform/` | 已有 Infrastructure Terraform Modules/State | 同时写 native Notebook/Pipeline/Environment Item |
-| `azure-fabric/deployment/`, `openlineage/` | 现有发布脚本和 Lineage 能力，路径保留 | 随意扩大 Trial Smoke 发布范围 |
+| `azure-fabric/deployment/`, `azure-fabric/openlineage/` | 版本化 SQL/Listener 部署资产与 Lineage Publisher 业务逻辑按组件边界区分 | 随意扩大 Trial Smoke 或构造第二套运行时 |
 
 ## 2. 真实目录归属（2026-11-04）
 
@@ -34,7 +34,8 @@ azure-fabric/workspaces/healthcare-omop/
   pl_fhir_ingest.DataPipeline/                     # 真实根级 Pipeline
   env_healthcare.Environment/                      # 真实根级 Environment
   lh_omop_analytics.Lakehouse/                     # 真实根级 Lakehouse
-azure-fabric/warehouse/                            # 原有 Warehouse SQL/Writer
+azure-fabric/deployment/warehouse/                 # 已迁移 Warehouse SQL/Manifest 部署资产
+azure-fabric/warehouse/                            # Warehouse Writer 业务 Python
 .github/quality/tests/                             # 所有新增自动化测试
 .github/quality/scripts/                           # 新增质量检查脚本
 documents/systems/azure-fabric/                     # 权威说明文档与 CODE Map
@@ -83,3 +84,10 @@ documents/systems/azure-fabric/                     # 权威说明文档与 CODE
 - **已建立**：`shared-data-engine/AGENTS.md` 的 scoped Agent 指令和文档 Code Ownership 入口。
 - **当前实施状态以 Git/CI/云端独立读回为准**：Shared Wheel、业务 Native Git Items 已有真实版本；不能据此宣称 Gold COMMITTED。此 P1 不进行任何运行时验收。
 - **独立未来 Gate**：按原 PR 的 OpenSpec tasks 分阶段建设自动静态边界检查、Shared Python 包、合同与 Spark 跨版本测试；不能把本轮文件夹治理视为业务功能 PASS。
+
+## 2026-11-05 实现状态与正式文档落点复核
+
+- Shared Engine 唯一 Python Wheel 已实际存在，`pyproject.toml` 当前为 0.1.3；不再使用旧“仅目录设计、尚无业务包”状态描述。正式源码目录见 [组件 CODE.md](../../systems/data-platform/shared-engine/CODE.md)。
+- 目录级 `shared-data-engine/AGENTS.md` 保留在源码作用域，仅负责可自动发现的 Agent 特殊约束。人类技术说明和离线构建测试入口集中于 [组件 README](../../systems/data-platform/shared-engine/README.md) 与 [BUILD-AND-TEST](../../systems/data-platform/shared-engine/BUILD-AND-TEST.md)，源目录不再维护第二份 README。
+- Warehouse 受控 DDL/Manifest 属于 `azure-fabric/deployment/warehouse/`，业务 Writer 属于 `azure-fabric/warehouse/`；Listener 部署配置在 `deployment/openlineage/`，Publisher 业务代码在 `openlineage/`。长期目录 Owner 见 [Fabric Deployment Ownership Spec](../../../openspec/specs/fabric-deployment-component-ownership/spec.md)。
+- 0.1.3 Fabric Environment 正式 Publish 和独立临时 Notebook Import 已有证据；正式业务 Notebook FHIR/Gold E2E 不因此获得验收或运行授权。旧测试/合约/源码原位不动。

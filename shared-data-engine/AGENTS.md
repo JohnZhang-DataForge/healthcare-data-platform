@@ -1,20 +1,19 @@
-# Scoped Agent rules — shared-data-engine/
+# Shared Data Engine — scoped Agent instructions
 
-**MANDATORY for any Agent editing files below this directory.** Read the repository root [AGENTS.md](../AGENTS.md) and the authoritative [Shared Engine structure and ownership rules](../documents/engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md) first. This directory is a **versioned, platform-neutral business transformation package**, not another Airflow/Fabric runtime.
+These instructions apply only within `shared-data-engine/`. Read [root AGENTS](../AGENTS.md), the relevant [Active OpenSpec](../openspec/changes/), and the [Shared Engine ownership rules](../documents/engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md) before editing. This file defines stable boundaries, **not package versions or current progress**.
 
-## Absolute boundaries
+## Component boundaries
 
-- **Owned here:** source and entity adapters (CSV, FHIR R4, HL7 v2), common Canonical Patient/Encounter contracts and normalization, pure PySpark DataFrame OMOP candidate mappers, versioned identity planning, quality and reconciliation, frozen synthetic tests.
-- **Forbidden here:** Fabric/OneLake/Azure Blob I/O and SDKs, SeaweedFS/S3 I/O, network access and authentication, Airflow DAG or Fabric Notebook/Pipeline, PostgreSQL/Warehouse/Delta *physical* writer and commits, K8s/Terraform, Secrets, real patient data, deployment-specific monitoring/exporter side effects.
-- **Allowed compute:** deterministic Python/PySpark transformations; DataFrame arguments in, DataFrame + typed plan/quality results out. **No** Spark Session creation, environment reads, network calls or file access at import time. Caller/platform owns I/O and side effects.
-- **Dependency direction:** source adapters → canonical/models/quality; OMOP mappers → canonical/identity/quality; platform runtimes → shared public API. **Never** import Fabric Notebook, local runtime modules or cloud/provider Writers in shared. No circular imports and no source-specific parse dependency in OMOP mappers.
-- **Contracts:** Local `local-data-platform/spark/contracts/` remains the authoritative existing source until an approved standalone Contract-migration PR. Pin exact versions/hashes; no manually copied divergent schemas. Fail/quarantine optional or invalid clinical fields; do not fabricate medical defaults.
-- **Naming:** `shared-data-engine/src/healthcare_data_engine/` is the sole Python namespace; name modules by domain/function, not task/step/hospital/sprint. Do not create redundant bronze/silver/gold business-source trees or entire ETL copies per hospital.
-- **Migration:** leave established Local runtime/imports/IDs untouched until one module passes offline contract, negative, idempotence and Spark cross-runtime tests; release each platform's wheel dependency independently.
-- **Review gate:** Before edits, identify owning module, input/output Contract, allowed imports, test cases and OpenSpec task. Same PR must maintain `documents/systems/data-platform/shared-engine/CODE.md` after any new source files. New source requires a static import/ownership guard in CI; do not assume existing CODE-map covers this new root.
-- **Safety:** No runtime deployments, actual clinical data, Azure/K8s/PG/Blob writes or paid resources without separate explicit authorization. Docs ≠ implementation.
+- **Single package:** `src/healthcare_data_engine/` is the sole platform-neutral, installable Python namespace. Do not create a second Fabric I/O Wheel or copy shared algorithms into platform code.
+- **Allowed:** deterministic Python/PySpark FHIR/source adapters, Canonical validation, typed Quality, reconciliation, OMOP Candidate Mapping, and pure identity/planning decisions. Explicit caller-provided input and output, no import-time side effects.
+- **Forbidden:** Azure Blob/OneLake/S3/Delta/PostgreSQL/Warehouse physical I/O, network or cloud SDK, Airflow DAG, Fabric Notebook/Pipeline, K8s/Terraform, SparkSession construction in library code, credentials, clinical data, actual writes or deployment/monitoring side effects. Platforms own runtime operations.
+- **Dependencies:** shared modules must not import Local DP runtime or Fabric Native Item modules, provider Writers, or form circular dependencies. Do not embed source-specific parsing into OMOP mappers.
+- **Contracts:** Local `local-data-platform/spark/contracts/` is authoritative until a separately approved migration; pin original bytes/hashes, do not copy a competing schema or fabricate missing clinical values.
+- **Changes:** before coding, identify owner module, API/Contract, allowed imports, relevant tests and OpenSpec task. Keep historical Local IDs/behavior unless an explicit, independently verified migration authorizes a change.
 
-Current state: **only scoped directory policy is created**, no Python implementation or duplicate Contract files exist here.
+## Mandatory routing
 
-
-2026-10-31 authoritative Fabric execution boundary: [Native Notebook/Pipeline/Environment ADR](../documents/architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md). **Only Shared Engine is a new Wheel**; obsolete Fabric I/O/runtime packages must not be created.
+- **Architecture and source owner:** [shared-engine README](../documents/systems/data-platform/shared-engine/README.md) and [CODE map](../documents/systems/data-platform/shared-engine/CODE.md). Update CODE.md in the same PR whenever source ownership or paths change.
+- **Build/test procedures:** [BUILD-AND-TEST](../documents/systems/data-platform/shared-engine/BUILD-AND-TEST.md). Existing `tests/` remain frozen legacy paths; **new tests** go to `.github/quality/tests/shared-data-engine/<component>/` and fixtures to `.github/quality/fixtures/`.
+- **Progress and acceptance:** Active OpenSpec `tasks.md`, versioned source/CI evidence, and the actual Fabric Environment readback. No duplicate CURRENT/NEXT, releases, completed-claims or status diary here.
+- **Safety:** root [Safe Operations](../documents/engineering/operations/SAFE-OPERATIONS.md) applies; no live Fabric, PG, Blob, K8s or paid-resource action without separate authorization.

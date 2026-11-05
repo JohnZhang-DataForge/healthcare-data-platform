@@ -1,12 +1,12 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **状态：G4 已验证并发布 Fabric Shared Wheel 0.1.1；G5 的 0.1.3 是医院隔离版纯 OMOP Candidate Mapper 的离线发布候选，尚未发布到 Fabric Environment。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前状态（2026-11-05 核对）：源码 0.1.3 已有离线测试；Fabric Environment 0.1.3 已正式 Published，且独立临时 Notebook Spark 4.1 Import PASS。正式业务 `nb_fhir_ingest` 版本门禁、FHIR/OMOP E2E 与 Gold COMMIT 仍需另行验收。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
 - [`shared-data-engine/AGENTS.md`](../../../../shared-data-engine/AGENTS.md)：目录级 Agent 边界，不是运行时代码。
 - Wheel 元数据、FHIR Patient/Encounter、Canonical 验证、Reconciliation 和合成测试：详见下方「P1 真实实现源码地图」，其中列出的路径已存在。
-- 当前 CSV/HL7 Adapter、OMOP Person/Visit Mapping 和独立 Identity 模块仍是将来可能增加的代码，**不得**视为已实现或已通过 CI 的功能。
+- `mapping/omop/candidates.py` 已实现医院隔离的纯 Person/Visit OMOP **Candidate**；CSV/HL7 Adapter 和持久身份分配/物理 Writer 仍不是当前 Shared 已交付能力。Candidate 不等于 Gold 写入。
 
 共享包不能包含 Azure Blob/OneLake SDK、Airflow、Fabric Item、PG/Warehouse 写入或云 Secrets；这些平台侧源码分别归属于现有 Local 与 Azure/Fabric 组件。静态边界 Gate 与代码导航随源码一同审查。
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，版本已演进到 0.1.3（仅源代码/离线 Wheel 候选，Fabric 运行环境仍需独立 Publish 验收）；Fabric 仍暂存 0.1.0 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，源码版本 0.1.3；Environment 0.1.3 Publish 与独立 Spark Import 已有验收，正式业务 Notebook/Gold 未验收 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -43,9 +43,9 @@
 | [contracts/fabric-fhir-omop-handoff-v1.json](../../../../shared-data-engine/contracts/fabric-fhir-omop-handoff-v1.json) | FHIR Approved Silver → Fabric OMOP F1 机器可读版本化交接规范；不授权 Gold 写入 |
 | [src/healthcare_data_engine/models/fabric_omop_handoff.py](../../../../shared-data-engine/src/healthcare_data_engine/models/fabric_omop_handoff.py) | 无 I/O 的原始 SHA、来源命名空间、Approval/路径元数据校验；始终要求另行物理 Delta 读回 |
 | [tests/test_fabric_omop_handoff.py](../../../../shared-data-engine/tests/test_fabric_omop_handoff.py) | 仓库 Canonical 原始 SHA、自定义 F1 作用域、拒绝跨医院/Quarantine/篡改/不可信路径的 Python 3.11/3.13 无云端测试 |
-| [README.md](../../../../shared-data-engine/README.md) | 构建、无网络安装、测试操作说明 |
+| [BUILD-AND-TEST.md](BUILD-AND-TEST.md) | 原源码 README 的离线安装、Python/PySpark 测试、Wheel 构建及 Handoff 操作边界（唯一维护入口） |
 
-## P3 Python 3.13 兼容发行版候选（尚未上传 Fabric）
+## P3 Python 3.13 兼容发行版候选（历史阶段；后续 0.1.3 已发布）
 
 - 版本候选 `0.1.1` 在 `pyproject.toml` 和公开 API `__version__` 同步，支持 Python 3.13。
 - 本地 Python 3.11 / PySpark 3.5.7 与 Fabric 2.0 Python 3.13 / PySpark 4.1.1 的测试分离执行。
@@ -54,18 +54,23 @@
 
 CI 见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/shared-engine-wheel-validation.yml)，构建/安装证据只适用于该 PR HEAD 的测试版本；Fabric Publish 未授权。
 
-## G5 0.1.2 候选（2026-11-03）
+## G5 0.1.2 候选（2026-11-03；历史阶段，当前源码为 0.1.3）
 
 - 源码中首次提供 `build_omop_candidates` 与 `load_omop_mapping_profile`。独立从已验收的物理 Delta 获取 Silver Approval、稳定 ID Map、标准/有效 OMOP Concept Lookup、Profile 原字节及 SHA 都是运行方的责任；模块本身没有 Fabric/PG/I/O，也不生成 ID。
-- 新 Wheel 必须先经 GitHub CI 确认 SHA/安装/PySpark 3.5.7+4.1.1，**不自动更新现有 Git Native Environment 的 0.1.1 Wheel**。未经独立发布/读回，不允许 Notebook 导入 0.1.2 或声称 Candidate 已物理写入。
+- 当时新 Wheel 必须先经过离线 CI 和独立发布/读回；后续 0.1.3 已在 Fabric Environment 正式 Published。仍不得将临时 Notebook Import 外推为业务 Notebook 或 Gold 数据写入验收。
 - Local 人口统计 Synthea 编码不同于 FHIR 源码语义；测试所用假 Profile 仅用于正负回归，绝不视为经过 OHDSI Concept 审核的 Fabric 运行时 Profile。
 
 ## G5 Hospital-scoped F1 Identity Map interface (2026-11-04)
 
 - Pure mapper `build_omop_candidates(..., hospital_id=...)` **requires explicit verified hospital ID** and a `BatchContext.namespaced_source_system` matching `raw_source:hospital_id:feed_id`. Canonical v1 Patient/Encounter source tables do not carry a separate hospital column; do **not** silently alter their frozen schemas.
 - F1 Warehouse `etl.identity_map` supplies columns `entity_type,hospital_id,source_system,source_business_key,omop_id`. Only `entity_type='PERSON'` is used to map Patient and Encounter's Person reference. Joins require exact hospital + source namespace + canonical source key; uniqueness/collation/INT checks span **all hospitals**, not only the selected one.
-- G5 Candidate remains **Candidate-only**. A freshly planned F2 ID is not persisted, and a real Fabric Gold COMMIT is not implied. Version 0.1.3 wheel is an offline candidate until new Fabric Environment bind/publish/Notebook readback; do not state runtime import PASS from CI alone.
+- G5 Candidate remains **Candidate-only**. A freshly planned F2 ID is not persisted, and a real Fabric Gold COMMIT is not implied. 后续 0.1.3 Wheel 已通过独立 Environment Publish + 临时 Spark 4.1 Import；业务 `nb_fhir_ingest` 版本门禁和 OMOP Gold COMMIT 尚未验收，不能仅靠离线测试或临时 Import 声称业务成功。
 
 ## 0.1.3 offline Wheel evidence
 
 - [Shared Engine validation Run #41827968535](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41827968535) on [PR #647](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/647) passed Python 3.11 and Python 3.13 Spark suites, reproducible wheel SHA equality and independent installed 0.1.3 import. **This is not Fabric Environment publish or Notebook import evidence.**
+
+## 0.1.3 Published / Isolated Import 独立证据（2026-11-04）
+
+- [Staging 同步](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954)、[正式 Environment Publish 与唯一 0.1.3 库读回](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745)、[独立临时 Notebook Spark 4.1 Import](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167)。完整事实边界见 [Fabric Environment CODE](../../azure-fabric/environments/CODE.md)。
+- [组件 README](README.md) 管架构和能力；[BUILD-AND-TEST.md](BUILD-AND-TEST.md) 管可复现离线测试与构建；[`shared-data-engine/AGENTS.md`](../../../../shared-data-engine/AGENTS.md) 只保留目录级 Agent 指令，不再作为业务状态记录。
