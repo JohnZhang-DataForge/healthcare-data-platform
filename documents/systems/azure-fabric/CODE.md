@@ -54,10 +54,10 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 
 ## OpenLineage compatibility adapter (offline candidate)
 
-- [Candidate Listener config](../../../azure-fabric/openlineage/compatibility.py) · [Offline tests](../../../azure-fabric/openlineage/tests/test_compatibility.py) · [compatibility/authorization notes](../../../azure-fabric/openlineage/README.md). Scala 2.12 local and Scala 2.13 Fabric artifacts are not interchangeable. This source has no live Fabric test authorization; current Fabric Notebook HOLD remains.
+- [Candidate Listener config](../../../azure-fabric/openlineage/compatibility.py) · [Offline tests](../../../azure-fabric/openlineage/tests/test_compatibility.py) · [compatibility/authorization notes](openlineage/README.md). Scala 2.12 local and Scala 2.13 Fabric artifacts are not interchangeable. This source has no live Fabric test authorization; current Fabric Notebook HOLD remains.
 ## Immutable OpenLineage Blob Publisher (offline only)
 
-- [Publisher entrypoint](../../../azure-fabric/openlineage/publisher.py) · [Fake Azure and recovery tests](../../../azure-fabric/openlineage/tests/test_publisher.py) · [publisher protocol](../../../azure-fabric/openlineage/PUBLISHER.md). Independently verified immutable event readback before committed Manifest; Azure live operations unapproved.
+- [Publisher entrypoint](../../../azure-fabric/openlineage/publisher.py) · [Fake Azure and recovery tests](../../../azure-fabric/openlineage/tests/test_publisher.py) · [publisher protocol](openlineage/PUBLISHER.md). Independently verified immutable event readback before committed Manifest; Azure live operations unapproved.
 
 ## P2 未发布 Notebook 业务源码（2026-10-31；只属于开发阶段）
 
@@ -68,7 +68,7 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 | [fhir_ingest_notebook.py](../../../azure-fabric/notebook-development/fhir_ingest_notebook.py) | 离线兼容导入 Native Notebook；不含第二套业务实现 |
 | [native_item_readiness.py](../../../azure-fabric/notebook-development/native_item_readiness.py) | Fabric 原生 `.platform` 类型/名称/非零 ID 检查；导出成功仍 HOLD runtime exit 2 |
 | [test_notebook_offline.py](../../../azure-fabric/notebook-development/tests/test_notebook_offline.py) | 真实 PySpark Schema/关联和负向离线测试 |
-| [README.md](../../../azure-fabric/notebook-development/README.md) | 未发布 Notebook 实施边界和执行安全说明 |
+| [README.md](notebooks/GIT-FIRST-OFFLINE-VALIDATION.md) | 未发布 Notebook 实施边界和执行安全说明 |
 | [fabric-fhir-notebook-offline.yml](../../../.github/workflows/fabric-fhir-notebook-offline.yml) | GitHub-hosted 离线 Wheel 精确 SHA/PySpark 负向 CI |
 
 
@@ -78,3 +78,10 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 - [GitHub Actions dispatcher](../../../.github/quality/scripts/fabric_git_dispatch.py) — GitHub Actions workflow_dispatch to the private Self-Runner, pinned to exact Healthcare main SHA; no retry or cloud mutation.
 - [Dispatcher offline tests](../../../.github/quality/tests/test_fabric_git_dispatch.py) — validates repo/main/SHA guards, fixed destination and secret-safe error handling.
 - Private Self-Runner continues to own the Fabric OIDC, UpdateFromGit reconciliation, canonicalization analysis and independent deployed-definition readback. This trigger does not grant Environment Publish, Spark or Delta execution.
+
+
+## P2 OpenLineage 的唯一技术文档所有者
+
+- [OpenLineage README](openlineage/README.md) — 兼容性、Scala/Spark 版本、Fabric listener HOLD 和独立授权试验流程。
+- [OpenLineage CODE](openlineage/CODE.md) — 当前兼容适配器、Publisher 与旧测试的源码位置；源码/测试保留不迁移。
+- [Immutable Blob Publisher Protocol](openlineage/PUBLISHER.md) — 完整不可变对象、Manifest-last、无敏感信息和 Reader/Publisher 安全边界。

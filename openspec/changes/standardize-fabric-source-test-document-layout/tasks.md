@@ -18,7 +18,7 @@
 ## 2 — Azure Fabric 文档清理（独立 Docs PR）
 
 - [x] 2.1 对账 `azure-fabric/infra-terraform/` 3 份 README；保留 Capacity、OIDC、Remote State、IAM、已创建/未创建区分和真实 Run 的独有内容到 `documents/systems/azure-fabric/`。
-- [ ] 2.2 对账 Notebook 1 份与 OpenLineage 1 份 README，以及 `openlineage/PUBLISHER.md`；保留 HOLD、真实运行边界、只读协议、源代码唯一性。
+- [x] 2.2 对账 Notebook 1 份与 OpenLineage 1 份 README，以及 `openlineage/PUBLISHER.md`；保留 HOLD、真实运行边界、只读协议、源代码唯一性。
 - [ ] 2.3 对账 Warehouse 3 份 README（包含 `writer/README.md`）及 `ID-ALLOCATION-STATE-MACHINE.md`；保留 INT allocator、单写入者事务、ROLLBACK、G4/G5 概念映射与 `NOT GOLD_COMMITTED` 约束。
 - [ ] 2.4 重建所有反向链接及权威 CODE.md，完成内容一一核对之后删除旧说明性文件；8 份 README 无遗漏、2 份其他 MD 有明确处理结果；文档链接/CI PASS。
 
@@ -66,3 +66,5 @@
 
 - Task 2.1: consolidated three exact source README files into `documents/systems/azure-fabric/infra-terraform/{FABRIC-ENVIRONMENT-ADOPTION,CAPACITY-LIFECYCLE,LANDING-CONNECTION}.md`, preserving original command references, OIDC/State/Import/RBAC constraints, Trial-vs-paid capacity behavior and actual 2026-10-22 Reader/Connection Run evidence. The three old README source files are retired in this PR; Terraform files and State are unchanged.
 - Explicitly distinguished the original 2026-10-16 seven-Root Plan-only evidence from later Control Plane Apply/GET; neither is Blob data-plane read or Runtime acceptance.
+
+- Task 2.2: migrated Notebook's Git-first/HALT/old Wheel checkpoint to `notebooks/GIT-FIRST-OFFLINE-VALIDATION.md` and preserved complete OpenLineage compatibility+Publisher protocol under `openlineage/{README,CODE,PUBLISHER}.md`. Retired the two source README and source PUBLISHER Markdown; **no Notebook/Pipeline/Environment/Publisher Python/test was moved or executed**. Historical 0.1.0 Wheel and trial runs are labeled historical, not current environment release.

@@ -24,3 +24,8 @@ source_sha: 9e667468e278f68c3b26f7eb46b81e58b87bf119
 发布应严格分层：Git 代码/CI → 人工审查 Update from Git → 双格式云端 Definition 读回 → Environment Published Wheel/Notebook Binding → 非写入 Smoke → 经授权的 Delta E2E。禁止将 Git 同步、CI 绿色或 Pipeline success 等同于业务完成。
 
 **源码和导航：** [Notebooks CODE](CODE.md) · [Pipelines](../pipelines/README.md) · [Environments CODE](../environments/CODE.md) · [Azure/Fabric 总源码地图](../CODE.md) · [OpenSpec P2](../../../../openspec/changes/ingest-fhir-to-fabric/design.md)。
+
+
+## Git-first 离线验证与历史发布边界
+
+[Notebook Git-first Offline Validation](GIT-FIRST-OFFLINE-VALIDATION.md) 是原源码 README 的唯一替代：保留 Native Notebook/Pipeline、CLI 静态 HOLD、历史 0.1.0 Wheel SHA 和禁止未授权 Run 的技术合同。**旧 Wheel/待手工 Git 切换是历史记录**，不是当前 0.1.3 Environment 已发表/已验证事实的替代；业务 Delta/Gold 仍以独立 Run 和 OpenSpec 验收为准。
