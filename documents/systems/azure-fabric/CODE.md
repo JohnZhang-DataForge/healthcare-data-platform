@@ -85,5 +85,12 @@ The old `johnzhang-test` native Notebook/Pipeline Smoke items, `trial_smoke_publ
 ## P2 OpenLineage 的唯一技术文档所有者
 
 - [OpenLineage README](openlineage/README.md) — 兼容性、Scala/Spark 版本、Fabric listener HOLD 和独立授权试验流程。
-- [OpenLineage CODE](openlineage/CODE.md) — 当前兼容适配器、Publisher 与旧测试的源码位置；源码/测试保留不迁移。
+- [OpenLineage CODE](openlineage/CODE.md) — 当前兼容适配器与 Publisher 业务源码位置、以及 P3 已迁入的集中回归测试位置；保留业务源码，不重复实现。
 - [Immutable Blob Publisher Protocol](openlineage/PUBLISHER.md) — 完整不可变对象、Manifest-last、无敏感信息和 Reader/Publisher 安全边界。
+
+
+## P4 源码辅助程序保留结论（2026-11-04）
+
+- [fhir_ingest_notebook.py](../../../azure-fabric/notebook-development/fhir_ingest_notebook.py) 只有 **17 行**，通过 `importlib` 按确定路径加载唯一 Git Native Notebook，并供 8 个已迁移测试中的多组作为兼容导入入口；它**不是第二个 ETL 实现**。搬到 `.github/quality/scripts/` 会改变模块导入、`PYTHONPATH` 和 Git Native 源码定位，当前无收益，保留原路径。
+- [native_item_readiness.py](../../../azure-fabric/notebook-development/native_item_readiness.py) **63 行**，供 Native Contract/PySpark 离线测试及 [Fabric Notebook Offline Workflow](../../../.github/workflows/fabric-fhir-notebook-offline.yml) 直接调用（预期 exit 2 / HALT）。将其迁移需同步修改 Workflow 和模块相对路径，既无消除重复实现的收益，也会扩大发布风险；保持原位。
+- **业务 Owner 冻结**：`azure-fabric/workspaces/healthcare-omop/` 继续包含真实 Notebook/Pipeline/Environment/Lakehouse Native Git Item；`azure-fabric/warehouse/` 是 CDM/Identity/Writer SQL 和 Python 源码（非 Git Native Warehouse）；`azure-fabric/openlineage/` 是 Publisher/Compatibility 业务实现。只有离线 **test_*.py** 归 `.github/quality/tests/azure-fabric/`。本阶段不创建 `src/` 镜像树、另一个 Wheel 或假 Warehouse Item。
