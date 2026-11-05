@@ -70,8 +70,8 @@ test('public trailing slash route displays Processing and Landing, with exact pr
     assert.ok(l.rows.every(r=>r.link.getAttribute('title')!==null));
     const first=setup({route,ns:'default'});
     assert.equal(first.opened(),1,'first visitor opens namespace selector on '+route);
-    const chosen=setup({route,ns:'default',chosen:'default'});
-    assert.equal(chosen.opened(),0,'manual namespace choice preserved on '+route);
+    const chosen=setup({route,ns:'s3://health-processing',chosen:'s3://health-processing'});
+    assert.equal(chosen.opened(),0,'explicit useful Processing choice preserved on '+route);
   }
   for(const route of ['/jobs','/jobs/']){
     const jobs=setup({route,ns:'default'});
@@ -132,7 +132,7 @@ test('live-proven Jobs namespace is preferred; fallback Spark Business never cho
   const first=setup({route:'/jobs/',ns:'s3://health-landing',chosen:'s3://health-landing',
     options:['default','s3://health-landing','healthcare-platform-airflow','healthcare-platform-spark-business']});
   assert.deepEqual(first.selected,['healthcare-platform-airflow']);
-  assert.equal(first.session.get('publicMarquezJobsNamespace'),null,
+  assert.equal(first.session.get('publicMarquezJobsNamespace'),undefined,
     'per-section choice is written after the MUI selector has rendered the new value');
   first.update();
   assert.equal(first.session.get('publicMarquezJobsNamespace'),'healthcare-platform-airflow');
@@ -151,7 +151,7 @@ test('tab navigation keeps useful independent defaults and honors visitor manual
   assert.equal(x.selector.textContent,'s3://health-landing');
   x.win.location.pathname='/jobs';x.update();
   assert.equal(x.selector.textContent,'healthcare-platform-airflow');
-  assert.equal(x.session.get('publicMarquezJobsNamespace'),null);
+  assert.equal(x.session.get('publicMarquezJobsNamespace'),undefined);
   x.update();
   assert.equal(x.session.get('publicMarquezJobsNamespace'),'healthcare-platform-airflow');
   x.win.location.pathname='/datasets';x.update();
