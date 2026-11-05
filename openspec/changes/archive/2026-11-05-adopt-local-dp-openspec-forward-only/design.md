@@ -2,11 +2,11 @@
 
 ## 1. 单一事实来源：forward-only 切换而非历史迁移
 
-1. 根 `AGENTS.md` 是强制入口；[Data Platform README](../../../documents/systems/data-platform/README.md) 是 Local DP 组件和下钻路由，系统组件的 `README.md` 解释长期能力，`CODE.md` 是唯一真实代码 Owner 图。
+1. 根 `AGENTS.md` 是强制入口；[Data Platform README](../../../../documents/systems/data-platform/README.md) 是 Local DP 组件和下钻路由，系统组件的 `README.md` 解释长期能力，`CODE.md` 是唯一真实代码 Owner 图。
 2. Local DP 下一次新增 Condition / Drug / Procedure / Measurement / Observation 等领域时先审计当前 main/开放 PR，查 Active OpenSpec 是否已有同一功能；存在则沿用，否则先建立 **一个新业务 Change**（如 `local-omop-condition-occurrence`）。同一 PR 将确切 OpenSpec-Change/Task 写入 PR Body、更新该任务，复用已验证的旧函数/Contract。不要另起 `TASK006.md` 管开发进度。
 3. `openspec/changes/relocate-local-data-platform/` 原有遗留清理、相容性/E2E 和 Archive 任务保持原始职责，不掺入新 Condition；历史 `docs/tasks/TASK-005-...` 保留在 Git 固定 SHA，仅作为技术参考，不是当前 Active Tasks，也不授予写入权限。
 4. 历史已部署的 `task004_*` Python/DAG/SQL 函数、镜像 COPY、持久化身份、冻结合同和先前 PASS/FAIL 证据不改动。新功能按组件命名，代码写到已有 Owner 根目录，不为 OpenSpec 新造一套执行框架。
-5. 新测试只能放 `.github/quality/tests/<system>/<component>/`；组件源文件的每次新增/移动/删除均与同一 PR 的唯一 `CODE.md` 同步。完整安全规则仍由原 [Safe Operations](../../../documents/engineering/operations/SAFE-OPERATIONS.md) 等持有。
+5. 新测试只能放 `.github/quality/tests/<system>/<component>/`；组件源文件的每次新增/移动/删除均与同一 PR 的唯一 `CODE.md` 同步。完整安全规则仍由原 [Safe Operations](../../../../documents/engineering/operations/SAFE-OPERATIONS.md) 等持有。
 
 ## 2. Agent 真实走法（Condition 仅作示例，不启动开发）
 
