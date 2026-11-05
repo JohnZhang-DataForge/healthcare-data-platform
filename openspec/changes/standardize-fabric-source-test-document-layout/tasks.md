@@ -31,8 +31,8 @@
 
 ## 4 — 可选辅助源码归属，不再另起大迁移
 
-- [ ] 4.1 审计 `notebook-development/fhir_ingest_notebook.py`、`native_item_readiness.py` 的真实调用/依赖。如果确为独立测试辅助且搬迁有明确收益，可以迁移到 `.github/quality/scripts/azure-fabric/`；否则保留源文件并仅修正文档 Owner。
-- [ ] 4.2 再次确认 `warehouse/`、`openlineage/` 与真实 `workspaces/healthcare-omop/` 的唯一 owner，**不**搬 Warehouse/Lineage 业务代码、不创建 `src/` 镜像树、不变更真实 Workspace Item。
+- [x] 4.1 审计 `notebook-development/fhir_ingest_notebook.py`、`native_item_readiness.py` 的真实调用/依赖。如果确为独立测试辅助且搬迁有明确收益，可以迁移到 `.github/quality/scripts/azure-fabric/`；否则保留源文件并仅修正文档 Owner。
+- [x] 4.2 再次确认 `warehouse/`、`openlineage/` 与真实 `workspaces/healthcare-omop/` 的唯一 owner，**不**搬 Warehouse/Lineage 业务代码、不创建 `src/` 镜像树、不变更真实 Workspace Item。
 
 ## 5 — 最终独立审计和收口
 
@@ -106,3 +106,9 @@
 - P3.4 independently re-read Self-Runner main at SHA `10ef1321fd7a191c2a418700e331551ba523ce2e` and scanned the content of **all 170 tracked GitHub workflow files**; the only four legacy Fabric test path mentions were in `.github/workflows/fabric-api-client.yml`, `fabric-omop-cdm54-schema-deploy.yml`, `fabric-omop-f2-transaction-rollback.yml`, and `fabric-omop-identity-schema-deploy.yml`. All four explicitly check out **immutable historical Healthcare SHAs** (`dde06bf86f7a5390709b66d95ea07e086595385d`, `860af51ca3c1f7389c2276b68494eab274888f94`, `ede02cdaf3ff8b41fc39455be387233f538fa8f9`, `195b1f9a387e3393c47cbc298b1110fc34ba52d5`). Independent recursive Git-tree fetch for **each exact SHA** confirmed the expected original path+test files actually exist. Do not rewrite these fixed historical references to today's test folders; no unpinned Self-Runner workflow reference to removed test paths was found among those workflow files.
 - Also searched all **59** current Healthcare GitHub workflow file bodies at the P3.3 PR head; none contains old `azure-fabric/*/tests` execution entrypoints. Explicit new centralized test start dirs are in their respective Notebook/CDM/Foundation/OpenLineage workflows. Offline code-only tests have zero Azure/Git/SQL/Spark persistent side effects.
 - Note: These workflow body scans prove only tracked workflow references, **not uninspected arbitrary Self-Runner Python/scripts or external consumers**. Historical source pins are intentionally untouched. P3/P4/P5 remain distinct; P5 must still independently reconcile the exact legacy baseline and true Ruleset enforcement.
+
+
+### P4 optional helper ownership audit (2026-11-04 ET)
+
+- Task 4.1: inspected the exact `azure-fabric/notebook-development/fhir_ingest_notebook.py` (17-line `importlib` compatibility shim resolving the one true Native Notebook) and `native_item_readiness.py` (63-line read-only native export/HALT checker). The centralized Notebook 87-case offline suite still imports those names through source `PYTHONPATH=azure-fabric/notebook-development`; [Fabric Notebook Offline Workflow](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/main/.github/workflows/fabric-fhir-notebook-offline.yml) directly invokes `native_item_readiness.py` and demands expected exit 2. Relocating them would break imports/relative paths without any approved runtime or maintenance benefit. **Accepted optional decision: keep both in the existing development helper location.** No business source copied/moved.
+- Task 4.2: verified the exclusive owners: Git Native Notebook/Pipeline/Environment/Lakehouse remain directly in `azure-fabric/workspaces/healthcare-omop/`; Workspace-only `dw-omop-5.4` has no fabricated `*.Warehouse/` Git Item; `azure-fabric/warehouse/` owns OMOP CDM/Writer, `azure-fabric/openlineage/` owns immutable Publisher and compatibility adapter. After P3, all 15 Fabric `test_*.py` files reside only in `.github/quality/tests/azure-fabric/`. No mirrored code tree, shared Wheel change, production run or cloud mutation performed.
