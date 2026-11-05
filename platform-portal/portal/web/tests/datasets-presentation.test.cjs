@@ -29,9 +29,11 @@ function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[
   if(fromHome)session.set('publicMarquezRootLandingOnce','1');
   if(chosen!==null)saved.set('selectedNamespace',chosen);
   selector.click=()=>opened++;
-  const opt=options.map(o=>{const e=el(o);e.click=()=>{selected.push(o);saved.set('selectedNamespace',o)};return e;});
+  const opt=options.map(o=>{const e=el(o);e.click=()=>{selected.push(o);saved.set('selectedNamespace',o);selector.textContent=o};return e;});
+  const listeners={};
   const doc={readyState:'complete',body:{},getElementById:id=>id==='namespace-select'?selector:null,
-    querySelectorAll:q=>q==='table'?[table]:q==='[role="option"]'?opt:[],addEventListener(){}};
+    querySelectorAll:q=>q==='table'?[table]:q==='[role="option"]'?opt:[],
+    addEventListener:(type,handler)=>{listeners[type]=handler}};
   const win={location:{pathname:route.split('?')[0],href:'http://local'+route,
     search:route.includes('?')?'?'+route.split('?').slice(1).join('?'):'',hash:'',
     replace:u=>redirected.push(u)},
@@ -43,7 +45,14 @@ function setup({route='/datasets',chosen=null,ns='s3://health-processing',data=[
     },addEventListener(){}};
   let update;class Observer{constructor(fn){update=fn}observe(){}}
   vm.runInNewContext(src,{window:win,document:doc,URL,MutationObserver:Observer});
-  return {headers,rows,selector,saved,session,selected,redirected,opened:()=>opened,update};
+  const manualChoose=value=>{
+    const option=opt.find(o=>o.textContent===value);
+    if(!option)throw Error('Unavailable manual option '+value);
+    listeners.click({target:{closest:()=>option}});
+    option.click();
+    update();
+  };
+  return {headers,rows,selector,saved,session,selected,redirected,opened:()=>opened,update,win,manualChoose};
 }
 test('public trailing slash route displays Processing and Landing, with exact preserved dataset hrefs',()=>{
   for(const route of ['/datasets','/datasets/']){
@@ -64,20 +73,30 @@ test('public trailing slash route displays Processing and Landing, with exact pr
     const chosen=setup({route,ns:'default',chosen:'default'});
     assert.equal(chosen.opened(),0,'manual namespace choice preserved on '+route);
   }
-  for(const route of ['/jobs','/jobs/','/datasets/some-other-path','/datasets-old']){
+  for(const route of ['/jobs','/jobs/']){
+    const jobs=setup({route,ns:'default'});
+    assert.equal(jobs.opened(),1,'Jobs must pick an actual nonempty namespace on '+route);
+    assert.equal(jobs.headers[0].textContent,'NAME','Jobs table must remain native');
+  }
+  for(const route of ['/datasets/some-other-path','/datasets-old','/lineage/job/x/y']){
     const other=setup({route,ns:'default'});
     assert.equal(other.opened(),0,route+' must not trigger namespace popup');
     assert.equal(other.headers[0].textContent,'NAME',route+' must not rewrite unrelated tables');
   }
 });
 
-test('first-visit Datasets picks real Landing data; prior manual selection and Jobs remain untouched',()=>{
+test('first-visit Datasets picks Landing and Jobs picks actual Airflow separately',()=>{
   const a=setup({ns:'default'});assert.equal(a.opened(),1);a.update();assert.equal(a.opened(),1);
   const b=setup({ns:'default',options:['default','s3://health-landing']});
   assert.deepEqual(b.selected,['s3://health-landing']);
   assert.equal(b.saved.get('selectedNamespace'),'s3://health-landing');
-  assert.equal(setup({ns:'default',chosen:'default'}).opened(),0);
-  assert.equal(setup({route:'/jobs',ns:'default'}).opened(),0);
+  assert.equal(setup({ns:'default',chosen:'default',options:['s3://health-landing']}).selected[0],
+    's3://health-landing','empty default is not a good showcase');
+  const jobs=setup({route:'/jobs',ns:'s3://health-landing',chosen:'s3://health-landing',
+    options:['s3://health-landing','healthcare-platform-airflow']});
+  assert.deepEqual(jobs.selected,['healthcare-platform-airflow']);
+  assert.equal(jobs.saved.get('selectedNamespace'),'healthcare-platform-airflow');
+  assert.equal(jobs.headers[0].textContent,'NAME','native Jobs table untouched');
 });
 
 test('exact public root redirects to Datasets and arms one-time Landing choice, preserving UTM',()=>{
@@ -106,6 +125,64 @@ test('root arrival overrides saved Processing exactly once, then keeps manual ch
   const active=setup({route:'/datasets',chosen:'s3://health-processing',
     ns:'s3://health-landing',fromHome:true});
   assert.equal(active.session.has('publicMarquezRootLandingOnce'),false,'landing already active consumes marker');
+});
+
+test('live-proven Jobs namespace is preferred; fallback Spark Business never chooses empty Landing',()=>{
+  const first=setup({route:'/jobs/',ns:'s3://health-landing',chosen:'s3://health-landing',
+    options:['default','s3://health-landing','healthcare-platform-airflow','healthcare-platform-spark-business']});
+  assert.deepEqual(first.selected,['healthcare-platform-airflow']);
+  assert.equal(first.session.get('publicMarquezJobsNamespace'),null,
+    'per-section choice is written after the MUI selector has rendered the new value');
+  first.update();
+  assert.equal(first.session.get('publicMarquezJobsNamespace'),'healthcare-platform-airflow');
+  const fallback=setup({route:'/jobs',ns:'s3://health-landing',chosen:'s3://health-landing',
+    options:['s3://health-landing','healthcare-platform-spark-business']});
+  assert.deepEqual(fallback.selected,['healthcare-platform-spark-business']);
+  fallback.update();
+  assert.equal(fallback.session.get('publicMarquezJobsNamespace'),'healthcare-platform-spark-business');
+});
+
+test('tab navigation keeps useful independent defaults and honors visitor manual selection',()=>{
+  const choices=['s3://health-landing','s3://health-processing',
+    'healthcare-platform-airflow','healthcare-platform-spark-business'];
+  const x=setup({route:'/datasets',ns:'s3://health-landing',chosen:'s3://health-landing',
+    data:landingNames,options:choices});
+  assert.equal(x.selector.textContent,'s3://health-landing');
+  x.win.location.pathname='/jobs';x.update();
+  assert.equal(x.selector.textContent,'healthcare-platform-airflow');
+  assert.equal(x.session.get('publicMarquezJobsNamespace'),null);
+  x.update();
+  assert.equal(x.session.get('publicMarquezJobsNamespace'),'healthcare-platform-airflow');
+  x.win.location.pathname='/datasets';x.update();
+  assert.equal(x.selector.textContent,'s3://health-landing');
+  x.update();
+  x.manualChoose('s3://health-processing');
+  assert.equal(x.session.get('publicMarquezDatasetsNamespace'),'s3://health-processing');
+  x.win.location.pathname='/jobs';x.update();
+  assert.equal(x.selector.textContent,'healthcare-platform-airflow');
+  x.manualChoose('healthcare-platform-spark-business');
+  assert.equal(x.session.get('publicMarquezJobsNamespace'),'healthcare-platform-spark-business');
+  x.win.location.pathname='/datasets';x.update();
+  assert.equal(x.selector.textContent,'s3://health-processing');
+  x.win.location.pathname='/jobs';x.update();
+  assert.equal(x.selector.textContent,'healthcare-platform-spark-business');
+});
+
+test('direct Dataset bookmark retains useful Processing but stale Jobs choice cannot hide datasets',()=>{
+  const valid=setup({route:'/datasets/',chosen:'s3://health-processing',
+    ns:'s3://health-processing',options:['s3://health-landing']});
+  assert.equal(valid.selected.length,0);
+  const invalid=setup({route:'/datasets',chosen:'healthcare-platform-airflow',
+    ns:'healthcare-platform-airflow',options:['s3://health-landing']});
+  assert.deepEqual(invalid.selected,['s3://health-landing']);
+  const job=setup({route:'/jobs',chosen:'s3://health-landing',
+    ns:'s3://health-landing',options:['healthcare-platform-airflow']});
+  assert.deepEqual(job.selected,['healthcare-platform-airflow']);
+  for(const route of ['/lineage/dataset/hello/world','/lineage/job/x/y','/jobs/some-job']){
+    const detail=setup({route,ns:'s3://health-landing',options:['healthcare-platform-airflow']});
+    assert.equal(detail.opened(),0);
+    assert.equal(detail.selected.length,0);
+  }
 });
 test('show real Encounter and Patient, exact Batch/date/Run, unmodified lineage hrefs, original source tooltip',()=>{
   const x=setup({chosen:'s3://health-processing'});
