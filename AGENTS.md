@@ -20,6 +20,8 @@
 
 ## 3. Task-aware routing — expand only what is relevant
 
+**Before ANY Shared Engine or Fabric source change**, read the [Native execution ADR](documents/architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) and [Shared ownership contract](documents/engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md). For layout, the newer [P1–P5 adopted spec](openspec/specs/repository-quality-layout/spec.md) wins; none of these documents authorizes a runtime write.
+
 | Task | Read before coding/testing |
 | --- | --- |
 | Local DP (Synthea / Airflow / Spark / PostgreSQL) | [Local system navigation](documents/systems/data-platform/README.md) → component `CODE.md` → relevant Active OpenSpec/contract |
