@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 
 from pyspark.sql import SparkSession
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[5]
 NB = ROOT / "azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py"
 PATIENT = ROOT / "local-data-platform/spark/contracts/canonical/patient-v1.json"
 ENCOUNTER = ROOT / "local-data-platform/spark/contracts/canonical/encounter-v1.json"

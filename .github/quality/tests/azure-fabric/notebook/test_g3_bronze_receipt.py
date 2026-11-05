@@ -11,7 +11,7 @@ from healthcare_data_engine import BatchContext, SourceObject
 
 from pathlib import Path
 import sys
-HERE = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parents[5] / "azure-fabric/notebook-development"
 sys.path.insert(0, str(HERE))
 import fhir_ingest_notebook as nb
 

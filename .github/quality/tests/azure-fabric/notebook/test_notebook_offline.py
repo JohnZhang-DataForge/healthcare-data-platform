@@ -14,7 +14,7 @@ from unittest.mock import patch
 from pyspark.sql import SparkSession, functions as F
 from healthcare_data_engine import BatchContext, SourceObject
 
-HERE = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parents[5] / "azure-fabric/notebook-development"
 ROOT = HERE.parents[1]
 SRC = HERE / "fhir_ingest_notebook.py"
 NATIVE = HERE / "native_item_readiness.py"

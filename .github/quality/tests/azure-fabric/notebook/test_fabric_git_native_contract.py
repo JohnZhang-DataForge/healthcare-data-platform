@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-HERE = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parents[5] / "azure-fabric/notebook-development"
 ROOT = HERE.parents[1]
 GIT_ROOT = ROOT / "azure-fabric/workspaces/healthcare-omop"
 sys.path.insert(0, str(HERE))

@@ -7,7 +7,7 @@ import sys
 import unittest
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "azure-fabric/notebook-development"))
 import fhir_ingest_notebook as nb
 from test_g4_silver_delta import G4Offline, Frame

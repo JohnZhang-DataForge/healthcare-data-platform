@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import unittest
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[5]
 PIPELINE = ROOT / (
     "azure-fabric/workspaces/healthcare-omop/"
     "pl_fhir_ingest.DataPipeline/pipeline-content.json")
