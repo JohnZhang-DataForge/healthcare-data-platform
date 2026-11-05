@@ -13,7 +13,8 @@ source_sha: 8e075bca130429c261a0f2cf245daef83ba8eebf
 
 | 真实源文件 | 主要职责与执行风险 |
 | --- | --- |
-| [`check_fabric_deployment_ownership.py`](../../../.github/quality/scripts/check_fabric_deployment_ownership.py) | [OFFLINE CI] Fabric seven-component deployment Owner registry / new-path checks, no cloud operations; initially not a trusted Required Check. |\n| [`fabric_git_dispatch.py`](../../../.github/quality/scripts/fabric_git_dispatch.py) | [GITHUB ACTIONS MAIN PUSH] 固定目标 Self-Runner 私有 Workflow；校验 Healthcare main SHA、GitHub credential 不输出，禁止任何 Fabric/数据写入；只触发受保护的远端 CI。 |
+| [`check_fabric_deployment_ownership.py`](../../../.github/quality/scripts/check_fabric_deployment_ownership.py) | [OFFLINE CI] Fabric seven-component deployment Owner registry / new-path checks, no cloud operations; initially not a trusted Required Check. |
+| [`fabric_git_dispatch.py`](../../../.github/quality/scripts/fabric_git_dispatch.py) | [GITHUB ACTIONS MAIN PUSH] 固定目标 Self-Runner 私有 Workflow；校验 Healthcare main SHA、GitHub credential 不输出，禁止任何 Fabric/数据写入；只触发受保护的远端 CI。 |
 | [`check_shared_fabric_boundaries.py`](../../../.github/quality/scripts/check_shared_fabric_boundaries.py) | [STATIC CI] Shared/Fabric CODE-map ownership, forbidden provider/runtime imports, copied Contract and Local Contract SHA256 integrity |
 | [`check_repository_layout.py`](../../../.github/quality/scripts/check_repository_layout.py) | [TRUSTED REQUIRED CI] 精确路径存量与新增 README/test/Fabric Native Item/top-level 规则，Git 树只读；[正负向单测](../../../.github/quality/tests/test_repository_layout.py) |
 | [`check_component_code_map.py`](../../../.github/quality/scripts/check_component_code_map.py) | [STATIC CI] Git diff/tree 组件 CODE.md 全量导航和新增/删除同步 CI Gate（本 PR 扩展） |
