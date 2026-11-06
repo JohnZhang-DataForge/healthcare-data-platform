@@ -124,3 +124,9 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 - 原 V2 Controller 使用 Healthcare 的 `audit_frozen_adt_profile()`，它返回医院/Feed/源 SHA 和 A01/A03 统计，**不返回** `request_id`；Runner 却把 `request_id` 作为严格同次运行验收必需字段。直接进入真实 worker01 的 Source Audit 后就会因为字段缺失而 HOLD，属于离线 Fake 数据掩盖的接口不匹配。
 - [Self-Runner #537](https://github.com/JohnZhang-DataForge/Self-Runner/pull/537) 已从已独立验证的 `verify_handoff()` 冻结 Request 补入 `audit["request_id"]`，**不放松**校验也**不修改** Healthcare 公共 Audit Schema；补充实际执行 K8s 嵌入审计 Python 代码的真实合成 FHIR fixture 回归测试。[Main CI #42291756749](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42291756749) 9/9 Hosted PASS，Live Job Skipped。
 - 该修复仅消除真实接口必然失败的风险，未执行 OIE 实机只读预检、Channel 导入、FHIR POST、Derby GET 或 Azure PUT；运行前门禁和 `PUBLISHER_IMAGE=""` 仍有效。 
+
+## 严格 Channel STARTED 判断及 Runner 版本同步（2026-11-06）
+
+- 旧实现只搜索状态响应中有无 `STARTED`，遇到 `NOT_STARTED` 或 STOPPED XML 附带历史 `lastState=STARTED` 会误放行。已由 [Healthcare #756](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/756) 修复共享 OIE Sender 的真实 POST 前置检查（同样覆盖新版 V2 Sender），只接受**明确的当前**状态值，拒绝歧义/历史字段/其他 Channel ID。
+- [Self-Runner #539](https://github.com/JohnZhang-DataForge/Self-Runner/pull/539) 修复只读 GET-only 审计入口的同类假阳性问题，并将只读 Workflow、V2 新 Batch Controller Workflow 和两端源代码固定 Healthcare Commit 统一到 `b63e89b8ebed04f8f371db95562413597c54295a`。原有 A01 Controller、Channel 和历史数据不迁移、不替换。
+- Hosted 正反测试均通过，但这**不代表真实 OIE V2 Channel 已 STARTED**；Self-Runner 的手动只读 Worker01/OIE 预检 `INSPECT_OIE_V2` 尚未运行，且 V2 Publisher GHCR Digest 仍未发布和审查（Controller `PUBLISHER_IMAGE=""` 为硬拒绝）。要部署或发送新的 A01/A03 Event 必须另行核验共享 Session/工作负载与明确批准；不得直接重跑旧 A01 Workflow。
