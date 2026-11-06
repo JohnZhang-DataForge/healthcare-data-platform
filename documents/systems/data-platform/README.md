@@ -5,6 +5,8 @@ last_verified: 2026-10-16
 source_sha: 2c85b485381a72425506829fd321d93b164a231d
 ---
 
+
+**旧 Task 命名代码的业务导航与迁移边界：** [223 个文件 Git Blob 清单](../../engineering/development/LEGACY-TASK-GIT-INVENTORY-20261105.json) · [19 组功能 Owner 与迁移门禁](../../engineering/development/LEGACY-TASK-COMPONENT-MIGRATION-MAP.md)。这些是静态规划，现有 Airflow/Docker/PG/Workflow 仍可能引用旧路径，**不得直接删除或批量改名**。
 # Local Pipeline — 组件地图
 
 > **2026-10-18 源码目录迁移后导航更新**：物理源码位置已由 PR #225 调整，本页引用新路径；运行逻辑尚未经新位置回归验证，旧 STEP05 组件分类与历史业务验收不因此变更。
