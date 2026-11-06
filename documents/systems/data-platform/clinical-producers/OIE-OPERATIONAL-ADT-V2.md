@@ -59,3 +59,11 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 **下一项阻断：** 既有 `oie_hl7_publisher.py` 的 `prepare_oie_hl7` 和 `oie_persisted_readback.py` 均仍是 A01-only/每 Encounter 一条消息的 legacy 接口。真实 V2 会对完成的一次 Encounter 生成两条 OIE 持久消息（各自 Message ID、MSH-10、事件类型），所以必须先新增 versioned Event Receipt（组合键 `encounter_id + event_type`、Channel ID、Message ID、原始字节 SHA、来源批次身份），并确保原 API 不发生行为改变。必要时需要让 OIE **实际持久化/GET** 能独立分辨 A03 与 `OIE_ADT_V2_EVENT_NOT_APPLICABLE`，完成失败/未知 ACK 审计之后才能启动真实 Blob PUT。
 
 **当前不属于已验收：** 真实 OIE Source Channel v2 的部署、使用真实冻结 FHIR 源、Azure Storage RBAC、工作负载身份、远端 Azure GET/ETag、经批准的 Fabric Silver 发布。严格 A03 mock 验收仅覆盖未来 Publisher 的传输及计划子集。
+
+## 双事件 OIE Message Receipt（新版本：离线阶段）
+
+旧 `oie_persisted_readback.py::fetch_persisted_readbacks` 的接口为**每 Encounter 一条消息**，且旧 transport parser 将所有以 `MSH|` 开始的 Source Connector Payload 临时分类为 `ADT_A01`。这对 V2 一次住院可能产生两条分别可审计的 A01/A03 不成立。**旧接口保持冻结**，不静默更改其语义。
+
+新 `local-data-platform/apps/clinical_producers/oie_event_readback_v2.py` 用 `(source_encounter_id,event_type,message_id)` 绑定单条 OIE 源消息，必须有明确的新 Channel ID、医院/Feed/Request/Assigning Authority；复用现有只读 Scoped GET 及 OIE Source Connector 安全 XML 解析，只允许显式 GET 的 Message IDs，不枚举或发送/重放消息。返回**原始** HL7 bytes、SHA256、Control ID；根据实际 A01/A03 subtype 重新做严格解析和来源关联检查，而不是相信旧的 legacy A01 disposition。A03 若没有已核实的 A01 在同一受控输入中则 HOLD（跨批次晚到出院留待 versioned reconciliation 设计）。
+
+新静态测试：`.github/quality/tests/data-platform/clinical-producers/oie/test_oie_event_readback_v2.py`，使用 V2 Node 生成的消息嵌入 OIE 4.7 仿真持久 XML 响应，并使用 FakeScopedGetter。任何离线通过都不是 **真实 worker01 OIE 新 Channel GET** 或 Azure Blob 发布证明。正式发布前还需要冻结 FHIR Source Handoff / Event Type 与每条 OIE Message ID 的双向验证，以及现实运行的独立 GET、SHA/manifest-last。
