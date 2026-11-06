@@ -41,6 +41,7 @@
 
 
 - [x] 4.4 增加 Local/Shared Person/Visit **offline synthetic parity gate**：真实调用既有 Local Visit 纯 DataFrame Transformer 与唯一 Shared Candidate，同 Canonical v1 合同及现有 Legacy 访次类别/人口统计映射常量，双 Runtime 校验全部 10 种 Legacy Visit Class、完整 Visit 字段及重放，未知 Class/跨医院/非 Standard Concept HOLD；Person 暂仅合同与旧常量匹配，**完整 Local Person 映射抽离及行为等价仍 OPEN**。本项只标 SOURCE_ONLY，不执行 Local PG/Fabric SQL/物理 Gold；[PR #739](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/739) / [双 Runtime CI #42231773037](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42231773037) 已通过 Synthetic Test / 可重复 Wheel，不代表发布或真实 Mapper 切换；本任务仅 SOURCE_ONLY。
+- [x] 4.5 Local Person 完整 SOURCE_ONLY 等价门禁：从原 Local `map_canonical_patient_to_omop.py::main` **原样抽离唯一现役投影**为可独立调用的纯 DataFrame 函数，`main` 继续调用该函数并保留原 JDBC/Manifest/DQ/Parquet 发布，未改运行时的导入/部署；以真实 Local 与 Shared Person 投影对照 OMOP v5.4 全部 Schema/列/行，交叉覆盖 2 Gender × 4 Race × 2 Ethnicity 及 Replay；未知人口学代码由 Shared 严格 HOLD。原 Visit 10 类和负向测试保留，两个 Python/PySpark Runtime 运行 >=9 测试。**这仅证明所覆盖的合成场景转换等价，不代表 Local 已切换为 Shared、真实 clinical mapping 已审核、任何 Gold/PG/Fabric 写入已验收。** PR/CI 证据以实际通过的 PR HEAD 为准。
 - [ ] 4.1 维持当前 G4 P100/E5918/Q0 和 Approval 不可变，复用正式 Notebook/Environment 0.1.3+ 经审核发布版本与原 G5 源只读门禁；不冒充多实体 Runtime PASS。
 - [ ] 4.2 真实临床 Mapping Profile 和 Warehouse ID 完整 Snapshot 审核通过后，按 Person/Visit 目标输出 Candidate Delta；独立读回 Count/Keys/Hash/FK，Approval-last、冲突 HOLD、Replay SKIP。
 - [ ] 4.3 将真实 Candidate Evidence 写回现有 G5 OpenSpec，相关 Run/SHA/物理 Delta 路径真实可查；本 Change 只确认公共契约集成。
