@@ -130,3 +130,8 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 - 旧实现只搜索状态响应中有无 `STARTED`，遇到 `NOT_STARTED` 或 STOPPED XML 附带历史 `lastState=STARTED` 会误放行。已由 [Healthcare #756](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/756) 修复共享 OIE Sender 的真实 POST 前置检查（同样覆盖新版 V2 Sender），只接受**明确的当前**状态值，拒绝歧义/历史字段/其他 Channel ID。
 - [Self-Runner #539](https://github.com/JohnZhang-DataForge/Self-Runner/pull/539) 修复只读 GET-only 审计入口的同类假阳性问题，并将只读 Workflow、V2 新 Batch Controller Workflow 和两端源代码固定 Healthcare Commit 统一到 `b63e89b8ebed04f8f371db95562413597c54295a`。原有 A01 Controller、Channel 和历史数据不迁移、不替换。
 - Hosted 正反测试均通过，但这**不代表真实 OIE V2 Channel 已 STARTED**；Self-Runner 的手动只读 Worker01/OIE 预检 `INSPECT_OIE_V2` 尚未运行，且 V2 Publisher GHCR Digest 仍未发布和审查（Controller `PUBLISHER_IMAGE=""` 为硬拒绝）。要部署或发送新的 A01/A03 Event 必须另行核验共享 Session/工作负载与明确批准；不得直接重跑旧 A01 Workflow。
+
+## OIE V2 K8s Job 实际模板渲染验收（2026-11-06，Hosted-only）
+
+- [Self-Runner #540](https://github.com/JohnZhang-DataForge/Self-Runner/pull/540) 新增真正的 YAML 类型解析测试（PyYAML 固定 6.0.2），对 Controller 实际的 Sender、Publisher、Publisher Replay 分别完成模板替换及运行合同检查，而不只是匹配占位符字符串。检查 `batch/v1 Job`、worker01、`dw-synthea`、非 root/只读文件系统、PVC/ConfigMap/Secret 挂载、准确的 CLI 参数、A01/A03 的新 Channel ID、Publisher-only Azure 凭据/Raw Landing Prefix 和 `backoffLimit=0`，缺失或未知占位符必须拒绝。
+- 这三项测试与先前九项 Controller 回归共同在 **GitHub Hosted** 运行，不调用真实 K8s/OIE/Azure；测试用镜像 Digest 为合成占位值，生产 `PUBLISHER_IMAGE=""` 仍故意使所有 Live Job 在任何副作用前 HOLD。工作流仅允许明确手动、首次运行，并须在实际 GHCR V2 Digest、OIE Channel 状态、共享资源与授权全部确认后才可以开始新 Batch。

@@ -457,3 +457,7 @@ The reusable workflow remains **parameter-driven**, with Profile, population cho
 ## Human-first OIE docs cutover
 
 OIE / external clinical FHIR→HL7 source guides are now centralized under [Clinical Producers](../clinical-producers/README.md); five original source-area README paths were retired with unchanged executable/manifest sources. This current CODE map remains the single trusted local source inventory for OIE until the Local DP CODE-map governance policy is separately adapted; the human-facing OIE README does not create a second competing source map. The Synthea-direct publisher guide is [DIRECT-FHIR-BLOB-PUBLISHER](DIRECT-FHIR-BLOB-PUBLISHER.md).
+
+### OIE V2 Controller 真实 Job 模板静态合同测试（2026-11-06）
+
+- [Self-Runner Test `scripts/test_oie_v2_job_template_render.py`](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/scripts/test_oie_v2_job_template_render.py) 现使用固定 PyYAML 6.0.2，对 Sender/Publisher/replay 真正渲染的 K8s YAML 进行解析和安全/身份/命令合同核对；[Self-Runner PR #540](https://github.com/JohnZhang-DataForge/Self-Runner/pull/540) 已合并，仅 Hosted 运行，实际 `dw-runner-set` Live Job 未获批准也未执行。生产 GHCR V2 Digest 仍未绑定，旧 A01 路线及所有历史 Blob 不变。
