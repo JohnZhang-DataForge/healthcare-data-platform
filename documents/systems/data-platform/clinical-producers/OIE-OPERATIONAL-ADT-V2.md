@@ -51,3 +51,11 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 ## 下阶段必需的真实工程工作
 
 下一阶段要完成：实机部署前只读审计、Channel Writer/Transport 方案与单消息持久化、原始 HL7 bytes 的出口、source+processing identity + Blob manifest-last/remote GET、failure/replay/HOLD 以及 Sender 两次事件请求 A01/A03 的执行/回退。MLLP/ACK 属于之后展示真实医院消息传输协议时单独开放的受控接口。**这些任务当前均未完成**。
+
+## 共享 HL7 Blob Publisher 扩展（新 A03 离线阶段）
+
+**复用而非另建：** 当前仓库已经拥有 `local-data-platform/apps/clinical_producers/azure_blob_publisher.py` 的不可变条件创建、每对象独立读回和 `landing-manifest.json` manifest-last；`blob_publish_contract.py` 是共享 FHIR/HL7 传输入口。此前 HL7 plan 校验仅有 A01；新的离线实现加入 `oie/hl7_readback.py::parse_adt_a03`，允许严格验证的 A03 与 A01 原始消息分别以 `hl7/<source-visit>-A01.hl7`、`hl7/<source-visit>-A03.hl7` 作为**两个独立对象**发布，MSH-10 与 Plan `source_event_id` 必须一一对应，不能覆盖已有对象。仍只使用既有的 `publish_immutable`；这次新增的 Mock Blob 测试不是 Azure 实机成功记录。
+
+**下一项阻断：** 既有 `oie_hl7_publisher.py` 的 `prepare_oie_hl7` 和 `oie_persisted_readback.py` 均仍是 A01-only/每 Encounter 一条消息的 legacy 接口。真实 V2 会对完成的一次 Encounter 生成两条 OIE 持久消息（各自 Message ID、MSH-10、事件类型），所以必须先新增 versioned Event Receipt（组合键 `encounter_id + event_type`、Channel ID、Message ID、原始字节 SHA、来源批次身份），并确保原 API 不发生行为改变。必要时需要让 OIE **实际持久化/GET** 能独立分辨 A03 与 `OIE_ADT_V2_EVENT_NOT_APPLICABLE`，完成失败/未知 ACK 审计之后才能启动真实 Blob PUT。
+
+**当前不属于已验收：** 真实 OIE Source Channel v2 的部署、使用真实冻结 FHIR 源、Azure Storage RBAC、工作负载身份、远端 Azure GET/ETag、经批准的 Fabric Silver 发布。严格 A03 mock 验收仅覆盖未来 Publisher 的传输及计划子集。
