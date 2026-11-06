@@ -13,6 +13,8 @@ Human-readable, current component navigation. Select a system overview first, th
 
 ## Architecture and engineering
 
+**先读批准的业务架构，再读最近的任务：** [2026-10-30 Medallion Canonical ADR](architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) 明确 **CSV/FHIR/HL7 各有 Source/Entity Adapter → 单一 Canonical Patient/Encounter → 共享 OMOP Mapper/DQ/Identity/Reconciliation**；[2026-10-31 Fabric Native ADR](architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) 固定 Notebook/Pipeline/唯一 Wheel 的执行边界；[Shared Engine Ownership](engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md) 固定代码 Owner。Local PG CDM→Fabric 快照复制是另一项尚未完成的数据产品，并非 FHIR→Canonical→OMOP 的先决链路。目标共享架构不代表 Local 旧生产转换代码已经全部迁移。
+
 [Architecture](architecture/SYSTEM-OVERVIEW.md) · [Data Flow](architecture/DATA-FLOW.md) · [Architecture Decisions](architecture/decisions/README.md) · [Engineering](engineering/README.md) · [Safe Operations](engineering/operations/SAFE-OPERATIONS.md) · [Human-readable directory map](engineering/development/REPOSITORY-STRUCTURE-AND-HUMAN-NAVIGATION.md).
 
 Agents start with [root AGENTS.md](../AGENTS.md). New capabilities follow [OpenSpec lifecycle](engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md), [Active Changes](../openspec/changes/) and [Current Specs](../openspec/specs/). [Archive](../openspec/changes/archive/) preserves accepted history.

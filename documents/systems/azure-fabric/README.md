@@ -8,6 +8,14 @@ last_verified: 2026-11-05
 
 Fabric analytics is separated from the Local PG17 transactional OMOP writer. The physical Warehouse is an existing Workspace item; never invent a synthetic native Warehouse Git folder. [Fabric CODE](CODE.md) is the source owner map.
 
+## Current business architecture — canonical-first, not PG-export-only
+
+**批准的业务架构**：[Medallion Canonical ADR](../../architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)；**批准的执行架构**：[Fabric-native ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)；**唯一共享业务 Owner**：[Shared Engine rules](../../engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md)。
+
+- **当前在开发的真实 FHIR 主线**：FHIR R4 Adapter → 同一份 Canonical Patient/Encounter v1 → 已验收 G4 Approved Silver Delta (100 Patient / 5,918 Encounter / quarantine 0) → Shared OMOP Candidate + 经审查的来源 Concept Profile + 稳定 INT ID → 受控 Fabric Warehouse Gold。Candidate Delta、正式临床 Profile、Warehouse Gold COMMIT/Replay 和 Pipeline E2E **尚未通过**，不得以 Silver Approval 或 Vocabulary lexical lookup 代替。
+- **各来源先各自做适配，之后共享**：CSV/FHIR/HL7 格式、字段和来源代码差异留在 Source/Entity Adapter 与版本化 Mapping Profile；Canonical 之后以唯一 Shared Engine 为目标共用纯业务计算。现有 Local PG 生产链仍是 legacy Local 实现，尚未完全替换为同一 Wheel；不能把目标架构写成双平台运行事实。
+- **另一条独立路线**：已经提交的 Local PG OMOP → read-only snapshot Exporter → Azure Blob → Fabric 分析副本；Exporter/跨平台复制 E2E **未实现**，不是 Fabric FHIR Intake 前置。Fabric Warehouse 真实存在且是 Workspace-only，不是 PG 的自动镜像。
+
 ## Ownership at a glance
 
 | Work | Source and map |

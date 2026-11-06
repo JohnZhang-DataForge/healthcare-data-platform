@@ -2,6 +2,12 @@
 
 > 跨 Local DP 与 Azure Fabric 的**唯一共享 Python Wheel**，源代码位于 [`shared-data-engine/src/healthcare_data_engine/`](../../../../shared-data-engine/src/healthcare_data_engine/)。这不是另一套 Airflow、Fabric 执行服务或数据库 Writer。
 
+## Canonical-first 的唯一业务归属
+
+[Medallion Canonical ADR](../../../architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) 已确定：CSV、FHIR R4、HL7 v2 各使用 Source/Entity Adapter；所有来源先进入唯一的 Canonical Patient/Encounter 合同，再调用平台无关的 OMOP Candidate Mapper、DQ、Concept/Identity 规则、Reconciliation。Source-specific 编码差异由**经审核的版本化 Mapping Profile**传入同一 Mapper，不能靠名字相似猜测 OMOP Concept ID，也不允许复制一份 Fabric 专用 Mapper。Local PG Writer 和 Fabric Warehouse Writer 各自处理持久化事务，Shared 不承担 I/O。
+
+**目标与当前实现必须分开**：0.1.3 已有 FHIR R4→Canonical 和 Shared OMOP Candidate 的实际源码；Local CSV/Person/Visit 的历史生产转换尚没有整体迁移到此 Wheel，HL7 Shared Adapter 也尚未实现。现存 Fabric `azure-fabric/warehouse/omop-foundation/writer/identity_plan.py` 负责无 I/O 的 F2 Preview；**不能据此声称统一 Identity 持久化/Gold Writer 已经在 Shared 内完成**。纯规则提炼需独立 OpenSpec、Local/Fabric 双 Runtime 等价测试和无损行为验证。现行平台详情见 [总体架构](../../../architecture/SYSTEM-OVERVIEW.md)。
+
 ## 代码能力和验收边界（按最新 main 与独立 Run 核对）
 
 - **当前源码版本：** [`pyproject.toml`](../../../../shared-data-engine/pyproject.toml) 为 `0.1.3`。已包含 FHIR R4 Patient/Encounter、Canonical v1 验证、Replay/Reconciliation、Handoff v1 结构校验、医院隔离的纯 OMOP Person/Visit Candidate Mapping。模块与测试以 [CODE.md](CODE.md) 的真实路径为准。

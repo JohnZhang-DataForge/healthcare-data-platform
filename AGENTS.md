@@ -20,7 +20,7 @@
 
 ## 3. Task-aware routing — expand only what is relevant
 
-**Before ANY Shared Engine or Fabric source change**, read the [Native execution ADR](documents/architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) and [Shared ownership contract](documents/engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md). For layout, the newer [P1–P5 adopted spec](openspec/specs/repository-quality-layout/spec.md) wins; none of these documents authorizes a runtime write.
+**Before ANY Shared Engine or Fabric source change**, FIRST read the [Canonical / Medallion business ADR](documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md): different source/entity adapters converge on one canonical Patient/Encounter contract, then share one platform-neutral OMOP/DQ/identity/reconciliation engine (as the approved target; Local legacy code is not fully migrated). Source-specific codes belong in approved mapping profiles; Local PG and Fabric Warehouse use separate physical writers. Next read the [Native execution ADR](documents/architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) and [Shared ownership contract](documents/engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md). For layout, the newer [P1–P5 adopted spec](openspec/specs/repository-quality-layout/spec.md) wins; none of these documents authorizes a runtime write.
 
 | Task | Read before coding/testing |
 | --- | --- |
