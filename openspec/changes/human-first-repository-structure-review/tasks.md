@@ -5,6 +5,12 @@
 - [x] 0.2 Identify 223 legacy `taskNNN` paths, nine source README, 35 OpenSpec active changes and stale root ownership/long history problems.
 - [x] 0.3 PR #709 merged protected main `10482bcd41ebe9cdbd6a06282bc26144b0f4736e`: all three Required Checks, OpenSpec, links and source-closure PASS; root map and exact full audit present.
 
+## P0b — Freeze new directory debt before new business development
+
+- [x] 0.4 Implement default-branch-only `pull_request_target` path/legacy-dependency gate `require-trusted-component-paths`, independent unit tests, and CODE-map guidance without changing protected existing checkers. Bootstrap implementation awaits actual PR CI/merge.
+- [ ] 0.5 After bootstrap merge, run one real valid PR PASS and one intentionally invalid new `task005` source PR FAIL. Record immutable head SHAs, job logs and negative evidence, close the negative PR unmerged.
+- [ ] 0.6 Require the exact new status `require-trusted-component-paths` (GitHub Actions integration ID `15368`) in Ruleset #25365902, retaining the existing three Required contexts with no bypass. Independently verify a non-Draft invalid PR reports `mergeable_state=blocked`. Until then, this new check is NOT an enforced Required gate.
+
 ## P1 — Repo-wide human navigation and current ownership
 - [x] 1.1 Fix stale Warehouse/Deployment references in root AGENTS, Documentation Governance and Developer CODE; preserve all safety restrictions; review PR merge pending.
 - [x] 1.2 Add first-class clickable top-level codebase map for human GitHub browsing, exact component owners and explicit legacy distinction; review PR merge pending.

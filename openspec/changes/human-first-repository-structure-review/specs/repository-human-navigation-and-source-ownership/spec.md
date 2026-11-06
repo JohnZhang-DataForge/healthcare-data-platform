@@ -27,3 +27,17 @@ Changes with zero open checkboxes are candidates, not proof, of completed work. 
 #### Scenario: A task checklist is fully checked but a runtime hold remains
 - **WHEN** the historical task narrative records an unresolved launch/runtime gate
 - **THEN** the Change SHALL not be marked wholly accepted or moved solely based on checkbox counts.
+
+### Requirement: New source directories use a trusted component naming boundary
+The default-branch-only `require-trusted-component-paths` checker SHALL examine new source/quality/Workflow paths across Local DP, Fabric, Shared Engine and Portal as **passive Git data**. It MUST reject newly added `taskNNN`/`stepNNN` code locations and routine edits to the trusted checker/tests/workflow after bootstrap while leaving existing historical paths operable. This check is considered enforced only once GitHub Ruleset lists it as Required and a non-Draft negative PR is independently blocked.
+
+#### Scenario: Agent adds a new Condition module
+- **WHEN** the candidate adds `local-data-platform/apps/task005/condition.py` or `shared-data-engine/src/healthcare_data_engine/step04.py`
+- **THEN** the trusted checker MUST fail before merge, regardless of PR-modified code or naming tests; valid `apps/omop_writer/condition.py` may pass ordinary component CODE-map/OpenSpec checks.
+
+### Requirement: New production sources do not acquire untracked legacy Task dependencies
+New business source files SHALL NOT directly import task-numbered Python modules or hardcode task-numbered legacy source file paths. Existing code and fixed runtime identities (for example `etl.task004_batch_ledger`, GHCR image names, K8s service accounts and approved Batch identities) SHALL remain untouched until the independent Clean Slate migration is accepted.
+
+#### Scenario: New domain code tries to import an old Task module
+- **WHEN** newly added `spark/apps/condition/loader.py` imports `apps.task004` or hardcodes `apps/task003/`
+- **THEN** the trusted checker MUST reject the new direct dependency; the owner must design a semantic interface and record exact replacement/compatibility plan under Active OpenSpec rather than silently expanding old Task reachability.
