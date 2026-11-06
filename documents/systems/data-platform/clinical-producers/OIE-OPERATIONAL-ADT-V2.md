@@ -135,3 +135,8 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 
 - [Self-Runner #540](https://github.com/JohnZhang-DataForge/Self-Runner/pull/540) 新增真正的 YAML 类型解析测试（PyYAML 固定 6.0.2），对 Controller 实际的 Sender、Publisher、Publisher Replay 分别完成模板替换及运行合同检查，而不只是匹配占位符字符串。检查 `batch/v1 Job`、worker01、`dw-synthea`、非 root/只读文件系统、PVC/ConfigMap/Secret 挂载、准确的 CLI 参数、A01/A03 的新 Channel ID、Publisher-only Azure 凭据/Raw Landing Prefix 和 `backoffLimit=0`，缺失或未知占位符必须拒绝。
 - 这三项测试与先前九项 Controller 回归共同在 **GitHub Hosted** 运行，不调用真实 K8s/OIE/Azure；测试用镜像 Digest 为合成占位值，生产 `PUBLISHER_IMAGE=""` 仍故意使所有 Live Job 在任何副作用前 HOLD。工作流仅允许明确手动、首次运行，并须在实际 GHCR V2 Digest、OIE Channel 状态、共享资源与授权全部确认后才可以开始新 Batch。
+
+## 真实只读检查入口及三种后续状态（2026-11-06）
+
+- [Self-Runner #541](https://github.com/JohnZhang-DataForge/Self-Runner/pull/541) 已修复预检总结果中“Channel 停止却提示只剩发布授权”的误导。实际手工运行时现在输出 `OIE_V2_CHANNEL_STATE`、`OIE_V2_CHANNEL_READY` 和 `OIE_V2_LIVE_GO_NO_GO`：缺失 Channel → 单独批准导入；现存但未 STARTED → 单独批准启动；配置一致且 STARTED → 仍须 GHCR V2 Digest、新批次及消息发布审批。所有结果均非自动 GO。Hosted 11/11 PASS 不能充当 live 证据。
+- 人工只读入口：[OIE ADT V2 worker01 and Channel GET-only preflight](https://github.com/JohnZhang-DataForge/Self-Runner/actions/workflows/oie-adt-v2-readonly-preflight.yml)，选择 Main，输入 `INSPECT_OIE_V2`。只检查既有 worker01/PVC/Deployment/Secret 元数据，OIE TLS 认证后 GET Channel List/Config/Status；无 Channel 变更、旧 Message 重放或 Azure Raw PUT。该运行需要实际自建 Runner 可用；若 Workflow 未触发、权限不足或 Channel 缺失，应保持对应 HOLD，并只依据当次 Run 链接/日志确认结果。
