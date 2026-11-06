@@ -118,3 +118,9 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 - [PR #530 的最终合并后 Hosted CI #42282257632](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42282257632) 中 Controller 负向/来源/双事件/Remote GET 模拟测试 PASS，真实 Runner Job **skipped**。现有 `PUBLISHER_IMAGE=""` 是专门的 FAIL-CLOSED 运行门禁，若无经正式审查的 V2 GHCR Digest 会在任何共享资源写操作之前阻断。旧 A01 Controller、旧 Channel、Derby/PVC、现有 Azure 已提交 HL7 及 FHIR 保持原状。
 - [Healthcare PR #748](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/748) 已使原 Azure Publisher 镜像在 Hosted clean build 中通过 V2 CLI 的 `--network none` Import/Help smoke；[Main Run #42280635889](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42280635889) 的 **GHCR 发布跳过**。发布正式 digest 必须另以 Main 手动 `workflow_dispatch` 执行、保存真实 digest 及镜像 revision/SHA 证据，再审查更新 Controller 的 `PUBLISHER_IMAGE`；不能复用旧 A01 的 SHA/Digest，也不能因用户说“继续”而启动有副作用的 E2E。
 - 项目真实 OIE/Blob E2E 的下一步是**仅只读**手工运行已合并的 [V2 preflight (Self-Runner #529)](https://github.com/JohnZhang-DataForge/Self-Runner/pull/529)，固定新 Channel ID `6b91681e-5b3b-59cb-b270-09412054110c`，观测是否已存在/STARTED，以及 worker01/Secret/PVC 共享资源条件。新 Channel 若未安装，仍需单独批准部署；旧 A01 的真实 E2E 历史成绩不能替代新版 A03 验收。
+
+## V2 Source Audit 返回接口修复与验收（2026-11-06）
+
+- 原 V2 Controller 使用 Healthcare 的 `audit_frozen_adt_profile()`，它返回医院/Feed/源 SHA 和 A01/A03 统计，**不返回** `request_id`；Runner 却把 `request_id` 作为严格同次运行验收必需字段。直接进入真实 worker01 的 Source Audit 后就会因为字段缺失而 HOLD，属于离线 Fake 数据掩盖的接口不匹配。
+- [Self-Runner #537](https://github.com/JohnZhang-DataForge/Self-Runner/pull/537) 已从已独立验证的 `verify_handoff()` 冻结 Request 补入 `audit["request_id"]`，**不放松**校验也**不修改** Healthcare 公共 Audit Schema；补充实际执行 K8s 嵌入审计 Python 代码的真实合成 FHIR fixture 回归测试。[Main CI #42291756749](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42291756749) 9/9 Hosted PASS，Live Job Skipped。
+- 该修复仅消除真实接口必然失败的风险，未执行 OIE 实机只读预检、Channel 导入、FHIR POST、Derby GET 或 Azure PUT；运行前门禁和 `PUBLISHER_IMAGE=""` 仍有效。 
