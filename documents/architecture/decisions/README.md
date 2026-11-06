@@ -7,7 +7,7 @@ source_sha: e384777a093a402449eac8dadadd46772bdcf92e
 
 # Architecture Decisions — 长期架构决策索引
 
-> 这里记录**已经批准**的长期决定及取代关系，不维护第二套 CURRENT/NEXT。Fabric 临床语义的正式依据是 [Medallion Canonical ADR (2026-10-30)](../design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)，执行/唯一 Wheel 的正式依据是 [Fabric-native ADR (2026-10-31)](../design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)；[系统总览](../SYSTEM-OVERVIEW.md) 是人类导航而非替代 ADR。旧 2026-10-16 快照请使用[固定提交](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/d1962f79e1c7337c372de1aebfaaec87dfc7d1c8/documents/architecture/decisions/README.md)，其早期云端假设不再标记为当前。
+> 这里记录**已经批准**的长期决定及取代关系，不维护第二套 CURRENT/NEXT。Fabric 临床语义的正式依据是 [Medallion Canonical ADR (2026-10-30)](../design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)，执行/唯一 Wheel 的正式依据是 [Fabric-native ADR (2026-10-31)](../design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)；[系统总览](../SYSTEM-OVERVIEW.md) 是人类导航而非替代 ADR。旧 2026-10-16 快照请使用[固定提交](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/e384777a093a402449eac8dadadd46772bdcf92e/documents/architecture/decisions/README.md)，其早期云端假设不再标记为当前。
 
 | ID | 已批准的架构决定 | 实现 / 验收边界 |
 | --- | --- | --- |
