@@ -123,6 +123,24 @@ jobs:
           echo "AZURE_BLOB_PUBLICATION=NOT_STARTED"
           echo "OIE_HL7_TRANSFORMATION=NOT_STARTED"
 
+      - name: Read-only audit of frozen real Synthea Johns Creek ADT V2 mapping profile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          image="ghcr.io/johnzhang-dataforge/healthcare-data-platform-synthea:latest"
+          # Only aggregate counts + code-only HOLD reasons, never FHIR source facts or PHI.
+          docker run --rm --network none --read-only --user 10001:10001 \
+            --mount "type=bind,source=${GITHUB_WORKSPACE}/local-data-platform,target=/workspace,readonly" \
+            --mount "type=bind,source=${RUNNER_TEMP}/new-generator-state,target=/synthea-new-generator-state,readonly" \
+            --workdir /workspace --entrypoint python3 "${image}" \
+            -m apps.clinical_producers.oie_hl7_publisher_v2 \
+            --state-root /synthea-new-generator-state \
+            --profile config/synthea-new-generator/johns-creek-hl7.json \
+            --request-id ci-johnscreek-fhir-0001
+          echo "OIE_V2_REAL_SOURCE_AUDIT=AGGREGATE_ONLY_NOT_LIVE_OIE"
+          echo "OIE_V2_CHANNEL_DEPLOYMENT=NOT_STARTED"
+          echo "RAW_HL7_AZURE_UPLOAD=NOT_STARTED"
+
       - name: Extract verified real Johns Creek FHIR event envelopes for OIE Channel acceptance
         shell: bash
         run: |
@@ -166,6 +184,51 @@ jobs:
             --mount "type=bind,source=${RUNNER_TEMP}/oie-real-johns-creek,target=/oie-verified" \
             --workdir /workspace --entrypoint python3 "$image" -c "$program"
           sudo chmod -R a+rX "$RUNNER_TEMP/oie-real-johns-creek"
+      - name: Pin Node runtime for actual frozen FHIR to OIE V2 mapper acceptance
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Parse actual frozen Synthea FHIR with production V2 ADT JS mapper (no OIE)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node <<'JS'
+          const fs = require("fs");
+          const path = require("path");
+          const {fhirToHl7AdtEventsV2} = require("./local-data-platform/apps/clinical_producers/oie/adt_events_v2.js");
+          const root = path.join(process.env.RUNNER_TEMP, "oie-real-johns-creek");
+          const handoff = JSON.parse(fs.readFileSync(path.join(root, "source-handoff.json"), "utf8"));
+          const events = fs.readFileSync(path.join(root, "encounter-events.ndjson"), "utf8").trim().split("\n");
+          const counts = {encounters: 0, A01: 0, A03: 0, skipped: 0};
+          for (const line of events) {
+            const source = JSON.parse(line);
+            // Same genuine per-Encounter FHIR resources, no mutation or mock fields.
+            const result = fhirToHl7AdtEventsV2(source.bundle, {
+              hospital_id: handoff.hospital_id, feed_id: handoff.feed_id,
+              request_id: handoff.request_id, assigning_authority: "JOHNSCREEKB"
+            });
+            counts.encounters += 1;
+            counts.skipped += result.skipped_non_admissions;
+            for (const event of result.messages) {
+              if ((event.event_type !== "A01" && event.event_type !== "A03") ||
+                  typeof event.hl7 !== "string" || !event.hl7.startsWith("MSH|") ||
+                  !event.hl7.endsWith("\r")) {
+                throw new Error("REAL_SOURCE_OIE_V2_INVALID_HL7_EVENT");
+              }
+              counts[event.event_type] += 1;
+            }
+          }
+          if (counts.encounters !== handoff.metrics.fhir_encounters ||
+              counts.encounters !== counts.A01 + counts.skipped ||
+              counts.A03 > counts.A01 || counts.A01 === 0) {
+            throw new Error("REAL_SOURCE_OIE_V2_EVENT_COVERAGE_MISMATCH");
+          }
+          // Print only aggregate statistics; never Patient, Encounter or raw HL7 bytes.
+          console.log("REAL_SYNTHEA_OIE_ADT_V2_NODE_MAPPING=PASS", JSON.stringify(counts));
+          console.log("REAL_OIE_CHANNEL_POST=NOT_STARTED AZURE_BLOB_PUT=NOT_STARTED");
+          JS
+
       - name: Upload immutable synthetic FHIR event proof (short retention)
         uses: actions/upload-artifact@v4
         with:
