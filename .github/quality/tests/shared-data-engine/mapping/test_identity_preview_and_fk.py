@@ -104,7 +104,7 @@ class SnapshotAndIdentityPreviewTests(unittest.TestCase):
         a = snapshot(existing=((derived(), 1),
                                (derived("VISIT_OCCURRENCE", key="v1"), 3)),
                      next_person=2, next_visit=4, gold_person=(1,), gold_visit=(3,))
-        b = snapshot(existing=tuple(reversed(a.existing)), next_person=2, next_visit=4,
+        b = snapshot(existing=tuple((entry.key, entry.omop_id) for entry in reversed(a.existing)), next_person=2, next_visit=4,
                      gold_person=(1,), gold_visit=(3,))
         self.assertEqual(a.fingerprint, b.fingerprint)
         self.assertNotEqual(a.fingerprint, replace(a, ledger_sha256=SHA_B).fingerprint)
@@ -187,7 +187,10 @@ class SnapshotAndIdentityPreviewTests(unittest.TestCase):
                           {"PERSON": [], "VISIT_OCCURRENCE": []})
         with self.assertRaisesRegex(IdentityPreviewHold, "F2_SCOPE_PERSON_VISIT_ONLY"):
             future = condition_registry()
-            extra = replace(snapshot(), registry=future)
+            extra = IdentitySnapshot(
+                (), ((PERSON, 1), (VISIT, 1), ("cdm.condition_occurrence", 1)),
+                ((PERSON, ()), (VISIT, ()), ("cdm.condition_occurrence", ())),
+                SHA_A, SHA_B, future)
             bridge_f2_person_visit_allocation(result, extra)
         with self.assertRaisesRegex(IdentityPreviewHold, "F2_COUNTERS_INVALID"):
             broken = replace(result, next_free=(("UNKNOWN", 2),))
