@@ -106,7 +106,14 @@ class ScopedOIEPoster(OIEScopedHTTPSClient):
                             CHANNEL_NAME if expected_channel_name is None
                             else expected_channel_name)
                         or observed.findtext("preprocessingScript") !=
-                           expected.findtext("preprocessingScript")):
+                           expected.findtext("preprocessingScript")
+                        or (expected_channel_xml is not None and (
+                            observed.findtext("sourceConnector/transportName") !=
+                            expected.findtext("sourceConnector/transportName")
+                            or observed.find("destinationConnectors") is None
+                            or expected.find("destinationConnectors") is None
+                            or ET.tostring(observed.find("destinationConnectors")) !=
+                               ET.tostring(expected.find("destinationConnectors"))))):
                     raise OIEPostBlocked("OIE_CHANNEL_CONFIG_DRIFT_HOLD")
 
     def submit(self, channel_id: str, event: bytes) -> str:
