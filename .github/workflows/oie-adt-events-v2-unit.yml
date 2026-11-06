@@ -5,6 +5,8 @@ on:
     paths:
       - "local-data-platform/apps/clinical_producers/oie/adt_events_v2.js"
       - "local-data-platform/apps/clinical_producers/oie/build_adt_events_v2_channel.py"
+      - "local-data-platform/apps/clinical_producers/oie/hl7_readback.py"
+      - "local-data-platform/apps/clinical_producers/blob_publish_contract.py"
       - ".github/quality/tests/data-platform/clinical-producers/oie/**"
       - ".github/workflows/oie-adt-events-v2-unit.yml"
   workflow_dispatch:
@@ -33,5 +35,7 @@ jobs:
         run: |
           python -m pip install hl7apy==1.3.5
           python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_adt_events_v2_independent_hl7.py' -v
+      - name: Verify A03 shared Azure Blob plan and immutable Fake Publisher offline
+        run: python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_a03_blob_contract.py' -v
       - name: Preserve old A01 mapping against regression (without OIE runtime calls)
         run: node --test local-data-platform/tests/clinical_producers/test_oie_adt_a01.js
