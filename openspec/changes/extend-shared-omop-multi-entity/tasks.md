@@ -11,9 +11,9 @@
 
 ## 2. PR2 — 最小 Shared Entity Registry / Candidate API
 
-- [ ] 2.1 提供仅声明式、显式注册的 Person/Visit `EntityDefinition` / Registry，支持一个来源实体映射多个目标表及多输出 stable derived key，不引入自动 SQL/动态 import/第二轮空框架。
-- [ ] 2.2 增加统一 `EntityCandidateSet` 输出/一致性校验，现有 `build_omop_candidates` / `OmopCandidates` 接口仍兼容；明确 Entity、Source、Processing SHA 与审批证据。
-- [ ] 2.3 在 `.github/quality/tests/shared-data-engine/` 添加正负向、注册冲突、重复键、一对多、不同输入顺序以及现有 Person/Visit 回归；执行双 PySpark 版本与 Wheel 构建验证；更新唯一 CODE.md。
+- [x] 2.1 提供仅声明式、显式注册的 Person/Visit `EntityDefinition` / Registry，支持一个来源实体映射多个目标表及多输出 stable derived key，不引入自动 SQL/动态 import/第二轮空框架。
+- [x] 2.2 增加统一 `EntityCandidateSet` 输出/一致性校验，现有 `build_omop_candidates` / `OmopCandidates` 接口仍兼容；明确 Entity、Source、Processing SHA 与审批证据。
+- [x] 2.3 新增 `.github/quality/tests/shared-data-engine/mapping/test_entity_registry.py` 15 项正负向/兼容测试；CI 精确发现执行 15/15（Python 3.11 与 3.13）；现有 Spark/Canonical 回归、重复 Wheel 构建、独立安装均通过；唯一组件 CODE.md 同 PR 更新。实际 Run/SHA 见下方 PR2 证据。
 
 ## 3. PR3 — Identity / Concept / FK 公共能力
 
@@ -46,4 +46,13 @@
 ## Evidence / boundaries
 
 - PR1 baseline：Healthcare main `52b113d07c6d959c86201dfd7e17137bebdb2721`；G4 已验收 Silver P100/E5918/Q0、正式 Wheel 0.1.3 Import、F0/F1 基础/Vocabulary 与 F2 合成 ROLLBACK；P1 正式临床 Map、G5 实体 Candidate、Gold COMMIT/全 E2E **仍 OPEN**。
-- PR1 的 Git-only 文件变更、PR/CI/HEAD/合并证据应在 1.4 完成后补充；不要提前把 CI 或 Cloud 标记为通过。现场任何 Azure/Fabric、PG/Local/Capacity、K8s/Blob 操作必须依照 `SAFE-OPERATIONS` 与 `SESSION-COORDINATION` 单独授权。
+- PR1 已通过静态 Required Checks 并合并（见 1.4）；PR2 当前为源代码候选，新增 CI、Wheel 构建与版本验收仍在 2.3 OPEN，绝非 Fabric Cloud 发布。现场任何 Azure/Fabric、PG/Local/Capacity、K8s/Blob 操作必须依照 `SAFE-OPERATIONS` 与 `SESSION-COORDINATION` 单独授权。
+
+## PR2 — Registry/Adapter 源码候选离线验收（2026-11-05 ET）
+
+- [PR #724](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/724)；受测精确源码 HEAD `d803a10bc6d1828b824473606d24a8e9194bb240`；本次仅新增 2 个 Shared 纯源码模块、1 个新测试文件、原有 Wheel Workflow 新目录发现/版本、包 0.1.4 源码候选、CODE/README 及本 OpenSpec。无 Azure/Fabric/PG/Local 运行写入。
+- [Shared Engine Wheel Offline Validation Run #42157435397](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42157435397) 两个独立 Job **SUCCESS**：
+  - Python 3.11/PySpark 3.5.7：现有合成 FHIR/Canonical/OMOP 35/35 PASS、新规范目录 Multi-Entity 15/15 PASS、两次相同 Wheel 字节校验 `REPRODUCIBLE_WHEEL_PASS`、独立安装 `WHEEL_IMPORT_PASS 0.1.4`。
+  - Python 3.13/PySpark 4.1.1：FHIR pure 13/13 PASS、新 Multi-Entity 15/15 PASS、原有 Spark DataFrame 2/2 与 OMOP 11/11 PASS、Wheel `FABRIC_P3_PY313_WHEEL_INSTALL_IMPORT=PASS 0.1.4`。
+- 同精确受测 SHA 上，Required `require-trusted-change`、`validate-openspec`、`require-trusted-fabric-deployment-owner`、`require-trusted-component-paths` 全部 **SUCCESS**；链接、路径命名、Change Gate、Active Index 也 **SUCCESS**。Cloudflare 可选 Portal Build 是 FAILURE，与本次 Shared/OMOP 代码无关，不冒充 Portal 成功。最终 tasks 文档证据编辑会产生新 PR HEAD，必须重新核对该 HEAD 的适用 Required Checks。
+- **仅 SOURCE/UNIT/BUILD PASS；未发布到 Fabric Environment：** 正式 Cloud Wheel 仍是 0.1.3；新 Entity Registry/Adapter 只针对当前 Person/Visit，真实临床 Profile、G5 物理 Candidate、F2 stable ID Gold COMMIT 和统一 E2E 仍 OPEN。

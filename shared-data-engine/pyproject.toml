@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthcare-data-engine"
-version = "0.1.3"
-description = "Pure, platform-neutral healthcare FHIR R4 canonical transformation engine"
+version = "0.1.4"
+description = "Pure platform-neutral healthcare Canonical and multi-entity OMOP candidate engine"
 requires-python = ">=3.10,<3.14"
 dependencies = []
 
