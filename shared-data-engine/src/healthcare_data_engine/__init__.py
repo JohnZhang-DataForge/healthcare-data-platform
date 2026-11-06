@@ -11,7 +11,7 @@ from healthcare_data_engine.quality.result import Finding, ParsedResources, Tran
 from healthcare_data_engine.reconciliation.patient_encounter import reconcile_patient_encounter, PatientEncounterReconciliation
 from healthcare_data_engine.reconciliation.replay import PublicationRecord, decide_replay
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 __all__ = [
     "BatchContext", "SourceObject", "parse_fhir_resources",
     "normalize_fhir_patient", "normalize_fhir_encounter",
@@ -66,4 +66,14 @@ __all__ += [
     "TargetConceptHold", "TargetConceptRule", "TargetConceptProfile",
     "TargetConceptPreflight", "load_target_concept_profile",
     "inspect_target_concepts",
+]
+
+# Source-only G5/F2 provisional-ID candidate handoff. Not a Gold map.
+from healthcare_data_engine.identity.candidate_handoff import (
+    CandidateIdentityHold, CandidatePersonId, CandidateVisitId,
+    PersonVisitCandidateHandoff, plan_candidate_identity_handoff,
+)
+__all__ += [
+    "CandidateIdentityHold", "CandidatePersonId", "CandidateVisitId",
+    "PersonVisitCandidateHandoff", "plan_candidate_identity_handoff",
 ]

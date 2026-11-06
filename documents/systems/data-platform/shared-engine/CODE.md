@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **当前状态：本 PR 源码候选版本 0.1.5（未发布）；Fabric Environment 仍为 0.1.3，已正式 Published，且独立临时 Notebook Spark 4.1 Import PASS。正式业务 `nb_fhir_ingest` 版本门禁、FHIR/OMOP E2E 与 Gold COMMIT 仍需另行验收。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前状态：当前源码候选版本 0.1.6（未发布）；Fabric Environment 仍为 0.1.3，已正式 Published，且独立临时 Notebook Spark 4.1 Import PASS。正式业务 `nb_fhir_ingest` 版本门禁、FHIR/OMOP E2E 与 Gold COMMIT 仍需另行验收。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，源码候选版本 0.1.5；Environment 0.1.3 Publish 与独立 Spark Import 已有验收，正式业务 Notebook/Gold 未验收 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，源码候选版本 0.1.6；Environment 0.1.3 Publish 与独立 Spark Import 已有验收，正式业务 Notebook/Gold 未验收 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -46,6 +46,8 @@
 | [src/healthcare_data_engine/mapping/omop/target_concepts.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/target_concepts.py) | 0.1.5 源码候选：版本化目标表/字段级 Concept Profile、Source/Release/Domain/有效日期/审核证据 SHA 预检；**不是**临床审批 |
 | [identity/FK synthetic tests](../../../../.github/quality/tests/shared-data-engine/mapping/test_identity_preview_and_fk.py) | Python 3.11/3.13 两版本对 Fabric F2 纯算法输出进行端到端 Adapter 验证、跨医院/溢出/快照漂移/跨组 FK 拒绝 |
 | [target Concept synthetic tests](../../../../.github/quality/tests/shared-data-engine/mapping/test_target_concepts.py) | 表/字段概念 Domain、词表版本、错误 Code 和有效期的正负向测试，不能冒充真实 Clinical Reviewer Signoff |
+| [src/healthcare_data_engine/identity/candidate_handoff.py](../../../../shared-data-engine/src/healthcare_data_engine/identity/candidate_handoff.py) | 0.1.6 源码候选：接收现有 F2 `IdentityPreview` 与 Warehouse 全量 `IdentitySnapshot`，对照 Caller 提供的 G4 Approved Silver Patient/Encounter 来源键，产生带 `PERSISTED/PROVISIONAL` 明确状态的 Person/Visit Candidate ID Lookup。**无 SQL/Delta I/O、无 ID 正式分配、无 Gold 权限、无临床审批** |
+| [G5/F2 candidate preview synthetic tests](../../../../.github/quality/tests/shared-data-engine/mapping/test_candidate_identity_handoff.py) | 0.1.6 新增 18 项正负向合成用例：首批零映射、100/5918、完全重放、跨医院同键、源主外键/目标列长/快照漂移/伪造目标 ID 冲突。双版本 Wheel CI 明确执行 |
 | [src/healthcare_data_engine/mapping/omop/candidates.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/candidates.py) | G5 Silver Approval/Concept + 外部 stable ID Map 保护的纯 Spark OMOP Person/Visit Candidate；不负责 Writer/Gold COMMIT |
 | [tests/test_omop_candidates.py](../../../../shared-data-engine/tests/test_omop_candidates.py) | G5 真实本地 PySpark Schema/FK/DQ/Unknown Concept/Approval 拒绝/确定性 Replay 正负测试 |
 | [contracts/fabric-fhir-omop-handoff-v1.json](../../../../shared-data-engine/contracts/fabric-fhir-omop-handoff-v1.json) | FHIR Approved Silver → Fabric OMOP F1 机器可读版本化交接规范；不授权 Gold 写入 |
