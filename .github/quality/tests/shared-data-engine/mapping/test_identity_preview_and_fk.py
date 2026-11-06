@@ -17,6 +17,7 @@ from identity_plan import IdentityKey, plan_ids
 from healthcare_data_engine.identity.preview import (
     IdentityPreview, IdentityPreviewHold, IdentitySnapshot, PersistedIdentity,
     PlannedIdentity, bridge_f2_person_visit_allocation, verify_allocation_proposal,
+    require_preview_snapshot_unchanged,
 )
 from healthcare_data_engine.identity.references import (
     ReferenceHold, resolve_declared_dependencies, resolve_parent_reference,
@@ -109,6 +110,17 @@ class SnapshotAndIdentityPreviewTests(unittest.TestCase):
         self.assertNotEqual(a.fingerprint, replace(a, ledger_sha256=SHA_B).fingerprint)
         self.assertNotEqual(a.fingerprint, replace(a, readback_sha256=SHA_A).fingerprint)
 
+    def test_changed_ledger_or_readback_invalidates_preview(self):
+        original = snapshot()
+        planned = plan(original, [legacy_key()])
+        self.assertIs(require_preview_snapshot_unchanged(planned, original), planned)
+        with self.assertRaisesRegex(IdentityPreviewHold, "SNAPSHOT_CHANGED_BEFORE_COMMIT"):
+            require_preview_snapshot_unchanged(
+                planned, replace(original, ledger_sha256=SHA_B))
+        with self.assertRaisesRegex(IdentityPreviewHold, "SNAPSHOT_CHANGED_BEFORE_COMMIT"):
+            require_preview_snapshot_unchanged(
+                planned, replace(original, readback_sha256=SHA_A))
+
     def test_replay_is_persisted_not_reallocated(self):
         initial = snapshot()
         result = plan(initial, [legacy_key()])
@@ -164,7 +176,7 @@ class SnapshotAndIdentityPreviewTests(unittest.TestCase):
             PersistedIdentity(derived(), True)
         with self.assertRaisesRegex(IdentityPreviewHold, "INT_RANGE_INVALID"):
             snapshot(next_person=2_147_483_649)
-        with self.assertRaisesRegex(IdentityPreviewHold, "PROPOSED_COUNTER_DRIFT"):
+        with self.assertRaisesRegex(IdentityPreviewHold, "INT_RANGE_INVALID"):
             verify_allocation_proposal(snapshot(next_person=2_147_483_648),
                 ((derived(), 2_147_483_648),),
                 ((derived(), 2_147_483_648),),
