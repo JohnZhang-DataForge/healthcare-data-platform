@@ -49,7 +49,7 @@ jobs:
           import unittest
           suite = unittest.defaultTestLoader.discover(
               '.github/quality/tests/shared-data-engine/parity', pattern='test_*.py')
-          assert suite.countTestCases() >= 6, 'Local/Shared parity tests not discovered'
+          assert suite.countTestCases() >= 7, 'Local/Shared parity tests not discovered'
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful(), 'Local/Shared parity failed'
           print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_CONTRACT_VISIT_TRANSFORM')
@@ -144,7 +144,7 @@ jobs:
           import unittest
           suite = unittest.defaultTestLoader.discover(
               '.github/quality/tests/shared-data-engine/parity', pattern='test_*.py')
-          assert suite.countTestCases() >= 6, 'Local/Shared parity tests not discovered'
+          assert suite.countTestCases() >= 7, 'Local/Shared parity tests not discovered'
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful(), 'Local/Shared parity failed'
           print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_CONTRACT_VISIT_TRANSFORM')
