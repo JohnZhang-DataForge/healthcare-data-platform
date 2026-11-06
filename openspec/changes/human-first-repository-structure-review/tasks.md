@@ -7,7 +7,7 @@
 
 ## P0b — Freeze new directory debt before new business development
 
-- [x] 0.4 Implement default-branch-only `pull_request_target` path/legacy-dependency gate `require-trusted-component-paths`, independent unit tests, and CODE-map guidance without changing protected existing checkers. Bootstrap implementation awaits actual PR CI/merge.
+- [x] 0.4 PR #715 merged protected main `0e1c95d46ae577e5c5b3467cc39484c4ba48d644`: bootstrap default-branch-only `pull_request_target` job `require-trusted-component-paths`, offline 12 positive/negative unit tests, owner CODE/docs and source-path freeze. Original three Required Checks passed. New job is **NOT Required** until administrator adopts Ruleset.
 - [ ] 0.5 After bootstrap merge, run one real valid PR PASS and one intentionally invalid new `task005` source PR FAIL. Record immutable head SHAs, job logs and negative evidence, close the negative PR unmerged.
 - [ ] 0.6 Require the exact new status `require-trusted-component-paths` (GitHub Actions integration ID `15368`) in Ruleset #25365902, retaining the existing three Required contexts with no bypass. Independently verify a non-Draft invalid PR reports `mergeable_state=blocked`. Until then, this new check is NOT an enforced Required gate.
 
@@ -44,3 +44,7 @@
 ## P4 exact Git-only inventory evidence
 
 Healthcare b3313aff archive receipt has accepted P3; current snapshot uses main `335fde4c87307e185836154abeae0c4afaaa56ae`, 223 task-subtree sources, 19 owners, each file's original Git Blob SHA in `documents/engineering/development/LEGACY-TASK-GIT-INVENTORY-20261105.json`. Self-Runner main `3faa9c243e07f62d96474b1989c2ad0ed831d9e3` has 134 Task-name-path matches among 545 tracked files. This supports only static dependency prioritization; P4.1/P4.2/P4.3/P4.4 and P5 remain OPEN until complete dual-repo/live acceptance.
+
+## P0.5 real positive PR acceptance probe
+
+A bounded documentation/task update (this PR) probes that the newly bootstrapped default-branch-only source-structure job runs, reads current main policy, and **PASSES** when no source violates naming. Actual job SHA/Run acceptance is to be recorded in the follow-up evidence PR, not guessed here. Existing Local DP runtime and OpenSpec P4 Clean Slate HOLDS remain unchanged.
