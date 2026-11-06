@@ -19,6 +19,9 @@
 
 - [x] 1.9 F1 来源/版本只读审计的**真实 ODBC 适配与有界查询源码**，Self-Runner [PR #527](https://github.com/JohnZhang-DataForge/Self-Runner/pull/527) 合并 main `db8a010df25c522cbbd7f51bdf60bd6b4dd957cd`；[Offline Run #42212808029](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42212808029) **16/16 PASS**。接受非 tuple/list 的 `pyodbc.Row`，Vocabulary SQL 限 `TOP (48)`、Source Audit SQL 限 `TOP (10)`、保存缺少版本的 Vocabulary IDs 供人工审查；不自动填入版本、不推断 CPT4 许可证或临床 Signoff。**仅 CODE/OFFLINE，未新增自动 OIDC 云端执行入口，也未实际进行 F1 SQL 读回。** P1.4 / P1.5 仍 OPEN。
 
+- [x] 1.10 **F1 版本/来源数据库元数据实机只读核验（P1.4 限定子任务）**：Self-Runner [PR #528](https://github.com/JohnZhang-DataForge/Self-Runner/pull/528) squash merged `8a4474cef192e56f32b3f418638fa3b8a7b05a37`，真实 [OIDC Run #42219030641](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42219030641) 的 offline-contract 与 live-reference-audit 均 **SUCCESS**。源 runner复用现有 Vocabulary Deep DQ OIDC、REST Warehouse GUID 及 SQL DB_NAME 真实验证；两条有界 SQL SELECT 独立读回 `cdm.vocabulary=47`、版本空值 `28`、`audit.vocabulary_source_file=0`，缺少 **9/9 数据库来源审计记录**。九张 Vocabulary 物理表总数仍 `28,703,753`，11 项跨表引用校验均 0 缺失。审批保持 `P1_RELEASE_PROVENANCE_PREFLIGHT_ONLY_NOT_APPROVED` 和 `F1_METADATA_PHYSICAL_READONLY_PASS_REVIEW_HOLD`，未查询或写入临床 Gold，未启动 Capacity。本实机 SQL 元数据子任务已通过，**1.4 真正 release/license 文件和临床 Concept 的完整审计及 1.5 临床人工 Signoff 继续 OPEN**。
+  - 不可变证据：GitHub Run Artifact `fabric-p1-f1-metadata-42219030641`、ZIP SHA256 `4c6eab8f7177f3dab42c6c51de34a139e5bb8665377dedf4f6b311071314710e`、内含 `report.json` SHA256 `d822605d00fb7e741b3d7ab7ccf8135f539f499f51fdff73a3343b44662ebb97`；原始报告包含全部 28 个空版本 Vocabulary ID（多为内部/类别词表，逐一评审而非擅自填造版本）。报告 `sql_readback=true`、`sql_write_attempted=false`、`candidate_delta_written=false`、`gold_committed=false`、`clinical_mapping_approved=false`、`vocabulary_license_approved=false`。
+
 ## P2–P5 — 候选、事务、管线
 
 - [ ] 2.1 以真实 Warehouse 完整 ID/Allocator/Gold/Ledger 快照验证跨医院稳定 INT 分配，保留并发 Single-writer fence。

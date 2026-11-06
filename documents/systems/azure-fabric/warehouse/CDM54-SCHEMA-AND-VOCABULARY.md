@@ -1,7 +1,7 @@
 ---
 status: active
 scope: fabric-omop-cdm54-schema-vocabulary
-last_verified: 2026-11-04
+last_verified: 2026-11-06
 source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 ---
 
@@ -26,4 +26,5 @@ Source OpenSpec: [Fabric OMOP Foundation](../../../../openspec/changes/fabric-om
 
 - Existing user-created Warehouse `dw-omop-5.4`, item ID `7a6d08da-278d-4603-8a3b-28640110984c`. [F0 real schema CREATE/readback Run #41648858578](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41648858578): 39 official base tables, 432 columns, PASS.
 - [F1 nine Vocabulary table COPY/readback Run #41770643994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41770643994): private Blob source, 9/9 SHA256-verified files, 9/9 physical table row reconciliation, **28,703,753 rows** PASS; Concept ID/date and Vocabulary ID checks PASS.
-- **Not complete:** Identity Map, Person/Visit Gold writes, full semantic FK/Domain DQ, source Vocabulary release/version metadata audit, CPT4 special processing. Do not infer a complete OMOP clinical dataset from populated Vocabulary.
+- **Current F1 metadata status (2026-11-06):** Actual [Self-Runner SQL SELECT-only Run #42219030641](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42219030641) PASS, independently verified 47 Vocabulary rows, 28 blank `vocabulary_version` metadata rows, 0 rows in `audit.vocabulary_source_file`. Nine CDM tables still reconcile to **28,703,753** rows and 11 referential checks show zero missing links. The exact 28 blank-version vocabulary IDs are retained in the archived `fabric-p1-f1-metadata-42219030641/report.json`, SHA256 `d822605d00fb7e741b3d7ab7ccf8135f539f499f51fdff73a3343b44662ebb97`. Empty version fields may be valid for some internal Vocabulary categories and must be reviewed, not made up. Source files already imported and hash-checked, but the nine corresponding SQL audit rows have **not** been recorded.
+- **Not complete:** clinical Concept profile review and approval, Vocabulary release/version/license/CPT4 legal evidence, Source File audit Manifest recording, real OMOP Person/Visit identity allocation/Gold COMMIT, complete E2E. Do not infer clinical authorization from physical Vocabulary readback.
