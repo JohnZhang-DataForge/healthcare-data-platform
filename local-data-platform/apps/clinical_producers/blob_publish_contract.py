@@ -9,7 +9,7 @@ import json
 from pathlib import PurePosixPath
 import re
 
-from apps.clinical_producers.oie.hl7_readback import parse_adt_a01, Hl7ReadbackError
+from apps.clinical_producers.oie.hl7_readback import parse_adt_a01, parse_adt_a03, Hl7ReadbackError
 
 VERSION = "healthcare-azure-blob-publish-plan-v1"
 SAFE_ID = re.compile(r"^[a-z][a-z0-9-]{2,63}$")
@@ -139,7 +139,13 @@ def verified_plan(plan: dict, source_bytes: dict[str, bytes], *,
             if not isinstance(event, str) or not event or len(event) > 199:
                 raise BlobPlanRejected("INVALID_HL7_CONTROL_ID")
             try:
-                parsed = parse_adt_a01(raw)
+                # Preserve the existing strict A01 acceptance. Add ONLY an
+                # independently verified A03 event; never accept arbitrary ADT.
+                msh = raw.split(b"\\r", 1)[0].split(b"|") if isinstance(raw, bytes) else []
+                if len(msh) > 8 and msh[8] == b"ADT^A03^ADT_A03":
+                    parsed = parse_adt_a03(raw)
+                else:
+                    parsed = parse_adt_a01(raw)
             except Hl7ReadbackError as exc:
                 raise BlobPlanRejected("HL7_NOT_INDEPENDENTLY_VERIFIED") from exc
             if parsed["control_id"] != event:
