@@ -1,7 +1,7 @@
 ---
 status: active
 scope: component-catalog
-last_verified: 2026-10-16
+last_verified: 2026-11-05
 source_sha: 2c85b485381a72425506829fd321d93b164a231d
 ---
 
@@ -22,7 +22,9 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 | Spark Canonical / DQ | [Spark](spark/README.md) · [CODE](spark/CODE.md) | `local-data-platform/spark/apps/person/`、`local-data-platform/spark/apps/visit/`、`local-data-platform/spark/common/` |
 | OMOP Writer / PostgreSQL | [OMOP](omop/README.md) · [CODE](omop/CODE.md) | `local-data-platform/apps/omop_writer/`、`local-data-platform/sql/`，原子事务、Mapping、Reconciliation |
 
-**横切边界（已于 STEP06 完成专项说明）**：[Portal / Marquez](../platform-portal/README.md) 是观测子系统，[Azure/Fabric](../azure-fabric/README.md) 是本地 PG 的云端分析副本，不属于这五个模块的事务 Writer。总体图见 [System Overview](../../architecture/SYSTEM-OVERVIEW.md)。
+**横切边界（2026-11-05 架构对齐）**：[Portal / Marquez](../platform-portal/README.md) 是独立观测系统；[Azure/Fabric](../azure-fabric/README.md) 已经有单独的 **FHIR→Bronze→Canonical Silver→OMOP Gold** 开发主线，原 Local PG→Fabric 分析副本只是另一条尚未实现的产品路线，不能继续把整个 Fabric 定义为 PG 复制。两种 Runtime 各自拥有物理 Writer，不共享 PG/Fabric SQL 实现。权威：[总架构](../../architecture/SYSTEM-OVERVIEW.md) · [Canonical Medallion ADR](../../architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) · [Shared Engine Owner](../../engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md)。
+
+**复用进度的真实边界**：Local CSV→Canonical→OMOP Person/Visit 已通过历史 PG17 原子 COMMIT/Replay 验证，但其生产 Spark/PG Mapper 仍保留 Local 原路径。唯一 Shared Wheel `healthcare_data_engine` 0.1.3 已经实现 FHIR→Canonical/OMOP Candidate 并部署于 Fabric；**Local 正式迁移到同一 Shared 实现尚未完成**。以后新增来源先实现专用 Adapter，再通过同一 Canonical Contract 和经审批的 Source Mapping Profile 进入共用业务层；逐模块抽纯函数并验证旧行为等价，不将旧 Writer 搬入 Shared、不增加第二个 Fabric Mapper。
 
 ## 新开发：OpenSpec Forward-Only（2026-11-05 起）
 
