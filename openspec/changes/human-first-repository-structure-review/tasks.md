@@ -8,7 +8,7 @@
 ## P1 — Repo-wide human navigation and current ownership
 - [x] 1.1 Fix stale Warehouse/Deployment references in root AGENTS, Documentation Governance and Developer CODE; preserve all safety restrictions; review PR merge pending.
 - [x] 1.2 Add first-class clickable top-level codebase map for human GitHub browsing, exact component owners and explicit legacy distinction; review PR merge pending.
-- [ ] 1.3 Shorten duplicated current-vs-history summaries without discarding accepted evidence; keep release states accurate.
+- [x] 1.3 Split the cumulative Document Index, Portal System, Portal Component and Fabric System readmes into concise current navigation while preserving four exact byte-identical former Markdown blobs at sibling dated HISTORY paths; CI acceptance pending.
 
 ## P2 — Centralize duplicate source READMEs
 - [x] 2.1 Six Local DP source READMEs relocated with unchanged substantive content, immutable original SHA permalink and central Clinical Producers/Synthea owners; final PR #710 review pending.

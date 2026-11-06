@@ -1,81 +1,28 @@
 ---
-
-> **2026-10-31 Fabric FHIR 开发基线**：[最终 Native Notebook/Pipeline/Environment ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。NB 必须执行真实 PySpark，PL 编排，Env 发布唯一 Shared Wheel；不创建额外 Fabric I/O/runtime Python Package。
 status: active
 scope: azure-fabric-system-overview
-last_verified: 2026-10-18
-source_sha: 8ad52828599ae95cda95eda4d888fc601ebfdfdc
+last_verified: 2026-11-05
 ---
 
-# Azure / Microsoft Fabric — OMOP 云端分析子系统
+# Azure / Microsoft Fabric — Lakehouse and OMOP Analytics
 
-> **新目标架构（2026-10-20）**：[Module-first Fabric Environment](../../architecture/design/FABRIC-TERRAFORM-ENVIRONMENT-ARCHITECTURE.md) · [新 OpenSpec Tasks](../../../openspec/changes/simplify-fabric-environment-iac/tasks.md)。已授权 Fabric 账号、现成 Landing/State/Capacity 是外部前置；复用旧 `components → modules → environments`；旧 A=B/Bootstrap/new-environments 是历史方案或当前源码事实，**不是当前实施方向**。下方旧决策小节仅供历史追溯，新的 Terraform 代码仍未真正 Apply。
+Fabric analytics is separated from the Local PG17 transactional OMOP writer. The physical Warehouse is an existing Workspace item; never invent a synthetic native Warehouse Git folder. [Fabric CODE](CODE.md) is the source owner map.
 
-> **唯一系统总导航**：本文说明整体业务架构、组件分工和验收范围；总源码导航见 [CODE.md](CODE.md)，各组件的 README 解释职责，CODE 定位源码。实施任务以 [Active OpenSpec Changes](../../../openspec/changes/) 相应 `tasks.md` 为准；[Project Status](../../engineering/status/PROJECT-STATUS.md) 仅兼容导航。
+## Ownership at a glance
 
-## 当前部署固定基线（2026-10-20）
+| Work | Source and map |
+| --- | --- |
+| Native Notebook, Pipeline, Environment, Lakehouse | [Native Git Items](../../../azure-fabric/workspaces/healthcare-omop/) · [Notebook](notebooks/CODE.md) · [Pipeline](pipelines/CODE.md) · [Environment](environments/CODE.md) |
+| Warehouse SQL, Schema and manifests | [deployment/warehouse](../../../azure-fabric/deployment/warehouse/) · [Deployment CODE](deployment/CODE.md) |
+| OMOP Writer business Python | [Writer source](../../../azure-fabric/warehouse/omop-foundation/writer/) · [Warehouse CODE](warehouse/CODE.md) |
+| OpenLineage Publisher and Listener deployment | [Publisher](../../../azure-fabric/openlineage/) · [OpenLineage CODE](openlineage/CODE.md) |
+| Terraform resources | [IaC modules](../../../azure-fabric/infra-terraform/) · [Terraform CODE](infra-terraform/CODE.md) |
+| Shared pure Python engine | [Shared Engine](../data-platform/shared-engine/README.md) |
 
-用户已决定：**Tenant A = Tenant B**（`899a04e8-8d3d-486c-88a1-7bdeb22d5f1a`，Azure Subscription `56107520-5920-4e96-9833-5441ded0a90c`），现有 `johnzhang/landing` 和 `johnzhang/tfstate` 保留，采用 `reuse-existing`，新环境独立 `fabric/<env>/*.tfstate`。旧 `johnzhang-fabric` 子账号/手工 Workspace 不作为重建依赖；新身份与 Fabric 环境用 Terraform/GitHub Actions/fabric-cicd 创建。**未来 A≠B 仍受支持，但当前开发不要求验证另一个 Tenant**。权威决策：[当前 Fabric 部署基线](../../architecture/design/FABRIC-CURRENT-DEPLOYMENT-BASELINE.md)。以上是用户确认的部署输入，不代表已完成当前 Fabric API/远端 State 真实验收。
+## Verified scope and acceptance boundaries
 
-## 系统目标与真实边界
+Shared Engine version 0.1.3 is [published to Environment](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745) with an independently [completed isolated Spark 4.1 import](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167). This does not prove the formal business Notebook's Engine guard is aligned or that FHIR→Bronze/Silver Approval→OMOP Gold warehouse COMMIT, replay and physical readback succeeded. See [FHIR E2E Change](../../../openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md) and [OMOP Foundation](../../../openspec/changes/fabric-omop-foundation/tasks.md).
 
-> **2026-10-20 历史目标设计（各云资源后续部署状态另行核实）**：[Fabric 多环境可重建架构](../../architecture/design/FABRIC-MULTI-ENVIRONMENT-REBUILD-DESIGN.md) 已确定采用 Terraform + Self-Runner GitHub Actions + fabric-cicd，复用现有 Blob/Backend，Fabric 环境使用独立身份和 State Key；**这不会改变下文的 Plan-only、Workspace 手工建立与业务 Item 尚未完成的当前事实**。
+Current development follows [Native execution ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md), [Deployment ownership spec](../../../openspec/specs/fabric-deployment-component-ownership/spec.md) and [Safe Operations](../../engineering/operations/SAFE-OPERATIONS.md). Azure Capacity, Terraform apply, Notebook run and SQL/Delta write require independently authorized, observed execution.
 
-Azure/Fabric 与本地 [Data Platform](../data-platform/README.md) 平级。本地 PostgreSQL OMOP 是权威数据源，Azure/Fabric 用于构建可重建的云端分析副本。现阶段批准的 OneLake-first 数据流：
-
-```text
-本地 PostgreSQL OMOP（权威库）
-  → 一致性只读 Exporter + 不可变 Manifest（待开发）
-  → 已有 Azure Blob Landing
-  → Fabric Data Pipeline 编排（业务实现待开发）
-  → Fabric PySpark Notebook（DQ / PK / FK / Delta 加载，待开发）
-  → OneLake Lakehouse / Delta（分析副本）
-```
-
-**2026-10-16 七 Root 历史 Plan-only ≠ 后续真实资源状态**：该时点只证实旧 Root 的 Plan，不代表 2026-11-04 仍没有 Fabric Item 或 Warehouse。当前 Native Notebook/Pipeline/Environment/Lakehouse 已存在；Warehouse F0 39/432、F1 Vocabulary 9/9 及 F1 Management Schema 有独立真实 Run 读回；这些也**不代表临床 Gold E2E 已完成**。详情见 [总 CODE](CODE.md)、[Warehouse README](warehouse/README.md)、[Terraform 技术架构](infra-terraform/ARCHITECTURE.md#verified-plan-evidence)。
-
-## 组件总表
-
-| 组件 | 组件说明 / 源码地图 | 当前实际源码 | 实现与验收边界 |
-| --- | --- | --- | --- |
-| **Terraform Infrastructure** | [README](infra-terraform/README.md) · [CODE](infra-terraform/CODE.md) · [ARCHITECTURE](infra-terraform/ARCHITECTURE.md) | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | 七个历史 Root Plan-only；Reader/Connection 及后续独立 Fabric 资源有另外的 Apply/GET/Runtime 证据，详见 [Terraform README](infra-terraform/README.md) |
-| **Fabric Notebooks** | [README](notebooks/README.md) · [CODE](notebooks/CODE.md) | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | 真实 Git-native Notebook 已存在，默认 HALT；G4 / G5 Source Readonly 已实际验收 |
-| **Fabric OpenLineage** | [README](openlineage/README.md) · [CODE](openlineage/CODE.md) · [Publisher](openlineage/PUBLISHER.md) | [`openlineage/`](../../../azure-fabric/openlineage/) | 离线兼容性与不可变 Publisher 源码；Fabric listener、私有采集和 Azure 实时发布仍需独立授权 |
-| **Fabric Pipelines** | [README](pipelines/README.md) · [CODE](pipelines/CODE.md) | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | 真实 Git-native Pipeline 已存在，受控参数默认 HALT；完整 Gold E2E 尚未验收 |
-| **Fabric Warehouse** | [README](warehouse/README.md) · [CODE](warehouse/CODE.md) | [`omop-cdm-5.4/`](../../../azure-fabric/deployment/warehouse/omop-cdm-5.4/) · [`omop-foundation/`](../../../azure-fabric/warehouse/omop-foundation/) | 已有 `healthcare-omop` Workspace 内 **`dw-omop-5.4`** (GUID `7a6d08da-278d-4603-8a3b-28640110984c`)；Workspace-only Git 保护；SQL 源码独立于 Native Item Git 根目录 |
-
-`healthcare-omop` 是**已有 Fabric Workspace 的名称**，不是本次要创建的新 Workspace。源码结构分为基础设施 `infra-terraform/` 与未来 Fabric 原生业务 Item 的 `workspaces/healthcare-omop/`；建 Git 目录**不会**自动创建 Fabric Item 或连通 Fabric Git。
-
-```text
-azure-fabric/
-├── infra-terraform/
-├── warehouse/                        # 现有 Workspace-only Warehouse 的 SQL/Writer/测试源码
-│   ├── omop-cdm-5.4/
-│   └── omop-foundation/
-└── workspaces/
-    └── healthcare-omop/              # 真实 Fabric Git-native Item 根
-        ├── nb_fhir_ingest.Notebook/
-        ├── pl_fhir_ingest.DataPipeline/
-        ├── env_healthcare.Environment/
-        └── lh_omop_analytics.Lakehouse/
-```
-
-## Terraform 与 Fabric Git 的交付所有权
-
-现有 [Terraform Notebook Bootstrap](../../../azure-fabric/infra-terraform/modules/notebook/definitions/notebook-content.py) **故意抛出 `RuntimeError`**；Terraform Pipeline 在未提供真实 Notebook GUID 时运行 [Fail Activity](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-disabled.json)。[Notebook Activity JSON](../../../azure-fabric/infra-terraform/modules/data-factory/definitions/pipeline-notebook.json) 只是模板，**并非已经运行的业务处理**。这些定义继续归 Terraform，而不是未来 Fabric Git 业务源码。
-
-引入真正的 Fabric Item 时，应保留 Fabric 生成的 `.platform` 和真实 Notebook/Pipeline Item 文件，**不得虚构 Item ID**。必须核实已有 GUID，并为每个 Item 选择 **Terraform 或 Fabric Git 中唯一交付责任方**，避免双向同步覆盖。可复用 Python 库的构建、部署、运行环境应独立明确，不要把任意辅助源码塞入 Git 同步的 Item 文件夹。参考 [Fabric Notebook Source Control](https://learn.microsoft.com/en-us/fabric/data-engineering/notebook-source-control-deployment) 与 [Fabric Git Item Format](https://learn.microsoft.com/en-us/fabric/cicd/git-integration/source-code-format)。
-
-## 本地 Exporter、测试和独立对账
-
-只读 PostgreSQL Exporter、不可变 Manifest、Hash/Schema/PK/FK 校验、Blob 发布、云端幂等写入及独立跨平台 Reconciliation 均**尚未实现**。过去 `azure-fabric/exporter/` 和 `azure-fabric/tests/` 只有空占位 `.gitkeep`，已被清理；**删除占位不代表放弃能力**。未来 Exporter 应作为本地业务流程开发，并按实际部署与 API 契约确定源码/测试位置，不将它伪装为 Workspace 原生 Item。
-
-**可重建架构的首个安全开发切片**：新增 [离线环境 Preflight](infra-terraform/CODE.md#fabric-多环境离线-preflight新增静态工具不接触云资源) 和 [新账号人工前置 Runbook](../../engineering/operations/FABRIC-ACCOUNT-BOOTSTRAP-RUNBOOK.md)，保护旧 State/Workspace。**Terraform 本体与 Self-Runner 部署仍保持原状，跨 Tenant 自动部署尚未实现。**
-
-## 源码导航、安全与验收
-
-- [总 CODE](CODE.md)：跨组件源码归属，细节交给各组件 CODE；[Terraform CODE](infra-terraform/CODE.md)：七个 Root/Module、Bootstrap、IAM 和执行入口。
-- [Terraform ARCHITECTURE](infra-terraform/ARCHITECTURE.md)：State/OIDC/Import/权限及 **2026-10-15/16 历史 Plan-only Run**。
-- [全局数据流](../../architecture/DATA-FLOW.md) · [Safe Operations](../../engineering/operations/SAFE-OPERATIONS.md) · [当前项目状态](../../engineering/status/PROJECT-STATUS.md)。
-
-[Self-Runner Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/blob/main/.github/workflows/azure-infra.yaml) 当前正式执行路径为 `healthcare/azure-fabric/infra-terraform/components/$COMPONENT`。旧 `azure/infra-terraform/` 已从 Main 退役、历史可追溯。**该工作流存在 Apply 选项不等于已获得授权；本文档迁移未运行 Plan/Apply/Destroy。**
+The previous [Fabric system history and exact past configuration inputs](FABRIC-HISTORY-20261105.md) remains byte-identical; old dated architecture assumptions are not current deployment proof.
