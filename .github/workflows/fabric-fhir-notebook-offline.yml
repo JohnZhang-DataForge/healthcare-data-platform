@@ -122,7 +122,7 @@ jobs:
           grep -qx 'version = "0.1.6"' shared-data-engine/pyproject.toml
           NATIVE='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl'
           test "$(find "$(dirname "$NATIVE")" -maxdepth 1 -name '*.whl' | wc -l)" = 1
-          echo '473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff' " $NATIVE" | awk '{print $1, $2}' | sha256sum --check
+          echo "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff  $NATIVE" | sha256sum --check
           python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1' 'pyspark==4.1.1'
           mkdir -p "$RUNNER_TEMP/g5-wheel-016" "$RUNNER_TEMP/g5-wheel-016-repeat"
           python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-016" ./shared-data-engine
