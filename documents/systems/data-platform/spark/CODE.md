@@ -14,7 +14,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | 源文件（直接链接） | 职责 / 使用边界 |
 | --- | --- |
 | [`load_omop_person_stage.py`](../../../../local-data-platform/spark/apps/person/load_omop_person_stage.py) | OMOP Person Stage 数据形态和 ID 检查及加载入口；区别于最终事务 Writer |
-| [`map_canonical_patient_to_omop.py`](../../../../local-data-platform/spark/apps/person/map_canonical_patient_to_omop.py) | Canonical Patient → OMOP Person 映射、Concept 与主键检查 |
+| [`map_canonical_patient_to_omop.py`](../../../../local-data-platform/spark/apps/person/map_canonical_patient_to_omop.py) | Local Canonical Patient → Person：`map_joined_patient_to_person` 无 IO 纯投影可供双运行时 parity 直接调用；`main()` 仍独占已有 Manifest/JDBC 概念校验、ID/DQ 与不可变 Parquet 发布，不代表 Local 已切换 Shared Wheel |
 | [`publish_canonical_patient.py`](../../../../local-data-platform/spark/apps/person/publish_canonical_patient.py) | Canonical Patient 合同校验和已批准 Raw 发布 |
 | [`synthea_patient_adapter.py`](../../../../local-data-platform/spark/apps/person/synthea_patient_adapter.py) | Synthea Patient CSV → Canonical Patient Spark Adapter |
 
