@@ -1,107 +1,109 @@
 ---
 status: active
 scope: data-flow-architecture
-last_verified: 2026-10-16
-source_sha: 8d276dc7a121c15396a9ce328fcfea4688a795ae
+last_verified: 2026-11-05
+source_sha: e384777a093a402449eac8dadadd46772bdcf92e
 ---
 
-# 数据流架构 — Local OMOP + Portal Lineage + Azure OneLake
+# Healthcare 数据流 — 多来源 Canonical、Shared Engine、双平台发布
 
-> **状态说明**：分清「已验收的本地数据流」「部分验收的可观测性流」「尚未部署/实现的云端目标流」。本文件描述业务数据**从哪里来、经何处处理、最后保存到哪里**；不代替逐模块 Runtime Runbook。基于 Healthcare Main `8d276dc7a121c15396a9ce328fcfea4688a795ae` 和既有验收证据核对。
+> **业务数据流入口**。与 [总体架构](SYSTEM-OVERVIEW.md) 配套，规范来源差异与 Canonical 之后的共享阶段。业务语义以 [Medallion ADR](design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) 为准，物理执行以 [Fabric Native ADR](design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md) 为准；本页只区分数据流、已有实证和待验收环节。2026-10-16 只读旧总览中 PG→Azure 复制是**独立未来支线**，不再是唯一或当前 Fabric 业务主线。
 
-## A. 已验收：本地 Synthea → PostgreSQL OMOP（仅 NEW_ONLY Person/Visit）
+## A. 数据来源与统一 Canonical 合同
 
-```text
-[独立 Synthea v3.3.0, worker01, dw-synthea]
-  -> 固定 Request + 本地 synthea-local 持久化状态
-  -> 18 个 CSV + 文件级校验
-  -> SeaweedFS S3 health-landing
-  -> 最后发布 verified immutable manifest.json (Batch ID + URI + SHA256)
-  -> Airflow new_only_omop_consumer (schedule=None, manual)
-       select exact batch + verify manifest, read-only claim inspection
-       COMPLETED -> already_completed_no_replay (skip Spark/Writer)
-       ABSENT + explicit permitted inputs -> controlled Spark processing
-  -> Spark Operator / PySpark on worker02
-       Person + Visit transforms and reconciliation
-       Processing S3 / immutable Writer Handoff
-  -> Secret/flags/fencing gated atomic OMOP Writer
-  -> PostgreSQL 17: cdm.person / cdm.visit_occurrence
-       etl ID Maps / Claim / Stage / Checkpoints / Commit
-  -> independent PostgreSQL readback + completed-batch replay verification
-```
+| 来源与运行状态 | Source/Entity Adapter | Canonical 产物 | 非共享的部分 |
+| --- | --- | --- | --- |
+| 本地 Synthea CSV（NEW_ONLY Person/Visit 已验收） | Local CSV Patient/Encounter Adapter；未来逐模块提炼到 Shared | `patient-v1.json`、`encounter-v1.json` 对应的 Patient/Encounter | S3、Airflow、Local Spark 作业、PG JDBC/Writer |
+| Azure FHIR R4（合成 G4 Silver 已验收） | Shared `adapters/fhir_r4/{patient,encounter}.py` | **相同 Local Canonical v1 字段语义/冻结 Contract SHA**；Fabric Approved Silver Delta | Blob source verification、Notebook、Delta Publisher |
+| HL7 v2 / OIE producer（共享 HL7 Adapter 未验收） | 预期 HL7 PID/PV1 Adapter；必须独立开发测试 | 相同 Canonical Contract 或经过批准的新版本 | OIE 与 HL7 特定语义、Producer / ACK |
 
-- **生成与消费解耦**：Generator 不调用/依赖 Airflow；Airflow 不触发 Generator。原 `task004_processing_pipeline.py` 中的生成阶段为历史链路，不再是新架构入口。
-- **发现 DAG 与入库 DAG 不是一个能力**：`landing_batch_discovery` 每 15 分钟扫描的默认路径是 Discovery/只读 Claim Guard（不代表自动 Writer）；真正 NEW_ONLY Writer DAG `new_only_omop_consumer` 为 `schedule=None`、`max_active_runs=1`、需显式授权。
-- **成功验证的范围**：三条真实 NEW_ONLY Batch 的最终 Claim 均为 COMPLETED。第三批 `synthea-new-only-gh-38588671004` 的 1 Person / 244 Visit 写入后独立读取 `cdm.person=208`、`cdm.visit_occurrence=21934`、Claim=3，并验证同一个 Batch 再消费时跳过 Spark/Writer、PG 不变；这些是 **2026-10-14 验收读数**，不是当前实时数据库统计。
-- **尚未完成**：UPDATE_ONLY、MIX_DATA、Condition/Procedure/Drug/Observation 其他域的业务 Writer、自动批次 Claim 及所有复杂恢复/并发路径。不能将历史 ROLLBACK/PASS 泛化为未来任意 Commit 安全。
-- [当前 DAG 源码](../../local-data-platform/airflow/dags/new_only_omop_consumer.py)、[Discovery DAG](../../local-data-platform/airflow/dags/landing_batch_discovery.py)、[TASK004 最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)。
-
-## B. 已部分验收：OpenLineage → Marquez（元数据流，不是业务数据流）
+完整处理原则：
 
 ```text
-Airflow Provider -> OpenLineage events -> Marquez API -> PG14 metadata
-                                                -> Marquez native Web (NodePort 30999)
-Spark Listener  -> independent test events -----^
+CSV ── CSV Adapter ──┐
+FHIR ─ FHIR Adapter ─┼── Canonical Patient + Encounter Contract
+HL7 ── HL7 Adapter ──┘                │
+                                     ▼
+              ONE platform-neutral Shared Data Engine
+                  Candidate Mapper / Concept Mapping Profile
+                  Quality / Identity Planning / Reconciliation
+                                     │
+                         ┌───────────┴────────────┐
+                         ▼                        ▼
+                   Local PG writer          Fabric Warehouse writer
 ```
 
-- 已证实：A3 Airflow 独立 Probe DAG 的任务事件；A4 SparkApplication 计算真实完成、Run facets 经后续只读证明写入 Marquez。
-- 尚未证实：完整业务 `Airflow → Spark → Person/Visit S3/Parquet → PostgreSQL OMOP` 的一一对应 Job/Run/DataSet 图。A4 的 Spark Run 在 `unknown` Job 下，应用 Job 没有正确挂接；input/output Dataset lineage 尚未通过。
-- Marquez Web 是**官方原生 Web**，不是自主开发的门户应用。它读取独立 `dw-postgre14`，而不是在 OMOP PostgreSQL17 中建立观测业务表。
-- Portal 不能通过伪造测试事件、手工插入血缘边来伪装业务写入或云端实现。下一轮若改共享 Airflow/Spark/Provider，按 [人工协调规则](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/SESSION-COORDINATION-POLICY.zh-CN.md) 独立授权。
-- [A3 验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/PORTAL-A3-AIRFLOW-OPENLINEAGE-REAL-LIVE-CLOSEOUT-2026-10-13.zh-CN.md)、[A4 验收与限制](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/platform-portal/A4-SPARK-OPENLINEAGE-REAL-SMOKE-2026-10-14.zh-CN.md)。
+**注意**：这张图表达已批准的**最终共享设计**，不表示当前 Local 旧 Writer/Mapper 已经整体改为 import Shared Wheel。Local 的历史 Person/Visit 转换和 PG Writer 仍在运行；Fabric 的 Shared 0.1.3 FHIR/Canonical/OMOP Candidate 已实现并在其证据范围内测试。共享纯函数必须逐组件抽取、对比行为后才替换本地既有代码。Source-specific Code Mapping 用经审核的版本化 Profile 传入相同 Mapper，不能直接把 FHIR LOINC 词汇同名匹配当作正确 Person Race/Ethnicity/Visit Concept。
 
-## C. 新目标：PostgreSQL OMOP → Azure Blob → Fabric Data Factory → Notebook → OneLake
+## B. 本地 NEW_ONLY CSV → PostgreSQL OMOP（历史实机已验收）
 
-**这条链路是云端分析副本，复用本地已标准化的 Person/Visit 数据，不将原始 Synthea/S3 CSV 作为 Fabric 必须重跑的输入。**
-
-```mermaid
-flowchart LR
-  PG["Local PostgreSQL OMOP<br/>Source of Truth"]
-  EXP["Read-only Consistent Exporter<br/>NOT IMPLEMENTED"]
-  AZ["Existing Azure Blob<br/>OMOP snapshot landing"]
-  F["Fabric Data Factory Data Pipeline<br/>ORCHESTRATION"]
-  N["Fabric PySpark Notebook<br/>snapshot validation / Delta load"]
-  LH["OneLake Lakehouse<br/>analytical Delta replica"]
-  PG --> EXP -->|"snapshot + READY manifest"| AZ
-  AZ -->|"manifest_uri / export_id (future)"| F
-  F -->|"Notebook activity"| N
-  N -->|"Delta files / tables"| LH
+```text
+Synthea 3.3.0 → 18 CSV + immutable S3 manifest/SHA
+  → SeaweedFS health-landing → Airflow new_only_omop_consumer (manual)
+  → Local Spark Patient/Encounter Canonical + Person/Visit mapping + DQ
+  → controlled PG Writer: Claim/Fencing/Identity Maps/Stage/Checkpoint/Ledger
+  → cdm.person + cdm.visit_occurrence one atomic COMMIT
+  → independent PG readback / completed-batch replay SKIP
 ```
 
-**工作职责与范围**
+- 本地 Generator 与 Airflow 消费者独立；Discovery 每 15 分钟不等于自动业务写入。NEW_ONLY DAG `schedule=None`，必须显式选择 Batch 并符合独立 Writer 授权。
+- 历史 TASK004 真实批次的 Person/Visit COMMIT 与 SKIP 有 [最终验收](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/49936b51d4beadc69383e931efc3e72d2f0db47e/docs/tasks/TASK-004-NEW-ONLY-E2E-FINAL-ACCEPTANCE-2026-10-14.zh-CN.md)，不是此刻 PG 行数的在线统计。
+- UPDATE_ONLY、MIX_DATA、Condition/Drug/Procedure/Observation 域、Local 生产全面 Shared 化不应从此结果推导为已完成。见 [Local 文档入口](../systems/data-platform/README.md)、[Local OMOP Writer](../systems/data-platform/omop/README.md)。
 
-| 组件 | 应该负责 | 目前情况 |
+## C. Fabric FHIR R4 → Bronze → Approved Canonical Silver → OMOP Gold（当前开发）
+
+```text
+Verified synthetic FHIR Patient/Encounter Azure Blob + signed-off Manifest SHA
+   ↓  native Fabric Pipeline orchestrates, Notebook physically reads + executes Spark
+Bronze: source raw snapshot/receipt
+   ↓  Shared FHIR Adapter, Canonical v1 validation, source-reference FK + DQ
+Silver: persisted canonical_patient, canonical_encounter, quarantine, Approval
+   ↓  only approved Silver, pinned source/processing/mapping versions
+Shared OMOP Person/Visit Candidate Mapper + approved Concept Profile
+   ↓  stable ID preview + independently verified prior Map/Gold/Allocator/Ledger
+Candidate Delta physical write/readback/approval (NOT YET ACCEPTED)
+   ↓  one fenced Warehouse writer, re-read state inside TX
+Warehouse cdm.person + cdm.visit_occurrence + etl.identity_map/id_allocator/batch_ledger
+   ↓  independent SQL readback, reconciliation, unknown-ACK read-before-retry
+GOLD COMMITTED (NOT YET ACCEPTED)
+```
+
+| 确切里程碑 | 已核对的证据范围 | 待办 / 不得宣称 |
 | --- | --- | --- |
-| PostgreSQL OMOP | 保持 `cdm.*` 的本地数据权威，提供指定版本/快照来源 | 本地 Person/Visit 链路已验收 |
-| Exporter（未来） | 使用只读、一致性快照导出选定 OMOP 表，并产出 export_id、表计数/版本/校验信息 | **尚未实现**；如何保证多表快照一致性需在开发前确定 |
-| Azure Blob Landing | 存放 export 数据文件，最后原子化发布可校验 READY Manifest | Storage 已有；**PG→Blob 导出流程尚未验收** |
-| **Fabric Data Pipeline** | 在 READY 后处理参数与编排/触发 Notebook，记录执行状态 | Terraform 资源 **Plan 成功但未创建**；当前 Fail activity 阻止“空成功” |
-| **Fabric PySpark Notebook** | 读取 Azure Blob 快照、Schema/DQ/PK-FK 检查、映射目标、执行受控 Delta 装载及重放校验 | 只有故意 `raise RuntimeError` 的 bootstrap source，**无真实 ETL** |
-| **OneLake Lakehouse** | 保存分析副本（未来 schema-enabled Lakehouse Delta `cdm` 表） | Fabric Lakehouse **Plan 成功但未 Apply** |
-| Fabric Warehouse | 可选的未来 SQL 服务层，不是第一阶段依赖 | 不在本轮主线范围 |
+| Engine 0.1.3 | Environment Published、独立 Spark 4.1 Import PASS | 正式 Gold 运行未验收 |
+| G3 / G4 | 真实合成 FHIR Bronze；100 Patient + 5,918 Encounter 的 Delta Silver Approved/Q0、独立读回与 Replay SKIP | 没有 Candidate Gold 的业务 COMMIT |
+| F0/F1 | 39 空 CDM 表、9 Vocabulary 表、5 空 ETL/Audit 管理表；Vocabulary 28,703,753 行及分项 DQ | Release/License/Domain 审核不完整 |
+| P1/G5 | 已从真实 Silver 读取来源代码、执行 F1 vocabulary lexical SELECT；无法把词汇名称匹配直接当医学映射 | 正式 Mapping Profile SHA/审批、真实 Candidate Delta |
+| F2 | `identity_plan` / `silver_identity` ID Preview、合成 Warehouse ROLLBACK 验收 | Identity Map/Gold/COMMITTED Ledger 的真实事务与 Pipeline E2E |
 
-**需要在开发阶段定稿的接口（当前不是已实现 Contract）**：
+**映射和 ID 安全边界**：Silver 只包含 Canonical Source ID，不存正式 Person/Visit OMOP INT ID；Mapping Profile 需按源代码、有效日期、Domain、Standard、License 审核；新 ID Preview 不是持久化预约。Candidate 与 Warehouse Writer 的先后接口仍由 [Active E2E Tasks](../../openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md) 决议，禁止预先将临时 ID 写入目标表。Warehouse 的 NOT ENFORCED 约束要求独立 PK/FK/跨医院唯一性校验。所有实际 DML、Capacity 和执行仍受 [Safe Operations](../engineering/operations/SAFE-OPERATIONS.md) 限制。
 
-- 最小数据范围先覆盖 `cdm.person` 与 `cdm.visit_occurrence`，按真实数据量与 FK 校验逐步扩展。
-- 建议输出不可变 `export_id + manifest_uri + export timestamp + source version + table count + checksum + schema version`；对象写完并校验后才发布 READY。
-- Pipeline 使用版本化 Manifest 启动 Notebook；Notebook 比较 Blob 完整性/主外键/行数并把相同 export 的重复处理做成幂等；失败不得把半成品标记为成功。
-- Azure Blob 的 Fabric 数据读取权限需与 Workspace/Item 权限独立审核；服务主体身份、网络连接、容量/访问控制都必须真实验证。
-- **不默认让 Fabric Pipeline 远程执行本地 Exporter**：第一阶段 Exporter 是独立的产生端，Pipeline 只消费已经 READY 的云端快照。后续要做全自动调度应先单独设计鉴权/网络/失败恢复。
-- **先打通最小两表一次快照→一次 Notebook 加载→一次独立读回，后续才增加 dbt、Warehouse、高级业务逻辑**，避免再次扩大范围延误工期。
+## D. Local PG OMOP → Fabric 分析副本（独立未来路线）
 
-## D. Azure 当前 Infra 证据（与云端数据流验收区分）
+```text
+Local PG17 committed and conformed OMOP CDM
+   → read-only, cross-table-consistent Exporter (NOT IMPLEMENTED)
+   → versioned Azure Blob snapshot + manifest (NOT E2E VERIFIED)
+   → Fabric Notebook/Pipeline analytic-load adapter (NOT E2E VERIFIED)
+   → OneLake analytical copy (FUTURE PRODUCT)
+```
 
-Terraform Components 位于 [`azure-fabric/infra-terraform/`](../systems/azure-fabric/infra-terraform/README.md)，执行器为 Self-Runner [Azure-Infra-TF](https://github.com/JohnZhang-DataForge/Self-Runner/actions/workflows/azure-infra.yaml)。2026-10-15 三次真实 Plan 均是相同 Healthcare SHA `6acb59353f5d7630f65b6f417c8e8bfbd39cf651`，各 **1 add / 0 change / 0 destroy**：
+**与 C 不同**：这里的输入是已有 OMOP Gold，不需回退为 Source CSV/FHIR 或重做 Canonical/OMOP Conversion。Local PG 是本地提交数据的权威，不表示已自动同步 Fabric 当前的独立临床 Gold。旧 2026-10-15 Terraform 三项 Plan-only 及 `nb_omop_snapshot_load` 提案属于历史快照产品设计，不能代替 2026-11-05 实存 FHIR Notebook/Pipeline/Lakehouse/Warehouse 的状态。保留 [旧数据流固定 Git 版本](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/8d276dc7a121c15396a9ce328fcfea4688a795ae/documents/architecture/DATA-FLOW.md) 供历史追溯。
 
-- [OneLake Lakehouse Plan 38799966270 attempt2](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38799966270/attempts/2)：`lh_omop_analytics`。
-- [Notebook Plan 38832798550](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38832798550)：`nb_omop_snapshot_load`。
-- [Fabric Data Pipeline Plan 38832801221](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/38832801221)：`pl_omop_snapshot_to_onelake`。
+## E. OpenLineage / Marquez（数据血缘元数据，非业务提交）
 
-Plan 使用现有 OIDC Azure Blob 远程 State（各 root 独立 `dev/<component>.tfstate`），**没有 Apply/Destroy**。实际工作流允许手动选择 `operation=apply`，但本阶段用户仅授权整理文档；不因为 Terraform 已经有代码就自动获准创建云端资源。
+```text
+Local Airflow / standalone Spark OpenLineage  → Marquez API → PG14 metadata → native Web
+Fabric Notebook/Runner future publisher      ────────────────────────┘
+```
 
-## E. 本地与云端之间的明确边界
+A3 Airflow Provider 与 A4 Spark Listener 已有分项真实 Smoke，不能因此宣称整条业务 Job/Run/Dataset I/O 映射成功。Fabric 到 Marquez 的业务级集成、Gold 数据集对应和端到端血缘仍需独立验证。入口：[Portal](../systems/platform-portal/README.md)；开发归属、成本与调度不得混同 Fabric Gold 业务验收。
 
-- 本地 **PostgreSQL 是权威库**；Azure Blob 是云端导出 Landing；OneLake 是分析副本。不要混同 S3 源数据 Landing、PG 数据仓库、Fabric Lakehouse 三种不同职责。
-- 云端不依赖重建 Synthea Producer、再造 Airflow/Spark/OMOP Writer，也不要求同时上线 FHIR/HL7/dbt/ML。
-- Portal 的 OpenLineage/Marquez 首先覆盖本地链路。未来若希望把 Azure/Fabric Pipeline 和 Notebook 纳入相同血缘视图，必须另行设计和验证采集，不把这部分视作已完成。
-- 每一阶段只能在实际 Run、输入/输出和独立数据读回都一致后声明业务 E2E 完成。见 [测试与证据标准](../engineering/development/TESTING-AND-EVIDENCE.md)。
+## F. 验收状态的命名
+
+- **CANONICAL_VALIDATED**：仅指合同/结构检查；不等于 Delta 数据已经成功落地。
+- **SILVER_APPROVED**：已持久化并独立读回两实体数据、DQ/PK/FK 和 Approval 记录。
+- **OMOP_CANDIDATE_VERIFIED**：数据候选及 ID/Mapping/DQ 审核过，**不是** Warehouse COMMITTED。
+- **GOLD_COMMITTED**：唯一受控 Writer 在目标事务中成功提交且经独立 SQL 读回；同版 Replay 不二次写入，未知 ACK 必须先查持久状态。
+
+每一步均使用实际 Source Batch、Processing Version、Publication ID 和精确 SHA；文档和测试的 PASS 不能替代平台物理提交证据。
