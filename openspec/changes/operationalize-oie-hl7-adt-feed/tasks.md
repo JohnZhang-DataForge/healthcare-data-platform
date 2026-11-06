@@ -8,7 +8,7 @@
 - [x] 0.3 docs/spec-only 提案 [PR #733](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/733) 经 Required OpenSpec Change/Static/Links/Index 检查通过并合并 Main `97758b51ca7446669fbe3cbfd19beb82482ed380`；未部署 OIE/Blob/Fabric。
 
 ## Phase 1 — OIE ADT Producer 可操作语义（offline first）
-- [ ] 1.1 评审源 Patient FHIR Profile；实现 PID-7 DOB、PID-8 gender、PID-10 Race、PID-22 Ethnicity 的真实字段映射及缺失/未知/编码系统 Fail-Closed，保留独立 Stable Identity。
+- [x] 1.1 评审源 Patient FHIR Profile；实现 PID-7 DOB、PID-8 gender、PID-10 Race、PID-22 Ethnicity 的真实字段映射及缺失/未知/编码系统 Fail-Closed，保留独立 Stable Identity。**限已验收的冻结 Synthea v3.3.0 Johns Creek 样本**，见 2026-11-06 实证；其它医院/批次或多码字段仍需要单独 Profile 审核。
 - [x] 1.2 完成**离线纯函数**的 versioned `ADT^A01` + `ADT^A03` 业务生成、明确时序及 `PV1-44/45`，源码单测/hl7apy 读回 PASS；现有已部署旧 A01 Channel ID/字节行为保持不动。OIE 新版本实机运行仍是 2.3/2.4 待办。
 - [x] 1.3 新测试 `.github/quality/tests/data-platform/clinical-producers/oie/` 覆盖合成历史完整、in-progress A01-only、编码缺失、标识碰撞、负时间、时区和转义，Node 10/10 + XML 4/4 + 独立 hl7apy 3/3 + legacy 10/10 PASS（新 V2 Channel 实机不在内）。
 - [x] 1.4 对应更新系统 CODE owner、人类 OIE 文档与本 Change tasks；正式离线源码 [PR #735](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/735) 已通过 CI 并合并 main `ea9dda11c0b683de993394a01c275e75250d47bc`。
@@ -83,3 +83,9 @@
 - 新回归覆盖双事件 GET/manifest-last、同 Request/同 SHA Replay、进行中 A01-only、非住院 SKIP、源被修改、PID/时间篡改、漏/额外 Receipt、旧 Channel 不兼容；新测试在 `.github/quality/tests/data-platform/clinical-producers/oie/`，Workflow 复用 `oie-adt-events-v2-unit.yml`。CODE Map 与人类文档同步。**当前只记录候选，不预写 PR/Run/PASS**。
 - 真实冻结 Synthea v3.3.0 Johns Creek FHIR Profile 将由已有 GitHub-hosted `synthea-new-generator-real-smoke.yml` 的只读 aggregate audit 扫描，报告 inpatient、A01/A03 eligibility、DOB/Gender、US Core OMB Race/Ethnicity、时段及代码型 HOLD，不输出 Patient/Encounter 具体数据。Run 只有出现 `PROFILE_COMPATIBLE` 才足以标记 1.1 真源验证；如有 HOLD，1.1 维持 OPEN，并另行审核 Mapping Profile（禁止用历史 FHIR 重播假装修复）。
 - **仍 HOLD：** 未经精确批准不导入新 OIE V2 Channel、不发真实 POST、不声称 OIE 4.7 真实持久 GET、不调用 Azure SDK 写/读、不重放历史 Batch、不修改 Derby/PVC/旧 A01 Channel。2.1/2.2 完整 Operational 与 2.3/2.4 实机 E2E 保持 OPEN；HL7 Parser+dbt → ONE Silver，dbt 后端继续 PENDING。
+
+## 2026-11-06 ET — PR #740 validated source profile and offline V2 bridge (actual CI)
+
+- **真实生成样本字段证据：** GitHub-hosted [Synthea Real Source Run #42231391800](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42231391800) 以 pin Synthea v3.3.0 创建全新临时 Johns Creek FHIR source，`source_handoff` 对 request/source manifest 和文件 SHA 验证成功；匿名只读 V2 Profile Audit 为 `PROFILE_COMPATIBLE`。精确限定 `request_id=ci-johnscreek-fhir-0001`，`source_manifest_sha256=05fe2808331522f2b8dae77c7e844ce0fa2e75081fa41adbedda0e9a49246b81`，31 Encounter、1 合格 IMP（1 A01 + 1 A03）、30 SKIP、0 HOLD；此数据实际证明本次冻结样本 PID-7/8/10/22 和 Encounter start/end **符合 V2 strict Pilot Profile**，不自动延伸到未来全部 Synthea/hospital 来源，且**不是真实 OIE Channel 运行**。
+- **V2 source/persistence/Blob 关联离线 PASS：** [PR #740](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/740)，[Hosted OIE V2 Run #42231391604](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42231391604)；本次新 `test_oie_hl7_publisher_v2.py` 12/12 PASS，包括同一冻结 Manifest 的 2 个不同 A01/A03 OIE Message IDs、每字段来源关联、Fake Blob manifest-last/独立 GET、immutable replay、缺事件/错事件/字段篡改/过期 Source 的 HOLD。其它既有 V2/Legacy/Blob 单元测试也 PASS；OpenSpec/命名/文档归属等 GitHub 检查通过。**上述运行皆为 PR HEAD `7019c076376dfc06c1aad62333df042eab26d8bb` 的离线/Hosted 证据**，并非真实 worker01 OIE/Azure Runtime。
+- **未决安全边界：** 2.1/2.2 保留 OPEN，直到新版本 OIE Channel 真实持久化策略、Event POST IDs 与 Source Manifest 的真实 Runtime 授权关联完全验证；2.3/2.4 共享 worker01/K8s OIE、Derby 和 Azure Storage 仍无授权、不执行 PUT/POST/部署/历史 Replay。Profile PASS 不代表 OIE→Azure E2E、Fabric Silver 或 dbt backend 选型。
