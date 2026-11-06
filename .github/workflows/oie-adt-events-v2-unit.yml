@@ -8,6 +8,7 @@ on:
       - "local-data-platform/apps/clinical_producers/oie/hl7_readback.py"
       - "local-data-platform/apps/clinical_producers/blob_publish_contract.py"
       - "local-data-platform/apps/clinical_producers/oie_event_readback_v2.py"
+      - "local-data-platform/apps/clinical_producers/oie_hl7_publisher_v2.py"
       - ".github/quality/tests/data-platform/clinical-producers/oie/**"
       - ".github/workflows/oie-adt-events-v2-unit.yml"
   workflow_dispatch:
@@ -40,5 +41,7 @@ jobs:
         run: python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_a03_blob_contract.py' -v
       - name: Verify V2 A01/A03 dual-event scoped OIE readback offline
         run: python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_oie_event_readback_v2.py' -v
+      - name: Verify frozen Source Manifest to dual persisted OIE GET to shared Blob bridge
+        run: python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_oie_hl7_publisher_v2.py' -v
       - name: Preserve old A01 mapping against regression (without OIE runtime calls)
         run: node --test local-data-platform/tests/clinical_producers/test_oie_adt_a01.js
