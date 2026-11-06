@@ -214,6 +214,201 @@ def validate_raw_manifest(
     )
 
 
+def map_joined_patient_to_person(joined):
+    """Pure legacy Local Patient→OMOP Person projection for offline parity.
+
+    Caller independently owns approved Source/ID/Concept readback, validation
+    and immutable physical publication; this function performs no I/O or
+    allocation. Preserve original Local mapping exactly until migration gate.
+    """
+    gender_concept = (
+        when(
+            col("p.gender_code") == "M",
+            lit(
+                GENDER_CONCEPTS["M"]
+            ),
+        )
+        .when(
+            col("p.gender_code") == "F",
+            lit(
+                GENDER_CONCEPTS["F"]
+            ),
+        )
+    )
+
+    race_concept = (
+        when(
+            col("p.race_code") == "asian",
+            lit(
+                RACE_CONCEPTS["asian"]
+            ),
+        )
+        .when(
+            col("p.race_code") == "black",
+            lit(
+                RACE_CONCEPTS["black"]
+            ),
+        )
+        .when(
+            col("p.race_code") == "hawaiian",
+            lit(
+                RACE_CONCEPTS["hawaiian"]
+            ),
+        )
+        .when(
+            col("p.race_code") == "white",
+            lit(
+                RACE_CONCEPTS["white"]
+            ),
+        )
+    )
+
+    ethnicity_concept = (
+        when(
+            col("p.ethnicity_code")
+            == "hispanic",
+            lit(
+                ETHNICITY_CONCEPTS[
+                    "hispanic"
+                ]
+            ),
+        )
+        .when(
+            col("p.ethnicity_code")
+            == "nonhispanic",
+            lit(
+                ETHNICITY_CONCEPTS[
+                    "nonhispanic"
+                ]
+            ),
+        )
+    )
+
+
+    return (
+        joined
+        .select(
+            col("m.person_id")
+            .cast("int")
+            .alias(
+                "person_id"
+            ),
+
+            gender_concept
+            .cast("int")
+            .alias(
+                "gender_concept_id"
+            ),
+
+            year(
+                col("p.birth_date")
+            )
+            .cast("int")
+            .alias(
+                "year_of_birth"
+            ),
+
+            month(
+                col("p.birth_date")
+            )
+            .cast("int")
+            .alias(
+                "month_of_birth"
+            ),
+
+            dayofmonth(
+                col("p.birth_date")
+            )
+            .cast("int")
+            .alias(
+                "day_of_birth"
+            ),
+
+            to_timestamp(
+                col("p.birth_date")
+            )
+            .alias(
+                "birth_datetime"
+            ),
+
+            race_concept
+            .cast("int")
+            .alias(
+                "race_concept_id"
+            ),
+
+            ethnicity_concept
+            .cast("int")
+            .alias(
+                "ethnicity_concept_id"
+            ),
+
+            lit(None)
+            .cast(IntegerType())
+            .alias(
+                "location_id"
+            ),
+
+            lit(None)
+            .cast(IntegerType())
+            .alias(
+                "provider_id"
+            ),
+
+            lit(None)
+            .cast(IntegerType())
+            .alias(
+                "care_site_id"
+            ),
+
+            col(
+                "p.source_record_id"
+            )
+            .alias(
+                "person_source_value"
+            ),
+
+            col(
+                "p.gender_code"
+            )
+            .alias(
+                "gender_source_value"
+            ),
+
+            lit(None)
+            .cast(IntegerType())
+            .alias(
+                "gender_source_concept_id"
+            ),
+
+            col(
+                "p.race_code"
+            )
+            .alias(
+                "race_source_value"
+            ),
+
+            lit(None)
+            .cast(IntegerType())
+            .alias(
+                "race_source_concept_id"
+            ),
+
+            col(
+                "p.ethnicity_code"
+            )
+            .alias(
+                "ethnicity_source_value"
+            ),
+
+            lit(None)
+            .cast(IntegerType())
+            .alias(
+                "ethnicity_source_concept_id"
+            ),
+        )
+    )
+
 def main():
     args = parse_args()
 
@@ -577,194 +772,7 @@ def main():
     # 7. Canonical -> OMOP mapping
     # ========================================================
 
-    gender_concept = (
-        when(
-            col("p.gender_code") == "M",
-            lit(
-                GENDER_CONCEPTS["M"]
-            ),
-        )
-        .when(
-            col("p.gender_code") == "F",
-            lit(
-                GENDER_CONCEPTS["F"]
-            ),
-        )
-    )
-
-    race_concept = (
-        when(
-            col("p.race_code") == "asian",
-            lit(
-                RACE_CONCEPTS["asian"]
-            ),
-        )
-        .when(
-            col("p.race_code") == "black",
-            lit(
-                RACE_CONCEPTS["black"]
-            ),
-        )
-        .when(
-            col("p.race_code") == "hawaiian",
-            lit(
-                RACE_CONCEPTS["hawaiian"]
-            ),
-        )
-        .when(
-            col("p.race_code") == "white",
-            lit(
-                RACE_CONCEPTS["white"]
-            ),
-        )
-    )
-
-    ethnicity_concept = (
-        when(
-            col("p.ethnicity_code")
-            == "hispanic",
-            lit(
-                ETHNICITY_CONCEPTS[
-                    "hispanic"
-                ]
-            ),
-        )
-        .when(
-            col("p.ethnicity_code")
-            == "nonhispanic",
-            lit(
-                ETHNICITY_CONCEPTS[
-                    "nonhispanic"
-                ]
-            ),
-        )
-    )
-
-
-    person = (
-        joined
-        .select(
-            col("m.person_id")
-            .cast("int")
-            .alias(
-                "person_id"
-            ),
-
-            gender_concept
-            .cast("int")
-            .alias(
-                "gender_concept_id"
-            ),
-
-            year(
-                col("p.birth_date")
-            )
-            .cast("int")
-            .alias(
-                "year_of_birth"
-            ),
-
-            month(
-                col("p.birth_date")
-            )
-            .cast("int")
-            .alias(
-                "month_of_birth"
-            ),
-
-            dayofmonth(
-                col("p.birth_date")
-            )
-            .cast("int")
-            .alias(
-                "day_of_birth"
-            ),
-
-            to_timestamp(
-                col("p.birth_date")
-            )
-            .alias(
-                "birth_datetime"
-            ),
-
-            race_concept
-            .cast("int")
-            .alias(
-                "race_concept_id"
-            ),
-
-            ethnicity_concept
-            .cast("int")
-            .alias(
-                "ethnicity_concept_id"
-            ),
-
-            lit(None)
-            .cast(IntegerType())
-            .alias(
-                "location_id"
-            ),
-
-            lit(None)
-            .cast(IntegerType())
-            .alias(
-                "provider_id"
-            ),
-
-            lit(None)
-            .cast(IntegerType())
-            .alias(
-                "care_site_id"
-            ),
-
-            col(
-                "p.source_record_id"
-            )
-            .alias(
-                "person_source_value"
-            ),
-
-            col(
-                "p.gender_code"
-            )
-            .alias(
-                "gender_source_value"
-            ),
-
-            lit(None)
-            .cast(IntegerType())
-            .alias(
-                "gender_source_concept_id"
-            ),
-
-            col(
-                "p.race_code"
-            )
-            .alias(
-                "race_source_value"
-            ),
-
-            lit(None)
-            .cast(IntegerType())
-            .alias(
-                "race_source_concept_id"
-            ),
-
-            col(
-                "p.ethnicity_code"
-            )
-            .alias(
-                "ethnicity_source_value"
-            ),
-
-            lit(None)
-            .cast(IntegerType())
-            .alias(
-                "ethnicity_source_concept_id"
-            ),
-        )
-        .cache()
-    )
+    person = map_joined_patient_to_person(joined).cache()
 
 
     # ========================================================

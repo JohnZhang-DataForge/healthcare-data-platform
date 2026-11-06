@@ -49,10 +49,10 @@ jobs:
           import unittest
           suite = unittest.defaultTestLoader.discover(
               '.github/quality/tests/shared-data-engine/parity', pattern='test_*.py')
-          assert suite.countTestCases() >= 7, 'Local/Shared parity tests not discovered'
+          assert suite.countTestCases() >= 9, 'Local/Shared parity tests not discovered'
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful(), 'Local/Shared parity failed'
-          print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_CONTRACT_VISIT_TRANSFORM')
+          print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_VISIT_FULL_TRANSFORM')
           PY
       - name: Pure Multi-Entity Registry and adapter tests (Python 3.11)
         env:
@@ -144,10 +144,10 @@ jobs:
           import unittest
           suite = unittest.defaultTestLoader.discover(
               '.github/quality/tests/shared-data-engine/parity', pattern='test_*.py')
-          assert suite.countTestCases() >= 7, 'Local/Shared parity tests not discovered'
+          assert suite.countTestCases() >= 9, 'Local/Shared parity tests not discovered'
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful(), 'Local/Shared parity failed'
-          print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_CONTRACT_VISIT_TRANSFORM')
+          print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_VISIT_FULL_TRANSFORM')
           PY
           echo 'FABRIC_P3_PY313_SPARK41_OFFLINE_DATAFRAME_AND_OMOP=PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Build and pip-install version 0.1.6 Wheel on Python 3.13

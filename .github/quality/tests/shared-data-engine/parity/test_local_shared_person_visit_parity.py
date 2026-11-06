@@ -1,9 +1,9 @@
 """Local vs Shared Person/Visit contract/transform parity, synthetic and offline.
 
-Only the Local Visit pure transformer can be executed independently today.
-The Local Person mapping remains inside a side-effectful Spark/JDBC main(), so
-Person coverage here compares the source-owned concept constants and frozen
-Person output contract, NOT full Local-to-Shared execution equivalence.
+Both Local Person and Visit pure projections are invoked directly from the
+actual Local production modules and compared with Shared output for every
+column and row. Source validation/physical Writer remain separate runtime
+responsibilities; these synthetic tests do not establish production migration.
 
 No Warehouse/PG/Blob/Delta, no identity allocation and no clinical approval.
 """
@@ -13,6 +13,7 @@ from datetime import date, datetime, timezone
 import hashlib
 import importlib.util
 import json
+import sys
 from pathlib import Path
 import unittest
 
@@ -77,6 +78,13 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
             .config("spark.ui.enabled", "false")
             .config("spark.sql.session.timeZone", "UTC")
             .getOrCreate()
+        )
+        common = str(LOCAL / "common")
+        if common not in sys.path:
+            sys.path.insert(0, common)
+        cls.person_module = _load_local_module(
+            LOCAL / "apps/person/map_canonical_patient_to_omop.py",
+            "local_person_candidate_parity",
         )
         cls.visit_module = _load_local_module(
             LOCAL / "apps/visit/map_encounter_to_visit_candidate.py",
@@ -164,6 +172,21 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
         params.update(updates)
         return build_omop_candidates(**params)
 
+    def local_person(self, patients=None, identity_map=None):
+        # Execute the same pure projection that Local main() invokes.
+        # No Local main(), JDBC, physical write, or identity allocation.
+        local_ids = (self.ids if identity_map is None else identity_map).select(
+            F.col("source_business_key").alias("source_person_id"),
+            F.col("omop_id").alias("person_id"),
+        )
+        joined = (
+            (self.patients if patients is None else patients).alias("p")
+            .join(local_ids.alias("m"),
+                  F.col("p.source_record_id") == F.col("m.source_person_id"),
+                  "left")
+        )
+        return self.person_module.map_joined_patient_to_person(joined)
+
     def local_visit(self, encounters=None):
         # Only the legacy *pure* function is called; never Local main()/JDBC.
         persons = self.ids.select(
@@ -230,20 +253,79 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
         self.assertEqual(local_one.exceptAll(local_two).count(), 0)
         self.assertEqual(local_two.exceptAll(local_one).count(), 0)
 
-    def test_person_shape_and_legacy_code_constants_only(self):
-        # NOT a full runtime Person parity proof: Local Person is JDBC main().
-        person = self.shared().person
+    def test_person_full_schema_and_all_rows_equal_real_local_transform(self):
+        shared = self.shared().person
+        local = self.local_person()
         contract = json.loads(
             (CONTRACTS / "omop/person-v5.4.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(person.columns, [f["name"] for f in contract["fields"]])
-        self.assertEqual(person.count(), 1)
-        row = person.first()
+        self.assertEqual(shared.columns, [f["name"] for f in contract["fields"]])
+        self.assertEqual(shared.columns, local.columns)
+        self.assertEqual(shared.schema, local.schema)
+        self.assertEqual(shared.count(), 1)
+        self.assertEqual(local.exceptAll(shared).count(), 0)
+        self.assertEqual(shared.exceptAll(local).count(), 0)
+        row = shared.first()
         self.assertEqual(row.person_id, 12345)
         self.assertEqual(row.gender_concept_id, self.omop.GENDER_CONCEPTS["M"])
         self.assertEqual(row.race_concept_id, self.omop.RACE_CONCEPTS["white"])
         self.assertEqual(row.ethnicity_concept_id,
                          self.omop.ETHNICITY_CONCEPTS["nonhispanic"])
+
+    def test_person_all_legacy_demographic_combinations_and_replay(self):
+        # Cross product covers 2 gender × 4 race × 2 ethnicity code paths.
+        records, ids = [], []
+        combinations = [
+            (gender, race, ethnicity)
+            for gender in sorted(self.omop.GENDER_CONCEPTS)
+            for race in sorted(self.omop.RACE_CONCEPTS)
+            for ethnicity in sorted(self.omop.ETHNICITY_CONCEPTS)
+        ]
+        self.assertEqual(len(combinations), 16)
+        for idx, (gender, race, ethnicity) in enumerate(combinations):
+            key = f"patient-combo-{idx:02d}"
+            records.append({
+                **_base_record("patient"), "source_record_id": key,
+                "birth_date": date(1980 + idx, (idx % 12) + 1, (idx % 27) + 1),
+                "gender_code": gender, "race_code": race,
+                "ethnicity_code": ethnicity,
+            })
+            ids.append(("PERSON", HOSPITAL, SOURCE, key, 40001 + idx))
+        patients = _canonical_frame(self.spark, "patient", records)
+        identity = self.spark.createDataFrame(
+            ids, self.ids.schema
+        )
+        shared = self.shared(
+            patients=patients, identity_map=identity,
+            encounters=self.encounters.withColumn(
+                "source_person_id", F.lit("patient-combo-00")
+            ),
+            approval={**self.approval, "patient_count": len(records)},
+        ).person
+        local = self.local_person(patients=patients, identity_map=identity)
+        self.assertEqual(shared.schema, local.schema)
+        self.assertEqual(shared.count(), len(records))
+        self.assertEqual(local.count(), len(records))
+        self.assertEqual(local.exceptAll(shared).count(), 0)
+        self.assertEqual(shared.exceptAll(local).count(), 0)
+        replay = self.shared(
+            patients=patients, identity_map=identity,
+            encounters=self.encounters.withColumn(
+                "source_person_id", F.lit("patient-combo-00")
+            ),
+            approval={**self.approval, "patient_count": len(records)},
+        ).person
+        self.assertEqual(shared.exceptAll(replay).count(), 0)
+        self.assertEqual(replay.exceptAll(shared).count(), 0)
+
+    def test_unknown_person_gender_fails_closed_before_shared_candidate(self):
+        bad = self.patients.withColumn("gender_code", F.lit("UNKNOWN"))
+        self.assertEqual(
+            self.local_person(patients=bad)
+            .filter(F.col("gender_concept_id").isNull()).count(), 1
+        )
+        with self.assertRaisesRegex(ValueError, "G5_UNKNOWN_MAPPING_CODE:gender_code"):
+            self.shared(patients=bad)
 
     def test_unknown_visit_class_is_fail_closed_by_shared(self):
         unknown = self.encounters.withColumn("encounter_class", F.lit("unknown"))

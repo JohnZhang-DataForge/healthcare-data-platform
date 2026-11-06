@@ -57,8 +57,8 @@
 
 ## Local / Shared 等价性测试（2026-11-06，合成离线限定）
 
-- [Local Person/Visit Shared parity tests](../../../../.github/quality/tests/shared-data-engine/parity/test_local_shared_person_visit_parity.py)：直接调用既有 Local `map_encounter_to_candidate` 纯函数和 Shared `build_omop_candidates`，使用冻结 Canonical v1 字段定义、现有 Local `visit-class-v1.json` 和 `common/omop.py` 中的概念常量，验证 Visit 完整 Schema/全部字段/重放等价。对未知 Class、跨医院 Identity 和非 Standard Concept 做 fail-closed 负向测试；使用合成、未临床审批的 Profile，绝不授权 Fabric Gold。
-- Local Person 的映射暂时内联于 `local-data-platform/spark/apps/person/map_canonical_patient_to_omop.py::main`（包含 JDBC、Spark 及后续写入）；本轮**只证明 Shared Person 的 OMOP 输出合同及现有 Local 映射常量兼容**，不声称两端 Person 运行时转换已经等价。真正的 Local Person 并行纯转换提炼、受测后迁移、实际 PG/Local 生产切换仍为 OPEN。
+- [Local Person/Visit Shared parity tests](../../../../.github/quality/tests/shared-data-engine/parity/test_local_shared_person_visit_parity.py)：直接调用既有 Local Visit `map_encounter_to_candidate`、从真实 Local Person main 原样抽出的 `map_joined_patient_to_person` 纯函数及 Shared `build_omop_candidates`，使用冻结 Canonical v1 字段定义、现有 Local `visit-class-v1.json` 和 `common/omop.py` 中的概念常量，验证 Person（16 个人口学码交叉组合）与 Visit（10 种 Class）完整 Schema/全部字段/重放等价。对未知 Class、人口学码、跨医院 Identity 和非 Standard Concept 做 fail-closed 负向测试；使用合成、未临床审批的 Profile，绝不授权 Fabric Gold。
+- Local Person 已将原有纯 OMOP 投影从 `local-data-platform/spark/apps/person/map_canonical_patient_to_omop.py::main` 原样抽为同文件 `map_joined_patient_to_person`，现役 main 调用这一函数。离线双 Spark Runtime 覆盖冻结 Schema、16 种合法人口学组合、行数据及 Replay 的 Local/Shared **投影等价**；原 JDBC/Manifest/原始来源验证、数据发布不在此纯函数内，未重写或切换任何 Local 生产系统。真正复用 Shared Wheel 的 Local 部署/交付验收、真实临床 Profile 和物理 Gold/PG/Fabric 写入仍 OPEN。
 - 该测试由现有 Shared Wheel 离线 CI 分别在 Python 3.11/PySpark 3.5.7 与 Python 3.13/PySpark 4.1.1 执行，且不改变唯一 Wheel 0.1.6 的内容、已发布 Fabric 0.1.3、现有 Notebook 或物理数据。
 
 ## P3 Python 3.13 兼容发行版候选（历史阶段；后续 0.1.3 已发布）
