@@ -25,6 +25,9 @@
 ## P2–P5 — 候选、事务、管线
 
 - [ ] 2.1 以真实 Warehouse 完整 ID/Allocator/Gold/Ledger 快照验证跨医院稳定 INT 分配，保留并发 Single-writer fence。
+
+- [x] 2.1a **真实六表 SQL SELECT-only、双连接独立指纹核验（empty-snapshot 子任务）**：Self-Runner [PR #546](https://github.com/JohnZhang-DataForge/Self-Runner/pull/546) 与报告键修复 [PR #547](https://github.com/JohnZhang-DataForge/Self-Runner/pull/547) 已合并；准确控制仓库源码 `15ae0e0a977cbf3250117b1c173339830505b3a3`，真正 Main [Run #42305323595](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42305323595) **completed/success**。复用现有 OIDC/SQL F0 Probe，Warehouse REST 身份 `7a6d08da-278d-4603-8a3b-28640110984c`、DB_NAME SQL 身份、六张固定 SELECT 均 PASS；`etl.identity_map=0`、`etl.id_allocator=0`、`cdm.person=0`、`cdm.visit_occurrence=0`、`etl.batch_ledger=0`、`audit.omop_commit_check=0`。每张表 SHA256 皆为 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`（空记录指纹）；第二条独立 SQL 连接读回完全相等，`P2_INDEPENDENT_SQL_READBACK=PASS`。`P2_IDENTITY_SNAPSHOT=READONLY_PASS_REVIEW_HOLD`，`PROVISIONAL_IDS_PERSISTED=FALSE`，`SQL_DML=NO`、`GOLD_COMMITTED=FALSE`、`CLINICAL_APPROVED=FALSE`。早先首次实机 [Run #42304980210](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304980210) 因输出键名不匹配 **FAIL**，修复后方获得上述实机 PASS；保留历史失败证据。**2.1 主项仍 OPEN**：empty snapshot 证明没有持久身份，不能实测跨医院已持久化稳定 ID/Single-writer Gold 分配；使用既有 F2 Planner/Shared Handoff 的 `PROVISIONAL` 身份只能作为预览，真实提交时必须原子重查快照与单写入者事务。
+
 - [x] 2.2 完成 F2 Preview + 完整 Warehouse Snapshot → G5 Candidate ID Handoff（首次空 Map 的接口鸡生蛋问题），显式区分 PROVISIONAL/PERSISTED，校验 Person/Visit 100/5918、跨医院及 Parent FK；源码纯逻辑实现经 CI/PR 核验并合并后才关闭这一 SOURCE_ONLY 子项，真实 Gold 仍在 P4 OPEN。
 
 - [ ] 3.1 真正 Candidate Delta 物理写入、独立读回、Approval-last、同 Request Replay SKIP。
@@ -85,3 +88,9 @@
 - 在新 Session **先**读最新 Healthcare/Self-Runner main、Active PR/Actions、root/scoped AGENTS、[Safe Operations](../../../documents/engineering/operations/SAFE-OPERATIONS.md) 和 [Session Coordination](../../../documents/engineering/development/SESSION-COORDINATION.md)，再次独立查询 Fabric 当前 Item/Published Wheel/Git HEAD/本地改动/容量状态；上方验收证据是 2026-11-06 的**历史有效记录**，不可替代下一次实际操作前实时 GET。
 - 只在原有 Active OpenSpec 增量改动对应唯一 Owner 源码、测试、README/CODE；先合同与合成/负向回归，再代码 PR/CI/合并，最后单次授权的真实读回或受控写入；禁止重复模块、污染 Local 运行链或采用未批准临床概念。
 - 当前仅确认 **FABRIC_READY_CORE**；仍 **NOT GOLD_COMMITTED / NOT FULL_PIPELINE_E2E / NOT THIRD_ENTITY_DONE**。Local、HL7/dbt、Condition 不作为本轮 FHIR Person/Visit G5 的前置条件。
+
+
+## 2026-11-06 — Fabric 实时部署/来源审计闸门（无业务写入）
+
+- Self-Runner [Workspace GET-only Run #42304980071](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304980071) **SUCCESS**，`env_healthcare` Published/Staging Wheel 均真实读回 **0.1.6**，正式 Notebook、Warehouse、Lakehouse 物理 GUID/类型/名称 REST 可见。**仅物理 Item 身份，未进行本轮 Notebook Definition 内容独立读回**（`G5_NOTEBOOK_DEFINITION_FRESH_READBACK=NOT_RUN`）。该次 Git status 远端 HEAD `840abc45e4c6c74ce9981608143739b1a59cf0c0`、Workspace HEAD `f15d359d12f6116e5e3ccd3af84653f6f015ae3d`；Workspace 四项本地变更：Warehouse Added、Lakehouse Modified、Pipeline Modified、Notebook Modified，remote changes=0。此为该 Run 时间点状态；**禁止无差别 UpdateFromGit**，后续修改 Native Item 前须重新读回四项状态/definition 并保护 Workspace-only Warehouse。此 Run 未进行 Fabric Git/Capacity/Notebook 或 SQL 写入。
+- P1.4 来源审计继续引用真实 [Run #42219030641](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42219030641)：`cdm.vocabulary=47`、空版本 `28`、`audit.vocabulary_source_file=0`（九份物理来源审计记录全缺），需按已冻结 Blob SHA/size/row Manifest 单独核对原始 Athena release、license（尤其 CPT4）、标准标记、Domain 与有效日期；**没有**因此判定源文件丢失。P1.5 clinical reviewer 的 Race/Ethnicity/Visit 目标标准映射未批准，`UNK`、`virtual/home` 和 Wrong Domain 继续 HOLD。禁止任何伪造 Concept Profile/临床值、Candidate 物理写入或 Gold COMMIT；P1.4/P1.5/P3.1/P4.1/P5.1 均仍 OPEN。
