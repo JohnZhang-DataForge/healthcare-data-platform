@@ -109,7 +109,7 @@ class HL7V2RuntimeTests(unittest.TestCase):
         manifest = json.loads(self.blob.read(first["manifest_key"]).data)
         self.assertEqual(manifest["skipped_non_admissions"], 1)
         self.assertEqual(
-            [x["name"] for x in manifest["objects"]],
+            [x["blob_key"].split("/HL7_V2/", 1)[1] for x in manifest["objects"]],
             ["hl7/visit-one-A01.hl7", "hl7/visit-one-A03.hl7"])
         second = self.publish()
         self.assertEqual(second["manifest_create_status"], "ALREADY_MATCHING")
