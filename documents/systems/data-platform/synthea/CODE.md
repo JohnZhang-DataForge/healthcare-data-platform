@@ -196,6 +196,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [build_adt_events_v2_channel.py](../../../../local-data-platform/apps/clinical_producers/oie/build_adt_events_v2_channel.py) | 由已固定 upstream OIE XML 生成**新 Channel ID** 的单事件接收模板；仅离线静态，未部署 |
 | [test_adt_events_v2.js](../../../../.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2.js) | Node.js 新版本业务逻辑与医学日期/代码负向测试 |
 | [test_adt_events_v2_channel.py](../../../../.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2_channel.py) | Python OIE Channel XML 构造/旧 ID 隔离测试 |
+| [test_adt_events_v2_independent_hl7.py](../../../../.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2_independent_hl7.py) | 用 pin 的开源 hl7apy 独立解析 V2 A01/A03 原始字节并核对 PID/PV1 |
 | [oie-adt-events-v2-unit.yml](../../../../.github/workflows/oie-adt-events-v2-unit.yml) | GitHub-hosted 仅 offline CI，无 Azure/worker01/OIE 集群访问 |
 | [OIE Operational ADT V2](../clinical-producers/OIE-OPERATIONAL-ADT-V2.md) | 医院来源格式、A01/A03 事件语义及 Blob / Fabric 待办交付边界 |
 
