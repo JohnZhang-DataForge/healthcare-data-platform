@@ -15,6 +15,7 @@
 - [ ] 1.4 从真实 F1 Warehouse 读回这些 Concept 明细；核对九文件 release/manifest、许可、有效日期、Domain、Vocabulary 审计。
 - [x] 1.7 真实 F1 Warehouse **SQL SELECT-only** lexical discovery PASS：Self-Runner Run `41922120812`，源为固定 G4 Runner `41920328470` 的 59 个真实代码；报告清楚区分 Concept Domain/Standard/Invalid/Validity 与正式临床映射。**不是** 1.4 的 release/license 复核通过，也不是 1.5 Profile 审批。
 - [ ] 1.5 临床映射审查与正式版本 SHA 冻结；未知、不合法、无授权的全部 HOLD；禁止发布伪 Profile。
+- [x] 1.8 F1 Release/Source Provenance 的**纯离线检查工具**：Self-Runner [PR #526](https://github.com/JohnZhang-DataForge/Self-Runner/pull/526) 已合并 main `3613f7bb84753f3cb49d9ff4241ae28b270d60ca`，离线 [Run #42208801101](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42208801101) **12/12 PASS**。实现两条固定只读 `cdm.vocabulary` 与 `audit.vocabulary_source_file` SQL 合同，按既有九份 Blob SHA/Size/Rows 源 Manifest 校验输入，拒绝重复/缺档/版本漂移及多 Release 混合；明确仅 `P1_RELEASE_PROVENANCE_PREFLIGHT_ONLY_NOT_APPROVED`。**本次没有实机 SQL 执行、没有 CPT4 或临床审核**；P1.4 真实版本/许可/来源审计及 P1.5 Mapping 人工审批仍 OPEN。
 
 ## P2–P5 — 候选、事务、管线
 
