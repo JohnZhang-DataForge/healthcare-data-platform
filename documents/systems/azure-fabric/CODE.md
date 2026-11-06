@@ -1,7 +1,7 @@
 ---
 status: active
 scope: azure-fabric-source-map
-last_verified: 2026-11-04
+last_verified: 2026-11-06
 source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 ---
 
@@ -16,8 +16,8 @@ source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 | 组件 | 源码目录 | 唯一组件源码地图 | 约束 |
 | --- | --- | --- | --- |
 | Terraform | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | [Terraform CODE.md](infra-terraform/CODE.md) · [安全设计和历史 Plan](infra-terraform/ARCHITECTURE.md) | 七个 Root/Module，IAM、远程 State、Fabric Item Bootstrap；未证明 Apply |
-| Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Git Native 业务 Notebook 已有完整代码并完成云端双格式读回；正式业务 Notebook Runtime / FHIR→Delta E2E 仍 HALT，未验收 |
-| Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | env_healthcare 中 Wheel 0.1.3 已发布且 Spark 4.1 真实 Import PASS；正式 G4 Silver 与 G5 Source/P1 只读验收有独立证据，Candidate/Gold Pipeline E2E 尚未完成 |
+| Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Git Native Notebook 已完成 0.1.6 双格式定义读回和正式 import-only Spark 4.1 RUNTIME_SMOKE；默认仍 HALT，G5 Candidate/Gold E2E 未完成 |
+| Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | env_healthcare 唯一 Wheel 0.1.6 GA Published/Staging 独立读回、Spark 4.1 真实 Import PASS；G4 Silver/G5 Source 只读验收独立，Candidate/Gold Pipeline E2E 未完成 |
 | Lakehouse | [`lh_omop_analytics.Lakehouse/`](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/) | [Lakehouse native files](../../../azure-fabric/workspaces/healthcare-omop/lh_omop_analytics.Lakehouse/lakehouse.metadata.json) | Native 元数据导出本身不证明 Delta；G4 Silver 与 G5 Source Readonly 的受控业务读回另见相应 OpenSpec，不能外推 Gold E2E |
 | Warehouse (`healthcare-omop` Workspace-only actual item) | [`omop-cdm-5.4/`](../../../azure-fabric/deployment/warehouse/omop-cdm-5.4/) · [`omop-foundation/`](../../../azure-fabric/deployment/warehouse/omop-foundation/) | [Warehouse CODE.md](warehouse/CODE.md) | Existing physical `dw-omop-5.4` Warehouse GUID `7a6d08da-278d-4603-8a3b-28640110984c` in same Workspace. F0 schema 39/432 and F1 Vocabulary 9/9 true SQL readback PASS; these are **SQL/Writer sources, not a `.Warehouse/` Git Native Item**. Protected from Git UpdateFromGit; Gold COMMITTED still not done |
 | Pipelines | [`pl_fhir_ingest.DataPipeline/`](../../../azure-fabric/workspaces/healthcare-omop/pl_fhir_ingest.DataPipeline/) | [Pipelines CODE.md](pipelines/CODE.md) | 原生 Pipeline 已包含 1 个 TridentNotebook Activity；默认 HALT，未执行业务数据管道 |
