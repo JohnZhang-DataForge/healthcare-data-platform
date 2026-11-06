@@ -221,6 +221,70 @@ def map_joined_patient_to_person(joined):
     and immutable physical publication; this function performs no I/O or
     allocation. Preserve original Local mapping exactly until migration gate.
     """
+    gender_concept = (
+        when(
+            col("p.gender_code") == "M",
+            lit(
+                GENDER_CONCEPTS["M"]
+            ),
+        )
+        .when(
+            col("p.gender_code") == "F",
+            lit(
+                GENDER_CONCEPTS["F"]
+            ),
+        )
+    )
+
+    race_concept = (
+        when(
+            col("p.race_code") == "asian",
+            lit(
+                RACE_CONCEPTS["asian"]
+            ),
+        )
+        .when(
+            col("p.race_code") == "black",
+            lit(
+                RACE_CONCEPTS["black"]
+            ),
+        )
+        .when(
+            col("p.race_code") == "hawaiian",
+            lit(
+                RACE_CONCEPTS["hawaiian"]
+            ),
+        )
+        .when(
+            col("p.race_code") == "white",
+            lit(
+                RACE_CONCEPTS["white"]
+            ),
+        )
+    )
+
+    ethnicity_concept = (
+        when(
+            col("p.ethnicity_code")
+            == "hispanic",
+            lit(
+                ETHNICITY_CONCEPTS[
+                    "hispanic"
+                ]
+            ),
+        )
+        .when(
+            col("p.ethnicity_code")
+            == "nonhispanic",
+            lit(
+                ETHNICITY_CONCEPTS[
+                    "nonhispanic"
+                ]
+            ),
+        )
+    )
+
+
     return (
         joined
         .select(
@@ -707,70 +771,6 @@ def main():
     # ========================================================
     # 7. Canonical -> OMOP mapping
     # ========================================================
-
-    gender_concept = (
-        when(
-            col("p.gender_code") == "M",
-            lit(
-                GENDER_CONCEPTS["M"]
-            ),
-        )
-        .when(
-            col("p.gender_code") == "F",
-            lit(
-                GENDER_CONCEPTS["F"]
-            ),
-        )
-    )
-
-    race_concept = (
-        when(
-            col("p.race_code") == "asian",
-            lit(
-                RACE_CONCEPTS["asian"]
-            ),
-        )
-        .when(
-            col("p.race_code") == "black",
-            lit(
-                RACE_CONCEPTS["black"]
-            ),
-        )
-        .when(
-            col("p.race_code") == "hawaiian",
-            lit(
-                RACE_CONCEPTS["hawaiian"]
-            ),
-        )
-        .when(
-            col("p.race_code") == "white",
-            lit(
-                RACE_CONCEPTS["white"]
-            ),
-        )
-    )
-
-    ethnicity_concept = (
-        when(
-            col("p.ethnicity_code")
-            == "hispanic",
-            lit(
-                ETHNICITY_CONCEPTS[
-                    "hispanic"
-                ]
-            ),
-        )
-        .when(
-            col("p.ethnicity_code")
-            == "nonhispanic",
-            lit(
-                ETHNICITY_CONCEPTS[
-                    "nonhispanic"
-                ]
-            ),
-        )
-    )
-
 
     person = map_joined_patient_to_person(joined).cache()
 
