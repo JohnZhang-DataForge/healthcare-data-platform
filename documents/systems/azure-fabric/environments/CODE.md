@@ -8,7 +8,7 @@
 | --- | --- |
 | [env_healthcare.Environment/.platform](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/.platform) | Fabric Git 原生 Environment 元数据，保持 `logicalId` 不变 |
 | [env_healthcare.Environment/Setting/Sparkcompute.yml](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Setting/Sparkcompute.yml) | Spark compute 声明；真实 Staging 读回 Runtime 2.0 |
-| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl) | 唯一 0.1.3 Wheel；Git/CI SHA256 `6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59`，发布后的 Library List 只验证**库名称**，不直接提供 Wheel 文件内容 SHA |
+| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl) | 唯一 0.1.3 Wheel；Git/CI SHA256 `473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff`，发布后的 Library List 只验证**库名称**，不直接提供 Wheel 文件内容 SHA |
 
 新增原生定义要在 CODE 映射中注册。Shared 源码只能在 `shared-data-engine/` 维护，Environment 的 `CustomLibraries/` 仅保存已构建版本制品；避免复制源码或同时保留多个 Wheel。
 
@@ -35,3 +35,8 @@
 ### G5 实机 0.1.3 Spark Runtime Import 验收 — 2026-11-04
 
 [Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) completed SUCCESS: published `env_healthcare` 0.1.3 preflight PASS; ephemeral Notebook exact definition readback PASS, Spark Job **Completed** with `G5_ENGINE_013_SPARK41_IMPORT_PASS`; temporary Notebook cleanup independently PASS. This supersedes previous 0.1.3 import HOLD, **not** the separate G5 business Notebook HALT/Gold COMMIT/Replay gates. Native business `nb_fhir_ingest` continues source-guard 0.1.1 and must be explicitly updated and redeployed before authorized G5 execution.
+
+## G5 0.1.6 staged only in a Git review branch
+This 0.1.6 Wheel replaces 0.1.3 in the Git review branch.
+It is NOT Fabric staged, NOT Environment Published and NOT Notebook imported.
+A separately reviewed Git main sync and Publish is needed.
