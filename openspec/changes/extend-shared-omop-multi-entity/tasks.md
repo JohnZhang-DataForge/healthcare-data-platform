@@ -40,6 +40,7 @@
 - [ ] 4.0b 真实 Cloud Source/Concept/Release/License/Identity Snapshot 物理核实、Wheel 发布、Candidate Delta 写入/独立读回/Approval-last、事务内 Gold COMMIT 分别属于后续运行 Gate，不与 4.0a 混淆。
 
 
+- [ ] 4.0c 增加 Local/Shared Person/Visit **offline synthetic parity gate**：真实调用既有 Local Visit 纯 DataFrame Transformer 与唯一 Shared Candidate，同 Canonical v1 合同及现有 Legacy 访次类别/人口统计映射常量，双 Runtime 校验完整 Visit 字段及重放，未知 Class/跨医院/非 Standard Concept HOLD；Person 暂仅合同与旧常量匹配，**完整 Local Person 映射抽离及行为等价仍 OPEN**。本项只标 SOURCE_ONLY，不执行 Local PG/Fabric SQL/物理 Gold；PR CI 最终成功后才可关闭本子项。
 - [ ] 4.1 维持当前 G4 P100/E5918/Q0 和 Approval 不可变，复用正式 Notebook/Environment 0.1.3+ 经审核发布版本与原 G5 源只读门禁；不冒充多实体 Runtime PASS。
 - [ ] 4.2 真实临床 Mapping Profile 和 Warehouse ID 完整 Snapshot 审核通过后，按 Person/Visit 目标输出 Candidate Delta；独立读回 Count/Keys/Hash/FK，Approval-last、冲突 HOLD、Replay SKIP。
 - [ ] 4.3 将真实 Candidate Evidence 写回现有 G5 OpenSpec，相关 Run/SHA/物理 Delta 路径真实可查；本 Change 只确认公共契约集成。
