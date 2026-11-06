@@ -169,6 +169,35 @@ def submit_v2_new_request(
     return dict(identity, messages=receipts)
 
 
+def verify_v2_receipts_against_frozen_source(
+    state_root: Path, profile_path: Path, request_id: str, *,
+    run_id: str, expected_source_manifest_sha256: str, document: dict,
+) -> list[OIEV2EventReceipt]:
+    """Recompute expected event coverage from immutable source before ANY GET.
+
+    The document must come directly from the approved single-attempt controller,
+    never a guessed/reconstructed list of historical OIE Message IDs.
+    """
+    identity, events = prepare_v2_new_events(
+        state_root, profile_path, request_id, run_id=run_id,
+        expected_source_manifest_sha256=expected_source_manifest_sha256)
+    if (not isinstance(document, dict)
+            or document.get("skipped_non_admissions") !=
+               identity["skipped_non_admissions"]
+            or document.get("event_count") != identity["event_count"]):
+        raise OIEPostBlocked("OIE_V2_RECEIPT_SOURCE_EVENT_COVERAGE_HOLD")
+    try:
+        handoff = verify_handoff(
+            Path(state_root), Path(profile_path), request_id)
+    except Exception:
+        raise OIEPostBlocked("OIE_V2_RECEIPT_SOURCE_CHANGED_HOLD") from None
+    return verified_v2_post_receipts(
+        document, run_id=run_id, request_id=request_id,
+        handoff=handoff,
+        expected_events=[(eid, event_type) for eid, event_type, _ in events],
+    )
+
+
 def verified_v2_post_receipts(
     document: dict, *, run_id: str, request_id: str,
     handoff: dict, expected_events: list[tuple[str, str]],
