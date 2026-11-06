@@ -1,7 +1,7 @@
-"""OFFLINE ONLY: 0.1.3 effective Fabric Native Notebook vs 0.1.6 source release boundary.
+"""OFFLINE ONLY: 0.1.3 effective HALT Notebook vs sole 0.1.6 Git-staged release.
 
-Tests use the one already-staged Git Native 0.1.3 Wheel; source 0.1.6 is
-exercised separately in another CI job / installed environment. These probes
+Tests use the immutable historical 0.1.3 Wheel for the Notebook while the
+sole Git-native candidate is 0.1.6; these are not simultaneously Published. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
 """
@@ -27,7 +27,7 @@ SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
 PUBLISHED_VERSION = "0.1.3"
 SOURCE_CANDIDATE_VERSION = "0.1.6"
 PINNED_WHEEL_SHA256 = (
-    "6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59")
+    "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff")
 
 
 class G5NativeWheelIsolation(unittest.TestCase):
@@ -49,7 +49,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         wheel_files = sorted(LIBS.glob("*.whl"))
         self.assertEqual(
             [p.name for p in wheel_files],
-            [f"healthcare_data_engine-{PUBLISHED_VERSION}-py3-none-any.whl"])
+            [f"healthcare_data_engine-{SOURCE_CANDIDATE_VERSION}-py3-none-any.whl"])
         self.assertEqual(
             hashlib.sha256(wheel_files[0].read_bytes()).hexdigest(),
             PINNED_WHEEL_SHA256)
