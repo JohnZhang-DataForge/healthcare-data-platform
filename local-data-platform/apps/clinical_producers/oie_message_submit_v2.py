@@ -200,13 +200,27 @@ def verified_v2_post_receipts(
             or type(document["skipped_non_admissions"]) is not int
             or document["skipped_non_admissions"] < 0):
         raise OIEPostBlocked("OIE_V2_RECEIPT_COUNT_HOLD")
+    if (not isinstance(expected_events, list) or
+            any(not isinstance(x, tuple) or len(x) != 2
+                or not isinstance(x[0], str) or x[1] not in {"A01", "A03"}
+                for x in expected_events)):
+        raise OIEPostBlocked("OIE_V2_EXPECTED_EVENT_COVERAGE_HOLD")
     expected = set(expected_events)
-    if len(expected) != len(expected_events) or len(expected) != len(messages):
+    admissions = {eid for eid, event_type in expected if event_type == "A01"}
+    if (len(expected) != len(expected_events) or len(expected) != len(messages)
+            or any(event_type == "A03" and (eid, "A01") not in expected
+                   for eid, event_type in expected)
+            or type(handoff.get("metrics", {}).get("fhir_encounters")) is not int
+            or document["skipped_non_admissions"] !=
+               handoff["metrics"]["fhir_encounters"] - len(admissions)):
         raise OIEPostBlocked("OIE_V2_EXPECTED_EVENT_COVERAGE_HOLD")
     found, ids, receipts = set(), set(), []
     for row in messages:
         if (not isinstance(row, dict)
                 or set(row) != {"source_encounter_id", "event_type", "message_id"}):
+            raise OIEPostBlocked("OIE_V2_RECEIPT_SHAPE_HOLD")
+        if (not isinstance(row["source_encounter_id"], str)
+                or not isinstance(row["event_type"], str)):
             raise OIEPostBlocked("OIE_V2_RECEIPT_SHAPE_HOLD")
         key = (row["source_encounter_id"], row["event_type"])
         msg = row["message_id"]
