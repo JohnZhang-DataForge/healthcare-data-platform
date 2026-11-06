@@ -57,7 +57,7 @@ Azure Exporter/Fabric = 独立分析副本链路
 ## 四、执行与验收
 
 - 在创建新文件之前，Agent 先说明它属于哪个组件、负责什么功能；使用**功能名**组织路径、公共函数、DAG ID、镜像和新测试。
-- [CI 命名检查](../../../.github/workflows/code-component-naming-check.yml) 用 [Python 检查器](../../../.github/quality/scripts/check_new_code_names.py) 对 PR 的**新增源码路径**拒绝 `taskNNN` / `stepNNN`；**不追溯阻断既有文件**。函数/变量、文本内部新名字由 Reviewer/Agent 依据本规范复核。
+- [既有 Component Code Naming 检查](../../../.github/workflows/code-component-naming-check.yml) 与 [原检查器](../../../.github/quality/scripts/check_new_code_names.py) 在 PR 分支执行新增源码路径拒绝规则，保留原有历史兼容机制；**它不是 Required/可信执行的强制边界**。本次新增默认分支独立 [Trusted Component Source Structure Gate](../../../.github/workflows/component-source-structure-trusted.yml) 和 [可信策略脚本](../../../.github/quality/scripts/check_new_source_structure_trusted.py)：覆盖 Local DP、Fabric、Shared Engine、Portal、质量测试和 CI 文件，检查新增文件路径，也检查新增业务源码直接引用旧 Task Python 模块/旧源码路径。该新检查在 Ruleset #25365902 明确新增为 Required 且真实负向 PR 被阻断之前，必须标为 **PENDING / NOT REQUIRED**。
 - 任务号允许出现在 PR、OpenSpec Change 的开发追踪、日志、历史证据。新正式脚本和测试**不允许**继续放入新建的 `scripts/taskNNN/` 或 `tests/taskNNN/`。
 - 保持已验收 DAG ID、镜像 Digest、老数据库表/函数 `etl.task004_*`、Batch Identity；涉及兼容变更必须独立设计版本、回退、单测和必要的 Runtime 验收，不自行重放冻结 Batch。
 - 对代码的真正迁移先制作依赖列表，再按模块逐 PR 执行。文档重建与代码重命名**不等于**获得运行 K8s/PG/Azure 的授权。

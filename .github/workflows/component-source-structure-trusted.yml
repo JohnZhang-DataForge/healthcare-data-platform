@@ -1,0 +1,41 @@
+name: Human-first Component Path Trusted Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  require-trusted-component-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout trusted default-branch policy and tests
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: policy
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Checkout candidate PR only as Git data
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Run trusted positive and negative structure tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s policy/.github/quality/tests -p 'test_new_source_structure_trusted.py' -v
+      - name: Inspect PR tree and newly introduced source as passive data
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 policy/.github/quality/scripts/check_new_source_structure_trusted.py \
+            --repo-root "$GITHUB_WORKSPACE/candidate" \
+            --base "$BASE_SHA" --head "$HEAD_SHA"
