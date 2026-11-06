@@ -238,7 +238,7 @@ def prepare_batch(spark, *, context: BatchContext, manifest_bytes: bytes,
                   source_objects: Iterable[SourceObject],
                   patient_contract_bytes: bytes, encounter_contract_bytes: bytes) -> PreparedBatch:
     """Offline-executable conversion using injected SparkSession, no persisted output."""
-    if engine_version != "0.1.3":
+    if engine_version != "0.1.6":
         raise ValueError("SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH")
     objects = tuple(source_objects)
     receipts = verify_source_objects(manifest_bytes, objects, context)
@@ -408,7 +408,7 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
     if (mode == "BRONZE_READBACK_ONLY" and
             (allow_write is not False or retention_ok is not False)):
         raise RuntimeError("HOLD_G3_READBACK_FLAGS_NOT_READONLY")
-    if (engine_version != "0.1.3" or not isinstance(manifest_sha, str)
+    if (engine_version != "0.1.6" or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
         raise RuntimeError("HOLD_G3_ENGINE_OR_MANIFEST_PIN_INVALID")
@@ -584,7 +584,7 @@ def _g4_independent_silver_readback(spark, paths: dict[str, str],
 
 
 # G4.c physical Delta rejection of isolated synthetic missing-DOB source.
-# Transform/conversion remains wholly inside Shared Engine 0.1.3.
+# Transform/conversion remains wholly inside Shared Engine 0.1.6.
 def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
                                derivation_sha: str, mode: str,
                                allow_write: bool, retention_ok: bool,
@@ -602,7 +602,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
     paths = _g4_paths(request)
     writable = mode == "SILVER_DQ_QUARANTINE_WRITE"
     if (allow_write is not writable or retention_ok is not writable
-            or engine_version != "0.1.3"
+            or engine_version != "0.1.6"
             or not isinstance(manifest_sha, str)
             or not isinstance(derivation_sha, str)
             or len(manifest_sha) != 64 or len(derivation_sha) != 64
@@ -732,7 +732,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
             or (mode == "SILVER_READBACK_ONLY" and
                 (allow_write is not False or retention_ok is not False))):
         raise RuntimeError("HOLD_G4_BOOLEAN_WRITE_GATES")
-    if (engine_version != "0.1.3" or not isinstance(manifest_sha, str)
+    if (engine_version != "0.1.6" or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
         raise RuntimeError("HOLD_G4_ENGINE_OR_MANIFEST_PIN")
@@ -913,7 +913,7 @@ def verify_fhir_g5_candidate_source_readonly(
     """
     if (request != _G5_APPROVED_REQUEST
             or manifest_sha != _G5_APPROVED_MANIFEST_SHA
-            or engine_version != "0.1.3"
+            or engine_version != "0.1.6"
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or allow_write is not False
             or retention_ok is not False
@@ -1317,13 +1317,13 @@ def validate_read_only_runtime_smoke(*, mode: str, allow_write: bool,
             or any(value != "" for value in (request, manifest, source, target))):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_UNSAFE_PARAMETERS")
     import pyspark
-    if engine_version != "0.1.3":
+    if engine_version != "0.1.6":
         raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION")
     if not pyspark.__version__.startswith("4.1."):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_SPARK_VERSION")
     if not callable(parse_fhir_resources) or not callable(normalize_fhir_patient):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_ENGINE_IMPORT_INVALID")
-    return "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_013_SPARK41_PASS_20261104"
+    return "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_016_SPARK41_PASS_20261106"
 
 
 def _frozen_fhir_source_context(spark, request: str):
@@ -1338,7 +1338,7 @@ def _frozen_fhir_source_context(spark, request: str):
     }
     if not isinstance(request, str) or request not in frozen:
         raise RuntimeError("HOLD_FHIR_INTAKE_REQUEST_NOT_PINNED")
-    if engine_version != "0.1.3":
+    if engine_version != "0.1.6":
         raise RuntimeError("HOLD_FHIR_INTAKE_WHEEL_MISMATCH")
     expected_manifest_sha, expected_objects = frozen[request]
     prefix = "Files/fhir_landing/clinical/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/" + request
