@@ -263,3 +263,53 @@ def verified_v2_post_receipts(
     if found != expected:
         raise OIEPostBlocked("OIE_V2_RECEIPT_COVERAGE_HOLD")
     return receipts
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Explicit one-shot CLI for a separately approved V2 OIE Sender Job.
+
+    No automatic retry or resuming a partially submitted Request. Message IDs
+    are only ACK receipts, not accepted Blob or verified OIE durable data.
+    """
+    import argparse
+    import os
+    import sys
+
+    p = argparse.ArgumentParser(description="One-shot OIE ADT V2 A01/A03 source events")
+    p.add_argument("--state-root", required=True, type=Path)
+    p.add_argument("--profile", required=True, type=Path)
+    p.add_argument("--request-id", required=True)
+    p.add_argument("--run-id", required=True)
+    p.add_argument("--channel-id", required=True)
+    p.add_argument("--expected-source-manifest-sha256", required=True)
+    args = p.parse_args(argv)
+    try:
+        if args.channel_id != CHANNEL_ID:
+            raise OIEPostBlocked("OIE_V2_UNAPPROVED_CHANNEL")
+        scope = os.environ
+        if not all(scope.get(name) for name in (
+                "OIE_SCOPED_USERNAME", "OIE_SCOPED_PASSWORD",
+                "OIE_TRUSTED_CA_FILE")):
+            raise OIEPostBlocked("OIE_V2_SCOPED_TLS_IDENTITY_REQUIRED")
+        poster = ScopedOIEV2Poster(
+            username=scope["OIE_SCOPED_USERNAME"],
+            password=scope["OIE_SCOPED_PASSWORD"],
+            ca_file=Path(scope["OIE_TRUSTED_CA_FILE"]))
+        receipt = submit_v2_new_request(
+            args.state_root, args.profile, args.request_id,
+            run_id=args.run_id, channel_id=args.channel_id,
+            expected_source_manifest_sha256=args.expected_source_manifest_sha256,
+            poster=poster)
+    except Exception:
+        # Source names, raw HL7/FHIR and OIE/HTTP credentials never reach logs.
+        print("OIE_V2_POST_RESULT=HOLD_NO_RETRY", file=sys.stderr)
+        return 1
+    print("OIE_V2_NEW_REQUEST_RECEIPTS_JSON=" +
+          json.dumps(receipt, sort_keys=True, separators=(",", ":")))
+    print("OIE_V2_POST_RESULT=ALL_EVENTS_ACKNOWLEDGED")
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+    sys.exit(main())
