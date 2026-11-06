@@ -57,9 +57,14 @@ The initial generic contract accepts root-level `nb_*.Notebook` items only; movi
 - Only an actual separately controlled Fabric Spark run returning exact `FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_APPROVAL_DELTA_PASS_20261104` plus independent job verification can close the live gate. Read-only G5 source success is **not** candidate write or F2/F3 Warehouse success. See [G5 OpenSpec](../../../../openspec/changes/fabric-g5-approved-silver-omop-candidate/tasks.md). Keep Native Notebook's 2 ordinary cells, 1 Parameters Cell, all metadata separators and default HALT intact.
 
 
+## G5 0.1.3 published / 0.1.6 candidate isolation (source-only)
+
+- [Notebook Offline CI](../../../../.github/workflows/fabric-fhir-notebook-offline.yml) uses **two independent installed Wheel environments**: the one already-published Git Native `0.1.3` SHA-verified binary for all native HALT/G3/G4 tests; reproducibly built source-only `0.1.6` for G5 Candidate import/test on Python 3.13 / Spark 4.1. The legacy Notebook must explicitly reject the 0.1.6 package before any Spark/Delta/Cloud I/O until a separately approved Native source upgrade. The older `0.1.3` binary is **not rebuilt from current `0.1.6` sources**.
+- [Release isolation regression](../../../../.github/quality/tests/azure-fabric/notebook/test_g5_release_isolation.py) checks sole staged Git wheel SHA, both version metadata values, HALT and fail-closed G3/G5/smoke guards without cloud execution. This is a source-only release preflight; it neither publishes a new Environment Wheel nor changes any native Notebook file. A future Notebook update would trigger [Fabric Git dispatcher](../../../../.github/workflows/fabric-git-deploy.yml), requiring separate user coordination and live side-effect review. G4 historical processing `engine-0.1.1` stays immutable.
+
 ## P3 统一测试归属（2026-11-04）
 
-上述 Notebook、G3、G4、G5 的离线测试文件现仅在 `.github/quality/tests/azure-fabric/notebook/` 维护；`azure-fabric/notebook-development/` 中的 `fhir_ingest_notebook.py` 和 `native_item_readiness.py` **仍是实际离线辅助源码**，不因测试迁移而移动。CI 执行文件是 [Fabric Notebook Offline Contract](../../../../.github/workflows/fabric-fhir-notebook-offline.yml)，必须断言 8 个测试文件与至少 87 个可发现用例，避免空测试集 PASS。
+上述 Notebook、G3、G4、G5 的离线测试文件现仅在 `.github/quality/tests/azure-fabric/notebook/` 维护；`azure-fabric/notebook-development/` 中的 `fhir_ingest_notebook.py` 和 `native_item_readiness.py` **仍是实际离线辅助源码**，不因测试迁移而移动。CI 执行文件是 [Fabric Notebook Offline Contract](../../../../.github/workflows/fabric-fhir-notebook-offline.yml)，必须断言 9 个测试文件与至少 89 个可发现用例，避免空测试集 PASS。
 
 
 ### P4 原位保留决定
