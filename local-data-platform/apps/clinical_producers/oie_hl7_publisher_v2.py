@@ -57,8 +57,8 @@ def _escape(value: str) -> str:
     if not isinstance(value, str) or re.search(r"[\x00-\x1f\x7f]", value):
         _blocked("PATIENT_NAME_UNSAFE")
     return "".join({
-        "\\": r"\E\", "|": r"\F\", "^": r"\S\",
-        "~": r"\R\", "&": r"\T\",
+        "\\": "\\E\\", "|": "\\F\\", "^": "\\S\\",
+        "~": "\\R\\", "&": "\\T\\",
     }.get(c, c) for c in value)
 
 
