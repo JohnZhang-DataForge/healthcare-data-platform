@@ -38,6 +38,18 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/shared-env/bin/python" -m unittest discover -s shared-data-engine/tests -p 'test_*.py' -v
+      - name: Pure Multi-Entity Registry and adapter tests (Python 3.11)
+        env:
+          PYTHONPATH: shared-data-engine/src
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/shared-env/bin/python" - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.discover(".github/quality/tests/shared-data-engine", pattern="test_*.py")
+          assert suite.countTestCases() >= 14, "Multi-Entity new tests missing or not discovered"
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful(), "Multi-Entity Registry/Adapter tests failed"
+          PY
       - name: Build sole Shared Wheel with pinned offline build tools
         run: |
           set -euo pipefail
@@ -55,10 +67,10 @@ jobs:
           set -euo pipefail
           "$RUNNER_TEMP/shared-env/bin/pip" install --no-index --no-deps --force-reinstall dist/*.whl
           cd "$RUNNER_TEMP"
-          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.3"; print("WHEEL_IMPORT_PASS",h.__version__,h.__file__)'
+          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.4"; print("WHEEL_IMPORT_PASS",h.__version__,h.__file__)'
       - uses: actions/upload-artifact@v4
         with:
-          name: healthcare-data-engine-0.1.3-wheel-sha
+          name: healthcare-data-engine-0.1.4-wheel-sha
           path: |
             dist/*.whl
             dist/SHA256SUMS
@@ -86,6 +98,18 @@ jobs:
           python -c 'import healthcare_data_engine as h; print("FABRIC_P3_PY313_PURE_IMPORT_PASS", h.__version__)'
           python -m unittest discover -s shared-data-engine/tests -p 'test_fhir_r4_contract.py' -v
           echo 'FABRIC_P3_PY313_PURE_SYNTHETIC_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Pure Multi-Entity Registry tests on Python 3.13
+        env:
+          PYTHONPATH: shared-data-engine/src
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.discover(".github/quality/tests/shared-data-engine", pattern="test_*.py")
+          assert suite.countTestCases() >= 14, "Multi-Entity new tests missing or not discovered"
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful(), "Multi-Entity Registry/Adapter tests failed"
+          PY
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -101,7 +125,7 @@ jobs:
           python -m unittest discover -s shared-data-engine/tests -p 'test_spark_dataframe.py' -v
           python -m unittest discover -s shared-data-engine/tests -p 'test_omop_candidates.py' -v
           echo 'FABRIC_P3_PY313_SPARK41_OFFLINE_DATAFRAME_AND_OMOP=PASS' >> "$GITHUB_STEP_SUMMARY"
-      - name: Build and pip-install version 0.1.3 Wheel on Python 3.13
+      - name: Build and pip-install version 0.1.4 Wheel on Python 3.13
         shell: bash
         env:
           SOURCE_DATE_EPOCH: '1704067200'
@@ -111,13 +135,13 @@ jobs:
           mkdir -p "$RUNNER_TEMP/fabric-p3-py313-wheel"
           python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/fabric-p3-py313-wheel" ./shared-data-engine
           sha256sum "$RUNNER_TEMP"/fabric-p3-py313-wheel/*.whl
-          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP"/fabric-p3-py313-wheel/healthcare_data_engine-0.1.3-py3-none-any.whl
+          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP"/fabric-p3-py313-wheel/healthcare_data_engine-0.1.4-py3-none-any.whl
           cd "$RUNNER_TEMP"
           PYTHONPATH= python - <<'PY'
           import healthcare_data_engine as h
           from importlib import metadata
-          assert h.__version__ == "0.1.3", h.__version__
-          assert metadata.version("healthcare-data-engine") == "0.1.3"
+          assert h.__version__ == "0.1.4", h.__version__
+          assert metadata.version("healthcare-data-engine") == "0.1.4"
           requires_python = metadata.metadata("healthcare-data-engine")["Requires-Python"]
           assert ">=3.10" in requires_python and "<3.14" in requires_python, requires_python
           optional_dependencies = metadata.requires("healthcare-data-engine") or []
@@ -128,7 +152,7 @@ jobs:
           PY
           echo 'FABRIC_P3_PY313_WHEEL_INSTALL_IMPORT=PASS' >> "$GITHUB_STEP_SUMMARY"
           echo 'FABRIC_P3_PY313_OPTIONAL_SPARK_MARKERS=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Python 3.13 pip installed the 0.1.3 Wheel; no Fabric Environment or Notebook was changed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Python 3.13 pip installed the 0.1.4 Wheel; no Fabric Environment or Notebook was changed.' >> "$GITHUB_STEP_SUMMARY"
       - name: Inspect packaging metadata separately from source import
         shell: bash
         run: |
@@ -141,7 +165,7 @@ jobs:
           print("FABRIC_RUNTIME_2_TARGET_PYTHON=3.13")
           print("SOURCE_PACKAGE_VERSION=" + project["version"])
           print("SOURCE_REQUIRES_PYTHON=" + spec)
-          if spec == ">=3.10,<3.14" and project["version"] == "0.1.3":
+          if spec == ">=3.10,<3.14" and project["version"] == "0.1.4":
               outcome = "PYTHON313_WHEEL_METADATA_ALLOWED"
           else:
               outcome = "HOLD_RELEASE_METADATA_UNREVIEWED"

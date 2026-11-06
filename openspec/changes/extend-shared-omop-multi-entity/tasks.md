@@ -11,8 +11,8 @@
 
 ## 2. PR2 — 最小 Shared Entity Registry / Candidate API
 
-- [ ] 2.1 提供仅声明式、显式注册的 Person/Visit `EntityDefinition` / Registry，支持一个来源实体映射多个目标表及多输出 stable derived key，不引入自动 SQL/动态 import/第二轮空框架。
-- [ ] 2.2 增加统一 `EntityCandidateSet` 输出/一致性校验，现有 `build_omop_candidates` / `OmopCandidates` 接口仍兼容；明确 Entity、Source、Processing SHA 与审批证据。
+- [x] 2.1 提供仅声明式、显式注册的 Person/Visit `EntityDefinition` / Registry，支持一个来源实体映射多个目标表及多输出 stable derived key，不引入自动 SQL/动态 import/第二轮空框架。
+- [x] 2.2 增加统一 `EntityCandidateSet` 输出/一致性校验，现有 `build_omop_candidates` / `OmopCandidates` 接口仍兼容；明确 Entity、Source、Processing SHA 与审批证据。
 - [ ] 2.3 在 `.github/quality/tests/shared-data-engine/` 添加正负向、注册冲突、重复键、一对多、不同输入顺序以及现有 Person/Visit 回归；执行双 PySpark 版本与 Wheel 构建验证；更新唯一 CODE.md。
 
 ## 3. PR3 — Identity / Concept / FK 公共能力
@@ -46,4 +46,4 @@
 ## Evidence / boundaries
 
 - PR1 baseline：Healthcare main `52b113d07c6d959c86201dfd7e17137bebdb2721`；G4 已验收 Silver P100/E5918/Q0、正式 Wheel 0.1.3 Import、F0/F1 基础/Vocabulary 与 F2 合成 ROLLBACK；P1 正式临床 Map、G5 实体 Candidate、Gold COMMIT/全 E2E **仍 OPEN**。
-- PR1 的 Git-only 文件变更、PR/CI/HEAD/合并证据应在 1.4 完成后补充；不要提前把 CI 或 Cloud 标记为通过。现场任何 Azure/Fabric、PG/Local/Capacity、K8s/Blob 操作必须依照 `SAFE-OPERATIONS` 与 `SESSION-COORDINATION` 单独授权。
+- PR1 已通过静态 Required Checks 并合并（见 1.4）；PR2 当前为源代码候选，新增 CI、Wheel 构建与版本验收仍在 2.3 OPEN，绝非 Fabric Cloud 发布。现场任何 Azure/Fabric、PG/Local/Capacity、K8s/Blob 操作必须依照 `SAFE-OPERATIONS` 与 `SESSION-COORDINATION` 单独授权。
