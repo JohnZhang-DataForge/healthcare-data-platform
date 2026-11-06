@@ -1,5 +1,7 @@
 # Public read-only Marquez Web
 
+> **Directory cutover (2026-11-05):** This material was moved from `platform-portal/portal/web/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/platform-portal/portal/web/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 Source of the public UI overlay and dedicated image, derived from official Marquez Web 0.51.1 (Apache-2.0, digest pinned). Original private LAN Web is unchanged. No local tunnel, gateway configuration, credentials, network addresses or real metadata are stored here.
 
 The public variant hides Delete Job/Dataset, Edit Tag, Tag Submit/deletion, Tag editing input and raw Events navigation (currently denied by Gateway). Dashboard, Jobs, Datasets, Run History, Table/Column Lineage, filters, refresh, zoom and navigation stay available.
@@ -25,7 +27,7 @@ Upstream: https://github.com/MarquezProject/marquez/tree/0.51.1/web
 
 ## Isolated LAN trial (no Cloudflare switch)
 
-Kubernetes source: [kubernetes/lan.yaml](kubernetes/lan.yaml). It creates only three named resources in `dw-marquez`: `Deployment/marquez-public-web`, `Service/marquez-public-web` (ClusterIP) and `Service/marquez-public-web-lan` (NodePort **31080**). Selectors use the separate label `app.kubernetes.io/name=marquez-public-web`, distinct from the Helm original `marquez-web` and LAN NodePort 30999.
+Kubernetes source: [kubernetes/lan.yaml](../../../../platform-portal/portal/web/kubernetes/lan.yaml). It creates only three named resources in `dw-marquez`: `Deployment/marquez-public-web`, `Service/marquez-public-web` (ClusterIP) and `Service/marquez-public-web-lan` (NodePort **31080**). Selectors use the separate label `app.kubernetes.io/name=marquez-public-web`, distinct from the Helm original `marquez-web` and LAN NodePort 30999.
 
 Upstream API is the existing cluster-local Marquez port 80; this Deployment does not run an API, connect to PG14 directly or change original API/Web/Cloudflare Gateway/Secret. The image is pinned to the verified GHCR manifest digest. No Helm upgrade, existing Service patch, Cloudflare change or business data operation is part of this rollout.
 

@@ -1,5 +1,7 @@
 # Eclipse OIE 4.7.0 — source-pinned image (isolated smoke only)
 
+> **Directory cutover (2026-11-05):** This material was moved from `local-data-platform/images/oie/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/local-data-platform/images/oie/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 ## Immutable upstream baseline
 
 - Official upstream repository: `OpenIntegrationEngine/engine`
@@ -18,7 +20,7 @@ a pinned packaged release, but are **not yet used** by this smoke.
 ## Source-build gate
 
 The Healthcare GitHub-hosted workflow
-[`oie-470-isolated-image-smoke.yml`](../../../.github/workflows/oie-470-isolated-image-smoke.yml)
+[`oie-470-isolated-image-smoke.yml`](../../../../.github/workflows/oie-470-isolated-image-smoke.yml)
 checks out the exact commit and runs the *upstream*
 `docker build --target jre-run`, without modifying upstream source
 or pushing any image. It separately verifies the built image's

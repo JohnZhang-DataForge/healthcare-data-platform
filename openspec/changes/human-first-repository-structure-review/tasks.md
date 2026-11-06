@@ -3,7 +3,7 @@
 ## P0 — Structure audit and reviewed model
 - [x] 0.1 Inspect latest main, PRs and Git tree by every root/system; capture baseline numbers and exact paths.
 - [x] 0.2 Identify 223 legacy `taskNNN` paths, nine source README, 35 OpenSpec active changes and stale root ownership/long history problems.
-- [ ] 0.3 Merge full baseline, human-first target taxonomy and root navigation after real Required Checks; commit now contains an accurate index, but merge/readback pending.
+- [x] 0.3 PR #709 merged protected main `10482bcd41ebe9cdbd6a06282bc26144b0f4736e`: all three Required Checks, OpenSpec, links and source-closure PASS; root map and exact full audit present.
 
 ## P1 — Repo-wide human navigation and current ownership
 - [x] 1.1 Fix stale Warehouse/Deployment references in root AGENTS, Documentation Governance and Developer CODE; preserve all safety restrictions; review PR merge pending.
@@ -11,8 +11,8 @@
 - [ ] 1.3 Shorten duplicated current-vs-history summaries without discarding accepted evidence; keep release states accurate.
 
 ## P2 — Centralize duplicate source READMEs
-- [ ] 2.1 Migrate six Local DP source-area READMEs into central system/owner docs, preserve unique code/setup/security/runbook content and correct links.
-- [ ] 2.2 Migrate three Portal source-area READMEs similarly and update authoritative CODE maps.
+- [x] 2.1 Six Local DP source READMEs relocated with unchanged substantive content, immutable original SHA permalink and central Clinical Producers/Synthea owners; final PR #710 review pending.
+- [x] 2.2 Three Portal READMEs moved to centralized documentation and component CODE maps updated; one Public Web concise current overview plus full implementation history; final PR #710 review pending.
 - [ ] 2.3 Prove no source/runtime blobs changed, docs links PASS, archived historical cross-links remain resolvable, no deleted source README can be reintroduced.
 
 ## P3 — Active OpenSpec hygiene

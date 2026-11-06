@@ -1,5 +1,7 @@
 # OIE v4.7.0 single-PVC persistent phase (worker01 only)
 
+> **Directory cutover (2026-11-05):** This material was moved from `local-data-platform/kubernetes/manifests/oie/persistent/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/local-data-platform/kubernetes/manifests/oie/persistent/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 Live read-only evidence: [Self-Runner #40121142405](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40121142405)
 confirms `local-path-storage/local-path-config` already includes
 `storageClassConfigs.oie.nodePathMap` with **worker01:

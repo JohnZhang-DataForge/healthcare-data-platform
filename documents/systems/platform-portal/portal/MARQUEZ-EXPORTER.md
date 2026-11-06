@@ -1,5 +1,7 @@
 # Marquez read-only exporter
 
+> **Directory cutover (2026-11-05):** This material was moved from `platform-portal/portal/exporter/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/platform-portal/portal/exporter/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 **State:** offline implementation only. No local Marquez readback, public staging,
 or Azure end-to-end verification has been performed for this branch.
 

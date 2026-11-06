@@ -1,5 +1,7 @@
 # Azure Blob Publisher — dw-synthea DIRECT FHIR runtime (static)
 
+> **Directory cutover (2026-11-05):** This material was moved from `local-data-platform/kubernetes/manifests/synthea/blob-publisher/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/local-data-platform/kubernetes/manifests/synthea/blob-publisher/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 ## Current accepted deployment boundary
 
 - Publisher Job runs in **`dw-synthea`** on **`worker01`**. This is the **same Namespace** as `synthea-new-generator-state`; do not create another Namespace or another Publisher PVC.

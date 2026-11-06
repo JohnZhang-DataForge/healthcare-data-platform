@@ -1,5 +1,7 @@
 # Johns Creek OIE — Kubernetes *static templates only*
 
+> **Directory cutover (2026-11-05):** This material was moved from `local-data-platform/kubernetes/manifests/oie/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/local-data-platform/kubernetes/manifests/oie/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 This directory is for the **Eclipse Open Integration Engine 4.7.0**
 clinical transformer. The first PoC uses a distinct `dw-oie` Namespace,
 a single-replica OIE StatefulSet pinned to `worker01`, and a distinct
