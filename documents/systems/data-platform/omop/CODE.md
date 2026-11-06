@@ -157,3 +157,9 @@ NEW_ONLY Writer 新 GHCR 包名：`ghcr.io/johnzhang-dataforge/healthcare-data-p
 | [`test_omop_snapshot_publisher.py`](../../../../local-data-platform/tests/clinical_producers/test_omop_snapshot_publisher.py) | Fake Azure 正负向、partial retry、认证及静态 K8s Namespace 合同；不是 Azure Live 验收 |
 
 真正运行前需核对读库只读账号和独立 `dw-synthea/omop-snapshot-reader` Secret、PG17 客户端版本、PG Service DNS、Image Digest、容量、Azure 权限及并行作业；必须按 Safe Operations 单独获得真实部署及 Blob PUT 授权。本次 PR 只提供代码、模板和离线测试。
+
+## Required Ruleset negative PR only — NEVER MERGE
+
+| Source | Purpose |
+| --- | --- |
+| [Intentionally invalid Task005 source path](../../../../local-data-platform/apps/task005/condition.py) | **NEVER MERGE.** An inert Python comment file deliberately violating the newly Required human-first directory gate. This row exists solely to isolate ownership-check errors; it is NOT an accepted source owner or Condition implementation. |
