@@ -275,3 +275,22 @@ def bridge_f2_person_visit_allocation(
         raise IdentityPreviewHold("IDENTITY_F2_COUNTERS_INVALID")
     return verify_allocation_proposal(snapshot, rows(f2_allocation.assigned),
                                       rows(f2_allocation.inserted), next_free)
+
+
+def require_preview_snapshot_unchanged(
+    preview: IdentityPreview, current_snapshot: IdentitySnapshot,
+) -> IdentityPreview:
+    """Fail closed when a freshly supplied full snapshot no longer matches.
+
+    This pure comparison is mandatory at the eventual Writer boundary but is
+    NOT a substitute for independent Warehouse readback or writer fencing.
+    """
+    if (not isinstance(preview, IdentityPreview)
+            or preview.status != "ID_PREVIEW_ONLY_NOT_PERSISTED"
+            or not isinstance(current_snapshot, IdentitySnapshot)):
+        raise IdentityPreviewHold("IDENTITY_PREVIEW_STATE_INVALID")
+    if (preview.snapshot_fingerprint != current_snapshot.fingerprint
+            or any(item.snapshot_fingerprint != preview.snapshot_fingerprint
+                   for item in preview.identities)):
+        raise IdentityPreviewHold("IDENTITY_SNAPSHOT_CHANGED_BEFORE_COMMIT")
+    return preview
