@@ -101,3 +101,80 @@ def verify_adt_against_fhir(
             raise
         raise Hl7ReadbackError("FHIR_EVENT_NOT_VERIFIABLE") from exc
     return result
+
+
+def parse_adt_a03(data: str | bytes) -> dict[str, str]:
+    """Strict readback of ONE HL7 v2.5.1 A03 produced from verified source.
+
+    Distinct from the legacy A01 parser. This is a bounded source/publisher
+    integrity check, not a generic HL7 parser or a completed-visit approval.
+    """
+    if isinstance(data, bytes):
+        try:
+            data = data.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise Hl7ReadbackError("HL7_A03_INVALID_UTF8") from exc
+    if (not isinstance(data, str) or not 0 < len(data) <= 65536
+            or "\n" in data or "\x00" in data or "\r\r" in data
+            or not data.endswith("\r")):
+        raise Hl7ReadbackError("HL7_A03_FRAMING_OR_SIZE")
+    segments = [line.split("|") for line in data[:-1].split("\r")]
+    if len(segments) != 4 or tuple(s[0] for s in segments) != _SEGMENTS:
+        raise Hl7ReadbackError("HL7_A03_SEGMENT_SEQUENCE")
+    msh, evn, pid, pv1 = segments
+    if len(msh) < 12 or len(evn) < 3 or len(pid) < 23 or len(pv1) < 46:
+        raise Hl7ReadbackError("HL7_A03_FIELDS_MISSING")
+    if (msh[1] != r"^~\&" or msh[8] != "ADT^A03^ADT_A03"
+            or msh[11] != "2.5.1" or evn[1] != "A03" or pv1[2] != "I"):
+        raise Hl7ReadbackError("HL7_A03_TYPE_OR_VERSION")
+    if not _CONTROL.fullmatch(msh[9]):
+        raise Hl7ReadbackError("HL7_A03_CONTROL_ID")
+    if (not _TIME.fullmatch(msh[6])
+            or not _TIME.fullmatch(pv1[44])
+            or not _TIME.fullmatch(pv1[45])
+            or evn[2] != msh[6] or pv1[45] != msh[6]):
+        raise Hl7ReadbackError("HL7_A03_EVENT_TIME")
+    try:
+        admission = datetime.strptime(pv1[44], "%Y%m%d%H%M%S%z")
+        discharge = datetime.strptime(pv1[45], "%Y%m%d%H%M%S%z")
+    except ValueError:
+        raise Hl7ReadbackError("HL7_A03_INVALID_TIMESTAMP") from None
+    if discharge < admission:
+        raise Hl7ReadbackError("HL7_A03_END_BEFORE_START")
+    patient = pid[3].split("^")
+    visit = pv1[19].split("^")
+    if (len(patient) != 5 or len(visit) != 5
+            or not patient[0] or not visit[0]
+            or patient[4] != "MR" or visit[4] != "VN"
+            or not patient[3] or patient[3] != visit[3]):
+        raise Hl7ReadbackError("HL7_A03_SOURCE_IDENTIFIERS")
+    if not re.fullmatch(r"[0-9]{8}", pid[7]):
+        raise Hl7ReadbackError("HL7_A03_BIRTH_DATE")
+    try:
+        datetime.strptime(pid[7], "%Y%m%d")
+    except ValueError:
+        raise Hl7ReadbackError("HL7_A03_BIRTH_DATE") from None
+    if pid[8] not in {"M", "F"}:
+        raise Hl7ReadbackError("HL7_A03_GENDER_PROFILE")
+    race, ethnicity = pid[10].split("^"), pid[22].split("^")
+    if (len(race) != 3 or race[0] not in
+            {"1002-5", "2028-9", "2054-5", "2076-8", "2106-3"}
+            or race[2] != "CDCREC" or len(ethnicity) != 3
+            or ethnicity[0] not in {"2135-2", "2186-5"}
+            or ethnicity[2] != "CDCREC"):
+        raise Hl7ReadbackError("HL7_A03_DEMOGRAPHIC_PROFILE")
+    return {
+        "message_type": "ADT^A03^ADT_A03",
+        "version": "2.5.1",
+        "control_id": msh[9],
+        "event_time": msh[6],
+        "start_time": pv1[44],
+        "end_time": pv1[45],
+        "patient_id": patient[0],
+        "encounter_id": visit[0],
+        "assigning_authority": patient[3],
+        "birth_date": pid[7],
+        "gender_code": pid[8],
+        "race_code": race[0],
+        "ethnicity_code": ethnicity[0],
+    }
