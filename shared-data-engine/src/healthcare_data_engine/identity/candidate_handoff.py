@@ -53,10 +53,10 @@ class CandidatePersonId:
     person_id: int
     state: str
 
-    def f1_lookup(self) -> tuple[str, str, str, str, int]:
-        """Only a *candidate* lookup row, NEVER a persisted F1 map row."""
+    def f1_lookup(self) -> tuple[str, str, str, str, int, str]:
+        """Candidate lookup row includes REQUIRED identity_state, not F1 DML."""
         return ("PERSON", self.hospital_id, self.source_system,
-                self.source_business_key, self.person_id)
+                self.source_business_key, self.person_id, self.state)
 
 
 @dataclass(frozen=True)
@@ -93,8 +93,8 @@ class PersonVisitCandidateHandoff:
     snapshot_fingerprint: str
     status: str = "G5_CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
 
-    def person_lookup_rows(self) -> tuple[tuple[str, str, str, str, int], ...]:
-        """Legacy mapper-compatible shape, not actual Warehouse F1 rows."""
+    def person_lookup_rows(self) -> tuple[tuple[str, str, str, str, int, str], ...]:
+        """Legacy mapper-compatible columns + `identity_state` (never F1 DML)."""
         return tuple(row.f1_lookup() for row in self.person_lookup)
 
     def visit_id_rows(self) -> tuple[tuple[str, str, int, str], ...]:
@@ -200,6 +200,14 @@ def plan_candidate_identity_handoff(
             item.key.hospital_id, item.key.source_system,
             item.key.source_business_key, item.omop_id, item.state,
         )
+
+    # The candidate handoff must also reject a forged Preview with two
+    # Visit IDs or two Person IDs mapped to the same per-target INT. F2's
+    # legitimate proposal already enforces this, but this boundary is public.
+    target_ids = {(key.target_table, item.omop_id)
+                  for key, item in proposals.items()}
+    if len(target_ids) != len(proposals):
+        raise CandidateIdentityHold("G5_PREVIEW_TARGET_ID_COLLISION")
 
     # Prevent global duplicated prospective Person IDs and case-insensitive
     # source collisions even when the underlying Warehouse constraints are
