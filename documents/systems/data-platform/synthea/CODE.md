@@ -277,8 +277,9 @@ Active OpenSpec：[`operationalize-oie-hl7-adt-feed`](../../../../openspec/chang
 ## OIE HL7 2.5.1 independent message readback
 | Path | Role |
 | --- | --- |
-| [HL7 source readback](../../../../local-data-platform/apps/clinical_producers/oie/hl7_readback.py) | Strict segment and source identity/control/time match for **actual OIE returned** ADT^A01 messages; no cloud code |
+| [HL7 source readback](../../../../local-data-platform/apps/clinical_producers/oie/hl7_readback.py) | Legacy A01 verifier unchanged; new bounded A03 verification checks discharge time, PID demographics and source-scoped IDs, no cloud I/O |
 | [HL7 readback tests](../../../../local-data-platform/tests/clinical_producers/test_oie_hl7_readback.py) | Rejects wrong class, timestamp, version, control IDs, malformed segments |
+| [New A03 Blob contract offline tests](../../../../.github/quality/tests/data-platform/clinical-producers/oie/test_a03_blob_contract.py) | 使用 V2 源生成 A01/A03 原始字节，Mock Blob manifest-last/重跑/损坏拒绝，无真实上传 |
 | [HL7 readback CI](../../../../.github/workflows/oie-hl7-readback-unit.yml) | Isolated unit/contract tests; not OIE runtime acceptance |
 
 ## Disposable OIE real FHIR→HL7 runtime probe
@@ -294,7 +295,7 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 ## Azure Landing immutable publish-plan contract（未发布）
 | Path | Role |
 | --- | --- |
-| [blob_publish_contract.py](../../../../local-data-platform/apps/clinical_producers/blob_publish_contract.py) | 只校验 P4.1/OIE 验证状态、医院、Request、对象路径、原始 Bytes SHA256 与确定性 Blob key；**不上传** |
+| [blob_publish_contract.py](../../../../local-data-platform/apps/clinical_producers/blob_publish_contract.py) | 只校验 P4.1/OIE 验证状态、医院、Request、对象路径、原始 Bytes SHA256 与确定性 Blob key；HL7_V2 支持严格 A01 与新增 A03 readback 校验，**不上传** |
 | [blob-publish-plan-v1.schema.json](../../../../local-data-platform/contracts/clinical_producers/blob-publish-plan-v1.schema.json) | 共享 Azure Blob 输入计划 JSON Schema，医院无关 |
 | [test_blob_publish_contract.py](../../../../local-data-platform/tests/clinical_producers/test_blob_publish_contract.py) | 错医院、路径穿越、篡改、状态不匹配的 fail-closed 合同测试 |
 | [azure-blob-publish-contract-unit.yml](../../../../.github/workflows/azure-blob-publish-contract-unit.yml) | Hosted-only static/unit，无 Azure/PVC 写入 |
