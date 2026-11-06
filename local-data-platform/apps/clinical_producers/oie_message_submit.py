@@ -58,8 +58,14 @@ class ScopedOIEPoster(OIEScopedHTTPSClient):
     No mutation except new message delivery is exposed; no Channel management.
     """
 
-    def preflight_channel(self, channel_id: str) -> None:
-        """Verify exact live mapper bytes and STARTED state before first POST."""
+    def preflight_channel(self, channel_id: str, *,
+                          expected_channel_xml: str | None = None,
+                          expected_channel_name: str | None = None) -> None:
+        """Verify exact deployed source mapper + STARTED before first POST.
+
+        Default arguments preserve the legacy A01 identity and bytes.
+        The V2-only caller passes its own separately versioned XML/name.
+        """
         try:
             UUID(channel_id)
         except (ValueError, TypeError, AttributeError):
@@ -89,12 +95,16 @@ class ScopedOIEPoster(OIEScopedHTTPSClient):
             else:
                 try:
                     observed = ET.fromstring(raw)
-                    expected = ET.fromstring(render_channel())
+                    expected = ET.fromstring(
+                        render_channel() if expected_channel_xml is None
+                        else expected_channel_xml)
                 except (ET.ParseError, ValueError, AssertionError, OSError):
                     raise OIEPostBlocked("OIE_CHANNEL_CONFIG_INVALID") from None
                 if (observed.tag != "channel"
                         or observed.findtext("id") != channel_id
-                        or observed.findtext("name") != CHANNEL_NAME
+                        or observed.findtext("name") != (
+                            CHANNEL_NAME if expected_channel_name is None
+                            else expected_channel_name)
                         or observed.findtext("preprocessingScript") !=
                            expected.findtext("preprocessingScript")):
                     raise OIEPostBlocked("OIE_CHANNEL_CONFIG_DRIFT_HOLD")
