@@ -136,9 +136,9 @@ jobs:
           import runpy
           import healthcare_data_engine as engine
           from healthcare_data_engine.mapping.omop.candidates import build_omop_candidates
-          from healthcare_data_engine.identity.candidate_handoff import build_candidate_identity_handoff
+          from healthcare_data_engine.identity.candidate_handoff import plan_candidate_identity_handoff
           assert engine.__version__ == importlib.metadata.version('healthcare-data-engine') == '0.1.6'
-          assert callable(build_omop_candidates) and callable(build_candidate_identity_handoff)
+          assert callable(build_omop_candidates) and callable(plan_candidate_identity_handoff)
           path = (Path(os.environ['GITHUB_WORKSPACE']) /
                   'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py')
           nb = runpy.run_path(str(path), run_name='_g5_016_offline_only_no_notebook_execution')
