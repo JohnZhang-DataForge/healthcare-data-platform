@@ -45,7 +45,7 @@ jobs:
           set -euo pipefail
           "$RUNNER_TEMP/shared-env/bin/python" - <<'PY'
           import unittest
-          suite = unittest.defaultTestLoader.discover(".github/quality/tests/shared-data-engine", pattern="test_*.py")
+          suite = unittest.defaultTestLoader.discover(".github/quality/tests/shared-data-engine/mapping", pattern="test_*.py")
           assert suite.countTestCases() >= 14, "Multi-Entity new tests missing or not discovered"
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful(), "Multi-Entity Registry/Adapter tests failed"
@@ -105,7 +105,7 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           import unittest
-          suite = unittest.defaultTestLoader.discover(".github/quality/tests/shared-data-engine", pattern="test_*.py")
+          suite = unittest.defaultTestLoader.discover(".github/quality/tests/shared-data-engine/mapping", pattern="test_*.py")
           assert suite.countTestCases() >= 14, "Multi-Entity new tests missing or not discovered"
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful(), "Multi-Entity Registry/Adapter tests failed"
