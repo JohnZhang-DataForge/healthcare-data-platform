@@ -22,7 +22,7 @@ Human README/CODE shall show current role/navigation concisely; dated chronology
 - **THEN** those notes are preserved under the appropriate `documents/systems/` owner before source README is removed and all active links pass checks.
 
 ### Requirement: Completed changes exit the active OpenSpec directory only with real acceptance
-Changes with zero open checkboxes are candidates, not proof, of completed work. Only accepted changes with recorded main/Run/consumer evidence MAY move to `changes/archive/`; remaining HOLD must remain visible and unarchived.
+Changes with zero open checkboxes are candidates, not proof, of completed work. Only accepted changes with recorded main/Run/consumer evidence SHALL move to `changes/archive/`; remaining HOLD must remain visible and unarchived.
 
 #### Scenario: A task checklist is fully checked but a runtime hold remains
 - **WHEN** the historical task narrative records an unresolved launch/runtime gate
