@@ -1,5 +1,9 @@
 # Local DP Writer Parquet Dataset Reader
 
+## Purpose
+
+Read a complete immutable Parquet dataset across multiple Spark part files while preserving atomic OMOP Writer and idempotency safety.
+
 ## Requirements
 
 ### Requirement: A Processing URI denotes a complete immutable Parquet dataset

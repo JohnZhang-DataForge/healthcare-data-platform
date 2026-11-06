@@ -17,7 +17,7 @@ source_sha: ad39ed608c699ea3f30b74bd4bc331733d462e99
 - 这些命名和容量/调度要求来自历史部署快照，**不是当前 Pod、SC、PVC/Node 状态的实时读回**。
 
 ## 开发环境轻量备份（2026-11-04 方案）
-用户批准将 Marquez PG14 的每日备份与数据库放在**同一现有 PVC**，无需新建 Bucket 或外部存储。Kubernetes CronJob `dw-postgre14/marquez-pg14-local-backup` 计划美东 03:00 自动运行 `pg_dump -Fc`，经 `pg_restore --list` 检查后把 `marquez-*.dump` 放在卷内 `marquez-backups/`（与 `pgdata/` 隔离）。每次成功产生新备份之后，自动清理仅此目录中超过 7 天的 `.dump` 文件。计划源码见 [CronJob](../../../../platform-portal/postgres/backup/marquez-pg14-backup-cronjob.yaml)；OpenSpec 见 [变更记录](../../../../openspec/changes/marquez-pg14-local-seven-day-backup/tasks.md)。
+用户批准将 Marquez PG14 的每日备份与数据库放在**同一现有 PVC**，无需新建 Bucket 或外部存储。Kubernetes CronJob `dw-postgre14/marquez-pg14-local-backup` 计划美东 03:00 自动运行 `pg_dump -Fc`，经 `pg_restore --list` 检查后把 `marquez-*.dump` 放在卷内 `marquez-backups/`（与 `pgdata/` 隔离）。每次成功产生新备份之后，自动清理仅此目录中超过 7 天的 `.dump` 文件。计划源码见 [CronJob](../../../../platform-portal/postgres/backup/marquez-pg14-backup-cronjob.yaml)；OpenSpec 见 [变更记录](../../../../openspec/changes/archive/2026-11-05-marquez-pg14-local-seven-day-backup/tasks.md)。
 
 这是**开发环境同卷备份**，可帮助恢复人为误删除的元数据，不保护节点/磁盘/PVC 整体损坏。不要将该 CronJob 与 Marquez `dbRetention` 混淆：后者仍然永久禁用，不会删除任何 Job、Run 或 Dataset。该备份任务不执行 PG Restore，也不接触 OMOP PG17。源码/PR 并入 Main 与现场 CronJob 已部署是不同状态，必须以 Runner 验收为准。
 

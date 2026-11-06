@@ -1,5 +1,9 @@
 # NEW_ONLY Exact S3 Batch Selection
 
+## Purpose
+
+Require exact immutable NEW_ONLY Batch selection independent of bounded Airflow preview size and preserve source identity and fail-closed Writer gates.
+
 ## Requirements
 
 ### Requirement: Manual Airflow selection is independent of display preview truncation

@@ -24,7 +24,7 @@ source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 
 ## 2026-11-02 Git-first Notebook 实测（未来 Agent 必读）
 
-新原生 Notebook **Git PR → main → GitHub Actions → Fabric UpdateFromGit → 独立代码/Environment 读回 → Spark 4.1/Wheel 0.1.1 导入 → 受控 Git 原生删除** 已全部实测 PASS。全过程证据和踩坑（尤其 `Added` 可能没有 `fileChanges`、运行后 Local Modified 与一次性安全删除）见 [Notebook Git Authoring Runbook](notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md) 与 [OpenSpec 验收](../../../openspec/changes/fabric-native-notebook-git-onboarding/tasks.md)。不能把本次创建运行 Smoke 当作正式 `nb_fhir_ingest` 的 FHIR/Delta 业务验收；业务 HALT 仍在。
+新原生 Notebook **Git PR → main → GitHub Actions → Fabric UpdateFromGit → 独立代码/Environment 读回 → Spark 4.1/Wheel 0.1.1 导入 → 受控 Git 原生删除** 已全部实测 PASS。全过程证据和踩坑（尤其 `Added` 可能没有 `fileChanges`、运行后 Local Modified 与一次性安全删除）见 [Notebook Git Authoring Runbook](notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md) 与 [OpenSpec 验收](../../../openspec/changes/archive/2026-11-05-fabric-native-notebook-git-onboarding/tasks.md)。不能把本次创建运行 Smoke 当作正式 `nb_fhir_ingest` 的 FHIR/Delta 业务验收；业务 HALT 仍在。
 
 ## 跨组件依赖与源码边界
 

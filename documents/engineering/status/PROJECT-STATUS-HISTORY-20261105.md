@@ -94,7 +94,7 @@ source_sha: 8e26d0940a857b2cc49be8a5458ea8871f1db25f
 
 **两个不同的“04”**：业务 **TASK004 已 CLOSED**，本次 **Documentation Rebuild STEP04** 是文档整理步骤，完成前者不等于后者提前完成。
 
-> **2026-10-20 曾观察到的随机 Batch Writer 失败（历史问题，后续已分别修复）**：Native Race 映射在 [独立 Change](../../../openspec/changes/fix-synthea-native-race-mapping/tasks.md) 下完成修复；Spark 多 Parquet 部分写入也经 [Writer Change](../../../openspec/changes/fix-multi-parquet-omop-writer-read/tasks.md) 定向修复和真实两分片只读回归，并在后续新 Batch E2E 通过 COMMIT/SKIP。旧失败日志仍保留供追溯，不代表现在的未解决告警；也**不**声称所有可能的随机 Batch 都已覆盖。
+> **2026-10-20 曾观察到的随机 Batch Writer 失败（历史问题，后续已分别修复）**：Native Race 映射在 [独立 Change](../../../openspec/changes/fix-synthea-native-race-mapping/tasks.md) 下完成修复；Spark 多 Parquet 部分写入也经 [Writer Change](../../../openspec/changes/archive/2026-11-05-fix-multi-parquet-omop-writer-read/tasks.md) 定向修复和真实两分片只读回归，并在后续新 Batch E2E 通过 COMMIT/SKIP。旧失败日志仍保留供追溯，不代表现在的未解决告警；也**不**声称所有可能的随机 Batch 都已覆盖。
 
 ## 2. 本地业务：TASK004 已关闭
 

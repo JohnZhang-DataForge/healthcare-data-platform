@@ -1,3 +1,9 @@
+# Marquez PG14 Local Backup
+
+## Purpose
+
+Define one development-only local Marquez PG14 backup schedule, retention and same-PVC safety boundary; it is not offsite recovery.
+
 ## Requirements
 
 ### Requirement: Marquez SHALL produce a daily local development backup

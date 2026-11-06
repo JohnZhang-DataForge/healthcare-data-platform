@@ -1,5 +1,9 @@
 # Fabric Git Native Notebook Onboarding
 
+## Purpose
+
+Establish trusted Git-first identity, preflight and independent readback for added Fabric Native Notebooks without weakening business execution HALT.
+
 ## Requirements
 
 ### Requirement: Deploy new native Notebook definitions from reviewed Git only
