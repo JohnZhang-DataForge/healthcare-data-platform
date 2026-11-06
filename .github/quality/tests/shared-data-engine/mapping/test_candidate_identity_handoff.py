@@ -109,6 +109,8 @@ class F2CandidateIdentityHandoffTests(unittest.TestCase):
                          [1, 2, 3, 4])
         self.assertEqual({x.person_id for x in result.batch_visits}, {1, 2})
         self.assertEqual({row[0] for row in result.person_lookup_rows()}, {"PERSON"})
+        self.assertEqual({row[5] for row in result.person_lookup_rows()},
+                         {"PROVISIONAL"})
         self.assertEqual({x[3] for x in result.visit_id_rows()}, {"PROVISIONAL"})
         self.assertFalse(hasattr(result, "commit"))
 
@@ -268,6 +270,20 @@ class F2CandidateIdentityHandoffTests(unittest.TestCase):
                                     "DUPLICATE_OR_DRIFTED_ID"):
             plan_candidate_identity_handoff(
                 **args, snapshot=state, preview=extra)
+
+    def test_forged_duplicate_target_ints_hold_even_if_source_keys_differ(self):
+        args = fixture(people=2, visits=4)
+        state, plan = state_with_preview(args)
+        visit_items = [i for i, x in enumerate(plan.identities)
+                       if x.key.target_table == VISIT]
+        self.assertGreaterEqual(len(visit_items), 2)
+        bad = list(plan.identities)
+        bad[visit_items[1]] = replace(
+            bad[visit_items[1]], omop_id=bad[visit_items[0]].omop_id)
+        with self.assertRaisesRegex(CandidateIdentityHold, "TARGET_ID_COLLISION"):
+            plan_candidate_identity_handoff(
+                **args, snapshot=state,
+                preview=replace(plan, identities=tuple(bad)))
 
     def test_spoofed_persisted_without_snapshot_mapping_holds(self):
         args = fixture()
