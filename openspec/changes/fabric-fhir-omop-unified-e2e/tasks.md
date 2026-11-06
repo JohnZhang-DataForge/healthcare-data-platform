@@ -19,7 +19,7 @@
 ## P2–P5 — 候选、事务、管线
 
 - [ ] 2.1 以真实 Warehouse 完整 ID/Allocator/Gold/Ledger 快照验证跨医院稳定 INT 分配，保留并发 Single-writer fence。
-- [ ] 2.2 完成 F2 Preview + 完整 Warehouse Snapshot → G5 Candidate ID Handoff（首次空 Map 的接口鸡生蛋问题），显式区分 PROVISIONAL/PERSISTED，校验 Person/Visit 100/5918、跨医院及 Parent FK；源码纯逻辑实现经 CI/PR 核验并合并后才关闭这一 SOURCE_ONLY 子项，真实 Gold 仍在 P4 OPEN。
+- [x] 2.2 完成 F2 Preview + 完整 Warehouse Snapshot → G5 Candidate ID Handoff（首次空 Map 的接口鸡生蛋问题），显式区分 PROVISIONAL/PERSISTED，校验 Person/Visit 100/5918、跨医院及 Parent FK；源码纯逻辑实现经 CI/PR 核验并合并后才关闭这一 SOURCE_ONLY 子项，真实 Gold 仍在 P4 OPEN。
 
 - [ ] 3.1 真正 Candidate Delta 物理写入、独立读回、Approval-last、同 Request Replay SKIP。
 - [ ] 4.1 Warehouse 单事务 Map/Allocator/Person/Visit/Ledger/Audit COMMIT；独立 SQL 新连接读回、Rollback/Unknown-ACK/Replay/DQ 负向验证。
@@ -56,3 +56,7 @@
 - 全部 44 个 `source_code` 均找到词表记录，但 **36 个 Observation + 8 个 Procedure**，没有任何一个直接是有效标准 Visit Domain；候选覆盖率不能冒充目标 Domain 合规通过。
 - `cdm.vocabulary` 行数 47、`vocabulary_version` 空 28；`audit.vocabulary_source_file` 行数 0，F1 release/license/audit 任务仍须独立完成。
 - **禁止**将词法命中冒充临床标准映射或将 Wrong Domain Concept 充作正式 OMOP Gold；P1.4/P1.5、P2、P3 Candidate、P4 Gold COMMIT、P5 Pipeline E2E 依旧 OPEN。
+
+## P2 Source-only ID Handoff evidence (not physical SQL)
+
+[Healthcare PR #727](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/727), source `02084e4b1b59a922c9888182d82e985cfec95c6d`, [Wheel CI #42207621020](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42207621020) PASS (dual runtime 66/66 multi-entity tests + existing FHIR/Spark/OMOP regression). Pure F2 preview → G5 first-batch identity candidate interface task 2.2 complete; **P1.4 release/license audit, P1.5 reviewed clinical Concept Profile, P2.1 real Warehouse snapshot, P3 Candidate physical Delta, P4 Gold COMMIT and P5 Pipeline remain OPEN**.
