@@ -195,10 +195,9 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
         one, two = self.shared().visit, self.shared().visit
         self.assertEqual(one.exceptAll(two).count(), 0)
         self.assertEqual(two.exceptAll(one).count(), 0)
-        self.assertEqual(
-            sorted(row.asDict(recursive=True).items() for row in self.local_visit().collect()),
-            sorted(row.asDict(recursive=True).items() for row in self.local_visit().collect()),
-        )
+        local_one, local_two = self.local_visit(), self.local_visit()
+        self.assertEqual(local_one.exceptAll(local_two).count(), 0)
+        self.assertEqual(local_two.exceptAll(local_one).count(), 0)
 
     def test_person_shape_and_legacy_code_constants_only(self):
         # NOT a full runtime Person parity proof: Local Person is JDBC main().
