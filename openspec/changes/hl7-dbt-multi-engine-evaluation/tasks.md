@@ -9,9 +9,9 @@
 - [ ] 1.4 形成 docs-only PR，CI 验证、审查/合并；在完成前不得称本方案已并入 main。
 
 ## 2. Self-Runner 纯本地离线 POC
-- [ ] 2.1 在 Self-Runner 自有隔离目录建立独立实验代码、固定版本、合成 HL7 fixtures 和 runner-only 测试入口；不得引入云凭据/真实集群访问。
-- [ ] 2.2 验证开源 HL7 Parser 的 v2.5.1 解析与缺字段/转义/时间/重复消息负向断言。
-- [ ] 2.3 执行 dbt Core + DuckDB compile/run/test，记录实际日志、schema 与 replay。
+- [x] 2.1 在 Self-Runner 自有隔离目录建立独立实验代码、固定版本、合成 HL7 fixtures 和 runner-only 测试入口；不得引入云凭据/真实集群访问。Self-Runner PR #525（SOURCE/CI）。
+- [x] 2.2 验证开源 HL7 Parser 的 v2.5.1 解析以及部分缺字段/版本/出院事件/重复消息负向断言（合成固定样例 6/6 PASS；转义、时区、多医院完整矩阵尚未覆盖，留在 2.5）。
+- [x] 2.3 执行 dbt Core + DuckDB seed/run/test 及独立读回、同数据重跑（合成事件 2，Patient 1，Encounter 1，14/14 dbt tests PASS；不是 Delta 验收）。
 - [ ] 2.4 执行 dbt Core + Local Spark (dbt-fabricspark session) compile/run/test，记录版本和本地 Delta 读写；不可运行则提供具体阻断证据。
 - [ ] 2.5 同一 synthetic fixture 对齐 Candidate 值、异常分类、SQL/Delta 能力、运行成本；对比打分，**测试后**提议选型。
 
@@ -25,3 +25,10 @@
 - OIE 真实 FHIR→HL7 消息已验收，但 HL7 Blob 发布未验收；FHIR G4 Approved Silver 已验收，Gold 仍 OPEN。
 - A01 单消息缺少 Canonical v1 必需字段；必须将缺失事实与来源 Profile 约束作为阻断条件，不得靠默认值绕过。
 - 本 Change 实验全部执行证据指向 Self-Runner 的单独 PR/commit/run；不往 Healthcare 增加实验资产。
+
+## 2026-11-05/06 ET — First isolated Self-Runner experiment evidence
+
+- Self-Runner PR [#525](https://github.com/JohnZhang-DataForge/Self-Runner/pull/525) — `experiments/hl7-dbt-canonical/` only + GitHub-hosted read-only test Workflow；无 Healthcare 业务源码修改/真实云资源访问。
+- GitHub Actions [Run #42158571603](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42158571603), HEAD `340f0d08359ca19818ac6018a296c2b64c84162f`: DuckDB job SUCCESS。Parser 6/6 合成正负用例 PASS；dbt seed=1、table models=2、dbt tests=14/14；两次 SQL run/test/readback PASS：staging 2 unique HL7 events，Candidate 1 Patient/1 Encounter。证明纯本地 dbt-duckdb 可以完成受控 SQL ELT；不是 HL7 OIE live → Blob，也不是真实 Silver Delta 发布。
+- 同一 Run 的本地 dbt-fabricspark session Job FAIL：`SparkSession` / `dbt debug` 正常，seed 在内置 Hive `spark_catalog` 执行 `REPLACE TABLE` 时 `UNSUPPORTED_FEATURE.TABLE_OPERATION`；属于 Delta Catalog 环境配置差异，尚不能据此判定后端不可用。Self-Runner PR 已追加 Delta Catalog + delta-spark 依赖，**复验结果待核实**。
+- **后端 A/B/C 选型仍为 PENDING**；同时缺原始真实 OIE 必需字段、增量/多医院/replay conflict/Delta 外部写入验证；不得宣布完成 2.4/2.5/3.x。
