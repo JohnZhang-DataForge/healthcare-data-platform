@@ -40,6 +40,10 @@ I designed the pipeline around a few practical questions:
 
 The reusable part is **source onboarding, provenance, validation, reconciliation, and observability**. OMOP is the target model for this *clinical* example—not a universal model for HR, finance, student, or research administration data. Other domains would reuse the platform patterns with their own models and business rules.
 
+## Canonical-first shared processing (approved architecture)
+
+The [Medallion Canonical ADR](documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) fixes the long-term design: **source-specific CSV/FHIR/HL7 adapters → one canonical Patient/Encounter contract → one portable OMOP mapping, DQ, identity-planning and reconciliation engine**. Data sources supply independently reviewed code-to-Concept profiles; the Local PostgreSQL and Fabric Warehouse publishers remain platform-specific. The single `healthcare_data_engine` Wheel 0.1.3 has FHIR/Canonical/OMOP Candidate code and passed isolated Fabric import, but the **Local production mapper has not yet been fully migrated to it**. Fabric's synthetic FHIR Approved Silver milestone (100 Patient / 5,918 Encounter) is physically accepted; Fabric clinical Candidate/Gold COMMIT and end-to-end pipeline are not. The separate Local PG→Fabric analytical snapshot route remains a future product. [Current data flow](documents/architecture/DATA-FLOW.md).
+
 ## Architecture: different sources, common controls
 
 ```mermaid
@@ -114,7 +118,7 @@ This approach is deliberately not tied to one message standard or one processing
 
 The Azure/Fabric foundation is provisioned with Terraform, including a Fabric workspace and OneLake Lakehouse. Azure Blob publishing has been exercised separately. **A complete FHIR/HL7 → Fabric Notebook/Pipeline → curated OneLake load has not yet passed end-to-end acceptance.**
 
-The next milestones are to validate each additional feed against the same landing and reconciliation contracts, implement the Fabric ingestion/transformation path, and establish clear raw/normalized/curated data boundaries in the cloud. Data quality, lineage, replay behavior, and evidence of durable writes will remain acceptance criteria—not optional reporting features.
+The next milestones are to complete the vetted FHIR-to-OMOP Concept Mapping Profile, durable Identity/Gold transaction and independently verified Candidate/Gold/Pipeline replay, then gradually migrate Local pure transformations to the same Shared Engine. New CSV/HL7 Fabric adapters and the separate PG snapshot export product are later, individually scoped work. Data quality, lineage, replay behavior, and evidence of durable writes will remain acceptance criteria—not optional reporting features.
 
 The project uses **synthetic records only**. It does not contain real patient data, and it makes no HIPAA certification, institution-wide production-readiness, or always-on availability claim.
 
