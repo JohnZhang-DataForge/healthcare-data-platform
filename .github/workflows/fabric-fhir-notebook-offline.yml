@@ -28,11 +28,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Verify Git-staged 0.1.6 and independent historical published-baseline 0.1.3
+      - name: Verify published 0.1.6 Native Wheel and historical 0.1.3 rollback bytes
         run: |
           set -Eeuo pipefail
-          # The native wheel is a historical, independently published artifact;
-          # never pretend current 0.1.6 source rebuilds the older 0.1.3 bytes.
+          # Effective published 0.1.6 is the current sole Git-native Wheel.
+          # Historical 0.1.3 is SHA verified from Git history, never installed.
           python -m pip wheel -w "$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           python -m venv "$RUNNER_TEMP/fabric-offline"
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
@@ -48,11 +48,11 @@ jobs:
           echo "$NATIVE_SHA  $NATIVE" | sha256sum --check
           echo "$OLD_SHA  $OLD" | sha256sum --check
           grep -qx 'version = "0.1.6"' shared-data-engine/pyproject.toml
-          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$OLD"
-          "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.3"'
-          echo 'G5_013_HISTORICAL_EFFECTIVE_WHEEL_PIN_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'G5_016_GIT_STAGED_SOLE_WHEEL_NOT_FABRIC_PUBLISHED=PASS' >> "$GITHUB_STEP_SUMMARY"
-          # The existing HALT Notebook/G4 processing remain 0.1.3/0.1.1.
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$NATIVE"
+          "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.6"'
+          echo 'G5_013_HISTORICAL_ROLLBACK_WHEEL_PIN_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G5_016_PUBLISHED_NATIVE_ENGINE_ALIGNED=PASS' >> "$GITHUB_STEP_SUMMARY"
+          # Notebook HALT, canonical Adapter 0.1.0 and G4 historical engine-0.1.1 stay immutable.
 
       - name: Synthetic Manifest plus local PySpark readback tests; ZERO cloud writes
         env:
@@ -95,8 +95,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  g5-source-016-prepublish:
-    name: G5 Wheel 0.1.6 independent installed-Wheel prepublish isolation
+  g5-source-016-native-alignment:
+    name: G5 Wheel 0.1.6 Native Notebook alignment with installed Wheel
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -134,7 +134,7 @@ jobs:
           sha256sum "$RUNNER_TEMP/g5-wheel-016/$WHEEL"
           python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-016/$WHEEL"
           echo 'G5_016_REPRODUCIBLE_SOURCE_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
-      - name: Prove old Native Notebook FAILS CLOSED with 0.1.6, no Spark/cloud I/O
+      - name: Prove 0.1.6 Native Notebook accepts installed Engine and rejects old 0.1.3
         shell: bash
         run: |
           set -Eeuo pipefail
