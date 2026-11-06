@@ -1,7 +1,7 @@
-"""OFFLINE ONLY: 0.1.3 effective HALT Notebook vs sole 0.1.6 Git-staged release.
+"""OFFLINE ONLY: published 0.1.6 Native Notebook and old 0.1.3 downgrade HOLD.
 
-Tests use the immutable historical 0.1.3 Wheel for the Notebook while the
-sole Git-native candidate is 0.1.6; these are not simultaneously Published. These probes
+Tests install the sole Git-native 0.1.6 Wheel and simulate a wrong old
+0.1.3 runtime for fail-closed guards. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
 """
@@ -24,7 +24,8 @@ LIBS = ROOT / (
     "azure-fabric/workspaces/healthcare-omop/"
     "env_healthcare.Environment/Libraries/CustomLibraries")
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
-PUBLISHED_VERSION = "0.1.3"
+PUBLISHED_VERSION = "0.1.6"
+LEGACY_VERSION = "0.1.3"
 SOURCE_CANDIDATE_VERSION = "0.1.6"
 PINNED_WHEEL_SHA256 = (
     "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff")
@@ -35,9 +36,9 @@ class G5NativeWheelIsolation(unittest.TestCase):
     def setUpClass(cls):
         # A unique non-__main__ name ensures zero runtime entrypoint actions.
         cls.native = runpy.run_path(
-            str(NATIVE), run_name="_g5_013_offline_source_isolation")
+            str(NATIVE), run_name="_g5_016_offline_source_isolation")
 
-    def test_sole_git_native_wheel_and_source_candidate_are_distinct(self):
+    def test_sole_git_native_wheel_matches_published_016_and_halt(self):
         self.assertEqual(engine.__version__, PUBLISHED_VERSION)
         self.assertEqual(self.native["engine_version"], PUBLISHED_VERSION)
         self.assertEqual(self.native["run_mode"], "HALT")
@@ -55,16 +56,16 @@ class G5NativeWheelIsolation(unittest.TestCase):
             PINNED_WHEEL_SHA256)
         source = NATIVE.read_text(encoding="utf-8")
         self.assertEqual(
-            source.count('if engine_version != "0.1.3":'), 3)
+            source.count('if engine_version != "0.1.6":'), 3)
         self.assertIn('run_mode = "HALT"', source)
         self.assertIn('fhir-silver-canonical-v1:engine-0.1.1', source)
         self.assertNotIn("write_authorized = True", source)
 
-    def test_old_notebook_rejects_016_even_with_safe_flags_before_data_reads(self):
-        # Existing G3/G4 source processing must not silently accept 0.1.6.
+    def test_016_notebook_rejects_013_even_with_safe_flags_before_data_reads(self):
+        # G3/G4 historical processing stays unchanged; wrong runtime 0.1.3 MUST HOLD.
         with patch.dict(
             self.native["prepare_batch"].__globals__,
-            {"engine_version": SOURCE_CANDIDATE_VERSION},
+            {"engine_version": LEGACY_VERSION},
         ):
             with self.assertRaisesRegex(
                     ValueError, "SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH"):
@@ -76,7 +77,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         g4_guard = Mock(side_effect=AssertionError("NO_G4_SPARK_READ_ALLOWED"))
         with patch.dict(
             self.native["verify_fhir_g5_candidate_source_readonly"].__globals__,
-            {"engine_version": SOURCE_CANDIDATE_VERSION,
+            {"engine_version": LEGACY_VERSION,
              "verify_fhir_g4_silver": g4_guard},
         ):
             with self.assertRaisesRegex(RuntimeError, "HOLD_G5_SOURCE_PIN"):
@@ -93,7 +94,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
 
         with patch.dict(
             self.native["validate_read_only_runtime_smoke"].__globals__,
-            {"engine_version": SOURCE_CANDIDATE_VERSION},
+            {"engine_version": LEGACY_VERSION},
         ):
             with self.assertRaisesRegex(
                     RuntimeError, "HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION"):
