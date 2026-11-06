@@ -1,5 +1,8 @@
 # Johns Creek OIE 4.7.0 clinical Channel — deployed and verified
 
+> This OIE Channel guide was physically relocated from `local-data-platform/apps/clinical_producers/oie/CHANNEL-POC.md` to the centralized clinical-producer documentation owner on 2026-11-05. Its original Git blob is preserved in [pre-move main](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/68962c3e34c3daa10f01367cb1bafcf62c7f8cb5/local-data-platform/apps/clinical_producers/oie/CHANNEL-POC.md). In-world historical Run evidence is preserved; no Channel import, message replay or Azure Blob write is authorized here.
+
+
 Use the upstream OIE 4.7.0 repository's **actual** Channel Reader + Channel
 Writer no-op fixture as an XStream-compatible base:
 `upstream-raw-reader.xml` copied from

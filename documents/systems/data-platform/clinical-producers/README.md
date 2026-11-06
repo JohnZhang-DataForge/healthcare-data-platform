@@ -6,6 +6,7 @@
 
 | Need | Human document | Actual source owner |
 | --- | --- | --- |
+| Live OIE Channel and message reader receipt | [Deployed clinical Channel PoC](OIE-CHANNEL-POC.md) | [Channel builder](../../../../local-data-platform/apps/clinical_producers/oie/build_channel.py), no automatic Blob authorization |
 | FHIR Encounter → ADT A01 Channel mapping | [OIE ADT mapping](OIE-ADT-MAPPING.md) | [Clinical Producer JS](../../../../local-data-platform/apps/clinical_producers/oie/adt_a01.js) |
 | Exact OIE 4.7.0 upstream image | [OIE image build](OIE-IMAGE-BUILD.md) | [Image workflow](../../../../.github/workflows/oie-470-isolated-image-smoke.yml) |
 | K8s Namespace / Secret / StatefulSet candidates | [OIE templates](OIE-K8S-TEMPLATES.md) | [Kubernetes manifests](../../../../local-data-platform/kubernetes/manifests/oie/) |
