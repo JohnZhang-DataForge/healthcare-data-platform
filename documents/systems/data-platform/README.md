@@ -13,6 +13,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 | 组件 | 权威组件说明 | 当前源码与边界 |
 | --- | --- | --- |
+| Clinical external FHIR/OIE producer | [Clinical Producers](clinical-producers/README.md) · [Current source CODE](synthea/CODE.md) | `local-data-platform/apps/clinical_producers/oie/`、`images/oie/`、`kubernetes/manifests/oie/`；ADT A01 mapping / OIE 4.7.0 lifecycle，区别于 Synthea Generator |
 | Synthea Producer | [Synthea](synthea/README.md) · [CODE](synthea/CODE.md) | `local-data-platform/apps/synthea/new_only/`、`local-data-platform/images/synthea-new-only/`，独立 Generator |
 | Landing / Manifest / Claim | [Landing](landing/README.md) · [CODE](landing/CODE.md) | `local-data-platform/apps/landing_discovery/`、`local-data-platform/apps/landing_claim/`，不可变 Batch + Claim Guard |
 | Airflow Orchestration | [Airflow 组件说明](airflow/README.md) · [CODE 源码导航](airflow/CODE.md) | `local-data-platform/airflow/dags/`，手工受控 NEW_ONLY Consumer 与独立 Discovery |

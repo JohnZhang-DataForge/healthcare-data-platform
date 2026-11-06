@@ -183,7 +183,7 @@ OIE/Blob 发布不属于 P4.1；其 Runtime 成功不能由离线校验测试推
 | --- | --- |
 | [adt_a01.js](../../../../local-data-platform/apps/clinical_producers/oie/adt_a01.js) | 供 OIE Channel 使用的通用 FHIR Encounter IMP → HL7 ADT^A01 ES5 纯映射逻辑，当前仅离线测试 |
 | [test_oie_adt_a01.js](../../../../local-data-platform/tests/clinical_producers/test_oie_adt_a01.js) | Node.js HL7 字段、拒绝、跳过、稳定 ID 与 VM 兼容测试 |
-| [README.md](../../../../local-data-platform/apps/clinical_producers/oie/README.md) | 使用方式与尚未完成的 OIE Channel/运行态边界 |
+| [README.md](../clinical-producers/OIE-ADT-MAPPING.md) | 使用方式与尚未完成的 OIE Channel/运行态边界 |
 | [oie-adt-mapping-unit.yml](../../../../.github/workflows/oie-adt-mapping-unit.yml) | GitHub-hosted 离线 PoC 映射门禁，无 K8s/云连接 |
 
 OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/implement-oie-fhir-to-hl7-adt-poc/tasks.md)。
@@ -192,7 +192,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 
 | 文件 | 作用及边界 |
 | --- | --- |
-| [OIE Kubernetes README](../../../../local-data-platform/kubernetes/manifests/oie/README.md) | `dw-oie` 前置审批、独立 PVC/Secret/镜像与真实安全门 |
+| [OIE Kubernetes README](../clinical-producers/OIE-K8S-TEMPLATES.md) | `dw-oie` 前置审批、独立 PVC/Secret/镜像与真实安全门 |
 | [namespace.yaml](../../../../local-data-platform/kubernetes/manifests/oie/namespace.yaml) | 拟建 `dw-oie`，尚未 Apply |
 | [pvc.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/oie/pvc.yaml.tpl) | 独立 `oie-state`，需确认 worker01 StorageClass Retain |
 | [statefulset.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/oie/statefulset.yaml.tpl) | 单副本、固定 `worker01`、Digest/Secret 占位符，不可直接 Apply |
@@ -206,7 +206,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | --- | --- |
 | [debug/deployment.yaml.tpl](../../../../local-data-platform/kubernetes/manifests/oie/debug/deployment.yaml.tpl) | `dw-oie`/worker01 非持久化 Deployment；`emptyDir` + 固定 Digest/UID/GID 占位符，不申请 PVC |
 | [debug/service.yaml](../../../../local-data-platform/kubernetes/manifests/oie/debug/service.yaml) | 临时 OIE 内网 HTTPS Service |
-| [debug/README.md](../../../../local-data-platform/kubernetes/manifests/oie/debug/README.md) | 安全调试步骤、失效数据边界以及持久化延后约束 |
+| [debug/README.md](../clinical-producers/OIE-DEBUG-HISTORY.md) | 安全调试步骤、失效数据边界以及持久化延后约束 |
 | [OIE debug template tests](../../../../local-data-platform/tests/clinical_producers/test_oie_debug_manifest.py) | 非持久化模式 YAML/节点/Secret 边界测试 |
 | [OIE debug static CI](../../../../.github/workflows/oie-debug-manifest-static.yml) | 无集群调用的 GitHub-hosted 静态门禁 |
 
@@ -214,7 +214,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 
 | 文件 | 作用 |
 | --- | --- |
-| [OIE pinned build README](../../../../local-data-platform/images/oie/README.md) | 上游 v4.7.0 精确 Commit、原 Dockerfile target/依赖与 GHCR 交付边界 |
+| [OIE pinned build README](../clinical-producers/OIE-IMAGE-BUILD.md) | 上游 v4.7.0 精确 Commit、原 Dockerfile target/依赖与 GHCR 交付边界 |
 | [OIE 4.7 isolated image smoke](../../../../.github/workflows/oie-470-isolated-image-smoke.yml) | GitHub-hosted 官方源 Clean Build 与启动测试，不推送镜像、不改共享环境 |
 
 ## OIE 4.7 GHCR 固定镜像发布
@@ -233,7 +233,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | --- | --- |
 | [persistent/storageclass.yaml](../../../../local-data-platform/kubernetes/manifests/oie/persistent/storageclass.yaml) | 专用 `oie` StorageClass: local-path, worker01 路径 /data/oie, Retain, WaitForFirstConsumer |
 | [persistent/pvc.yaml](../../../../local-data-platform/kubernetes/manifests/oie/persistent/pvc.yaml) | 唯一 10Gi `dw-oie/oie-state`，挂 OIE `/opt/engine/appdata`，独立数据库/运行数据 |
-| [persistent/README.md](../../../../local-data-platform/kubernetes/manifests/oie/persistent/README.md) | 热加载事实、安全切换路径与一次性 PVC 验收原则；无需第二个文件存储卷 |
+| [persistent/README.md](../clinical-producers/OIE-PERSISTENT-HISTORY.md) | 热加载事实、安全切换路径与一次性 PVC 验收原则；无需第二个文件存储卷 |
 | [persistent static test](../../../../local-data-platform/tests/clinical_producers/test_oie_persistent_static.py) | 专用 SC、PVC、安全切换静态校验 |
 | [persistent static CI](../../../../.github/workflows/oie-persistent-static.yml) | GitHub-hosted，无 K8s 副作用 |
 
@@ -335,7 +335,7 @@ After confirming safety and permissions with the scoped Self-Runner runtime Work
 | [Publisher SHA-only GHCR release](../../../../.github/workflows/azure-blob-publisher-ghcr-release.yml) | Hosted-only PR Clean Build/无网络容器 Smoke，Main-only 发布 git-SHA/Digest，不触碰 K8s、Secret 或 Azure，不覆盖 latest |
 | [Short-lived OIDC Publisher Job template](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-temporary-token-job.yaml.tpl) | 静态单次 Session Secret access-token/expires-on 模式，同 Namespace 只读 Generator PVC，强制 1200 秒 Job 截止；OIDC token 本身不得当 Azure 凭据；尚未实际创建 Secret/Job |
 | [DIRECT FHIR Job template](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl) | `dw-synthea` 内 Job，同 Namespace 只读挂载既有 Generator PVC；引用受控 ConfigMap Profile 和本 Namespace 专用 `azure-blob-publisher-identity` Secret，所有参数/镜像 Digest 必须经 Runner 审核后渲染 |
-| [Same-namespace Job guide](../../../../local-data-platform/kubernetes/manifests/synthea/blob-publisher/README.md) | 现有 Generator PVC 的只读挂载、OIE API 隔离和真实 Azure 操作门槛 |
+| [Same-namespace Job guide](DIRECT-FHIR-BLOB-PUBLISHER.md) | 现有 Generator PVC 的只读挂载、OIE API 隔离和真实 Azure 操作门槛 |
 | [runtime offline tests](../../../../local-data-platform/tests/clinical_producers/test_azure_blob_runtime.py) | 缺失 ready、旧 staged 模式拒绝隐式绕过、新 readonly PVC 模式、错误来源 SHA、缺失 Secret、数据篡改、不可变重试、脱敏和 Job 模板路径的离线断言 |
 
 **未完成边界**：`dw-az-blob` 已删除，改用 `dw-synthea` 现有 PVC 的 readOnly 源；已有 DIRECT FHIR Publisher GHCR 镜像（见下方），但 scoped OIE Fetcher 尚未真实认证读回，Azure RBAC/Secret/Job/真实 Blob GET 未验证。不执行此 Job 模板，不创建 Secret，也不重放历史 Request。
@@ -423,3 +423,7 @@ Exact evidence and bounded claims: [Johns Creek source/OIE/Blob E2E acceptance](
 Beyond the accepted 5-person E2E, a distinct NEW synthetic 50-person Run [Self-Runner #40731892374](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/40731892374) completed **SUCCESS** with `johnscreek-hl7-gh-40731892374`. Generator verified **1,941** FHIR Encounter resources; new OIE POST receipts **1,941**; **21 inpatient** Encounters yielded real HL7 ADT^A01 Azure Blob objects; **1,920** non-inpatient Encounters were skipped rather than fabricated as admissions. All **21 objects** and final Manifest were independently verified via Azure REST GET/HEAD/SHA/ETag. Publisher-only immutable retry and run-owned temporary-resource cleanup PASS; original 5-person and failed 100-person batches were not replayed.
 
 The reusable workflow remains **parameter-driven**, with Profile, population choices 5 (default), 10 and 50, optional seed and date; the batch source ID is generated at run time. The previously too-small 1,000 OIE event cap is now a bounded 5,000 in both Sender and Runner, using verified immutable Publisher Digest `sha256:ba8dbf51347f05f58db9af0e5777a125df571ab67644bad7d7fb7f0b15857ead`. This is specifically an Azure **Landing** acceptance; Fabric Notebook/Pipeline and OMOP are not included. [Full Source SHA, Azure Manifest SHA/ETag and live proof](../../../../openspec/changes/implement-multi-hospital-azure-blob-publisher/evidence/JOHNS-CREEK-HL7-50P-AZURE-LIVE-E2E-20261028.md).
+
+## Human-first OIE docs cutover
+
+OIE / external clinical FHIR→HL7 source guides are now centralized under [Clinical Producers](../clinical-producers/README.md); five original source-area README paths were retired with unchanged executable/manifest sources. This current CODE map remains the single trusted local source inventory for OIE until the Local DP CODE-map governance policy is separately adapted; the human-facing OIE README does not create a second competing source map. The Synthea-direct publisher guide is [DIRECT-FHIR-BLOB-PUBLISHER](DIRECT-FHIR-BLOB-PUBLISHER.md).

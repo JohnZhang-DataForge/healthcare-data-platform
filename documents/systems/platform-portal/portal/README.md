@@ -5,6 +5,10 @@ decision_date: 2026-10-27
 implementation_status: contract-frozen-v1; no-runtime-or-public-deployment
 ---
 
+## Public-facing Web and evidence navigation (2026-11-05)
+
+The public-only Marquez Web has an independent [current operator overview](PUBLIC-MARQUEZ-WEB.md), full [immutable implementation history](PUBLIC-MARQUEZ-WEB-HISTORY-20261105.md), and [exporter constraints](MARQUEZ-EXPORTER.md). Do not treat dated P0 planned UI assumptions below as a substitute for verified live Public Web or authorized exporter release.
+
 # Healthcare Portal — P0 Contract Foundation
 
 本页是 *Portal P0* 的接口与 Agent 协作权威入口。**最新用户决定（2026-10-27）**：三个独立 Session 为 Marquito Web、Marquez Exporter、Azure OpenLineage/Blob Relay；Cloudflare 用户手工配置，独立 P4 Infra 开发包取消，访客 Control 待后续阶段。最新协调和 Agent 提示词见 [OpenSpec Parallel Workstreams](../../../../openspec/changes/healthcare-on-demand-live-demo/parallel-workstreams.md)；下文旧 P1–P4 表为冻结 P0 历史分工，不应再作为当前执行分配。Portal 属于既有 `platform-portal/` 子组件，不是新独立系统；此前误建的顶级源码已迁移。长期目标架构继续以 [按需真实演示设计](../../../infra/HEALTHCARE-ON-DEMAND-LIVE-DEMO.md) 为准；任务进度只在 [Active OpenSpec tasks](../../../../openspec/changes/healthcare-on-demand-live-demo/tasks.md) 管理。Source map 见 [CODE](CODE.md)。
