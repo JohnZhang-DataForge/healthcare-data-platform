@@ -38,6 +38,8 @@ jobs:
         with: {persist-credentials: false}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
       - name: Assert image and release scope plus Blob source contracts
         shell: bash
         run: |
@@ -62,6 +64,15 @@ jobs:
             exit 1
           fi
           echo 'LEGACY_HOSPITAL_ID_SOURCE_SCAN=PASS'
+          # Required: ordinary Main push cannot silently publish GHCR.
+          python3 - <<'PY'
+          from pathlib import Path
+          flow=Path('.github/workflows/azure-blob-publisher-ghcr-release.yml').read_text()
+          marker="if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1"
+          assert marker in flow, "HOLD_GHCR_RELEASE_NOT_DISPATCH_GATED"
+          assert "if: github.event_name != 'workflow_dispatch'" in flow
+          print("GHCR_MANUAL_ONLY_RELEASE_STATIC_GATE=PASS")
+          PY
           python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p test_hospital_profiles.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
           # Blob key policy must accept realistic Synthea patient spelling
@@ -84,6 +95,12 @@ jobs:
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_persisted_readback.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_hl7_blob_runtime.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_message_submit.py -v
+          # The image also contains versioned source-bound A01/A03 send and
+          # dual persisted readback publisher entrypoints; never trust a legacy
+          # A01-only release smoke as V2 runtime proof.
+          python3 -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p test_oie_message_submit_v2.py -v
+          python3 -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p test_hl7_blob_runtime_v2.py -v
+          echo OIE_V2_BOTH_CLI_SOURCE_CONTRACT=PASS
           echo PUBLISHER_RELEASE_HOSTED_CONTRACT=PASS
           echo KUBERNETES_MUTATIONS=NO
           echo AZURE_STORAGE_WRITES=NO
@@ -146,6 +163,15 @@ jobs:
           from apps.clinical_producers.hl7_blob_runtime import (
               RECEIPT_VERSION, publish_hl7_from_new_receipts)
           assert RECEIPT_VERSION == "healthcare-oie-new-request-receipts-v1"
+          from apps.clinical_producers.oie_message_submit_v2 import (
+              VERSION as V2_RECEIPT_VERSION, ScopedOIEV2Poster,
+              submit_v2_new_request, verify_v2_receipts_against_frozen_source)
+          from apps.clinical_producers.hl7_blob_runtime_v2 import (
+              publish_hl7_v2_from_new_receipts, load_v2_receipts)
+          from apps.clinical_producers.oie.build_adt_events_v2_channel import (
+              CHANNEL_ID as V2_CHANNEL_ID)
+          assert V2_RECEIPT_VERSION == "healthcare-oie-adt-v2-new-event-receipts-v1"
+          assert V2_CHANNEL_ID == "6b91681e-5b3b-59cb-b270-09412054110c"
           from azure.identity import ClientSecretCredential
           from azure.storage.blob import BlobServiceClient
           assert os.getuid() == 10001 and os.getgid() == 10001
@@ -161,6 +187,13 @@ jobs:
           docker run --rm --network none --read-only --cap-drop ALL \
             --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
             -m apps.clinical_producers.oie_message_submit --help >/dev/null
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.oie_message_submit_v2 --help >/dev/null
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.hl7_blob_runtime_v2 --help >/dev/null
+          echo "OIE_V2_A01_A03_IMAGE_CLIS_NO_NETWORK=PASS"
           echo "OIE_INTERNAL_ADMIN_SHA256_LEAF_PIN_AVAILABLE=PASS"
           echo "OIE_SCOPED_POST_RUNTIME_CLI_SMOKE=PASS"
           echo "OIE_FIFTY_PATIENT_BOUNDED_EVENTS_RELEASE=PASS"
@@ -172,8 +205,10 @@ jobs:
           echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
           echo "AZURE_BLOB_REAL_UPLOAD=NO"
           echo "DW_SYNTHETIC_PVC_MOUNT=NO"
-      - name: Publish git-SHA tag only from exact Main release activation
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      - name: Publish git-SHA tag only on explicitly authorized Main dispatch
+        # A workflow-source PR merge is NOT permission to publish a package.
+        # Push-to-Main is hosted build/smoke only; manual release is separate.
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1
         shell: bash
         env:
           GHCR_USER: ${{ github.actor }}
@@ -200,8 +235,8 @@ jobs:
             echo "- Clean build / non-root offline smoke: PASS"
             echo "- Shared K8s, OIE, Azure Blob/Secret: UNCHANGED"
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: PR build is local-only (never push)
-        if: github.event_name == 'pull_request'
+      - name: PR and Main push build are local-only (never push)
+        if: github.event_name != 'workflow_dispatch'
         run: |
-          echo PUBLISHER_PR_IMAGE_BUILD=PASS
+          echo PUBLISHER_HOSTED_IMAGE_BUILD=PASS
           echo GHCR_PUSH_SKIPPED=YES
