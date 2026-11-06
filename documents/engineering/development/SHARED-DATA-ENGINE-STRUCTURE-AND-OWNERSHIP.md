@@ -87,7 +87,13 @@ documents/systems/azure-fabric/                     # 权威说明文档与 CODE
 
 ## 2026-11-05 实现状态与正式文档落点复核
 
-- Shared Engine 唯一 Python Wheel 已实际存在，`pyproject.toml` 当前为 0.1.3；不再使用旧“仅目录设计、尚无业务包”状态描述。正式源码目录见 [组件 CODE.md](../../systems/data-platform/shared-engine/CODE.md)。
+- Shared Engine 唯一 Python Wheel 已实际存在，`pyproject.toml` 当前为 0.1.6；不再使用旧“仅目录设计、尚无业务包”状态描述。正式源码目录见 [组件 CODE.md](../../systems/data-platform/shared-engine/CODE.md)。
 - 目录级 `shared-data-engine/AGENTS.md` 保留在源码作用域，仅负责可自动发现的 Agent 特殊约束。人类技术说明和离线构建测试入口集中于 [组件 README](../../systems/data-platform/shared-engine/README.md) 与 [BUILD-AND-TEST](../../systems/data-platform/shared-engine/BUILD-AND-TEST.md)，源目录不再维护第二份 README。
 - Warehouse 受控 DDL/Manifest 属于 `azure-fabric/deployment/warehouse/`，业务 Writer 属于 `azure-fabric/warehouse/`；Listener 部署配置在 `deployment/openlineage/`，Publisher 业务代码在 `openlineage/`。长期目录 Owner 见 [Fabric Deployment Ownership Spec](../../../openspec/specs/fabric-deployment-component-ownership/spec.md)。
-- 0.1.3 Fabric Environment 正式 Publish 和独立临时 Notebook Import 已有证据；正式业务 Notebook FHIR/Gold E2E 不因此获得验收或运行授权。旧测试/合约/源码原位不动。
+- 历史 0.1.3 环境发布/临时 Notebook Import 曾通过。**后续 2026-11-06 已独立完成 0.1.6 Fabric GA Publish、正式 Notebook 定义读回和正式 Notebook Spark 4.1 只读 RUNTIME_SMOKE**；但 FHIR/OMOP Candidate/Gold/Pipeline E2E 仍 OPEN。旧测试/合约/源码原位不动。
+
+## 2026-11-06 — 通用核心就绪后的 Owner 冻结
+
+- 继续遵守唯一 Shared Wheel 0.1.6、唯一 Canonical v1 Contract、Local/Fabric **不同物理 Writer**。Fabric 主线可以直接消费 Shared Engine，不必先改动稳定运行的 Local PG 生产链。
+- Local 进入维护模式：只处理确实需要的故障/合同兼容，**暂缓** Local Mapper/Writer 全面迁移。未来 Condition/新实体应通过 [多实体 OpenSpec](../../../openspec/changes/extend-shared-omop-multi-entity/tasks.md) 的独立增量业务 Change 验证，不做全平台大重构。
+- Fabric 正式业务验收归 [Unified FHIR→OMOP E2E](../../../openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md)、[G5 Candidate](../../../openspec/changes/fabric-g5-approved-silver-omop-candidate/tasks.md)、[OMOP Foundation Writer](../../../openspec/changes/fabric-omop-foundation/tasks.md)，临床 Mapping/真实 Identity/Delta Candidate/Gold E2E 未完成，不由此文档宣布 PASS。

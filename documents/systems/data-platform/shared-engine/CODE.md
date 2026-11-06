@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **当前状态：当前源码候选版本 0.1.6（未发布）；Fabric Environment 仍为 0.1.3，已正式 Published，且独立临时 Notebook Spark 4.1 Import PASS。正式业务 `nb_fhir_ingest` 版本门禁、FHIR/OMOP E2E 与 Gold COMMIT 仍需另行验收。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前状态（2026-11-06）：Shared 源码/正式 Fabric Published Wheel 均为 0.1.6；正式业务 Notebook 0.1.6 Git 定义读回及 Spark 4.1 只读 RUNTIME_SMOKE PASS。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 元数据，源码候选版本 0.1.6；Environment 0.1.3 Publish 与独立 Spark Import 已有验收，正式业务 Notebook/Gold 未验收 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 0.1.6；Fabric GA Publish、正式 Notebook 定义读回和只读实机 Smoke 已验收；Candidate/Gold 未验收 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -59,18 +59,18 @@
 
 - [Local Person/Visit Shared parity tests](../../../../.github/quality/tests/shared-data-engine/parity/test_local_shared_person_visit_parity.py)：直接调用既有 Local Visit `map_encounter_to_candidate`、从真实 Local Person main 原样抽出的 `map_joined_patient_to_person` 纯函数及 Shared `build_omop_candidates`，使用冻结 Canonical v1 字段定义、现有 Local `visit-class-v1.json` 和 `common/omop.py` 中的概念常量，验证 Person（16 个人口学码交叉组合）与 Visit（10 种 Class）完整 Schema/全部字段/重放等价。对未知 Class、人口学码、跨医院 Identity 和非 Standard Concept 做 fail-closed 负向测试；使用合成、未临床审批的 Profile，绝不授权 Fabric Gold。
 - Local Person 已将原有纯 OMOP 投影从 `local-data-platform/spark/apps/person/map_canonical_patient_to_omop.py::main` 原样抽为同文件 `map_joined_patient_to_person`，现役 main 调用这一函数。离线双 Spark Runtime 覆盖冻结 Schema、16 种合法人口学组合、行数据及 Replay 的 Local/Shared **投影等价**；原 JDBC/Manifest/原始来源验证、数据发布不在此纯函数内，未重写或切换任何 Local 生产系统。真正复用 Shared Wheel 的 Local 部署/交付验收、真实临床 Profile 和物理 Gold/PG/Fabric 写入仍 OPEN。
-- 该测试由现有 Shared Wheel 离线 CI 分别在 Python 3.11/PySpark 3.5.7 与 Python 3.13/PySpark 4.1.1 执行，且不改变唯一 Wheel 0.1.6 的内容、已发布 Fabric 0.1.3、现有 Notebook 或物理数据。
+- 该测试由现有 Shared Wheel 离线 CI 分别在 Python 3.11/PySpark 3.5.7 与 Python 3.13/PySpark 4.1.1 执行，且不改变唯一 Wheel 0.1.6 的内容、现有 Fabric Notebook、Local 生产链或物理数据。
 
-## P3 Python 3.13 兼容发行版候选（历史阶段；后续 0.1.3 已发布）
+## 历史 P3 Python 3.13 兼容发行版候选（后续 0.1.3 与 0.1.6 均已发布）
 
 - 版本候选 `0.1.1` 在 `pyproject.toml` 和公开 API `__version__` 同步，支持 Python 3.13。
 - 本地 Python 3.11 / PySpark 3.5.7 与 Fabric 2.0 Python 3.13 / PySpark 4.1.1 的测试分离执行。
 - 原有 Git Environment CustomLibraries `0.1.0` 是历史暂存版本；在新版源码 PR、确定性 Wheel SHA、离线安装验收、另行的 Wheel Git staging PR 全部通过前，不得直接更换 Fabric 运行环境。
 - 必须确保从旧 Wheel 过渡至新 Wheel 时只有一个 CustomLibraries 文件；任何 Fabric Publish/Notebook Binding 都需独立授权。
 
-CI 见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/shared-engine-wheel-validation.yml)，构建/安装证据只适用于该 PR HEAD 的测试版本；Fabric Publish 未授权。
+此段仅代表历史 P3 阶段；0.1.6 Fabric GA Publish 已于后续独立 Run 完成。构建/安装仅针对其被测 SHA；见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/shared-engine-wheel-validation.yml)。
 
-## G5 0.1.2 候选（2026-11-03；历史阶段，当前源码为 0.1.3）
+## G5 0.1.2 候选（2026-11-03 历史阶段；当前源码为 0.1.6）
 
 - 源码中首次提供 `build_omop_candidates` 与 `load_omop_mapping_profile`。独立从已验收的物理 Delta 获取 Silver Approval、稳定 ID Map、标准/有效 OMOP Concept Lookup、Profile 原字节及 SHA 都是运行方的责任；模块本身没有 Fabric/PG/I/O，也不生成 ID。
 - 当时新 Wheel 必须先经过离线 CI 和独立发布/读回；后续 0.1.3 已在 Fabric Environment 正式 Published。仍不得将临时 Notebook Import 外推为业务 Notebook 或 Gold 数据写入验收。
@@ -90,3 +90,10 @@ CI 见 [Shared Engine Wheel Offline Validation](../../../../.github/workflows/sh
 
 - [Staging 同步](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41833502954)、[正式 Environment Publish 与唯一 0.1.3 库读回](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745)、[独立临时 Notebook Spark 4.1 Import](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167)。完整事实边界见 [Fabric Environment CODE](../../azure-fabric/environments/CODE.md)。
 - [组件 README](README.md) 管架构和能力；[BUILD-AND-TEST.md](BUILD-AND-TEST.md) 管可复现离线测试与构建；[`shared-data-engine/AGENTS.md`](../../../../shared-data-engine/AGENTS.md) 只保留目录级 Agent 指令，不再作为业务状态记录。
+
+## 2026-11-06 通用核心收口与 Fabric 开发基线
+
+- **FABRIC_READY_CORE（不是 BUSINESS_E2E_DONE）**：单一 Shared Wheel 0.1.6，冻结 Canonical v1、Person/Visit、纯 Registry/Identity Snapshot/Preview Handoff、Concept/FK 和 Candidate；[双 Runtime 回归 #42281544230](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42281544230) 与 [Local/Shared parity #42273958120](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42273958120) PASS。
+- **云端发布/执行 PASS**：[0.1.6 Publish #42284453546](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42284453546)、[正式 Notebook Git 双格式读回 #42291355563](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42291355563)、[正式业务只读 RUNTIME_SMOKE #42297766098](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42297766098)。Published/Staging 唯一 0.1.6，默认 HALT，历史 G4 `engine-0.1.1` 不改。
+- **Local 维护模式**：不重构当前 Local PG Writer/Mapper，不阻塞 Fabric；任何未来 Local Shared 切换需独立 PR/回归。
+- **接下来的业务权威**：[Fabric FHIR→OMOP E2E](../../../../openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md) 及 [G5](../../../../openspec/changes/fabric-g5-approved-silver-omop-candidate/tasks.md)、[F2](../../../../openspec/changes/fabric-omop-foundation/tasks.md)。F1 release/license/临床 Profile、真实 Snapshot、Candidate Delta、Gold COMMIT/Replay、Pipeline E2E 未完成；Condition 作为后续第三实体证明，不提前复制另一套框架。
