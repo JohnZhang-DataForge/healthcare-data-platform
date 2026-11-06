@@ -64,3 +64,8 @@ Azure Exporter/Fabric = 独立分析副本链路
 
 
 2026-10-31 Fabric 项目最终规范：[Native Notebook/Pipeline/Environment ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。Fabric NB/PL 是必须的原生执行资源，Environment 管共享包构建产物；不额外创建 Fabric I/O/runtime 包。
+
+## 验收与实际保护状态（2026-11-05）
+
+- [PR #715](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/715) 的可信命名检查已合并到 main，真实 [正向 PR #716](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/716) 为 PASS、[负向 PR #717](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/717) 为 FAIL；历史 223 个 Task 文件未改。
+- GitHub Ruleset #25365902 仍需要仓库管理员添加第四个 Required Context：`require-trusted-component-paths`，来源 GitHub Actions integration `15368`；保存后核对 Ruleset 并对非 Draft 的负向 PR 验证 `blocked` 才能声称强制封板。该操作与旧 Required Checks 相互独立，**不得删除现有三项**。
