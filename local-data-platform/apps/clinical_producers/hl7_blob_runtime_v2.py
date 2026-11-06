@@ -22,7 +22,7 @@ from apps.clinical_producers.azure_blob_publisher import (
 from apps.clinical_producers.azure_blob_runtime import CONFIG_KEYS, HEX64
 from apps.clinical_producers.blob_publish_contract import verified_plan
 from apps.clinical_producers.hl7_blob_runtime import (
-    MAX_RECEIPT_BYTES, _unique_pairs,
+    MAX_RECEIPT_BYTES, HL7RuntimeBlocked, _unique_pairs,
 )
 from apps.clinical_producers.oie.build_adt_events_v2_channel import CHANNEL_ID
 from apps.clinical_producers.oie_hl7_publisher_v2 import prepare_oie_hl7_v2
@@ -45,7 +45,7 @@ def load_v2_receipts(path: Path) -> dict:
     try:
         receipt = json.loads(path.read_text(encoding="utf-8"),
                              object_pairs_hook=_unique_pairs)
-    except (OSError, UnicodeError, ValueError, TypeError):
+    except (OSError, UnicodeError, ValueError, TypeError, HL7RuntimeBlocked):
         raise HL7V2RuntimeBlocked("OIE_V2_RECEIPT_JSON_REJECTED") from None
     if not isinstance(receipt, dict):
         raise HL7V2RuntimeBlocked("OIE_V2_RECEIPT_JSON_SHAPE")
