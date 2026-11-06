@@ -158,7 +158,8 @@ def plan_candidate_identity_handoff(
     # hospital-only Map subset may be passed as a substitute for global state.
     if set(dict(snapshot.next_free)) != {_PERSON, _VISIT}:
         raise CandidateIdentityHold("G5_PREVIEW_TARGET_SCOPE_INCOMPLETE")
-    if set(preview.next_free) != set(snapshot.next_free):
+    if ({table for table, _ in preview.next_free}
+            != {table for table, _ in snapshot.next_free}):
         raise CandidateIdentityHold("G5_PREVIEW_ALLOCATOR_SCOPE_INVALID")
 
     # Build the exact proposal lookup once: G4 currently contains 5,918
