@@ -97,3 +97,12 @@ Person + Visit 是当前同事务基础组；Condition/Measurement 等后续可�
 - **决策 D4：** 沿用已有 G5/F2/统一 E2E Change 的真实 runtime acceptance；本 Change 完成的是**公共架构实现/兼容性**，不是临床 Gold 通过。
 - **风险：** 医院/Feed 命名空间与源键漂移、现有 Profile 强制模式、Fabric INT 全局空间、Derived ID 碰撞、跨组部分可见、契约向后兼容。每个风险需要对应失败用例和可恢复的 HOLD。
 - **回滚：** PR1 可 Git revert；PR2/3 保持旧函数及原版本 Wheel，可回退调用路径；PR4/5 必须有实际版本/事务/独立数据读回的回退计划，不能 DELETE 已提交医院记录来“回滚”。
+
+## PR3 源码边界：保留唯一 ID 分配算法，新增可移植的安全接口
+
+- F2 `azure-fabric/warehouse/omop-foundation/writer/identity_plan.py::plan_ids` 继续是当前 Person/Visit **唯一**确实执行整数分配建议的纯算法；F2 `silver_identity.py` 使用它生成合成/经核实 Silver Preview。Shared `identity/preview.py` 不再实现第二份 `plan_ids`，而是将现有 `AllocationPlan` 输入做严格快照核对、版本指纹和 PERSISTED/PROVISIONAL 显式化。未来 Condition 等新增 OMOP Target 的真正 Allocator Kind 需要单独修改原 Planner / physical Warehouse ID Map，**不能因为声明式 Registry 已能表达第三表就宣称可实际写入**。
+- `IdentitySnapshot` 必须包含指定 Registry 所有 Target 的原 Map、Gold 实际 ID、Allocator Next、Ledger SHA 和独立 Readback SHA，分别验证正 INT、跨医院复合来源键、Casefold、ID 冲突、计数/Map-Gold 一致；`require_preview_snapshot_unchanged` 只执行纯指纹对比。Digest 与调用方声称的 physical readback 必须被 Warehouse Writer 以真正 SQL 重新检验，不能仅凭传入的 SHA 或 boolean 获得事务权限。
+- Shared `mapping/omop/target_concepts.py` 新增 target-field 粒度 Profile（完整 Raw Bytes SHA pin / Domain 标准 / Vocabulary release SHA / Reviewer 与 License 证据 SHA / 有效期），仍只返回 `PRECHECK_ONLY_NOT_CLINICALLY_APPROVED`；现有 Fabric `writer/concept_profile.py` 继续守护当前 FHIR P1 的原始字段/概念预检，不允许独立改变其临床批准状态。后续应在实机 P1.4/P1.5 完成后以已评审规则接入。
+- Shared `identity/references.py` 的父级 FK 检查对同 Hospital/Source 精确匹配，并要求同一个事务组才可引用拟议父 ID；跨事务组只能引用已外部独立读回的持久父 ID。这里返回的是 `FK_PREFLIGHT_ONLY_NOT_COMMITTED`，不替代 Warehouse NOT ENFORCED FK/UNIQUE 应用级 DQ；可选 FK 的真正合法省略必须来自独立评审的 OMOP Entity 字段合同。
+- 保留 Canonical v1 原字节、旧 Person/Visit Mapper 的函数签名与原输出、Shared 0.1.4 的 Registry/EntityCandidateSet 接口、已有历史 G4 Frozen 数据，以及正式 Fabric Environment 0.1.3 Wheel。源码候选 0.1.5 的 Wheel 离线安装不表示 Azure Publish/Notebook 运行或 Gold COMMIT。
+
