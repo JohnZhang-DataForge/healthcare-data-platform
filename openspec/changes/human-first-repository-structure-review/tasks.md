@@ -3,11 +3,11 @@
 ## P0 — Structure audit and reviewed model
 - [x] 0.1 Inspect latest main, PRs and Git tree by every root/system; capture baseline numbers and exact paths.
 - [x] 0.2 Identify 223 legacy `taskNNN` paths, nine source README, 35 OpenSpec active changes and stale root ownership/long history problems.
-- [ ] 0.3 Merge human-readable target taxonomy, dependency/hazard boundaries and root navigation after Required Checks.
+- [ ] 0.3 Merge full baseline, human-first target taxonomy and root navigation after real Required Checks; commit now contains an accurate index, but merge/readback pending.
 
 ## P1 — Repo-wide human navigation and current ownership
-- [ ] 1.1 Fix stale Warehouse/Deployment references in root AGENTS and active engineering docs; preserve all safety restrictions.
-- [ ] 1.2 Add first-class clickable top-level codebase map for human GitHub browsing, exact component owners and explicit legacy distinction.
+- [x] 1.1 Fix stale Warehouse/Deployment references in root AGENTS, Documentation Governance and Developer CODE; preserve all safety restrictions; review PR merge pending.
+- [x] 1.2 Add first-class clickable top-level codebase map for human GitHub browsing, exact component owners and explicit legacy distinction; review PR merge pending.
 - [ ] 1.3 Shorten duplicated current-vs-history summaries without discarding accepted evidence; keep release states accurate.
 
 ## P2 — Centralize duplicate source READMEs
