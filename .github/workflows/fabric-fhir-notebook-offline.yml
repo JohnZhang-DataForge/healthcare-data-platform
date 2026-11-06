@@ -154,26 +154,35 @@ jobs:
           nb = runpy.run_path(str(path), run_name='_g5_016_offline_only_no_notebook_execution')
           assert nb['engine_version'] == '0.1.6'
           assert nb['run_mode'] == 'HALT'
-          # This is deliberate: old 0.1.3 code is NOT 0.1.6-compatible yet.
-          try:
-              nb['prepare_batch'](
-                  object(), context=object(), manifest_bytes=b'',
-                  source_objects=(), patient_contract_bytes=b'',
-                  encounter_contract_bytes=b'')
-          except ValueError as exc:
-              assert str(exc) == 'SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH', exc
-          else:
-              raise AssertionError('HOLD_G5_016_OLD_NOTEBOOK_UNEXPECTEDLY_EXECUTABLE')
-          try:
-              nb['validate_read_only_runtime_smoke'](
-                  mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
-                  request='', manifest='', source='', target='')
-          except RuntimeError as exc:
-              assert str(exc) == 'HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION', exc
-          else:
-              raise AssertionError('HOLD_G5_016_OLD_SMOKE_UNEXPECTEDLY_EXECUTABLE')
-          print('G5_013_NOTEBOOK_REJECTS_016_SOURCE_WHEEL=PASS')
-          print('G5_016_SOURCE_API_IMPORT_ONLY_CANDIDATE_NOT_PUBLISHED=PASS')
+          # Current formal Notebook is aligned to GA Published 0.1.6.
+          assert nb['validate_read_only_runtime_smoke'](
+              mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
+              request='', manifest='', source='', target=''
+          ) == 'FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_016_SPARK41_PASS_20261106'
+          # Simulate a downgrade strictly in function globals before Spark I/O.
+          from unittest.mock import patch
+          with patch.dict(nb['prepare_batch'].__globals__, {'engine_version': '0.1.3'}):
+              try:
+                  nb['prepare_batch'](
+                      object(), context=object(), manifest_bytes=b'',
+                      source_objects=(), patient_contract_bytes=b'',
+                      encounter_contract_bytes=b'')
+              except ValueError as exc:
+                  assert str(exc) == 'SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH', exc
+              else:
+                  raise AssertionError('OLD_013_NOTEBOOK_DOWNGRADE_NOT_BLOCKED')
+          with patch.dict(nb['validate_read_only_runtime_smoke'].__globals__,
+                          {'engine_version': '0.1.3'}):
+              try:
+                  nb['validate_read_only_runtime_smoke'](
+                      mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
+                      request='', manifest='', source='', target='')
+              except RuntimeError as exc:
+                  assert str(exc) == 'HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION', exc
+              else:
+                  raise AssertionError('OLD_013_RUNTIME_SMOKE_DOWNGRADE_NOT_BLOCKED')
+          print('G5_016_NATIVE_NOTEBOOK_GA_VERSION_ALIGNED=PASS')
+          print('G5_013_DOWNGRADE_FAILS_CLOSED=PASS')
           PY
       - name: Existing approved synthetic G5 candidate tests on installed 0.1.6
         shell: bash
@@ -182,8 +191,8 @@ jobs:
           cd "$RUNNER_TEMP"
           PYTHONPATH= python -m unittest discover -s "$GITHUB_WORKSPACE/shared-data-engine/tests" -p 'test_omop_candidates.py' -v
           echo 'G5_016_INSTALLED_CANDIDATE_OFFLINE_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'No Fabric Environment Publish, no native Notebook update, no G4/G5 Delta and no Gold write.' >> "$GITHUB_STEP_SUMMARY"
-      - name: Archive exact Git-native 0.1.6 source candidate (still NOT Fabric Published)
+          echo 'No Cloud Publish or Native Notebook deployment occurs inside offline CI; no G4/G5 Delta and no Gold write.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Archive exact already-GA-Published Git-native 0.1.6 package bytes
         if: success()
         uses: actions/upload-artifact@v4
         with:
