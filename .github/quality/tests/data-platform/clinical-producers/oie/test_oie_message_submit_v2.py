@@ -17,7 +17,9 @@ from apps.clinical_producers.oie.build_adt_events_v2_channel import (
     CHANNEL_ID, render_channel_v2,
 )
 from apps.clinical_producers.oie.build_channel import render_channel as legacy_channel_xml
-from apps.clinical_producers.oie_message_submit import OIEPostBlocked
+from apps.clinical_producers.oie_message_submit import (
+    OIEPostBlocked, channel_started_exact,
+)
 from apps.clinical_producers.oie_message_submit_v2 import (
     AUTHORITY, VERSION, ScopedOIEV2Poster,
     prepare_v2_new_events, submit_v2_new_request, verified_v2_post_receipts,
@@ -254,13 +256,14 @@ class V2SenderTests(unittest.TestCase):
             def __exit__(self, *args): return False
             def read(self, count): return self.raw
         class Opener:
-            def __init__(self, channel_xml):
+            def __init__(self, channel_xml, status=b"<status>STARTED</status>"):
                 self.channel_xml = channel_xml
+                self.status = status
                 self.calls = []
             def open(self, req, timeout):
                 self.calls.append(req)
                 if req.full_url.endswith("/status"):
-                    return Response(b"<status>STARTED</status>")
+                    return Response(self.status)
                 return Response(self.channel_xml.encode("utf-8"))
 
         scoped = object.__new__(ScopedOIEV2Poster)
@@ -291,6 +294,59 @@ class V2SenderTests(unittest.TestCase):
         with self.assertRaisesRegex(OIEPostBlocked, "OIE_CHANNEL_CONFIG_DRIFT_HOLD"):
             scoped.preflight_channel(CHANNEL_ID)
         self.assertEqual(len(scoped._opener.calls), 1)
+
+        # A nested stale STARTED field or literal NOT_STARTED must not permit
+        # A01/A03 submission into a stopped Channel. Only two GETs, zero POSTs.
+        for bad in (
+            b"<status>NOT_STARTED</status>",
+            b"<status>STOPPED</status>",
+            b"<channelStatus><state>STOPPED</state>"
+                b"<destinationConnectorStatus><state>STARTED</state>"
+                b"</destinationConnectorStatus></channelStatus>",
+            b"<channelStatus><state>NOT_STARTED</state>"
+                b"<lastState>STARTED</lastState></channelStatus>",
+            b"<channelStatus><state>STARTED</state><state>STOPPED</state></channelStatus>",
+            b"<channelStatus><channelId>00000000-0000-0000-0000-000000000000</channelId>"
+                b"<state>STARTED</state></channelStatus>",
+            b"<status>UNSTARTED</status>",
+        ):
+            with self.subTest(status=bad):
+                scoped._opener = Opener(render_channel_v2(), status=bad)
+                with self.assertRaises(OIEPostBlocked):
+                    scoped.preflight_channel(CHANNEL_ID)
+                self.assertEqual(len(scoped._opener.calls), 2)
+                self.assertTrue(all(req.get_method() == "GET"
+                                    for req in scoped._opener.calls))
+
+    def test_exact_channel_state_parses_current_state_not_substrings(self):
+        valid = (
+            b"STARTED", b" <string>STARTED</string> ",
+            b"<status>STARTED</status>",
+            b"<channelStatus><channelId>" + CHANNEL_ID.encode() +
+                b"</channelId><state>STARTED</state>"
+                b"<destinationConnectorStatus><state>STOPPED</state>"
+                b"</destinationConnectorStatus></channelStatus>",
+        )
+        for body in valid:
+            with self.subTest(body=body):
+                self.assertTrue(channel_started_exact(body, channel_id=CHANNEL_ID))
+        false_states = (
+            b"NOT_STARTED", b"STOPPED", b"<status>NOT_STARTED</status>",
+            b"<channelStatus><state>STOPPED</state>"
+            b"<lastState>STARTED</lastState></channelStatus>",
+        )
+        for body in false_states:
+            with self.subTest(body=body):
+                self.assertFalse(channel_started_exact(body, channel_id=CHANNEL_ID))
+        for invalid in (
+            b"<!DOCTYPE channelStatus><status>STARTED</status>",
+            b"<unknown>STARTED</unknown>",
+            b"<channelStatus><state>STARTED</state><state>STOPPED</state></channelStatus>",
+            b"<channelStatus><channelId>not-this-channel</channelId>"
+                b"<state>STARTED</state></channelStatus>",
+        ):
+            with self.subTest(body=invalid), self.assertRaises(OIEPostBlocked):
+                channel_started_exact(invalid, channel_id=CHANNEL_ID)
 
 
 if __name__ == "__main__":
