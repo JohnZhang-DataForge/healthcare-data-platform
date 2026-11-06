@@ -21,6 +21,7 @@ from apps.clinical_producers.oie_message_submit import OIEPostBlocked
 from apps.clinical_producers.oie_message_submit_v2 import (
     AUTHORITY, VERSION, ScopedOIEV2Poster,
     prepare_v2_new_events, submit_v2_new_request, verified_v2_post_receipts,
+    verify_v2_receipts_against_frozen_source,
 )
 from apps.clinical_producers.source_handoff import verify_handoff
 from apps.synthea.synthea_new_generator.generator import (
@@ -138,6 +139,22 @@ class V2SenderTests(unittest.TestCase):
             doc, run_id=RUN_ID, request_id=REQUEST, handoff=handoff,
             expected_events=[("visit-one", "A01"), ("visit-one", "A03")])
         self.assertEqual([p.message_id for p in parsed], ["10001", "10002"])
+
+    def test_independent_receipt_verifier_recomputes_frozen_source(self):
+        doc = self.submit(FakePoster())
+        records = verify_v2_receipts_against_frozen_source(
+            self.root, self.profile, REQUEST, run_id=RUN_ID,
+            expected_source_manifest_sha256=self.source_sha,
+            document=doc,
+        )
+        self.assertEqual([x.event_type for x in records], ["A01", "A03"])
+        doc["skipped_non_admissions"] = 0
+        with self.assertRaisesRegex(OIEPostBlocked, "SOURCE_EVENT_COVERAGE_HOLD"):
+            verify_v2_receipts_against_frozen_source(
+                self.root, self.profile, REQUEST, run_id=RUN_ID,
+                expected_source_manifest_sha256=self.source_sha,
+                document=doc,
+            )
 
     def test_wrong_channel_manifest_or_run_refuses_all_post(self):
         for kwargs in (
