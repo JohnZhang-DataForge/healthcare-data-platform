@@ -32,7 +32,7 @@
 - [x] 3.3a 新的 `target_concepts.py` 明确 Source Namespace、Target Table/Field、Profile SHA、Vocabulary Release SHA、Domain、Standard/Validity、Reviewer/License Evidence SHA 并防止旧 Person/Visit Domain 被覆盖；仅结构预检。
 - [ ] 3.3b F1 真实 Release/License 审计、来源临床规则人工 Signoff：必须继续完成 `fabric-fhir-omop-unified-e2e` P1.4–P1.5；没有此次实际审批。
 - [x] 3.4a 新 `identity/references.py` 按 Registry Dependencies 校验同来源医院与同事务组临时 Parent 引用；跨组未提交 Parent HOLD，已提交 Parent 要独立读回 Digest。可选 FK 必须另有审核后的字段合同，本 PR 不默认放开。
-- [ ] 3.6 PR3 新测试双 Runtime CI、Wheel 0.1.5 独立构建/安装、最终 HEAD Required Checks、合并/读回证据待确认；只认真实 Workflow 结果。
+- [x] 3.6 PR3 首次修复后的源码 HEAD `10ae0587b742318b1e5898f9922abbcc86f804a3` 上，双 Runtime 新测试 48/48、旧 Spark 回归、Wheel 0.1.5 可重复构建/独立安装和全部四项 Required Checks 均 SUCCESS；[Run #42160159116](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42160159116)。最终文档证据提交后须对**最终 PR HEAD**再次核验 CI 和合并/读回。
 
 ## 4. PR4 — 当前 Fabric G5 Candidate 恢复主线
 
@@ -73,3 +73,10 @@
 - 本轮从 Healthcare main `47ee4673fe72efaf5a53c2cf08e093b80f8b08f3`（2026-11-05 ET）分支，Self-Runner main 核对 `a96a07851823f4b953ef2e7b9540ff9a7b1d6ccd`，核对时 open PR=0。没有修改 Self-Runner、Local DP、Fabric Workspace/Notebook/Warehouse、环境 CustomLibraries、实际 SQL。
 - 已有 0.1.4 Registry 和 frozen Person/Visit Candidate 逻辑完全保留；本 PR 源码候选为 `0.1.5`，而 Fabric 已发布 Wheel 继续 `0.1.3`。新 `IdentitySnapshot` 的完整性校验只对**调用方提供的记录**负责；真实 SQL 数据和单写入 Fence 仍必须由平台 Writer 单独验证。
 - 正式 CI、实际 PR/HEAD SHA、所发现测试数量、旧映射回归、新测试、可重复 Wheel 证据必须在 3.5 验收后补充；不能提前写成 PASS/COMMIT。
+
+## PR #726 — source-only final validation evidence
+
+- [PR #726](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/726)，第一次 HEAD `33d4f92a17034b2c0f7faa98f53d7533dee300ad` 的校验发现两个**测试夹具**错误（既有 PersistedIdentity 类型误解和第三目标 Registry 缺 Snapshot Scope）及新增任务编号 `3.5` 冲突。修正后受测源码 HEAD `10ae0587b742318b1e5898f9922abbcc86f804a3`，原断言和业务安全规则未放宽。
+- [Shared Engine Wheel Offline Validation #42160159116](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42160159116) **SUCCESS BOTH JOBS**：Python 3.11/PySpark 3.5.7 旧合成 FHIR/Canonical/OMOP 35/35 PASS + 48/48 Multi-Entity 单元 PASS；Wheel `REPRODUCIBLE_WHEEL_PASS`、`WHEEL_IMPORT_PASS 0.1.5`；Python 3.13 纯 FHIR 13/13、Multi-Entity 48/48、Spark DataFrame 2/2 + OMOP 11/11 PASS、安装 `FABRIC_P3_PY313_WHEEL_INSTALL_IMPORT=PASS 0.1.5`。
+- 同 SHA 上 OpenSpec Strict、Change Gate、Active Index、文档链接、Source Path 及四个 Ruleset Required `require-trusted-change` / `validate-openspec` / `require-trusted-fabric-deployment-owner` / `require-trusted-component-paths` 全部成功。可选 Cloudflare `Workers Builds: healthcare-portal` 独立 FAILURE，本 PR 无 Portal 更改，不冒充 Cloudflare 验收。
+- **严守 SOURCE_ONLY：** F2 真实 ID 分配持久化、第三目标表 Allocator Kind、真实临床/License Signoff、G5 Candidate Delta、SQL Gold COMMIT/Replay、Fabric 发布 0.1.5 全部未执行/未验收。Fabric 环境继续使用 Published 0.1.3，Local DP 未改。
