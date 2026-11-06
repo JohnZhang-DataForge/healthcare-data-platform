@@ -51,6 +51,44 @@ class OIEPoster(Protocol):
         """Return the actual numeric OIE source Message ID from one POST ACK."""
 
 
+def channel_started_exact(raw: bytes, *, channel_id: str) -> bool:
+    """Parse only the current Channel state, never substring-match STARTED.
+
+    OIE REST may report a plain state token, a scalar XML status, or an
+    XStream channelStatus whose direct state/status child is authoritative.
+    A nested stale status, error message, NOT_STARTED or wrong Channel ID
+    must NEVER authorize a new POST.
+    """
+    if (not isinstance(raw, bytes) or not 0 < len(raw) <= 65_536
+            or b"<!DOCTYPE" in raw.upper() or b"<!ENTITY" in raw.upper()):
+        raise OIEPostBlocked("OIE_CHANNEL_STATUS_INVALID")
+    value = raw.strip()
+    if value == b"STARTED":
+        return True
+    if value in (b"STOPPED", b"PAUSED", b"NOT_STARTED", b"UNDEPLOYED"):
+        return False
+    try:
+        root = ET.fromstring(value)
+    except ET.ParseError:
+        raise OIEPostBlocked("OIE_CHANNEL_STATUS_INVALID") from None
+    if root.tag in {"status", "state", "string"}:
+        if len(root) or root.attrib:
+            raise OIEPostBlocked("OIE_CHANNEL_STATUS_AMBIGUOUS")
+        current = root.text
+    elif root.tag == "channelStatus":
+        states = [x for x in root if x.tag in ("state", "status")]
+        if len(states) != 1 or len(states[0]) or states[0].attrib:
+            raise OIEPostBlocked("OIE_CHANNEL_STATUS_AMBIGUOUS")
+        identities = [x for x in root if x.tag in ("channelId", "channelID")]
+        if (len(identities) > 1 or
+                (identities and identities[0].text != channel_id)):
+            raise OIEPostBlocked("OIE_CHANNEL_STATUS_IDENTITY_HOLD")
+        current = states[0].text
+    else:
+        raise OIEPostBlocked("OIE_CHANNEL_STATUS_INVALID")
+    return isinstance(current, str) and current.strip() == "STARTED"
+
+
 class ScopedOIEPoster(OIEScopedHTTPSClient):
     """Dedicated non-admin TLS client permitting only one explicit Channel POST.
 
@@ -90,7 +128,7 @@ class ScopedOIEPoster(OIEScopedHTTPSClient):
                     or b"<!ENTITY" in raw.upper()):
                 raise OIEPostBlocked("OIE_CHANNEL_PREFLIGHT_INVALID")
             if suffix:
-                if b"STARTED" not in raw.upper():
+                if not channel_started_exact(raw, channel_id=channel_id):
                     raise OIEPostBlocked("OIE_CHANNEL_NOT_STARTED")
             else:
                 try:
