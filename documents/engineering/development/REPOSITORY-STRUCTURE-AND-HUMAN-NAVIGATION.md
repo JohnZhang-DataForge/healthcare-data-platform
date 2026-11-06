@@ -45,3 +45,7 @@ Root `README.md` is the portfolio overview, root `AGENTS.md` sets mandatory Agen
 5. Compare exact Git blobs before/after, run all Required Checks and relevant offline tests, collect deployment/runtime checks where needed; use independent main readback. Record separate HOLD if actual producer/consumer migration not accepted.
 
 **This audit does not certify that task-numbered operational paths have been migrated, or that Runtime/Gold/Lineage E2E is complete.** Each checkpoint must be accepted separately.
+
+## Live Task-number migration status — source path inventory complete, runtime mapping HOLD
+
+The [223-file exact Git Blob inventory](LEGACY-TASK-GIT-INVENTORY-20261105.json) and [19-subtree semantic migration map](LEGACY-TASK-COMPONENT-MIGRATION-MAP.md) document each current Task-number path and proposed function owner. These are **STATIC / NOT MIGRATED**: real consumers include Local Docker/Airflow/PG identifiers and active Self-Runner workflows. The existing approved [Clean Slate local refactor](../../../openspec/changes/modernize-legacy-task-code/tasks.md) still governs isolated replacement and actual live testing before any cutover or old resource deletion.

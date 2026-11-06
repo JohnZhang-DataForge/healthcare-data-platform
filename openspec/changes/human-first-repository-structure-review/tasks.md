@@ -20,8 +20,8 @@
 - [ ] 3.2 Run link/trusted Required validation and independently count active/archive changes after merge.
 
 ## P4 — Legacy Local DP functional migration (HOLD pending dependency proof)
-- [ ] 4.1 Inventory every executable old `taskNNN/` path, owned logical function and all first-party/cross-repo consumers, especially Self-Runner, Airflow, image build contexts, manifests, SQL/DB and historical SHA pins.
-- [ ] 4.2 Publish exactly one semantic target per source module and versioned compatibility/rollback matrix. Enforce incremental no-duplicate ownership.
+- [ ] 4.1 **PARTIAL — exact 223/223 Healthcare Task directory Git tree/blob inventory and 19 functional-owner groupings recorded**, plus concrete Dockerfile/Airflow/PG/8-image workflow consumers and a Self-Runner 545-file/134 Task-name-path inventory. The separate full cross-repo content scan, live read-only PG/S3/K8s/Airflow consumer inventory and immutable SHA checker still require independent evidence; NOT ACCEPTED.
+- [ ] 4.2 **PARTIAL — 19 functional destination categories and mandatory boundary gates published**, exact per-file new paths/compatibility and independent Clean Slate Path A/B choice remain under existing `modernize-legacy-task-code` OpenSpec; DO NOT treat planning targets as implemented.
 - [ ] 4.3 Merge and test safe old/new compat first; move bounded functional batches with executable CI and required live acceptance where necessary; only then delete an obsolete task directory.
 - [ ] 4.4 Independently verify full final Git tree contains no accepted task paths except approved compatibility exceptions. Do not claim done until real path consumer tests pass.
 
@@ -34,3 +34,7 @@
 - Five fully checked, previously accepted Change histories moved to dated Archive: [fabric-native-notebook-git-onboarding](../archive/2026-11-05-fabric-native-notebook-git-onboarding/tasks.md), [fabric-workspace-native-layout-cleanup](../archive/2026-11-05-fabric-workspace-native-layout-cleanup/tasks.md), [fix-airflow-exact-new-only-batch-selection](../archive/2026-11-05-fix-airflow-exact-new-only-batch-selection/tasks.md), [fix-multi-parquet-omop-writer-read](../archive/2026-11-05-fix-multi-parquet-omop-writer-read/tasks.md), [marquez-pg14-local-seven-day-backup](../archive/2026-11-05-marquez-pg14-local-seven-day-backup/tasks.md). Their content/acceptance proof remains immutable by matching each original Git blob SHA at new location; source Python/SQL and live resources are not altered by archive.
 - Archive is **scoped**: New Git Native Notebook onboarding source and independent smoke accepted; *formal FHIR/Gold E2E remains distinct*. Airflow exact selection and multi-part Parquet Writer had separately verified successful real E2E/SKIP. Marquez PG14 backup CronJob + one manual dump was accepted; the first unattended scheduled 03:00 Job, restore and offsite recovery remain separate operational verification and are not implied.
 - Behaviors from four delta specs are adopted as Current Specs with ADDED converted to Requirements. Fabric Workspace empty placeholder cleanup had no spec delta.
+
+## P4 exact Git-only inventory evidence
+
+Healthcare b3313aff archive receipt has accepted P3; current snapshot uses main `335fde4c87307e185836154abeae0c4afaaa56ae`, 223 task-subtree sources, 19 owners, each file's original Git Blob SHA in `documents/engineering/development/LEGACY-TASK-GIT-INVENTORY-20261105.json`. Self-Runner main `3faa9c243e07f62d96474b1989c2ad0ed831d9e3` has 134 Task-name-path matches among 545 tracked files. This supports only static dependency prioritization; P4.1/P4.2/P4.3/P4.4 and P5 remain OPEN until complete dual-repo/live acceptance.
