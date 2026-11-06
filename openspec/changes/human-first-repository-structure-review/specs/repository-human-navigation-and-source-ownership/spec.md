@@ -29,7 +29,7 @@ Changes with zero open checkboxes are candidates, not proof, of completed work. 
 - **THEN** the Change SHALL not be marked wholly accepted or moved solely based on checkbox counts.
 
 ### Requirement: New source directories use a trusted component naming boundary
-The default-branch-only `require-trusted-component-paths` checker SHALL examine new source/quality/Workflow paths across Local DP, Fabric, Shared Engine and Portal as **passive Git data**. It MUST reject newly added `taskNNN`/`stepNNN` code locations and routine edits to the trusted checker/tests/workflow after bootstrap while leaving existing historical paths operable. This check is considered enforced only once GitHub Ruleset lists it as Required and a non-Draft negative PR is independently blocked.
+A trusted, default-branch-only CI policy SHALL reject newly added Task/Step-numbered source, quality and Workflow paths across all four platform source roots. The PR checkout MUST remain passive Git data, and existing historical source paths SHALL remain operable. Enforcement is not accepted until the check is Required and an invalid, non-Draft PR is blocked.
 
 #### Scenario: Agent adds a new Condition module
 - **WHEN** the candidate adds `local-data-platform/apps/task005/condition.py` or `shared-data-engine/src/healthcare_data_engine/step04.py`
