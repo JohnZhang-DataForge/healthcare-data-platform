@@ -12,7 +12,7 @@
 - [x] 2.1 在 Self-Runner 自有隔离目录建立独立实验代码、固定版本、合成 HL7 fixtures 和 runner-only 测试入口；不得引入云凭据/真实集群访问。Self-Runner PR #525（SOURCE/CI）。
 - [x] 2.2 验证开源 HL7 Parser 的 v2.5.1 解析以及部分缺字段/版本/出院事件/重复消息负向断言（合成固定样例 6/6 PASS；转义、时区、多医院完整矩阵尚未覆盖，留在 2.5）。
 - [x] 2.3 执行 dbt Core + DuckDB seed/run/test 及独立读回、同数据重跑（合成事件 2，Patient 1，Encounter 1，14/14 dbt tests PASS；不是 Delta 验收）。
-- [ ] 2.4 执行 dbt Core + Local Spark (dbt-fabricspark session) compile/run/test，记录版本和本地 Delta 读写；不可运行则提供具体阻断证据。
+- [x] 2.4 dbt Core + Local Spark (dbt-fabricspark session) compile/seed/run/test 与本地物理 Delta `_delta_log`、Candidate、MERGE 目标独立 SparkSession 读回、基础/重跑/双医院扩展均已通过 [Run #42207568265](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42207568265)。适用 PySpark 3.5.5 + delta-spark 3.3.2；当前 Fabric Spark 4.1 的兼容性不由该 POC 证明。
 - [ ] 2.5 同一 synthetic fixture 对齐 Candidate 值、异常分类、SQL/Delta 能力、运行成本；对比打分，**测试后**提议选型。
 
 ## 3. 正式 HL7 集成（尚未授权、与 POC 分离）
@@ -40,3 +40,10 @@
 - [Run #42206889854](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42206889854) 使用新跨医院合成 fixture：DuckDB **PASS**（hl7apy 10 个单测、16 项 dbt tests、基础/重跑/双医院独立读回，Patient/Encounter 1→2，events 2→4）。Local Spark (PySpark 3.5.7/Delta 3.3.2) 在显式 Delta `CREATE OR REPLACE TABLE` 报 `does not support truncate in batch mode`，因此 **Delta FAIL**，尚非语义模型失败。社区相似问题：https://github.com/delta-io/delta/issues/4671。
 - 针对该具体兼容问题，Self-Runner 仅实验分支将本地 PySpark pin 到 3.5.5，并将物理 Delta 验收限定在实际 Candidate 与 MERGE 目标（dbt Seed 是 Parquet fixture，不冒充 Delta）。[Run #42207568265](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42207568265) **提交文档时尚未获得完成的复验结论**；使用者必须先检查其最终日志与实际 HEAD，不可推断 PASS。
 - **仍未完成 2.4 / 2.5**：对 Spark 的 `_delta_log`、独立 Delta Reader、真实 `MERGE` 更新/插入、同批 Replay、两种引擎字段值等价、实际 OIE→Blob→Silver 的物理验收；所以 dbt-duckdb vs Local Spark vs Fabric 远程运行 **PENDING**，任何后续选择都须以真实证据为据。
+
+## 2026-11-06 ET — Actual local Delta candidate/readback acceptance
+
+- [Self-Runner Run #42207568265](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42207568265) 的两个 CI jobs 均 `SUCCESS`：GitHub-hosted ubuntu-latest，Synthetic HL7 parser 10/10；DuckDB dbt 2 models + 16/16 tests（三阶段）；Local Spark dbt 3 models（含独立 Delta MERGE probe）+ 16/16 tests（三阶段）。没有使用 Fabric Capacity、Azure/OneLake/OIE 实机或其他云凭据。
+- **最重要的增量 Delta 证据：** 第二个**独立** SparkSession 对 `canonical_patient`、`canonical_encounter` 与 `delta_event_merge_probe` 逐表执行 `DESCRIBE DETAIL` 确认 `format=delta`，检查目标物理 `_delta_log` 存在，并独立读回。同批重跑不增加重复；第二个合成医院相同来源 local Patient/Visit ID 进入独立 source namespace，Patient/Encounter 1→2，原 MSH-10 所属 source 更新 `processing_run_id` synthetic-poc-001→002，probe 行数由 2→4，证明在此本地组合中 `MERGE` 更新/插入有验证。
+- **重要限制：** 上轮 Spark 3.5.7 + delta-spark 3.3.2 `CREATE OR REPLACE TABLE` `truncate in batch mode` FAIL，换成 PySpark **3.5.5** 才通过；运行日志出现不致失败的 `HiveAlterHandler` error，应单独评审其在本地 metastore 的副作用。这与 Fabric 4.1 或 OneLake 真实远端 Delta 兼容性仍是不同验收层级。
+- 最新 Self-Runner PR [#525](https://github.com/JohnZhang-DataForge/Self-Runner/pull/525) 还增加了两个后端对 Canonical 关键字段值的精确断言/规范化哈希对照；该**新 HEAD 的测试尚未在此文档提交时获得完成验收**，所以 2.5 保持 OPEN、dbt 执行后端保持 PENDING。
