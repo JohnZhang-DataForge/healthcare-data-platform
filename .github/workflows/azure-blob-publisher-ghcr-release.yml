@@ -64,6 +64,15 @@ jobs:
             exit 1
           fi
           echo 'LEGACY_HOSPITAL_ID_SOURCE_SCAN=PASS'
+          # Required: ordinary Main push cannot silently publish GHCR.
+          python3 - <<'PY'
+          from pathlib import Path
+          flow=Path('.github/workflows/azure-blob-publisher-ghcr-release.yml').read_text()
+          marker="if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1"
+          assert marker in flow, "HOLD_GHCR_RELEASE_NOT_DISPATCH_GATED"
+          assert "if: github.event_name != 'workflow_dispatch'" in flow
+          print("GHCR_MANUAL_ONLY_RELEASE_STATIC_GATE=PASS")
+          PY
           python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p test_hospital_profiles.py -v
           python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
           # Blob key policy must accept realistic Synthea patient spelling
