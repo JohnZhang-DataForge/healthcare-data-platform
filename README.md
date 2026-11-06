@@ -44,38 +44,38 @@ The reusable part is **source onboarding, provenance, validation, reconciliation
 
 The [Medallion Canonical ADR](documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) fixes the long-term design: **source-specific CSV/FHIR/HL7 adapters → one canonical Patient/Encounter contract → one portable OMOP mapping, DQ, identity-planning and reconciliation engine**. Data sources supply independently reviewed code-to-Concept profiles; the Local PostgreSQL and Fabric Warehouse publishers remain platform-specific. The single `healthcare_data_engine` Wheel 0.1.3 has FHIR/Canonical/OMOP Candidate code and passed isolated Fabric import, but the **Local production mapper has not yet been fully migrated to it**. Fabric's synthetic FHIR Approved Silver milestone (100 Patient / 5,918 Encounter) is physically accepted; Fabric clinical Candidate/Gold COMMIT and end-to-end pipeline are not. The separate Local PG→Fabric analytical snapshot route remains a future product. [Current data flow](documents/architecture/DATA-FLOW.md).
 
-## Architecture: different sources, common controls
+## Architecture: different sources, common Canonical contract
 
 ```mermaid
-flowchart LR
-    subgraph SOURCES["Source-specific ingestion"]
-        CSV["Synthea CSV<br/>verified local feed"]
-        FHIR["FHIR R4<br/>integration in progress"]
-        HL7["HL7 v2 / OIE<br/>integration in progress"]
+flowchart TB
+    subgraph LOCAL["Local CSV path — verified PG17 COMMIT"]
+        CSV["Synthea CSV"] --> S3["SeaweedFS + immutable manifest"]
+        S3 --> AF["Airflow batch gate"] --> LSP["Local Spark adapter / Canonical / legacy OMOP mapping"]
+        LSP --> PGW["PG guarded Writer"] --> PG[("PostgreSQL OMOP Person / Visit")]
     end
 
-    subgraph LOCAL["Verified local processing path"]
-        LAND["S3-compatible landing<br/>batch + manifest"]
-        AIR["Airflow<br/>batch selection"]
-        SPARK["PySpark<br/>validation + canonical mapping"]
-        GATE["Reconciliation<br/>guarded writer"]
-        OMOP[("PostgreSQL 17<br/>OMOP Person + Visit")]
+    subgraph FABRIC["Fabric FHIR R4 path — approved Silver; Gold still open"]
+        FHIR["FHIR R4 source"] --> BLOB["Azure Blob manifest / source SHA"]
+        BLOB --> NB["Native Fabric Notebook / Shared FHIR adapter"]
+        NB --> SILVER[("G4 Canonical Silver Delta — approved / read back")]
+        SILVER -. "G5 Concept/Identity/Gold not yet committed" .-> CAND["OMOP Candidate / Warehouse Writer"] 
+        CAND -. "not yet accepted" .-> DW[("Fabric OMOP Gold")]
     end
 
-    CSV --> LAND --> AIR --> SPARK --> GATE --> OMOP
+    subgraph SHARED["Shared business architecture — single code owner"]
+        CONTRACT["ONE Canonical Patient/Encounter v1 Contract"]
+        ENGINE["healthcare_data_engine: post-Canonical Mapper / DQ / Reconciliation"]
+        CONTRACT --> ENGINE
+    end
 
-    AIR -. "run metadata" .-> LINEAGE["OpenLineage / Marquez<br/>run, table + column lineage"]
-    SPARK -. "dataset mappings" .-> LINEAGE
-
-    FHIR -. "cloud handoff work" .-> BLOB["Azure Blob<br/>publisher tested separately"]
-    HL7 -. "cloud handoff work" .-> BLOB
-    BLOB -. "not yet end-to-end" .-> FABRIC[("Microsoft Fabric / OneLake<br/>provisioned foundation")]
-    OMOP -. "analytics publishing planned" .-> FABRIC
+    LSP -. "contract compliant; legacy Local implementation" .-> CONTRACT
+    NB -. "same frozen contract" .-> CONTRACT
+    AF -. "Airflow event metadata" .-> LINEAGE["OpenLineage / Marquez"]
+    LSP -. "Spark event metadata" .-> LINEAGE
+    HL7["HL7 v2 / OIE — future shared Adapter"] -. "future Canonical integration" .-> CONTRACT
 ```
 
-**Reading the diagram:** The solid CSV → OMOP route has passed an end-to-end test and durable database readback. The OpenLineage connections are observed metadata flows. Dotted cloud integration routes are **component-level work or planned data flows**, not claims of a completed three-source Fabric pipeline.
-
-Source producers, landing, processing, and publishing are separate responsibilities. A generated file does not authorize a database write: processing starts from a selected batch with known identity and validation evidence. This is the boundary that makes onboarding additional feeds practical without weakening the controls on existing ones.
+**Reading the diagram:** Solid arrows are established local or Fabric Bronze/Silver component flows; dotted arrows identify unaccepted Fabric Gold, future HL7 integration, metadata, or logical contract relationships—not proof of a common deployed runtime. Source-specific adapters converge on a single *contract*, and post-Canonical business logic belongs to the shared code owner. The verified Local path retains its existing mapper until equivalence-tested incremental migration; no second Fabric business engine or cross-database SQL Writer is authorized. For exact stage acceptance see [Data Flow](documents/architecture/DATA-FLOW.md) and [current E2E tasks](openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md).
 
 ## What has been demonstrated
 
