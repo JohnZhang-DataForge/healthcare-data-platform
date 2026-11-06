@@ -280,6 +280,18 @@ class V2SenderTests(unittest.TestCase):
             scoped.preflight_channel(CHANNEL_ID)
         self.assertEqual(len(scoped._opener.calls), 1)
 
+        # An unexpected V2 OIE destination can have side effects. Do not POST
+        # into a Channel whose writer/route differs from reviewed version.
+        import xml.etree.ElementTree as ET
+        tampered = ET.fromstring(render_channel_v2())
+        destination = tampered.find("destinationConnectors/connector/properties")
+        self.assertIsNotNone(destination)
+        destination.set("class", "UNAPPROVED_SINK")
+        scoped._opener = Opener(ET.tostring(tampered, encoding="unicode"))
+        with self.assertRaisesRegex(OIEPostBlocked, "OIE_CHANNEL_CONFIG_DRIFT_HOLD"):
+            scoped.preflight_channel(CHANNEL_ID)
+        self.assertEqual(len(scoped._opener.calls), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
