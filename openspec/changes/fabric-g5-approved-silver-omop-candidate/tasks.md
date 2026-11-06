@@ -67,7 +67,9 @@
 - [x] 3.5 Add a distinct, strictly read-only `G5_CANDIDATE_SOURCE_READONLY` native Notebook mode that reuses actual G4 frozen source/Manifest/Approval/Canonical Delta readback; re-open independent Delta Patient, Encounter and approval paths; validate exact accepted P100/E5918/Q0, source batch SHA, source namespace, historical processing 0.1.1, pinned Canonical contract raw bytes, unique keys and FK. This is **source-only**, not Candidate or Gold.
 - [x] 3.6 Offline negative tests must reject changed Manifest, rejected G4 request, unexpected write authorization, unknown path overrides, partial/duplicate Approval, patient/encounter tampering and silent non-approval; run required CI and merge reviewed PR.
 - [x] 3.7 Actual G5 mode live Spark execution and exact exit / independent physical readback remain a separately scheduled, explicitly authorized stage. No assertion of PASS based on deployment or offline tests.
-- [ ] 3.8 Physical Candidate requires real approved Concept Mapping Profile and independently verified persisted Warehouse Identity Map; do not synthesize missing IDs, fake clinically approved Concepts, or publish Candidate using `silver_identity.py`'s preview.
+- [ ] 3.8 Physical Candidate requires reviewed real Concept Profile, independently verified **complete persisted Warehouse Map/Gold/Allocator/Ledger snapshot** and revalidated F2 `PROVISIONAL` ID proposal where Map is initially empty. Preview is NOT a durable ID reservation. The controlled Warehouse Writer must re-read under single-writer fence and atomically COMMIT Map/Allocator/clinical targets/Ledger; never mark preview or Candidate as Gold.
+
+- [ ] 3.9 New Shared Wheel 0.1.6 **source-only** F2 Preview → G5 Person/Visit Candidate ID Handoff: exact G4 source/Approval equality, PERSISTED vs PROVISIONAL lookup state, first batch empty Map, multi-hospital, 100/5918, replay, FK, length, snapshot and collision rejection. CI/PR and merged SHA evidence are required before closing this source-only task. Real Candidate/G5 3.2/Gold remain OPEN.
 
 ## 2026-11-04 — G5 3.5–3.7 independent physical evidence (source only)
 

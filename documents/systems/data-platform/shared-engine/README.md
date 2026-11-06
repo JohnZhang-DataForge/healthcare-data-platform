@@ -10,7 +10,7 @@
 
 ## 代码能力和验收边界（按最新 main 与独立 Run 核对）
 
-- **当前源码候选：** [`pyproject.toml`](../../../../shared-data-engine/pyproject.toml) 为 `0.1.5`，包含 Entity Registry / Person-Visit Candidate 兼容适配，并新增纯 Identity Snapshot / Concept 规则 / FK Reference Preflight（F2 原分配器保留唯一算法归属）；本版本**尚未发布到 Fabric**。已发布环境仍为 `0.1.3`。已包含 FHIR R4 Patient/Encounter、Canonical v1 验证、Replay/Reconciliation、Handoff v1 结构校验、医院隔离的纯 OMOP Person/Visit Candidate Mapping。模块与测试以 [CODE.md](CODE.md) 的真实路径为准。
+- **当前源码候选：** [`pyproject.toml`](../../../../shared-data-engine/pyproject.toml) 为 `0.1.6`，包含 Entity Registry / Person-Visit Candidate 兼容适配，并新增纯 Identity Snapshot / Concept 规则 / FK Reference Preflight（F2 原分配器保留唯一算法归属）；新增 F2 Preview → G5 Person/Visit Candidate 的安全 ID Handoff，全部输出仍保留拟议/已持久化状态且不进入 SQL/Delta Writer；本版本**尚未发布到 Fabric**。已发布环境仍为 `0.1.3`。已包含 FHIR R4 Patient/Encounter、Canonical v1 验证、Replay/Reconciliation、Handoff v1 结构校验、医院隔离的纯 OMOP Person/Visit Candidate Mapping。模块与测试以 [CODE.md](CODE.md) 的真实路径为准。
 - **离线 Wheel：** Python 3.11/PySpark 3.5.7 和 Python 3.13/PySpark 4.1.1 的合成测试、独立安装与可复现构建已有 [0.1.3 CI 证据](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/41827968535)。离线 PASS 只覆盖相应版本和测试范围。
 - **Fabric Environment：** 0.1.3 已通过 [正式 Publish 和已发布库读回](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41834029745)，并由[临时 Notebook Spark 4.1 Import](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) 独立验收。这**不代表**正式业务 `nb_fhir_ingest` 版本门禁、真实 FHIR/OMOP E2E 或 Gold COMMIT 已通过；参见 [Fabric Environment CODE](../../azure-fabric/environments/CODE.md)。
 - **依赖边界：** Shared 只负责纯计算。Blob/S3/OneLake/Delta/PG/Warehouse 物理写入、SparkSession、Notebook/Pipeline、部署和 Secrets 均由各平台独立负责。

@@ -19,6 +19,8 @@
 ## P2–P5 — 候选、事务、管线
 
 - [ ] 2.1 以真实 Warehouse 完整 ID/Allocator/Gold/Ledger 快照验证跨医院稳定 INT 分配，保留并发 Single-writer fence。
+- [ ] 2.2 完成 F2 Preview + 完整 Warehouse Snapshot → G5 Candidate ID Handoff（首次空 Map 的接口鸡生蛋问题），显式区分 PROVISIONAL/PERSISTED，校验 Person/Visit 100/5918、跨医院及 Parent FK；源码纯逻辑实现经 CI/PR 核验并合并后才关闭这一 SOURCE_ONLY 子项，真实 Gold 仍在 P4 OPEN。
+
 - [ ] 3.1 真正 Candidate Delta 物理写入、独立读回、Approval-last、同 Request Replay SKIP。
 - [ ] 4.1 Warehouse 单事务 Map/Allocator/Person/Visit/Ledger/Audit COMMIT；独立 SQL 新连接读回、Rollback/Unknown-ACK/Replay/DQ 负向验证。
 - [ ] 5.1 原生 Pipeline 实际 FHIR→OMOP E2E：默认 HALT/无自动 Schedule/retry=0；记录 Job、Spark、SQL 三类独立证据。

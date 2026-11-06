@@ -36,6 +36,10 @@
 
 ## 4. PR4 — 当前 Fabric G5 Candidate 恢复主线
 
+- [ ] 4.0a 首批零持久 Identity Map 的安全桥接：Shared 0.1.6 接收真正 F2 人员/就诊 ID Preview 与外部验证完整 Warehouse Snapshot，按批准 G4 P100/E5918 的源键构造 Candidate-only 索引，所有输出强制携带 PERSISTED/PROVISIONAL；无 Gold 权限、无 Fabric I/O。仅在离线双 Runtime 测试成功、PR 合并后标记为 SOURCE_ONLY 完成。
+- [ ] 4.0b 真实 Cloud Source/Concept/Release/License/Identity Snapshot 物理核实、Wheel 发布、Candidate Delta 写入/独立读回/Approval-last、事务内 Gold COMMIT 分别属于后续运行 Gate，不与 4.0a 混淆。
+
+
 - [ ] 4.1 维持当前 G4 P100/E5918/Q0 和 Approval 不可变，复用正式 Notebook/Environment 0.1.3+ 经审核发布版本与原 G5 源只读门禁；不冒充多实体 Runtime PASS。
 - [ ] 4.2 真实临床 Mapping Profile 和 Warehouse ID 完整 Snapshot 审核通过后，按 Person/Visit 目标输出 Candidate Delta；独立读回 Count/Keys/Hash/FK，Approval-last、冲突 HOLD、Replay SKIP。
 - [ ] 4.3 将真实 Candidate Evidence 写回现有 G5 OpenSpec，相关 Run/SHA/物理 Delta 路径真实可查；本 Change 只确认公共契约集成。
