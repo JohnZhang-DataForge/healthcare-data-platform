@@ -76,3 +76,10 @@
 - **PENDING**：Task 1.1 实际冻结 Synthea FHIR 的 PID-7/8/10/22 事实/US Core OMB extension 存在率及 Profile 兼容性；2.1/2.2 **完整**的可操作 Channel Writer、Source Handoff 与 OIE V2 Message Receipts/Bundle 绑定/发布流程；2.3/2.4 真实共享 worker01 OIE 新 Channel 安装/消息提交/持久 Derby GET、Blob PUT/GET、Manifest-last 的独立验收；3.x A08/MLLP/ACK，HL7 dbt → Fabric Canonical Silver 的正式 Publisher。
 - **安全**：新增三项 PR 均无共享 OIE/K8s/Azure/Fabric 副作用、不重放旧历史 Batch、不更改已部署 A01 ID 或持久 PVC/Derby。自建 Runner 运行时权限/Scoped Service Credential、精确 Workspace/Storage Location 和新 Request Batch 均未审批；不能以 CI 成功当实机成功。dbt DuckDB / Local Spark 选型仍 **PENDING**，见单独 `hl7-dbt-multi-engine-evaluation`。
 - **Next**：先对新冻结 FHIR Source Profile 做只读实证，再完成源 Event Receipt ↔ FHIR Source Manifest 的双向关联与已有 Publisher 集成测试；之后才是受控新 Channel 的实际 OIE 部署和 Raw HL7 Azure Blob E2E。
+
+## 2026-11-06 ET — Frozen Source Manifest + V2 Dual Event Blob Bridge (CI evidence pending)
+
+- 本次推进 2.1/2.2 的有界离线实现：新增 `oie_hl7_publisher_v2.py`，**复用** `verify_handoff` / `events_from_bundle`、`fetch_v2_event_readbacks` 与共享 `publish_immutable`；在 Blob PUT 前独立绑定源 Manifest、每 Encounter 事件完整性及原 FHIR demographic/时间与 OIE 持久 HL7 原字节。重读冻结源后再构建共享 Blob Plan，不重造 Transport/Writer/Mapper，旧 A01 调用路径不动。
+- 新回归覆盖双事件 GET/manifest-last、同 Request/同 SHA Replay、进行中 A01-only、非住院 SKIP、源被修改、PID/时间篡改、漏/额外 Receipt、旧 Channel 不兼容；新测试在 `.github/quality/tests/data-platform/clinical-producers/oie/`，Workflow 复用 `oie-adt-events-v2-unit.yml`。CODE Map 与人类文档同步。**当前只记录候选，不预写 PR/Run/PASS**。
+- 真实冻结 Synthea v3.3.0 Johns Creek FHIR Profile 将由已有 GitHub-hosted `synthea-new-generator-real-smoke.yml` 的只读 aggregate audit 扫描，报告 inpatient、A01/A03 eligibility、DOB/Gender、US Core OMB Race/Ethnicity、时段及代码型 HOLD，不输出 Patient/Encounter 具体数据。Run 只有出现 `PROFILE_COMPATIBLE` 才足以标记 1.1 真源验证；如有 HOLD，1.1 维持 OPEN，并另行审核 Mapping Profile（禁止用历史 FHIR 重播假装修复）。
+- **仍 HOLD：** 未经精确批准不导入新 OIE V2 Channel、不发真实 POST、不声称 OIE 4.7 真实持久 GET、不调用 Azure SDK 写/读、不重放历史 Batch、不修改 Derby/PVC/旧 A01 Channel。2.1/2.2 完整 Operational 与 2.3/2.4 实机 E2E 保持 OPEN；HL7 Parser+dbt → ONE Silver，dbt 后端继续 PENDING。
