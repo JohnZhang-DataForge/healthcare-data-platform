@@ -297,6 +297,9 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
         )
         shared = self.shared(
             patients=patients, identity_map=identity,
+            encounters=self.encounters.withColumn(
+                "source_person_id", F.lit("patient-combo-00")
+            ),
             approval={**self.approval, "patient_count": len(records)},
         ).person
         local = self.local_person(patients=patients, identity_map=identity)
@@ -307,6 +310,9 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
         self.assertEqual(shared.exceptAll(local).count(), 0)
         replay = self.shared(
             patients=patients, identity_map=identity,
+            encounters=self.encounters.withColumn(
+                "source_person_id", F.lit("patient-combo-00")
+            ),
             approval={**self.approval, "patient_count": len(records)},
         ).person
         self.assertEqual(shared.exceptAll(replay).count(), 0)
