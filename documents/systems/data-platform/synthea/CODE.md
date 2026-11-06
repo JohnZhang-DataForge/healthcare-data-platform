@@ -188,6 +188,22 @@ OIE/Blob 发布不属于 P4.1；其 Runtime 成功不能由离线校验测试推
 
 OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/implement-oie-fhir-to-hl7-adt-poc/tasks.md)。
 
+### OIE ADT v2 operational feed — 新版本离线 Source Phase
+
+| 文件 | 职责 |
+| --- | --- |
+| [adt_events_v2.js](../../../../local-data-platform/apps/clinical_producers/oie/adt_events_v2.js) | 新版本 ES5 FHIR source-backed ADT A01/A03 事件生成，缺真实临床字段 fail-closed；不替换已部署旧 Channel |
+| [build_adt_events_v2_channel.py](../../../../local-data-platform/apps/clinical_producers/oie/build_adt_events_v2_channel.py) | 由已固定 upstream OIE XML 生成**新 Channel ID** 的单事件接收模板；仅离线静态，未部署 |
+| [test_adt_events_v2.js](../../../../.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2.js) | Node.js 新版本业务逻辑与医学日期/代码负向测试 |
+| [test_adt_events_v2_channel.py](../../../../.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2_channel.py) | Python OIE Channel XML 构造/旧 ID 隔离测试 |
+| [test_adt_events_v2_independent_hl7.py](../../../../.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2_independent_hl7.py) | 用 pin 的开源 hl7apy 独立解析 V2 A01/A03 原始字节并核对 PID/PV1 |
+| [oie-adt-events-v2-unit.yml](../../../../.github/workflows/oie-adt-events-v2-unit.yml) | GitHub-hosted 仅 offline CI，无 Azure/worker01/OIE 集群访问 |
+| [OIE Operational ADT V2](../clinical-producers/OIE-OPERATIONAL-ADT-V2.md) | 医院来源格式、A01/A03 事件语义及 Blob / Fabric 待办交付边界 |
+
+Active OpenSpec：[`operationalize-oie-hl7-adt-feed`](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。当前 SOURCE/STATIC only；历史实机证据只属于旧 A01 Channel。
+
+
+
 ## OIE / worker01 独立部署候选（静态）
 
 | 文件 | 作用及边界 |

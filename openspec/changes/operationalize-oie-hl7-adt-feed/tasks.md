@@ -5,12 +5,12 @@
 ## Phase 0 — 设计与维护既有事实
 - [x] 0.1 只读核对 Main OIE 4.7.0 Channel、FHIR→ADT^A01、已有 OIE Derby/PVC 及 Writer=none、Legacy 历史实机证据。
 - [x] 0.2 核对 Canonical Patient/Encounter v1 必填信息、Self-Runner dbt POC 和隔离边界，规定 A01/A03 原始 HL7 → dbt → ONE Silver。
-- [ ] 0.3 合并 docs/spec-only 提案 PR，严格不部署、不执行 OIE/Blob/Fabric。
+- [x] 0.3 docs/spec-only 提案 [PR #733](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/733) 经 Required OpenSpec Change/Static/Links/Index 检查通过并合并 Main `97758b51ca7446669fbe3cbfd19beb82482ed380`；未部署 OIE/Blob/Fabric。
 
 ## Phase 1 — OIE ADT Producer 可操作语义（offline first）
 - [ ] 1.1 评审源 Patient FHIR Profile；实现 PID-7 DOB、PID-8 gender、PID-10 Race、PID-22 Ethnicity 的真实字段映射及缺失/未知/编码系统 Fail-Closed，保留独立 Stable Identity。
-- [ ] 1.2 完成 versioned `ADT^A01` + `ADT^A03` 业务生成、明确时序及 `PV1-44/45`；现有已部署 A01 Channel ID/字节行为保持不动。
-- [ ] 1.3 新测试 `.github/quality/tests/data-platform/clinical-producers/oie/` 覆盖历史完整、in-progress A01-only、编码缺失、重复/冲突、负时间、时区和转义，并通过实际 Node/HL7 parser 交叉校验。
+- [x] 1.2 完成**离线纯函数**的 versioned `ADT^A01` + `ADT^A03` 业务生成、明确时序及 `PV1-44/45`，源码单测/hl7apy 读回 PASS；现有已部署旧 A01 Channel ID/字节行为保持不动。OIE 新版本实机运行仍是 2.3/2.4 待办。
+- [x] 1.3 新测试 `.github/quality/tests/data-platform/clinical-producers/oie/` 覆盖合成历史完整、in-progress A01-only、编码缺失、标识碰撞、负时间、时区和转义，Node 10/10 + XML 4/4 + 独立 hl7apy 3/3 + legacy 10/10 PASS（新 V2 Channel 实机不在内）。
 - [ ] 1.4 对应更新系统 CODE owner、人类 OIE 文档与本 Change tasks；合并经 CI 验证的正式离线源码 PR。
 
 ## Phase 2 — Channel、原始传输、Blob（尚未授权实机）
@@ -27,3 +27,17 @@
 ## Separate product handoff
 - [ ] H.1 HL7 open-source Parser+dbt source-specific Candidate → One Canonical Silver Publisher 与 FHIR 汇合；dbt backend (DuckDB/Local Spark/remote Fabric) 选型保持 **PENDING**，此 Change 不实现 OMOP Mapper 或写正式 Silver。
 - [ ] H.2 完整上线验收前必须有正反向、故障注入、来源合成、独立 OIE 消息和远端 Blob readback 证据；不因 Phase 1 完成就宣称 E2E 成功。
+
+## 2026-11-06 ET — Versioned A01/A03 Source Implementation Candidate (STATIC / CI PENDING)
+
+- 在独立 Healthcare feature PR 实现 **新** `local-data-platform/apps/clinical_producers/oie/adt_events_v2.js`，与已部署旧 `adt_a01.js` / `build_channel.py` 完全分离。强制 Synthea/FHIR Patient.birthDate、male/female gender、FHIR US-Core Race/Ethnicity OMB Code extensions；合法 IMP in-progress→A01，finished + sourced end→A01/A03；同源 bytes/同 event type MSH-10 稳定，医院隔离。代码仅构建新 V2 的 HL7 v2.5.1 原始消息，不写 Azure，也不把 A01-only 填为 completed Encounter。
+- 新 `build_adt_events_v2_channel.py` 只生成**新 Channel ID** 的 OIE 4.7.0 Channel Reader 静态 XML；one-event-per-message 必须由 `requested_event_type` 请求并在 OIE 重新校验 eligibility。源 Writer 沿用 upstream `none`；因此不是可交付的 Raw HL7 Publisher。旧 OIE Derby/PVC/Channel 保持原样；未通过 live auth。
+- 新质量测试及 CI 均归 `.github/quality/tests/data-platform/clinical-producers/oie/` 和 `.github/workflows/oie-adt-events-v2-unit.yml`；源码/组件 CODE 入口见 Synthea CODE Owner，技术说明见 `documents/systems/data-platform/clinical-producers/OIE-OPERATIONAL-ADT-V2.md`。
+- **状态：source committed in PR branch; CI + independent HL7 Parser parse-back still need fresh evidence before marking 1.1/1.2/1.3 complete**。任何 OIE live/Blob/MLLP/Fabric 不在本源码 PR 中，Phase 2/3 不得提前打勾。
+
+## 2026-11-06 ET — OIE ADT V2 offline evidence
+
+- [Source PR #735](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/735) 为**新版本** `adt_events_v2.js` + `build_adt_events_v2_channel.py`，与旧 deployed A01 Channel/ID/`adt_a01.js` 完全隔离。实际 Node 输出为两条真正不同的 HL7 v2.5.1 A01/A03 原始消息；PID-7/8/10/22 分别来自 FHIR birthDate/gender/US-Core `ombCategory`，A03 的 PV1-45 来自真实 `Encounter.period.end`；A01-only 不制造出院。
+- [GitHub-hosted Run #42220398131](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42220398131)（源 `c88083764832cc77fd232ed2f5a2f9e4fee14be9`）：V2 Node 正反向 10/10、OIE 新 Channel XML 4/4、第三方 hl7apy v1.3.5 对 Node 输出真实字节及 PID/PV1 独立 3/3、原 Legacy OIE A01 10/10，全 PASS。属于静态/离线 SOURCE 验证，不是新版 OIE Channel 的真实 Derby/Blob Producer E2E。
+- **仍在 1.1 OPEN：** CI fixture 使用标准 US Core 扩展结构，但尚未独立读取真实冻结 Synthea FHIR Patient 的性别、DOB、Race/Ethnicity 实际字段分布和缺失率；只有源数据 Profile 检查通过、必要时 upstream 真实合法数据补全后才能说满足实际 OIE 医院 Feed。不能以合成 fixture 等同真实源。
+- 1.4 尚待 PR 合并。所有 Azure Blob Publisher、OIE 新 Channel 实机导入、MLLP/ACK、A08 和 FHIR/HL7 dbt→Silver 仍为后续受控任务；不复用已完成历史 batch。
