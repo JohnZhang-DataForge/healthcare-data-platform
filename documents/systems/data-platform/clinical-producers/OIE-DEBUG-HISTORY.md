@@ -1,5 +1,7 @@
 # OIE 4.7.0 disposable install — FIRST, before PV/PVC
 
+> **Directory cutover (2026-11-05):** This material was moved from `local-data-platform/kubernetes/manifests/oie/debug/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/local-data-platform/kubernetes/manifests/oie/debug/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 **Runtime mode: nonpersistent by explicit user request (2026-10-24).**
 Use this isolated OIE Debug Deployment in `dw-oie`, exclusively on
 `worker01`, to prove engine startup and Channel conversion before

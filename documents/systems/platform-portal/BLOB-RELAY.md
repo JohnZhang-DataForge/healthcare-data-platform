@@ -1,6 +1,8 @@
 # OpenLineage Blob -> existing Marquez consumer (offline)
 
-Entry: [consumer.py](consumer.py). Unit tests: `python -m unittest discover -s platform-portal/openlineage/blob-relay/tests -p 'test_*.py' -v`. **No Azure, Kubernetes, PG14, Marquez POST, or network operations were executed** by this module's offline tests.
+> **Directory cutover (2026-11-05):** This material was moved from `platform-portal/openlineage/blob-relay/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/platform-portal/openlineage/blob-relay/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
+Entry: [consumer.py](../../../platform-portal/openlineage/blob-relay/consumer.py). Unit tests: `python -m unittest discover -s platform-portal/openlineage/blob-relay/tests -p 'test_*.py' -v`. **No Azure, Kubernetes, PG14, Marquez POST, or network operations were executed** by this module's offline tests.
 
 The caller injects an authorized READ-only Blob store, an authorized existing PRIVATE Marquez endpoint, and a **persistent SQLite checkpoint** on a mounted durable local volume. Call `consume(blob_store, manifest_key, marquez, checkpoint)` only for the exact `openlineage/v1/batches/<batch>/manifest.json` key returned by the Publisher. The design intentionally does not implement a cloud polling loop, scheduler, Synthea rerun, Spark trigger or PG17/OMOP Writer.
 

@@ -1,5 +1,7 @@
 # OIE Clinical ADT^A01 Source Mapping (PoC Code Template)
 
+> **Directory cutover (2026-11-05):** This material was moved from `local-data-platform/apps/clinical_producers/oie/README.md` into the authoritative human documentation tree without changing executable sources, deployments or historical runtime evidence. The original is preserved in [the immutable pre-move Git commit](https://github.com/JohnZhang-DataForge/healthcare-data-platform/blob/10482bcd41ebe9cdbd6a06282bc26144b0f4736e/local-data-platform/apps/clinical_producers/oie/README.md). Dated outcomes below describe their original scope; use active OpenSpec and current code/runtime readback for live state.
+
 The source file `adt_a01.js` is an **ES5-style OIE channel JavaScript Code
 Template candidate**, built to avoid Node-specific behavior. Invoke its
 `fhirToAdtA01(bundle, config)` function from an OIE JavaScript
