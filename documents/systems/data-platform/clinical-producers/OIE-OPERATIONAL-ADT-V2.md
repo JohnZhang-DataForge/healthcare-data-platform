@@ -147,3 +147,30 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 - [Run #42304858501](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304858501) 最终 PASS：worker01 Ready，OIE 与 Synthea PVC Bound，OIE Deployment/内部 Service 正常，Scoped Auth/Pinned TLS Secret 均在，`ACTIVE_JOBS=0`。OIE Channel List GET HTTP 200；V2 Config GET HTTP 204 (No Content)；List 确认原 A01 Channel 存在、**新版 V2 Channel 不存在**；输出 `OIE_V2_CHANNEL_STATE=ABSENT_IMPORT_REQUIRED` / `OIE_V2_CHANNEL_READY=False` / `HOLD_V2_CHANNEL_IMPORT_APPROVAL_REQUIRED`。
 - 证据流程：[首次实机 #42302940758](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42302940758) 发现非 200 → [精确 HTTP 状态 #42304240902](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304240902) 确认为 Config 204 → [最终 List 对照 #42304858501](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304858501) 确认缺失。中间 #42303598463 仅 Host 授权校验失败，未进入实机，也未执行额外 OIE GET。
 - **下一步不再重复只读检查或排查 Runner**。单独提出导入并启动完全匹配审查版 XML、Source Mapper 和无副作用 Destination 的 V2 Channel 的执行门禁；导入前需要核对 ID 不冲突、现存 A01 不改动、Derby/PVC 不重建，并取得该写入范围的明确授权。完成后独立 GET 确认 STARTED，才允许 V2 GHCR Digest 绑定和新批次 A01+A03 → Raw Blob E2E。当前无 Channel 导入、HL7 POST、Blob PUT 或历史批次重放。
+
+
+## V2 Channel 首次导入与启动操作卡 — 2026-11-06（提案，尚未执行）
+
+权威状态：Self-Runner [真实 GET-only Run #42304858501](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304858501) 确认 V2 Channel **ABSENT_IMPORT_REQUIRED**，Legacy A01 仍存在。导入与启动候选见 [Self-Runner PR #548](https://github.com/JohnZhang-DataForge/Self-Runner/pull/548)。该 PR 未构成运行批准；截至本记录，**既未导入 V2，也未 START**。
+
+### 导入审批（仅 IMPORT_ONLY）
+
+- 固定 Healthcare Source SHA：b63e89b8ebed04f8f371db95562413597c54295a。固定新 Channel ID：6b91681e-5b3b-59cb-b270-09412054110c；旧 ID：69ace705-a675-45f6-b126-a3b22a65212a。通过源码 Builder 产生原版经过审查的 V2 XML，记录其 SHA256；不能用未审查的 XML 或旧导入 Workflow。
+- **先确认 Session Coordination 与共享资源所有权**，没有其它操作同一 OIE 实例的 Agent；worker01 Ready、OIE 原镜像/Deployment/Service/PVC、Synthea PVC、Scoped Secret/Pinned TLS、active Jobs=0 全部重新 GET。主分支及 SHA 精确一致后，读取所有 Channel ID、Legacy 配置及当前状态作为前置快照，并交叉确认 V2 不在列表中、精确 Config 不存在。
+- 独立授权且仅 Main 第一次 workflow_dispatch 选择 IMPORT_ONLY，输入对应精确确认文本；只对 /api/channels/ 提交一次 V2 新 XML。无部署/启动 API 调用，不向 OIE 送 HL7，不触碰 Blob。现有 XML 的 initialState=STARTED 是**配置字段，不是实机当前状态证明**；若服务端导入导致意外启动必须 HOLD 并调查。
+- 导入后重新 GET 列表、V2 完整配置/Mapper/Source/Destination/当前状态，比较旧 A01 配置+状态快照，并保存 Run ID、结果、XML SHA。若写请求超时或返回不确定，**不能自动重试、覆盖、清理、重建或再 POST**；应先独立 GET 核实实际生效范围。
+
+### 启动审批（仅 START_ONLY）
+
+- 独立检查导入的证据和 V2 XML 一致性；批准时重新核查 Session/资源、当前 V2 非 STARTED、旧 A01 快照；保留同一互斥组但不视其为全局排他锁。
+- 在新的、单独的 Main 初次 workflow_dispatch 中选择 START_ONLY，精确确认。仅调用新 V2 ID 的单 Channel deploy/start API；不得触发旧 A01 重部署、所有 Channel restart 或修改 Derby/PVC。
+- 独立 GET 当前 V2 STATUS 必须明示 STARTED（不接受 NOT_STARTED 或历史字段含 STARTED）；再比对 Mapper/Destination、Legacy 前后快照。没有真实 Run/GET 证据不得标记 V2 Channel READY。
+- **IMPORT 与 START 的两次授权不能合并**；Main push 或 PR Hosted PASS 都不构成授权。操作异常进入 HOLD，不做任何自动重试。
+
+### 后续交付仍独立 HOLD
+
+V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 **独立 Main 手动授权**，以清洁构建、non-root/no-network CLI Smoke、revision 一致性、真实 GHCR sha256 Digest 为证据，再审查绑定到独立 V2 Controller（目前 PUBLISHER_IMAGE 仍为空、故意阻断）。普通 Main push 只可构建/测试而不能推送包。
+
+只有 Channel 经 GET 验证 STARTED、V2 Digest 已获审查并绑定、首次新 Synthea Request/Manifest 唯一、Azure prefix 空且已单独批准，才能进行新的 A01/A03 原始消息 POST/ACK → Derby Message ID GET → immutable Blob PUT/远端 GET/manifest-last → Replay 审计。旧 A01 批次不得复用；Parser/dbt → Canonical Silver 归另一 Agent，本文不做该链路实现。
+
+**执行授权说明：** GitHub Workflow 的操作选项与确认字符串仅是技术防误触门禁，不构成跨 Session 的资源写入授权；即使 PR 已合并且 Hosted CI 通过，仍须先取得针对本次 V2-only IMPORT 或 START 的独立、明确批准。不得将任何先前只读检查的授权延伸为写入授权。
