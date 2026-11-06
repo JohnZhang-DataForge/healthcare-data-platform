@@ -53,6 +53,20 @@
 - Self-Runner PR [#525](https://github.com/JohnZhang-DataForge/Self-Runner/pull/525) 继续保持**隔离实验源码唯一归属**；Healthcare 此更新只记录证据，不增添实验代码、正式 Contract 的第二份权威、Fabric Notebook/Job 或 CI。使用的 `fixtures/canonical-v1.snapshot.json` 明确是离线测试用只读快照，引用 Healthcare Patient 18 字段及 Encounter 27 字段合同 Git Blob SHA；未来实施必须与权威合同最新 SHA 再对照。
 - [CI Run #42213497623](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42213497623) **DuckDB job SUCCESS**：开源 hl7apy 的 15 个合成正反向 parser 用例，通过严格 HL7 来源隔离、无效性别/人口学代码、时间冲突、重复 MSH-10 不同 SHA 的 HOLD；Canonical Patient 18/18、Encounter 27/27 字段顺序/类型/非空数据/来源联合主键、联合 FK 测试通过，dbt 16/16；两医院合成输出 2 Patient、2 Encounter。缺失 A03 的 A01-only 测试保持 Patient 1、completed Encounter **0**，没有造出院时间。
 - 同一 DuckDB Job 还验证本地（**非云端**）Candidate Parquet `manifest-last` 交付包的 object SHA256/size/row-count 独立读回、同版本 replay SKIP 和单字节篡改拒绝；Package Status 明确 `CANDIDATE_ONLY_NOT_APPROVED`。这是**未来 Fabric Silver Publisher 的接口 POC**，不能宣称 OneLake/Blob 已接入、远程 Approval 已完成。
-- **Spark 最新 Full Contract gate：** 本记录提交时，Run #42213497623 的 Spark 分支仍在执行；历史 [Run #42209078774](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42209078774) 双后端 SQL 关键字段和 SHA 相同且物理 Delta MERGE probe PASS，但不足以替代本次 18/27 全字段验证。不得提前标记新 HEAD Spark PASS。
+- **Spark 最新 Full Contract gate PASS：** [Run #42213497623](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42213497623) 的 DuckDB 与 Local Spark 两个作业均 SUCCESS（最新 HEAD `61bf15b7b0db6e593dc556020c28465573018bd3`）。Local Spark `dbt-fabricspark method=session` 在 PySpark 3.5.5 / Delta 3.3.2 下，Patient 18/18 字段、Encounter 27/27 字段、SQL 类型、强制非空数据、来源联合 PK/FK、16/16 dbt tests、真实 Delta `_delta_log`、单独 MERGE probe 的 baseline/replay/双医院扩展/独立读回全通过。两后端关键 Canonical 字段的 SHA256 在 baseline/expanded 场景逐一相同。**并不等于 Fabric Spark 4.1 / 远端 OneLake E2E 已通过。**
 - **明确剩余范围：** 虽然 Delta `MERGE` probe 已在 Local Spark 测过，正式 Patient/Encounter Candidate dbt models 仍为 `table` materialization，并非已完成生产增量模型；真实 OIE A01 信息不完整、Azure Blob Producer/Publisher 与 Fabric Approved Silver Publisher E2E 均未验证。
-- 仅在合成数据和 GitHub-hosted Runner 中，本地 DuckDB 速度明显较快、Local Spark 已有 Delta 读写证据；不足以正式选型。**dbt backend remains PENDING**，按既有 OpenSpec Task 2.5 继续评估本地 Delta 交付兼容、正式 Publisher 合同与计算成本。
+- **Self-Runner PR #525 已合并 Main：** [PR](https://github.com/JohnZhang-DataForge/Self-Runner/pull/525)，squash commit `f45131f72091cbf4170132640a6a0c0d38ac7a67`。变更仅 26 个文件：`experiments/hl7-dbt-canonical/` + 一项隔离新 CI Workflow。由此 POC 代码、Schema 只读快照、日志链接和运行说明均可从 Self-Runner Main 找到；绝无 Healthcare 实验代码。
+- **选型比较（当前可核查的 POC 结论，非生产性能测评）：**
+
+  | 维度 | dbt-duckdb / Runner | dbt-fabricspark local session / Runner |
+  | --- | --- | --- |
+  | HL7 Parser → dbt SQL / 18+27 Canonical 合同 | PASS | PASS |
+  | 本地增量与同源重跑 | SQL 重算/readback PASS；dbt 原生增量未验证 | 独立 Delta MERGE probe PASS；正式 Candidate 增量仍待做 |
+  | Candidate 物理格式 | Parquet + Manifest-last SHA / tamper reject PASS | 真实 Delta + `_delta_log` PASS |
+  | 两家医院相同 local PK 隔离 | PASS | PASS |
+  | 本地引擎计算需 Fabric Spark CU？ | 不需要 | 不需要（`method: session`） |
+  | CI 小合成数据工作流主要执行/读回阶段 | 历史 ~38 秒 | 历史 ~395 秒（JVM/Hive 启动明显更重） |
+  | 版本和迁移问题 | DuckDB→OneLake Delta 发布接口未验收 | PySpark 3.5.7/Delta 3.3.2 组合曾失败；3.5.5 能通过但有 HiveAlterHandler 错误日志 |
+  | Fabric 4.1 / 远端 OneLake Publisher | 未验证 | 未验证 |
+
+- **决策保持 PENDING**：当前本地技术可行性已验证，但只有真实 Silver Publisher 的受控交付/单 Writer 边界、OIE 原生 HL7 必需事实、Canon-v1/v2 放行策略和成本/恢复验收明确后，才作最后 DuckDB / Local Spark / Fabric remote 路线选择。禁止因成功 POC 推断正式 Silver/Gold 已完成；`2.5` 持续 OPEN 直至完成后端决策记录。
