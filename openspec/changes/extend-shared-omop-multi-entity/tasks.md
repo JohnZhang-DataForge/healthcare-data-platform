@@ -32,7 +32,7 @@
 - [x] 3.3a 新的 `target_concepts.py` 明确 Source Namespace、Target Table/Field、Profile SHA、Vocabulary Release SHA、Domain、Standard/Validity、Reviewer/License Evidence SHA 并防止旧 Person/Visit Domain 被覆盖；仅结构预检。
 - [ ] 3.3b F1 真实 Release/License 审计、来源临床规则人工 Signoff：必须继续完成 `fabric-fhir-omop-unified-e2e` P1.4–P1.5；没有此次实际审批。
 - [x] 3.4a 新 `identity/references.py` 按 Registry Dependencies 校验同来源医院与同事务组临时 Parent 引用；跨组未提交 Parent HOLD，已提交 Parent 要独立读回 Digest。可选 FK 必须另有审核后的字段合同，本 PR 不默认放开。
-- [ ] 3.5 PR3 新测试双 Runtime CI、Wheel 0.1.5 独立构建/安装、最终 HEAD Required Checks、合并/读回证据待确认；只认真实 Workflow 结果。
+- [ ] 3.6 PR3 新测试双 Runtime CI、Wheel 0.1.5 独立构建/安装、最终 HEAD Required Checks、合并/读回证据待确认；只认真实 Workflow 结果。
 
 ## 4. PR4 — 当前 Fabric G5 Candidate 恢复主线
 
