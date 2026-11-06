@@ -34,7 +34,7 @@ class FabricGitNativeContract(unittest.TestCase):
             "workspaceId": "00000000-0000-0000-0000-000000000000"
         })
         self.assertEqual(env_platform["metadata"]["displayName"], "env_healthcare")
-        self.assertIn('if engine_version != "0.1.3":', nb)
+        self.assertIn('if engine_version != "0.1.6":', nb)
         self.assertIn('run_mode = "HALT"', nb)
         self.assertIn("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED", nb)
         self.assertNotIn("write_authorized = True", nb)
@@ -50,9 +50,9 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertNotIn("def execute_native_notebook(", candidate)
         self.assertNotIn("write_authorized = True", content)
 
-    def test_g5_engine_package_013_is_distinct_from_adapter_record_010(self):
+    def test_g5_engine_package_016_is_distinct_from_adapter_record_010(self):
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
-        self.assertEqual(content.count('if engine_version != "0.1.3":'), 3)  # ETL, runtime smoke and source-only intake
+        self.assertEqual(content.count('if engine_version != "0.1.6":'), 3)  # ETL, runtime smoke and source-only intake
         self.assertNotIn('if engine_version != "0.1.0":', content)
         self.assertIn('(F.col("adapter_version") != "0.1.0")', content)
         # Engine is a published dependency version; adapter_version is the
@@ -151,7 +151,7 @@ class FabricGitNativeContract(unittest.TestCase):
         with patch("pyspark.__version__", "4.1.1"):
             self.assertEqual(
                 notebook.validate_read_only_runtime_smoke(**base),
-                "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_013_SPARK41_PASS_20261104",
+                "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_016_SPARK41_PASS_20261106",
             )
             for key, value in (
                 ("mode", "HALT"), ("mode", "ETL"),
