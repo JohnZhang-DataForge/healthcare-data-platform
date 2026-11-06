@@ -8,6 +8,22 @@ This independent project tackles those problems with synthetic healthcare data. 
 
 > **[Explore the live data lineage viewer](https://lineage.johnzhang-dataforge.site)** — Inspect real Spark jobs, upstream/downstream datasets, and Patient field mappings in Marquez. The self-hosted demo may be temporarily unavailable.
 
+## Browse the repository (human-first)
+
+The source tree is organized by **system and function**, not by development task number. [Full directory guide and legacy migration status](documents/engineering/development/REPOSITORY-STRUCTURE-AND-HUMAN-NAVIGATION.md).
+
+| Folder | What you find there | Human-readable map |
+| --- | --- | --- |
+| [`local-data-platform/`](local-data-platform/) | Existing Local Synthea, Airflow, Spark and OMOP workflows; historical `taskNNN/` paths still have live consumers | [Local components](documents/systems/data-platform/README.md) |
+| [`azure-fabric/`](azure-fabric/) | Fabric-native Items, Writer business code, deployment SQL/config and Terraform | [Fabric components](documents/systems/azure-fabric/README.md) |
+| [`platform-portal/`](platform-portal/) | Marquez, OpenLineage, public viewer and metadata storage | [Portal components](documents/systems/platform-portal/README.md) |
+| [`shared-data-engine/`](shared-data-engine/) | One portable Python library and scoped Agent instructions | [Shared Engine](documents/systems/data-platform/shared-engine/README.md) |
+| [`documents/`](documents/) | Canonical architecture, component README/CODE and runbooks | [Docs index](documents/README.md) |
+| [`openspec/`](openspec/) | Adopted specs, active changes, archived accepted history | [Change lifecycle](documents/engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md) |
+| [`.github/`](.github/) | Workflows and centralized quality/test assets | [Developer CODE map](documents/engineering/development/CODE.md) |
+
+The Local DP task-named directories are **operational compatibility paths**, not preferred new source organization. They are being assessed by function and consumer dependency before any physical migration. New code uses descriptive component names.
+
 ## The platform problem
 
 A new source system should not require a completely new pipeline. But a shared ingestion framework also cannot assume that CSV, FHIR, HL7, and future enterprise feeds have the same structure or semantics.

@@ -38,7 +38,7 @@ Azure/Fabric 的唯一当前权威说明位于 `documents/systems/azure-fabric/`
 
 [已批准的 OpenSpec Change](../../../openspec/changes/archive/2026-11-05-standardize-fabric-source-test-document-layout/tasks.md) 是新增文件的权威目录规则：新增自动化测试仅放 `.github/quality/tests/<system>/<component>/`，新增质量检查程序仅放 `.github/quality/scripts/`，测试静态样本按需放 `.github/quality/fixtures/`。正式人类技术文档归 `documents/`；源码目录不再新增说明性 README/CODE/ARCHITECTURE/PUBLISHER/Runbook Markdown。仓库根 README、各级 AGENTS、真实 SQL/DDL、运行配置和 Fabric 原生机器元数据保留。
 
-Local DP、Portal、Shared Engine、Azure Fabric 现存的旧测试和说明文档全部**按精确路径冻结**（`.github/quality/repository-layout-legacy-baseline.txt`）；允许原位维护已有文件，但不能在同目录新增测试或说明文件。P1 不进行物理迁移。当前 Native Item 在 `azure-fabric/workspaces/healthcare-omop/<real-item>.<type>/` 根级；不建立虚构 `notebooks/` / `pipelines/` / `*.Warehouse/`；Workspace-only Warehouse 的 SQL/Writer 仍在 `azure-fabric/warehouse/`。Native Git Item 文件新增/删除时，同一 PR 同步唯一 CODE Map。与旧设计文字冲突时，以当前 Git 实物路径和该 OpenSpec 规则为准；安全/授权边界不放宽。
+Local DP、Portal、Shared Engine、Azure Fabric 现存的旧测试和说明文档全部**按精确路径冻结**（`.github/quality/repository-layout-legacy-baseline.txt`）；允许原位维护已有文件，但不能在同目录新增测试或说明文件。P1 不进行物理迁移。当前 Native Item 在 `azure-fabric/workspaces/healthcare-omop/<real-item>.<type>/` 根级；不建立虚构 `notebooks/` / `pipelines/` / `*.Warehouse/`；Workspace-only Warehouse 的 SQL/Manifest 已归 `azure-fabric/deployment/warehouse/`，Writer Python 仍在 `azure-fabric/warehouse/`。Native Git Item 文件新增/删除时，同一 PR 同步唯一 CODE Map。与旧设计文字冲突时，以当前 Git 实物路径和该 OpenSpec 规则为准；安全/授权边界不放宽。
 
 ### Component README / CODE 双入口约定
 
@@ -122,3 +122,7 @@ evidence: []
 - 旧 Skill、历史 Runbook 和故障过程仅在 [Git 历史快照](../migration/LEGACY-DOCS-SNAPSHOT.md) 中查阅，**不作为新的 Agent 执行入口**。不得因为旧文件记载了某项操作，就恢复旧目录、过时状态或 Shell 生成源码流程。
 - 现行文档只保留跨任务稳定且会影响开发、安全或验收的工程规则。Shell Parser、Generator、特定路径等零散经验或反复遇到的坑，日后按需另行总结，**不复制进常驻规则**。
 - 文档名称保持稳定，语言按实际读者选择；不强制双语副本或语言后缀。重要的历史验收证据仍保留原始 Git/PR/Run 引用，不改写结果。
+
+### Human-readable repository structure (2026-11-05)
+
+The [human-first repository map](REPOSITORY-STRUCTURE-AND-HUMAN-NAVIGATION.md) is the **navigation and owner rationale**, not a second authoritative CURRENT/NEXT or business status tracker. Root GitHub tree readability, stable functional naming, one READMEs/CODE owner per component and strict historical operational compatibility are all required. New tasks use descriptive paths; legacy task directories need scoped executable-consumer migration, not unreviewed cosmetic moves. This does not change the frozen legacy baseline or GitHub protected gate.
