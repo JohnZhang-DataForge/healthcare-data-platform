@@ -56,8 +56,8 @@ flowchart TB
 
     subgraph FABRIC["Fabric FHIR R4 path — approved Silver; Gold still open"]
         FHIR["FHIR R4 source"] --> BLOB["Azure Blob manifest / source SHA"]
-        BLOB --> NB["Native Fabric Notebook / Shared FHIR adapter"]
-        NB --> SILVER[("G4 Canonical Silver Delta — approved / read back")]
+        BLOB --> NB["Native Fabric Notebook / source verification"]
+        NB --> BRONZE["G3 verified Bronze raw receipt"] --> FAD["Shared FHIR Adapter / Canonical DQ"] --> SILVER[("G4 Canonical Silver Delta — approved / read back")]
         SILVER -. "G5 Concept/Identity/Gold not yet committed" .-> CAND["OMOP Candidate / Warehouse Writer"] 
         CAND -. "not yet accepted" .-> DW[("Fabric OMOP Gold")]
     end
@@ -69,7 +69,7 @@ flowchart TB
     end
 
     LSP -. "contract compliant; legacy Local implementation" .-> CONTRACT
-    NB -. "same frozen contract" .-> CONTRACT
+    FAD -. "same frozen contract" .-> CONTRACT
     AF -. "Airflow event metadata" .-> LINEAGE["OpenLineage / Marquez"]
     LSP -. "Spark event metadata" .-> LINEAGE
     HL7["HL7 v2 / OIE — future shared Adapter"] -. "future Canonical integration" .-> CONTRACT
