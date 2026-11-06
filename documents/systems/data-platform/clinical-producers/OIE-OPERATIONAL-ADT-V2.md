@@ -67,3 +67,10 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 新 `local-data-platform/apps/clinical_producers/oie_event_readback_v2.py` 用 `(source_encounter_id,event_type,message_id)` 绑定单条 OIE 源消息，必须有明确的新 Channel ID、医院/Feed/Request/Assigning Authority；复用现有只读 Scoped GET 及 OIE Source Connector 安全 XML 解析，只允许显式 GET 的 Message IDs，不枚举或发送/重放消息。返回**原始** HL7 bytes、SHA256、Control ID；根据实际 A01/A03 subtype 重新做严格解析和来源关联检查，而不是相信旧的 legacy A01 disposition。A03 若没有已核实的 A01 在同一受控输入中则 HOLD（跨批次晚到出院留待 versioned reconciliation 设计）。
 
 新静态测试：`.github/quality/tests/data-platform/clinical-producers/oie/test_oie_event_readback_v2.py`，使用 V2 Node 生成的消息嵌入 OIE 4.7 仿真持久 XML 响应，并使用 FakeScopedGetter。任何离线通过都不是 **真实 worker01 OIE 新 Channel GET** 或 Azure Blob 发布证明。正式发布前还需要冻结 FHIR Source Handoff / Event Type 与每条 OIE Message ID 的双向验证，以及现实运行的独立 GET、SHA/manifest-last。
+
+## V2 Source Manifest → Event Receipts → 共享 Blob Bridge（离线实现）
+
+- 新增独立适配层 `local-data-platform/apps/clinical_producers/oie_hl7_publisher_v2.py`：先用现成 `source_handoff.verify_handoff` 核查**冻结 Request/Manifest SHA + 原 FHIR 文件 SHA**，按每一源 Encounter 核对 A01/A03 完整事件集合；随后仅经 `oie_event_readback_v2.fetch_v2_event_readbacks` 对明确的新 Channel/Message ID 做持久 GET。非住院/非适用状态计数跳过；住院进行中只允许 A01，完成住院必须 A01 和 A03，缺/多 Receipt 均 HOLD，不读历史消息。
+- 独立核对源 Patient/Encounter 与 OIE 持久 HL7 原字节中的 PID-3/5/7/8/10/22、PV1-19/44/45、事件时刻及 SHA；缺 DOB/Gender/US Core OMB Race/Ethnicity、缺出院或字段冲突，**Blob PUT 前** fail closed。V2 独立对象 `hl7/<encounter>-A01.hl7` / `-A03.hl7` 只复用共享 `azure_blob_publisher.publish_immutable`；对象条件创建、远端 GET、manifest-last、同 Request Replay 与冲突 HOLD 均由共享模块负责。
+- 新 CLI 只读扫描已冻结 Synthea FHIR，输出无 Patient/Encounter 标识符的 aggregate mapping 计数与代码级 HOLD 原因。已接入 GitHub-hosted `synthea-new-generator-real-smoke.yml`，结果应以实际 Run/日志为准。仅在源数据被证明兼容当前 V2 strict Pilot Profile 时标记支持；多 Race/category 或未知扩展必须 HOLD 或另行审核映射，不能造值。
+- 新离线测试 `.github/quality/tests/data-platform/clinical-producers/oie/test_oie_hl7_publisher_v2.py` 与既有 ADT Hosted CI 集成 Fake OIE 4.7 XML、双消息/独立 Fake Blob 读回；**CI 不能证明 V2 Channel 实机导入、POST/ACK、Derby/PVC 实际写入、Azure Blob 实际远端 GET 或正式 Fabric Canonical/Silver。** 真实操作须重新核查 Session Coordination、目标 SHA、共享资源占用及逐项显式授权；旧 Channel、Derby/PVC、A01 和历史 Batch 不动。
