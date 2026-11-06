@@ -191,6 +191,37 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
         self.assertEqual(local.exceptAll(shared).count(), 0)
         self.assertEqual(shared.exceptAll(local).count(), 0)
 
+    def test_all_approved_legacy_visit_classes_have_matching_rows(self):
+        # Real Local v1 profile drives this coverage, including home/virtual.
+        classes = sorted(self.local_visit_profile["class_to_visit_concept"])
+        cases = []
+        for idx, klass in enumerate(classes):
+            cases.append({
+                **_base_record("encounter"),
+                "source_encounter_id": f"all-class-{idx}",
+                "source_person_id": "patient-one",
+                "start_datetime": datetime(2026, 11, 5, 10, tzinfo=timezone.utc),
+                "end_datetime": datetime(2026, 11, 5, 11, tzinfo=timezone.utc),
+                "encounter_class": klass,
+                "source_code": "synthetic-code",
+                "source_description": "synthetic-only",
+            })
+        frame = _canonical_frame(self.spark, "encounter", cases)
+        result = self.shared(
+            encounters=frame,
+            approval={**self.approval, "encounter_count": len(classes)},
+        ).visit
+        legacy = self.local_visit(frame)
+        self.assertEqual(result.columns, legacy.columns)
+        self.assertEqual(result.count(), len(classes))
+        self.assertEqual(legacy.exceptAll(result).count(), 0)
+        self.assertEqual(result.exceptAll(legacy).count(), 0)
+        self.assertEqual(
+            {r.encounter_class: r.visit_concept_id for r in result.collect()},
+            {key: row["concept_id"] for key, row in
+             self.local_visit_profile["class_to_visit_concept"].items()},
+        )
+
     def test_replay_is_identical_without_storage_or_id_assignment(self):
         one, two = self.shared().visit, self.shared().visit
         self.assertEqual(one.exceptAll(two).count(), 0)
