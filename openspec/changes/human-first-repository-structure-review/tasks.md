@@ -48,3 +48,7 @@ Healthcare b3313aff archive receipt has accepted P3; current snapshot uses main 
 ## P0.5 real positive PR acceptance probe
 
 A bounded documentation/task update (this PR) probes that the newly bootstrapped default-branch-only source-structure job runs, reads current main policy, and **PASSES** when no source violates naming. Actual job SHA/Run acceptance is to be recorded in the follow-up evidence PR, not guessed here. Existing Local DP runtime and OpenSpec P4 Clean Slate HOLDS remain unchanged.
+
+## Real negative test (PR-only, NEVER MERGE)
+
+- A deliberately invalid new path `local-data-platform/apps/task005/condition.py` is introduced **only** in this separate negative PR. Its substantive OpenSpec record and CODE map are included so existing trusted Change, CODE-map and OpenSpec checks can pass, isolating the new source-structure failure. This test PR must remain unmerged and its code never becomes a source artifact.
