@@ -36,9 +36,14 @@
 
 [Self-Runner #41835694167](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41835694167) completed SUCCESS: published `env_healthcare` 0.1.3 preflight PASS; ephemeral Notebook exact definition readback PASS, Spark Job **Completed** with `G5_ENGINE_013_SPARK41_IMPORT_PASS`; temporary Notebook cleanup independently PASS. This supersedes previous 0.1.3 import HOLD, **not** the separate G5 business Notebook HALT/Gold COMMIT/Replay gates. Native business `nb_fhir_ingest` 已在后续 PR 中 source-guard 0.1.3，仍为 HALT；新 0.1.6 Git Wheel 发布和 Notebook 切换尚未完成。
 
-## G5 0.1.6 Git review candidate (NOT Fabric staged or Published)
-This 0.1.6 Wheel replaces 0.1.3 in the Git review branch.
-It is NOT Fabric staged, NOT Environment Published and NOT Notebook imported.
-A separately reviewed Git main sync and Publish is needed.
+## G5 0.1.6 Git review candidate — superseded by true Cloud Staging
+This 0.1.6 Wheel replaced 0.1.3 in the immutable Git review branch. **At that Git-only moment** there was no Fabric staging/Publish/import. A later independently verified Fabric Git update has since confirmed cloud **Staging 0.1.6**, with GA Published still **0.1.3** at the live readback time (details below).
 
 - Staging Workflows [#42280473991](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42280473991) **SUCCESS**: exact subtree `987ff3436761de57682d93f9a1c1205a42a8d242`, SHA256 `473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff` and four exact Git-only paths. Existing 0.1.3 Git Wheel removed, not both shipped. In this PR the historical 0.1.3 wheel is loaded only from immutable commit `b56b73207f7abe9d98e3fa4c3603fe045af6e15a` for old Notebook offline tests. **No Fabric UpdateFromGit, no Environment Publish, no cloud import yet**.
+
+### 2026-11-06 — Cloud staging 0.1.6 independently verified, GA Publish separate
+
+- [Real GET-only release audit #42282151277](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42282151277) initially saw Staging=0.1.3 and Published=0.1.3, five bounded Git differences, zero conflicts.
+- [Git sync Run #42283543934](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42283543934) passed exact five-item/HEAD preflight and submitted exactly one `UpdateFromGit` POST (202), then lost operation GET connectivity. **Do not retry the acknowledged POST**; its original GitHub job is FAILED and remains so.
+- Independent follow-up [GET-only Run #42283214760](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42283214760) **SUCCESS** with real cloud Staging **sole 0.1.6**, Published **sole 0.1.3**, Git synced/remote/workspace SHA `175caee20289f4b8056f4d39b4edca3a71210d61`, four local-only items unchanged, 0 remote changes, 0 conflicts. No cloud write from verification.
+- Effective GA Publish and new Spark runtime import are separate gates. The existing Native business Notebook still checks 0.1.3 and is `HALT`. **Do not infer 0.1.6 Published from Cloud staging or from a Git-only review.**
