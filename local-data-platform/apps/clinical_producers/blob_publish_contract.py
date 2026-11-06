@@ -141,7 +141,7 @@ def verified_plan(plan: dict, source_bytes: dict[str, bytes], *,
             try:
                 # Preserve the existing strict A01 acceptance. Add ONLY an
                 # independently verified A03 event; never accept arbitrary ADT.
-                msh = raw.split(b"\\r", 1)[0].split(b"|") if isinstance(raw, bytes) else []
+                msh = raw.split(b"\r", 1)[0].split(b"|") if isinstance(raw, bytes) else []
                 if len(msh) > 8 and msh[8] == b"ADT^A03^ADT_A03":
                     parsed = parse_adt_a03(raw)
                 else:
