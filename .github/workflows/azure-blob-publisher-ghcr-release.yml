@@ -196,8 +196,10 @@ jobs:
           echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
           echo "AZURE_BLOB_REAL_UPLOAD=NO"
           echo "DW_SYNTHETIC_PVC_MOUNT=NO"
-      - name: Publish git-SHA tag only from exact Main release activation
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      - name: Publish git-SHA tag only on explicitly authorized Main dispatch
+        # A workflow-source PR merge is NOT permission to publish a package.
+        # Push-to-Main is hosted build/smoke only; manual release is separate.
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1
         shell: bash
         env:
           GHCR_USER: ${{ github.actor }}
@@ -224,8 +226,8 @@ jobs:
             echo "- Clean build / non-root offline smoke: PASS"
             echo "- Shared K8s, OIE, Azure Blob/Secret: UNCHANGED"
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: PR build is local-only (never push)
-        if: github.event_name == 'pull_request'
+      - name: PR and Main push build are local-only (never push)
+        if: github.event_name != 'workflow_dispatch'
         run: |
-          echo PUBLISHER_PR_IMAGE_BUILD=PASS
+          echo PUBLISHER_HOSTED_IMAGE_BUILD=PASS
           echo GHCR_PUSH_SKIPPED=YES
