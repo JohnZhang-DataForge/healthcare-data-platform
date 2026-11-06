@@ -32,9 +32,9 @@ Root `README.md` is the portfolio overview, root `AGENTS.md` sets mandatory Agen
 
 **Critical human-browsing debt — Local DP:** 223 files under legacy task/step directories. These include Python, shell scripts, SQL, K8s templates and tests. The owner of runtime endpoints must be determined before moving. Use [legacy refactor plan](LEGACY-CODE-REFACTOR-PLAN.md) and [active Local DP relocation Change](../../../openspec/changes/relocate-local-data-platform/tasks.md) for known history; this new review does not silently supersede its business contracts.
 
-**Duplicated docs:** nine remaining source-area README files are legacy exceptions (six Local DP, three Platform Portal), several with essential OIE, Blob, public security and exporter instructions. Preserve the unique knowledge centrally, fix links, then remove source duplicates under proper PR/CI.
+**Historical audit (before PR #710):** nine source-area README files were legacy exceptions (six Local DP, three Platform Portal), several with essential OIE, Blob, public security and exporter instructions. Preserve the unique knowledge centrally, fix links, then remove source duplicates under proper PR/CI.
 
-**Stale/current ambiguity:** 35 Active OpenSpec Changes, with five zero-unchecked candidates requiring evidence-level review; avoid auto-archiving an unresolved business HOLD. Some system READMEs are excessively dated and duplicate archived Run chronologies. The root AGENTS has an obsolete Warehouse source statement inconsistent with adopted [Fabric deployment owner spec](../../../openspec/specs/fabric-deployment-component-ownership/spec.md).
+**Historical audit (before PRs #711–#712):** 35 Active OpenSpec Changes, with five zero-unchecked candidates requiring evidence-level review; avoid auto-archiving an unresolved business HOLD. Some system READMEs are excessively dated and duplicate archived Run chronologies. The root AGENTS has an obsolete Warehouse source statement inconsistent with adopted [Fabric deployment owner spec](../../../openspec/specs/fabric-deployment-component-ownership/spec.md).
 
 ## 4. Migration order and rollback
 
@@ -49,3 +49,7 @@ Root `README.md` is the portfolio overview, root `AGENTS.md` sets mandatory Agen
 ## Live Task-number migration status — source path inventory complete, runtime mapping HOLD
 
 The [223-file exact Git Blob inventory](LEGACY-TASK-GIT-INVENTORY-20261105.json) and [19-subtree semantic migration map](LEGACY-TASK-COMPONENT-MIGRATION-MAP.md) document each current Task-number path and proposed function owner. These are **STATIC / NOT MIGRATED**: real consumers include Local Docker/Airflow/PG identifiers and active Self-Runner workflows. The existing approved [Clean Slate local refactor](../../../openspec/changes/modernize-legacy-task-code/tasks.md) still governs isolated replacement and actual live testing before any cutover or old resource deletion.
+
+## P2/P3 source document readback — current main
+
+[PR #709](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/709) established root navigation and repaired stale ownership. [PR #710](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/710) removed all nine duplicate source READMEs, migrating their full content to human-facing component docs; 874 source/non-Markdown blobs were identical pre/post. [PR #711](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/711) separated four system overview READMEs from byte-identical archived history at their new sibling paths. [PR #712](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/712) archived five completed OpenSpec Changes and adopted four Current Specs. The remaining historical OIE Channel-PoC Markdown also moved to [Clinical Producers](../../systems/data-platform/clinical-producers/OIE-CHANNEL-POC.md) in this bounded document PR. All source-area human Markdown is now retired except the intentionally scoped Shared Engine `AGENTS.md`.

@@ -249,7 +249,7 @@ OpenSpec：[`implement-oie-fhir-to-hl7-adt-poc`](../../../../openspec/changes/im
 | [OIE bundled upstream raw reader](../../../../local-data-platform/apps/clinical_producers/oie/upstream-raw-reader.xml) | OIE v4.7.0 official test-export Channel XML, preserves XStream structure |
 | [OIE Channel builder](../../../../local-data-platform/apps/clinical_producers/oie/build_channel.py) | Replaces only channel identity and preprocessor JS using canonical ADT mapping |
 | [FHIR event splitter](../../../../local-data-platform/apps/clinical_producers/oie/fhir_events.py) | Pure read-only Patient+Encounter per event, clinical classification is done inside OIE |
-| [OIE import PoC notes](../../../../local-data-platform/apps/clinical_producers/oie/CHANNEL-POC.md) | Message API and runtime gates, no public listener |
+| [OIE import PoC notes](../clinical-producers/OIE-CHANNEL-POC.md) | Message API and runtime gates, no public listener |
 | [OIE import static tests](../../../../local-data-platform/tests/clinical_producers/test_oie_channel_build.py) | XML parse and event slicing contract tests |
 | [OIE channel static CI](../../../../.github/workflows/oie-channel-static.yml) | Hosted-only Channel build test; does not import/deploy |
 

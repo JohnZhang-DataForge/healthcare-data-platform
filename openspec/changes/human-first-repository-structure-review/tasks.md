@@ -13,11 +13,11 @@
 ## P2 — Centralize duplicate source READMEs
 - [x] 2.1 Six Local DP source READMEs relocated with unchanged substantive content, immutable original SHA permalink and central Clinical Producers/Synthea owners; final PR #710 review pending.
 - [x] 2.2 Three Portal READMEs moved to centralized documentation and component CODE maps updated; one Public Web concise current overview plus full implementation history; final PR #710 review pending.
-- [ ] 2.3 Prove no source/runtime blobs changed, docs links PASS, archived historical cross-links remain resolvable, no deleted source README can be reintroduced.
+- [x] 2.3 PR #710 merged main `d460116ec886eece35c598d55146ed4d688bed66` with docs links, OpenSpec, three Required Checks PASS and 874/874 non-Markdown blob SHA equivalence. All nine source READMEs absent. Also migrate the one remaining source-area OIE Channel-PoC Markdown in this PR, pending final CI/readback.
 
 ## P3 — Active OpenSpec hygiene
 - [x] 3.1 Review five zero-unchecked Change task checklists against their recorded accepted merge/Run evidence, preserving historical failures and known boundaries; archive each unchanged except its path and adopt four scoped Current Specs. PR acceptance pending independent CI/main readback.
-- [ ] 3.2 Run link/trusted Required validation and independently count active/archive changes after merge.
+- [x] 3.2 PR #712 merged main `335fde4c87307e185836154abeae0c4afaaa56ae`; OpenSpec Strict, links, Notebook offline and three Required Checks PASS. Independent post-merge tree readback shows 31 Active Changes (vs 36 after new review Change + original 35) and five successfully archived Changes. Scope-limited four Current Specs adopted; no business runtime impact.
 
 ## P4 — Legacy Local DP functional migration (HOLD pending dependency proof)
 - [ ] 4.1 **PARTIAL — exact 223/223 Healthcare Task directory Git tree/blob inventory and 19 functional-owner groupings recorded**, plus concrete Dockerfile/Airflow/PG/8-image workflow consumers and a Self-Runner 545-file/134 Task-name-path inventory. The separate full cross-repo content scan, live read-only PG/S3/K8s/Airflow consumer inventory and immutable SHA checker still require independent evidence; NOT ACCEPTED.
@@ -26,7 +26,7 @@
 - [ ] 4.4 Independently verify full final Git tree contains no accepted task paths except approved compatibility exceptions. Do not claim done until real path consumer tests pass.
 
 ## P5 — Final whole-repo readback
-- [ ] 5.1 Read merged main and check all root systems, Markdown links, CODE maps, required checks, OpenSpec status and frozen source blobs.
+- [ ] 5.1 **PARTIAL:** after PRs #709–#713, independently read merged main `68962c3e34c3daa10f01367cb1bafcf62c7f8cb5`: no source READMEs, 31 Active Changes, no open PR, exact 223 Local Task files unchanged, all scoped Required Checks passed. Complete P5 only after approved Local DP task-path migration and live consumer validation.
 - [ ] 5.2 Adopt the architecture layout Current Spec and archive only when all required physical/compatibility tasks have passed; otherwise explicitly retain Active HOLD for Local DP and do not claim full cleanup.
 
 ## P3 archive scope and historical proof (2026-11-05)
