@@ -161,6 +161,17 @@ def plan_candidate_identity_handoff(
     if set(preview.next_free) != set(snapshot.next_free):
         raise CandidateIdentityHold("G5_PREVIEW_ALLOCATOR_SCOPE_INVALID")
 
+    # Build the exact proposal lookup once: G4 currently contains 5,918
+    # encounters, and repeated IdentityPreview.for_key scans would be O(n²).
+    proposals = {}
+    folded_proposals = set()
+    for candidate in preview.identities:
+        key = candidate.key
+        if (key in proposals or key.folded() in folded_proposals
+                or candidate.snapshot_fingerprint != preview.snapshot_fingerprint):
+            raise CandidateIdentityHold("G5_PREVIEW_DUPLICATE_OR_DRIFTED_ID")
+        proposals[key] = candidate
+        folded_proposals.add(key.folded())
     persisted = snapshot.persisted()
     lookup: dict[DerivedRowKey, CandidatePersonId] = {}
     for key, omop_id in persisted.items():
@@ -214,8 +225,10 @@ def plan_candidate_identity_handoff(
         seen_person.add(key.casefold())
         # OMOP person_source_value has a varchar(50) target. No truncation.
         _source(key, "PERSON_SOURCE_VALUE_LENGTH", 50)
-        planned = preview.for_key(DerivedRowKey(
+        planned = proposals.get(DerivedRowKey(
             _PERSON, hospital_id, source_system, key))
+        if planned is None:
+            raise CandidateIdentityHold("G5_PREVIEW_PERSON_ID_NOT_FOUND")
         item = lookup.get(planned.key)
         if (item is None or item.person_id != planned.omop_id
                 or item.state != planned.state):
@@ -236,8 +249,10 @@ def plan_candidate_identity_handoff(
         parent = person_by_source.get(parent_source)
         if parent is None:
             raise CandidateIdentityHold("G5_PREVIEW_PARENT_PERSON_NOT_IN_SILVER")
-        target = preview.for_key(DerivedRowKey(
+        target = proposals.get(DerivedRowKey(
             _VISIT, hospital_id, source_system, source_visit))
+        if target is None:
+            raise CandidateIdentityHold("G5_PREVIEW_VISIT_ID_NOT_FOUND")
         # The F2 preview must be exact and must not be allowed to switch a
         # proposed ID to PERSISTED when there is no matching Warehouse map.
         original = persisted.get(target.key)
