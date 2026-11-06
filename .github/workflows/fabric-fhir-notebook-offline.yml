@@ -28,28 +28,25 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Verify staged 0.1.3 Wheel and install for HALT Notebook offline tests
+      - name: Verify exact sole Git-native published baseline 0.1.3 (source 0.1.6 is separate)
         run: |
           set -Eeuo pipefail
+          # The native wheel is a historical, independently published artifact;
+          # never pretend current 0.1.6 source rebuilds the older 0.1.3 bytes.
           python -m pip wheel -w "$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           python -m venv "$RUNNER_TEMP/fabric-offline"
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
-          mkdir -p dist
-          "$RUNNER_TEMP/fabric-offline/bin/python" -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
-          NEW='healthcare_data_engine-0.1.3-py3-none-any.whl'
-          NEW_SHA='6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59'
-          STAGED="azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/$NEW"
+          STAGED='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl'
+          SHA='6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59'
           test "$(find "$(dirname "$STAGED")" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
-          echo "$NEW_SHA  dist/$NEW" | sha256sum -c -
-          echo "$NEW_SHA  $STAGED" | sha256sum -c -
-          cmp "dist/$NEW" "$STAGED"
-          echo 'G5_013_SOURCE_NATIVE_GIT_WHEEL_BYTE_IDENTICAL=PASS' >> "$GITHUB_STEP_SUMMARY"
-          # The published 0.1.3 Wheel is byte-identical to Git staging.
-          # Notebook code remains HALT by default; offline tests may not publish.
+          echo "$SHA  $STAGED" | sha256sum --check
+          grep -qx 'version = "0.1.6"' shared-data-engine/pyproject.toml
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$STAGED"
           "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.3"'
-          echo 'G5_013_NOTEBOOK_OFFLINE_PIN_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'G5_013_NOTEBOOK_RUNTIME_GIT_READBACK_PENDING=YES' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G5_013_GIT_NATIVE_PIN_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G5_016_SOURCE_ONLY_NOT_PUBLISHED=YES' >> "$GITHUB_STEP_SUMMARY"
+          # The HALT Notebook and historic G3/G4 partitions remain pinned.
+
       - name: Synthetic Manifest plus local PySpark readback tests; ZERO cloud writes
         env:
           PYTHONPATH: azure-fabric/notebook-development
@@ -61,12 +58,12 @@ jobs:
           import unittest
           start = ".github/quality/tests/azure-fabric/notebook"
           test_files = sorted(Path(start).glob("test_*.py"))
-          if len(test_files) != 8:
-              raise SystemExit(f"FABRIC_NOTEBOOK_TEST_FILE_COUNT_INVALID={len(test_files)}; expected=8")
+          if len(test_files) != 9:
+              raise SystemExit(f"FABRIC_NOTEBOOK_TEST_FILE_COUNT_INVALID={len(test_files)}; expected=9")
           suite = unittest.TestLoader().discover(start_dir=start, pattern="test_*.py")
           found = suite.countTestCases()
-          print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=87; files={len(test_files)}", flush=True)
-          if found < 87:
+          print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=89; files={len(test_files)}", flush=True)
+          if found < 89:
               raise SystemExit("FABRIC_NOTEBOOK_TEST_DISCOVERY_FAIL")
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
@@ -82,11 +79,105 @@ jobs:
           test "$result" = 2 || { echo "EXPECTED_P2_RUNTIME_HOLD; got $result"; exit 1; }
           grep -q "HOLD_NATIVE_RUNTIME_DEPLOYMENT" "$RUNNER_TEMP/native-gate.txt"
           echo "NATIVE_GIT_EXPORT_VERIFIED_RUNTIME_HOLD"
-      - name: Archive SHA-verified sole Shared Engine Wheel
+      - name: Archive sole Git-native 0.1.3 baseline wheel (not a new publish)
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-g5-shared-wheel-013-candidate-${{ github.sha }}
-          path: dist/healthcare_data_engine-0.1.3-py3-none-any.whl
+          name: fabric-g5-native-013-baseline-${{ github.sha }}
+          path: azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl
           if-no-files-found: error
           retention-days: 30
+
+  g5-source-016-prepublish:
+    name: G5 Wheel 0.1.6 independent installed-Wheel prepublish isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_DATE_EPOCH: '1704067200'
+      SPARK_LOCAL_HOSTNAME: localhost
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build and independently install only source candidate 0.1.6
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          grep -qx 'version = "0.1.6"' shared-data-engine/pyproject.toml
+          test "$(find azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries -maxdepth 1 -name '*.whl' | wc -l)" = 1
+          python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1' 'pyspark==4.1.1'
+          mkdir -p "$RUNNER_TEMP/g5-wheel-016" "$RUNNER_TEMP/g5-wheel-016-repeat"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-016" ./shared-data-engine
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-016-repeat" ./shared-data-engine
+          WHEEL=healthcare_data_engine-0.1.6-py3-none-any.whl
+          test "$(find "$RUNNER_TEMP/g5-wheel-016" -name '*.whl' | wc -l)" = 1
+          cmp "$RUNNER_TEMP/g5-wheel-016/$WHEEL" "$RUNNER_TEMP/g5-wheel-016-repeat/$WHEEL"
+          sha256sum "$RUNNER_TEMP/g5-wheel-016/$WHEEL"
+          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-016/$WHEEL"
+          echo 'G5_016_REPRODUCIBLE_SOURCE_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Prove old Native Notebook FAILS CLOSED with 0.1.6, no Spark/cloud I/O
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP"
+          PYTHONPATH= python - <<'PY'
+          import importlib.metadata
+          import os
+          from pathlib import Path
+          import runpy
+          import healthcare_data_engine as engine
+          from healthcare_data_engine.mapping.omop.candidates import build_omop_candidates
+          from healthcare_data_engine.identity.candidate_handoff import build_candidate_identity_handoff
+          assert engine.__version__ == importlib.metadata.version('healthcare-data-engine') == '0.1.6'
+          assert callable(build_omop_candidates) and callable(build_candidate_identity_handoff)
+          path = (Path(os.environ['GITHUB_WORKSPACE']) /
+                  'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py')
+          nb = runpy.run_path(str(path), run_name='_g5_016_offline_only_no_notebook_execution')
+          assert nb['engine_version'] == '0.1.6'
+          assert nb['run_mode'] == 'HALT'
+          # This is deliberate: old 0.1.3 code is NOT 0.1.6-compatible yet.
+          try:
+              nb['prepare_batch'](
+                  object(), context=object(), manifest_bytes=b'',
+                  source_objects=(), patient_contract_bytes=b'',
+                  encounter_contract_bytes=b'')
+          except ValueError as exc:
+              assert str(exc) == 'SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH', exc
+          else:
+              raise AssertionError('HOLD_G5_016_OLD_NOTEBOOK_UNEXPECTEDLY_EXECUTABLE')
+          try:
+              nb['validate_read_only_runtime_smoke'](
+                  mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
+                  request='', manifest='', source='', target='')
+          except RuntimeError as exc:
+              assert str(exc) == 'HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION', exc
+          else:
+              raise AssertionError('HOLD_G5_016_OLD_SMOKE_UNEXPECTEDLY_EXECUTABLE')
+          print('G5_013_NOTEBOOK_REJECTS_016_SOURCE_WHEEL=PASS')
+          print('G5_016_SOURCE_API_IMPORT_ONLY_CANDIDATE_NOT_PUBLISHED=PASS')
+          PY
+      - name: Existing approved synthetic G5 candidate tests on installed 0.1.6
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP"
+          PYTHONPATH= python -m unittest discover -s "$GITHUB_WORKSPACE/shared-data-engine/tests" -p 'test_omop_candidates.py' -v
+          echo 'G5_016_INSTALLED_CANDIDATE_OFFLINE_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No Fabric Environment Publish, no native Notebook update, no G4/G5 Delta and no Gold write.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Archive 0.1.6 source candidate (NEVER an Environment library)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fabric-g5-wheel-016-source-only-${{ github.sha }}
+          path: ${{ runner.temp }}/g5-wheel-016/healthcare_data_engine-0.1.6-py3-none-any.whl
+          if-no-files-found: error
+          retention-days: 14
