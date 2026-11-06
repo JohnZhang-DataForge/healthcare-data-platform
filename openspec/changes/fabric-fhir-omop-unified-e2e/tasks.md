@@ -17,6 +17,8 @@
 - [ ] 1.5 临床映射审查与正式版本 SHA 冻结；未知、不合法、无授权的全部 HOLD；禁止发布伪 Profile。
 - [x] 1.8 F1 Release/Source Provenance 的**纯离线检查工具**：Self-Runner [PR #526](https://github.com/JohnZhang-DataForge/Self-Runner/pull/526) 已合并 main `3613f7bb84753f3cb49d9ff4241ae28b270d60ca`，离线 [Run #42208801101](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42208801101) **12/12 PASS**。实现两条固定只读 `cdm.vocabulary` 与 `audit.vocabulary_source_file` SQL 合同，按既有九份 Blob SHA/Size/Rows 源 Manifest 校验输入，拒绝重复/缺档/版本漂移及多 Release 混合；明确仅 `P1_RELEASE_PROVENANCE_PREFLIGHT_ONLY_NOT_APPROVED`。**本次没有实机 SQL 执行、没有 CPT4 或临床审核**；P1.4 真实版本/许可/来源审计及 P1.5 Mapping 人工审批仍 OPEN。
 
+- [x] 1.9 F1 来源/版本只读审计的**真实 ODBC 适配与有界查询源码**，Self-Runner [PR #527](https://github.com/JohnZhang-DataForge/Self-Runner/pull/527) 合并 main `db8a010df25c522cbbd7f51bdf60bd6b4dd957cd`；[Offline Run #42212808029](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42212808029) **16/16 PASS**。接受非 tuple/list 的 `pyodbc.Row`，Vocabulary SQL 限 `TOP (48)`、Source Audit SQL 限 `TOP (10)`、保存缺少版本的 Vocabulary IDs 供人工审查；不自动填入版本、不推断 CPT4 许可证或临床 Signoff。**仅 CODE/OFFLINE，未新增自动 OIDC 云端执行入口，也未实际进行 F1 SQL 读回。** P1.4 / P1.5 仍 OPEN。
+
 ## P2–P5 — 候选、事务、管线
 
 - [ ] 2.1 以真实 Warehouse 完整 ID/Allocator/Gold/Ledger 快照验证跨医院稳定 INT 分配，保留并发 Single-writer fence。
