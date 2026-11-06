@@ -172,3 +172,5 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 **独立 Main 手动授权**，以清洁构建、non-root/no-network CLI Smoke、revision 一致性、真实 GHCR sha256 Digest 为证据，再审查绑定到独立 V2 Controller（目前 PUBLISHER_IMAGE 仍为空、故意阻断）。普通 Main push 只可构建/测试而不能推送包。
 
 只有 Channel 经 GET 验证 STARTED、V2 Digest 已获审查并绑定、首次新 Synthea Request/Manifest 唯一、Azure prefix 空且已单独批准，才能进行新的 A01/A03 原始消息 POST/ACK → Derby Message ID GET → immutable Blob PUT/远端 GET/manifest-last → Replay 审计。旧 A01 批次不得复用；Parser/dbt → Canonical Silver 归另一 Agent，本文不做该链路实现。
+
+**执行授权说明：** GitHub Workflow 的操作选项与确认字符串仅是技术防误触门禁，不构成跨 Session 的资源写入授权；即使 PR 已合并且 Hosted CI 通过，仍须先取得针对本次 V2-only IMPORT 或 START 的独立、明确批准。不得将任何先前只读检查的授权延伸为写入授权。
