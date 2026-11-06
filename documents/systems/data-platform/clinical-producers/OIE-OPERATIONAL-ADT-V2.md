@@ -1,6 +1,6 @@
 # OIE HL7 v2.5.1 ADT 业务事件 V2 — 离线实现与验收边界
 
-> 状态：**SOURCE / OFFLINE UNIT PENDING**；当前尚无新版本 OIE Channel 实机导入/运行，也未完成 Raw HL7 → Azure Blob 交付。本文件不授权任何真实资源写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
+> 状态：**SOURCE / STATIC PASS（GitHub-hosted offline CI）**；当前尚无新版本 OIE Channel 实机导入/运行，也未完成 Raw HL7 → Azure Blob 交付。本文件不授权任何真实资源写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
 
 ## 业务目标
 
@@ -45,7 +45,8 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 - 新 JS 测试：`.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2.js` 覆盖 A01/A03 时间、PID/PV1、FHIR source facts、缺字段、错误编码、临床状态、稳定 ID、不同 Hospital、HL7 转义和 ES5 VM。
 - Python static test：`.github/quality/tests/data-platform/clinical-producers/oie/test_adt_events_v2_channel.py` 验证 XML 与旧 Channel ID 区分、one-event source wrapper、Channel Reader 和确定性。
 - 新 GitHub-hosted CI：`.github/workflows/oie-adt-events-v2-unit.yml`，`permissions: contents: read`；不连接 Azure、OneLake、worker01、OIE 8443/Derby、K8s 或 PHI。
-- **验收门禁：** 仅本轮新 SHA 的 Node/Static CI PASS 才能标记 SOURCE/STATIC；实际 OIE 运行需要新的授权来源数据及 independently parsed/readback；Blob Delivery 需要新的 Publisher 的 manifest-last + remote GET/sha 验证。
+- **已验收离线证据：** [PR #735 最新 CI（首次完整代码验证）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42220398131) — V2 Node 10/10、Channel XML 4/4、第三方 hl7apy 3/3、旧 A01 回归 10/10 PASS。真实冻结 Synthea FHIR Source Profile、实际 OIE 新 Channel 运行仍 **OPEN**。
+- **独立实机门禁：** 只有 Node/Static CI 不能宣称 OIE v2 已运行。需在受控授权后用新来源批次部署到 OIE，并由独立读回解析 HL7；Blob Delivery 另需 manifest-last + remote GET/sha 验证。
 
 ## 下阶段必需的真实工程工作
 
