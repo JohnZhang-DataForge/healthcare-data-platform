@@ -24,7 +24,7 @@
 - [ ] 1.3b **版本与许可审计仍 OPEN**：`cdm.vocabulary` 47 行中 28 行 `vocabulary_version` 为空，需核查实际 Athena release、CPT4 许可/后处理适用性；`audit.vocabulary_source_file` 目前空表，尚未写入审计 Manifest。不要把 11 项引用 PASS 扩大解释为整个 Vocabulary 版本治理结项。
 
 
-- [x] 1.4 **F1 来源审计记录与 28 个空版本 ID 审核范围 DESIGN/SOURCE_ONLY**：复用 Self-Runner 已有 `fabric_p1_release_provenance_preflight.py` 固定 SELECT、九文件 `FILES/BLOBS` 原始 pins 和深度 DQ 行数，不建第二套 Manifest 检查器；在 [CDM/Vocabulary 业务文档](../../../../documents/systems/azure-fabric/warehouse/CDM54-SCHEMA-AND-VOCABULARY.md) 明确六列 Audit 9/9 单 Release 记录、真实 Blob/SQL 证据、原始 Athena Release/License 独立人工审核、未知 ACK 不重试以及持久写入单独审批/读回。对照 [Run #42219030641](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42219030641) 原始报告精确列出 28 个空版本 `vocabulary_id`；复用 [离线 16/16 Run #42212808029](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42212808029) 与 F1 原实机只读证据。**仅审计方案与审阅队列就绪；`1.3b` release/license 证明、九条审计记录持久写入、临床审核仍 OPEN。**
+- [x] 1.4 **F1 来源审计记录与 28 个空版本 ID 审核范围 DESIGN/SOURCE_ONLY**：复用 Self-Runner 已有 `fabric_p1_release_provenance_preflight.py` 固定 SELECT、九文件 `FILES/BLOBS` 原始 pins 和深度 DQ 行数，不建第二套 Manifest 检查器；在 [CDM/Vocabulary 业务文档](../../../documents/systems/azure-fabric/warehouse/CDM54-SCHEMA-AND-VOCABULARY.md) 明确六列 Audit 9/9 单 Release 记录、真实 Blob/SQL 证据、原始 Athena Release/License 独立人工审核、未知 ACK 不重试以及持久写入单独审批/读回。对照 [Run #42219030641](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42219030641) 原始报告精确列出 28 个空版本 `vocabulary_id`；复用 [离线 16/16 Run #42212808029](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42212808029) 与 F1 原实机只读证据。**仅审计方案与审阅队列就绪；`1.3b` release/license 证明、九条审计记录持久写入、临床审核仍 OPEN。**
 
 ## F2 — Transactional Gold writer
 
