@@ -13,16 +13,18 @@ python -m venv .venv-shared
 PYTHONPATH=shared-data-engine/src .venv-shared/bin/python -m unittest discover -s shared-data-engine/tests -p 'test_*.py' -v
 ```
 
+PR #724 的 Entity Registry + PR #3 的 Identity/Concept/FK 新测试放在 `.github/quality/tests/shared-data-engine/mapping/`，由同一 Wheel Workflow 在 Python 3.11 与 3.13 明确发现至少 48 个用例。F2 真正的 ID 分配仍由 Fabric `identity_plan.plan_ids` 负责，新 Shared `identity/preview.py` 只对其结果进行快照一致性和 provisional 状态验证；物理 Fabric/Gold 不在纯测试范围。
+
 原目录下 4 个 `tests/test_*.py` 和合成 Fixture 是既有冻结测试：本次不迁移也不减少覆盖。以后新测试应进入 `.github/quality/tests/shared-data-engine/<component>/`，新样本进入 `.github/quality/fixtures/`，并同步 CI 的非零用例发现。
 
 ## Reproducible Wheel build and install
 
-固定 `SOURCE_DATE_EPOCH=1704067200`，重复构建并比较二进制 SHA；`--no-build-isolation` 要求环境已安装所需构建工具。当前 `pyproject.toml` 版本为 `0.1.3`，以后版本变化必须同步更新安装目标，并以审查过的产物哈希为准。
+固定 `SOURCE_DATE_EPOCH=1704067200`，重复构建并比较二进制 SHA；`--no-build-isolation` 要求环境已安装所需构建工具。当前 `pyproject.toml` 源码候选版本为 `0.1.5`（正式 Fabric Environment 仍发布 0.1.3），以后版本变化必须同步更新安装目标，并以审查过的产物哈希为准。
 
 ```sh
 SOURCE_DATE_EPOCH=1704067200 .venv-shared/bin/python -m pip wheel --no-index --no-deps --no-build-isolation --wheel-dir dist ./shared-data-engine
 sha256sum dist/healthcare_data_engine-*.whl
-.venv-shared/bin/pip install --no-index --no-deps --force-reinstall dist/healthcare_data_engine-0.1.3-*.whl
+.venv-shared/bin/pip install --no-index --no-deps --force-reinstall dist/healthcare_data_engine-0.1.5-*.whl
 ```
 
 [Shared Engine Wheel Validation](../../../../.github/workflows/shared-engine-wheel-validation.yml) 在 Python 3.11 与 3.13 分别校验纯函数、PySpark Schema/Rows、可重复构建、安装以及从 Checkout 外 Import。Fabric Runtime 2.0 的 Python 3.13 / PySpark 4.1.1 / Java 21 环境须按该 Workflow 的实际任务验证，不能从本地 Python 3.11 结果推断。
