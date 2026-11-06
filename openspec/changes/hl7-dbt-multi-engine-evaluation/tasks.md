@@ -47,3 +47,12 @@
 - **最重要的增量 Delta 证据：** 第二个**独立** SparkSession 对 `canonical_patient`、`canonical_encounter` 与 `delta_event_merge_probe` 逐表执行 `DESCRIBE DETAIL` 确认 `format=delta`，检查目标物理 `_delta_log` 存在，并独立读回。同批重跑不增加重复；第二个合成医院相同来源 local Patient/Visit ID 进入独立 source namespace，Patient/Encounter 1→2，原 MSH-10 所属 source 更新 `processing_run_id` synthetic-poc-001→002，probe 行数由 2→4，证明在此本地组合中 `MERGE` 更新/插入有验证。
 - **重要限制：** 上轮 Spark 3.5.7 + delta-spark 3.3.2 `CREATE OR REPLACE TABLE` `truncate in batch mode` FAIL，换成 PySpark **3.5.5** 才通过；运行日志出现不致失败的 `HiveAlterHandler` error，应单独评审其在本地 metastore 的副作用。这与 Fabric 4.1 或 OneLake 真实远端 Delta 兼容性仍是不同验收层级。
 - 最新 Self-Runner PR [#525](https://github.com/JohnZhang-DataForge/Self-Runner/pull/525) 还增加了两个后端对 Canonical 关键字段值的精确断言/规范化哈希对照；该**新 HEAD 的测试尚未在此文档提交时获得完成验收**，所以 2.5 保持 OPEN、dbt 执行后端保持 PENDING。
+
+## 2026-11-06 ET — Full Canonical v1 and local Candidate delivery gate
+
+- Self-Runner PR [#525](https://github.com/JohnZhang-DataForge/Self-Runner/pull/525) 继续保持**隔离实验源码唯一归属**；Healthcare 此更新只记录证据，不增添实验代码、正式 Contract 的第二份权威、Fabric Notebook/Job 或 CI。使用的 `fixtures/canonical-v1.snapshot.json` 明确是离线测试用只读快照，引用 Healthcare Patient 18 字段及 Encounter 27 字段合同 Git Blob SHA；未来实施必须与权威合同最新 SHA 再对照。
+- [CI Run #42213497623](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42213497623) **DuckDB job SUCCESS**：开源 hl7apy 的 15 个合成正反向 parser 用例，通过严格 HL7 来源隔离、无效性别/人口学代码、时间冲突、重复 MSH-10 不同 SHA 的 HOLD；Canonical Patient 18/18、Encounter 27/27 字段顺序/类型/非空数据/来源联合主键、联合 FK 测试通过，dbt 16/16；两医院合成输出 2 Patient、2 Encounter。缺失 A03 的 A01-only 测试保持 Patient 1、completed Encounter **0**，没有造出院时间。
+- 同一 DuckDB Job 还验证本地（**非云端**）Candidate Parquet `manifest-last` 交付包的 object SHA256/size/row-count 独立读回、同版本 replay SKIP 和单字节篡改拒绝；Package Status 明确 `CANDIDATE_ONLY_NOT_APPROVED`。这是**未来 Fabric Silver Publisher 的接口 POC**，不能宣称 OneLake/Blob 已接入、远程 Approval 已完成。
+- **Spark 最新 Full Contract gate：** 本记录提交时，Run #42213497623 的 Spark 分支仍在执行；历史 [Run #42209078774](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42209078774) 双后端 SQL 关键字段和 SHA 相同且物理 Delta MERGE probe PASS，但不足以替代本次 18/27 全字段验证。不得提前标记新 HEAD Spark PASS。
+- **明确剩余范围：** 虽然 Delta `MERGE` probe 已在 Local Spark 测过，正式 Patient/Encounter Candidate dbt models 仍为 `table` materialization，并非已完成生产增量模型；真实 OIE A01 信息不完整、Azure Blob Producer/Publisher 与 Fabric Approved Silver Publisher E2E 均未验证。
+- 仅在合成数据和 GitHub-hosted Runner 中，本地 DuckDB 速度明显较快、Local Spark 已有 Delta 读写证据；不足以正式选型。**dbt backend remains PENDING**，按既有 OpenSpec Task 2.5 继续评估本地 Delta 交付兼容、正式 Publisher 合同与计算成本。
