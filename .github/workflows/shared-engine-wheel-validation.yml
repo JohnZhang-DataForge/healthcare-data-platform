@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'shared-data-engine/**'
+      - '.github/quality/tests/shared-data-engine/parity/**'
       - '.github/workflows/shared-engine-wheel-validation.yml'
       - 'documents/systems/data-platform/shared-engine/CODE.md'
 permissions:
@@ -38,6 +39,21 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/shared-env/bin/python" -m unittest discover -s shared-data-engine/tests -p 'test_*.py' -v
+      - name: Local/Shared Person and Visit parity (Python 3.11, synthetic only)
+        env:
+          PYTHONPATH: shared-data-engine/src
+          SPARK_LOCAL_HOSTNAME: localhost
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/shared-env/bin/python" - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.discover(
+              '.github/quality/tests/shared-data-engine/parity', pattern='test_*.py')
+          assert suite.countTestCases() >= 6, 'Local/Shared parity tests not discovered'
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful(), 'Local/Shared parity failed'
+          print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_CONTRACT_VISIT_TRANSFORM')
+          PY
       - name: Pure Multi-Entity Registry and adapter tests (Python 3.11)
         env:
           PYTHONPATH: shared-data-engine/src
@@ -124,6 +140,15 @@ jobs:
           python -m pip install 'pyspark==4.1.1'
           python -m unittest discover -s shared-data-engine/tests -p 'test_spark_dataframe.py' -v
           python -m unittest discover -s shared-data-engine/tests -p 'test_omop_candidates.py' -v
+          python - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.discover(
+              '.github/quality/tests/shared-data-engine/parity', pattern='test_*.py')
+          assert suite.countTestCases() >= 6, 'Local/Shared parity tests not discovered'
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful(), 'Local/Shared parity failed'
+          print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_CONTRACT_VISIT_TRANSFORM')
+          PY
           echo 'FABRIC_P3_PY313_SPARK41_OFFLINE_DATAFRAME_AND_OMOP=PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Build and pip-install version 0.1.6 Wheel on Python 3.13
         shell: bash
