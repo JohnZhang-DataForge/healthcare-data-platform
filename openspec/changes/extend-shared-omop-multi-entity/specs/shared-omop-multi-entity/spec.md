@@ -50,7 +50,7 @@ Concept resolution SHALL use a pinned source namespace, target table/column, map
 
 ### Requirement: Stable target-scoped identity planning
 
-Identity planning SHALL resolve persisted positive OMOP INT IDs from a complete, independently verified target Map/Allocator/Gold/Ledger snapshot and MAY propose new provisional positive INT IDs only under a validated snapshot fingerprint. Stable source and derived row identities MUST include target scope and hospital/source namespace. Preview SHALL NOT reserve or persist an ID; the platform writer MUST revalidate the whole snapshot behind a verified single-writer fence before atomically committing IDs and associated clinical targets.
+Identity planning SHALL use a validated Map/Allocator/Gold/Ledger snapshot and target- and hospital-scoped stable source identities. It MAY propose provisional positive INT IDs, but preview SHALL NOT persist or reserve them. The writer MUST revalidate the whole snapshot behind a verified single-writer fence before atomic Gold COMMIT.
 
 #### Scenario: First batch before a persistent map
 
@@ -88,7 +88,7 @@ Each target entity SHALL declare required and optional parent relationships in a
 
 ### Requirement: Candidate evidence and replay-fenced publication groups
 
-The execution owner SHALL publish a request/version-scoped immutable Candidate set with target-specific count, key, hash, source/processing identity and dependency evidence; Candidate approval MUST occur last and only after independent physical readback. Each Gold publication group SHALL commit its Map, Allocator, target rows and Ledger in the same database transaction, followed by independent target and receipt verification. Source, mapping, vocabulary, entity-definition, code and target fingerprints MUST fence replay.
+The execution owner SHALL persist version-scoped immutable Candidates with per-target counts, keys, hashes and provenance; approval MUST follow independent physical readback. Gold publication groups SHALL atomically commit Map, Allocator, target rows and Ledger, followed by independent receipt verification. All source, processing, mapping, vocabulary and definition fingerprints MUST fence replay.
 
 #### Scenario: Partial candidate write
 
