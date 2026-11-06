@@ -51,10 +51,10 @@ The user-authorized test passed all three distinct live gates and has now been r
 
 ## Agent discoverability & stale-summary correction — 2026-11-02
 
-- 加固根级 [AGENTS.md](../../../AGENTS.md)：所有未来 Fabric Notebook 新建/修改/同步/运行/删除必须先读 [原生 Git Runbook](../../../documents/systems/azure-fabric/notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md)、[Notebooks CODE](../../../documents/systems/azure-fabric/notebooks/CODE.md) 与本 Change 的真实 E2E 证据。避免新 Agent 仅看到旧 2026-10-31 ADR 就复活 REST 空 Notebook / 手工 Portal 旧流程。
-- 修复 [Fabric 总 CODE](../../../documents/systems/azure-fabric/CODE.md) 早期过期断言：业务 Notebook 已有代码但实际业务 ETL 仍 HALT；Wheel 0.1.1 Published 且已在**独立测试** Notebook 中导入；Pipeline 已包含 1 个 TridentNotebook Activity 但未执行业务 ETL。
-- 修复 [Environment CODE](../../../documents/systems/azure-fabric/environments/CODE.md) 的旧说法「业务 Engine 仍检查 0.1.0」：当前业务代码明确检查 0.1.1；但是正式业务 Notebook Runtime 和 FHIR/Delta 写入依旧未验收，临时 Smoke 不能替代业务验收。
-- [文档总入口](../../../documents/README.md) 增加最新 2026-11-02 E2E 验收导航。此项仅提高规范发现率及事实准确性，不改 Fabric 资源、Notebook/Pipeline 代码或任何云操作；Task 3.3 仍保持未完成。
+- 加固根级 [AGENTS.md](../../../../AGENTS.md)：所有未来 Fabric Notebook 新建/修改/同步/运行/删除必须先读 [原生 Git Runbook](../../../../documents/systems/azure-fabric/notebooks/FABRIC-GIT-AUTHORING-RUNBOOK.md)、[Notebooks CODE](../../../../documents/systems/azure-fabric/notebooks/CODE.md) 与本 Change 的真实 E2E 证据。避免新 Agent 仅看到旧 2026-10-31 ADR 就复活 REST 空 Notebook / 手工 Portal 旧流程。
+- 修复 [Fabric 总 CODE](../../../../documents/systems/azure-fabric/CODE.md) 早期过期断言：业务 Notebook 已有代码但实际业务 ETL 仍 HALT；Wheel 0.1.1 Published 且已在**独立测试** Notebook 中导入；Pipeline 已包含 1 个 TridentNotebook Activity 但未执行业务 ETL。
+- 修复 [Environment CODE](../../../../documents/systems/azure-fabric/environments/CODE.md) 的旧说法「业务 Engine 仍检查 0.1.0」：当前业务代码明确检查 0.1.1；但是正式业务 Notebook Runtime 和 FHIR/Delta 写入依旧未验收，临时 Smoke 不能替代业务验收。
+- [文档总入口](../../../../documents/README.md) 增加最新 2026-11-02 E2E 验收导航。此项仅提高规范发现率及事实准确性，不改 Fabric 资源、Notebook/Pipeline 代码或任何云操作；Task 3.3 仍保持未完成。
 
 ## Business Notebook runtime-only smoke implementation (2026-11-02)
 
