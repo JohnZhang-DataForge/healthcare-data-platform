@@ -8,25 +8,25 @@
 
 | Existing source subtree | Files | Human meaning | Proposed direction / gate |
 | --- | ---: | --- | --- |
-| `apps/task001` | undefined | Landing intake / Synthea Manifest | Candidate apps/landing_intake; review actual caller and CODE owner |
-| `apps/task003` | undefined | Encounter Raw, Visit DQ, processed writer, ID planning | Split by business capability: visit, identity, reservation and OMOP Writer |
-| `apps/task004` | undefined | NEW_ONLY runtime / CDM writer adapters / Synthea | Split into existing omop_writer and synthea adapters after Image/DAG graph |
-| `kubernetes/manifests/task004` | undefined | Task004 Control and Synthea K8s | Function-first manifests under relevant workload; preserve namespace, SA, Secret names |
-| `scripts/task001` | undefined | Intake and Landing historic operations | Classify read-only/one-shot/destructive before semantic scripts/landing route |
-| `scripts/task002` | undefined | Person Canonical + OMOP historic operations | Classify before scripts/person and scripts/omop |
-| `scripts/task003` | undefined | Visit Processed/ID/Writer reservations | Decompose by visit processing, identity, writer; many old one-shot recovery scripts |
-| `scripts/task004` | undefined | NEW_ONLY generation / publishing / reconciliation | Owner by Synthea, Landing, Airflow, OMOP; avoid renaming executable calls |
-| `spark/apps/task004` | undefined | Person/Visit reconciliation | Candidate spark/apps/reconciliation after imports and runner tests |
-| `spark/manifests/task002` | undefined | Person Spark jobs | Candidate spark/manifests/person after job reference readback |
-| `spark/manifests/task003` | undefined | Visit Spark jobs | Candidate spark/manifests/visit after K8s/Image consumers |
-| `spark/manifests/task004` | undefined | Reconciliation Spark job | Candidate spark/manifests/reconciliation |
-| `sql/task002` | undefined | Person CDM upsert | Candidate SQL by domain, but PG SQL function names stay pinned until migration |
-| `sql/task003` | undefined | Visit ID, schema and mapping baseline | OMOP/Identity owner; schema contract approval first |
-| `sql/task004` | undefined | CDM transaction, readiness and readbacks | Writer schema/read-only query split; live PG objects are not filenames |
-| `tests/task001` | undefined | Intake/landing tests | New quality owner .github/quality/tests/data-platform/landing; existing frozen test discovery retained |
-| `tests/task002` | undefined | Person/Canonical tests | New quality owner .github/quality/tests/data-platform/person; frozen tests only moved with CI updates |
-| `tests/task003` | undefined | Visit/Identity/Writer tests | Split by capability and adjust relative repository roots, discovery and CODE map |
-| `tests/task004` | undefined | NEW_ONLY/Airflow/Writer tests | Split by owning modules with full 8-image and DAG checks |
+| `apps/task001` | 3 | Landing intake / Synthea Manifest | Candidate apps/landing_intake; review actual caller and CODE owner |
+| `apps/task003` | 23 | Encounter Raw, Visit DQ, processed writer, ID planning | Split by business capability: visit, identity, reservation and OMOP Writer |
+| `apps/task004` | 13 | NEW_ONLY runtime / CDM writer adapters / Synthea | Split into existing omop_writer and synthea adapters after Image/DAG graph |
+| `kubernetes/manifests/task004` | 5 | Task004 Control and Synthea K8s | Function-first manifests under relevant workload; preserve namespace, SA, Secret names |
+| `scripts/task001` | 6 | Intake and Landing historic operations | Classify read-only/one-shot/destructive before semantic scripts/landing route |
+| `scripts/task002` | 9 | Person Canonical + OMOP historic operations | Classify before scripts/person and scripts/omop |
+| `scripts/task003` | 60 | Visit Processed/ID/Writer reservations | Decompose by visit processing, identity, writer; many old one-shot recovery scripts |
+| `scripts/task004` | 11 | NEW_ONLY generation / publishing / reconciliation | Owner by Synthea, Landing, Airflow, OMOP; avoid renaming executable calls |
+| `spark/apps/task004` | 1 | Person/Visit reconciliation | Candidate spark/apps/reconciliation after imports and runner tests |
+| `spark/manifests/task002` | 4 | Person Spark jobs | Candidate spark/manifests/person after job reference readback |
+| `spark/manifests/task003` | 6 | Visit Spark jobs | Candidate spark/manifests/visit after K8s/Image consumers |
+| `spark/manifests/task004` | 1 | Reconciliation Spark job | Candidate spark/manifests/reconciliation |
+| `sql/task002` | 1 | Person CDM upsert | Candidate SQL by domain, but PG SQL function names stay pinned until migration |
+| `sql/task003` | 2 | Visit ID, schema and mapping baseline | OMOP/Identity owner; schema contract approval first |
+| `sql/task004` | 7 | CDM transaction, readiness and readbacks | Writer schema/read-only query split; live PG objects are not filenames |
+| `tests/task001` | 3 | Intake/landing tests | New quality owner .github/quality/tests/data-platform/landing; existing frozen test discovery retained |
+| `tests/task002` | 5 | Person/Canonical tests | New quality owner .github/quality/tests/data-platform/person; frozen tests only moved with CI updates |
+| `tests/task003` | 30 | Visit/Identity/Writer tests | Split by capability and adjust relative repository roots, discovery and CODE map |
+| `tests/task004` | 33 | NEW_ONLY/Airflow/Writer tests | Split by owning modules with full 8-image and DAG checks |
 
 **By task:** Task001 12, Task002 19, Task003 121, Task004 71; total 223. There are also Task-numbered **filenames** outside these directories; this file intentionally inventories only directories containing an actual `taskNNN/` component and does not claim otherwise.
 
