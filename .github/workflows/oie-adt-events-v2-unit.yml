@@ -10,6 +10,8 @@ on:
       - "local-data-platform/apps/clinical_producers/oie_event_readback_v2.py"
       - "local-data-platform/apps/clinical_producers/oie_hl7_publisher_v2.py"
       - "local-data-platform/apps/clinical_producers/oie_message_submit_v2.py"
+      - "local-data-platform/apps/clinical_producers/hl7_blob_runtime_v2.py"
+      - "local-data-platform/kubernetes/manifests/synthea/blob-publisher/*oie-v2*.yaml.tpl"
       - "local-data-platform/apps/clinical_producers/oie_message_submit.py"
       - ".github/quality/tests/data-platform/clinical-producers/oie/**"
       - ".github/workflows/oie-adt-events-v2-unit.yml"
@@ -47,5 +49,7 @@ jobs:
         run: python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_oie_hl7_publisher_v2.py' -v
       - name: Validate source-pinned one-shot A01 A03 POST envelopes using fake OIE only
         run: python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_oie_message_submit_v2.py' -v
+      - name: Validate V2 Sender CLI to persisted OIE GET to shared Azure Blob raw publication offline
+        run: python -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p 'test_hl7_blob_runtime_v2.py' -v
       - name: Preserve old A01 mapping against regression (without OIE runtime calls)
         run: node --test local-data-platform/tests/clinical_producers/test_oie_adt_a01.js
