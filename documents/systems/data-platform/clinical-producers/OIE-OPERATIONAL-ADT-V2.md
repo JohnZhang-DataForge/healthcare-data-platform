@@ -149,21 +149,21 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 - **下一步不再重复只读检查或排查 Runner**。单独提出导入并启动完全匹配审查版 XML、Source Mapper 和无副作用 Destination 的 V2 Channel 的执行门禁；导入前需要核对 ID 不冲突、现存 A01 不改动、Derby/PVC 不重建，并取得该写入范围的明确授权。完成后独立 GET 确认 STARTED，才允许 V2 GHCR Digest 绑定和新批次 A01+A03 → Raw Blob E2E。当前无 Channel 导入、HL7 POST、Blob PUT 或历史批次重放。
 
 
-## V2 Channel 首次导入与启动操作卡 — 2026-11-06（提案，尚未执行）
+## V2 Channel 首次导入与启动操作卡 — 2026-11-06（最新版门禁已合并，实机仍未执行）
 
-权威状态：Self-Runner [真实 GET-only Run #42304858501](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304858501) 确认 V2 Channel **ABSENT_IMPORT_REQUIRED**，Legacy A01 仍存在。导入与启动候选见 [Self-Runner PR #548](https://github.com/JohnZhang-DataForge/Self-Runner/pull/548)。该 PR 未构成运行批准；截至本记录，**既未导入 V2，也未 START**。
+权威状态：Self-Runner [真实 GET-only Run #42304858501](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42304858501) 确认 V2 Channel **ABSENT_IMPORT_REQUIRED**，Legacy A01 仍存在。导入与启动基础门禁见 [Self-Runner PR #548](https://github.com/JohnZhang-DataForge/Self-Runner/pull/548)，最新 STOPPED-first 修复见 [PR #551](https://github.com/JohnZhang-DataForge/Self-Runner/pull/551)。两次 PR 均不构成实机运行批准；截至本记录，**既未导入 V2，也未 START**。
 
 ### 导入审批（仅 IMPORT_ONLY）
 
-- 固定 Healthcare Source SHA：b63e89b8ebed04f8f371db95562413597c54295a。固定新 Channel ID：6b91681e-5b3b-59cb-b270-09412054110c；旧 ID：69ace705-a675-45f6-b126-a3b22a65212a。通过源码 Builder 产生原版经过审查的 V2 XML，记录其 SHA256；不能用未审查的 XML 或旧导入 Workflow。
+- 固定 Healthcare Source SHA：b63e89b8ebed04f8f371db95562413597c54295a。固定新 Channel ID：6b91681e-5b3b-59cb-b270-09412054110c；旧 ID：69ace705-a675-45f6-b126-a3b22a65212a。通过固定 SHA 的源码 Builder 产生原版经过审查的 V2 XML（其 `properties/initialState=STARTED`），然后**仅针对新 V2 的导入副本**精确替换唯一一个 `<initialState>STARTED</initialState>` 为 `STOPPED`。记录原版 Builder SHA256 与 `STOPPED` 导入副本 SHA256，确认除这一标签外字节不变；**不得直接以 STARTED 版 XML 导入**，也不得修改原 Builder、旧 Channel 或旧导入 Workflow。
 - **先确认 Session Coordination 与共享资源所有权**，没有其它操作同一 OIE 实例的 Agent；worker01 Ready、OIE 原镜像/Deployment/Service/PVC、Synthea PVC、Scoped Secret/Pinned TLS、active Jobs=0 全部重新 GET。主分支及 SHA 精确一致后，读取所有 Channel ID、Legacy 配置及当前状态作为前置快照，并交叉确认 V2 不在列表中、精确 Config 不存在。
-- 独立授权且仅 Main 第一次 workflow_dispatch 选择 IMPORT_ONLY，输入对应精确确认文本；只对 /api/channels/ 提交一次 V2 新 XML。无部署/启动 API 调用，不向 OIE 送 HL7，不触碰 Blob。现有 XML 的 initialState=STARTED 是**配置字段，不是实机当前状态证明**；若服务端导入导致意外启动必须 HOLD 并调查。
+- 独立授权且仅 Main 第一次 `workflow_dispatch` 选择 `IMPORT_ONLY`，输入对应精确确认文本；只对 `/api/channels/` 提交一次 **`initialState=STOPPED` 的 V2 导入 XML**。本阶段不调用部署或启动 API，不向 OIE 发送 HL7，不触碰 Blob；读回当前状态必须明确 STOPPED/UNDEPLOYED/NOT_STARTED，若未知、PAUSED 或意外 STARTED 则 HOLD。
 - 导入后重新 GET 列表、V2 完整配置/Mapper/Source/Destination/当前状态，比较旧 A01 配置+状态快照，并保存 Run ID、结果、XML SHA。若写请求超时或返回不确定，**不能自动重试、覆盖、清理、重建或再 POST**；应先独立 GET 核实实际生效范围。
 
 ### 启动审批（仅 START_ONLY）
 
-- 独立检查导入的证据和 V2 XML 一致性；批准时重新核查 Session/资源、当前 V2 非 STARTED、旧 A01 快照；保留同一互斥组但不视其为全局排他锁。
-- 在新的、单独的 Main 初次 workflow_dispatch 中选择 START_ONLY，精确确认。仅调用新 V2 ID 的单 Channel deploy/start API；不得触发旧 A01 重部署、所有 Channel restart 或修改 Derby/PVC。
+- 独立检查导入的证据与 `initialState=STOPPED` 版 V2 XML 一致；批准时重新核查 Session/资源、当前 V2 **明确为 STOPPED/UNDEPLOYED/NOT_STARTED 而非泛泛地“非 STARTED”**、旧 A01 快照；保留同一互斥组但不视其为全局排他锁。
+- 在新的、单独的 Main 初次 `workflow_dispatch` 中选择 `START_ONLY`，精确确认。先仅向新 V2 ID 调用一次 `/_deploy`，**GET 证实当前仍为 STOPPED** 并二次比较导入 XML，再仅向同一 V2 ID 调用一次 `/_start`，随后独立 GET 证实 STARTED。这两次 V2-only 生命周期请求都属于同一次单独审批的启动阶段；任一结果未知、自动启动或中间状态非 STOPPED 均停止下一步并 HOLD，不自动重试。不得触发旧 A01 重部署、所有 Channel restart 或修改 Derby/PVC。
 - 独立 GET 当前 V2 STATUS 必须明示 STARTED（不接受 NOT_STARTED 或历史字段含 STARTED）；再比对 Mapper/Destination、Legacy 前后快照。没有真实 Run/GET 证据不得标记 V2 Channel READY。
 - **IMPORT 与 START 的两次授权不能合并**；Main push 或 PR Hosted PASS 都不构成授权。操作异常进入 HOLD，不做任何自动重试。
 
@@ -174,3 +174,9 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 只有 Channel 经 GET 验证 STARTED、V2 Digest 已获审查并绑定、首次新 Synthea Request/Manifest 唯一、Azure prefix 空且已单独批准，才能进行新的 A01/A03 原始消息 POST/ACK → Derby Message ID GET → immutable Blob PUT/远端 GET/manifest-last → Replay 审计。旧 A01 批次不得复用；Parser/dbt → Canonical Silver 归另一 Agent，本文不做该链路实现。
 
 **执行授权说明：** GitHub Workflow 的操作选项与确认字符串仅是技术防误触门禁，不构成跨 Session 的资源写入授权；即使 PR 已合并且 Hosted CI 通过，仍须先取得针对本次 V2-only IMPORT 或 START 的独立、明确批准。不得将任何先前只读检查的授权延伸为写入授权。
+
+
+### STOPPED-first 修复验收 — PR #551（仅 Hosted，未进入实机）
+
+- [Self-Runner PR #551](https://github.com/JohnZhang-DataForge/Self-Runner/pull/551) 已合并为 `827e621e3b112c38a0db06ea3050771a38d48623`；[PR Hosted Run #42322130584](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42322130584) 成功：新版 15 项正反测试 + 原 GET-only 18 项回归 PASS，并对固定原 Builder 的真实 XML 渲染出唯一 STOPPED 导入副本。Live job 在 PR 上 SKIPPED。
+- 合并并不意味着 V2 已导入或正在运行。上次真实 GET-only 证据仍为 **ABSENT_IMPORT_REQUIRED**；之后必须先获得分别针对 `IMPORT_ONLY` 和 `START_ONLY` 的资源写入授权，先导入再启动，两个阶段不能并成一次执行。实际 OIE 4.7 REST 的各个响应仍需以新 Run 的独立 GET 证明；不允许以 Fake OIE CI 推断真实部署成功。
