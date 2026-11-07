@@ -46,6 +46,9 @@ class Frame:
     def count(self):
         return len(self.rows)
 
+    def limit(self, n):
+        return Frame(self.rows[:n], self.columns)
+
     def select(self, *columns):
         return Frame([{c: r[c] for c in columns} for r in self.rows], columns)
 
@@ -361,7 +364,13 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             for e in self.visits])
         from healthcare_data_engine.mapping.omop.candidates import OmopCandidates
         self.mapper_result = OmopCandidates(
-            self.patient, self.visit, self.scope.mapping_sha256, 100, 5918)
+            Frame([{k:v for k,v in row.items()
+                    if k != "identity_state"} for row in self.patient.rows]),
+            Frame([{k:v for k,v in row.items()
+                    if k not in {"visit_occurrence_id", "identity_state",
+                                 "parent_identity_state"}}
+                    for row in self.visit.rows]),
+            self.scope.mapping_sha256, 100, 5918)
         self.spark = Spark(b"")
         self.rechecked_source = []
         self.writes = []
@@ -455,6 +464,31 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
                                     "HOLD_G5_CANDIDATE_IDENTITY_OR_FK_DRIFT"):
             self.invoke(person_candidate=broken)
         self.assertEqual(self.writes, [])
+
+    def test_p3_mapped_concepts_cannot_be_replaced_after_strict_mapper(self):
+        bad_person = Frame([
+            {**r, "gender_concept_id":999999} if i == 0 else r
+            for i, r in enumerate(self.patient.rows)])
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED"):
+            self.invoke(person_candidate=bad_person)
+        self.assertFalse(self.writes)
+
+        bad_visit = Frame([
+            {**r, "visit_concept_id":999999} if i == 0 else r
+            for i, r in enumerate(self.visit.rows)])
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED"):
+            self.invoke(visit_candidate=bad_visit)
+        self.assertFalse(self.writes)
+
+    def test_p3_unapproved_extra_payload_columns_fail_before_writes(self):
+        extra = Frame([{**r, "fabric_invented_concept":123}
+                       for r in self.patient.rows])
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_MAPPER_CANDIDATE_SCHEMA_OR_COUNT"):
+            self.invoke(person_candidate=extra)
+        self.assertFalse(self.writes)
 
     def test_p3_readback_tamper_refuses_skip(self):
         self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
