@@ -564,5 +564,172 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
 
 
+
+class G5TrustedControllerOffline(unittest.TestCase):
+    """P3 controller contract, fake evidence service; NO cloud approvals."""
+
+    def setUp(self):
+        # Share only the fixture, not its inherited test methods: otherwise
+        # mutating the mapping SHA would rerun unrelated existing P3 tests.
+        G5CandidateNativeDeltaStagedOffline.setUpClass()
+        fixture = G5CandidateNativeDeltaStagedOffline(
+            "test_p3_notebook_has_no_write_runmode_dispatch")
+        fixture.setUp()
+        self.module = fixture.module
+        self.handoff = fixture.handoff
+        self.scope = fixture.scope
+        self.spark = fixture.spark
+        self.profile = b"synthetic-only-profile-not-authorized"
+        self.scope = self.module.FrozenCandidateScope(
+            **{**self.scope.__dict__,
+               "mapping_sha256": hashlib.sha256(self.profile).hexdigest()})
+        self.business_calls = []
+
+    def provider(self):
+        owner = self
+        class FakeProvider:
+            snapshot_number = 0
+            def load_pinned_inputs(self):
+                return {
+                    "scope": owner.scope, "handoff": owner.handoff,
+                    "mapping_profile_bytes": owner.profile,
+                    "raw_publish_run_id": "synthetic-publication",
+                    "patient_contract_json": PATIENT,
+                    "encounter_contract_json": ENCOUNTER}
+            def verify_signed_clinical_review(self, scope, profile):
+                return {
+                    "status": "SIGNED_CLINICAL_APPROVED",
+                    "source_batch_id": scope.source_batch_id,
+                    "mapping_sha256": scope.mapping_sha256,
+                    "reviewer": "synthetic-only-not-a-real-reviewer",
+                    "review_sha256": "d"*64}
+            def verify_license_rights(self, scope, profile):
+                return {
+                    "status": "LICENSE_USE_APPROVED",
+                    "source_batch_id": scope.source_batch_id,
+                    "mapping_sha256": scope.mapping_sha256,
+                    "reviewer": "synthetic-only-not-a-real-license",
+                    "license_sha256": "e"*64}
+            def capture_full_warehouse_snapshot(self, scope):
+                self.snapshot_number += 1
+                return {
+                    "status": "INDEPENDENT_SIX_TABLE_SQL_PASS",
+                    "warehouse_id": "7a6d08da-278d-4603-8a3b-28640110984c",
+                    "fingerprint": scope.identity_snapshot_fingerprint,
+                    "connection_id": f"synthetic-connection-{self.snapshot_number}"}
+            def read_verified_warehouse_concepts(self, scope):
+                return Frame([{"concept_id": 1}])
+        return FakeProvider()
+
+    def controlled(self, provider=None, mode="G5_CANDIDATE_WRITE"):
+        def business(spark, **kwargs):
+            self.assertIs(spark, self.spark)
+            self.business_calls.append(kwargs)
+            return "SYNTHETIC_P3_BUSINESS_ENTRY_CALLED_NOT_CLOUD"
+        with patch.dict(
+            nb.execute_g5_candidate_from_trusted_controller.__globals__,
+            {"execute_g5_person_visit_business": business},
+        ):
+            return nb.execute_g5_candidate_from_trusted_controller(
+                self.spark, provider=provider, mode=mode)
+
+    def test_g5_controller_missing_provider_holds_before_spark(self):
+        with self.assertRaisesRegex(RuntimeError, "TRUSTED_PROVIDER_MISSING"):
+            self.controlled()
+        self.assertEqual(self.business_calls, [])
+        self.assertFalse(self.spark.delta)
+
+    def test_g5_controller_rejects_profile_sha_drift_before_external_queries(self):
+        p = self.provider()
+        original = p.load_pinned_inputs
+        p.load_pinned_inputs = lambda: {**original(),
+                                      "mapping_profile_bytes": b"unreviewed"}
+        with self.assertRaisesRegex(RuntimeError, "SOURCE_PROFILE_F2_DRIFT"):
+            self.controlled(p)
+        self.assertEqual(p.snapshot_number, 0)
+        self.assertEqual(self.business_calls, [])
+
+    def test_g5_controller_clinical_denial_never_reads_sql(self):
+        p = self.provider()
+        p.verify_signed_clinical_review = lambda scope, profile: {
+            "status": "PENDING_REVIEW"}
+        with self.assertRaisesRegex(RuntimeError, "CLINICAL_OR_LICENSE"):
+            self.controlled(p)
+        self.assertEqual(p.snapshot_number, 0)
+        self.assertFalse(self.business_calls)
+
+    def test_g5_controller_license_denial_never_reads_sql(self):
+        p = self.provider()
+        p.verify_license_rights = lambda scope, profile: {"status": "PENDING"}
+        with self.assertRaisesRegex(RuntimeError, "CLINICAL_OR_LICENSE"):
+            self.controlled(p)
+        self.assertEqual(p.snapshot_number, 0)
+
+    def test_g5_controller_rejects_nonindependent_sql_connections(self):
+        p = self.provider()
+        original = p.capture_full_warehouse_snapshot
+        p.capture_full_warehouse_snapshot = lambda scope: {
+            **original(scope), "connection_id": "same-connection"}
+        with self.assertRaisesRegex(RuntimeError, "CONNECTION_NOT_INDEPENDENT"):
+            self.controlled(p)
+        self.assertEqual(p.snapshot_number, 2)
+        self.assertFalse(self.business_calls)
+
+    def test_g5_controller_rejects_sql_identity_or_fingerprint_drift(self):
+        for changed in ({"fingerprint": "0"*64},
+                        {"warehouse_id": "other-warehouse"},
+                        {"status": "PREVIEW_ONLY"}):
+            p = self.provider()
+            original = p.capture_full_warehouse_snapshot
+            p.capture_full_warehouse_snapshot = (
+                lambda scope, fn=original, mutation=changed:
+                {**fn(scope), **mutation})
+            with self.subTest(changed=changed):
+                with self.assertRaisesRegex(RuntimeError, "F2_PHYSICAL_SNAPSHOT"):
+                    self.controlled(p)
+                self.assertFalse(self.business_calls)
+
+    def test_g5_controller_rejects_missing_f1_concept_evidence(self):
+        p = self.provider()
+        p.read_verified_warehouse_concepts = lambda scope: None
+        with self.assertRaisesRegex(RuntimeError, "F1_PHYSICAL_CONCEPT_MISSING"):
+            self.controlled(p)
+        self.assertFalse(self.business_calls)
+
+    def test_g5_controller_source_wires_business_without_parameter_bypass(self):
+        p = self.provider()
+        result = self.controlled(p)
+        self.assertEqual(result, "SYNTHETIC_P3_BUSINESS_ENTRY_CALLED_NOT_CLOUD")
+        self.assertEqual(p.snapshot_number, 2)
+        self.assertEqual(len(self.business_calls), 1)
+        kwargs = self.business_calls[0]
+        self.assertEqual(kwargs["mode"], "G5_CANDIDATE_WRITE")
+        self.assertIs(kwargs["write_authorized"], True)
+        self.assertIs(kwargs["clinically_reviewed"], True)
+        self.assertIs(kwargs["license_reviewed"], True)
+        self.assertIs(kwargs["warehouse_snapshot_verified"], True)
+        self.assertEqual(kwargs["mapping_profile_bytes"], self.profile)
+        self.assertEqual(kwargs["warehouse_snapshot_sha256"],
+                         self.scope.identity_snapshot_fingerprint)
+        self.assertFalse(self.spark.delta)
+
+    def test_g5_controller_readback_always_disables_write_flags(self):
+        p = self.provider()
+        result = self.controlled(p, mode="G5_CANDIDATE_READBACK_ONLY")
+        self.assertEqual(result, "SYNTHETIC_P3_BUSINESS_ENTRY_CALLED_NOT_CLOUD")
+        kwargs = self.business_calls[0]
+        self.assertEqual(kwargs["mode"], "G5_CANDIDATE_READBACK_ONLY")
+        for flag in ("write_authorized", "clinically_reviewed", "license_reviewed"):
+            self.assertIs(kwargs[flag], False)
+
+    def test_g5_controller_not_exposed_as_public_notebook_write_runmode(self):
+        native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"
+                  "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
+        main = native.split('if __name__ == "__main__":')[-1]
+        self.assertNotIn("execute_g5_candidate_from_trusted_controller(", main)
+        self.assertNotIn('run_mode == "G5_CANDIDATE_WRITE"', main)
+        self.assertIn('run_mode = "HALT"', native)
+
+
 if __name__ == "__main__":
     unittest.main()
