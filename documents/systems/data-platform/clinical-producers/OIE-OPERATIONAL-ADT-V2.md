@@ -278,3 +278,23 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 - **Immutable Digest：** `ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:10252ba6ad5560174218b52ee985fe346a7a7ac23c3fdf9f585efb23e56cb5ea`；镜像 OCI `org.opencontainers.image.revision=ecc99b18b2dd52af8c8b54eae208564adffd5b71`，与发布的仓库源码一致。这是已经执行并确认的发布，不再只是等待 GHCR Release。
 - **Self-Runner 已记录，但未激活临床运行：** [Self-Runner PR #574](https://github.com/JohnZhang-DataForge/Self-Runner/pull/574) 将 `HEALTHCARE_SHA` 更新为镜像实际 Revision，并以 `RELEASED_PUBLISHER_IMAGE` 保存真实 Digest；所有 V2 来源/Job 模板 Hosted 检查通过。实际 `PUBLISHER_IMAGE=""` **继续故意保持禁用**，手工运行 Controller 仍会在任何 Kubernetes/Azure 写入前 HOLD。本次批准范围仅限 GHCR 软件产物发布，没有授权新 Synthea 生成批次、FHIR/HL7 发送、OIE Message 持久化或 Azure Raw PUT。
 - **后续工作：** 取得单独批次/真实消息/Blob 写入审批后，再根据当次实时共享资源与外部存储审计，解除 `PUBLISHER_IMAGE` HOLD、固定新 Request/Manifest 和 OIE V2 STARTED 只读证明，逐步完成 A01/A03 ACK → 独立 Derby GET → Raw HL7 Azure Blob 的 immutable PUT/GET/manifest-last 和 Replay。历史 A01 Channel/Derby PVC 与旧批次继续原样保留。
+
+
+## 两阶段新 E2E 运行路线 — 先 P2 持久化、后 P3 Azure（2026-11-07，源码完成 / 实机 HOLD）
+
+从 [Self-Runner PR #577](https://github.com/JohnZhang-DataForge/Self-Runner/pull/577) / Main `1f7fcce3e9a7c1a7ccc7d524d45710ccb33af240` 起，**旧 `oie-adt-v2-e2e-manual.yml` 中的一次性 P2+P3 Controller 已源代码强制退役**，即使将来镜像引用解锁也立即 HOLD。正式入口是 `Self-Runner/.github/workflows/oie-adt-v2-staged-manual.yml`，源 `scripts/oie_v2_staged_controller.py`，证据规则 `scripts/oie_v2_phase_evidence.py`。
+
+### P2 — 独立新批次授权后执行，不包含 Azure PUT
+
+- 在全新 GitHub Run、当前 Main 与独立批准范围内，选择 `stage=P2` 和专用确认值 `OIE_V2_P2_FRESH_FHIR_TO_PERSISTED_GET`。必须提前明确 worker01、`dw-synthea` / `dw-oie` / `oie-state`、已核实 STARTED 的新 Channel、旧 A01 不变、精确 Profile/Population/Seed/Reference Date、将生成的 Request 格式和一次性 OIE Message POST 副作用；**确认文本本身不是批准**。
+- P2 使用新请求 `johnscreek-hl7-gh-<P2 Run ID>`。真实校验包括 Source Manifest、至少一条合格 A01+A03、无 HOLD、严格的首次 OIE ACK/Message ID 列表；未知结果不重试。
+- 从同一个已发布的精确 GHCR Publisher Digest 运行**单独只读**持久化消息验证 Job，使用已核验的新 Message ID 精确 OIE GET，校验 FHIR 临床事实、原始 HL7 bytes/SHA256 与每个事件，不加载 Azure Secret 到这个 Job，不执行 Azure Publisher 或 Blob PUT。
+- 完成后保留原请求、Profile、ACK Receipts 和 `p2-persisted-proof.json` 的源 Run ConfigMap，并从可信 P2 日志记录 `OIE_V2_P2_SOURCE_RUN_ID`、`OIE_V2_P2_SOURCE_SHA256`、`OIE_V2_P2_PROOF_SHA256` 与数量。证据完整才称 P2 持久化 PASS；不会自动触发 P3。
+
+### P3 — 在新的、单独授权的 GitHub Run 发布 Blob
+
+- 需要单独批准 Azure Storage **Raw HL7 PUT/GET/HEAD、manifest-last、仅 Blob replay** 的副作用及相应 worker01 K8s Job。工作流选 `stage=P3`，确认 `OIE_V2_P3_VERIFIED_GET_TO_AZURE_BLOB`，输入原 P2 Run ID 与实际 P2 Proof SHA256；当前新 Run ID 必须与 P2 不同。
+- 先严格读取并验证原 P2 ConfigMaps 的作用域/标签与 SHA，独立重新审计冻结 FHIR Source，生成全新的只读 OIE Message GET 验证 Job；将重新读回的全部 HL7 对象哈希、源身份和原始 Receipt SHA 与 **P2 Proof 完全一致**。不一致或证据丢失直接 HOLD，绝不重新 POST OIE。
+- 只有 P2→P3 对账一致后才允许读取 Azure 目标 Prefix，再使用原 Publisher immutability contract 执行独立 PUT、远端 GET/HEAD 和 manifest-last；仅已确认首次完整 Commit 的 Batch 可以做 Blob-only replay 测试。P3 不创建新的 Synthea Request、不覆盖旧 Batch/旧 A01，不自动清理 P2 证据。
+
+**目前的真实门禁：** GHCR 固定已发布 Digest/OCI Revision 仅作候选发行物验收；运行时 `PUBLISHER_IMAGE=""` 仍阻止 P2 和 P3 真实执行。Hosted [Run #42396202994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42396202994) 源码/负向门禁 PASS，两种 Live Job 都 SKIPPED；没有新消息 POST、独立 Derby 读回或 Azure PUT 的真实 PASS 证据。若后续获得 P2 授权，应先只读核验资源和当次共享占用，并单独审核解锁范围；不能直接重跑旧 E2E。
