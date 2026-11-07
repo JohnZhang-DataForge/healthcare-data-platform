@@ -93,14 +93,19 @@ class LocalOnlyOIE:
 
     def call(self, path, *, method="GET", body=None, accept="application/xml",
              content_type=None):
-        if (not path.startswith("/api/") or "?" in path
-                and path not in (
-                    f"/api/channels/{V2_ID}/_deploy?returnErrors=true&debug=false",
-                    f"/api/channels/statuses?channelId={V2_ID}&includeUndeployed=true",
-                )):
-            hold("HTTP_PATH_NOT_REVIEWED")
-        if method not in ("GET", "POST"):
-            hold("HTTP_VERB_FORBIDDEN")
+        allowed_get = {
+            "/api/channels", f"/api/channels/{V2_ID}",
+            f"/api/channels/{V2_ID}/status",
+            "/api/server/channelMetadata",
+            f"/api/channels/statuses?channelId={V2_ID}&includeUndeployed=true",
+        }
+        allowed_post = {
+            "/api/users/_login", "/api/channels/",
+            f"/api/channels/{V2_ID}/_deploy?returnErrors=true&debug=false",
+        }
+        if not ((method == "GET" and path in allowed_get)
+                or (method == "POST" and path in allowed_post)):
+            hold("HTTP_VERB_OR_PATH_NOT_REVIEWED")
         headers = {"Accept": accept, "X-Requested-With": "XMLHttpRequest"}
         if content_type:
             headers["Content-Type"] = content_type
