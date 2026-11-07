@@ -7,7 +7,7 @@ source_sha: 641215bcb9dc94fdda1da0da60904cf16c5bef5a
 
 # Fabric dbt — 标准工程目录与 Agent 准入规则
 
-> **AI/Agent 必读：** 这是正式的**未来源码归属规则**，不是现有源码已经迁移的声明。任何新 dbt 目录、模型、项目改名或迁移必须先检查最新 Main、[OpenSpec dbt Change](../../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md) 与现有 CODE Map。
+> **AI/Agent 必读：** 这是正式的**未来源码归属规则**，不是现有源码已经迁移的声明。任何新 dbt 目录、模型、项目改名或迁移必须先检查最新 Main、[正式采用的 dbt Current Spec](../../../../openspec/specs/fabric-dbt-project-layout/spec.md)、[OpenSpec dbt Change](../../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md) 与现有 CODE Map。
 
 ## 唯一归属
 
