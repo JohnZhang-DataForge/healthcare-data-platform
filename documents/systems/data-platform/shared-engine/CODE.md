@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **当前候选状态（2026-11-07）：Shared 新映射源码候选版本为 0.1.9，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前候选状态（2026-11-07）：Shared 新映射源码候选版本为 0.1.10，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -57,6 +57,7 @@
 | [src/healthcare_data_engine/models/fabric_omop_handoff.py](../../../../shared-data-engine/src/healthcare_data_engine/models/fabric_omop_handoff.py) | 无 I/O 的原始 SHA、来源命名空间、Approval/路径元数据校验；始终要求另行物理 Delta 读回 |
 | [tests/test_fabric_omop_handoff.py](../../../../shared-data-engine/tests/test_fabric_omop_handoff.py) | 仓库 Canonical 原始 SHA、自定义 F1 作用域、拒绝跨医院/Quarantine/篡改/不可信路径的 Python 3.11/3.13 无云端测试 |
 | [BUILD-AND-TEST.md](BUILD-AND-TEST.md) | 原源码 README 的离线安装、Python/PySpark 测试、Wheel 构建及 Handoff 操作边界（唯一维护入口） |
+| [src/healthcare_data_engine/mapping/omop/race_resolution.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/race_resolution.py) | 0.1.10 Source/F1 Race **草稿**预检：检查 1002-5 原始 CDC Coding.system、UNK 原始 HL7 NullFlavor Coding.system、F1 输入候选行的 Race 标准域/有效日期；生成仅追加正数 Concept 的新 G5 Profile 草稿、保持 UNK 未映射/0 仅待审，不能替代物理 SQL 或临床审批 |
 | [src/healthcare_data_engine/mapping/omop/local_profile.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/local_profile.py) | 0.1.9 平台无关 Mapping Profile + P100/E5918 **汇总级 CoverageReview**：复用原 LocalDP Person/Visit Concept 权威；检查四类源字段完整性、patient/encounter 总数、版本/manifest SHA、未知码与频数，产出不含 Patient ID 的临床审核缺口清单；不执行 I/O、不分配 OMOP ID、绝不代表 Clinical/License Approval |
 
 ## Local / Shared 等价性测试（2026-11-06，合成离线限定）
@@ -124,3 +125,12 @@
 - 返回不含患者标识的 `MappingCoverageReview`：`gender_code` 未映射 0、`race_code` 未映射 3（`1002-5` 1、`UNK` 2）、`ethnicity_code` 0、`encounter_class` 0，均**仅为已核实 G4 代码频数的离线合同测试覆盖**；不是新实机验证。`1002-5` 是 CDC Race / HL7 表中 American Indian or Alaska Native，`UNK` 是 HL7 NullFlavor unknown，源码 Hint 不是目标 OMOP ID（[HL7 US Core race](https://www.hl7.org/fhir/us/core/STU2/ValueSet-omb-race-category.html)）。OMOP 5.4 Race 未知的 Concept 0 仅是未来临床审查时可考虑的正式 no-information 规则（[OHDSI CDM5.4](https://ohdsi.github.io/CommonDataModel/cdm54.html)），**当前 G5 Profile 仍严禁 ID 0，不能靠假 ID 绕过**。
 - 结果一律 `MAPPING_COVERAGE_REVIEW_ONLY_NO_CLINICAL_APPROVAL`、`candidate_write_authorized=False`，并显式列出每个未映射原码/数量/含义提示。类别、有效日期、标准 Concept、F1 Release rights 和人工 mapping reviewer 尚待真实签审。未知源值不改写入 Gold，不允许凭 SOURCE/CI PASS 推进 P3/P4。
 - [映射与覆盖离线负向测试](../../../../.github/quality/tests/shared-data-engine/mapping/test_localdp_g5_profile.py) 覆盖四组 Source Count、manifest SHA、LocalDP parity、错误 Code/个数、碰撞、伪造授权、Profile 字节漂移、跨医院 Namespace 和 0/default 禁止。
+
+
+## FHIR Race 1002-5 / UNK 源码草稿预检（0.1.10 SOURCE_ONLY）
+
+- [Race resolution pure source](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/race_resolution.py)：调用方提供已存在的 `MappingCoverageReview`、同一 SHA 的 `LocalProfileDraft`、**独立读取获得**的 F1 `concept_id/concept_name/domain_id/vocabulary_id/standard_concept/invalid_reason/valid_start_date/valid_end_date` 行、F1 元数据哈希、以及每个未映射 Race 代码的 FHIR `Coding.system` 汇总频数。纯函数 `propose_race_resolution` 严格核对源 Batch / Manifest / Profile SHA、唯一 Code System、数量、大小写、标准 Race Domain、有效日期与标准标记、不可重用旧 Mapping Version；只返回独立字节和 SHA 的**新草稿**，`clinically_approved=False`、`candidate_write_authorized=False`。
+- 当前外部 HL7 [FHIR-to-OMOP Race guide](https://hl7.org/fhir/uv/omop/2.0.0-202609-ballot/en/RaceAndEthnicity.html) 将 American Indian or Alaska Native 列作 **8657（示例）**，该 ID **仅在合成测试输入中**，不在共享生产算法里硬编码。来源 `1002-5` 来自 CDC Race Coding System `urn:oid:2.16.840.1.113883.6.238`；`UNK` 必须来自 HL7 `v3-NullFlavor` `http://terminology.hl7.org/CodeSystem/v3-NullFlavor`，两者不可混淆，详见 [HL7 US Core Race](https://www.hl7.org/fhir/us/core/STU4/ValueSet-omb-race-category.html)。
+- `UNK` = Unknown 不能映射为任何现成 Race 身份。OMOP [CDM 5.4 PERSON race_concept_id](https://ohdsi.github.io/CommonDataModel/cdm54.html) 允许无确切信息时用 `0`，**但本期不向正式 G5 Profile 注入 0，也不修改原本严格拒绝 0 的 Shared Mapper / private Runner Provider**。未来需要经批准的类型化 no-information 合同、原始 FHIR Code System 的真实来源证据及单独的临床/法律/发布门禁；不许仅仅因为 FHIR Code 文本为 `UNK` 即改写。
+- 当前 LocalDP Rule 未包含 American Indian/Alaska Native，候选 Profile 仅在**合成 F1 记录满足标准+有效日期**时把此代码添加为对应的**正整数 Concept**，临床未经审批的字节 SHA 与任何正式 Profile 必须区分；仍有 `UNK` 2/100 **HOLD**。现有 Canonical Patient v1 只存 `race_code`，没有单独存 `Coding.system`，需要从冻结、可独立证明的 FHIR 原始资源生成外部来源 Code System 计数；未验收的调用方参数不算真实来源验收。
+- [Positive/negative SOURCE tests](../../../../.github/quality/tests/shared-data-engine/mapping/test_localdp_g5_profile.py) 覆盖 8657 合成行、错误 F1 Domain/Standard/Name/Vocabulary、失效日期、Code System 混淆、错误来源数、缺少 Provenance、跨医院隔离及未知零值，LocalDP 旧实现/数据不修改。本期源码包候选为 0.1.10；现有 Fabric Environment Git Wheel 0.1.7 未改动；**无云端查询/签名审核/真实 Candidate/Gold 写入**。
