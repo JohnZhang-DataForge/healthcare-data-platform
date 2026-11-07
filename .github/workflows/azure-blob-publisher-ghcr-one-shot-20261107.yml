@@ -1,0 +1,329 @@
+name: One-shot owner-approved Publisher immutable SHA GHCR release (2026-11-07)
+
+# A GitHub-hosted only first Main merge intent. PR runs tests and NEVER
+# pushes; an ordinary Main commit, a rerun and a modified old marker cannot
+# grant a second release. No runtime workloads or clinical data changes.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/azure-blob-publisher-ghcr-one-shot-20261107.yml"
+      - ".github/one-shot/publisher-ghcr-sha-release-20261107.json"
+  push:
+    branches: [main]
+    paths:
+      - ".github/one-shot/publisher-ghcr-sha-release-20261107.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: healthcare-azure-blob-publisher-sha-only-release
+  cancel-in-progress: false
+
+env:
+  PACKAGE: ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher
+  # Tag used only for initial Docker Hub resolution. The build itself is
+  # always bound to and logs the resolved immutable sha256 parent digest.
+  PARENT_TAG: python:3.12-slim-bookworm
+
+jobs:
+  preflight:
+    name: Host-only one-shot intent and Publisher contracts (no GHCR write)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    outputs:
+      authorized: ${{ steps.intent.outputs.authorized }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Validate one-shot Main release intent, exact baseline and added files
+        id: intent
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_EVENT_NAME" != "push" ]]; then
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            echo GHCR_ONE_SHOT_PR_HAS_NO_PUBLISH=PASS
+            exit 0
+          fi
+          test "$GITHUB_EVENT_NAME" = push
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_RUN_ATTEMPT" = 1
+          test "$BEFORE_SHA" = 82b3a6646b84a11482ada7f8c1f0c6f1d8ded367
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 - "$BEFORE_SHA" "$GITHUB_SHA" <<'PY'
+          from pathlib import Path
+          import json,subprocess,sys
+          before,after=sys.argv[1:]
+          marker=".github/one-shot/publisher-ghcr-sha-release-20261107.json"
+          workflow=".github/workflows/azure-blob-publisher-ghcr-one-shot-20261107.yml"
+          changes=subprocess.check_output(
+              ["git","diff","--name-status",before,after],text=True).splitlines()
+          expected_changes={"A\t"+marker,"A\t"+workflow, "M\topenspec/changes/operationalize-oie-hl7-adt-feed/tasks.md"}
+          assert len(changes)==3 and set(changes)==expected_changes, (
+              "HOLD_GHCR_ONE_SHOT_UNREVIEWED_DIFF")
+          old=subprocess.run(["git","cat-file","-e",before+":"+marker],
+                             stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+          assert old.returncode != 0, "HOLD_GHCR_MARKER_ALREADY_EXISTED"
+          actual=json.loads(Path(marker).read_text(encoding="utf-8"))
+          expected={
+            "schema_version":"publisher-ghcr-sha-once-20261107-v1",
+            "approval":"PUBLISH_GHCR_PUBLISHER_SHA_ONLY",
+            "scope":"ONLY_IMMUTABLE_PUBLISHER_IMAGE_GHCR_PUSH_NO_RUNTIME",
+            "expected_previous_main_sha":"82b3a6646b84a11482ada7f8c1f0c6f1d8ded367",
+            "target_image":"ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher",
+            "published_tag_policy":"git-MERGED_MAIN_SHA_ONLY",
+            "publish_latest":False,
+            "github_main_merge_first_attempt_only":True,
+            "normal_push_and_pr_no_publication":True,
+            "overwrite_existing_release":False,
+            "authorize_fhir_hl7_message_post":False,
+            "authorize_azure_blob_put":False,
+            "authorize_kubernetes_mutation":False,
+            "authorize_oie_channel_mutation":False,
+            "authorize_legacy_a01_mutation":False,
+            "authorization_reuse":False,
+          }
+          assert actual==expected, "HOLD_GHCR_RELEASE_INTENT_CHANGED"
+          print("GHCR_EXACT_NEW_MAIN_INTENT=PASS")
+          print("GHCR_PRIOR_MAIN_SHA=82b3a6646b84a11482ada7f8c1f0c6f1d8ded367")
+          print("GHCR_NEW_MERGE_REVISION="+after)
+          PY
+          echo "authorized=true" >> "$GITHUB_OUTPUT"
+          echo GHCR_APPROVED_FIRST_MAIN_MERGE=PASS
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Assert image and release scope plus Blob source contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'FROM ${BASE_IMAGE}' local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'ENTRYPOINT ["python3", "-m", "apps.clinical_producers.azure_blob_runtime"]' local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'USER 10001:10001' local-data-platform/images/azure-blob-publisher/Dockerfile
+          grep -Fq 'namespace: dw-synthea' local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl
+          grep -Fq 'claimName: synthea-new-generator-state' local-data-platform/kubernetes/manifests/synthea/blob-publisher/publish-direct-fhir-job.yaml.tpl
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_runtime.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_azure_blob_publisher.py -v
+          # Permanent prevention: old identifiers may remain in historical evidence,
+          # never in maintained clinical implementation, tests, profiles or workflows.
+          if git grep -n -E 'd[e]mo-atlanta|d[e]mo-johns-creek|D[E]MOJC' -- \
+            local-data-platform/apps/clinical_producers \
+            local-data-platform/tests/clinical_producers \
+            local-data-platform/tests/synthea_new_generator \
+            local-data-platform/config/synthea-new-generator \
+            .github/workflows; then
+            echo 'HOLD_LEGACY_DEMO_HOSPITAL_ID_IN_MAINTAINED_SOURCE'
+            exit 1
+          fi
+          echo 'LEGACY_HOSPITAL_ID_SOURCE_SCAN=PASS'
+          # Required: ordinary Main push cannot silently publish GHCR.
+          python3 - <<'PY'
+          from pathlib import Path
+          flow=Path('.github/workflows/azure-blob-publisher-ghcr-release.yml').read_text()
+          marker="if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1"
+          assert marker in flow, "HOLD_GHCR_RELEASE_NOT_DISPATCH_GATED"
+          assert "inputs.confirmation == 'PUBLISH_GHCR_PUBLISHER_SHA_ONLY'" in flow
+          assert "inputs.source_sha == github.sha" in flow
+          assert "HOLD_GHCR_SOURCE_SHA_CONFIRMATION_REQUIRED" in flow
+          assert "if: github.event_name != 'workflow_dispatch'" in flow
+          print("GHCR_MANUAL_ONLY_RELEASE_STATIC_GATE=PASS")
+          PY
+          python3 -m unittest discover -s local-data-platform/tests/synthea_new_generator -p test_hospital_profiles.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_blob_publish_contract.py -v
+          # Blob key policy must accept realistic Synthea patient spelling
+          # without relaxing path traversal, reserved URL or HL7 guards.
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, "local-data-platform")
+          from apps.clinical_producers.blob_publish_contract import _valid_path
+          assert _valid_path("fhir/Élodie_O'Neil.json", "fhir", ".json")
+          assert _valid_path("fhir/Anne_O’Connor.json", "fhir", ".json")
+          assert not _valid_path("fhir/patient?name.json", "fhir", ".json")
+          assert not _valid_path("fhir/patient name.json", "fhir", ".json")
+          assert not _valid_path("hl7/Élodie.hl7", "hl7", ".hl7")
+          print("FHIR_SYNTHETIC_UNICODE_APOSTROPHE_BLOB_KEY_CONTRACT=PASS")
+          PY
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_channel_build.py -v
+          node local-data-platform/tests/clinical_producers/test_oie_adt_a01.js
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_direct_fhir_publisher.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_hl7_publisher.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_persisted_readback.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_hl7_blob_runtime.py -v
+          python3 -m unittest discover -s local-data-platform/tests/clinical_producers -p test_oie_message_submit.py -v
+          # The image also contains versioned source-bound A01/A03 send and
+          # dual persisted readback publisher entrypoints; never trust a legacy
+          # A01-only release smoke as V2 runtime proof.
+          python3 -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p test_oie_message_submit_v2.py -v
+          python3 -m unittest discover -s .github/quality/tests/data-platform/clinical-producers/oie -p test_hl7_blob_runtime_v2.py -v
+          echo OIE_V2_BOTH_CLI_SOURCE_CONTRACT=PASS
+          echo PUBLISHER_RELEASE_HOSTED_CONTRACT=PASS
+          echo KUBERNETES_MUTATIONS=NO
+          echo AZURE_STORAGE_WRITES=NO
+
+  build-and-smoke:
+    name: Publisher immutable base clean build and container smoke
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Validate distinct manual GHCR release approval and exact Main source SHA
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" || "$GITHUB_RUN_ATTEMPT" != 1 ||
+                "$RELEASE_CONFIRMATION" != "PUBLISH_GHCR_PUBLISHER_SHA_ONLY" ||
+                ! "$RELEASE_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ||
+                "$RELEASE_SOURCE_SHA" != "$GITHUB_SHA" ]]; then
+            echo HOLD_GHCR_SOURCE_SHA_CONFIRMATION_REQUIRED
+            exit 1
+          fi
+          echo GHCR_SOURCE_SHA_AND_APPROVAL_PIN=PASS
+      - name: Bind base to actual immutable digest and clean-build independent image
+        id: build
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$GITHUB_SHA"
+          docker pull "$PARENT_TAG"
+          base="$(docker image inspect "$PARENT_TAG" --format '{{range .RepoDigests}}{{println .}}{{end}}' | grep -E '^python@sha256:[a-f0-9]{64}$' | head -n1)"
+          [[ "$base" =~ ^python@sha256:[a-f0-9]{64}$ ]] || { echo HOLD_UNRESOLVED_PYTHON_BASE; exit 1; }
+          base_ref="python:3.12-slim-bookworm@${base#python@}"
+          echo "PINNED_PARENT_IMAGE=$base_ref"
+          tag="$PACKAGE:git-$GITHUB_SHA"
+          docker build --pull --no-cache \
+            --build-arg "BASE_IMAGE=$base_ref" \
+            --build-arg "PROJECT_GIT_SHA=$GITHUB_SHA" \
+            -f local-data-platform/images/azure-blob-publisher/Dockerfile \
+            -t "$tag" local-data-platform
+          label="$(docker image inspect "$tag" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+          test "$label" = "$GITHUB_SHA"
+          test "$(docker image inspect "$tag" --format '{{.Config.User}}')" = "10001:10001"
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=$tag" >> "$GITHUB_OUTPUT"
+          echo "PUBLISHER_CLEAN_BUILD=PASS"
+      - name: Run no-network read-only container entrypoint smoke
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --tmpfs /tmp:rw,size=64m \
+            --entrypoint python3 "$IMAGE_TAG" -c '
+          import os
+          from apps.clinical_producers.azure_blob_runtime import (
+              CONFIG_KEYS, PublisherRuntimeBlocked, main)
+          from apps.clinical_producers.azure_blob_publisher import (
+              AzureSDKBlobBackend, publish_immutable)
+          from apps.clinical_producers.omop_snapshot_publisher import (
+              BLOB_PREFIX, MANIFEST_VERSION, publish_omop_dump)
+          from apps.clinical_producers.omop_snapshot_runtime import (
+              publish_from_stage)
+          assert BLOB_PREFIX == "omop/snapshots"
+          assert MANIFEST_VERSION == "healthcare-omop-blob-snapshot-v1"
+          from apps.clinical_producers.oie_hl7_publisher import prepare_oie_hl7
+          from apps.clinical_producers.oie_message_submit import (
+              ScopedOIEPoster, submit_new_fhir_request)
+          from apps.clinical_producers.hl7_blob_runtime import (
+              RECEIPT_VERSION, publish_hl7_from_new_receipts)
+          assert RECEIPT_VERSION == "healthcare-oie-new-request-receipts-v1"
+          from apps.clinical_producers.oie_message_submit_v2 import (
+              VERSION as V2_RECEIPT_VERSION, ScopedOIEV2Poster,
+              submit_v2_new_request, verify_v2_receipts_against_frozen_source)
+          from apps.clinical_producers.hl7_blob_runtime_v2 import (
+              publish_hl7_v2_from_new_receipts, load_v2_receipts)
+          from apps.clinical_producers.oie.build_adt_events_v2_channel import (
+              CHANNEL_ID as V2_CHANNEL_ID)
+          assert V2_RECEIPT_VERSION == "healthcare-oie-adt-v2-new-event-receipts-v1"
+          assert V2_CHANNEL_ID == "6b91681e-5b3b-59cb-b270-09412054110c"
+          from azure.identity import ClientSecretCredential
+          from azure.storage.blob import BlobServiceClient
+          assert os.getuid() == 10001 and os.getgid() == 10001
+          assert len(CONFIG_KEYS) == 5
+          print("PUBLISHER_IMAGE_IMPORT_NONROOT_NO_NETWORK=PASS")
+          '
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.azure_blob_runtime --help >/dev/null
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.hl7_blob_runtime --help >/dev/null
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.oie_message_submit --help >/dev/null
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.oie_message_submit_v2 --help >/dev/null
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.hl7_blob_runtime_v2 --help >/dev/null
+          echo "OIE_V2_A01_A03_IMAGE_CLIS_NO_NETWORK=PASS"
+          echo "OIE_INTERNAL_ADMIN_SHA256_LEAF_PIN_AVAILABLE=PASS"
+          echo "OIE_SCOPED_POST_RUNTIME_CLI_SMOKE=PASS"
+          echo "OIE_FIFTY_PATIENT_BOUNDED_EVENTS_RELEASE=PASS"
+          echo "PUBLISHER_HL7_RUNTIME_CLI_SMOKE=PASS"
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --entrypoint python3 "$IMAGE_TAG" \
+            -m apps.clinical_producers.omop_snapshot_runtime --help >/dev/null
+          echo "OMOP_SNAPSHOT_PUBLISHER_CLI_SMOKE=PASS"
+          echo "PUBLISHER_IMAGE_RUNTIME_CLI_SMOKE=PASS"
+          echo "AZURE_BLOB_REAL_UPLOAD=NO"
+          echo "DW_SYNTHETIC_PVC_MOUNT=NO"
+      - name: Publish git-SHA tag only on exact newly added Main one-shot marker
+        # A mere workflow-source PR, rerun, or any other Main push never publishes.
+        # Only the explicit newly ADDED marker + exact prior Main SHA is approved.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.run_attempt == 1 && needs.preflight.outputs.authorized == 'true'
+        shell: bash
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -Eeuo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$IMAGE_TAG" = "$PACKAGE:git-$GITHUB_SHA"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+          # The revision tag must not exist: never overwrite a prior image.
+          if docker manifest inspect "$IMAGE_TAG" >/dev/null 2>&1; then
+            echo HOLD_GHCR_REVISION_TAG_ALREADY_EXISTS
+            exit 1
+          fi
+          docker push "$IMAGE_TAG"
+          docker pull "$IMAGE_TAG"
+          digest="$(docker image inspect "$IMAGE_TAG" --format '{{range .RepoDigests}}{{println .}}{{end}}' | grep -E '^ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:[a-f0-9]{64}$' | head -n1)"
+          [[ "$digest" =~ ^ghcr\.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:[a-f0-9]{64}$ ]]
+          echo "PUBLISHER_IMAGE_DIGEST_REF=$digest"
+          docker pull "$digest" >/dev/null
+          digest_rev="$(docker image inspect "$digest" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+          test "$digest_rev" = "$GITHUB_SHA"
+          echo PUBLISHER_REMOTE_DIGEST_REVISION_READBACK=PASS
+          echo PUBLISHER_GHCR_SHA_ONLY_PUBLISH=PASS
+          echo LATEST_TAG_MODIFIED=NO
+          echo SHARED_K8S_RESOURCE_CREATED=NO
+          echo AZURE_BLOB_LANDING_MUTATED=NO
+          {
+            echo "## Azure Blob Publisher SHA-only release"
+            echo "- Healthcare source SHA: `$GITHUB_SHA`"
+            echo "- Image tag: `$IMAGE_TAG`"
+            echo "- Immutable image digest: `$digest`"
+            echo "- Clean build / non-root offline smoke: PASS"
+            echo "- Shared K8s, OIE, Azure Blob/Secret: UNCHANGED"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: PR Hosted build never publishes
+        if: github.event_name == 'pull_request'
+        run: |
+          echo PUBLISHER_HOSTED_IMAGE_BUILD=PASS
+          echo GHCR_PUSH_SKIPPED=YES
