@@ -454,15 +454,15 @@ class RaceF1AndMissingValueSourceReviewTests(unittest.TestCase):
         self.assertIn("DRAFT_ONLY", result.status)
         self.assertIn("REQUIRES_EXPLICIT_REVIEW",
                       result.pending_no_information_policy)
-        self.assertEqual(len(result.verified_source_coding_sha256), 64)
+        self.assertEqual(len(result.claimed_source_coding_sha256), 64)
 
     def test_proposal_stable_under_coverage_reordering_and_other_hospital(self):
         original = race_proposal()
         reread = race_proposal()
         self.assertEqual(original.proposed_profile_bytes,
                          reread.proposed_profile_bytes)
-        self.assertEqual(original.verified_source_coding_sha256,
-                         reread.verified_source_coding_sha256)
+        self.assertEqual(original.claimed_source_coding_sha256,
+                         reread.claimed_source_coding_sha256)
         source_b = "synthea-fhir:atlanta-hospital-b:hospital-b-fhir-r4"
         draft_b = make(source_system=source_b)
         cov_b = coverage(draft=draft_b)
