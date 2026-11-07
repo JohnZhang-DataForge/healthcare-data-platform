@@ -310,7 +310,7 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 
 ## 最新验收：P2 新 FHIR → OIE V2 双事件持久化独立 GET 实机 PASS（2026-11-07 ET）
 
-<真实运行；不是 GitHub-hosted Mock、不是旧 A01 历史 Batch、也不是 Azure Blob E2E。>
+> **证据级别：** 真实运行，不是 GitHub-hosted Mock、旧 A01 历史 Batch，也不是 Azure Blob E2E。
 
 - **前次故障及修复：** [Run #42402668196](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42402668196) 于旧版 V2 GET Config 比对时抛出 `HOLD_V2_CHANNEL_CONFIG_DRIFT`，在生成 Batch 和任何 OIE 写入之前停止；之后 [Self-Runner PR #580](https://github.com/JohnZhang-DataForge/Self-Runner/pull/580) 复用此前实机审查的 STOPPED Import + 16 条 XStream version 容错和确切 `dashboardStatus` 顶层 STARTED 状态解析，CI PASS。该前次授权不重放。
 - **新一次性授权及 Run：** 用户允许最多 **3 次新调试尝试**，保持 unknown/partial OIE POST 绝不盲重试同一 Request 的安全门禁；[Self-Runner PR #581](https://github.com/JohnZhang-DataForge/Self-Runner/pull/581) / Main `a592ceea275215575d23d5b4287e0275e19e2f26` 提交独立的 retry 1/3 一次性授权文件并触发 [真实 Actions Run #42410482514](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42410482514) 完整 **SUCCESS**。因此**后续两次尝试不执行**。
