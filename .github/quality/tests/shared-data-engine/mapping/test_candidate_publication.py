@@ -203,8 +203,17 @@ class CandidatePublicationPlanTests(unittest.TestCase):
         ):
             self.assertEqual(classify_mapping_failure(reason),
                              "DATA_QUARANTINE_CANDIDATE_HOLD_PUBLICATION")
+        # Existing strict Mapper/P1 reason codes (no patient values).
+        self.assertEqual(
+            classify_mapping_failure("G5_UNKNOWN_MAPPING_CODE:race_code"),
+            "DATA_QUARANTINE_CANDIDATE_HOLD_PUBLICATION")
+        self.assertEqual(
+            classify_mapping_failure("P1_UNMAPPED_SOURCE_CODE:encounter_class"),
+            "DATA_QUARANTINE_CANDIDATE_HOLD_PUBLICATION")
         for reason in ("SNAPSHOT_CHANGED", "SILVER_APPROVAL_MISSING",
-                       "PROFILE_SHA_DRIFT", "WAREHOUSE_WRITE_UNKNOWN_ACK"):
+                       "PROFILE_SHA_DRIFT", "WAREHOUSE_WRITE_UNKNOWN_ACK",
+                       "G5_UNKNOWN_MAPPING_CODE:untrusted_field",
+                       "P1_CONCEPT_DOMAIN_MISMATCH"):
             self.assertEqual(classify_mapping_failure(reason),
                              "BATCH_HOLD_NO_PUBLICATION")
 
