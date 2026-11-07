@@ -77,17 +77,21 @@ jobs:
           set +x
           name="oie-v2-ephemeral-${GITHUB_RUN_ID}"
           conf="$RUNNER_TEMP/oie-v2-ephemeral-bootstrap.properties"
+          clientconf="$RUNNER_TEMP/oie-v2-ephemeral-admin-client.properties"
           cleanup() {
             docker rm -fv "$name" >/dev/null 2>&1 || true
-            rm -f "$conf"
+            rm -f "$conf" "$clientconf"
           }
           trap cleanup EXIT
           umask 077
-          python3 - "$conf" <<'PY'
+          python3 - "$conf" "$clientconf" <<'PY'
           import secrets,sys
-          with open(sys.argv[1],"w",encoding="utf-8") as out:
-              out.write("server.initialadminpassword = "+secrets.token_urlsafe(32)+"\n")
+          value="server.initialadminpassword = "+secrets.token_urlsafe(32)+"\n"
+          for target in sys.argv[1:]:
+              with open(target,"w",encoding="utf-8") as out:
+                  out.write(value)
           PY
+          chmod 600 "$clientconf"
           uid="$(docker run --rm --entrypoint id "$PINNED_OIE_IMAGE" -u)"
           gid="$(docker run --rm --entrypoint id "$PINNED_OIE_IMAGE" -g)"
           [[ "$uid" =~ ^[0-9]+$ && "$gid" =~ ^[0-9]+$ ]]
@@ -110,7 +114,7 @@ jobs:
           test "$ready" = yes
           echo OIE_DISPOSABLE_HTTPS_READY=PASS
           python3 .github/quality/tests/data-platform/clinical-producers/oie/disposable_oie_v2_deploy_smoke.py \
-            --pinned-root _pinned/healthcare --admin-password-file "$conf"
+            --pinned-root _pinned/healthcare --admin-password-file "$clientconf"
           echo OIE_DISPOSABLE_DOCKER_AND_DATABASE_DELETED_ON_EXIT=YES
           echo OIE_PRODUCTION_CHANNEL_DEPLOY_OR_START=NO
           echo OIE_PRODUCTION_DERBY_OR_K8S_MUTATION=NO
