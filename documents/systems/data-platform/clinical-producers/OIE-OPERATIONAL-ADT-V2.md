@@ -1,6 +1,6 @@
 # OIE HL7 v2.5.1 ADT 业务事件 V2 — 离线实现与验收边界
 
-> 当前状态（2026-11-07 ET）：**现有 V2 Channel 已经在 worker01 真实 Deploy → STOPPED 验证 → Start → STARTED，后续独立双状态 GET 再次确认 STARTED，START_ONLY 实机验收 PASS**。此前首次 HTTP 406 导致的 UNDEPLOYED/HOLD 仅是历史记录，已通过修复 Accept Header 和新的一次性明确授权操作解决。旧 A01 在本次启动及后续只读检查中保持稳定；**Publisher GHCR SHA-only 镜像已真实发布；随后一次获批的全新 FHIR P2 Run #42410482514 已成功发送并独立持久化读回 21 条 A01 + 21 条 A03（42 条真实 OIE V2 消息），且已保存 P2 校验证据；Raw HL7 → Azure Blob 发布与 P3 E2E 仍未执行**。后续消息写入、Publisher 与 Blob 操作仍需各自的明确授权。本文件不授权任何额外真实写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
+> 当前状态（2026-11-07 ET）：**现有 V2 Channel 已经在 worker01 真实 Deploy → STOPPED 验证 → Start → STARTED，后续独立双状态 GET 再次确认 STARTED，START_ONLY 实机验收 PASS**。此前首次 HTTP 406 导致的 UNDEPLOYED/HOLD 仅是历史记录，已通过修复 Accept Header 和新的一次性明确授权操作解决。旧 A01 在本次启动及后续只读检查中保持稳定；**Publisher GHCR SHA-only 镜像已发布；P2 Run #42410482514 已真实发送并持久化 GET 验证 21 条 A01 + 21 条 A03；P3 Run #42412009780 对相同 42 条原始 HL7 独立 OIE 重新 GET、不可变 Azure Blob 发布、远端 42 对象 + Manifest GET/HEAD、Blob-only Replay 均真实 PASS**。后续消息写入、Publisher 与 Blob 操作仍需各自的明确授权。本文件不授权任何额外真实写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
 
 ## 正式双事件 E2E 的源审计门禁（2026-11-07）
 
@@ -318,5 +318,18 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 - **新 FHIR 来源：** `johnscreek-hl7-gh-42410482514`，population=50，真实冻结 Manifest SHA256 `3999e773321a76a5d8421d62af23d24d833261a65812ea24e14e7e828f960a93`。来源临床规则审计 `PROFILE_COMPATIBLE=PASS`：**A01=21、A03=21、非住院跳过=1920、HOLD=0**。
 - **单消息真实提交与 Derby 持久化：** V2 Sender 按源 FHIR 的不同 Event Type 分别 POST 42 条独立 A01/A03，保存来源绑定、单条 Message ID 的新批次 ACK Receipts；另有**独立只读 OIE GET Job** 从持久化存储按这些确切 ID 读取全部 42 条消息，对消息类型、临床 Patient/Encounter 事实、HL7 原始字节、MSH-10/SHA256 和 Request/Source Manifest 做独立校验；日志 `OIE_V2_P2_PERSISTED_GET_VERIFIED_NO_BLOB=PASS`，而非仅凭 Sender ACK 宣称提交。
 - **正式 P2 Proof：** `P2_PERSISTED_GET_VERIFIED_NO_BLOB` 证据存入来源 Run 专用 `p2-persisted-proof.json` ConfigMap 并读回验证，SHA256 为 `0563e10b2ade95f11e5cf76ec5bf8915b53489134f72b75fe0b08aaf9b53205c`。原 FHIR Source、Profile、Receipts 和 Proof 都要保留给未来 P3，无用户新批准不得清除。
-- **尚未执行：** Azure Storage Prefix LIST/PUT、Raw HL7 Blob、远端 GET/HEAD、manifest-last、Blob-only Replay、P3 实机、HL7 Parser/dbt/Canonical/Silver/OMOP 写入。已有 GHCR Digest 及 `PUBLISHER_IMAGE=""` 安全默认不因此自动解锁任何后续运行。**P2 已 PASS；P3 仍 HOLD**。
+- **截至当时 P2 完成但 P3 尚未运行的历史状态（已被下文最新 P3 PASS 更新）：** Azure Storage Prefix LIST/PUT、Raw HL7 Blob、远端 GET/HEAD、manifest-last、Blob-only Replay、P3 实机在当时均未执行；HL7 Parser/dbt/Canonical/Silver/OMOP 写入至今尚未执行。已有 GHCR Digest 及 `PUBLISHER_IMAGE=""` 安全默认不因此自动解锁任何后续运行。**P2 已 PASS；P3 仍 HOLD**。
 - **后续 P3 参数（仅预备，非授权）：** `OIE_V2_P2_SOURCE_RUN_ID=42410482514`；`OIE_V2_P2_PROOF_SHA256=0563e10b2ade95f11e5cf76ec5bf8915b53489134f72b75fe0b08aaf9b53205c`。新的 P3 必须从原持久化记录独立重新 GET/验 hash 后才允许 Azure 写入；严禁再次 OIE POST、重建新 FHIR 或重放本批次。
+
+
+## 最新验收：P3 同一 P2 Proof → Azure Blob Raw HL7 Manifest-last 真正 E2E PASS（2026-11-07 ET）
+
+> **数据边界：** 同一已冻结的 Synthea 合成请求；这不是新 FHIR Batch、不重新提交 OIE 消息，也未执行 HL7 Parser/dbt → Canonical Silver 或 OMOP。
+
+- **一次性精确授权：** [Self-Runner PR #582](https://github.com/JohnZhang-DataForge/Self-Runner/pull/582) / Main `7d2c7a09a94a6415db8e5080a237cc9de9d930d7`。只允许对 P2 Run `42410482514`、Source SHA `3999e773321a76a5d8421d62af23d24d833261a65812ea24e14e7e828f960a93`、Proof SHA `0563e10b2ade95f11e5cf76ec5bf8915b53489134f72b75fe0b08aaf9b53205c` 的真实持久化 21 A01 + 21 A03 执行 P3。新 Run ID 仅代表 P3 的独立执行，不代表新 FHIR 或新的 OIE Message。
+- **真实任务：[Run #42412009780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42412009780) SUCCESS。** 单独 P3 Job 在 `dw-runner-set` 上实机执行；首先确认 worker01/K8s/源 ConfigMap/已验证 OIE v4.7 Channel、Strict Profile。重新审计原冻结 FHIR，独立按确切 Message ID GET 42 条已持久化的 OIE V2 HL7，严格与原 P2 Proof 比对，输出 `OIE_V2_P3_INDEPENDENT_PERSISTED_REGET_PROOF=PASS`，然后才连接 Azure。
+- **Azure 唯一目标：** `https://johnzhang.blob.core.windows.net/landing`，Request 前缀 `clinical/v1/johns-creek-hospital-b/johns-creek-hospital-b-hl7-v2/johnscreek-hl7-gh-42410482514/`。前置 Azure List 精确显示 **0** 对象；Scope 限制只对这次请求做条件创建，不覆盖或删除任何历史对象。
+- **发布结果：** 共 **42 个原始 HL7 文件**（21 A01、21 A03）+ **一个 landing-manifest.json**。由既有共享 Blob Publisher 实施不可变条件创建和 manifest-last，后由不同实现的 Controller 使用 Azure REST 完成逐对象与 Manifest 的独立 `GET`、`HEAD`、SHA256、ETag、Content-Type / Metadata 与业务 Source-Event Identity 验证。`AZURE_OIE_V2_A01_A03_INDEPENDENT_GET_COUNT=42` 和 `AZURE_OIE_V2_MANIFEST_LAST_SHA_ETAG=PASS` 实际输出两次。
+- **Blob-only Replay：** 只有首次成功提交并远程验证后才启动第二个 Publisher Job，预期全部对象 **ALREADY_MATCHING** 而非重新 PUT/覆盖；第二次远程 Manifest 与全部对象校验完全一致。最终日志：`OIE_V2_P3_AZURE_BLOB_E2E=PASS`，`OIE_V2_P3_REMOTE_OBJECT_COUNT=42`，`OIE_V2_P3_BLOB_MANIFEST_SHA256=dfb9895554470b0cb31536a041cd38aef5aaedd11ff762f491ce54e6dd1df114`，`OIE_V2_P3_OIE_REPOST=NO`，`OIE_V2_P3_LEGACY_A01_CHANGED=NO`。
+- **保留与清理：** `JOHNS_CREEK_RUN_SCOPED_EPHEMERAL_CLEANUP=PASS` 只清理成功完成的 P3 临时 K8s Jobs，保留原 P2 FHIR Source、Manifest、P2 ACK Receipts/Proof ConfigMaps 和 OIE Derby/Message IDs。除非新的审批，不允许对已完成 Request 做再次 Azure PUT/Replay、删除 Azure Blob 或修改旧 OIE A01。
+- **阶段结论：** **Phase 2.1–2.4 完成**，证明合成样本真正走通 `FHIR → OIE V2 A01/A03 → Derby → Azure raw HL7`。继续开发的新方向是**HL7 开源 Parser + dbt → ONE Canonical Silver**，它属于其它 Agent 的职责；另有 A08、MLLP/ACK、长期存储/故障恢复等 Phase 3 增强，不属于这次 P3 实机验收。
