@@ -980,7 +980,7 @@ def _g5_candidate_validate_rows(person_rows, visit_rows, handoff) -> None:
 
 
 def plan_and_write_g5_candidate_delta(
-    spark, *, scope, handoff, person_candidate, visit_candidate,
+    spark, *, scope, handoff, mapper_result, person_candidate, visit_candidate,
     mode: str, write_authorized: bool,
     clinically_reviewed: bool, license_reviewed: bool,
     warehouse_snapshot_verified: bool,
@@ -1000,8 +1000,14 @@ def plan_and_write_g5_candidate_delta(
         FrozenCandidateScope, PersonVisitCandidateHandoff as _Unused,
         decide_candidate_publication, ObservedCandidate,
     )
+    from healthcare_data_engine.mapping.omop.candidates import OmopCandidates
     if (not isinstance(scope, FrozenCandidateScope)
             or not isinstance(handoff, _Unused)
+            or not isinstance(mapper_result, OmopCandidates)
+            or mapper_result.status != "OMOP_CANDIDATE_ONLY_NOT_PUBLISHED"
+            or mapper_result.mapping_sha256 != scope.mapping_sha256
+            or mapper_result.person_count != scope.patient_count
+            or mapper_result.visit_count != scope.encounter_count
             or scope.hospital_id != handoff.hospital_id
             or scope.source_system != handoff.source_system
             or scope.source_batch_id != handoff.source_batch_id
