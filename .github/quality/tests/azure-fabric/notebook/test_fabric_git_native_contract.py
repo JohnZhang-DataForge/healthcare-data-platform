@@ -34,7 +34,7 @@ class FabricGitNativeContract(unittest.TestCase):
             "workspaceId": "00000000-0000-0000-0000-000000000000"
         })
         self.assertEqual(env_platform["metadata"]["displayName"], "env_healthcare")
-        self.assertIn('if engine_version != "0.1.6":', nb)
+        self.assertIn('if engine_version != "0.1.7":', nb)
         self.assertIn('run_mode = "HALT"', nb)
         self.assertIn("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED", nb)
         self.assertNotIn("write_authorized = True", nb)
@@ -52,7 +52,7 @@ class FabricGitNativeContract(unittest.TestCase):
 
     def test_g5_engine_package_016_is_distinct_from_adapter_record_010(self):
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
-        self.assertEqual(content.count('if engine_version != "0.1.6":'), 3)  # ETL, runtime smoke and source-only intake
+        self.assertEqual(content.count('if engine_version != "0.1.7":'), 3)  # ETL, runtime smoke and source-only intake
         self.assertNotIn('if engine_version != "0.1.0":', content)
         self.assertIn('(F.col("adapter_version") != "0.1.0")', content)
         # Engine is a published dependency version; adapter_version is the
@@ -151,7 +151,7 @@ class FabricGitNativeContract(unittest.TestCase):
         with patch("pyspark.__version__", "4.1.1"):
             self.assertEqual(
                 notebook.validate_read_only_runtime_smoke(**base),
-                "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_016_SPARK41_PASS_20261106",
+                "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_017_SPARK41_PASS_20261107",
             )
             for key, value in (
                 ("mode", "HALT"), ("mode", "ETL"),
@@ -238,12 +238,12 @@ class FabricGitNativeContract(unittest.TestCase):
             self.assertTrue(any(n.startswith("healthcare_data_engine/") for n in names))
             p3 = "healthcare_data_engine/mapping/omop/candidate_publication.py"
             self.assertEqual(p3 in names, "0.1.7" in lib.name)
-        # Existing HALT Native business Notebook STILL pins 0.1.6. A
-        # review-only Git 0.1.7 Wheel is not a GA Publish or activation.
+        # Existing HALT Native business Notebook now pins Published 0.1.7. A
+        # real GA Published 0.1.7 Wheel does NOT lift HALT or authorize writes.
         notebook = (
             GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py"
         ).read_text()
-        self.assertIn('if engine_version != "0.1.6":', notebook)
+        self.assertIn('if engine_version != "0.1.7":', notebook)
         self.assertIn('run_mode = "HALT"', notebook)
         self.assertIn('write_authorized = False', notebook)
 
