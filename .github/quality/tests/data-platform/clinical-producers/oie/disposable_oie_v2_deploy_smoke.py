@@ -151,6 +151,23 @@ def single_v2_state(api):
             return (root.text or "").strip()
         if root.tag == "channelStatus":
             return (root.findtext("state") or "").strip()
+        if root.tag == "dashboardStatus":
+            # Compare only direct Channel state + ID. This is the exact
+            # structure accepted by Self-Runner OIE V2 gate (PR #566),
+            # not any nested Source/Destination connector state.
+            ids = [node for node in root if node.tag == "channelId"]
+            states = [node for node in root if node.tag == "state"]
+            matching = (len(ids) == 1 and len(states) == 1
+                        and ids[0].text == V2_ID
+                        and not ids[0].attrib and not len(ids[0])
+                        and not states[0].attrib and not len(states[0]))
+            print("OIE_DISPOSABLE_DASHBOARD_DIRECT_V2_ID_MATCH=" +
+                  ("PASS" if matching else "HOLD"))
+            if matching:
+                state = (states[0].text or "").strip()
+                if state in ("STOPPED", "STARTED", "PAUSED",
+                             "UNDEPLOYED", "NOT_STARTED"):
+                    return state
     return "UNKNOWN"
 
 
@@ -219,7 +236,11 @@ def run(pinned_root, password):
     print("OIE_DISPOSABLE_DEPLOY_HTTP_CODE=" + str(code))
     state = list_state(api)
     print("OIE_DISPOSABLE_STATE_AFTER_DEPLOY=" + state)
-    print("OIE_DISPOSABLE_SCALAR_STATE_AFTER_DEPLOY=" + single_v2_state(api))
+    scalar_state = single_v2_state(api)
+    print("OIE_DISPOSABLE_SCALAR_STATE_AFTER_DEPLOY=" + scalar_state)
+    if scalar_state != "STOPPED":
+        hold("SCALAR_DASHBOARD_CHANNEL_STATE_MISMATCH")
+    print("OIE_DISPOSABLE_DASHBOARD_IDENTITY_AND_STATE=PASS")
     print("OIE_DISPOSABLE_START_POST=NO")
     print("OIE_DISPOSABLE_FHIR_HL7_MESSAGE_POST=NO")
     print("OIE_DISPOSABLE_AZURE_BLOB_PUT=NO")
