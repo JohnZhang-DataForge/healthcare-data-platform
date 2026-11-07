@@ -48,6 +48,10 @@ jobs:
           import pathlib,sys
           s=pathlib.Path(sys.argv[1]).read_text()
           assert 'https://127.0.0.1:18443' in s
+          assert 'sender_source_root' in s
+          assert 'OIE_DISPOSABLE_V2_SENDER_GET_ONLY_PREFLIGHT=PASS' in s
+          assert 'if sender_source_root is None:' in s
+          assert 'f"/api/channels/{V2_ID}/_start"' in s
           assert 'b63e89b8ebed04f8f371db95562413597c54295a' in s
           assert '_start' not in s or 'START_POST=NO' in s
           for forbidden in ('import azure.', 'from azure.', 'BlobServiceClient(',
@@ -114,8 +118,10 @@ jobs:
           test "$ready" = yes
           echo OIE_DISPOSABLE_HTTPS_READY=PASS
           python3 .github/quality/tests/data-platform/clinical-producers/oie/disposable_oie_v2_deploy_smoke.py \
-            --pinned-root _pinned/healthcare --admin-password-file "$clientconf"
+            --pinned-root _pinned/healthcare --admin-password-file "$clientconf" \
+            --verify-sender-preflight
           echo OIE_DISPOSABLE_DOCKER_AND_DATABASE_DELETED_ON_EXIT=YES
+          echo OIE_EPHEMERAL_CHANNEL_START=LOCALHOST_ONLY
           echo OIE_PRODUCTION_CHANNEL_DEPLOY_OR_START=NO
           echo OIE_PRODUCTION_DERBY_OR_K8S_MUTATION=NO
           echo OIE_LIVE_FHIR_AZURE_BLOB_WRITE=NO
