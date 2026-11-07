@@ -278,5 +278,16 @@ def classify_mapping_failure(code: str) -> str:
     """
     if not isinstance(code, str) or not code:
         raise CandidatePublicationHold("P3_FAILURE_CODE_INVALID")
+    # Translate only known diagnostic prefixes from the EXISTING strict
+    # Mapper/P1 validator. Their suffixes name a source COLUMN, not a patient
+    # value. The caller still keeps its strict batch HOLD until a separately
+    # approved record-level DQ/Quarantine contract is implemented.
+    source_columns = {"gender_code", "race_code", "ethnicity_code",
+                      "encounter_class"}
+    mapper_unmapped = (code.startswith("G5_UNKNOWN_MAPPING_CODE:")
+                       and code.partition(":")[2] in source_columns)
+    profile_unmapped = (code.startswith("P1_UNMAPPED_SOURCE_CODE:")
+                        and code.partition(":")[2] in source_columns)
     return ("DATA_QUARANTINE_CANDIDATE_HOLD_PUBLICATION"
-            if code in _DATA_FAILURES else "BATCH_HOLD_NO_PUBLICATION")
+            if code in _DATA_FAILURES or mapper_unmapped or profile_unmapped
+            else "BATCH_HOLD_NO_PUBLICATION")
