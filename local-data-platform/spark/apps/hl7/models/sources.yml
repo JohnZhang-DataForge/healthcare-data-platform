@@ -1,7 +1,7 @@
 version: 2
 sources:
   - name: oie_v2
-    database: null
+    database: spark_catalog
     schema: hl7_staging
     tables:
       - name: hl7_events
