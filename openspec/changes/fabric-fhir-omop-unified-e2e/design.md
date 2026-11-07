@@ -15,6 +15,13 @@
 - 返回状态 **P1_CONCEPT_PREFLIGHT_ONLY_NOT_CLINICALLY_APPROVED**。输入由调用者提供，函数不能独立证明云端真实性；还须人工映射复核、真实源/词表双重证据后才建立正式版本化映射。当前没有臆造 Concept ID 或源值。
 - Warehouse 的 `Type Concept` 亦需以正式 Vocabulary 确认；若实际标准标记与此门禁不符应 HOLD 调查，不得调宽校验后假报 PASS。
 
+## 2026-11-06：开发门禁与临床发布门禁解耦（用户批准）
+
+- **开发不依赖固定 Vocabulary 版本**：FHIR/Canonical、Person/Visit Mapper、ID 预览、Candidate 重放计划、Gold Writer 事务算法和 Pipeline 编排均接受版本/规则 SHA 作为外部输入；不能将 `v5.0 27-FEB-26` 或未经审查的 Concept ID 硬编码进业务算法。
+- **不同失败分流**：源值未映射、无有效标准 Concept、Domain 错误、失效日期等归类为可保留原始值的 `DATA_QUARANTINE_CANDIDATE_HOLD_PUBLICATION` *建议*，具体行级 Quarantine/剩余数据的部分发布须经业务合同单独批准；Profile SHA/版本/Approval、Identity Snapshot 漂移与未知 ACK 属于 `BATCH_HOLD_NO_PUBLICATION`。目前严格 Mapper 遇不完整映射仍对整批 HOLD，不能通过新的分类辅助函数暗中绕过既有门禁。
+- **P3 源码可并行开发，实际临床 Candidate 写入不能擅自执行**：同一个 Shared Engine Pure Planner 仅冻结 Request、Silver Publication、Mapping SHA、Snapshot SHA、数量和 `PROVISIONAL/PERSISTED` 标志；输出 `PLAN_NEW_OFFLINE_ONLY`、`VERIFY_READONLY`、`SKIP_VERIFIED_CANDIDATE_ONLY` 或 `HOLD_*`。计划不自行执行 Spark/SQL/Delta 写入；由 Native Notebook 在获得独立真实审批及资源授权后执行 `errorifexists` 两张 Candidate Delta、独立重开对账、**最后**写 Approval 并二次读回，异常/部分状态先 GET，不自动重试。
+- **P4/Gold 边界不变**：Candidate ID 仍是提议；只有同一 Warehouse single-writer 事务真实提交的 Map/Allocator/Person/Visit/Ledger/Audit 才是持久 Gold。源业务字段映射失败与源数据无效不应自动生成假 Concept ID 或假 Gold 成功。新增 Shared 纯 Planner 不更新已经 Published 的 0.1.6 Wheel；后续版本化发行/Notebook Integration 单独验收。
+
 ## P2→P5：分阶段可恢复写入
 
 1. P2 复用 `identity_plan.py`、`silver_identity.py` 做已冻结真实 Warehouse 快照下的稳定 INT Preview；后续仅在 Gold 单写入者事务中原子持久化。
