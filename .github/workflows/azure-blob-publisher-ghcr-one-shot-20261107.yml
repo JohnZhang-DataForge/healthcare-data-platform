@@ -63,8 +63,8 @@ jobs:
           workflow=".github/workflows/azure-blob-publisher-ghcr-one-shot-20261107.yml"
           changes=subprocess.check_output(
               ["git","diff","--name-status",before,after],text=True).splitlines()
-          expected_changes={"A\t"+marker,"A\t"+workflow}
-          assert len(changes)==2 and set(changes)==expected_changes, (
+          expected_changes={"A\t"+marker,"A\t"+workflow, "M\topenspec/changes/operationalize-oie-hl7-adt-feed/tasks.md"}
+          assert len(changes)==3 and set(changes)==expected_changes, (
               "HOLD_GHCR_ONE_SHOT_UNREVIEWED_DIFF")
           old=subprocess.run(["git","cat-file","-e",before+":"+marker],
                              stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
