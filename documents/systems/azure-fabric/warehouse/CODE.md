@@ -45,6 +45,8 @@ this directory cleanup.
 
 - **F1 Vocabulary semantic DQ (real):** [Self-Runner #41820573379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41820573379), 11/11 cross-table links unresolved=0; vocabulary_version blank in 28/47 rows remains an explicit version/licensing review item.
 
+- [F2 Gold SQL transaction adapter (SOURCE_ONLY)](../../../../azure-fabric/warehouse/omop-foundation/writer/gold_transaction.py): reuses the same identity planner and existing SQL schema for external-fenced single-transaction Map/Allocator/Person/Visit/Ledger/Audit writes, guarded in-transaction reconciliation, rollback and unknown-ACK verification-only outcome; an independent new SQL connection is required for acceptance. [Offline atomicity/replay tests](../../../../.github/quality/tests/azure-fabric/warehouse/omop-foundation/test_identity_plan.py) use SQLite synthetic data only. **No Fabric Warehouse clinical COMMIT is authorized or claimed.**
+
 - [F2 pure source-to-INT-ID preview and replay planner](../../../../azure-fabric/warehouse/omop-foundation/writer/identity_plan.py) with [offline collision/overflow/replay tests](../../../../.github/quality/tests/azure-fabric/warehouse/omop-foundation/test_identity_plan.py). This code is SOURCE-ONLY; it does not write Warehouse Gold.
 
 - **F2 real rollback rehearsal:** [Self-Runner #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608), six Warehouse tables real synthetic DML within one transaction, explicit rollback and independently confirmed zero row persistence, PASS. No actual Person/Visit Gold COMMIT.

@@ -109,5 +109,183 @@ class F2PlannerTest(unittest.TestCase):
         with self.assertRaises(PlanningHold):
             BatchFence("h","fhir_r4","b","a"*64,"b"*64,"v1",True,0)
 
+
+
+class F2GoldTransactionTest(unittest.TestCase):
+    """SQLite exercises SQL atomicity offline; never a Fabric COMMIT claim."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        self.files = {name: pathlib.Path(self.tmp.name) / (name + ".db")
+                      for name in ("main", "etl", "cdm", "audit")}
+        con = self._open()
+        for sql in (
+            "CREATE TABLE etl.identity_map (entity_type text, hospital_id text, "
+            "source_system text, source_business_key text, omop_id int, "
+            "first_batch_id text, mapping_version text, created_at_utc text)",
+            "CREATE TABLE etl.id_allocator (entity_type text, next_omop_id int, "
+            "mapping_version text, updated_at_utc text)",
+            "CREATE TABLE etl.batch_ledger (hospital_id text, source_system text, "
+            "batch_id text, source_manifest_sha256 text, mapping_profile_sha256 text, "
+            "writer_version text, batch_status text, expected_person_count int, "
+            "expected_visit_count int, committed_person_count int, "
+            "committed_visit_count int, committed_at_utc text)",
+            "CREATE TABLE audit.omop_commit_check (batch_id text, check_name text, "
+            "expected_count int, observed_count int, check_status text, checked_at_utc text)",
+            "CREATE TABLE cdm.person (person_id int, gender_concept_id int, "
+            "year_of_birth int, race_concept_id int, ethnicity_concept_id int, "
+            "person_source_value text)",
+            "CREATE TABLE cdm.visit_occurrence (visit_occurrence_id int, person_id int, "
+            "visit_concept_id int, visit_type_concept_id int, visit_start_date text, "
+            "visit_end_date text)",
+        ):
+            con.execute(sql)
+        con.close()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _open(self):
+        import sqlite3
+        con = sqlite3.connect(str(self.files["main"]), isolation_level=None)
+        for name in ("etl", "cdm", "audit"):
+            con.execute(f"ATTACH DATABASE '{self.files[name]}' AS {name}")
+        return con
+
+    def _batch(self):
+        from gold_transaction import GoldBatch
+        fence = BatchFence("hospital-A", "fhir_r4", "batch-1",
+                           "a"*64, "b"*64, "f2-v1", 1, 1)
+        return GoldBatch(
+            fence=fence,
+            identities=((person(key="p1"), 1), (visit(key="v1"), 1)),
+            persons=({"person_id": 1, "person_source_value": "p1",
+                      "gender_concept_id": 8507, "race_concept_id": 8527,
+                      "ethnicity_concept_id": 38003564, "year_of_birth": 2000,
+                      "identity_state": "PROVISIONAL"},),
+            visits=({"visit_occurrence_id": 1, "person_id": 1,
+                     "visit_concept_id": 9201, "visit_type_concept_id": 44818517,
+                     "visit_start_date": "2026-01-01", "visit_end_date": "2026-01-02",
+                     "source_encounter_id": "v1", "source_person_id": "p1",
+                     "source_system": "fhir_r4", "identity_state": "PROVISIONAL",
+                     "parent_identity_state": "PROVISIONAL"},),
+            mapping_version="f2-v1", clinical_review_sha256="c"*64,
+            license_review_sha256="d"*64, candidate_approval_sha256="e"*64)
+
+    def _execute(self, batch=None, connection=None):
+        from gold_transaction import execute_gold_transaction
+        con = connection or self._open()
+        try:
+            return execute_gold_transaction(
+                con, batch or self._batch(),
+                single_writer_fence=lambda: True,
+                release_gate=lambda value: True)
+        finally:
+            con.close()
+
+    def _counts(self):
+        con = self._open()
+        try:
+            return tuple(con.execute("SELECT COUNT(*) FROM " + table).fetchone()[0]
+                         for table in ("etl.identity_map", "etl.id_allocator",
+                                       "cdm.person", "cdm.visit_occurrence",
+                                       "etl.batch_ledger", "audit.omop_commit_check"))
+        finally:
+            con.close()
+
+    def test_atomic_commit_and_separate_connection_readback(self):
+        from gold_transaction import independent_gold_readback
+        self.assertEqual(
+            self._execute(),
+            "GOLD_COMMIT_ACK_VERIFY_INDEPENDENT_SQL_NOT_ACCEPTED")
+        self.assertEqual(self._counts(), (2, 2, 1, 1, 1, 2))
+        self.assertTrue(independent_gold_readback(self._open, self._batch()))
+
+    def test_replay_never_blindly_inserts_again(self):
+        from gold_transaction import independent_gold_readback
+        self._execute()
+        with self.assertRaises(PlanningHold):
+            self._execute()
+        self.assertEqual(self._counts(), (2, 2, 1, 1, 1, 2))
+        self.assertTrue(independent_gold_readback(self._open, self._batch()))
+
+    def test_unapproved_fence_and_fake_concept_hold_before_dml(self):
+        from gold_transaction import GoldBatch, execute_gold_transaction, GoldHold
+        good = self._batch()
+        bad_person = {**good.persons[0], "race_concept_id": 0}
+        bad = GoldBatch(good.fence, good.identities, (bad_person,),
+                        good.visits, good.mapping_version,
+                        good.clinical_review_sha256, good.license_review_sha256,
+                        good.candidate_approval_sha256)
+        with self.assertRaisesRegex(GoldHold, "GOLD_PERSON_MAP_OR_PROFILE"):
+            self._execute(bad)
+        con = self._open()
+        try:
+            with self.assertRaisesRegex(GoldHold, "GOLD_RELEASE_OR_SINGLE_WRITER_HOLD"):
+                execute_gold_transaction(con, good,
+                    single_writer_fence=lambda: False,
+                    release_gate=lambda value: True)
+        finally:
+            con.close()
+        self.assertEqual(self._counts(), (0, 0, 0, 0, 0, 0))
+
+    def test_failure_before_commit_rolls_back_all_six_tables(self):
+        class FailureCursor:
+            def __init__(self, inner):
+                self.inner = inner
+            def execute(self, sql, params=()):
+                if sql.startswith("INSERT INTO cdm.visit_occurrence"):
+                    raise RuntimeError("injected DML failure")
+                self.inner.execute(sql, params)
+                return self
+            def fetchall(self):
+                return self.inner.fetchall()
+            @property
+            def rowcount(self):
+                return self.inner.rowcount
+        class FailureConnection:
+            def __init__(self, inner):
+                self.inner = inner
+            def cursor(self):
+                return FailureCursor(self.inner.cursor())
+            def rollback(self):
+                return self.inner.rollback()
+            def close(self):
+                return self.inner.close()
+        with self.assertRaisesRegex(RuntimeError, "injected DML"):
+            self._execute(connection=FailureConnection(self._open()))
+        self.assertEqual(self._counts(), (0, 0, 0, 0, 0, 0))
+
+    def test_commit_ack_unknown_does_not_retry_and_requires_get(self):
+        from gold_transaction import independent_gold_readback
+        class AckCursor:
+            def __init__(self, inner):
+                self.inner = inner
+            def execute(self, sql, params=()):
+                self.inner.execute(sql, params)
+                if sql == "COMMIT TRANSACTION":
+                    raise OSError("simulated connection lost after commit")
+                return self
+            def fetchall(self):
+                return self.inner.fetchall()
+            @property
+            def rowcount(self):
+                return self.inner.rowcount
+        class AckConnection:
+            def __init__(self, inner):
+                self.inner = inner
+            def cursor(self):
+                return AckCursor(self.inner.cursor())
+            def rollback(self):
+                raise AssertionError("do not rollback unknown commit")
+            def close(self):
+                self.inner.close()
+        self.assertEqual(
+            self._execute(connection=AckConnection(self._open())),
+            "GOLD_UNKNOWN_COMMIT_ACK_VERIFY_READONLY")
+        self.assertEqual(self._counts(), (2, 2, 1, 1, 1, 2))
+        self.assertTrue(independent_gold_readback(self._open, self._batch()))
+
 if __name__=="__main__":
     unittest.main()
