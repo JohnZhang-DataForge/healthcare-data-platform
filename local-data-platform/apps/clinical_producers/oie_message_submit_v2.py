@@ -12,6 +12,8 @@ import json
 from pathlib import Path
 import re
 from typing import Protocol
+from urllib.request import Request
+import xml.etree.ElementTree as ET
 
 from apps.clinical_producers.oie.build_adt_events_v2_channel import (
     CHANNEL_ID, CHANNEL_NAME, render_channel_v2,
@@ -22,8 +24,9 @@ from apps.clinical_producers.oie_hl7_publisher_v2 import (
 )
 from apps.clinical_producers.oie_message_submit import (
     MAX_EVENTS, MAX_POST_BYTES, OIEPostBlocked, ScopedOIEPoster,
+    channel_started_exact,
 )
-from apps.clinical_producers.oie_persisted_readback import MESSAGE_ID
+from apps.clinical_producers.oie_persisted_readback import MESSAGE_ID, SERVICE_URL
 from apps.clinical_producers.hl7_blob_runtime import RUN_ID
 from apps.clinical_producers.source_handoff import verify_handoff
 
@@ -39,16 +42,119 @@ class V2Poster(Protocol):
         """One POST returning a genuine numeric OIE Message ID, no retries."""
 
 
+# Actual OIE 4.7 import GET may add ONLY these XStream serializer-version
+# bookkeeping attributes. Proven by independent real GET Run #42326778011.
+# Every other destination/source property and the whole mapper must match.
+_V2_XSTREAM_VERSION_PATHS = frozenset({
+    "sourceConnector/properties/@version",
+    "sourceConnector/properties/sourceConnectorProperties[1]/@version",
+    "destinationConnectors/connector[1]/@version",
+    "destinationConnectors/connector[1]/filter[1]/@version",
+    "destinationConnectors/connector[1]/properties[1]/@version",
+    "destinationConnectors/connector[1]/properties[1]/destinationConnectorProperties[1]/@version",
+    "destinationConnectors/connector[1]/responseTransformer[1]/@version",
+    "destinationConnectors/connector[1]/responseTransformer[1]/inboundProperties[1]/@version",
+    "destinationConnectors/connector[1]/responseTransformer[1]/inboundProperties[1]/batchProperties[1]/@version",
+    "destinationConnectors/connector[1]/responseTransformer[1]/outboundProperties[1]/@version",
+    "destinationConnectors/connector[1]/responseTransformer[1]/outboundProperties[1]/batchProperties[1]/@version",
+    "destinationConnectors/connector[1]/transformer[1]/@version",
+    "destinationConnectors/connector[1]/transformer[1]/inboundProperties[1]/@version",
+    "destinationConnectors/connector[1]/transformer[1]/inboundProperties[1]/batchProperties[1]/@version",
+    "destinationConnectors/connector[1]/transformer[1]/outboundProperties[1]/@version",
+    "destinationConnectors/connector[1]/transformer[1]/outboundProperties[1]/batchProperties[1]/@version",
+})
+
+
+def _reviewed_v2_section(node: ET.Element | None, path: str) -> bytes | None:
+    if node is None:
+        return None
+    clone = ET.fromstring(ET.tostring(node))
+
+    def visit(element: ET.Element, current: str) -> None:
+        if current + "/@version" in _V2_XSTREAM_VERSION_PATHS:
+            element.attrib.pop("version", None)
+        positions = {}
+        for child in element:
+            positions[child.tag] = positions.get(child.tag, 0) + 1
+            visit(child, current + "/" + child.tag + "[" +
+                  str(positions[child.tag]) + "]")
+
+    visit(clone, path)
+    return ET.tostring(clone)
+
+
+def _verify_imported_v2_config(raw: bytes, expected_builder: str) -> None:
+    """Match actual STOPPED-import config, never the Builder's STARTED state.
+
+    The existing live V2 was deliberately imported from a derived STOPPED
+    version of the immutable source builder. Do not permit a destination
+    route change or accept a changed preprocessor to send patient data.
+    """
+    if (not isinstance(raw, bytes) or not 0 < len(raw) <= 3_000_000
+            or b"<!DOCTYPE" in raw.upper() or b"<!ENTITY" in raw.upper()):
+        raise OIEPostBlocked("OIE_V2_PREFLIGHT_CONFIG_INVALID")
+    try:
+        actual = ET.fromstring(raw)
+        builder = ET.fromstring(expected_builder)
+    except (ET.ParseError, ValueError, TypeError):
+        raise OIEPostBlocked("OIE_V2_PREFLIGHT_CONFIG_INVALID") from None
+    expected_initial = builder.findtext("properties/initialState")
+    if (expected_initial != "STARTED"
+            or builder.findtext("id") != CHANNEL_ID
+            or builder.findtext("name") != CHANNEL_NAME):
+        raise OIEPostBlocked("OIE_V2_REVIEWED_BUILDER_CHANGED")
+    if (actual.tag != "channel"
+            or actual.findtext("id") != CHANNEL_ID
+            or actual.findtext("name") != CHANNEL_NAME
+            or actual.findtext("properties/initialState") != "STOPPED"
+            or actual.findtext("preprocessingScript") !=
+               builder.findtext("preprocessingScript")
+            or actual.findtext("sourceConnector/transportName") !=
+               builder.findtext("sourceConnector/transportName")
+            or _reviewed_v2_section(
+                   actual.find("sourceConnector/properties"),
+                   "sourceConnector/properties") !=
+               _reviewed_v2_section(
+                   builder.find("sourceConnector/properties"),
+                   "sourceConnector/properties")
+            or _reviewed_v2_section(
+                   actual.find("destinationConnectors"), "destinationConnectors") !=
+               _reviewed_v2_section(
+                   builder.find("destinationConnectors"), "destinationConnectors")):
+        raise OIEPostBlocked("OIE_V2_IMPORTED_CHANNEL_CONFIG_DRIFT_HOLD")
+
+
 class ScopedOIEV2Poster(ScopedOIEPoster):
-    """Use the existing authenticated, TLS-pinned OIE client; V2 Channel ONLY."""
+    """TLS-pinned V2-only sender, GET-verified before any message POST."""
 
     def preflight_channel(self, channel_id: str) -> None:
         if channel_id != CHANNEL_ID:
             raise OIEPostBlocked("OIE_V2_UNAPPROVED_CHANNEL")
-        super().preflight_channel(
-            channel_id, expected_channel_xml=render_channel_v2(),
-            expected_channel_name=CHANNEL_NAME,
-        )
+        # This is V2-only. The legacy A01 poster's configuration comparison
+        # remains unchanged and cannot be widened to ignore metadata drift.
+        for suffix, max_bytes in (("", 3_000_000), ("/status", 65_536)):
+            req = Request(
+                SERVICE_URL + "/api/channels/" + CHANNEL_ID + suffix,
+                method="GET", headers={
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Accept": "application/xml",
+                })
+            try:
+                with self._opener.open(req, timeout=20) as response:
+                    if response.status != 200:
+                        raise OIEPostBlocked("OIE_V2_PREFLIGHT_HTTP_NOT_200")
+                    raw = response.read(max_bytes + 1)
+            except OIEPostBlocked:
+                raise
+            except Exception:
+                raise OIEPostBlocked("OIE_V2_PREFLIGHT_GET_UNKNOWN_NO_POST") from None
+            if not isinstance(raw, bytes) or not 0 < len(raw) <= max_bytes:
+                raise OIEPostBlocked("OIE_V2_PREFLIGHT_RESPONSE_INVALID")
+            if suffix:
+                if not channel_started_exact(raw, channel_id=CHANNEL_ID):
+                    raise OIEPostBlocked("OIE_V2_NOT_STARTED_NO_POST")
+            else:
+                _verify_imported_v2_config(raw, render_channel_v2())
 
     def submit(self, channel_id: str, event: bytes) -> str:
         if channel_id != CHANNEL_ID:
