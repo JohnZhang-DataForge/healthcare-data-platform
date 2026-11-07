@@ -11,7 +11,7 @@ from healthcare_data_engine.quality.result import Finding, ParsedResources, Tran
 from healthcare_data_engine.reconciliation.patient_encounter import reconcile_patient_encounter, PatientEncounterReconciliation
 from healthcare_data_engine.reconciliation.replay import PublicationRecord, decide_replay
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 __all__ = [
     "BatchContext", "SourceObject", "parse_fhir_resources",
     "normalize_fhir_patient", "normalize_fhir_encounter",
@@ -76,4 +76,18 @@ from healthcare_data_engine.identity.candidate_handoff import (
 __all__ += [
     "CandidateIdentityHold", "CandidatePersonId", "CandidateVisitId",
     "PersonVisitCandidateHandoff", "plan_candidate_identity_handoff",
+]
+
+# P3 immutable Candidate release/replay planner, pure business code.
+# This API has no filesystem/Spark/SQL/Fabric I/O and cannot grant Gold.
+from healthcare_data_engine.mapping.omop.candidate_publication import (
+    CandidatePublicationHold, CandidatePublicationPlan, FrozenCandidateScope,
+    ObservedCandidate, freeze_candidate_scope, decide_candidate_publication,
+    classify_mapping_failure,
+)
+__all__ += [
+    "CandidatePublicationHold", "CandidatePublicationPlan",
+    "FrozenCandidateScope", "ObservedCandidate",
+    "freeze_candidate_scope", "decide_candidate_publication",
+    "classify_mapping_failure",
 ]
