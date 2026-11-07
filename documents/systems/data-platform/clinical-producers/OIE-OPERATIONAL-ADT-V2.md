@@ -1,6 +1,6 @@
 # OIE HL7 v2.5.1 ADT 业务事件 V2 — 离线实现与验收边界
 
-> 当前状态（2026-11-07 ET）：**现有 V2 Channel 已经在 worker01 真实 Deploy → STOPPED 验证 → Start → STARTED，后续独立双状态 GET 再次确认 STARTED，START_ONLY 实机验收 PASS**。此前首次 HTTP 406 导致的 UNDEPLOYED/HOLD 仅是历史记录，已通过修复 Accept Header 和新的一次性明确授权操作解决。旧 A01 在本次启动及后续只读检查中保持稳定；**Publisher GHCR SHA-only 镜像已于本日真实发布、独立拉取验证 Digest/Revision，但尚未发送新 A01/A03 FHIR/HL7 消息、未完成 OIE Derby Message 独立读回、Raw HL7 → Azure Blob 发布与 E2E**。后续消息写入、Publisher 与 Blob 操作仍需各自的明确授权。本文件不授权任何额外真实写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
+> 当前状态（2026-11-07 ET）：**现有 V2 Channel 已经在 worker01 真实 Deploy → STOPPED 验证 → Start → STARTED，后续独立双状态 GET 再次确认 STARTED，START_ONLY 实机验收 PASS**。此前首次 HTTP 406 导致的 UNDEPLOYED/HOLD 仅是历史记录，已通过修复 Accept Header 和新的一次性明确授权操作解决。旧 A01 在本次启动及后续只读检查中保持稳定；**Publisher GHCR SHA-only 镜像已真实发布；随后一次获批的全新 FHIR P2 Run #42410482514 已成功发送并独立持久化读回 21 条 A01 + 21 条 A03（42 条真实 OIE V2 消息），且已保存 P2 校验证据；Raw HL7 → Azure Blob 发布与 P3 E2E 仍未执行**。后续消息写入、Publisher 与 Blob 操作仍需各自的明确授权。本文件不授权任何额外真实写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
 
 ## 正式双事件 E2E 的源审计门禁（2026-11-07）
 
@@ -306,3 +306,17 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 - 实际 Run 中 Hosted + 精确 Main 授权 PASS，worker01 本地准入、OIE scoped/CA Secret、V2 List/Config/Status 的 GET **HTTP 200**；紧接着旧比较器输出 `HOLD_V2_CHANNEL_CONFIG_DRIFT`，Controller 在创建 Synthea Request/ConfigMap/Job **之前**退出。即该次 **OIE POST=0 / 持久化新消息=0 / Azure Blob PUT=0**；不清理、不重发、不改旧 A01。
 - 定位到 Controller 旧的只读比较器没有复用已经真实验收的 STOPPED 导入及 **16 个 XStream version** 归一化，也不支持 v4.7 顶层 `dashboardStatus`。经 [Self-Runner #580](https://github.com/JohnZhang-DataForge/Self-Runner/pull/580) / Main `3b12709...` 替换为之前独立批准的严格 Config 比较和确切 V2 Channel 顶层 STARTED 判断，Hosted 正反测试 PASS；未知 Mapper/Destination 属性、错误 ID/状态/缺少旧 A01 均仍然 HOLD。
 - **当前分界：** 此次只证明真实只读前置检查尝试和源码修复，不能反推 V2 配置已真实重新验收，也不能反推新 A01/A03/Derby 已成功。若要继续，先在新的独立 GET-only 实机证据中确认新比较器通过，然后取得**下一次全新 P2 Request 的单独批准**；不能重跑旧 Run/旧 Request。既有 GHCR Release 不变，P3 Azure 写入继续 HOLD。
+
+
+## 最新验收：P2 新 FHIR → OIE V2 双事件持久化独立 GET 实机 PASS（2026-11-07 ET）
+
+> **证据级别：** 真实运行，不是 GitHub-hosted Mock、旧 A01 历史 Batch，也不是 Azure Blob E2E。
+
+- **前次故障及修复：** [Run #42402668196](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42402668196) 于旧版 V2 GET Config 比对时抛出 `HOLD_V2_CHANNEL_CONFIG_DRIFT`，在生成 Batch 和任何 OIE 写入之前停止；之后 [Self-Runner PR #580](https://github.com/JohnZhang-DataForge/Self-Runner/pull/580) 复用此前实机审查的 STOPPED Import + 16 条 XStream version 容错和确切 `dashboardStatus` 顶层 STARTED 状态解析，CI PASS。该前次授权不重放。
+- **新一次性授权及 Run：** 用户允许最多 **3 次新调试尝试**，保持 unknown/partial OIE POST 绝不盲重试同一 Request 的安全门禁；[Self-Runner PR #581](https://github.com/JohnZhang-DataForge/Self-Runner/pull/581) / Main `a592ceea275215575d23d5b4287e0275e19e2f26` 提交独立的 retry 1/3 一次性授权文件并触发 [真实 Actions Run #42410482514](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42410482514) 完整 **SUCCESS**。因此**后续两次尝试不执行**。
+- **Runtime 预检：** worker01 / `dw-synthea`、PVC、K8s 空闲与 Scoped RBAC、OIE Scoped Admin/CA 校验通过；现有 V2 Channel `6b91681e-5b3b-59cb-b270-09412054110c` List/Config/Status GET 均 HTTP 200，运行时配置与审核过的 STOPPED 原始导入 XML/XStream 元数据及顶层 STARTED 一致；旧 A01 Channel 维持原身份，无新 Deploy/Start/Import。
+- **新 FHIR 来源：** `johnscreek-hl7-gh-42410482514`，population=50，真实冻结 Manifest SHA256 `3999e773321a76a5d8421d62af23d24d833261a65812ea24e14e7e828f960a93`。来源临床规则审计 `PROFILE_COMPATIBLE=PASS`：**A01=21、A03=21、非住院跳过=1920、HOLD=0**。
+- **单消息真实提交与 Derby 持久化：** V2 Sender 按源 FHIR 的不同 Event Type 分别 POST 42 条独立 A01/A03，保存来源绑定、单条 Message ID 的新批次 ACK Receipts；另有**独立只读 OIE GET Job** 从持久化存储按这些确切 ID 读取全部 42 条消息，对消息类型、临床 Patient/Encounter 事实、HL7 原始字节、MSH-10/SHA256 和 Request/Source Manifest 做独立校验；日志 `OIE_V2_P2_PERSISTED_GET_VERIFIED_NO_BLOB=PASS`，而非仅凭 Sender ACK 宣称提交。
+- **正式 P2 Proof：** `P2_PERSISTED_GET_VERIFIED_NO_BLOB` 证据存入来源 Run 专用 `p2-persisted-proof.json` ConfigMap 并读回验证，SHA256 为 `0563e10b2ade95f11e5cf76ec5bf8915b53489134f72b75fe0b08aaf9b53205c`。原 FHIR Source、Profile、Receipts 和 Proof 都要保留给未来 P3，无用户新批准不得清除。
+- **尚未执行：** Azure Storage Prefix LIST/PUT、Raw HL7 Blob、远端 GET/HEAD、manifest-last、Blob-only Replay、P3 实机、HL7 Parser/dbt/Canonical/Silver/OMOP 写入。已有 GHCR Digest 及 `PUBLISHER_IMAGE=""` 安全默认不因此自动解锁任何后续运行。**P2 已 PASS；P3 仍 HOLD**。
+- **后续 P3 参数（仅预备，非授权）：** `OIE_V2_P2_SOURCE_RUN_ID=42410482514`；`OIE_V2_P2_PROOF_SHA256=0563e10b2ade95f11e5cf76ec5bf8915b53489134f72b75fe0b08aaf9b53205c`。新的 P3 必须从原持久化记录独立重新 GET/验 hash 后才允许 Azure 写入；严禁再次 OIE POST、重建新 FHIR 或重放本批次。
