@@ -481,6 +481,8 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         for mutation in (
             {"manifest_sha256": "f" * 64}, {"mapping_sha256": "f" * 64},
             {"request_id": "atlanta-fhir-gh-41552666928"},
+            {"provisional_person_count": 0},
+            {"provisional_visit_count": 0},
         ):
             with self.subTest(mutation=mutation):
                 other = self.module.FrozenCandidateScope(
