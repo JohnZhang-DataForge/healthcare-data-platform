@@ -53,7 +53,7 @@ jobs:
           test "$GITHUB_EVENT_NAME" = push
           test "$GITHUB_REF" = refs/heads/main
           test "$GITHUB_RUN_ATTEMPT" = 1
-          test "$BEFORE_SHA" = bc046519790312b06b2d9d445463d025efb54b9b
+          test "$BEFORE_SHA" = 82b3a6646b84a11482ada7f8c1f0c6f1d8ded367
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           python3 - "$BEFORE_SHA" "$GITHUB_SHA" <<'PY'
           from pathlib import Path
@@ -74,7 +74,7 @@ jobs:
             "schema_version":"publisher-ghcr-sha-once-20261107-v1",
             "approval":"PUBLISH_GHCR_PUBLISHER_SHA_ONLY",
             "scope":"ONLY_IMMUTABLE_PUBLISHER_IMAGE_GHCR_PUSH_NO_RUNTIME",
-            "expected_previous_main_sha":"bc046519790312b06b2d9d445463d025efb54b9b",
+            "expected_previous_main_sha":"82b3a6646b84a11482ada7f8c1f0c6f1d8ded367",
             "target_image":"ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher",
             "published_tag_policy":"git-MERGED_MAIN_SHA_ONLY",
             "publish_latest":False,
@@ -90,7 +90,7 @@ jobs:
           }
           assert actual==expected, "HOLD_GHCR_RELEASE_INTENT_CHANGED"
           print("GHCR_EXACT_NEW_MAIN_INTENT=PASS")
-          print("GHCR_PRIOR_MAIN_SHA=bc046519790312b06b2d9d445463d025efb54b9b")
+          print("GHCR_PRIOR_MAIN_SHA=82b3a6646b84a11482ada7f8c1f0c6f1d8ded367")
           print("GHCR_NEW_MERGE_REVISION="+after)
           PY
           echo "authorized=true" >> "$GITHUB_OUTPUT"
