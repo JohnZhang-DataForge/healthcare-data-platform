@@ -359,6 +359,9 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
              "identity_state":e.state, "parent_identity_state":e.parent_state,
              "visit_concept_id":1}
             for e in self.visits])
+        from healthcare_data_engine.mapping.omop.candidates import OmopCandidates
+        self.mapper_result = OmopCandidates(
+            self.patient, self.visit, self.scope.mapping_sha256, 100, 5918)
         self.spark = Spark(b"")
         self.rechecked_source = []
         self.writes = []
@@ -384,6 +387,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
     def invoke(self, *, mode="G5_CANDIDATE_WRITE", **overrides):
         args = dict(
             scope=self.scope, handoff=self.handoff,
+            mapper_result=self.mapper_result,
             person_candidate=self.patient, visit_candidate=self.visit,
             mode=mode, write_authorized=True,
             clinically_reviewed=True, license_reviewed=True,
