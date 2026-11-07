@@ -11,7 +11,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-REPO = Path(__file__).resolve().parents[3]
+REPO = Path(__file__).resolve().parents[4]
 REQUEST = "johnscreek-hl7-gh-12345678901"
 SOURCE_SHA = "a" * 64
 HOSPITAL = "johns-creek-hospital-b"
