@@ -151,8 +151,19 @@ class ScopedOIEV2Poster(ScopedOIEPoster):
             if not isinstance(raw, bytes) or not 0 < len(raw) <= max_bytes:
                 raise OIEPostBlocked("OIE_V2_PREFLIGHT_RESPONSE_INVALID")
             if suffix:
-                if not channel_started_exact(raw, channel_id=CHANNEL_ID):
-                    raise OIEPostBlocked("OIE_V2_NOT_STARTED_NO_POST")
+                # The pinned 4.7.0 OIE instance actually returns a
+                # dashboardStatus with its explicit Channel ID. Do not
+                # accept an anonymous plain STARTED token as sufficient
+                # independent permission to send a new clinical event.
+                if b"<!DOCTYPE" in raw.upper() or b"<!ENTITY" in raw.upper():
+                    raise OIEPostBlocked("OIE_V2_STATUS_XML_UNSAFE")
+                try:
+                    root = ET.fromstring(raw)
+                except ET.ParseError:
+                    raise OIEPostBlocked("OIE_V2_STATUS_XML_INVALID") from None
+                if root.tag != "dashboardStatus" or not channel_started_exact(
+                        raw, channel_id=CHANNEL_ID):
+                    raise OIEPostBlocked("OIE_V2_NOT_EXACT_DASHBOARD_STARTED_NO_POST")
             else:
                 _verify_imported_v2_config(raw, render_channel_v2())
 
