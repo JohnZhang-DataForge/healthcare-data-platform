@@ -281,5 +281,224 @@ class G4Offline(unittest.TestCase):
                          "VERIFY_READONLY")
 
 
+
+class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
+    """Fake native Delta and frozen F2 handoff; zero cloud access."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        import sys
+        # Published 0.1.6 Wheel does not yet include this P3 planner.
+        # Load REVIEW BRANCH source only for synthetic tests, do not claim
+        # that this is the Fabric Published Environment.
+        src = (ROOT / "shared-data-engine/src/healthcare_data_engine/"
+               "mapping/omop/candidate_publication.py")
+        name = "healthcare_data_engine.mapping.omop.candidate_publication"
+        spec = importlib.util.spec_from_file_location(name, src)
+        assert spec and spec.loader
+        cls._old = sys.modules.get(name)
+        cls.module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = cls.module
+        spec.loader.exec_module(cls.module)
+        from healthcare_data_engine.identity.candidate_handoff import (
+            CandidatePersonId, CandidateVisitId, PersonVisitCandidateHandoff)
+        cls.handoff_type = PersonVisitCandidateHandoff
+        cls.person_type = CandidatePersonId
+        cls.visit_type = CandidateVisitId
+
+    @classmethod
+    def tearDownClass(cls):
+        import sys
+        name = "healthcare_data_engine.mapping.omop.candidate_publication"
+        if cls._old is None:
+            sys.modules.pop(name, None)
+        else:
+            sys.modules[name] = cls._old
+
+    def setUp(self):
+        hospital = "atlanta-hospital-a"
+        feed = "atlanta-hospital-a-fhir-r4"
+        source = "synthea-fhir:" + hospital + ":" + feed
+        self.persons = tuple(self.person_type(
+            hospital, source, "p%03d" % i, i+1, "PROVISIONAL")
+            for i in range(100))
+        self.visits = tuple(self.visit_type(
+            hospital, source, "e%05d" % i, "p%03d" % (i % 100),
+            i+1, i%100+1, "PROVISIONAL", "PROVISIONAL")
+            for i in range(5918))
+        self.scope = self.module.FrozenCandidateScope(
+            hospital_id=hospital, feed_id=feed, source_system=source,
+            request_id="atlanta-fhir-gh-41552666929",
+            source_batch_id="a"*64,
+            manifest_sha256=nb._G5_APPROVED_MANIFEST_SHA,
+            silver_processing_version=nb._G4_PROCESSING,
+            silver_publication_id="synthetic-silver-approval",
+            mapping_sha256="c"*64,
+            identity_snapshot_fingerprint="b"*64,
+            patient_count=100, encounter_count=5918,
+            provisional_person_count=100, provisional_visit_count=5918)
+        self.handoff = self.handoff_type(
+            person_lookup=self.persons,
+            batch_persons=self.persons, batch_visits=self.visits,
+            hospital_id=hospital, source_system=source,
+            source_batch_id=self.scope.source_batch_id,
+            manifest_sha256=self.scope.manifest_sha256,
+            processing_version=self.scope.silver_processing_version,
+            silver_publication_id=self.scope.silver_publication_id,
+            snapshot_fingerprint=self.scope.identity_snapshot_fingerprint)
+        self.patient = Frame([
+            {"person_id":p.person_id, "person_source_value":p.source_business_key,
+             "identity_state":p.state, "gender_concept_id":1}
+            for p in self.persons])
+        self.visit = Frame([
+            {"visit_occurrence_id":e.visit_occurrence_id,
+             "person_id":e.person_id,
+             "source_encounter_id":e.source_encounter_id,
+             "source_person_id":e.source_person_id,
+             "identity_state":e.state, "parent_identity_state":e.parent_state,
+             "visit_concept_id":1}
+            for e in self.visits])
+        self.spark = Spark(b"")
+        self.rechecked_source = []
+        self.writes = []
+        self.fail_after_first = False
+
+    def fake_source_fence(self, spark, **kw):
+        self.rechecked_source.append(kw)
+        self.assertIs(spark, self.spark)
+        self.assertIs(kw["allow_write"], False)
+        self.assertIs(kw["retention_ok"], False)
+        self.assertEqual(kw["request"], self.scope.request_id)
+        return ("FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
+                "APPROVAL_DELTA_PASS_20261104")
+
+    def write(self, frame, path):
+        if path in self.spark.delta:
+            raise FileExistsError("errorifexists simulated")
+        self.spark.delta[path] = frame
+        self.writes.append(path)
+        if self.fail_after_first and len(self.writes) == 1:
+            raise OSError("synthetic unknown storage acknowledgement")
+
+    def invoke(self, *, mode="G5_CANDIDATE_WRITE", **overrides):
+        args = dict(
+            scope=self.scope, handoff=self.handoff,
+            person_candidate=self.patient, visit_candidate=self.visit,
+            mode=mode, write_authorized=True,
+            clinically_reviewed=True, license_reviewed=True,
+            warehouse_snapshot_verified=True,
+            clinical_review_sha256="d"*64,
+            license_review_sha256="e"*64,
+            warehouse_snapshot_sha256=self.scope.identity_snapshot_fingerprint,
+            patient_contract_json="synthetic-contract-for-offline-only",
+            encounter_contract_json="synthetic-contract-for-offline-only",
+        )
+        args.update(overrides)
+        with patch.dict(nb.plan_and_write_g5_candidate_delta.__globals__, {
+            "_write_delta": self.write,
+            "_g3_delta_exists": lambda spark, path: path in self.spark.delta,
+            "verify_fhir_g5_candidate_source_readonly": self.fake_source_fence,
+        }):
+            return nb.plan_and_write_g5_candidate_delta(self.spark, **args)
+
+    def test_p3_first_write_approval_last_then_replay_skip(self):
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        paths = nb._g5_candidate_paths(self.scope)
+        self.assertEqual(self.writes, [paths["person"], paths["visit"],
+                                       paths["approval"]])
+        approval = self.spark.delta[paths["approval"]].rows
+        self.assertEqual(len(approval), 1)
+        self.assertEqual(approval[0]["status"], "CANDIDATE_APPROVED")
+        self.assertEqual(approval[0]["scope_receipt_key"], self.scope.receipt_key)
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
+        self.assertEqual(len(self.writes), 3)
+        self.assertEqual(len(self.rechecked_source), 2)
+
+    def test_p3_partial_write_or_unknown_ack_requires_readback_not_retry(self):
+        self.fail_after_first = True
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_UNKNOWN_ACK")
+        self.assertEqual(len(self.writes), 1)
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT")
+        self.assertEqual(len(self.writes), 1)
+
+    def test_p3_bad_flags_and_missing_review_rejected_before_any_io(self):
+        cases = (
+            {"mode": "HALT"}, {"write_authorized": False},
+            {"clinically_reviewed": False}, {"license_reviewed": False},
+            {"warehouse_snapshot_verified": False},
+            {"clinical_review_sha256": "no-evidence"},
+            {"warehouse_snapshot_sha256": "f" * 64},
+        )
+        for mutation in cases:
+            with self.subTest(mutation=mutation), self.assertRaises(RuntimeError):
+                self.invoke(**mutation)
+            self.assertFalse(self.rechecked_source)
+            self.assertFalse(self.writes)
+
+    def test_p3_readback_mode_never_writes(self):
+        self.assertEqual(self.invoke(
+            mode="G5_CANDIDATE_READBACK_ONLY", write_authorized=False,
+            clinically_reviewed=False, license_reviewed=False),
+            "G5_CANDIDATE_HOLD_NOT_FOUND_READONLY")
+        self.assertFalse(self.writes)
+        self.assertEqual(len(self.rechecked_source), 1)
+
+    def test_p3_wrong_identity_or_wrong_concept_payload_holds(self):
+        broken = Frame([{**r, "person_id":9999} if idx == 0 else r
+                         for idx, r in enumerate(self.patient.rows)])
+        with self.assertRaisesRegex(RuntimeError,
+                                    "HOLD_G5_CANDIDATE_IDENTITY_OR_FK_DRIFT"):
+            self.invoke(person_candidate=broken)
+        self.assertEqual(self.writes, [])
+
+    def test_p3_readback_tamper_refuses_skip(self):
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        paths = nb._g5_candidate_paths(self.scope)
+        self.spark.delta[paths["visit"]].rows[0]["visit_concept_id"] = 99999
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
+        self.assertEqual(len(self.writes), 3)
+
+    def test_p3_bad_approval_refuses_skip(self):
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        paths = nb._g5_candidate_paths(self.scope)
+        self.spark.delta[paths["approval"]].rows[0]["status"] = "GOLD_COMMITTED"
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
+        self.assertEqual(len(self.writes), 3)
+
+    def test_p3_missing_approval_requires_readback_before_any_retry(self):
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        paths = nb._g5_candidate_paths(self.scope)
+        del self.spark.delta[paths["approval"]]
+        self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT")
+        self.assertEqual(len(self.writes), 3)
+
+    def test_p3_scope_drift_blocks_before_any_source_read(self):
+        for mutation in (
+            {"manifest_sha256": "f" * 64}, {"mapping_sha256": "f" * 64},
+            {"request_id": "atlanta-fhir-gh-41552666928"},
+        ):
+            with self.subTest(mutation=mutation):
+                other = self.module.FrozenCandidateScope(
+                    **{**self.scope.__dict__, **mutation})
+                with self.assertRaises(RuntimeError):
+                    self.invoke(scope=other)
+            self.assertFalse(self.rechecked_source)
+            self.assertFalse(self.writes)
+
+    def test_p3_notebook_has_no_write_runmode_dispatch(self):
+        import inspect
+        src = inspect.getsource(nb.plan_and_write_g5_candidate_delta)
+        self.assertIn("G5_CANDIDATE_WRITE", src)
+        self.assertIn("_write_delta(person_candidate", src)
+        self.assertIn("_write_delta(approval, paths", src)
+        native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"
+                  "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
+        main = native.split('if __name__ == "__main__":')[-1]
+        self.assertNotIn('run_mode == "G5_CANDIDATE_WRITE"', main)
+        self.assertIn('run_mode = "HALT"', native)
+
+
+
 if __name__ == "__main__":
     unittest.main()
