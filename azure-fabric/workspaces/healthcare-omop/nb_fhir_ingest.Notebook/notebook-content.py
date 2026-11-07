@@ -1016,7 +1016,11 @@ def plan_and_write_g5_candidate_delta(
             or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
             or scope.silver_publication_id != handoff.silver_publication_id
             or scope.patient_count != len(handoff.batch_persons)
-            or scope.encounter_count != len(handoff.batch_visits)):
+            or scope.encounter_count != len(handoff.batch_visits)
+            or scope.provisional_person_count != sum(
+                p.state == "PROVISIONAL" for p in handoff.batch_persons)
+            or scope.provisional_visit_count != sum(
+                visit.state == "PROVISIONAL" for visit in handoff.batch_visits)):
         raise RuntimeError("HOLD_G5_CANDIDATE_F2_SCOPE_DRIFT")
     from re import fullmatch
     if (mode not in ("G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY")
