@@ -137,23 +137,23 @@ jobs:
           print("G5_P3_018_INSTALLED_API_IMPORT_PASS")
           PY
           # Contrast the NEW source-candidate Wheel with immutable existing GA
-          # Native 0.1.6. Do not imply GA 0.1.8 Publish.
+          # Native 0.1.7. Do not imply GA 0.1.8 Publish.
           "$RUNNER_TEMP/shared-env/bin/python" - <<'PY'
           import os
           import zipfile
           from pathlib import Path
           root = Path(os.environ["GITHUB_WORKSPACE"])
           roots=root/"azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries"
-          old=roots/"healthcare_data_engine-0.1.6-py3-none-any.whl"
+          old=roots/"healthcare_data_engine-0.1.7-py3-none-any.whl"
           wheels=list((root/"dist").glob("healthcare_data_engine-0.1.8-*.whl"))
           assert len(wheels) == 1, "one expected candidate Wheel"
           candidate=wheels[0]
           assert len(list(roots.glob("*.whl"))) == 1, "GA single-wheel violation"
           with zipfile.ZipFile(old) as prior, zipfile.ZipFile(candidate) as after:
-              api="healthcare_data_engine/mapping/omop/candidate_publication.py"
+              api="healthcare_data_engine/mapping/omop/local_profile.py"
               assert api not in prior.namelist(), "expected previously published GA is old"
               assert api in after.namelist(), "new P3 planner not packed"
-          print("G5_016_GA_VS_018_CANDIDATE_SOURCE_ISOLATED_PASS")
+          print("G5_017_GA_VS_018_CANDIDATE_SOURCE_ISOLATED_PASS")
           PY
       - uses: actions/upload-artifact@v4
         with:
