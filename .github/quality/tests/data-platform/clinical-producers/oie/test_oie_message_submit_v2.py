@@ -249,16 +249,37 @@ class V2SenderTests(unittest.TestCase):
                     expected_events=[("visit-one", "A01"), ("visit-one", "A03")])
 
     def test_v2_network_scoped_channel_preflight_reuses_existing_http_no_post(self):
+        """Previously approved STOPPED import + real 4.7 dashboardStatus."""
+        import xml.etree.ElementTree as ET
+
+        def imported_xml():
+            # This is the exact STOPPED-only change made for real V2 import.
+            reviewed = render_channel_v2()
+            self.assertEqual(reviewed.count("<initialState>STARTED</initialState>"), 1)
+            return reviewed.replace("<initialState>STARTED</initialState>",
+                                    "<initialState>STOPPED</initialState>", 1)
+
+        def dashboard(state="STARTED", channel_id=CHANNEL_ID):
+            return (
+                f"<dashboardStatus><channelId>{channel_id}</channelId>"
+                f"<state>{state}</state>"
+                "<connectorStatuses>"
+                "<connectorStatus><state>STOPPED</state></connectorStatus>"
+                "<connectorStatus><state>STARTED</state></connectorStatus>"
+                "</connectorStatuses></dashboardStatus>"
+            ).encode()
+
         class Response:
             status = 200
             def __init__(self, raw): self.raw = raw
             def __enter__(self): return self
             def __exit__(self, *args): return False
             def read(self, count): return self.raw
+
         class Opener:
-            def __init__(self, channel_xml, status=b"<status>STARTED</status>"):
+            def __init__(self, channel_xml, status=None):
                 self.channel_xml = channel_xml
-                self.status = status
+                self.status = status if status is not None else dashboard()
                 self.calls = []
             def open(self, req, timeout):
                 self.calls.append(req)
@@ -267,7 +288,8 @@ class V2SenderTests(unittest.TestCase):
                 return Response(self.channel_xml.encode("utf-8"))
 
         scoped = object.__new__(ScopedOIEV2Poster)
-        opener = Opener(render_channel_v2())
+        correct = imported_xml()
+        opener = Opener(correct)
         scoped._opener = opener
         scoped.preflight_channel(CHANNEL_ID)
         self.assertEqual(len(opener.calls), 2)
@@ -278,50 +300,79 @@ class V2SenderTests(unittest.TestCase):
             scoped.submit(LEGACY_CHANNEL, b"example")
         self.assertEqual(len(opener.calls), 2)
 
-        scoped._opener = Opener(legacy_channel_xml())
-        with self.assertRaisesRegex(OIEPostBlocked, "OIE_CHANNEL_CONFIG_DRIFT_HOLD"):
-            scoped.preflight_channel(CHANNEL_ID)
-        self.assertEqual(len(scoped._opener.calls), 1)
+        # Real OIE import adds ONLY reviewed XStream version bookkeeping.
+        observed = ET.fromstring(correct)
+        observed.find("sourceConnector/properties").set("version", "4.7.0")
+        observed.find("destinationConnectors/connector").set("version", "4.7.0")
+        scoped._opener = Opener(ET.tostring(observed, encoding="unicode"))
+        scoped.preflight_channel(CHANNEL_ID)
+        self.assertEqual(len(scoped._opener.calls), 2)
 
-        # An unexpected V2 OIE destination can have side effects. Do not POST
-        # into a Channel whose writer/route differs from reviewed version.
-        import xml.etree.ElementTree as ET
-        tampered = ET.fromstring(render_channel_v2())
-        destination = tampered.find("destinationConnectors/connector/properties")
-        self.assertIsNotNone(destination)
-        destination.set("class", "UNAPPROVED_SINK")
-        scoped._opener = Opener(ET.tostring(tampered, encoding="unicode"))
-        with self.assertRaisesRegex(OIEPostBlocked, "OIE_CHANNEL_CONFIG_DRIFT_HOLD"):
-            scoped.preflight_channel(CHANNEL_ID)
-        self.assertEqual(len(scoped._opener.calls), 1)
-
-        # A nested stale STARTED field or literal NOT_STARTED must not permit
-        # A01/A03 submission into a stopped Channel. Only two GETs, zero POSTs.
-        for bad in (
-            b"<status>NOT_STARTED</status>",
-            b"<status>STOPPED</status>",
-            b"<channelStatus><state>STOPPED</state>"
-                b"<destinationConnectorStatus><state>STARTED</state>"
-                b"</destinationConnectorStatus></channelStatus>",
-            b"<channelStatus><state>NOT_STARTED</state>"
-                b"<lastState>STARTED</lastState></channelStatus>",
-            b"<channelStatus><state>STARTED</state><state>STOPPED</state></channelStatus>",
-            b"<channelStatus><channelId>00000000-0000-0000-0000-000000000000</channelId>"
-                b"<state>STARTED</state></channelStatus>",
-            b"<status>UNSTARTED</status>",
+        # Previously unnormalized or unapproved source/destination changes
+        # must fail BEFORE status GET, not silently allow a live FHIR POST.
+        for bad_xml in (
+            render_channel_v2(),  # Builder STARTED != installed STOPPED
+            legacy_channel_xml(),
         ):
-            with self.subTest(status=bad):
-                scoped._opener = Opener(render_channel_v2(), status=bad)
-                with self.assertRaises(OIEPostBlocked):
-                    scoped.preflight_channel(CHANNEL_ID)
-                self.assertEqual(len(scoped._opener.calls), 2)
-                self.assertTrue(all(req.get_method() == "GET"
-                                    for req in scoped._opener.calls))
+            scoped._opener = Opener(bad_xml)
+            with self.subTest(case=bad_xml[:70]), self.assertRaises(
+                    OIEPostBlocked):
+                scoped.preflight_channel(CHANNEL_ID)
+            self.assertEqual(len(scoped._opener.calls), 1)
+
+        modifications = (
+            ("destinationRoute", "destinationConnectors/connector/properties", "class",
+             "UNAPPROVED_SINK"),
+            ("sourceRoute", "sourceConnector/properties", "class", "UNAPPROVED_SOURCE"),
+            ("unknownMetadata", "sourceConnector/properties", "version-extra", "4.7"),
+            ("wrongVersionTag", "sourceConnector/properties/sourceConnectorProperties",
+             "unapproved-attribute", "4.7"),
+        )
+        for label, xpath, key, value in modifications:
+            tampered = ET.fromstring(correct)
+            target = tampered.find(xpath)
+            self.assertIsNotNone(target)
+            target.set(key, value)
+            scoped._opener = Opener(ET.tostring(tampered, encoding="unicode"))
+            with self.subTest(case=label), self.assertRaisesRegex(
+                    OIEPostBlocked, "CONFIG_DRIFT_HOLD"):
+                scoped.preflight_channel(CHANNEL_ID)
+            self.assertEqual(len(scoped._opener.calls), 1)
+
+        # A forged/paused/mismatched V2 state cannot be inferred from
+        # nested Connector STARTED; there must be exactly one direct
+        # matching Channel ID and direct STARTED state.
+        bad_statuses = (
+            b"STARTED", b"<status>STARTED</status>",
+            b"<channelStatus><state>STARTED</state></channelStatus>",
+            b"<status>NOT_STARTED</status>", b"<status>STOPPED</status>",
+            dashboard("STOPPED"), dashboard("UNDEPLOYED"),
+            dashboard("STARTED", "00000000-0000-0000-0000-000000000000"),
+            b"<dashboardStatus><state>STARTED</state>"
+            b"<connectorStatus><state>STARTED</state></connectorStatus></dashboardStatus>",
+            (f"<dashboardStatus><channelId>{CHANNEL_ID}</channelId>"
+             "<connectorStatus><state>STARTED</state></connectorStatus>"
+             "</dashboardStatus>").encode(),
+            (f"<dashboardStatus><channelId>{CHANNEL_ID}</channelId>"
+             "<state>STARTED</state><state>STOPPED</state></dashboardStatus>").encode(),
+            b"<status>UNSTARTED</status>",
+        )
+        for bad in bad_statuses:
+            scoped._opener = Opener(correct, status=bad)
+            with self.subTest(status=bad), self.assertRaises(OIEPostBlocked):
+                scoped.preflight_channel(CHANNEL_ID)
+            self.assertEqual(len(scoped._opener.calls), 2)
+            self.assertTrue(all(req.get_method() == "GET"
+                                for req in scoped._opener.calls))
 
     def test_exact_channel_state_parses_current_state_not_substrings(self):
         valid = (
             b"STARTED", b" <string>STARTED</string> ",
             b"<status>STARTED</status>",
+            (f"<dashboardStatus><channelId>{CHANNEL_ID}</channelId>"
+             "<state>STARTED</state>"
+             "<connectorStatus><state>STOPPED</state></connectorStatus>"
+             "</dashboardStatus>").encode(),
             b"<channelStatus><channelId>" + CHANNEL_ID.encode() +
                 b"</channelId><state>STARTED</state>"
                 b"<destinationConnectorStatus><state>STOPPED</state>"
@@ -344,6 +395,11 @@ class V2SenderTests(unittest.TestCase):
             b"<channelStatus><state>STARTED</state><state>STOPPED</state></channelStatus>",
             b"<channelStatus><channelId>not-this-channel</channelId>"
                 b"<state>STARTED</state></channelStatus>",
+            b"<dashboardStatus><state>STARTED</state>"
+                b"<connectorStatus><state>STARTED</state></connectorStatus>"
+                b"</dashboardStatus>",
+            (f"<dashboardStatus><channelId>{CHANNEL_ID}</channelId>"
+             "<state>STARTED</state><state>STOPPED</state></dashboardStatus>").encode(),
         ):
             with self.subTest(body=invalid), self.assertRaises(OIEPostBlocked):
                 channel_started_exact(invalid, channel_id=CHANNEL_ID)
