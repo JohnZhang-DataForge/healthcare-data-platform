@@ -15,15 +15,15 @@
 - [x] 2.4 dbt Core + Local Spark (dbt-fabricspark session) compile/seed/run/test 与本地物理 Delta `_delta_log`、Candidate、MERGE 目标独立 SparkSession 读回、基础/重跑/双医院扩展均已通过 [Run #42207568265](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42207568265)。适用 PySpark 3.5.5 + delta-spark 3.3.2；当前 Fabric Spark 4.1 的兼容性不由该 POC 证明。
 - [ ] 2.5 同一 synthetic fixture 对齐 Candidate 值、异常分类、SQL/Delta 能力、运行成本；对比打分，**测试后**提议选型。
 
-## 3. 正式 HL7 集成（尚未授权、与 POC 分离）
-- [ ] 3.1 评审 OIE Producer 扩展（PID-7/8、race/ethnicity 真实来源、A03 discharge 或 Canonical v2）及原始 HL7 Blob Publisher。
+## 3. 正式 HL7 集成（OIE/Raw 上游已获批验收；后续 Silver/Gold 仍未授权）
+- [x] 3.1 OIE V2 来源扩展与真实字段审计已完成（DOB/Gender/US Core CDCREC Race/Ethnicity、A01 admission + A03 discharge），新合成请求的 42 Message OIE 独立持久 GET 在 P2 Run #42410482514 PASS；共享 Azure Publisher 的 42 HL7 Raw + Manifest-last/远端独立 GET/HEAD/Blob-only replay 在 P3 Run #42412009780 PASS。**只代表已限定合成 Johns Creek Hospital B 上游 Producer/Raw 链路，不代表 HL7→Canonical Silver 已交付。**
 - [ ] 3.2 以单独 Implementation OpenSpec 完善实体插件/Schema/版本化 Profile、单一 Silver Publisher、quarantine、replay、readback。
 - [ ] 3.3 Azure/Fabric 真实 E2E 需要单独的执行授权和证据；不得因本地 POC PASS 推导真实 Silver Approved 或 Gold COMMITTED。
 
 ## Evidence / Blockers
 - 设计基线：2026-11-05 Healthcare 最新 main 的 Medallion ADR、DATA-FLOW、OIE Channel 文档、两个 Local Canonical v1 Contract。
-- OIE 真实 FHIR→HL7 消息已验收，但 HL7 Blob 发布未验收；FHIR G4 Approved Silver 已验收，Gold 仍 OPEN。
-- A01 单消息缺少 Canonical v1 必需字段；必须将缺失事实与来源 Profile 约束作为阻断条件，不得靠默认值绕过。
+- **2026-11-07 新事实：** OIE V2 P2 真实 21 A01 + 21 A03 Message ID 持久化 GET 在 [Run #42410482514](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42410482514) PASS；同一冻结来源 42 个原始 HL7 Azure Blob 对象 + Manifest 的独立 GET/HEAD、Blob-only Replay 在 [P3 Run #42412009780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42412009780) PASS。**HL7 Raw Landing 已完成**，但这不等于 HL7 Parser/dbt 消费了真实 Azure 数据或 Fabric Approved Silver / Gold 已完成。
+- 旧版单独 A01 事件无法证明 completed Encounter 的 Canonical v1 必需 end_datetime；新版 OIE V2 经合成 FHIR 来源真实 Profile 评审已带真实 DOB/Gender/Race/Ethnicity 及有据可查的 A03，**只有合法 A01+A03 成对时才可生成完成 Encounter Candidate**。其它医院 Profile、未知或多编码病例仍应 HOLD，不得造默认临床事实。
 - 本 Change 实验全部执行证据指向 Self-Runner 的单独 PR/commit/run；不往 Healthcare 增加实验资产。
 
 ## 2026-11-05/06 ET — First isolated Self-Runner experiment evidence
