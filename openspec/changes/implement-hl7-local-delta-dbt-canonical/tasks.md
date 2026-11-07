@@ -5,7 +5,7 @@
 - [x] 1.2 迁入唯一 Healthcare HL7 Reader/Manifest Parser/本地物理 Delta Writer，采用已测试 Spark 3.5.5/Delta 3.3.2 和 fail-closed Source Profile。
 - [x] 1.3 正式 dbt-fabricspark local session 从 Delta `source()` 读取，生成 Source-specific Patient/Encounter Candidate；不写正式 Silver/Gold。
 - [x] 1.4 实施 OpenSpec/系统 README/CODE、真实 OIE V2 JS Mapper 新合成 fixture、集中负向测试和 Hosted-only CI。
-- [ ] 1.5 CI 实际 local Delta/_delta_log、Replay、dbt compile/run/test、独立 18+27 字段 readback 通过后，登记最终 PR/Run/SHA 并合并 Main。
+- [x] 1.5 CI 实际 Local Delta/_delta_log、Replay、dbt compile/run/test、独立 Patient 18/Encounter 27 Contract readback 均通过，正式 Healthcare [PR #809](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/809) 已合并 Main `1b0ee1df4baeec986c419e2ee5f36abaf7613782`，四项 Ruleset Required Checks 均 SUCCESS；源码仅为 local Delta + dbt Candidate，不等于真实 Azure HL7 消费或 Silver/Gold。
 
 ## P2 — 真实来源和共享业务链路（单独资源授权）
 - [ ] 2.1 对 Azure 已发布 42 条 Raw HL7 做 GET-only 最小权限计划与 Batch/资源冲突核查；不重跑历史 P2/P3、不产生 OIE POST。
@@ -18,4 +18,4 @@
 - Actual OIE V2 JS Mapper created **new in-memory synthetic** FHIR → A01/A03 HL7 Raw + matching local Manifest and byte SHA; Python `hl7apy` Parser + Source Manifest/Profile/Gate tests PASS. Physical Local Delta `hl7_staging.hl7_events` **CREATED rows=2**, independently verified Delta `_delta_log`; same original source reprocessed in separate Spark process returned **`ALREADY_MATCHING_REPLAY_SKIP`** without overwrite/duplication.
 - dbt Core with `dbt-fabricspark(method=session)` local Spark: `dbt compile` + 2 Candidate Delta models **PASS 2/2** and dbt data tests **PASS 6/6**. Separate Spark process read back `hl7_candidate.canonical_patient` **1 row**, `canonical_encounter` **1 row**, independently verified real Delta format + immutable Contract Patient **18/18** / Encounter **27/27** field order/data types/required non-null and the actual Source/clinical facts. Marker: `HL7_LOCAL_DELTA_DBT_CANDIDATE_18_27_CONTRACT=PASS`.
 - CI recovered one real regression during development: Spark Delta persisted storage nullability metadata did not match Python in-memory StructType, incorrectly rejecting identical Replay; fixed to compare exact column names/types and symmetric row multisets without bypassing source hash or conflict HOLD, then same Main-bound PR CI succeeded.
-- **Remaining hold:** This Run did **NOT** fetch the already published Azure 42 real OIE HL7 objects, no actual Fabric Spark 4.1, no Approved Silver, shared OMS/OMOP or Gold. The local code is source-complete/physical-offline accepted, but final PR merge verification remains task 1.5 until GitHub merges #809. P2/P3 still OPEN.
+- **Remaining hold:** This Run did **NOT** fetch the already published Azure 42 real OIE HL7 objects, no actual Fabric Spark 4.1, no Approved Silver, shared OMS/OMOP or Gold. Local Component P1 代码与 Hosted Local Delta/dbt 物理验收均已通过，最终 PR #809 合并 SHA `1b0ee1df4baeec986c419e2ee5f36abaf7613782` 已独立确认；**P2 Azure GET-only 和 P3 正式共享 Silver Publisher/OMOP 仍 OPEN**。
