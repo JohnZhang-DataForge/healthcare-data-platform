@@ -57,6 +57,8 @@
 | [tests/test_fabric_omop_handoff.py](../../../../shared-data-engine/tests/test_fabric_omop_handoff.py) | 仓库 Canonical 原始 SHA、自定义 F1 作用域、拒绝跨医院/Quarantine/篡改/不可信路径的 Python 3.11/3.13 无云端测试 |
 | [BUILD-AND-TEST.md](BUILD-AND-TEST.md) | 原源码 README 的离线安装、Python/PySpark 测试、Wheel 构建及 Handoff 操作边界（唯一维护入口） |
 
+| [src/healthcare_data_engine/mapping/omop/local_profile.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/local_profile.py) | 0.1.8 纯 Source/Clinical Profile 候选生成：复用 LocalDP 原有 Concept 与 Visit 合同，FHIR 来源 alias 只产生 G5 Mapper 的既有单一 Profile；未知 Race 显式 HOLD，禁止自造 Concept ID，未获审签或发布授权 |
+
 ## Local / Shared 等价性测试（2026-11-06，合成离线限定）
 
 - [Local Person/Visit Shared parity tests](../../../../.github/quality/tests/shared-data-engine/parity/test_local_shared_person_visit_parity.py)：直接调用既有 Local Visit `map_encounter_to_candidate`、从真实 Local Person main 原样抽出的 `map_joined_patient_to_person` 纯函数及 Shared `build_omop_candidates`，使用冻结 Canonical v1 字段定义、现有 Local `visit-class-v1.json` 和 `common/omop.py` 中的概念常量，验证 Person（16 个人口学码交叉组合）与 Visit（10 种 Class）完整 Schema/全部字段/重放等价。对未知 Class、人口学码、跨医院 Identity 和非 Standard Concept 做 fail-closed 负向测试；使用合成、未临床审批的 Profile，绝不授权 Fabric Gold。
