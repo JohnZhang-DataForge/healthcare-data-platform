@@ -369,7 +369,11 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
     def write(self, frame, path):
         if path in self.spark.delta:
             raise FileExistsError("errorifexists simulated")
-        self.spark.delta[path] = frame
+        # Persist an independent snapshot, not the caller's in-memory Frame.
+        # Otherwise a simulated Delta corruption also mutates the expected
+        # Mapper source and never reaches independent persisted readback.
+        self.spark.delta[path] = Frame(
+            [dict(record) for record in frame.rows], frame.columns)
         self.writes.append(path)
         if self.fail_after_first and len(self.writes) == 1:
             raise OSError("synthetic unknown storage acknowledgement")
