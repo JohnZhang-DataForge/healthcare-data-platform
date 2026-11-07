@@ -46,7 +46,7 @@ class RaceResolutionDraft:
     source_inventory_sha256: str
     claimed_f1_release_sha256: str
     proposed_standard_race_concept_id: int
-    verified_source_coding_sha256: str
+    claimed_source_coding_sha256: str
     unresolved_source_codes: tuple[str, ...]
     pending_no_information_source_count: int
     pending_no_information_policy: str = "UNK_OMOP_CDM54_ZERO_REQUIRES_EXPLICIT_REVIEW"
@@ -199,7 +199,7 @@ def propose_race_resolution(
         source_inventory_sha256=coverage.inventory_sha256,
         claimed_f1_release_sha256=f1_release_metadata_sha256,
         proposed_standard_race_concept_id=concept_id,
-        verified_source_coding_sha256=hashlib.sha256(_canonical(coding)).hexdigest(),
+        claimed_source_coding_sha256=hashlib.sha256(_canonical(coding)).hexdigest(),
         unresolved_source_codes=expected_unresolved,
         pending_no_information_source_count=unknown_count,
     )
