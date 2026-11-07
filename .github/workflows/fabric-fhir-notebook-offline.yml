@@ -47,7 +47,10 @@ jobs:
           test "$(find "$LIBS" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
           echo "$NATIVE_SHA  $NATIVE" | sha256sum --check
           echo "$OLD_SHA  $OLD" | sha256sum --check
-          grep -qx 'version = "0.1.6"' shared-data-engine/pyproject.toml
+          # Current repository source is the unreleased 0.1.7 candidate,
+          # while the real Native Notebook still targets immutable GA 0.1.6.
+          grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
+          grep -qx '__version__ = "0.1.7"' shared-data-engine/src/healthcare_data_engine/__init__.py
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$NATIVE"
           "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.6"'
           echo 'G5_013_HISTORICAL_ROLLBACK_WHEEL_PIN_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
@@ -95,8 +98,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  g5-source-016-native-alignment:
-    name: G5 Wheel 0.1.6 Native Notebook alignment with installed Wheel
+  g5-source-017-native-version-separation:
+    name: G5 unreleased 0.1.7 candidate vs immutable Published 0.1.6 (HALT)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -115,26 +118,38 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Build and independently install only source candidate 0.1.6
+      - name: Build P3 0.1.7 twice; independently pin old native 0.1.6
         shell: bash
         run: |
           set -Eeuo pipefail
-          grep -qx 'version = "0.1.6"' shared-data-engine/pyproject.toml
+          grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
+          grep -qx '__version__ = "0.1.7"' shared-data-engine/src/healthcare_data_engine/__init__.py
           NATIVE='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl'
           test "$(find "$(dirname "$NATIVE")" -maxdepth 1 -name '*.whl' | wc -l)" = 1
           echo "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff  $NATIVE" | sha256sum --check
           python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1' 'pyspark==4.1.1'
-          mkdir -p "$RUNNER_TEMP/g5-wheel-016" "$RUNNER_TEMP/g5-wheel-016-repeat"
-          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-016" ./shared-data-engine
-          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-016-repeat" ./shared-data-engine
-          WHEEL=healthcare_data_engine-0.1.6-py3-none-any.whl
-          test "$(find "$RUNNER_TEMP/g5-wheel-016" -name '*.whl' | wc -l)" = 1
-          cmp "$RUNNER_TEMP/g5-wheel-016/$WHEEL" "$RUNNER_TEMP/g5-wheel-016-repeat/$WHEEL"
-          cmp "$RUNNER_TEMP/g5-wheel-016/$WHEEL" "$NATIVE"
-          sha256sum "$RUNNER_TEMP/g5-wheel-016/$WHEEL"
-          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-016/$WHEEL"
-          echo 'G5_016_REPRODUCIBLE_SOURCE_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
-      - name: Prove 0.1.6 Native Notebook accepts installed Engine and rejects old 0.1.3
+          mkdir -p "$RUNNER_TEMP/g5-wheel-017" "$RUNNER_TEMP/g5-wheel-017-repeat"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-017" ./shared-data-engine
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-017-repeat" ./shared-data-engine
+          WHEEL=healthcare_data_engine-0.1.7-py3-none-any.whl
+          test "$(find "$RUNNER_TEMP/g5-wheel-017" -name '*.whl' | wc -l)" = 1
+          cmp "$RUNNER_TEMP/g5-wheel-017/$WHEEL" "$RUNNER_TEMP/g5-wheel-017-repeat/$WHEEL"
+          if cmp -s "$RUNNER_TEMP/g5-wheel-017/$WHEEL" "$NATIVE"; then
+            echo 'HOLD_UNRELEASED_017_COLLIDES_WITH_GA_016'; exit 1
+          fi
+          NATIVE="$NATIVE" CANDIDATE="$RUNNER_TEMP/g5-wheel-017/$WHEEL" python - <<'PY'
+          import os
+          from zipfile import ZipFile
+          module = 'healthcare_data_engine/mapping/omop/candidate_publication.py'
+          with ZipFile(os.environ['NATIVE']) as old, ZipFile(os.environ['CANDIDATE']) as new:
+              assert module not in old.namelist(), 'GA 0.1.6 unexpectedly contains P3 planner'
+              assert module in new.namelist(), 'Source candidate 0.1.7 missing P3 planner'
+          print('G5_016_PUBLISHED_PINNED_AND_017_SOURCE_ONLY_ISOLATED=PASS')
+          PY
+          sha256sum "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
+          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
+          echo 'G5_017_REPRODUCIBLE_SOURCE_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
+      - name: Prove old 0.1.6 Native Notebook rejects new 0.1.7 until separate Cloud release
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -145,58 +160,56 @@ jobs:
           from pathlib import Path
           import runpy
           import healthcare_data_engine as engine
+          from healthcare_data_engine.mapping.omop.candidate_publication import (
+              decide_candidate_publication, FrozenCandidateScope,
+          )
           from healthcare_data_engine.mapping.omop.candidates import build_omop_candidates
           from healthcare_data_engine.identity.candidate_handoff import plan_candidate_identity_handoff
-          assert engine.__version__ == importlib.metadata.version('healthcare-data-engine') == '0.1.6'
+          assert engine.__version__ == importlib.metadata.version('healthcare-data-engine') == '0.1.7'
           assert callable(build_omop_candidates) and callable(plan_candidate_identity_handoff)
+          assert callable(decide_candidate_publication)
+          assert FrozenCandidateScope.__module__ == 'healthcare_data_engine.mapping.omop.candidate_publication'
           path = (Path(os.environ['GITHUB_WORKSPACE']) /
                   'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py')
-          nb = runpy.run_path(str(path), run_name='_g5_016_offline_only_no_notebook_execution')
-          assert nb['engine_version'] == '0.1.6'
-          assert nb['run_mode'] == 'HALT'
-          # Current formal Notebook is aligned to GA Published 0.1.6.
-          assert nb['validate_read_only_runtime_smoke'](
-              mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
-              request='', manifest='', source='', target=''
-          ) == 'FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_016_SPARK41_PASS_20261106'
-          # Simulate a downgrade strictly in function globals before Spark I/O.
-          from unittest.mock import patch
-          with patch.dict(nb['prepare_batch'].__globals__, {'engine_version': '0.1.3'}):
-              try:
-                  nb['prepare_batch'](
-                      object(), context=object(), manifest_bytes=b'',
-                      source_objects=(), patient_contract_bytes=b'',
-                      encounter_contract_bytes=b'')
-              except ValueError as exc:
-                  assert str(exc) == 'SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH', exc
-              else:
-                  raise AssertionError('OLD_013_NOTEBOOK_DOWNGRADE_NOT_BLOCKED')
-          with patch.dict(nb['validate_read_only_runtime_smoke'].__globals__,
-                          {'engine_version': '0.1.3'}):
-              try:
-                  nb['validate_read_only_runtime_smoke'](
-                      mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
-                      request='', manifest='', source='', target='')
-              except RuntimeError as exc:
-                  assert str(exc) == 'HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION', exc
-              else:
-                  raise AssertionError('OLD_013_RUNTIME_SMOKE_DOWNGRADE_NOT_BLOCKED')
-          print('G5_016_NATIVE_NOTEBOOK_GA_VERSION_ALIGNED=PASS')
-          print('G5_013_DOWNGRADE_FAILS_CLOSED=PASS')
+          nb = runpy.run_path(str(path), run_name='_g5_017_offline_only_no_notebook_execution')
+          assert nb['engine_version'] == '0.1.7'
+          assert nb['run_mode'] == 'HALT' and nb['write_authorized'] is False
+          assert nb['retention_preflight_verified'] is False
+          # Production Notebook is still pinned to the GA 0.1.6 Wheel.
+          # The new 0.1.7 candidate MUST fail before Spark/cloud read/write.
+          try:
+              nb['validate_read_only_runtime_smoke'](
+                  mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
+                  request='', manifest='', source='', target='')
+          except RuntimeError as exc:
+              assert str(exc) == 'HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION', exc
+          else:
+              raise AssertionError('UNRELEASED_017_ACCEPTED_BY_GA_016_NOTEBOOK')
+          try:
+              nb['prepare_batch'](
+                  object(), context=object(), manifest_bytes=b'',
+                  source_objects=(), patient_contract_bytes=b'',
+                  encounter_contract_bytes=b'')
+          except ValueError as exc:
+              assert str(exc) == 'SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH', exc
+          else:
+              raise AssertionError('UNRELEASED_017_UNSAFELY_ACCEPTED_BY_GA_016_ETL')
+          print('G5_017_SOURCE_WHEEL_API=PASS')
+          print('G5_016_NATIVE_NOTEBOOK_REJECTS_017_BEFORE_IO=PASS')
           PY
-      - name: Existing approved synthetic G5 candidate tests on installed 0.1.6
+      - name: Existing G5 strict Mapper synthetic parity under installed 0.1.7
         shell: bash
         run: |
           set -Eeuo pipefail
           cd "$RUNNER_TEMP"
           PYTHONPATH= python -m unittest discover -s "$GITHUB_WORKSPACE/shared-data-engine/tests" -p 'test_omop_candidates.py' -v
-          echo 'G5_016_INSTALLED_CANDIDATE_OFFLINE_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'No Cloud Publish or Native Notebook deployment occurs inside offline CI; no G4/G5 Delta and no Gold write.' >> "$GITHUB_STEP_SUMMARY"
-      - name: Archive exact already-GA-Published Git-native 0.1.6 package bytes
+          echo 'G5_017_INSTALLED_SOURCE_MAPPER_OFFLINE_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No Fabric Git Update, Environment Publish, Notebook dispatch or Gold data writes.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Archive source-only 0.1.7 candidate (NOT published)
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-g5-wheel-016-source-only-${{ github.sha }}
-          path: ${{ runner.temp }}/g5-wheel-016/healthcare_data_engine-0.1.6-py3-none-any.whl
+          name: fabric-g5-017-unreleased-source-only-${{ github.sha }}
+          path: ${{ runner.temp }}/g5-wheel-017/healthcare_data_engine-0.1.7-py3-none-any.whl
           if-no-files-found: error
           retention-days: 14
