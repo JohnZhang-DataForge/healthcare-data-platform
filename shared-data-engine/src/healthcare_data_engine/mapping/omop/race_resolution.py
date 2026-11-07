@@ -101,8 +101,8 @@ def propose_race_resolution(
             or type(draft.profile_bytes) is not bytes
             or hashlib.sha256(draft.profile_bytes).hexdigest() != draft.profile_sha256
             or coverage.profile_sha256 != draft.profile_sha256
-            or type(coverage.source_inventory_sha256) is not str
-            or not _SHA256.fullmatch(coverage.source_inventory_sha256)
+            or type(coverage.inventory_sha256) is not str
+            or not _SHA256.fullmatch(coverage.inventory_sha256)
             or type(coverage.source_batch_id) is not str
             or not _SHA256.fullmatch(coverage.source_batch_id)
             or type(coverage.manifest_sha256) is not str
