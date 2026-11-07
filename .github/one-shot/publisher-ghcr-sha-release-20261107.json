@@ -1,0 +1,18 @@
+{
+  "schema_version": "publisher-ghcr-sha-once-20261107-v1",
+  "approval": "PUBLISH_GHCR_PUBLISHER_SHA_ONLY",
+  "scope": "ONLY_IMMUTABLE_PUBLISHER_IMAGE_GHCR_PUSH_NO_RUNTIME",
+  "expected_previous_main_sha": "bc046519790312b06b2d9d445463d025efb54b9b",
+  "target_image": "ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher",
+  "published_tag_policy": "git-MERGED_MAIN_SHA_ONLY",
+  "publish_latest": false,
+  "github_main_merge_first_attempt_only": true,
+  "normal_push_and_pr_no_publication": true,
+  "overwrite_existing_release": false,
+  "authorize_fhir_hl7_message_post": false,
+  "authorize_azure_blob_put": false,
+  "authorize_kubernetes_mutation": false,
+  "authorize_oie_channel_mutation": false,
+  "authorize_legacy_a01_mutation": false,
+  "authorization_reuse": false
+}
