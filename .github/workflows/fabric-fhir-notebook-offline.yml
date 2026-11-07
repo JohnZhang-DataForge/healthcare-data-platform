@@ -37,24 +37,35 @@ jobs:
           python -m venv "$RUNNER_TEMP/fabric-offline"
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           LIBS='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
-          NATIVE="$LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl"
-          NATIVE_SHA='473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff'
+          # This immutable Git commit existed with the effective GA 0.1.6
+          # Wheel before source 0.1.7 and before 0.1.7 Git-review staging.
+          GA_COMMIT='3e1a036e309e72d8c9c79e5923333987c1c9eef7'
+          GA="$RUNNER_TEMP/healthcare_data_engine-0.1.6-py3-none-any.whl"
+          GA_SHA='473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff'
+          CANDIDATE_SHA='0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301'
           OLD="$RUNNER_TEMP/healthcare_data_engine-0.1.3-py3-none-any.whl"
           OLD_SHA='6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59'
-          # Obtain the previously approved native Wheel from an immutable Git
-          # commit, not from the NEW Git staging (which contains only 0.1.6).
+          git show "$GA_COMMIT:$LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl" > "$GA"
           git show 'b56b73207f7abe9d98e3fa4c3603fe045af6e15a:azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl' > "$OLD"
-          test "$(find "$LIBS" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
-          echo "$NATIVE_SHA  $NATIVE" | sha256sum --check
+          echo "$GA_SHA  $GA" | sha256sum --check
           echo "$OLD_SHA  $OLD" | sha256sum --check
-          # Current repository source is the unreleased 0.1.7 candidate,
-          # while the real Native Notebook still targets immutable GA 0.1.6.
+          test "$(find "$LIBS" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
+          # Verify the sole GIT-native Wheel separately from the GA runtime:
+          # source/main branch contains GA 0.1.6; review branch has 0.1.7.
+          if test -f "$LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl"; then
+            echo "$GA_SHA  $LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl" | sha256sum --check
+          elif test -f "$LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl"; then
+            echo "$CANDIDATE_SHA  $LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl" | sha256sum --check
+          else
+            echo 'HOLD_G5_UNREVIEWED_GIT_NATIVE_WHEEL'; exit 1
+          fi
           grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
-          grep -qx '__version__ = "0.1.7"' shared-data-engine/src/healthcare_data_engine/__init__.py
-          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$NATIVE"
+          # Always run old Native Notebook regression on real GA 0.1.6
+          # bytes, NOT the 0.1.7 staging candidate (never GA Published).
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$GA"
           "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.6"'
-          echo 'G5_013_HISTORICAL_ROLLBACK_WHEEL_PIN_VERIFIED=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'G5_016_PUBLISHED_NATIVE_ENGINE_ALIGNED=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G5_016_GA_NATIVE_NOTEBOOK_OFFLINE_REGRESSION=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G5_017_GIT_REVIEW_STATE_VERIFIED_NOT_PUBLISHED=PASS' >> "$GITHUB_STEP_SUMMARY"
           # Notebook HALT, canonical Adapter 0.1.0 and G4 historical engine-0.1.1 stay immutable.
 
       - name: Synthetic Manifest plus local PySpark readback tests; ZERO cloud writes
@@ -110,6 +121,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0 # pinned historical GA 0.1.6 from immutable repo commit
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -118,15 +130,19 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Build P3 0.1.7 twice; independently pin old native 0.1.6
+      - name: Build P3 source 0.1.7 twice; verify GA and one Git-native candidate
         shell: bash
         run: |
           set -Eeuo pipefail
           grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
           grep -qx '__version__ = "0.1.7"' shared-data-engine/src/healthcare_data_engine/__init__.py
-          NATIVE='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl'
-          test "$(find "$(dirname "$NATIVE")" -maxdepth 1 -name '*.whl' | wc -l)" = 1
-          echo "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff  $NATIVE" | sha256sum --check
+          LIBS='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
+          GA="$RUNNER_TEMP/healthcare_data_engine-0.1.6-py3-none-any.whl"
+          GA_SHA='473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff'
+          CANDIDATE_SHA='0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301'
+          git show '3e1a036e309e72d8c9c79e5923333987c1c9eef7:azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl' > "$GA"
+          echo "$GA_SHA  $GA" | sha256sum --check
+          test "$(find "$LIBS" -maxdepth 1 -name '*.whl' | wc -l)" = 1
           python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1' 'pyspark==4.1.1'
           mkdir -p "$RUNNER_TEMP/g5-wheel-017" "$RUNNER_TEMP/g5-wheel-017-repeat"
           python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-017" ./shared-data-engine
@@ -134,19 +150,30 @@ jobs:
           WHEEL=healthcare_data_engine-0.1.7-py3-none-any.whl
           test "$(find "$RUNNER_TEMP/g5-wheel-017" -name '*.whl' | wc -l)" = 1
           cmp "$RUNNER_TEMP/g5-wheel-017/$WHEEL" "$RUNNER_TEMP/g5-wheel-017-repeat/$WHEEL"
-          if cmp -s "$RUNNER_TEMP/g5-wheel-017/$WHEEL" "$NATIVE"; then
-            echo 'HOLD_UNRELEASED_017_COLLIDES_WITH_GA_016'; exit 1
+          echo "$CANDIDATE_SHA  $RUNNER_TEMP/g5-wheel-017/$WHEEL" | sha256sum --check
+          if cmp -s "$RUNNER_TEMP/g5-wheel-017/$WHEEL" "$GA"; then
+            echo 'HOLD_GA_AND_CANDIDATE_COLLISION'; exit 1
           fi
-          NATIVE="$NATIVE" CANDIDATE="$RUNNER_TEMP/g5-wheel-017/$WHEEL" python - <<'PY'
+          if test -f "$LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl"; then
+            echo "$GA_SHA  $LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl" | sha256sum --check
+            cmp "$LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl" "$GA"
+            echo 'G5_016_GIT_NATIVE_MATCHES_GA=PASS' >> "$GITHUB_STEP_SUMMARY"
+          elif test -f "$LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl"; then
+            echo "$CANDIDATE_SHA  $LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl" | sha256sum --check
+            cmp "$LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl" "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
+            echo 'G5_017_GIT_REVIEW_ONLY_MATCHES_SOURCE=PASS' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'HOLD_G5_UNREVIEWED_GIT_NATIVE_WHEEL'; exit 1
+          fi
+          GA="$GA" CANDIDATE="$RUNNER_TEMP/g5-wheel-017/$WHEEL" python - <<'PY'
           import os
           from zipfile import ZipFile
           module = 'healthcare_data_engine/mapping/omop/candidate_publication.py'
-          with ZipFile(os.environ['NATIVE']) as old, ZipFile(os.environ['CANDIDATE']) as new:
-              assert module not in old.namelist(), 'GA 0.1.6 unexpectedly contains P3 planner'
-              assert module in new.namelist(), 'Source candidate 0.1.7 missing P3 planner'
-          print('G5_016_PUBLISHED_PINNED_AND_017_SOURCE_ONLY_ISOLATED=PASS')
+          with ZipFile(os.environ['GA']) as old, ZipFile(os.environ['CANDIDATE']) as new:
+              assert module not in old.namelist(), 'immutable GA 0.1.6 is unexpectedly changed'
+              assert module in new.namelist(), 'candidate 0.1.7 does not contain P3'
+          print('G5_016_GA_VS_017_GIT_ONLY_CANDIDATE_INDEPENDENT=PASS')
           PY
-          sha256sum "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
           python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
           echo 'G5_017_REPRODUCIBLE_SOURCE_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
       - name: Prove old 0.1.6 Native Notebook rejects new 0.1.7 until separate Cloud release
