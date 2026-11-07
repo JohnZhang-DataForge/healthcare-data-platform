@@ -1,0 +1,10 @@
+name: hl7_canonical_candidate
+version: "1.0.0"
+config-version: 2
+profile: hl7_canonical_candidate
+model-paths: ["models"]
+target-path: "target/dbt"
+clean-targets: ["target/dbt"]
+models:
+  hl7_canonical_candidate:
+    +materialized: table
