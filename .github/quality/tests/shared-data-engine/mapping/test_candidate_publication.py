@@ -113,8 +113,13 @@ class CandidatePublicationPlanTests(unittest.TestCase):
     def test_replay_skip_requires_independent_readback(self):
         s = scope()
         self.assertEqual(decide_candidate_publication(
-            s, (complete_observed(s),)).decision,
+            s, (complete_observed(s),),
+            expected_person_content_sha256=SHA_C,
+            expected_visit_content_sha256=SHA_D).decision,
             "SKIP_VERIFIED_CANDIDATE_ONLY")
+        # A readback digest that merely exists cannot authorize SKIP.
+        self.assertEqual(decide_candidate_publication(
+            s, (complete_observed(s),)).decision, "VERIFY_READONLY")
         for change in (
             {"independently_reopened": False},
             {"schema_keys_fk_verified": False},
@@ -140,8 +145,23 @@ class CandidatePublicationPlanTests(unittest.TestCase):
             with self.subTest(change=change):
                 self.assertEqual(
                     decide_candidate_publication(
-                        s, (complete_observed(s, **change),)).decision,
+                        s, (complete_observed(s, **change),),
+                        expected_person_content_sha256=SHA_C,
+                        expected_visit_content_sha256=SHA_D).decision,
                     "HOLD_READBACK_OR_APPROVAL_CONFLICT")
+
+    def test_expected_digest_mismatch_and_partial_expectation_hold(self):
+        s = scope()
+        with self.assertRaisesRegex(CandidatePublicationHold,
+                                    "DIGEST_PAIR_REQUIRED"):
+            decide_candidate_publication(
+                s, (complete_observed(s),),
+                expected_person_content_sha256=SHA_C)
+        self.assertEqual(decide_candidate_publication(
+            s, (complete_observed(s),),
+            expected_person_content_sha256=SHA_D,
+            expected_visit_content_sha256=SHA_D).decision,
+            "HOLD_READBACK_OR_APPROVAL_CONFLICT")
 
     def test_same_request_different_batch_mapping_or_snapshot_holds(self):
         s = scope()
