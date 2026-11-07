@@ -80,3 +80,10 @@ The initial generic contract accepts root-level `nb_*.Notebook` items only; movi
 ### P4 原位保留决定
 
 `fhir_ingest_notebook.py` 是 Native Notebook 的 17 行离线兼容导入层，不是生产中的第二套 Notebook；`native_item_readiness.py` 是 63 行只读 Git Native 元数据预检并被 Hosted CI 直接调用。它们目前依赖原相对路径及明确 `PYTHONPATH`，移动将触及测试/Workflow 的执行路径但不会带来可验证的收益，因此**经审计决定两者原位保留，不移动到质量脚本目录**；所有新测试仍放集中质量目录。
+
+## G5 P3 Candidate Delta Native Writer — 源码审阅，尚未发布
+
+- 唯一正式 Notebook [nb_fhir_ingest.Notebook/notebook-content.py](../../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py) 的 G5 第一业务代码单元新增 `_g5_candidate_paths`、`_g5_candidate_content`、`_g5_candidate_validate_rows`、`plan_and_write_g5_candidate_delta`，是**同一 Notebook 内的真正 native Spark/Delta I/O**，没有建第二份 Mapper/Notebook/Wheel。由现有 Shared `mapping/omop/candidate_publication.py` 提供版本无关的冻结业务身份及 Replay 决策，现有严审临床 Mapper/P2 F2 Handoff 仍保持单一 Owner。
+- 行为：在任何写入之前对 frozen G4 Silver 做物理 readback fence（任何无效 Request/Manifest/Source/Approval/未审 Mapping 均 HOLD）；在内存和独立持久 Delta 两侧完整核对 100/5918 行的 ID/来源/FK/状态和整行 SHA；Candidate Person/Visit `errorifexists` → 两表独立读回 → Candidate Approval-last → Approval 二次独立读回；Partial/unknown ACK 不重试，Replay 不推断 Gold 提交。**数据级 Clinical Code 缺映射仍由既有 Mapper 拒绝，不改业务批准语义**。
+- **当前尚不可云端调用/自动发布**：Native `run_mode` 默认 `HALT`、无 `G5_CANDIDATE_WRITE` dispatch 分支；`env_healthcare` 仍是已发布 0.1.6 Wheel 的历史二进制，而 Native Writer 依赖 Source 中尚未发布的 P3 Pure Planner。当前 PR 只做模拟 Spark/Delta 离线测试。已有 [Fabric Git Deploy](../../../../.github/workflows/fabric-git-deploy.yml) 在主分支更改 `nb_*.Notebook/**` 后自动分派 Self-Runner UpdateFromGit；共享 Workspace 曾有四项 local-only drift（Warehouse Added、Lakehouse/Notebook/Pipeline Modified），**必须在另一个获批部署窗口做最新 GET/Definitions 比对，才能允许 Main merge 引发自动同步**。任何 Git/CI PASS 只说明源码已准备，绝不等于 Delta 真写、真实审批或 Gold COMMIT。
+- 测试仍归属于现有 [G4/G5 Native Notebook 模拟 Delta 测试](../../../../.github/quality/tests/azure-fabric/notebook/test_g4_silver_delta.py)，不新增第十个文件；CI 依旧固定 9 个测试文件的完整发现与有效执行。
