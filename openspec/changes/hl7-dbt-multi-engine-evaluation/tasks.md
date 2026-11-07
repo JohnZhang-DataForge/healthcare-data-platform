@@ -15,15 +15,15 @@
 - [x] 2.4 dbt Core + Local Spark (dbt-fabricspark session) compile/seed/run/test 与本地物理 Delta `_delta_log`、Candidate、MERGE 目标独立 SparkSession 读回、基础/重跑/双医院扩展均已通过 [Run #42207568265](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42207568265)。适用 PySpark 3.5.5 + delta-spark 3.3.2；当前 Fabric Spark 4.1 的兼容性不由该 POC 证明。
 - [ ] 2.5 同一 synthetic fixture 对齐 Candidate 值、异常分类、SQL/Delta 能力、运行成本；对比打分，**测试后**提议选型。
 
-## 3. 正式 HL7 集成（尚未授权、与 POC 分离）
-- [ ] 3.1 评审 OIE Producer 扩展（PID-7/8、race/ethnicity 真实来源、A03 discharge 或 Canonical v2）及原始 HL7 Blob Publisher。
+## 3. 正式 HL7 集成（OIE/Raw 上游已获批验收；后续 Silver/Gold 仍未授权）
+- [x] 3.1 OIE V2 来源扩展与真实字段审计已完成（DOB/Gender/US Core CDCREC Race/Ethnicity、A01 admission + A03 discharge），新合成请求的 42 Message OIE 独立持久 GET 在 P2 Run #42410482514 PASS；共享 Azure Publisher 的 42 HL7 Raw + Manifest-last/远端独立 GET/HEAD/Blob-only replay 在 P3 Run #42412009780 PASS。**只代表已限定合成 Johns Creek Hospital B 上游 Producer/Raw 链路，不代表 HL7→Canonical Silver 已交付。**
 - [ ] 3.2 以单独 Implementation OpenSpec 完善实体插件/Schema/版本化 Profile、单一 Silver Publisher、quarantine、replay、readback。
 - [ ] 3.3 Azure/Fabric 真实 E2E 需要单独的执行授权和证据；不得因本地 POC PASS 推导真实 Silver Approved 或 Gold COMMITTED。
 
 ## Evidence / Blockers
 - 设计基线：2026-11-05 Healthcare 最新 main 的 Medallion ADR、DATA-FLOW、OIE Channel 文档、两个 Local Canonical v1 Contract。
-- OIE 真实 FHIR→HL7 消息已验收，但 HL7 Blob 发布未验收；FHIR G4 Approved Silver 已验收，Gold 仍 OPEN。
-- A01 单消息缺少 Canonical v1 必需字段；必须将缺失事实与来源 Profile 约束作为阻断条件，不得靠默认值绕过。
+- **2026-11-07 新事实：** OIE V2 P2 真实 21 A01 + 21 A03 Message ID 持久化 GET 在 [Run #42410482514](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42410482514) PASS；同一冻结来源 42 个原始 HL7 Azure Blob 对象 + Manifest 的独立 GET/HEAD、Blob-only Replay 在 [P3 Run #42412009780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42412009780) PASS。**HL7 Raw Landing 已完成**，但这不等于 HL7 Parser/dbt 消费了真实 Azure 数据或 Fabric Approved Silver / Gold 已完成。
+- 旧版单独 A01 事件无法证明 completed Encounter 的 Canonical v1 必需 end_datetime；新版 OIE V2 经合成 FHIR 来源真实 Profile 评审已带真实 DOB/Gender/Race/Ethnicity 及有据可查的 A03，**只有合法 A01+A03 成对时才可生成完成 Encounter Candidate**。其它医院 Profile、未知或多编码病例仍应 HOLD，不得造默认临床事实。
 - 本 Change 实验全部执行证据指向 Self-Runner 的单独 PR/commit/run；不往 Healthcare 增加实验资产。
 
 ## 2026-11-05/06 ET — First isolated Self-Runner experiment evidence
@@ -70,3 +70,13 @@
   | Fabric 4.1 / 远端 OneLake Publisher | 未验证 | 未验证 |
 
 - **决策保持 PENDING**：当前本地技术可行性已验证，但只有真实 Silver Publisher 的受控交付/单 Writer 边界、OIE 原生 HL7 必需事实、Canon-v1/v2 放行策略和成本/恢复验收明确后，才作最后 DuckDB / Local Spark / Fabric remote 路线选择。禁止因成功 POC 推断正式 Silver/Gold 已完成；`2.5` 持续 OPEN 直至完成后端决策记录。
+
+
+## 2026-11-07 ET — Actual OIE V2 profile → offline HL7 Parser/dbt Candidate bridge PASS (no Azure retrieval)
+
+- **Source implementation merged:** [Self-Runner PR #584](https://github.com/JohnZhang-DataForge/Self-Runner/pull/584), Main `c4c82502de6bdadff462d9ad2c3115a606cdbeb2`. Changes are **only isolated POC** `experiments/hl7-dbt-canonical/` and its Hosted-only CI. Corrects earlier `JC`/`ATL`-only parser/White-only fixture assumption: the actual reviewed OIE V2 source uses Assigning Authority `JOHNSCREEKB`, has 5 allowed OMB Race Codes and 2 Ethnicity Codes, and emits separate admission/discharge messages. Unknown Source/clinical facts still HOLD.
+- **Strict local landing contract:** new `scripts/oie_v2_landing_to_seed.py` takes **caller-staged** original Azure `landing-manifest.json` byte-for-byte under an explicit expected Manifest SHA, original source Manifest SHA, request ID and locally staged paths. Verifies *every* object key, size/SHA, HL7 MSH-10 and ADT event, hospital/source patient/encounter scope, and A01/A03 event set before emitting a complete dbt seed CSV. No Azure SDK/REST, OIE, worker01, Fabric Capacity, credentials, Cloud writes or real PHI are used in this POC.
+- **Real source mapper, new synthetic input:** CI checks out the immutable Healthcare OIE V2 JS source at `ecc99b18b2dd52af8c8b54eae208564adffd5b71`, creates **new synthetic FHIR memory fixture**, generates true-formatted V2 A01/A03 HL7 by that mapper (not hand-assembled dbt fixture), then validates the staged mock Manifest and raw bytes through `hl7apy==1.3.5`. Test failures include byte/manifest mismatch, cross-request identity, unsafe path/symlink, duplicate/missing A01, demographic and clinical profile drift.
+- **Actual Hosted [CI Run #42414025073](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42414025073) BOTH jobs SUCCESS.** The **DuckDB job** goes further: actual OIE V2 mapper output → verified local Raw HL7 seed → existing `dbt-duckdb` `canonical_patient.sql` / `canonical_encounter.sql` → 16/16 dbt tests and independent Patient/Encounter v1 Contract check (18/27 fields) → independent factual readback of **one synthetic Patient + one completed Encounter**, source-scoped Admission A01 and Discharge A03. Log `FROZEN_OIE_V2_MAPPER_DBT_DUCKDB_CANONICAL_CANDIDATE=PASS`. A01-only returns zero completed visits, without false end time.
+- **Spark boundary:** the same Hosted run's **local dbt-fabricspark** job also SUCCESS for frozen Mapper's Parser/Manifest unit tests and the **existing** synthetic-dual-hospital Delta/_delta_log/MERGE/replay/18+27 field contract. It does **not** run the new V2 source-derived raw bytes through a separate Spark Candidate path; don't claim that cross-engine new-V2 equivalence or remote Fabric Spark 4.1 has been verified.
+- **Still OPEN:** backend selection task 2.5 (no final DuckDB/Local Spark/Fabric winner), formal Implementation Contract/real Azure 42-object **bounded GET-only** ingestion, quarantine/approval ledger, shared Silver Writer integration, actual Fabric Silver and OMOP transactions (3.2/3.3). P3 [Run #42412009780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42412009780) has **independently verified 42 immutable Azure HL7 objects**, but this **POC has not downloaded or processed those original bytes**. A new exact-resource approval and full workflow/authority review are mandatory before live Raw GET or Silver mutation.
