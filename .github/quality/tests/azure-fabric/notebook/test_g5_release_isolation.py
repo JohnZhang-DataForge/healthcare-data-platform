@@ -1,7 +1,7 @@
-"""OFFLINE ONLY: published 0.1.6 Native Notebook and old 0.1.3 downgrade HOLD.
+"""OFFLINE ONLY: published 0.1.7 Native Notebook and old 0.1.6 downgrade HOLD.
 
-Tests install the sole Git-native 0.1.6 Wheel and simulate a wrong old
-0.1.3 runtime for fail-closed guards. These probes
+Tests install the sole Git-native 0.1.7 Wheel and simulate a wrong old
+0.1.6 runtime for fail-closed guards. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
 """
@@ -24,11 +24,11 @@ LIBS = ROOT / (
     "azure-fabric/workspaces/healthcare-omop/"
     "env_healthcare.Environment/Libraries/CustomLibraries")
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
-PUBLISHED_VERSION = "0.1.6"
-LEGACY_VERSION = "0.1.3"
-SOURCE_CANDIDATE_VERSION = "0.1.6"
+PUBLISHED_VERSION = "0.1.7"
+LEGACY_VERSION = "0.1.6"
+SOURCE_CANDIDATE_VERSION = "0.1.7"
 PINNED_WHEEL_SHA256 = (
-    "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff")
+    "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
 
 
 class G5NativeWheelIsolation(unittest.TestCase):
@@ -36,9 +36,9 @@ class G5NativeWheelIsolation(unittest.TestCase):
     def setUpClass(cls):
         # A unique non-__main__ name ensures zero runtime entrypoint actions.
         cls.native = runpy.run_path(
-            str(NATIVE), run_name="_g5_016_offline_source_isolation")
+            str(NATIVE), run_name="_g5_017_offline_source_isolation")
 
-    def test_sole_git_native_wheel_matches_published_016_and_halt(self):
+    def test_sole_git_native_wheel_matches_published_017_and_halt(self):
         self.assertEqual(engine.__version__, PUBLISHED_VERSION)
         self.assertEqual(self.native["engine_version"], PUBLISHED_VERSION)
         self.assertEqual(self.native["run_mode"], "HALT")
@@ -56,13 +56,13 @@ class G5NativeWheelIsolation(unittest.TestCase):
             PINNED_WHEEL_SHA256)
         source = NATIVE.read_text(encoding="utf-8")
         self.assertEqual(
-            source.count('if engine_version != "0.1.6":'), 3)
+            source.count('if engine_version != "0.1.7":'), 3)
         self.assertIn('run_mode = "HALT"', source)
         self.assertIn('fhir-silver-canonical-v1:engine-0.1.1', source)
         self.assertNotIn("write_authorized = True", source)
 
-    def test_016_notebook_rejects_013_even_with_safe_flags_before_data_reads(self):
-        # G3/G4 historical processing stays unchanged; wrong runtime 0.1.3 MUST HOLD.
+    def test_017_notebook_rejects_016_even_with_safe_flags_before_data_reads(self):
+        # G3/G4 historical processing stays unchanged; wrong runtime 0.1.6 MUST HOLD.
         with patch.dict(
             self.native["prepare_batch"].__globals__,
             {"engine_version": LEGACY_VERSION},
