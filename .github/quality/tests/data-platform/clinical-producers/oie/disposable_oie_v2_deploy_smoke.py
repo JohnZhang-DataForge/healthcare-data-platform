@@ -232,7 +232,13 @@ def run(pinned_root, password):
     print("OIE_DISPOSABLE_STATE_BEFORE_DEPLOY=" + list_state(api))
     code, data = api.call(
         f"/api/channels/{V2_ID}/_deploy?returnErrors=true&debug=false",
-        method="POST", body=b"", content_type="application/xml")
+        method="POST", body=b"", content_type="application/xml",
+        accept="text/plain")
+    # The real Self-Runner V2 write gate uses Accept: text/plain for all
+    # lifecycle POSTs; earlier isolated 4.7 smoke used application/xml.
+    # Pin the exact production header before attributing failures to the
+    # real worker01 environment rather than HTTP content negotiation.
+    print("OIE_DISPOSABLE_DEPLOY_ACCEPT_HEADER=TEXT_PLAIN")
     print("OIE_DISPOSABLE_DEPLOY_HTTP_CODE=" + str(code))
     state = list_state(api)
     print("OIE_DISPOSABLE_STATE_AFTER_DEPLOY=" + state)
