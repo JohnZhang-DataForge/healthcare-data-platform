@@ -20,27 +20,11 @@ from typing import Mapping
 _FIELDS = ("gender_code", "race_code", "ethnicity_code", "encounter_class")
 _SHA_CODE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,95}$")
 
-# FHIR R4 US Core codes -> *existing LocalDP semantic key*, NOT Concept IDs.
-# Candidate crosswalk only; clinical reviewer must confirm each translation.
-# US Core race 1002-5 and source UNK have no LocalDP race counterpart, and
-# MUST remain a visible HOLD instead of inventing an OMOP concept or default 0.
-FHIR_R4_LOCALDP_ALIASES = {
-    "gender_code": {"male": "M", "female": "F"},
-    "race_code": {
-        "2028-9": "asian", "2054-5": "black",
-        "2106-3": "white", "2076-8": "hawaiian",
-    },
-    "ethnicity_code": {
-        "2135-2": "hispanic", "2186-5": "nonhispanic",
-    },
-    "encounter_class": {
-        k: k for k in (
-            "ambulatory", "emergency", "home", "hospice", "inpatient",
-            "outpatient", "snf", "urgentcare", "virtual", "wellness",
-        )
-    },
-}
-
+# Backwards-compatible import path, while the FHIR adapter now owns all
+# source-specific code semantics. Do not define FHIR/CSV/HL7 codes here.
+from healthcare_data_engine.adapters.fhir_r4.omop_code_aliases import (
+    FHIR_R4_LOCALDP_ALIASES,
+)
 
 class LocalProfileHold(ValueError):
     """Safe contract errors only; never print source patient values."""
@@ -180,4 +164,149 @@ def build_localdp_mapping_draft(
     return LocalProfileDraft(
         raw, hashlib.sha256(raw).hexdigest(),
         tuple(sorted(unresolved)),
+    )
+
+
+@dataclass(frozen=True)
+class MappingReviewGap:
+    """One observed aggregate source code still lacking an OMOP mapping rule."""
+    source_field: str
+    source_code: str
+    observed_count: int
+    source_meaning: str = "UNREVIEWED"
+    disposition: str = "REQUIRES_CLINICAL_AND_F1_VOCABULARY_REVIEW"
+
+
+@dataclass(frozen=True)
+class MappingCoverageReview:
+    """No row-level PHI and no permission to write a Candidate or Gold row."""
+    source_system: str
+    source_batch_id: str
+    manifest_sha256: str
+    profile_sha256: str
+    inventory_sha256: str
+    patient_count: int
+    encounter_count: int
+    unmapped_records_by_field: tuple[tuple[str, int], ...]
+    gaps: tuple[MappingReviewGap, ...]
+    status: str = "MAPPING_COVERAGE_REVIEW_ONLY_NO_CLINICAL_APPROVAL"
+
+    @property
+    def ready_for_clinical_review(self) -> bool:
+        return len(self.gaps) == 0
+
+    @property
+    def candidate_write_authorized(self) -> bool:
+        return False
+
+
+def build_mapping_coverage_review(
+    draft: LocalProfileDraft, *,
+    observed_codes: Mapping[str, Mapping[str, int]],
+    source_batch_id: str, manifest_sha256: str,
+    patient_count: int, encounter_count: int,
+    source_meanings: Mapping[tuple[str, str], str] | None = None,
+) -> MappingCoverageReview:
+    """Bound source-code review to an exact source batch, manifest and G5 SHA.
+
+    Input is a **caller-provided** full, aggregate-only canonical Silver
+    inventory. This pure function validates field totals and code coverage;
+    it CANNOT prove the physical Silver approval, clinical signoff, or an F1
+    Vocabulary release. Callers must independently read physical Silver.
+    The supplied source_meanings are descriptive review hints, NEVER target IDs.
+    """
+    from healthcare_data_engine.mapping.omop.candidates import (
+        load_omop_mapping_profile,
+    )
+
+    if (not isinstance(draft, LocalProfileDraft)
+            or draft.status != "LOCALDP_RULES_DRAFT_ONLY_NOT_APPROVED"
+            or hashlib.sha256(draft.profile_bytes).hexdigest() != draft.profile_sha256):
+        raise LocalProfileHold("LOCALDP_REVIEW_PROFILE_SHA_OR_STATUS_HOLD")
+    if (not isinstance(source_batch_id, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", source_batch_id)
+            or not isinstance(manifest_sha256, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", manifest_sha256)
+            or type(patient_count) is not int or patient_count <= 0
+            or type(encounter_count) is not int or encounter_count <= 0):
+        raise LocalProfileHold("LOCALDP_REVIEW_SOURCE_FENCE_NOT_PINNED")
+
+    try:
+        source_system = json.loads(draft.profile_bytes.decode("utf-8"))["source_system"]
+        profile = load_omop_mapping_profile(
+            draft.profile_bytes, draft.profile_sha256, source_system)
+    except (UnicodeDecodeError, ValueError, KeyError, TypeError):
+        raise LocalProfileHold("LOCALDP_REVIEW_G5_PROFILE_INVALID") from None
+
+    if (not isinstance(observed_codes, Mapping)
+            or set(observed_codes) != set(_FIELDS)
+            or source_meanings is not None
+            and not isinstance(source_meanings, Mapping)):
+        raise LocalProfileHold("LOCALDP_REVIEW_INVENTORY_FIELDS_MISSING")
+    expected_counts = {
+        "gender_code": patient_count, "race_code": patient_count,
+        "ethnicity_code": patient_count, "encounter_class": encounter_count,
+    }
+    profile_maps = {
+        "gender_code": profile["gender_concepts"],
+        "race_code": profile["race_concepts"],
+        "ethnicity_code": profile["ethnicity_concepts"],
+        "encounter_class": profile["visit_class_concepts"],
+    }
+    gaps = []
+    inventory = {}
+    unmapped = {}
+    for field in _FIELDS:
+        counts = observed_codes[field]
+        if not isinstance(counts, Mapping) or not counts or len(counts) > 128:
+            raise LocalProfileHold("LOCALDP_REVIEW_SOURCE_FIELD_EMPTY")
+        folded = set()
+        cleaned = {}
+        for code, count in counts.items():
+            if (not isinstance(code, str) or not _SHA_CODE.fullmatch(code)
+                    or len(code) > 50 or code.casefold() in folded
+                    or type(count) is not int or count <= 0):
+                raise LocalProfileHold("LOCALDP_REVIEW_SOURCE_CODE_INVALID")
+            folded.add(code.casefold())
+            cleaned[code] = count
+        if sum(cleaned.values()) != expected_counts[field]:
+            raise LocalProfileHold("LOCALDP_REVIEW_SOURCE_COUNT_DRIFT")
+        inventory[field] = cleaned
+        unmapped[field] = 0
+        for code, count in cleaned.items():
+            if code in profile_maps[field]:
+                continue
+            meaning = "UNREVIEWED"
+            if source_meanings is not None:
+                meaning = source_meanings.get((field, code), "UNREVIEWED")
+                if (not isinstance(meaning, str)
+                        or not 0 < len(meaning) <= 96
+                        or not re.fullmatch("[A-Z0-9_]+", meaning)):
+                    raise LocalProfileHold("LOCALDP_REVIEW_SOURCE_MEANING_INVALID")
+            unmapped[field] += count
+            gaps.append(MappingReviewGap(field, code, count, meaning))
+    if source_meanings is not None:
+        if not all(
+            isinstance(key, tuple) and len(key) == 2 and key[0] in _FIELDS
+            and isinstance(key[1], str) and key[1] in inventory[key[0]]
+            for key in source_meanings
+        ):
+            raise LocalProfileHold("LOCALDP_REVIEW_SOURCE_MEANING_UNOBSERVED")
+
+    gaps = tuple(sorted(gaps, key=lambda x: (x.source_field, x.source_code)))
+    if tuple(x.source_field + ":" + x.source_code for x in gaps) != (
+            draft.unresolved_source_codes):
+        raise LocalProfileHold("LOCALDP_REVIEW_PROFILE_INVENTORY_CONFLICT")
+    raw_inventory = json.dumps(inventory, sort_keys=True, ensure_ascii=False,
+                               separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return MappingCoverageReview(
+        source_system=source_system,
+        source_batch_id=source_batch_id,
+        manifest_sha256=manifest_sha256,
+        profile_sha256=draft.profile_sha256,
+        inventory_sha256=hashlib.sha256(raw_inventory).hexdigest(),
+        patient_count=patient_count,
+        encounter_count=encounter_count,
+        unmapped_records_by_field=tuple((f, unmapped[f]) for f in _FIELDS),
+        gaps=gaps,
     )

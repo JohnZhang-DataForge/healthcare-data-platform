@@ -13,8 +13,13 @@ import runpy
 import unittest
 
 from healthcare_data_engine.mapping.omop.local_profile import (
-    FHIR_R4_LOCALDP_ALIASES, LocalProfileHold, build_localdp_mapping_draft,
+    FHIR_R4_LOCALDP_ALIASES, LocalProfileDraft, LocalProfileHold,
+    build_localdp_mapping_draft, build_mapping_coverage_review,
 )
+from healthcare_data_engine.adapters.fhir_r4.omop_code_aliases import (
+    FHIR_R4_LOCALDP_ALIASES as ADAPTER_ALIASES, FHIR_R4_RACE_REVIEW_HINTS,
+)
+from dataclasses import replace
 from healthcare_data_engine.mapping.omop.candidates import load_omop_mapping_profile
 
 ROOT = Path(__file__).resolve().parents[5]
@@ -158,6 +163,136 @@ class LocalDPG5ProfileTests(unittest.TestCase):
         self.assertIn("race_code:UNK", draft.unresolved_source_codes)
         self.assertEqual(OBSERVED["gender_code"]["male"] + OBSERVED["gender_code"]["female"], 100)
         self.assertEqual(sum(OBSERVED["encounter_class"].values()), 5918)
+
+
+
+
+SOURCE_BATCH = "2e110eb1971fcfa3ebb4dda6782c49a7608955855a2de45a3d77ada47fea8adb"
+MANIFEST = "425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1"
+
+
+def coverage(**overrides):
+    params = dict(
+        draft=make(), observed_codes=OBSERVED,
+        source_batch_id=SOURCE_BATCH, manifest_sha256=MANIFEST,
+        patient_count=100, encounter_count=5918,
+        source_meanings={
+            ("race_code", key): meaning
+            for key, meaning in FHIR_R4_RACE_REVIEW_HINTS.items()
+        },
+    )
+    params.update(overrides)
+    return build_mapping_coverage_review(**params)
+
+
+class LocalDPMappingCoverageTests(unittest.TestCase):
+    def test_fhir_specific_aliases_owned_by_adapter_only(self):
+        self.assertIs(ADAPTER_ALIASES, FHIR_R4_LOCALDP_ALIASES)
+        self.assertEqual(ADAPTER_ALIASES["gender_code"]["female"], "F")
+        from healthcare_data_engine.mapping.omop import local_profile
+        code = Path(local_profile.__file__).read_text()
+        self.assertNotIn('"2028-9": "asian"', code)
+        self.assertNotIn('"2076-8": "hawaiian"', code)
+        self.assertNotIn('"1002-5": "american_indian"', code)
+        self.assertEqual(FHIR_R4_RACE_REVIEW_HINTS["1002-5"],
+                         "AMERICAN_INDIAN_OR_ALASKA_NATIVE")
+        self.assertEqual(FHIR_R4_RACE_REVIEW_HINTS["UNK"],
+                         "HL7_NULLFLAVOR_UNKNOWN")
+
+    def test_frozen_fhir_source_coverage_counts_and_two_real_gaps(self):
+        result = coverage()
+        self.assertEqual(result.status, "MAPPING_COVERAGE_REVIEW_ONLY_NO_CLINICAL_APPROVAL")
+        self.assertFalse(result.candidate_write_authorized)
+        self.assertFalse(result.ready_for_clinical_review)
+        self.assertEqual(result.patient_count, 100)
+        self.assertEqual(result.encounter_count, 5918)
+        self.assertEqual(result.source_batch_id, SOURCE_BATCH)
+        self.assertEqual(result.manifest_sha256, MANIFEST)
+        self.assertEqual(result.profile_sha256, make().profile_sha256)
+        self.assertEqual(len(result.inventory_sha256), 64)
+        self.assertEqual(dict(result.unmapped_records_by_field), {
+            "gender_code": 0, "race_code": 3,
+            "ethnicity_code": 0, "encounter_class": 0})
+        self.assertEqual(
+            [(x.source_field, x.source_code, x.observed_count, x.source_meaning)
+             for x in result.gaps],
+            [
+                ("race_code", "1002-5", 1, "AMERICAN_INDIAN_OR_ALASKA_NATIVE"),
+                ("race_code", "UNK", 2, "HL7_NULLFLAVOR_UNKNOWN"),
+            ])
+        self.assertTrue(all("REVIEW" in x.disposition for x in result.gaps))
+
+    def test_no_guessing_omop_id_zero_and_unresolved_draft_cannot_publish(self):
+        result = coverage()
+        self.assertFalse(result.candidate_write_authorized)
+        self.assertTrue(all(not hasattr(x, "concept_id") for x in result.gaps))
+        self.assertNotIn('"1002-5"', make().profile_bytes.decode())
+        self.assertNotIn('"UNK"', make().profile_bytes.decode())
+
+    def test_immutable_digest_and_source_counts_independent_of_order(self):
+        reordered = {k: dict(reversed(list(OBSERVED[k].items())))
+                     for k in reversed(list(OBSERVED))}
+        x, y = coverage(), coverage(observed_codes=reordered)
+        self.assertEqual(x.inventory_sha256, y.inventory_sha256)
+        self.assertEqual(x.gaps, y.gaps)
+        self.assertEqual(x.unmapped_records_by_field, y.unmapped_records_by_field)
+
+    def test_missing_fields_and_incorrect_totals_rejected(self):
+        counts = deepcopy(OBSERVED)
+        counts.pop("ethnicity_code")
+        with self.assertRaisesRegex(LocalProfileHold, "INVENTORY_FIELDS_MISSING"):
+            coverage(observed_codes=counts)
+        counts = deepcopy(OBSERVED)
+        counts["race_code"]["UNK"] = 1
+        with self.assertRaisesRegex(LocalProfileHold, "SOURCE_COUNT_DRIFT"):
+            coverage(observed_codes=counts)
+        with self.assertRaisesRegex(LocalProfileHold, "SOURCE_COUNT_DRIFT"):
+            coverage(encounter_count=5917)
+
+    def test_unpinned_manifest_or_batch_rejected(self):
+        for change in (
+            {"source_batch_id": "untrusted"},
+            {"manifest_sha256": "bad-sha"},
+            {"patient_count": True},
+            {"encounter_count": 0},
+        ):
+            with self.subTest(change=change):
+                with self.assertRaisesRegex(LocalProfileHold, "SOURCE_FENCE_NOT_PINNED"):
+                    coverage(**change)
+
+    def test_clinical_review_gaps_must_match_byte_pinned_draft(self):
+        draft = make()
+        with self.assertRaisesRegex(LocalProfileHold, "PROFILE_INVENTORY_CONFLICT"):
+            coverage(draft=replace(draft, unresolved_source_codes=()))
+        with self.assertRaisesRegex(LocalProfileHold, "PROFILE_SHA_OR_STATUS_HOLD"):
+            coverage(draft=replace(draft, profile_sha256="f" * 64))
+        with self.assertRaisesRegex(LocalProfileHold, "PROFILE_SHA_OR_STATUS_HOLD"):
+            coverage(draft=replace(draft, status="SIGNED_CLINICAL_APPROVED"))
+
+    def test_observed_only_source_hint_cannot_add_new_codes(self):
+        with self.assertRaisesRegex(LocalProfileHold, "SOURCE_MEANING_UNOBSERVED"):
+            coverage(source_meanings={("race_code", "MISSING_SOURCE_CODE"): "UNKNOWN"})
+        with self.assertRaisesRegex(LocalProfileHold, "SOURCE_MEANING_INVALID"):
+            coverage(source_meanings={("race_code", "UNK"): "review=approved"})
+
+    def test_negative_and_casefold_codes_cannot_fake_batch_coverage(self):
+        for change in (
+            lambda x: x["race_code"].update({"UNK": -1}),
+            lambda x: x["gender_code"].update({"FEMALE": 1}),
+            lambda x: x["race_code"].update({"": 1}),
+        ):
+            counts = deepcopy(OBSERVED)
+            change(counts)
+            with self.assertRaisesRegex(LocalProfileHold, "SOURCE_CODE_INVALID"):
+                coverage(observed_codes=counts)
+
+    def test_review_is_portable_across_source_namespace_with_explicit_aliases(self):
+        other = "synthea-fhir:atlanta-hospital-b:hospital-b-fhir-r4"
+        draft = make(source_system=other)
+        result = coverage(draft=draft)
+        self.assertEqual(result.source_system, other)
+        self.assertFalse(result.candidate_write_authorized)
+        self.assertEqual(len(result.gaps), 2)
 
 
 if __name__ == "__main__":
