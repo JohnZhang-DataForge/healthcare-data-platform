@@ -1,0 +1,121 @@
+name: OIE V2 exact reviewed Channel disposable 4.7.0 deploy reproduction (HOSTED)
+
+# Not a production deployment. All OIE operations are against a fresh
+# ephemeral Docker container bound exclusively to hosted runner loopback.
+# No self-hosted runner, live cluster, historical batch, Azure or Fabric.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/oie-v2-disposable-deploy-smoke.yml"
+      - ".github/quality/tests/data-platform/clinical-producers/oie/disposable_oie_v2_deploy_smoke.py"
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  reproduce-exact-v2:
+    name: Ephemeral pinned OIE 4.7 image, exact V2 import then STOPPED deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PINNED_OIE_IMAGE: ghcr.io/johnzhang-dataforge/healthcare-oie@sha256:6716fb6210f9dc029c801b13cc152ff3fcb1ad4df05c1dbe5a9d438a482ba84b
+      REVIEWED_HEALTHCARE_SHA: b63e89b8ebed04f8f371db95562413597c54295a
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: JohnZhang-DataForge/healthcare-data-platform
+          ref: b63e89b8ebed04f8f371db95562413597c54295a
+          path: _pinned/healthcare
+          persist-credentials: false
+      - name: Check strictly-hosted isolated test contract before Docker
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git -C _pinned/healthcare rev-parse HEAD)" = "$REVIEWED_HEALTHCARE_SHA"
+          test "${{ runner.environment }}" = github-hosted
+          test "$GITHUB_EVENT_NAME" = pull_request
+      - name: Offline compile and forbidden mutation source scan
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          file='.github/quality/tests/data-platform/clinical-producers/oie/disposable_oie_v2_deploy_smoke.py'
+          python3 -m py_compile "$file"
+          python3 - "$file" <<'PY'
+          import pathlib,sys
+          s=pathlib.Path(sys.argv[1]).read_text()
+          assert 'https://127.0.0.1:18443' in s
+          assert 'b63e89b8ebed04f8f371db95562413597c54295a' in s
+          assert '_start' not in s or 'START_POST=NO' in s
+          for forbidden in ('import azure.', 'from azure.', 'BlobServiceClient(',
+                            'subprocess.run(["kubectl"', 'kubectl apply',
+                            'https://oie-debug.', 'https://127.0.0.1:8443'):
+              assert forbidden not in s
+          print('OIE_V2_DISPOSABLE_NO_SHARED_RESOURCE_WRITE_CONTRACT=PASS')
+          PY
+      - name: Read-only login to immutable existing GHCR image
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull exact production image digest without build or publish
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker pull "$PINNED_OIE_IMAGE"
+          docker image inspect "$PINNED_OIE_IMAGE" --format 'OIE_ISOLATED_IMAGE_ID={{.Id}} USER={{.Config.User}}'
+          test "$(docker image inspect "$PINNED_OIE_IMAGE" --format '{{.Config.User}}')" = engine
+          echo OIE_IMMUTABLE_IMAGE_MATCH=PASS
+      - name: Isolated ephemeral OIE boot, V2 import and deploy reproduction
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          set +x
+          name="oie-v2-ephemeral-${GITHUB_RUN_ID}"
+          conf="$RUNNER_TEMP/oie-v2-ephemeral-bootstrap.properties"
+          clientconf="$RUNNER_TEMP/oie-v2-ephemeral-admin-client.properties"
+          cleanup() {
+            docker rm -fv "$name" >/dev/null 2>&1 || true
+            rm -f "$conf" "$clientconf"
+          }
+          trap cleanup EXIT
+          umask 077
+          python3 - "$conf" "$clientconf" <<'PY'
+          import secrets,sys
+          value="server.initialadminpassword = "+secrets.token_urlsafe(32)+"\n"
+          for target in sys.argv[1:]:
+              with open(target,"w",encoding="utf-8") as out:
+                  out.write(value)
+          PY
+          chmod 600 "$clientconf"
+          uid="$(docker run --rm --entrypoint id "$PINNED_OIE_IMAGE" -u)"
+          gid="$(docker run --rm --entrypoint id "$PINNED_OIE_IMAGE" -g)"
+          [[ "$uid" =~ ^[0-9]+$ && "$gid" =~ ^[0-9]+$ ]]
+          sudo chown "$uid:$gid" "$conf"
+          sudo chmod 400 "$conf"
+          docker run -d --name "$name" --cpus 2 --memory 4g \
+            -p 127.0.0.1:18443:8443 \
+            --mount "type=bind,source=$conf,target=/run/secrets/mirth_properties,readonly" \
+            "$PINNED_OIE_IMAGE" >/dev/null
+          ready=no
+          for attempt in $(seq 1 80); do
+            test "$(docker inspect "$name" --format '{{.State.Running}}')" = true || {
+              echo OIE_DISPOSABLE_CONTAINER_STOPPED; exit 1;
+            }
+            code="$(curl -kfsS --silent --output /dev/null --write-out '%{http_code}' \
+              --connect-timeout 2 --max-time 4 https://127.0.0.1:18443/ || true)"
+            if [[ "$code" =~ ^[234][0-9][0-9]$ ]]; then ready=yes; break; fi
+            sleep 4
+          done
+          test "$ready" = yes
+          echo OIE_DISPOSABLE_HTTPS_READY=PASS
+          python3 .github/quality/tests/data-platform/clinical-producers/oie/disposable_oie_v2_deploy_smoke.py \
+            --pinned-root _pinned/healthcare --admin-password-file "$clientconf"
+          echo OIE_DISPOSABLE_DOCKER_AND_DATABASE_DELETED_ON_EXIT=YES
+          echo OIE_PRODUCTION_CHANNEL_DEPLOY_OR_START=NO
+          echo OIE_PRODUCTION_DERBY_OR_K8S_MUTATION=NO
+          echo OIE_LIVE_FHIR_AZURE_BLOB_WRITE=NO
