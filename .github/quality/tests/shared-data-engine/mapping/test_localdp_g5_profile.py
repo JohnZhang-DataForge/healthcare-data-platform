@@ -295,5 +295,182 @@ class LocalDPMappingCoverageTests(unittest.TestCase):
         self.assertEqual(len(result.gaps), 2)
 
 
+
+# The official HL7 FHIR-to-OMOP guide (ballot) identifies this familiar Race
+# Concept, but it is still only a synthetic F1 row in the offline tests.
+# Real current Warehouse SQL evidence and clinical approval are separate.
+from datetime import date
+from healthcare_data_engine.mapping.omop.race_resolution import (
+    CDC_RACE_CODE_SYSTEM, HL7_NULLFLAVOR_CODE_SYSTEM,
+    propose_race_resolution,
+)
+
+F1_CANDIDATE = {
+    "concept_id": 8657,
+    "concept_name": "American Indian or Alaska Native",
+    "domain_id": "Race",
+    "vocabulary_id": "Race",
+    "standard_concept": "S",
+    "invalid_reason": None,
+    "valid_start_date": "2000-01-01",
+    "valid_end_date": "2099-12-31",
+}
+
+
+def race_proposal(**overrides):
+    args = dict(
+        coverage=coverage(),
+        draft=make(),
+        proposed_f1_concept_row=F1_CANDIDATE,
+        f1_release_metadata_sha256="d" * 64,
+        observed_race_coding_systems={
+            "1002-5": {CDC_RACE_CODE_SYSTEM: 1},
+            "UNK": {HL7_NULLFLAVOR_CODE_SYSTEM: 2},
+        },
+        as_of=date(2026, 11, 7),
+    )
+    args.update(overrides)
+    return propose_race_resolution(**args)
+
+
+class RaceF1AndMissingValueSourceReviewTests(unittest.TestCase):
+    def test_reviewed_standard_target_draft_adds_1002_only_and_never_unk_zero(self):
+        result = race_proposal()
+        self.assertEqual(result.status,
+                         "RACE_MAPPING_DRAFT_ONLY_F1_PHYSICAL_AND_CLINICAL_HOLD")
+        self.assertFalse(result.candidate_write_authorized)
+        self.assertFalse(result.clinically_approved)
+        self.assertEqual(result.original_profile_sha256, make().profile_sha256)
+        self.assertEqual(result.source_batch_id, SOURCE_BATCH)
+        self.assertEqual(result.manifest_sha256, MANIFEST)
+        self.assertEqual(result.source_system, SOURCE)
+        self.assertEqual(result.proposed_standard_race_concept_id, 8657)
+        self.assertEqual(hashlib.sha256(result.proposed_profile_bytes).hexdigest(),
+                         result.proposed_profile_sha256)
+        profile = load_omop_mapping_profile(
+            result.proposed_profile_bytes, result.proposed_profile_sha256, SOURCE)
+        self.assertEqual(profile["race_concepts"]["1002-5"], 8657)
+        self.assertNotIn("UNK", profile["race_concepts"])
+        self.assertNotIn(0, profile["race_concepts"].values())
+        self.assertEqual(result.unresolved_source_codes, ("race_code:UNK",))
+        self.assertEqual(result.pending_no_information_source_count, 2)
+        self.assertEqual(result.pending_no_information_policy,
+                         "UNK_OMOP_CDM54_ZERO_REQUIRES_EXPLICIT_REVIEW")
+
+    def test_source_and_semantic_authority_separated(self):
+        self.assertEqual(
+            race_proposal().claimed_f1_release_sha256, "d" * 64)
+        from healthcare_data_engine.mapping.omop import race_resolution
+        source = Path(race_resolution.__file__).read_text()
+        # The shared logic must not copy target Concept numbers from HL7 IG.
+        self.assertNotIn("8657", source)
+        self.assertNotIn("execute_gold", source)
+        self.assertNotIn("spark.read", source)
+        self.assertFalse(hasattr(race_proposal(), "commit"))
+
+    def test_incorrect_raw_fhir_system_missing_or_counts_hold(self):
+        for coding in (
+            {},
+            {"1002-5": {CDC_RACE_CODE_SYSTEM: 1}},
+            {"1002-5": {"http://loinc.org": 1},
+             "UNK": {HL7_NULLFLAVOR_CODE_SYSTEM: 2}},
+            {"1002-5": {CDC_RACE_CODE_SYSTEM: 1},
+             "UNK": {"http://example.org/other": 2}},
+            {"1002-5": {CDC_RACE_CODE_SYSTEM: 1},
+             "UNK": {HL7_NULLFLAVOR_CODE_SYSTEM: 1}},
+            {"1002-5": {CDC_RACE_CODE_SYSTEM: True},
+             "UNK": {HL7_NULLFLAVOR_CODE_SYSTEM: 2}},
+        ):
+            with self.subTest(coding=coding):
+                with self.assertRaisesRegex(LocalProfileHold,
+                                            "RAW_CODING_SYSTEM"):
+                    race_proposal(observed_race_coding_systems=coding)
+
+    def test_wrong_f1_domain_nonstandard_invalid_and_wrong_semantic_hold(self):
+        failures = (
+            {"concept_name": "Native Hawaiian or Other Pacific Islander"},
+            {"domain_id": "Measurement"},
+            {"vocabulary_id": "SNOMED"},
+            {"standard_concept": None},
+            {"standard_concept": "C"},
+            {"invalid_reason": "D"},
+            {"concept_id": True},
+            {"concept_id": 0},
+        )
+        for field_update in failures:
+            with self.subTest(field_update=field_update):
+                row = dict(F1_CANDIDATE, **field_update)
+                with self.assertRaisesRegex(LocalProfileHold,
+                                            "NONSTANDARD_OR_WRONG_SEMANTICS"):
+                    race_proposal(proposed_f1_concept_row=row)
+
+    def test_f1_date_window_and_schema_hold(self):
+        for row in (
+            dict(F1_CANDIDATE, valid_end_date="2020-01-01"),
+            dict(F1_CANDIDATE, valid_start_date="2027-01-01"),
+            dict(F1_CANDIDATE, valid_end_date="2026-99-99"),
+            dict(F1_CANDIDATE, unreviewed_extra="untrusted"),
+        ):
+            with self.subTest(row=row):
+                with self.assertRaises(LocalProfileHold):
+                    race_proposal(proposed_f1_concept_row=row)
+        with self.assertRaisesRegex(LocalProfileHold, "DATE_INVALID"):
+            race_proposal(as_of="2026-11-07-other")
+
+    def test_wrong_batch_manifest_f1_metadata_sha_or_profile_hold(self):
+        for change in (
+            {"f1_release_metadata_sha256": "fake"},
+            {"draft": replace(make(), profile_sha256="a"*64)},
+            {"draft": replace(make(), unresolved_source_codes=())},
+            {"coverage": replace(coverage(), profile_sha256="f"*64)},
+            {"coverage": replace(coverage(), source_batch_id="bad")},
+            {"coverage": replace(coverage(), manifest_sha256="wrong")},
+        ):
+            with self.subTest(change=change):
+                with self.assertRaises(LocalProfileHold):
+                    race_proposal(**change)
+
+    def test_unknown_additional_or_zero_mapped_gap_will_not_silently_pass(self):
+        altered = replace(
+            coverage(),
+            gaps=tuple(list(coverage().gaps) + [
+                replace(coverage().gaps[0],
+                        source_code="extra-code", observed_count=1)
+            ]))
+        with self.assertRaisesRegex(LocalProfileHold, "GAP_SCOPE"):
+            race_proposal(coverage=altered)
+        orig = json.loads(make().profile_bytes)
+        orig["race_concepts"]["UNK"] = 0
+        raw = json.dumps(orig, sort_keys=True).encode()
+        draft = replace(make(), profile_bytes=raw,
+                        profile_sha256=hashlib.sha256(raw).hexdigest())
+        with self.assertRaises(LocalProfileHold):
+            race_proposal(draft=draft)
+
+    def test_proposed_f1_row_and_unknown_never_masquerade_as_f1_sql_readback(self):
+        result = race_proposal()
+        self.assertNotEqual(result.proposed_profile_sha256,
+                            result.original_profile_sha256)
+        self.assertIn("DRAFT_ONLY", result.status)
+        self.assertIn("REQUIRES_EXPLICIT_REVIEW",
+                      result.pending_no_information_policy)
+        self.assertEqual(len(result.verified_source_coding_sha256), 64)
+
+    def test_proposal_stable_under_coverage_reordering_and_other_hospital(self):
+        original = race_proposal()
+        reread = race_proposal()
+        self.assertEqual(original.proposed_profile_bytes,
+                         reread.proposed_profile_bytes)
+        self.assertEqual(original.verified_source_coding_sha256,
+                         reread.verified_source_coding_sha256)
+        source_b = "synthea-fhir:atlanta-hospital-b:hospital-b-fhir-r4"
+        draft_b = make(source_system=source_b)
+        cov_b = coverage(draft=draft_b)
+        other = race_proposal(draft=draft_b, coverage=cov_b)
+        self.assertEqual(other.source_system, source_b)
+        self.assertNotEqual(original.proposed_profile_sha256,
+                            other.proposed_profile_sha256)
+        self.assertFalse(other.candidate_write_authorized)
+
 if __name__ == "__main__":
     unittest.main()
