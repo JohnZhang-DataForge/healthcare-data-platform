@@ -31,6 +31,9 @@
 - [x] 2.2 完成 F2 Preview + 完整 Warehouse Snapshot → G5 Candidate ID Handoff（首次空 Map 的接口鸡生蛋问题），显式区分 PROVISIONAL/PERSISTED，校验 Person/Visit 100/5918、跨医院及 Parent FK；源码纯逻辑实现经 CI/PR 核验并合并后才关闭这一 SOURCE_ONLY 子项，真实 Gold 仍在 P4 OPEN。
 
 - [ ] 3.1 真正 Candidate Delta 物理写入、独立读回、Approval-last、同 Request Replay SKIP。
+
+- [x] 3.1a **P3 纯开发切片（不需要临床映射审批）**：新增唯一 Shared Engine `mapping/omop/candidate_publication.py`，直接复用已有 `OmopCandidates` / `PersonVisitCandidateHandoff`，不另造 Mapper/ID Planner；对 Person/Visit 的 Source Batch、Manifest SHA、Silver Approval、Profile SHA、全 Warehouse ID Snapshot 指纹及 `PROVISIONAL/PERSISTED` 明确冻结。Pure State Machine 强制 Data(2) → Independent Readback → Approval-LAST → 再读回；对新批次 `PLAN_NEW_OFFLINE_ONLY`、同 Request 真实双表核验后 `SKIP_VERIFIED_CANDIDATE_ONLY`、partial/unknown ACK `VERIFY_READONLY`、Profile/Manifest/Snapshot 漂移 `HOLD`，无代码路径授权 Gold。增加 Python 3.11 / 3.13 合成 100/5918 正负/重复/跨医院/缺 FK/未映射隔离建议测试，复用现有 Wheel CI。**本子项仅 SOURCE_ONLY，不能称 P3.1 物理写入完成**；临床 Profile/License 仍是未来真实发布 Gate，非源码开发前置。候选 Mapper 仍沿用严格整批 HOLD，新的 DATA_QUARANTINE 分类不自动启用部分发布。CI/PR 实际证据在合并后补入；Native Notebook 源码和 Fabric Workspace 四个 local-modified Item 均未修改。
+
 - [ ] 4.1 Warehouse 单事务 Map/Allocator/Person/Visit/Ledger/Audit COMMIT；独立 SQL 新连接读回、Rollback/Unknown-ACK/Replay/DQ 负向验证。
 - [ ] 5.1 原生 Pipeline 实际 FHIR→OMOP E2E：默认 HALT/无自动 Schedule/retry=0；记录 Job、Spark、SQL 三类独立证据。
 
