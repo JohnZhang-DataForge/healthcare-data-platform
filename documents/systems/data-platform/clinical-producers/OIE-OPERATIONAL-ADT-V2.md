@@ -180,3 +180,11 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 
 - [Self-Runner PR #551](https://github.com/JohnZhang-DataForge/Self-Runner/pull/551) 已合并为 `827e621e3b112c38a0db06ea3050771a38d48623`；[PR Hosted Run #42322130584](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42322130584) 成功：新版 15 项正反测试 + 原 GET-only 18 项回归 PASS，并对固定原 Builder 的真实 XML 渲染出唯一 STOPPED 导入副本。Live job 在 PR 上 SKIPPED。
 - 合并并不意味着 V2 已导入或正在运行。上次真实 GET-only 证据仍为 **ABSENT_IMPORT_REQUIRED**；之后必须先获得分别针对 `IMPORT_ONLY` 和 `START_ONLY` 的资源写入授权，先导入再启动，两个阶段不能并成一次执行。实际 OIE 4.7 REST 的各个响应仍需以新 Run 的独立 GET 证明；不允许以 Fake OIE CI 推断真实部署成功。
+
+
+### V2 空状态 204 不是 UNDEPLOYED — 再次加固（2026-11-06）
+
+- [Self-Runner PR #552](https://github.com/JohnZhang-DataForge/Self-Runner/pull/552) 已合并 Main `1b833f06663285af5b61ada436f202c1e63f4de5`；[PR Hosted #42325697197](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42325697197) 及 [Main Hosted #42325738523](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42325738523) 均 SUCCESS，真实自托管 OIE 导入/启动 Job 跳过。此变更仅修改分离式 Channel 生命周期门禁与 Fake OIE 回归，不改变 OIE Mapper、历史 Channel、Derby/PVC、Blob、GHCR 镜像。
+- `GET /api/channels/{V2_ID}/status` 如果返回 **HTTP 204 No Content**，只能判断“该响应没有当前状态证据”，绝对不得将它解释为已 `UNDEPLOYED` / `STOPPED`。即便 Channel LIST 显示 V2 存在，配置 GET 合法，当前状态不明确时仍必须 `HOLD_OIE_V2_STATUS_HTTP_204_UNKNOWN_READONLY_RECONCILE`；未知结果不自动重试 IMPORT 或 DEPLOY，须经单独的 GET-only dashboard/status/metadata 复核。未来若要引入新的状态替代证明，需要另行测试并合并只读门禁，不能从无内容猜测当前态。
+- `START_ONLY` 阶段在 V2 单 Channel `/_deploy` 后、单 Channel `/_start` 之前，会重新获取旧 A01 的配置和当前状态与前置快照比较。任何差异直接 HOLD，不发送 `/_start`；事后仍需检查 V2 确切 `STARTED` 和旧 Channel 的前后快照。此阶段不会主动修改旧 Channel。
+- **进度定义**：本次 Host CI 成功只证明安全门禁行为，不是 V2 已导入/启动或 A01/A03 已真正交付 Blob 的证据。运营 OpenSpec 2.1–2.4 仍 OPEN；进行实际 `IMPORT_ONLY` 与 `START_ONLY` 必须分别重新取得明确的、针对运行资源的授权和当次资源检查。
