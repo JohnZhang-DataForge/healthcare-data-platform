@@ -565,11 +565,20 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
 
 
-class G5TrustedControllerOffline(G5CandidateNativeDeltaStagedOffline):
+class G5TrustedControllerOffline(unittest.TestCase):
     """P3 controller contract, fake evidence service; NO cloud approvals."""
 
     def setUp(self):
-        super().setUp()
+        # Share only the fixture, not its inherited test methods: otherwise
+        # mutating the mapping SHA would rerun unrelated existing P3 tests.
+        G5CandidateNativeDeltaStagedOffline.setUpClass()
+        fixture = G5CandidateNativeDeltaStagedOffline(
+            "test_p3_notebook_has_no_write_runmode_dispatch")
+        fixture.setUp()
+        self.module = fixture.module
+        self.handoff = fixture.handoff
+        self.scope = fixture.scope
+        self.spark = fixture.spark
         self.profile = b"synthetic-only-profile-not-authorized"
         self.scope = self.module.FrozenCandidateScope(
             **{**self.scope.__dict__,
