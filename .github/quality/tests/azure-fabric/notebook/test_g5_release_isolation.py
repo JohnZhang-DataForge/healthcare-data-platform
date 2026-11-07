@@ -1,6 +1,6 @@
-"""OFFLINE ONLY: published 0.1.6 Native Notebook and old 0.1.3 downgrade HOLD.
+"""OFFLINE ONLY: pinned published 0.1.6 Notebook, 0.1.7 SOURCE candidate, old 0.1.3 HOLD.
 
-Tests install the sole Git-native 0.1.6 Wheel and simulate a wrong old
+Tests install the sole immutable Git-native GA 0.1.6 Wheel while independent\nsource metadata is 0.1.7; simulate a wrong old
 0.1.3 runtime for fail-closed guards. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
@@ -26,7 +26,7 @@ LIBS = ROOT / (
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
 PUBLISHED_VERSION = "0.1.6"
 LEGACY_VERSION = "0.1.3"
-SOURCE_CANDIDATE_VERSION = "0.1.6"
+SOURCE_CANDIDATE_VERSION = "0.1.7"
 PINNED_WHEEL_SHA256 = (
     "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff")
 
@@ -50,7 +50,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         wheel_files = sorted(LIBS.glob("*.whl"))
         self.assertEqual(
             [p.name for p in wheel_files],
-            [f"healthcare_data_engine-{SOURCE_CANDIDATE_VERSION}-py3-none-any.whl"])
+            [f"healthcare_data_engine-{PUBLISHED_VERSION}-py3-none-any.whl"])
         self.assertEqual(
             hashlib.sha256(wheel_files[0].read_bytes()).hexdigest(),
             PINNED_WHEEL_SHA256)
