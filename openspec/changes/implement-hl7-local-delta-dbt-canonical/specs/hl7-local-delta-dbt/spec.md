@@ -30,3 +30,8 @@
 
 ### Requirement: One downstream Silver owner
 HL7 Candidate SHALL 通过已有统一 Contract/DQ/Approval/Single Writer 门禁才可进入正式 Canonical Silver；MUST NOT 新建第二套 OMOP Identity/Concept Mapper 或绕过 Warehouse Writer。
+
+#### Scenario: Candidate is not an approved Silver writer
+- **GIVEN** local Delta staging 与 dbt Candidate SQL 完成并返回 PASS
+- **WHEN** 本地 job 返回结果
+- **THEN** SHALL 保持 `CANDIDATE_ONLY`，MUST NOT 启动共享 Silver/OMOP Writer 或发布正式 Gold
