@@ -102,6 +102,7 @@ class LocalOnlyOIE:
         allowed_post = {
             "/api/users/_login", "/api/channels/",
             f"/api/channels/{V2_ID}/_deploy?returnErrors=true&debug=false",
+            f"/api/channels/{V2_ID}/_start",
         }
         if not ((method == "GET" and path in allowed_get)
                 or (method == "POST" and path in allowed_post)):
@@ -204,7 +205,7 @@ def metadata_enabled(api):
     return "MISSING"
 
 
-def run(pinned_root, password):
+def run(pinned_root, password, *, sender_source_root=None):
     api = LocalOnlyOIE()
     expected = reviewed_xml(pinned_root)
     api.login(password)
@@ -256,19 +257,68 @@ def run(pinned_root, password):
     if scalar_state != "STOPPED":
         hold("SCALAR_DASHBOARD_CHANNEL_STATE_MISMATCH")
     print("OIE_DISPOSABLE_DASHBOARD_IDENTITY_AND_STATE=PASS")
-    print("OIE_DISPOSABLE_START_POST=NO")
-    print("OIE_DISPOSABLE_FHIR_HL7_MESSAGE_POST=NO")
-    print("OIE_DISPOSABLE_AZURE_BLOB_PUT=NO")
-    print("OIE_LIVE_WORKER01_OIE_DERBY_PVC_MUTATION=NO")
     if code not in (200, 204) or state != "STOPPED":
         hold("DEPLOY_NOT_STOPPED")
     print("OIE_DISPOSABLE_V2_DEPLOY_STOPPED_ACCEPTANCE=PASS")
+
+    if sender_source_root is None:
+        print("OIE_DISPOSABLE_START_POST=NO")
+    else:
+        # This START happens ONLY in a fresh 127.0.0.1 hosted Docker
+        # container, solely to test the real new sender's GET-only preflight.
+        # It does NOT authorize or perform a clinical message POST.
+        start_code, _ = api.call(
+            f"/api/channels/{V2_ID}/_start", method="POST",
+            body=b"", content_type="application/xml",
+            accept="application/xml")
+        print("OIE_DISPOSABLE_START_HTTP_CODE=" + str(start_code))
+        if start_code not in (200, 204):
+            hold("EPHEMERAL_START_FAILED")
+        if list_state(api) != "STARTED" or single_v2_state(api) != "STARTED":
+            hold("EPHEMERAL_START_NOT_INDEPENDENTLY_PROVEN")
+        print("OIE_DISPOSABLE_START_POST=EPHEMERAL_LOCAL_ONLY")
+
+        # The pinned historical Builder is used for import above. Reload
+        # the checked-out PR's apps package for this sender-under-test;
+        # otherwise Python's module cache would silently load the old pinned
+        # sender instead of the changed source. The Builder output must
+        # still match the reviewed immutable STOPPED SHA256.
+        root = Path(sender_source_root).resolve()
+        src = root / "local-data-platform" / "apps" / "clinical_producers" / "oie_message_submit_v2.py"
+        if not src.is_file():
+            hold("SENDER_SOURCE_NOT_IN_WORKTREE")
+        for module_name in tuple(sys.modules):
+            if module_name == "apps" or module_name.startswith("apps."):
+                del sys.modules[module_name]
+        sys.path.insert(0, str((root / "local-data-platform").resolve()))
+        import apps.clinical_producers.oie_message_submit_v2 as sender
+        if Path(sender.__file__).resolve() != src:
+            hold("SENDER_MODULE_WORKTREE_MISMATCH")
+        source = sender.render_channel_v2()
+        if (source.count("<initialState>STARTED</initialState>") != 1 or
+                hashlib.sha256(source.replace(
+                    "<initialState>STARTED</initialState>",
+                    "<initialState>STOPPED</initialState>", 1).encode()).hexdigest()
+                != STOPPED_SHA):
+            hold("SENDER_REVIEWED_BUILDER_CHANGED")
+        from unittest.mock import patch
+        scoped = object.__new__(sender.ScopedOIEV2Poster)
+        scoped._opener = api.opener
+        with patch.object(sender, "SERVICE_URL", BASE):
+            scoped.preflight_channel(V2_ID)
+        print("OIE_DISPOSABLE_V2_SENDER_GET_ONLY_PREFLIGHT=PASS")
+
+    print("OIE_DISPOSABLE_FHIR_HL7_MESSAGE_POST=NO")
+    print("OIE_DISPOSABLE_AZURE_BLOB_PUT=NO")
+    print("OIE_LIVE_WORKER01_OIE_DERBY_PVC_MUTATION=NO")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pinned-root", required=True)
     ap.add_argument("--admin-password-file", required=True)
+    ap.add_argument("--verify-sender-preflight", action="store_true",
+                    help="Only start disposable OIE locally and verify current sender GET")
     args = ap.parse_args()
     secret_file = Path(args.admin_password_file)
     if not secret_file.is_file():
@@ -277,7 +327,8 @@ def main():
     match = re.fullmatch(r"server\.initialadminpassword\s*=\s*(\S+)", password_line)
     if not match or len(match.group(1)) < 24:
         hold("ADMIN_SECRET_FORMAT")
-    run(Path(args.pinned_root), match.group(1))
+    run(Path(args.pinned_root), match.group(1),
+        sender_source_root=Path.cwd() if args.verify_sender_preflight else None)
 
 
 if __name__ == "__main__":
