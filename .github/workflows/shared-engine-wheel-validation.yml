@@ -17,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0 # version-diff gate needs PR base commit's immutable metadata
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -25,6 +26,43 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Reject changed Shared Engine package source under a reused version
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -Eeuo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          import tomllib
+          from pathlib import Path
+
+          base = os.environ["BASE_SHA"]
+          if not re.fullmatch(r"[0-9a-f]{40}", base):
+              raise SystemExit("HOLD_SHARED_RELEASE_BASE_SHA_UNPINNED")
+          before = tomllib.loads(subprocess.check_output(
+              ["git", "show", f"{base}:shared-data-engine/pyproject.toml"],
+              text=True))["project"]["version"]
+          after = tomllib.loads(Path(
+              "shared-data-engine/pyproject.toml").read_text())["project"]["version"]
+          declared = Path(
+              "shared-data-engine/src/healthcare_data_engine/__init__.py").read_text()
+          if declared.count(f'__version__ = "{after}"') != 1:
+              raise SystemExit("HOLD_SHARED_RELEASE_SOURCE_METADATA_MISMATCH")
+          if not all(re.fullmatch(r"\d+\.\d+\.\d+", v) for v in (before, after)):
+              raise SystemExit("HOLD_SHARED_RELEASE_VERSION_NOT_NUMERIC")
+          paths = subprocess.check_output(
+              ["git", "diff", "--name-only", base, "HEAD", "--",
+               "shared-data-engine/src/"], text=True).splitlines()
+          if paths and not (tuple(map(int, after.split("."))) >
+                            tuple(map(int, before.split(".")))):
+              raise SystemExit("HOLD_SHARED_RELEASE_SOURCE_CHANGED_WITHOUT_VERSION_BUMP")
+          print("SHARED_ENGINE_RELEASE_VERSION_PROVENANCE_PASS",
+                "base=" + before, "head=" + after, "source_files_changed=" + str(len(paths)))
+          PY
       - name: Create pinned wheelhouse then install test environment offline
         run: |
           set -euo pipefail
