@@ -215,17 +215,37 @@ class FabricGitNativeContract(unittest.TestCase):
     def test_native_environment_has_exact_hashed_custom_wheel(self):
         import hashlib
         import zipfile
-        # The 0.1.6 Git-native Wheel is a REVIEWED GIT CANDIDATE ONLY;
-        # published Fabric Environment and this HALT Notebook still use 0.1.3.
-        lib = GIT_ROOT / "env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl"
-        self.assertTrue(lib.is_file())
+        # Git-native is a declarative staging asset and NOT the Fabric GA
+        # published library. Source-only branches retain 0.1.6 while the
+        # reviewed Wheel staging branch contains 0.1.7. Both must be exact
+        # SHA pinned, solitary and structurally valid.
+        folder = GIT_ROOT / "env_healthcare.Environment/Libraries/CustomLibraries"
+        wheels = list(folder.glob("*.whl"))
+        self.assertEqual(len(wheels), 1, "HOLD_GIT_NATIVE_MULTIPLE_WHEELS")
+        pinned = {
+            "healthcare_data_engine-0.1.6-py3-none-any.whl":
+                "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff",
+            "healthcare_data_engine-0.1.7-py3-none-any.whl":
+                "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301",
+        }
+        lib = wheels[0]
+        self.assertIn(lib.name, pinned, "HOLD_UNREVIEWED_GIT_NATIVE_WHEEL")
         self.assertEqual(hashlib.sha256(lib.read_bytes()).hexdigest(),
-                         "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff")
-        self.assertEqual([p.name for p in lib.parent.glob("*.whl")], [lib.name])
+                         pinned[lib.name], "HOLD_GIT_NATIVE_WHEEL_SHA_DRIFT")
         with zipfile.ZipFile(lib) as wheel:
             names = wheel.namelist()
             self.assertTrue(any(n.endswith(".dist-info/METADATA") for n in names))
             self.assertTrue(any(n.startswith("healthcare_data_engine/") for n in names))
+            p3 = "healthcare_data_engine/mapping/omop/candidate_publication.py"
+            self.assertEqual(p3 in names, "0.1.7" in lib.name)
+        # Existing HALT Native business Notebook STILL pins 0.1.6. A
+        # review-only Git 0.1.7 Wheel is not a GA Publish or activation.
+        notebook = (
+            GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py"
+        ).read_text()
+        self.assertIn('if engine_version != "0.1.6":', notebook)
+        self.assertIn('run_mode = "HALT"', notebook)
+        self.assertIn('write_authorized = False', notebook)
 
     def test_wrong_native_platform_rejected(self):
         import shutil
