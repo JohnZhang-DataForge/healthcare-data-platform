@@ -343,6 +343,8 @@ class V2SenderTests(unittest.TestCase):
         # nested Connector STARTED; there must be exactly one direct
         # matching Channel ID and direct STARTED state.
         bad_statuses = (
+            b"STARTED", b"<status>STARTED</status>",
+            b"<channelStatus><state>STARTED</state></channelStatus>",
             b"<status>NOT_STARTED</status>", b"<status>STOPPED</status>",
             dashboard("STOPPED"), dashboard("UNDEPLOYED"),
             dashboard("STARTED", "00000000-0000-0000-0000-000000000000"),
@@ -367,6 +369,10 @@ class V2SenderTests(unittest.TestCase):
         valid = (
             b"STARTED", b" <string>STARTED</string> ",
             b"<status>STARTED</status>",
+            (f"<dashboardStatus><channelId>{CHANNEL_ID}</channelId>"
+             "<state>STARTED</state>"
+             "<connectorStatus><state>STOPPED</state></connectorStatus>"
+             "</dashboardStatus>").encode(),
             b"<channelStatus><channelId>" + CHANNEL_ID.encode() +
                 b"</channelId><state>STARTED</state>"
                 b"<destinationConnectorStatus><state>STOPPED</state>"
@@ -389,6 +395,11 @@ class V2SenderTests(unittest.TestCase):
             b"<channelStatus><state>STARTED</state><state>STOPPED</state></channelStatus>",
             b"<channelStatus><channelId>not-this-channel</channelId>"
                 b"<state>STARTED</state></channelStatus>",
+            b"<dashboardStatus><state>STARTED</state>"
+                b"<connectorStatus><state>STARTED</state></connectorStatus>"
+                b"</dashboardStatus>",
+            (f"<dashboardStatus><channelId>{CHANNEL_ID}</channelId>"
+             "<state>STARTED</state><state>STOPPED</state></dashboardStatus>").encode(),
         ):
             with self.subTest(body=invalid), self.assertRaises(OIEPostBlocked):
                 channel_started_exact(invalid, channel_id=CHANNEL_ID)
