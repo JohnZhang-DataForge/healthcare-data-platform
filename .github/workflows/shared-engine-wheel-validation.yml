@@ -101,11 +101,15 @@ jobs:
           # Contrast the NEW source-candidate Wheel with immutable existing GA
           # Native 0.1.6. Do not imply GA 0.1.7 Publish.
           "$RUNNER_TEMP/shared-env/bin/python" - <<'PY'
+          import os
           import zipfile
           from pathlib import Path
-          roots=Path("azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries")
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          roots=root/"azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries"
           old=roots/"healthcare_data_engine-0.1.6-py3-none-any.whl"
-          candidate=next(Path("dist").glob("healthcare_data_engine-0.1.7-*.whl"))
+          wheels=list((root/"dist").glob("healthcare_data_engine-0.1.7-*.whl"))
+          assert len(wheels) == 1, "one expected candidate Wheel"
+          candidate=wheels[0]
           assert len(list(roots.glob("*.whl"))) == 1, "GA single-wheel violation"
           with zipfile.ZipFile(old) as prior, zipfile.ZipFile(candidate) as after:
               api="healthcare_data_engine/mapping/omop/candidate_publication.py"
