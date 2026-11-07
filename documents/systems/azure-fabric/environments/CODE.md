@@ -10,7 +10,7 @@
 | --- | --- |
 | [env_healthcare.Environment/.platform](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/.platform) | Fabric Git 原生 Environment 元数据，保持 `logicalId` 不变 |
 | [env_healthcare.Environment/Setting/Sparkcompute.yml](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Setting/Sparkcompute.yml) | Spark compute 声明；真实 Staging 读回 Runtime 2.0 |
-| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl) | 唯一 Git Native 0.1.6 Wheel（已同步 Cloud Staging 并 GA Published；见下方独立验收）；Git/CI SHA256 `0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301`，发布后的 Library List 只验证**库名称**，不直接提供 Wheel 文件内容 SHA |
+| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl) | 唯一 Git Native **0.1.7 Git review 候选**（只在此审阅分支，尚未 Fabric Cloud Staging/GA Publish；真实 Published 仍为 0.1.6，旧 GA SHA256 `473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff`）；候选 Git/CI SHA256 `0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301`，发布后的 Library List 只验证**库名称**，不直接提供 Wheel 文件内容 SHA |
 
 新增原生定义要在 CODE 映射中注册。Shared 源码只能在 `shared-data-engine/` 维护，Environment 的 `CustomLibraries/` 仅保存已构建版本制品；避免复制源码或同时保留多个 Wheel。
 
