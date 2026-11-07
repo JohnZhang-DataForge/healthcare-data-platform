@@ -511,10 +511,49 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             self.assertFalse(self.rechecked_source)
             self.assertFalse(self.writes)
 
+    def test_real_business_entry_fails_on_missing_clinical_review_before_spark(self):
+        with self.assertRaisesRegex(RuntimeError,
+                                    "HOLD_G5_BUSINESS_P1_F2_APPROVAL_MISSING"):
+            nb.execute_g5_person_visit_business(
+                self.spark, scope=self.scope, handoff=self.handoff,
+                concepts_from_verified_warehouse=None,
+                mapping_profile_bytes=b"{}",
+                raw_publish_run_id="source-real",
+                patient_contract_json=PATIENT,
+                encounter_contract_json=ENCOUNTER,
+                mode="G5_CANDIDATE_WRITE", write_authorized=True,
+                clinically_reviewed=False, license_reviewed=False,
+                warehouse_snapshot_verified=False,
+                clinical_review_sha256="d"*64,
+                license_review_sha256="e"*64,
+                warehouse_snapshot_sha256=self.scope.identity_snapshot_fingerprint)
+        self.assertFalse(self.writes)
+        self.assertFalse(self.spark.delta)
+
+    def test_real_business_entry_rejects_unpinned_mapping_before_spark(self):
+        with self.assertRaisesRegex(RuntimeError,
+                                    "HOLD_G5_BUSINESS_MAPPING_PROFILE_BYTES"):
+            nb.execute_g5_person_visit_business(
+                self.spark, scope=self.scope, handoff=self.handoff,
+                concepts_from_verified_warehouse=None,
+                mapping_profile_bytes=b'{"unapproved": true}',
+                raw_publish_run_id="source-real",
+                patient_contract_json=PATIENT,
+                encounter_contract_json=ENCOUNTER,
+                mode="G5_CANDIDATE_WRITE", write_authorized=True,
+                clinically_reviewed=True, license_reviewed=True,
+                warehouse_snapshot_verified=True,
+                clinical_review_sha256="d"*64,
+                license_review_sha256="e"*64,
+                warehouse_snapshot_sha256=self.scope.identity_snapshot_fingerprint)
+        self.assertFalse(self.writes)
+        self.assertFalse(self.spark.delta)
+
     def test_p3_notebook_has_no_write_runmode_dispatch(self):
         import inspect
         src = inspect.getsource(nb.plan_and_write_g5_candidate_delta)
         self.assertIn("G5_CANDIDATE_WRITE", src)
+        self.assertTrue(callable(nb.execute_g5_person_visit_business))
         self.assertIn("_write_delta(person_candidate", src)
         self.assertIn("_write_delta(approval, paths", src)
         native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"
