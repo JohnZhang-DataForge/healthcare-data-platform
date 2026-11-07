@@ -139,6 +139,14 @@ def single_v2_state(api):
         if raw in (b"STARTED", b"STOPPED", b"UNDEPLOYED"):
             return raw.decode("ascii")
         root = xml_tree(raw)
+        # Only allowlisted XML structural facts; do not log the value or
+        # serialized XML (which might include status details or other data).
+        known_roots = {"string", "status", "state", "channelStatus",
+                       "dashboardStatus", "list"}
+        print("OIE_DISPOSABLE_SCALAR_STATUS_XML_ROOT=" +
+              (root.tag if root.tag in known_roots else "OTHER"))
+        print("OIE_DISPOSABLE_SCALAR_STATUS_STATE_NODE_COUNT=" +
+              str(len(root.findall(".//state"))))
         if root.tag in ("string", "status", "state") and not len(root):
             return (root.text or "").strip()
         if root.tag == "channelStatus":
