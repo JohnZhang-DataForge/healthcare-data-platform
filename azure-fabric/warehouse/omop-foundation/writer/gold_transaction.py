@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-import hashlib
-import json
 from typing import Callable, Mapping, Sequence
 
 from identity_plan import BatchFence, IdentityKey, PlanningHold, plan_ids, replay, Receipt, SHA
@@ -205,7 +203,8 @@ def independent_gold_readback(new_connection: Callable[[], object],
     try:
         cursor = conn.cursor()
         existing, _, gold = _snapshot(cursor)
-        if (any(dict(existing).get(k) != v for k, v in batch.identities)
+        if (len(existing) != len({key for key, _ in existing})
+                or any(dict(existing).get(k) != v for k, v in batch.identities)
                 or any(len(gold[kind]) != len(set(gold[kind])) for kind in ENTITY)
                 or not _compare_rows(cursor, "cdm.person", PERSON_COLS,
                                       batch.persons, "person_id")
@@ -257,6 +256,12 @@ def execute_gold_transaction(connection, batch: GoldBatch, *,
         if receipts:
             replay(batch.fence, receipts, independently_verified=False)
             raise GoldHold("GOLD_EXISTING_RECEIPT_REQUIRES_INDEPENDENT_READBACK")
+        # Audit has only batch_id as a namespace: reject cross-hospital reuse.
+        if (_rows(cursor, "SELECT batch_id FROM etl.batch_ledger WHERE batch_id=?",
+                  (batch.fence.batch_id,))
+                or _rows(cursor, "SELECT batch_id FROM audit.omop_commit_check "
+                         "WHERE batch_id=?", (batch.fence.batch_id,))):
+            raise GoldHold("GOLD_BATCH_ID_GLOBAL_COLLISION")
         planned = plan_ids([k for k, _ in batch.identities], existing, next_free, gold)
         if dict(planned.assigned) != dict(batch.identities):
             raise GoldHold("GOLD_CANDIDATE_IDS_VS_TRANSACTION_SNAPSHOT")
@@ -287,6 +292,12 @@ def execute_gold_transaction(connection, batch: GoldBatch, *,
                     "VALUES (?,?,?,?)", (kind, nxt, batch.mapping_version, now))
         _insert_rows(cursor, "cdm.person", PERSON_COLS, batch.persons)
         _insert_rows(cursor, "cdm.visit_occurrence", VISIT_COLS, batch.visits)
+        # Reconcile actual SQL rows inside the same transaction before ledger.
+        if (not _compare_rows(cursor, "cdm.person", PERSON_COLS,
+                              batch.persons, "person_id")
+                or not _compare_rows(cursor, "cdm.visit_occurrence", VISIT_COLS,
+                                     batch.visits, "visit_occurrence_id")):
+            raise GoldHold("GOLD_TRANSACTION_CLINICAL_READBACK_DRIFT")
         cursor.execute("INSERT INTO etl.batch_ledger (hospital_id, source_system, "
             "batch_id, source_manifest_sha256, mapping_profile_sha256, writer_version, "
             "batch_status, expected_person_count, expected_visit_count, "
