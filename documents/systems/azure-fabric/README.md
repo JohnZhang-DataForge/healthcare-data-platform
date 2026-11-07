@@ -29,6 +29,7 @@ Shared 核心已可支撑 Fabric 主线开发；**Local 进入维护模式**、�
 | OMOP Writer business Python | [Writer source](../../../azure-fabric/warehouse/omop-foundation/writer/) · [Warehouse CODE](warehouse/CODE.md) |
 | OpenLineage Publisher and Listener deployment | [Publisher](../../../azure-fabric/openlineage/) · [OpenLineage CODE](openlineage/CODE.md) |
 | Terraform resources | [IaC modules](../../../azure-fabric/infra-terraform/) · [Terraform CODE](infra-terraform/CODE.md) |
+| dbt Core SQL (future governed owner, not migrated) | [dbt engineering/Agent rules](dbt/README.md); current executable [HL7 CODE](../data-platform/hl7/CODE.md) |
 | Shared pure Python engine | [Shared Engine](../data-platform/shared-engine/README.md) |
 
 ## Verified scope and acceptance boundaries

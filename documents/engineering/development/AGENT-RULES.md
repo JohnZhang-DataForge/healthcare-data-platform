@@ -31,6 +31,12 @@
 - CI 自动检查新建代码路径；代码内部的新标识符与职责归属由 Agent/Reviewer 复核。Task ID 只属于 PR/开发计划/历史验收。
 - **源码地图强制同步**：凡组件源码文件新增、删除、移动或改名，必须在同一 PR 更新其 **对应系统的** `documents/systems/<system>/<component>/CODE.md`（Native Item 使用 Azure/Fabric 的唯一 owner CODE Map）；重要入口、职责、依赖变化也要审查并同步。已落地 [Airflow CODE](../../systems/data-platform/airflow/CODE.md)，并将混合 `apps/` 源码按唯一功能归属映射到 [Synthea CODE](../../systems/data-platform/synthea/CODE.md)、[Landing CODE](../../systems/data-platform/landing/CODE.md)、[OMOP CODE](../../systems/data-platform/omop/CODE.md) 及 Airflow CODE；CI 检查新增/删除/改名、唯一所有者及同 PR 维护；[Spark CODE](../../systems/data-platform/spark/CODE.md) 现也覆盖 Spark 源码、Contract 和模板，`contracts/`、`sql/`、`images/` 与 `kubernetes/` 也已按 Synthea/Landing/OMOP/Airflow 组件归属纳入 CODE.md 与 CI；不允许因为删除原导航 README 就把 Runtime 模板当作直接可 Apply 的资源。`scripts/` 和 `config/` 现已按业务所有者与 [Developer CODE](CODE.md) 维护；旧 Shell 可产生仓库源码、Pod、Job、S3、PG 写入或 Secret 变更，浏览 CODE.md 不构成运行授权。其它目录逐步接入。
 
+### Fabric dbt 工程目录专用强制规则（2026-11-07）
+
+- 创建/移动任何 dbt 项目之前必须读 [Fabric dbt 目录与准入](../../systems/azure-fabric/dbt/README.md)、真实 Main/CODE Map 和 [OpenSpec dbt Change](../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md)。未来统一归 `azure-fabric/dbt/<project>/`，首期 `hl7-canonical`，内部名 `hl7_canonical`。**现有可执行工程仍在 Local DP**，文档批准不等于源码已经迁移。
+- 标准完整工程骨架和空目录 `.gitkeep` 为强制要求，但 dbt 原生 `tests/` 触发现有受保护 Layout Gate；**必须先审批独立受信任最小例外及正反 CI**，不能跳过 Required Check。一般 Python 自动化测试仍仅放 `.github/quality/tests/`。
+- 新的 `fhir-canonical` / `csv-canonical` / 共享业务 dbt 工程必须另走 OpenSpec 和唯一 Owner 审查；不允许自行另建 `azure-fabric/ingestion/`、Native 假目录或第二套 Canonical/OMOP 共享 Mapper；迁移时更新 CI、消费路径与 CODE Map。
+
 ## 4. Git / GitHub / Self-Runner
 
 - Healthcare Repo 保存业务 Python、Airflow、Spark、SQL、Contracts、部署定义、Tests 与正式脚本；Self-Runner Repo 保存跨仓库执行 Workflow/受控 Request/Run 证据。
