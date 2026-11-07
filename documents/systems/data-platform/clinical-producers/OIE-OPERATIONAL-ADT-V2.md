@@ -1,6 +1,6 @@
 # OIE HL7 v2.5.1 ADT 业务事件 V2 — 离线实现与验收边界
 
-> 当前状态（2026-11-07 ET）：**现有 V2 Channel 已经在 worker01 真实 Deploy → STOPPED 验证 → Start → STARTED，后续独立双状态 GET 再次确认 STARTED，START_ONLY 实机验收 PASS**。此前首次 HTTP 406 导致的 UNDEPLOYED/HOLD 仅是历史记录，已通过修复 Accept Header 和新的一次性明确授权操作解决。旧 A01 在本次启动及后续只读检查中保持稳定；**尚未发送新 A01/A03 FHIR/HL7 消息、未完成 OIE Derby Message 独立读回、Raw HL7 → Azure Blob 发布与 E2E**。后续消息写入、Publisher 与 Blob 操作仍需各自的明确授权。本文件不授权任何额外真实写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
+> 当前状态（2026-11-07 ET）：**现有 V2 Channel 已经在 worker01 真实 Deploy → STOPPED 验证 → Start → STARTED，后续独立双状态 GET 再次确认 STARTED，START_ONLY 实机验收 PASS**。此前首次 HTTP 406 导致的 UNDEPLOYED/HOLD 仅是历史记录，已通过修复 Accept Header 和新的一次性明确授权操作解决。旧 A01 在本次启动及后续只读检查中保持稳定；**Publisher GHCR SHA-only 镜像已于本日真实发布、独立拉取验证 Digest/Revision，但尚未发送新 A01/A03 FHIR/HL7 消息、未完成 OIE Derby Message 独立读回、Raw HL7 → Azure Blob 发布与 E2E**。后续消息写入、Publisher 与 Blob 操作仍需各自的明确授权。本文件不授权任何额外真实写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
 
 ## 业务目标
 
@@ -263,3 +263,12 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 - 此次追加两项**只有未来明确授权发布时才需要**的 `workflow_dispatch` 输入：`confirmation=PUBLISH_GHCR_PUBLISHER_SHA_ONLY`，以及 `source_sha` 为准确的 **40 位 lowercase Main HEAD commit SHA**。Release Job 先验证确认字符串、首次 Main 执行、输入 SHA 格式及其与实际 `GITHUB_SHA` 完全一致；否则 HOLD，不推送镜像。GHCR Release 原有 SHA-only tag 与 OCI revision label、不可变 Digest 读回保留。
 - [Self-Runner PR #573](https://github.com/JohnZhang-DataForge/Self-Runner/pull/573) 已将 V2 E2E 的 Healthcare checkout 由旧版更新到包括 [Sender #786](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/786) 和 [Hosted 真 OIE 4.7 #787](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/787) 的固定提交，但这只是**候选源码**，还没有对应发布后的 GHCR Digest。未来实际 release 如发生其它提交，必须核对生成镜像的 `org.opencontainers.image.revision` 与 Self-Runner Controller 使用的 `HEALTHCARE_SHA` 一致，否则不能解除 `PUBLISHER_IMAGE=""` 门禁。
 - **边界：** 本次只更新 Workflow 与文档，不发布 GHCR，不生成新 Synthea Batch，不发送 FHIR/HL7，不写 Azure，不重启 OIE，不改旧 A01。GHCR Release、随后的 Blob 新批次 E2E 分别等待独立授权。
+
+
+## Azure Publisher GHCR SHA-only 发布 — 实机 PASS（2026-11-07 ET）
+
+- **单独授权且已真实发布：** [Healthcare PR #792](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/792) 合并到 `ecc99b18b2dd52af8c8b54eae208564adffd5b71`；其 [Main 发布 Run #42388882268](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42388882268) 依次验证固定上一版 Main SHA、全新一次性授权文件、Hosted Publisher 全套源码测试、不可变 Python Base Clean Build、nonroot/no-network V2 CLI Smoke，然后仅推送 `git-<完整 SHA>` 镜像。远端真实 Pull/Digest + OCI Revision Readback PASS；原有 `latest` 标签没有修改。
+- **Release Tag：** `ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher:git-ecc99b18b2dd52af8c8b54eae208564adffd5b71`。
+- **Immutable Digest：** `ghcr.io/johnzhang-dataforge/healthcare-azure-blob-publisher@sha256:10252ba6ad5560174218b52ee985fe346a7a7ac23c3fdf9f585efb23e56cb5ea`；镜像 OCI `org.opencontainers.image.revision=ecc99b18b2dd52af8c8b54eae208564adffd5b71`，与发布的仓库源码一致。这是已经执行并确认的发布，不再只是等待 GHCR Release。
+- **Self-Runner 已记录，但未激活临床运行：** [Self-Runner PR #574](https://github.com/JohnZhang-DataForge/Self-Runner/pull/574) 将 `HEALTHCARE_SHA` 更新为镜像实际 Revision，并以 `RELEASED_PUBLISHER_IMAGE` 保存真实 Digest；所有 V2 来源/Job 模板 Hosted 检查通过。实际 `PUBLISHER_IMAGE=""` **继续故意保持禁用**，手工运行 Controller 仍会在任何 Kubernetes/Azure 写入前 HOLD。本次批准范围仅限 GHCR 软件产物发布，没有授权新 Synthea 生成批次、FHIR/HL7 发送、OIE Message 持久化或 Azure Raw PUT。
+- **后续工作：** 取得单独批次/真实消息/Blob 写入审批后，再根据当次实时共享资源与外部存储审计，解除 `PUBLISHER_IMAGE` HOLD、固定新 Request/Manifest 和 OIE V2 STARTED 只读证明，逐步完成 A01/A03 ACK → 独立 Derby GET → Raw HL7 Azure Blob 的 immutable PUT/GET/manifest-last 和 Replay。历史 A01 Channel/Derby PVC 与旧批次继续原样保留。
