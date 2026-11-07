@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **当前状态（2026-11-06）：Shared 源码/正式 Fabric Published Wheel 均为 0.1.6；正式业务 Notebook 0.1.6 Git 定义读回及 Spark 4.1 只读 RUNTIME_SMOKE PASS。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前候选状态（2026-11-07）：Shared 新映射源码候选版本为 0.1.8，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 0.1.6；Fabric GA Publish、正式 Notebook 定义读回和只读实机 Smoke 已验收；Candidate/Gold 未验收 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 当前源码候选 0.1.8；Native Environment Git 唯一旧 Wheel 0.1.7 未被本轮修改；历史 0.1.6 Git 定义/Import 只读 Smoke 已验收；Candidate/Gold 未验收 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -113,4 +113,4 @@
 - 新唯一 [`local_profile.py`](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/local_profile.py)：**只生产旧版 G5 Shared Mapper 已支持的八字段字典 Profile**，直接由调用方提供的 LocalDP 权威 [`omop.py`](../../../../local-data-platform/spark/common/omop.py) 人口学 Concept 常量与 [`visit-class-v1.json`](../../../../local-data-platform/spark/contracts/omop/visit-class-v1.json) 10 类 Visit 规则构建，无第二份写死的 OMOP ID 表、无新 Mapper、无文件或 SQL I/O。FHIR 入口代码别名为显式、待批准的源语义翻译，源端原始 Canonical 字段仍保留。
 - [`test_localdp_g5_profile.py`](../../../../.github/quality/tests/shared-data-engine/mapping/test_localdp_g5_profile.py)：直接从现有 LocalDP 代码/Visit JSON 加载原始规则，对真实已知 G4 **aggregate-only** 源代码分布（P100/E5918）进行合成轮询，验证原值 Concept 对齐、Profile SHA 稳定、10 类 Visit 兼容、未知/伪造来源以及 `0`/默认 Concept 拒绝。原已完成的 [Local/Shared Person/Visit parity](../../../../.github/quality/tests/shared-data-engine/parity/test_local_shared_person_visit_parity.py) 保留。
 - 真实 FHIR `race_code=1002-5` 与 `UNK` 在旧 LocalDP Race 规则中尚无对应键，明确列出为 unresolved **HOLD**；`2076-8` 对 `hawaiian` 的交叉含义须由临床 reviewer 根据 Population 语义正式确认。尚未发布真实经过批准的全覆盖 Mapping Profile，也不自动使用 OMOP Concept ID `0`。LocalDP 旧程序/持久 PG 数据均未修改。
-- Wheel **源码构建候选**版本 `0.1.8`（`pyproject.toml` 与 `__init__.py`）；已有 Fabric Published GA 0.1.6/此前源码 0.1.7 均保持原状，不把 CI 通过误称为 Fabric 实际发布。后续批准 Profile/临床/许可后，必须独立进行实际 Wheel Publish、Notebook 业务 Job、候选独立读回及 Gold 审批。
+- Wheel **源码构建候选**版本 `0.1.8`（`pyproject.toml` 与 `__init__.py`）；现有 Fabric Environment Git 固定唯一 0.1.7 Wheel/此前源码 0.1.7 均保持原状，不把 CI 通过误称为 Fabric 实际发布。后续批准 Profile/临床/许可后，必须独立进行实际 Wheel Publish、Notebook 业务 Job、候选独立读回及 Gold 审批。
