@@ -84,6 +84,19 @@ def channel_started_exact(raw: bytes, *, channel_id: str) -> bool:
                 (identities and identities[0].text != channel_id)):
             raise OIEPostBlocked("OIE_CHANNEL_STATUS_IDENTITY_HOLD")
         current = states[0].text
+    elif root.tag == "dashboardStatus":
+        # Real OIE 4.7.0 GET /channels/{id}/status uses dashboardStatus,
+        # which also contains nested Source/Destination connector states.
+        # The only permissible Channel state is the single direct <state>
+        # bound to exactly one direct <channelId> matching our target.
+        identities = [x for x in root if x.tag == "channelId"]
+        states = [x for x in root if x.tag == "state"]
+        if (len(identities) != 1 or len(states) != 1
+                or identities[0].text != channel_id
+                or len(identities[0]) or identities[0].attrib
+                or len(states[0]) or states[0].attrib):
+            raise OIEPostBlocked("OIE_CHANNEL_DASHBOARD_STATUS_ID_OR_STATE_HOLD")
+        current = states[0].text
     else:
         raise OIEPostBlocked("OIE_CHANNEL_STATUS_INVALID")
     return isinstance(current, str) and current.strip() == "STARTED"
