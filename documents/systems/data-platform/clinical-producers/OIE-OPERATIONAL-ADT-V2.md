@@ -1,6 +1,6 @@
 # OIE HL7 v2.5.1 ADT 业务事件 V2 — 离线实现与验收边界
 
-> 当前状态（2026-11-06 ET）：**V2 Channel IMPORT_ONLY 真实验收 PASS，当前为 UNDEPLOYED**；SOURCE / STATIC PASS 继续成立，但 V2 尚未 Deploy/STARTED，也没有新 A01/A03 OIE Message POST、Derby persisted readback 或 Raw HL7 → Azure Blob 实机验收。后续 START_ONLY 和完整 E2E 需要分别明确批准。本文件不授权额外资源写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
+> 当前状态（2026-11-07 ET）：**V2 Channel 导入真实验收 PASS；一次已授权的 START_ONLY 在单次 Deploy POST 响应不确定后 HOLD，经独立 GET 证明现在仍为 UNDEPLOYED**。Metadata enabled=ENABLED，尚未发出 Start POST；无新 A01/A03 OIE Message POST、Derby 持久读回或 Azure Blob 实机交付。继续部署必须基于新证据和单独批准，不能重放已失败的一次性 Workflow。本文件不授权额外资源写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
 
 ## 业务目标
 
@@ -217,3 +217,14 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 - **已完成：** OIE 4.7.0 新 V2 Channel 被创建，STOPPED 导入 XML 配置经独立归一化 GET 验证，当前生命周期状态 **UNDEPLOYED**。这是`IMPORT_ONLY` 的真实 PASS，不是新 A01/A03 Producer 全链路 PASS。旧 A01 的“同次只读快照稳定”不等于跨全部历史 Run 的逐字节零变化证明。
 - **仍未执行：** V2 的 `/_deploy`、`/_start`、真实 Frozen FHIR A01/A03 POST/ACK、Derby Message ID 独立 GET、GHCR V2 Publisher Digest 发布与绑定、Azure Blob immutable PUT/GET/HEAD/manifest-last/replay；Phase 2 的任务 2.1–2.4 仍有其它未关闭的工作项。
 - **下一步：** 重新检查 Session Coordination 与实时共享资源状态并**单独取得 START_ONLY 明确授权**；运行受控的 V2-only Deploy（目标当前 STOPPED）→ 先独立 GET 证明 STOPPED / Legacy Snapshot 没变化 → 同一被批准 START_ONLY 阶段内 V2-only Start → 再 GET 明确 STARTED。之后再审查 GHCR Publisher Digest 与全新 Request 的 Raw HL7 E2E 授权。**不得因为用户已批准 IMPORT_ONLY 就延伸到启动或发送消息。**
+
+
+## OIE V2 首次 START_ONLY 实机尝试与证据 — 2026-11-07 ET（当前权威状态）
+
+此前本文件中“尚未执行 V2 deploy”以及“准备取得首次 START_ONLY 授权”的历史段落，已被本节的真实运行记录更新；**不要重复执行此前单次导入或单次 Deploy POST**。
+
+- 用户在完成 V2 IMPORT_ONLY 正式验收后**另行明确批准本次 START_ONLY**。Self-Runner [PR #559](https://github.com/JohnZhang-DataForge/Self-Runner/pull/559) / Main `28ca03c16f6d0c4db35e08fa1fd40f0eb1ac75af` 使用新增加、精确且不可重放的 Main one-shot 意图，Hosted fake 测试及合并门禁 PASS。真实 [Run #42348044761](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42348044761)：worker01/OIE 前置检查 PASS，`OIE_V2_DEPLOY_MUTATION_ATTEMPT=ONE` 后立即 `HOLD_OIE_V2_HTTP_RESULT_UNKNOWN_INSPECT_BEFORE_RETRY`，**没有触发 V2 `/_start`**。未导入、未发 FHIR/HL7、未写 Azure、未改旧 A01；单次请求是否生效不能由 Workflow Failure 推断。
+- Self-Runner [PR #560](https://github.com/JohnZhang-DataForge/Self-Runner/pull/560) / [独立 GET-only Run #42348277557](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42348277557) 实机确认：`OIE_V2_POST_DEPLOY_CONFIG=PASS`；单状态 HTTP 404；`includeUndeployed` 列表 HTTP 200、精确 V2 ID 的 **`UNDEPLOYED`**；旧 A01 本次双快照一致；`OIE_V2_POST_DEPLOY_RESULT=UNDEPLOYED_VERIFIED_NO_RETRY`。因此不能声称 V2 已部署、STOPPED 或 STARTED，更不能继续调用 Start。
+- Mirth Channel Metadata 是独立于部署状态的服务器配置，只读检查不能用未知响应猜测其值。[Self-Runner #561](https://github.com/JohnZhang-DataForge/Self-Runner/pull/561) 初次只读 Run [#42348523665](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42348523665) 因客户端 Python `apps` 导入路径未初始化而失败、**未到达 Metadata API**；[修复 #562](https://github.com/JohnZhang-DataForge/Self-Runner/pull/562) / [实机 GET-only Run #42348715013](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42348715013) 返回 `OIE_V2_METADATA_GET_HTTP=200`、`OIE_V2_CHANNEL_METADATA_ENABLED=ENABLED`、旧 A01 双快照一致。**排除 Metadata Disabled 作为此时的解释，但没有确定 Deploy HTTP 错误根因。**
+- [Self-Runner #563](https://github.com/JohnZhang-DataForge/Self-Runner/pull/563) / Main `30b27a698ecdc2f1347eade6a6baa97b5d4af26f` 增加仅允许数字 HTTP Code + IMPORT/DEPLOY/START phase 的错误诊断日志，保留 HOLD、无自动重试且不输出 Response Body/敏感信息。仅 Hosted fake 验证；**没有产生新的实机 Deploy**，因首次错误发生在此改动合并之前，其确切 HTTP 状态码仍未知。
+- **实际状态与下一步**：`IMPORT_ONLY=PASS`，`START_ONLY=HOLD`，**V2 实机 UNDEPLOYED**，Metadata ENABLED，旧 A01 在各次只读检查中稳定。未经**新的独立资源协调/明确授权**不得重新调用 `/_deploy` 或 `/_start`；可以继续核查 4.7.0 端点参数、权限、Channel 验证和不含 PHI 的服务端错误证据，再确定下一次最小写入方案。Blob Publisher / A01+A03 实机 E2E / dbt→Silver 均不因本轮处理而变为 PASS。
