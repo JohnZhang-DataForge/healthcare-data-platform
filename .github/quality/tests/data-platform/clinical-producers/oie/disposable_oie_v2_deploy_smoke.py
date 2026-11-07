@@ -230,15 +230,24 @@ def run(pinned_root, password):
     print("OIE_DISPOSABLE_IMPORT_READBACK=PASS")
     print("OIE_DISPOSABLE_METADATA_ENABLED=" + metadata_enabled(api))
     print("OIE_DISPOSABLE_STATE_BEFORE_DEPLOY=" + list_state(api))
+    deploy_path = f"/api/channels/{V2_ID}/_deploy?returnErrors=true&debug=false"
+    # First prove production's original Accept: text/plain fails without
+    # deployment in this *disposable* isolated OIE only. The previous
+    # hosted Run #42352098003 confirmed HTTP 406 and UNDEPLOYED.
+    bad_code, _ = api.call(
+        deploy_path, method="POST", body=b"",
+        content_type="application/xml", accept="text/plain")
+    bad_state = list_state(api)
+    print("OIE_DISPOSABLE_NEGATIVE_TEXT_PLAIN_HTTP_CODE=" + str(bad_code))
+    print("OIE_DISPOSABLE_NEGATIVE_TEXT_PLAIN_STATE=" + bad_state)
+    if bad_code != 406 or bad_state != "UNDEPLOYED":
+        hold("NEGATIVE_CONTENT_NEGOTIATION_NOT_REPRODUCED")
+    # Then change *only* Accept header on the same isolated Channel. This
+    # never calls the real worker01 engine, nor repeats an unknown live POST.
     code, data = api.call(
-        f"/api/channels/{V2_ID}/_deploy?returnErrors=true&debug=false",
-        method="POST", body=b"", content_type="application/xml",
-        accept="text/plain")
-    # The real Self-Runner V2 write gate uses Accept: text/plain for all
-    # lifecycle POSTs; earlier isolated 4.7 smoke used application/xml.
-    # Pin the exact production header before attributing failures to the
-    # real worker01 environment rather than HTTP content negotiation.
-    print("OIE_DISPOSABLE_DEPLOY_ACCEPT_HEADER=TEXT_PLAIN")
+        deploy_path, method="POST", body=b"",
+        content_type="application/xml", accept="application/xml")
+    print("OIE_DISPOSABLE_DEPLOY_ACCEPT_HEADER=APPLICATION_XML")
     print("OIE_DISPOSABLE_DEPLOY_HTTP_CODE=" + str(code))
     state = list_state(api)
     print("OIE_DISPOSABLE_STATE_AFTER_DEPLOY=" + state)
