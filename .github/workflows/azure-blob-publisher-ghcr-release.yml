@@ -14,6 +14,15 @@ on:
       # Only the reviewed workflow addition/change activates a one-time release.
       - ".github/workflows/azure-blob-publisher-ghcr-release.yml"
   workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Explicit source-image publication approval: PUBLISH_GHCR_PUBLISHER_SHA_ONLY"
+        type: string
+        required: true
+      source_sha:
+        description: "Exact 40-hex Main HEAD commit to embed and publish; must match this workflow run SHA"
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -70,6 +79,9 @@ jobs:
           flow=Path('.github/workflows/azure-blob-publisher-ghcr-release.yml').read_text()
           marker="if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1"
           assert marker in flow, "HOLD_GHCR_RELEASE_NOT_DISPATCH_GATED"
+          assert "inputs.confirmation == 'PUBLISH_GHCR_PUBLISHER_SHA_ONLY'" in flow
+          assert "inputs.source_sha == github.sha" in flow
+          assert "HOLD_GHCR_SOURCE_SHA_CONFIRMATION_REQUIRED" in flow
           assert "if: github.event_name != 'workflow_dispatch'" in flow
           print("GHCR_MANUAL_ONLY_RELEASE_STATIC_GATE=PASS")
           PY
@@ -116,6 +128,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: {persist-credentials: false}
+      - name: Validate distinct manual GHCR release approval and exact Main source SHA
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" || "$GITHUB_RUN_ATTEMPT" != 1 ||
+                "$RELEASE_CONFIRMATION" != "PUBLISH_GHCR_PUBLISHER_SHA_ONLY" ||
+                ! "$RELEASE_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ||
+                "$RELEASE_SOURCE_SHA" != "$GITHUB_SHA" ]]; then
+            echo HOLD_GHCR_SOURCE_SHA_CONFIRMATION_REQUIRED
+            exit 1
+          fi
+          echo GHCR_SOURCE_SHA_AND_APPROVAL_PIN=PASS
       - name: Bind base to actual immutable digest and clean-build independent image
         id: build
         shell: bash
@@ -208,7 +236,7 @@ jobs:
       - name: Publish git-SHA tag only on explicitly authorized Main dispatch
         # A workflow-source PR merge is NOT permission to publish a package.
         # Push-to-Main is hosted build/smoke only; manual release is separate.
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.run_attempt == 1 && inputs.confirmation == 'PUBLISH_GHCR_PUBLISHER_SHA_ONLY' && inputs.source_sha == github.sha
         shell: bash
         env:
           GHCR_USER: ${{ github.actor }}
