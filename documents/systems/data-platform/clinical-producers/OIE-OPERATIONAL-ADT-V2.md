@@ -2,6 +2,12 @@
 
 > 当前状态（2026-11-07 ET）：**现有 V2 Channel 已经在 worker01 真实 Deploy → STOPPED 验证 → Start → STARTED，后续独立双状态 GET 再次确认 STARTED，START_ONLY 实机验收 PASS**。此前首次 HTTP 406 导致的 UNDEPLOYED/HOLD 仅是历史记录，已通过修复 Accept Header 和新的一次性明确授权操作解决。旧 A01 在本次启动及后续只读检查中保持稳定；**Publisher GHCR SHA-only 镜像已于本日真实发布、独立拉取验证 Digest/Revision，但尚未发送新 A01/A03 FHIR/HL7 消息、未完成 OIE Derby Message 独立读回、Raw HL7 → Azure Blob 发布与 E2E**。后续消息写入、Publisher 与 Blob 操作仍需各自的明确授权。本文件不授权任何额外真实写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
 
+## 正式双事件 E2E 的源审计门禁（2026-11-07）
+
+- Self-Runner [PR #575](https://github.com/JohnZhang-DataForge/Self-Runner/pull/575) 已合并，Hosted [Run #42390864435](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42390864435) PASS；真实 Live Job SKIPPED。
+- 冻结的新来源 Batch 在执行 V2 Sender POST 前，必须满足 `1 <= a03_eligible <= a01_eligible`，并且零 HOLD、来源 SHA/Request/Profile/事件数量合同全部合格。**只有 A01、没有 A03 的 Batch 不是正式 A01+A03 E2E**，必须停止；仍在院的 A01-only Encounter 可与其它已完成住院的 A03 同 Batch 存在。
+- 这仅补强 Controller 的源审计/Hosted 回归，**不授权**新 Synthea 请求、OIE Message POST、Derby 持久化改动、Kubernetes Job 或 Azure PUT。已发布 GHCR Digest 和 `PUBLISHER_IMAGE=""` 继续各司其职，未修改历史 Channel 或 Batch。后续真实 E2E 需新的确切执行授权、资源审计、逐事件持久化与远端 Blob 独立读回。
+
 ## 业务目标
 
 这条 Hospital B 模拟 HL7 路线要展示**不同医疗数据源格式**，而 FHIR Fabric PySpark 与 HL7 Parser + dbt 展示**不同数据处理引擎**，均在相同 Canonical v1 Patient/Encounter Candidate → 一套 Silver Approval 和共享 OMOP 逻辑汇合。OIE 是医院来源的 HL7 Producer，不执行 dbt、不写 OMOP、更不先将 HL7 解回 FHIR。
