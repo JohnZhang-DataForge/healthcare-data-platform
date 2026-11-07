@@ -1186,6 +1186,148 @@ def plan_and_write_g5_candidate_delta(
     return "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD"
 
 
+
+def execute_g5_person_visit_business(
+    spark, *, scope, handoff, concepts_from_verified_warehouse,
+    mapping_profile_bytes: bytes, raw_publish_run_id: str,
+    patient_contract_json: str, encounter_contract_json: str,
+    mode: str, write_authorized: bool,
+    clinically_reviewed: bool, license_reviewed: bool,
+    warehouse_snapshot_verified: bool,
+    clinical_review_sha256: str, license_review_sha256: str,
+    warehouse_snapshot_sha256: str,
+) -> str:
+    """Real G5 P3 task: physical Approved Silver -> shared Mapper -> Delta.
+
+    No independent import smoke and no second platform Mapper. The caller
+    supplies independently verified Warehouse Concept/F2 snapshot evidence
+    and real P1 clinical/license review; this function never fabricates them.
+    It cannot be dispatched from Notebook parameters without those real
+    SQL/clinical assets. Re-run uses the writer's independent Delta readback.
+    """
+    from healthcare_data_engine.mapping.omop.candidates import (
+        build_omop_candidates, load_omop_mapping_profile)
+    from healthcare_data_engine.mapping.omop.candidate_publication import (
+        FrozenCandidateScope, PersonVisitCandidateHandoff,
+        freeze_candidate_scope)
+    if (engine_version != "0.1.7"
+            or not isinstance(scope, FrozenCandidateScope)
+            or not isinstance(handoff, PersonVisitCandidateHandoff)
+            or scope.source_batch_id != handoff.source_batch_id
+            or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
+            or scope.mapping_sha256 is None
+            or mode not in ("G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY")):
+        raise RuntimeError("HOLD_G5_BUSINESS_RELEASE_OR_F2_SCOPE")
+    # Actual review evidence is mandatory for a write, but not for building
+    # and classifying a direct real-data mapping error. Fake clinical values
+    # never become OMOP candidates simply because Spark transformations run.
+    if mode == "G5_CANDIDATE_WRITE" and not (
+            write_authorized and clinically_reviewed and license_reviewed
+            and warehouse_snapshot_verified):
+        raise RuntimeError("HOLD_G5_BUSINESS_P1_F2_APPROVAL_MISSING")
+    if (not isinstance(mapping_profile_bytes, bytes)
+            or len(mapping_profile_bytes) > 65536
+            or hashlib.sha256(mapping_profile_bytes).hexdigest()
+                != scope.mapping_sha256):
+        raise RuntimeError("HOLD_G5_BUSINESS_MAPPING_PROFILE_BYTES")
+    # Strict existing Mapper validates the exact source namespace and all
+    # mapped concept IDs. It never guesses unmatched Race/Ethnicity/Visit.
+    load_omop_mapping_profile(
+        mapping_profile_bytes, scope.mapping_sha256, scope.source_system)
+    if (not isinstance(raw_publish_run_id, str)
+            or not raw_publish_run_id
+            or raw_publish_run_id != raw_publish_run_id.strip()):
+        raise RuntimeError("HOLD_G5_BUSINESS_RAW_PUBLICATION_UNPINNED")
+    # Only ever read the physical G4 DataFrames after rechecking exact
+    # original Manifest, Approval, row counts, source keys and FK.
+    verify_fhir_g5_candidate_source_readonly(
+        spark, request=scope.request_id,
+        manifest_sha=scope.manifest_sha256,
+        allow_write=False, retention_ok=False,
+        strategy="DELTA_RAW_SNAPSHOT_V1",
+        manifest_override="", source_override="", target_override="",
+        patient_contract_json=patient_contract_json,
+        encounter_contract_json=encounter_contract_json)
+    paths = _g4_paths(scope.request_id)
+    patient = spark.read.format("delta").load(paths["patient"])
+    encounter = spark.read.format("delta").load(paths["encounter"])
+    approval_rows = spark.read.format("delta").load(paths["approval"]).collect()
+    if len(approval_rows) != 1:
+        raise RuntimeError("HOLD_G5_BUSINESS_G4_APPROVAL_NOT_UNIQUE")
+    approval = approval_rows[0].asDict(recursive=True)
+    if (approval.get("status") != "SILVER_APPROVED"
+            or approval.get("publication_id") != scope.silver_publication_id
+            or approval.get("source_batch_id") != scope.source_batch_id
+            or approval.get("manifest_sha256") != scope.manifest_sha256
+            or approval.get("processing_version") != scope.silver_processing_version
+            or approval.get("patient_count") != scope.patient_count
+            or approval.get("encounter_count") != scope.encounter_count
+            or approval.get("quarantine_count") != 0):
+        raise RuntimeError("HOLD_G5_BUSINESS_G4_APPROVAL_DRIFT")
+    if (concepts_from_verified_warehouse is None
+            or not hasattr(concepts_from_verified_warehouse, "columns")):
+        raise RuntimeError("HOLD_G5_BUSINESS_F1_CONCEPT_SNAPSHOT_MISSING")
+    # F2 provisional IDs stay explicit and are never persisted as Warehouse
+    # Gold or treated as existing committed etl.identity_map records.
+    if not handoff.person_lookup or not handoff.batch_visits:
+        raise RuntimeError("HOLD_G5_BUSINESS_F2_ID_LOOKUP_EMPTY")
+    for person_id in (r.person_id for r in handoff.person_lookup):
+        if type(person_id) is not int or not 0 < person_id <= 2147483647:
+            raise RuntimeError("HOLD_G5_BUSINESS_PERSON_INT_RANGE")
+    for item in handoff.batch_visits:
+        if type(item.visit_occurrence_id) is not int or not (
+                0 < item.visit_occurrence_id <= 2147483647):
+            raise RuntimeError("HOLD_G5_BUSINESS_VISIT_INT_RANGE")
+    id_map = spark.createDataFrame(
+        [("PERSON", p.hospital_id, p.source_system,
+          p.source_business_key, p.person_id) for p in handoff.person_lookup],
+        "entity_type string, hospital_id string, source_system string, "
+        "source_business_key string, omop_id int")
+    mapped = build_omop_candidates(
+        patient, encounter, id_map, concepts_from_verified_warehouse,
+        approval=approval, hospital_id=scope.hospital_id,
+        source_system=scope.source_system,
+        source_batch_id=scope.source_batch_id,
+        manifest_sha256=scope.manifest_sha256,
+        processing_version=scope.silver_processing_version,
+        mapping_profile_bytes=mapping_profile_bytes,
+        mapping_profile_sha256=scope.mapping_sha256,
+        raw_publish_run_id=raw_publish_run_id)
+    if freeze_candidate_scope(
+            handoff, mapped, feed_id=scope.feed_id,
+            request_id=scope.request_id) != scope:
+        raise RuntimeError("HOLD_G5_BUSINESS_MAPPER_F2_SCOPE_CONFLICT")
+    # F2 proposes IDs, Shared Mapper owns every OMOP clinical data column.
+    # Never rewrite mapped output fields in this native coordinator.
+    persons = spark.createDataFrame(
+        [(p.person_id, p.state) for p in handoff.batch_persons],
+        "person_id int, identity_state string")
+    visits = spark.createDataFrame(
+        [(v.source_system, v.source_encounter_id,
+          v.visit_occurrence_id, v.state, v.parent_state)
+         for v in handoff.batch_visits],
+        "source_system string, source_encounter_id string, "
+        "visit_occurrence_id int, identity_state string, "
+        "parent_identity_state string")
+    candidate_person = mapped.person.join(persons, "person_id", "inner")
+    candidate_visit = mapped.visit.join(
+        visits, ["source_system", "source_encounter_id"], "inner")
+    return plan_and_write_g5_candidate_delta(
+        spark, scope=scope, handoff=handoff, mapper_result=mapped,
+        person_candidate=candidate_person,
+        visit_candidate=candidate_visit, mode=mode,
+        write_authorized=write_authorized,
+        clinically_reviewed=clinically_reviewed,
+        license_reviewed=license_reviewed,
+        warehouse_snapshot_verified=warehouse_snapshot_verified,
+        clinical_review_sha256=clinical_review_sha256,
+        license_review_sha256=license_review_sha256,
+        warehouse_snapshot_sha256=warehouse_snapshot_sha256,
+        patient_contract_json=patient_contract_json,
+        encounter_contract_json=encounter_contract_json)
+
+
+
 def verify_fhir_g5_candidate_source_readonly(
     spark, *, request: str, manifest_sha: str, allow_write: bool,
     retention_ok: bool, strategy: str, manifest_override: str,
