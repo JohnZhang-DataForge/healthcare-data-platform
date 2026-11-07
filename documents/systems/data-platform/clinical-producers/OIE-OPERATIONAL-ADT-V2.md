@@ -298,3 +298,11 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 - 只有 P2→P3 对账一致后才允许读取 Azure 目标 Prefix，再使用原 Publisher immutability contract 执行独立 PUT、远端 GET/HEAD 和 manifest-last；仅已确认首次完整 Commit 的 Batch 可以做 Blob-only replay 测试。P3 不创建新的 Synthea Request、不覆盖旧 Batch/旧 A01，不自动清理 P2 证据。
 
 **目前的真实门禁：** GHCR 固定已发布 Digest/OCI Revision 仅作候选发行物验收；运行时 `PUBLISHER_IMAGE=""` 仍阻止 P2 和 P3 真实执行。Hosted [Run #42396202994](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42396202994) 源码/负向门禁 PASS，两种 Live Job 都 SKIPPED；没有新消息 POST、独立 Derby 读回或 Azure PUT 的真实 PASS 证据。若后续获得 P2 授权，应先只读核验资源和当次共享占用，并单独审核解锁范围；不能直接重跑旧 E2E。
+
+
+## P2 第一次真实执行 HOLD — 仅预检失败、没有消息或 Azure 写入（2026-11-07 ET）
+
+- 本次单独允许的一次性 P2 范围是新合成 Johns Creek FHIR 50 人，通过 OIE V2 Channel `6b91681e-5b3b-59cb-b270-09412054110c` 发 A01/A03，并对真实 Derby Message ID 独立读回；不允许 Azure Blob PUT。[Self-Runner #578](https://github.com/JohnZhang-DataForge/Self-Runner/pull/578) → Main `567d863...` 已合并，真实 [Run #42402668196](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42402668196) 已消耗一次性授权。计划 Request `johnscreek-hl7-gh-42402668196` **尚未被生成或持久化**，不能当成已创建的 Batch。
+- 实际 Run 中 Hosted + 精确 Main 授权 PASS，worker01 本地准入、OIE scoped/CA Secret、V2 List/Config/Status 的 GET **HTTP 200**；紧接着旧比较器输出 `HOLD_V2_CHANNEL_CONFIG_DRIFT`，Controller 在创建 Synthea Request/ConfigMap/Job **之前**退出。即该次 **OIE POST=0 / 持久化新消息=0 / Azure Blob PUT=0**；不清理、不重发、不改旧 A01。
+- 定位到 Controller 旧的只读比较器没有复用已经真实验收的 STOPPED 导入及 **16 个 XStream version** 归一化，也不支持 v4.7 顶层 `dashboardStatus`。经 [Self-Runner #580](https://github.com/JohnZhang-DataForge/Self-Runner/pull/580) / Main `3b12709...` 替换为之前独立批准的严格 Config 比较和确切 V2 Channel 顶层 STARTED 判断，Hosted 正反测试 PASS；未知 Mapper/Destination 属性、错误 ID/状态/缺少旧 A01 均仍然 HOLD。
+- **当前分界：** 此次只证明真实只读前置检查尝试和源码修复，不能反推 V2 配置已真实重新验收，也不能反推新 A01/A03/Derby 已成功。若要继续，先在新的独立 GET-only 实机证据中确认新比较器通过，然后取得**下一次全新 P2 Request 的单独批准**；不能重跑旧 Run/旧 Request。既有 GHCR Release 不变，P3 Azure 写入继续 HOLD。
