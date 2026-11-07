@@ -1,0 +1,21 @@
+hl7_canonical_candidate:
+  target: local
+  outputs:
+    local:
+      type: fabricspark
+      method: session
+      schema: hl7_candidate
+      lakehouse: hl7_candidate
+      threads: 1
+      spark_config:
+        name: healthcare-hl7-dbt-local-candidate
+        conf:
+          spark.master: "local[2]"
+          spark.ui.enabled: "false"
+          spark.sql.warehouse.dir: "{{ env_var('HL7_LOCAL_WAREHOUSE_URI') }}"
+          spark.sql.session.timeZone: "UTC"
+          spark.jars.packages: "io.delta:delta-spark_2.12:3.3.2"
+          spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"
+          spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+          spark.sql.sources.default: "delta"
+      auto_optimize: false

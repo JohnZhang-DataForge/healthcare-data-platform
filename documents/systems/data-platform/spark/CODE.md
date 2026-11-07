@@ -151,3 +151,22 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 历史 `task002`、`task003`、`task004` 模板/代码/合同仍可能用于兼容，不能因导航整理而修改、重新运行或批量 Rename。所有 `*.yaml.tpl` 必须先检查镜像 Digest、Namespace、ServiceAccount、S3 Batch Prefix 和共享 Spark 资源并发；新源码按 [组件命名规范](../../../engineering/development/CODE-ORGANIZATION-AND-NAMING.md) 管理。
 
 > **P4 版本边界**：三个源模板 Git 中已加 Listener，但基础 `task004-runtime` 的旧 GHCR 镜像不会因为源码修改自动变化。本轮仅在 `landing-processing-runtime` 子镜像 Dockerfile 显式覆盖三个模板，供 `new_only_omop_consumer` 的 `spark_patient` / `spark_encounter` / `spark_reconcile` 使用。后续需对该一个镜像执行手动 Clean Build/Smoke/`publish-latest` 并真实验证，未完成前不得宣称正在运行的 Pod 已带 Listener。
+
+## HL7 V2 Source-specific Delta/dbt Component（新功能 Owner）
+
+经审核的 Johns Creek OIE V2 Consumer 的 Python Source Parser、Manifest Intake、本地 Delta Writer 和 dbt SQL 模型由 [HL7 CODE](../hl7/CODE.md) **唯一详细维护**；本 Spark CODE 只做跨组件导航，避免维护第二张不同步的源码清单。其结构化 Source Candidate 严格依据本 CODE 上述 `canonical/patient-v1.json` 与 `encounter-v1.json` 合同，后续统一 Shared OMOP/Publisher，未获授权写正式 Fabric Silver。
+
+### HL7 Spark CODE Gate 按实际源文件建立精确链接
+
+以上详细组件 Owner 由 [HL7 CODE](../hl7/CODE.md) 维护；CI 的 Spark Source Map 要求本 CODE 对每个新增物理源提供精确链接：
+
+| Source | Summary |
+| --- | --- |
+| [`dbt_project.yml`](../../../../local-data-platform/spark/apps/hl7/dbt_project.yml) | dbt local Source→Candidate 项目 |
+| [`landing_intake.py`](../../../../local-data-platform/spark/apps/hl7/landing_intake.py) | 不可变 OIE V2 Manifest/Raw SHA/身份 gate |
+| [`models/canonical_encounter.sql`](../../../../local-data-platform/spark/apps/hl7/models/canonical_encounter.sql) | A01+A03 统一 Encounter Candidate |
+| [`models/canonical_patient.sql`](../../../../local-data-platform/spark/apps/hl7/models/canonical_patient.sql) | 统一 Patient Candidate |
+| [`models/sources.yml`](../../../../local-data-platform/spark/apps/hl7/models/sources.yml) | local Delta staging dbt Source |
+| [`parse_oie_v2.py`](../../../../local-data-platform/spark/apps/hl7/parse_oie_v2.py) | 经批准的 hl7apy V2 Parser |
+| [`profiles/local/profiles.yml`](../../../../local-data-platform/spark/apps/hl7/profiles/local/profiles.yml) | local Spark/Delta dbt 配置 |
+| [`write_staging_delta.py`](../../../../local-data-platform/spark/apps/hl7/write_staging_delta.py) | 本地 Delta staging 物理 create/replay |
