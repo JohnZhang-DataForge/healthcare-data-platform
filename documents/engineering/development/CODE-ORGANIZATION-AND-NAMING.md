@@ -65,6 +65,10 @@ Azure Exporter/Fabric = 独立分析副本链路
 
 2026-10-31 Fabric 项目最终规范：[Native Notebook/Pipeline/Environment ADR](../../architecture/design/FABRIC-NATIVE-NOTEBOOK-PIPELINE-ENVIRONMENT-ADR-20261031.md)。Fabric NB/PL 是必须的原生执行资源，Environment 管共享包构建产物；不额外创建 Fabric I/O/runtime 包。
 
+## Fabric dbt 项目命名例外（2026-11-07）
+
+正式 Fabric 主线 dbt Core 项目目标父目录是 `azure-fabric/dbt/`；首期 `hl7-canonical/`，内部 `name: hl7_canonical`。项目保持 `models/staging/`、`models/intermediate/`、`models/canonical/`、`macros/`、`tests/`、`seeds/`、`snapshots/`、`analyses/`、`profiles/` 等标准骨架，暂无实现时用 `.gitkeep`。现有 Required Gate 禁止源码 `tests/`，故**在独立可信政策例外完成之前，不得创建该标准骨架**。现有 HL7 SQL 仍在 Local DP，源目录迁移须单独验收；其他 FHIR/共享业务 Project 需 OpenSpec。详见 [Fabric dbt 规则](../../systems/azure-fabric/dbt/README.md)。
+
 ## 验收与实际保护状态（2026-11-05）
 
 - [PR #715](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/715) 的可信命名检查已合并到 main，真实 [正向 PR #716](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/716) 为 PASS、[负向 PR #717](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/717) 为 FAIL；历史 223 个 Task 文件未改。

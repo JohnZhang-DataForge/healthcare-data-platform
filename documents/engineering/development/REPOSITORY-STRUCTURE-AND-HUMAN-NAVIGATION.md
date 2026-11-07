@@ -25,6 +25,7 @@ Root `README.md` is the portfolio overview, root `AGENTS.md` sets mandatory Agen
 | Add a feature | Relevant system owner + `openspec/changes/<change>/` | New task-number folders or separate CURRENT/NEXT docs |
 | Find accepted architectural constraints | `openspec/specs/` | Treating drafts/archived tasks as active |
 | Test new code | `.github/quality/tests/<system>/<component>/` | Creating another source-local tests tree |
+| Add / move a Fabric dbt project | [Fabric dbt directory and Agent policy](../../systems/azure-fabric/dbt/README.md) + Active OpenSpec | Ad-hoc `ingestion/`, per-hospital project, unapproved `tests/` Layout Gate bypass |
 | Add deployment assets | `azure-fabric/deployment/<registered-component>/` / actual platform-specific ownership | Mixing application business modules with deployment manifests |
 | Find historical outcomes | `openspec/changes/archive/`, Git PR / immutable Runs | Copying a large dated timeline into the current README |
 
