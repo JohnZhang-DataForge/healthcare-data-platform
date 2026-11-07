@@ -281,6 +281,26 @@ class CandidatePublicationPlanTests(unittest.TestCase):
                     CandidatePublicationHold):
                 complete_observed(s, **args)
 
+    def test_017_package_metadata_and_public_p3_api_are_same_release(self):
+        import tomllib
+        import healthcare_data_engine as engine
+        project = tomllib.loads(
+            (Path(__file__).resolve().parents[5] /
+             "shared-data-engine/pyproject.toml").read_text())["project"]
+        self.assertEqual(project["version"], engine.__version__)
+        self.assertEqual(engine.__version__, "0.1.7")
+        self.assertIs(engine.FrozenCandidateScope, FrozenCandidateScope)
+        self.assertIs(engine.ObservedCandidate, ObservedCandidate)
+        self.assertIs(engine.CandidatePublicationPlan, CandidatePublicationPlan)
+        self.assertIs(engine.decide_candidate_publication,
+                      decide_candidate_publication)
+        self.assertIs(engine.freeze_candidate_scope, freeze_candidate_scope)
+        self.assertIs(engine.classify_mapping_failure,
+                      classify_mapping_failure)
+        # Pure planning is source-only: even first-batch has NO Gold grant.
+        self.assertFalse(engine.decide_candidate_publication(
+            scope(), ()).gold_commit_authorized)
+
     def test_module_has_no_azure_sql_spark_or_delta_io(self):
         import inspect
         import healthcare_data_engine.mapping.omop.candidate_publication as mod
