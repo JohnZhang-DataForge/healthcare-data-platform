@@ -29,6 +29,9 @@ LEGACY_VERSION = "0.1.3"
 SOURCE_CANDIDATE_VERSION = "0.1.7"
 PINNED_WHEEL_SHA256 = (
     "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff")
+PINNED_REVIEW_ONLY_017_SHA256 = (
+    "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
+REVIEW_ONLY_VERSION = "0.1.7"
 
 
 class G5NativeWheelIsolation(unittest.TestCase):
@@ -48,12 +51,22 @@ class G5NativeWheelIsolation(unittest.TestCase):
             tomllib.loads(SOURCE_METADATA.read_text(encoding="utf-8"))
             ["project"]["version"], SOURCE_CANDIDATE_VERSION)
         wheel_files = sorted(LIBS.glob("*.whl"))
-        self.assertEqual(
-            [p.name for p in wheel_files],
-            [f"healthcare_data_engine-{PUBLISHED_VERSION}-py3-none-any.whl"])
+        # Source PR: Git-native contains sole GA 0.1.6.
+        # Candidate staging PR: Git-native contains sole review-only 0.1.7.
+        # In BOTH cases the installed test runtime is independently fetched
+        # from immutable GA commit; Git staging is NEVER a Publish assertion.
+        self.assertEqual(len(wheel_files), 1)
+        actual = wheel_files[0].name
+        allowed = {
+            f"healthcare_data_engine-{PUBLISHED_VERSION}-py3-none-any.whl":
+                PINNED_WHEEL_SHA256,
+            f"healthcare_data_engine-{REVIEW_ONLY_VERSION}-py3-none-any.whl":
+                PINNED_REVIEW_ONLY_017_SHA256,
+        }
+        self.assertIn(actual, allowed)
         self.assertEqual(
             hashlib.sha256(wheel_files[0].read_bytes()).hexdigest(),
-            PINNED_WHEEL_SHA256)
+            allowed[actual])
         source = NATIVE.read_text(encoding="utf-8")
         self.assertEqual(
             source.count('if engine_version != "0.1.6":'), 3)
