@@ -1,6 +1,6 @@
 # OIE HL7 v2.5.1 ADT 业务事件 V2 — 离线实现与验收边界
 
-> 状态：**SOURCE / STATIC PASS（GitHub-hosted offline CI）**；当前尚无新版本 OIE Channel 实机导入/运行，也未完成 Raw HL7 → Azure Blob 交付。本文件不授权任何真实资源写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
+> 当前状态（2026-11-06 ET）：**V2 Channel IMPORT_ONLY 真实验收 PASS，当前为 UNDEPLOYED**；SOURCE / STATIC PASS 继续成立，但 V2 尚未 Deploy/STARTED，也没有新 A01/A03 OIE Message POST、Derby persisted readback 或 Raw HL7 → Azure Blob 实机验收。后续 START_ONLY 和完整 E2E 需要分别明确批准。本文件不授权额外资源写入。任务与证据见 [Active OpenSpec](../../../../openspec/changes/operationalize-oie-hl7-adt-feed/tasks.md)。
 
 ## 业务目标
 
@@ -48,7 +48,7 @@ HL7 源直接从 **真实 FHIR Patient/Encounter 字段**投影：
 - **已验收离线证据：** [PR #735 最新 CI（首次完整代码验证）](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42220398131) — V2 Node 10/10、Channel XML 4/4、第三方 hl7apy 3/3、旧 A01 回归 10/10 PASS。真实冻结 Synthea FHIR Source Profile、实际 OIE 新 Channel 运行仍 **OPEN**。
 - **独立实机门禁：** 只有 Node/Static CI 不能宣称 OIE v2 已运行。需在受控授权后用新来源批次部署到 OIE，并由独立读回解析 HL7；Blob Delivery 另需 manifest-last + remote GET/sha 验证。
 
-## 下阶段必需的真实工程工作
+## 初始后续工程计划（历史记录；当前验收以文末最新实机证据为准）
 
 下一阶段要完成：实机部署前只读审计、Channel Writer/Transport 方案与单消息持久化、原始 HL7 bytes 的出口、source+processing identity + Blob manifest-last/remote GET、failure/replay/HOLD 以及 Sender 两次事件请求 A01/A03 的执行/回退。MLLP/ACK 属于之后展示真实医院消息传输协议时单独开放的受控接口。**这些任务当前均未完成**。
 
@@ -188,3 +188,32 @@ V2 的 GHCR Publisher Digest 应沿用 Healthcare SHA-only release workflow 的 
 - `GET /api/channels/{V2_ID}/status` 如果返回 **HTTP 204 No Content**，只能判断“该响应没有当前状态证据”，绝对不得将它解释为已 `UNDEPLOYED` / `STOPPED`。即便 Channel LIST 显示 V2 存在，配置 GET 合法，当前状态不明确时仍必须 `HOLD_OIE_V2_STATUS_HTTP_204_UNKNOWN_READONLY_RECONCILE`；未知结果不自动重试 IMPORT 或 DEPLOY，须经单独的 GET-only dashboard/status/metadata 复核。未来若要引入新的状态替代证明，需要另行测试并合并只读门禁，不能从无内容猜测当前态。
 - `START_ONLY` 阶段在 V2 单 Channel `/_deploy` 后、单 Channel `/_start` 之前，会重新获取旧 A01 的配置和当前状态与前置快照比较。任何差异直接 HOLD，不发送 `/_start`；事后仍需检查 V2 确切 `STARTED` 和旧 Channel 的前后快照。此阶段不会主动修改旧 Channel。
 - **进度定义**：本次 Host CI 成功只证明安全门禁行为，不是 V2 已导入/启动或 A01/A03 已真正交付 Blob 的证据。运营 OpenSpec 2.1–2.4 仍 OPEN；进行实际 `IMPORT_ONLY` 与 `START_ONLY` 必须分别重新取得明确的、针对运行资源的授权和当次资源检查。
+
+
+## OIE V2 IMPORT_ONLY — 真实上线验收（2026-11-06 ET，已完成）
+
+本节是本文件的**最新实机证据**，替代上文或其它历史段落中“V2 尚未导入/未安装”的过期状态描述。旧 Johns Creek A01 Channel/ID/Derby/PVC 仍是独立遗留资产，绝不因 V2 导入而重建、覆盖或重放历史消息。
+
+### One-shot CREATE 实际执行及第一次 HOLD
+
+- 已批准的操作范围仅为 `IMPORT_ONLY`：固定 Healthcare Source SHA `b63e89b8ebed04f8f371db95562413597c54295a`；V2 Channel ID `6b91681e-5b3b-59cb-b270-09412054110c`；不部署、不启动、不发送 FHIR/HL7、不写 Azure。原 Builder XML 保留 `initialState=STARTED`，真正导入使用经审查的**唯一 STOPPED 派生 XML**，其 SHA256 为 `3a2af7d775cf62eb8b2f1c28cdff2d166034fd6252408dc32979e3928f246925`。
+- [Self-Runner PR #554](https://github.com/JohnZhang-DataForge/Self-Runner/pull/554) / Main `630ad5f24d7ee7eefcf1f0142571ba82a3289afd` 以**新增且内容精确的单次 Main Intent** 经 Hosted 测试/验证后执行唯一的一次 `POST /api/channels/`。真实 [Run #42326461211](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42326461211) 的 worker01/OIE preflight PASS，打印 `OIE_V2_IMPORT_MUTATION_ATTEMPT=ONE`；创建结果得到后，原字节级 Source/Destination XML 比较因 `HOLD_OIE_V2_IMPORTED_XML_DRIFT` 拒绝验收。**不能重试创建请求**；失败发生在创建之后而非创建之前，Job 整体 FAILURE 不能误写成“Channel 不存在”。
+- [GET-only PR #555](https://github.com/JohnZhang-DataForge/Self-Runner/pull/555) / [实机 Run #42326778011](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42326778011) 独立证实：新 Channel **已出现在 OIE List 且 Config GET 存在**；ID、名称、初始状态 `STOPPED`、整个 Mapper、Source Transport 均与审核版一致；Source Properties/None Destination 的全部实际差异**仅为 16 个 XStream 序列化 `@version` 属性路径**，没有发现其它内容差异；旧 A01 配置/状态在这次 GET-only Run 的前后快照一致。Status GET 尚待独立分类。本检查无任何 OIE 写入。
+
+### 正式导入验收 PASS — 独立配置与状态交叉验证
+
+- [Self-Runner PR #556](https://github.com/JohnZhang-DataForge/Self-Runner/pull/556) / Main `c1afd8647c8d1da2b66b70d195202725f7061572` 将上述 **16 个真实观察到的 XStream 版本属性路径**加入严格、限定的配置比较归一化；Mapper、ID、名称、初始状态、Source Transport、Destination 其它内容或未知属性不允许漂移。Hosted 正反向测试 PASS；Main push 不触发任何导入。
+- [GET-only PR #557](https://github.com/JohnZhang-DataForge/Self-Runner/pull/557) / Main `6015b122be2c4d20aa37f6097dd6a3d915fdc9e4` 的**真实** [Run #42327337318](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42327337318) 记录：
+  - `OIE_V2_APPROVED_CONFIG_NORMALIZED_GET=PASS`；
+  - `OIE_V2_SINGLE_STATUS_GET_HTTP=404`（不能据此猜测当前状态）；
+  - `OIE_V2_INCLUDE_UNDEPLOYED_GET_HTTP=200`，独立身份绑定的状态列表明确给出**该 V2 Channel 的 `UNDEPLOYED`**；
+  - `OIE_V2_LEGACY_WITHIN_RUN_CONSISTENT=PASS`；
+  - **`OIE_V2_IMPORT_ONLY_ACCEPTANCE=PASS`**；
+  - `OIE_V2_CHANNEL_DEPLOY=NO`、`OIE_V2_CHANNEL_START=NO`、`OIE_V2_FHIR_POST=NO`、`OIE_V2_AZURE_PUT=NO`。
+- [Self-Runner PR #558](https://github.com/JohnZhang-DataForge/Self-Runner/pull/558) / Main `4ddefd16cdd1602285516ddc470d9eebe4d430f9` 进一步把真实的单 Channel status HTTP 404 作为**仅该 V2 ID 的标量缺失**处理；只有独立状态列表 200 + 精确 V2 ID + `UNDEPLOYED` 才能通过；HTTP 500/其它路径/错误 ID/状态冲突一律 HOLD。该修复仅准备未来单独批准的 START_ONLY，不代表已启动。
+
+### 当前边界与下一次独立审批
+
+- **已完成：** OIE 4.7.0 新 V2 Channel 被创建，STOPPED 导入 XML 配置经独立归一化 GET 验证，当前生命周期状态 **UNDEPLOYED**。这是`IMPORT_ONLY` 的真实 PASS，不是新 A01/A03 Producer 全链路 PASS。旧 A01 的“同次只读快照稳定”不等于跨全部历史 Run 的逐字节零变化证明。
+- **仍未执行：** V2 的 `/_deploy`、`/_start`、真实 Frozen FHIR A01/A03 POST/ACK、Derby Message ID 独立 GET、GHCR V2 Publisher Digest 发布与绑定、Azure Blob immutable PUT/GET/HEAD/manifest-last/replay；Phase 2 的任务 2.1–2.4 仍有其它未关闭的工作项。
+- **下一步：** 重新检查 Session Coordination 与实时共享资源状态并**单独取得 START_ONLY 明确授权**；运行受控的 V2-only Deploy（目标当前 STOPPED）→ 先独立 GET 证明 STOPPED / Legacy Snapshot 没变化 → 同一被批准 START_ONLY 阶段内 V2-only Start → 再 GET 明确 STARTED。之后再审查 GHCR Publisher Digest 与全新 Request 的 Raw HL7 E2E 授权。**不得因为用户已批准 IMPORT_ONLY 就延伸到启动或发送消息。**
