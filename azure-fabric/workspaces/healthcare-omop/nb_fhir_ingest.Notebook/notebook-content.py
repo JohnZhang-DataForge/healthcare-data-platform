@@ -979,6 +979,39 @@ def _g5_candidate_validate_rows(person_rows, visit_rows, handoff) -> None:
         raise RuntimeError("HOLD_G5_CANDIDATE_ID_STATE")
 
 
+
+def _g5_candidate_verify_mapper_payload(mapper_result, person_candidate,
+                                        visit_candidate, scope) -> None:
+    """Require every proposed Delta payload field to equal the sole F1 Mapper.
+
+    Identity proposal adds ONLY explicitly declared provisional state/Visit ID
+    columns; it must never replace a mapped Concept, date, source value, or
+    other OMOP property with hand-authored Notebook values. Full multiset
+    comparison uses Spark exceptAll on all mapped columns, NOT a sample.
+    """
+    p_base = mapper_result.person
+    v_base = mapper_result.visit
+    p_columns = set(p_base.columns)
+    v_columns = set(v_base.columns)
+    if (p_columns != set(person_candidate.columns) - {"identity_state"}
+            or v_columns != set(visit_candidate.columns) - {
+                "visit_occurrence_id", "identity_state", "parent_identity_state"}
+            or "person_id" not in p_columns
+            or {"source_encounter_id", "source_person_id", "person_id"} - v_columns
+            or p_base.count() != scope.patient_count
+            or v_base.count() != scope.encounter_count):
+        raise RuntimeError("HOLD_G5_MAPPER_CANDIDATE_SCHEMA_OR_COUNT")
+    for mapped, candidate, columns in (
+        (p_base, person_candidate, sorted(p_columns)),
+        (v_base, visit_candidate, sorted(v_columns)),
+    ):
+        source = mapped.select(*columns)
+        target = candidate.select(*columns)
+        if (target.exceptAll(source).limit(1).count()
+                or source.exceptAll(target).limit(1).count()):
+            raise RuntimeError("HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED")
+
+
 def plan_and_write_g5_candidate_delta(
     spark, *, scope, handoff, mapper_result, person_candidate, visit_candidate,
     mode: str, write_authorized: bool,
@@ -1061,6 +1094,8 @@ def plan_and_write_g5_candidate_delta(
     vsha, v_rows = _g5_candidate_content(
         visit_candidate, key="visit_occurrence_id", expected=scope.encounter_count)
     _g5_candidate_validate_rows(p_rows, v_rows, handoff)
+    _g5_candidate_verify_mapper_payload(
+        mapper_result, person_candidate, visit_candidate, scope)
     exists = {key: _g3_delta_exists(spark, path) for key, path in paths.items()}
     if any(exists.values()) and not all(exists.values()):
         return "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT"
