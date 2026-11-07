@@ -209,6 +209,8 @@ class CandidatePublicationPlan:
 
 def decide_candidate_publication(
     scope: FrozenCandidateScope, prior: Sequence[ObservedCandidate], *,
+    expected_person_content_sha256: str | None = None,
+    expected_visit_content_sha256: str | None = None,
     unknown_write_ack: bool = False,
 ) -> CandidatePublicationPlan:
     """No I/O. Even NEW only plans a write; never permits one.
@@ -220,6 +222,12 @@ def decide_candidate_publication(
         raise CandidatePublicationHold("P3_SCOPE_INVALID")
     if type(unknown_write_ack) is not bool or not isinstance(prior, (tuple, list)):
         raise CandidatePublicationHold("P3_OBSERVATIONS_INVALID")
+    if (expected_person_content_sha256 is None) != (
+            expected_visit_content_sha256 is None):
+        raise CandidatePublicationHold("P3_EXPECTED_REPLAY_DIGEST_PAIR_REQUIRED")
+    if expected_person_content_sha256 is not None:
+        _sha(expected_person_content_sha256, "EXPECTED_PERSON_SHA")
+        _sha(expected_visit_content_sha256, "EXPECTED_VISIT_SHA")
     if unknown_write_ack:
         return CandidatePublicationPlan("VERIFY_READONLY", (), scope.receipt_key)
     matched = []
@@ -246,10 +254,15 @@ def decide_candidate_publication(
         return CandidatePublicationPlan("VERIFY_READONLY", (), scope.receipt_key)
     if not previous.independently_reopened or not previous.schema_keys_fk_verified:
         return CandidatePublicationPlan("VERIFY_READONLY", (), scope.receipt_key)
+    # A returned digest is not evidence of equality by itself. Replay SKIP
+    # requires an independently computed EXPECTED candidate-row digest pair,
+    # distinct from the two observed physical Delta readback digests.
+    if expected_person_content_sha256 is None:
+        return CandidatePublicationPlan("VERIFY_READONLY", (), scope.receipt_key)
     if (previous.person_count != scope.patient_count
             or previous.visit_count != scope.encounter_count
-            or previous.person_content_sha256 is None
-            or previous.visit_content_sha256 is None
+            or previous.person_content_sha256 != expected_person_content_sha256
+            or previous.visit_content_sha256 != expected_visit_content_sha256
             or previous.approval_status != "CANDIDATE_APPROVED"):
         return CandidatePublicationPlan("HOLD_READBACK_OR_APPROVAL_CONFLICT",
                                         (), scope.receipt_key)
