@@ -225,13 +225,13 @@ class OfflineSparkCanonical(unittest.TestCase):
 
     def test_engine_016_published_version_required_and_legacy_010_rejected(self):
         # The business Adapter contract remains independently versioned at
-        # 0.1.0; the PACKAGE version must match Fabric Environment 0.1.6.
-        self.assertEqual(ingest.engine_version, "0.1.6")
+        # 0.1.0; the PACKAGE version must match Fabric Environment 0.1.7.
+        self.assertEqual(ingest.engine_version, "0.1.7")
         ctx, manifest, obj = make_batch()
         with patch.dict(ingest.prepare_batch.__globals__, {"engine_version": "0.1.0"}):
             with self.assertRaisesRegex(ValueError, "SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH"):
                 self.prepared(ctx, manifest, obj)
-        # Return to actual Wheel 0.1.6, and verify synthetic canonical output
+        # Return to actual Wheel 0.1.7, and verify synthetic canonical output
         # maintains its separate data-record adapter_version contract 0.1.0.
         batch = self.prepared(ctx, manifest, obj)
         self.assertEqual(batch.patient_df.select("adapter_version").first()[0], "0.1.0")

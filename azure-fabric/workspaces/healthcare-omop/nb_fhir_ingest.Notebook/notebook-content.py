@@ -238,7 +238,7 @@ def prepare_batch(spark, *, context: BatchContext, manifest_bytes: bytes,
                   source_objects: Iterable[SourceObject],
                   patient_contract_bytes: bytes, encounter_contract_bytes: bytes) -> PreparedBatch:
     """Offline-executable conversion using injected SparkSession, no persisted output."""
-    if engine_version != "0.1.6":
+    if engine_version != "0.1.7":
         raise ValueError("SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH")
     objects = tuple(source_objects)
     receipts = verify_source_objects(manifest_bytes, objects, context)
@@ -408,7 +408,7 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
     if (mode == "BRONZE_READBACK_ONLY" and
             (allow_write is not False or retention_ok is not False)):
         raise RuntimeError("HOLD_G3_READBACK_FLAGS_NOT_READONLY")
-    if (engine_version != "0.1.6" or not isinstance(manifest_sha, str)
+    if (engine_version != "0.1.7" or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
         raise RuntimeError("HOLD_G3_ENGINE_OR_MANIFEST_PIN_INVALID")
@@ -584,7 +584,7 @@ def _g4_independent_silver_readback(spark, paths: dict[str, str],
 
 
 # G4.c physical Delta rejection of isolated synthetic missing-DOB source.
-# Transform/conversion remains wholly inside Shared Engine 0.1.6.
+# Transform/conversion remains wholly inside Shared Engine 0.1.7.
 def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
                                derivation_sha: str, mode: str,
                                allow_write: bool, retention_ok: bool,
@@ -602,7 +602,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
     paths = _g4_paths(request)
     writable = mode == "SILVER_DQ_QUARANTINE_WRITE"
     if (allow_write is not writable or retention_ok is not writable
-            or engine_version != "0.1.6"
+            or engine_version != "0.1.7"
             or not isinstance(manifest_sha, str)
             or not isinstance(derivation_sha, str)
             or len(manifest_sha) != 64 or len(derivation_sha) != 64
@@ -732,7 +732,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
             or (mode == "SILVER_READBACK_ONLY" and
                 (allow_write is not False or retention_ok is not False))):
         raise RuntimeError("HOLD_G4_BOOLEAN_WRITE_GATES")
-    if (engine_version != "0.1.6" or not isinstance(manifest_sha, str)
+    if (engine_version != "0.1.7" or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
         raise RuntimeError("HOLD_G4_ENGINE_OR_MANIFEST_PIN")
@@ -897,6 +897,437 @@ _G5_APPROVED_PATIENTS = 100
 _G5_APPROVED_ENCOUNTERS = 5918
 
 
+def _g5_candidate_paths(scope) -> dict[str, str]:
+    _g3_receipt_path(scope.request_id)  # no traversal or unapproved request
+    if (scope.request_id != _G5_APPROVED_REQUEST
+            or scope.manifest_sha256 != _G5_APPROVED_MANIFEST_SHA
+            or scope.silver_processing_version != _G4_PROCESSING
+            or scope.patient_count != _G5_APPROVED_PATIENTS
+            or scope.encounter_count != _G5_APPROVED_ENCOUNTERS
+            or scope.hospital_id != _G3_HOSPITAL
+            or scope.feed_id != _G3_FEED
+            or scope.source_system != "synthea-fhir:" + _G3_HOSPITAL + ":" + _G3_FEED):
+        raise RuntimeError("HOLD_G5_CANDIDATE_SOURCE_SCOPE")
+    prefix = (f"Files/omop_candidate/fhir_r4/{scope.hospital_id}/"
+              f"{scope.feed_id}/{scope.request_id}/mapping={scope.mapping_sha256}")
+    return {"person": prefix + "/person_candidate",
+            "visit": prefix + "/visit_candidate",
+            "approval": prefix + "/candidate_approval"}
+
+
+def _g5_candidate_content(frame, *, key: str, expected: int) -> tuple[str, list[dict]]:
+    """Bounded deterministic full-row digest; never log protected row values."""
+    if (type(expected) is not int or not 0 < expected <= 10000
+            or key not in frame.columns
+            or len(frame.columns) != len(set(frame.columns))):
+        raise RuntimeError("HOLD_G5_CANDIDATE_SCHEMA_OR_BOUNDS")
+    rows = [r.asDict(recursive=True) for r in frame.collect()]
+    if len(rows) != expected:
+        raise RuntimeError("HOLD_G5_CANDIDATE_COUNT")
+    if len({r.get(key) for r in rows}) != expected or any(
+            type(r.get(key)) is not int or r[key] <= 0 for r in rows):
+        raise RuntimeError("HOLD_G5_CANDIDATE_DUPLICATE_OR_INVALID_ID")
+    import datetime
+    import decimal
+    def encode(value):
+        if isinstance(value, (datetime.date, datetime.datetime)):
+            return value.isoformat()
+        if isinstance(value, decimal.Decimal):
+            return str(value)
+        if isinstance(value, (bytes, bytearray)):
+            return bytes(value).hex()
+        raise TypeError("G5_UNSUPPORTED_CANDIDATE_DATATYPE")
+    digest = hashlib.sha256()
+    for row in sorted(rows, key=lambda x: x[key]):
+        if set(row) != set(frame.columns):
+            raise RuntimeError("HOLD_G5_CANDIDATE_ROW_SCHEMA")
+        raw = json.dumps(row, sort_keys=True, separators=(",", ":"),
+                         default=encode, allow_nan=False).encode("utf-8")
+        digest.update(len(raw).to_bytes(8, "big"))
+        digest.update(raw)
+    return digest.hexdigest(), rows
+
+
+def _g5_candidate_validate_rows(person_rows, visit_rows, handoff) -> None:
+    """Strict source/identity contract; do not infer any clinical Concept."""
+    persons = {(r.get("person_id"), r.get("person_source_value"),
+                r.get("identity_state")) for r in person_rows}
+    expected_person = {(p.person_id, p.source_business_key, p.state)
+                       for p in handoff.batch_persons}
+    visits = {(r.get("visit_occurrence_id"), r.get("person_id"),
+               r.get("source_encounter_id"), r.get("source_person_id"),
+               r.get("identity_state"), r.get("parent_identity_state"))
+              for r in visit_rows}
+    expected_visit = {(v.visit_occurrence_id, v.person_id,
+                       v.source_encounter_id, v.source_person_id,
+                       v.state, v.parent_state) for v in handoff.batch_visits}
+    if (len(persons) != len(person_rows) or persons != expected_person
+            or len(visits) != len(visit_rows) or visits != expected_visit):
+        raise RuntimeError("HOLD_G5_CANDIDATE_IDENTITY_OR_FK_DRIFT")
+    # Candidate is allowed provisional INT IDs; Gold is NOT.
+    if any(p.state not in ("PROVISIONAL", "PERSISTED") for p in handoff.batch_persons):
+        raise RuntimeError("HOLD_G5_CANDIDATE_ID_STATE")
+    if any(v.state not in ("PROVISIONAL", "PERSISTED") or
+           v.parent_state not in ("PROVISIONAL", "PERSISTED")
+           for v in handoff.batch_visits):
+        raise RuntimeError("HOLD_G5_CANDIDATE_ID_STATE")
+
+
+
+def _g5_candidate_verify_mapper_payload(mapper_result, person_candidate,
+                                        visit_candidate, scope) -> None:
+    """Require every proposed Delta payload field to equal the sole F1 Mapper.
+
+    Identity proposal adds ONLY explicitly declared provisional state/Visit ID
+    columns; it must never replace a mapped Concept, date, source value, or
+    other OMOP property with hand-authored Notebook values. Full multiset
+    comparison uses Spark exceptAll on all mapped columns, NOT a sample.
+    """
+    p_base = mapper_result.person
+    v_base = mapper_result.visit
+    p_columns = set(p_base.columns)
+    v_columns = set(v_base.columns)
+    if (p_columns != set(person_candidate.columns) - {"identity_state"}
+            or v_columns != set(visit_candidate.columns) - {
+                "visit_occurrence_id", "identity_state", "parent_identity_state"}
+            or "person_id" not in p_columns
+            or {"source_encounter_id", "source_person_id", "person_id"} - v_columns
+            or p_base.count() != scope.patient_count
+            or v_base.count() != scope.encounter_count):
+        raise RuntimeError("HOLD_G5_MAPPER_CANDIDATE_SCHEMA_OR_COUNT")
+    for mapped, candidate, columns in (
+        (p_base, person_candidate, sorted(p_columns)),
+        (v_base, visit_candidate, sorted(v_columns)),
+    ):
+        source = mapped.select(*columns)
+        target = candidate.select(*columns)
+        if (target.exceptAll(source).limit(1).count()
+                or source.exceptAll(target).limit(1).count()):
+            raise RuntimeError("HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED")
+
+
+def plan_and_write_g5_candidate_delta(
+    spark, *, scope, handoff, mapper_result, person_candidate, visit_candidate,
+    mode: str, write_authorized: bool,
+    clinically_reviewed: bool, license_reviewed: bool,
+    warehouse_snapshot_verified: bool,
+    clinical_review_sha256: str, license_review_sha256: str,
+    warehouse_snapshot_sha256: str,
+    patient_contract_json: str, encounter_contract_json: str,
+) -> str:
+    """Offline-reviewed Fabric-native Delta writer; NOT connected to run_mode.
+
+    Required verified input DataFrames are *already* mapped by the sole strict
+    Shared Engine Mapper and joined with F2 IDs, including identity_state.
+    Caller must independently validate real P1 clinical/license review evidence
+    and complete Warehouse F2 snapshot; Boolean flags and asserted SHA alone
+    do not prove real signoff. This adapter ALSO reopens real G4 Silver.
+    """
+    from healthcare_data_engine.mapping.omop.candidate_publication import (
+        FrozenCandidateScope, PersonVisitCandidateHandoff as _Unused,
+        decide_candidate_publication, ObservedCandidate,
+    )
+    from healthcare_data_engine.mapping.omop.candidates import OmopCandidates
+    if (not isinstance(scope, FrozenCandidateScope)
+            or not isinstance(handoff, _Unused)
+            or not isinstance(mapper_result, OmopCandidates)
+            or mapper_result.status != "OMOP_CANDIDATE_ONLY_NOT_PUBLISHED"
+            or mapper_result.mapping_sha256 != scope.mapping_sha256
+            or mapper_result.person_count != scope.patient_count
+            or mapper_result.visit_count != scope.encounter_count
+            or scope.hospital_id != handoff.hospital_id
+            or scope.source_system != handoff.source_system
+            or scope.source_batch_id != handoff.source_batch_id
+            or scope.manifest_sha256 != handoff.manifest_sha256
+            or scope.mapping_sha256 is None
+            or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
+            or scope.silver_publication_id != handoff.silver_publication_id
+            or scope.patient_count != len(handoff.batch_persons)
+            or scope.encounter_count != len(handoff.batch_visits)
+            or scope.provisional_person_count != sum(
+                p.state == "PROVISIONAL" for p in handoff.batch_persons)
+            or scope.provisional_visit_count != sum(
+                visit.state == "PROVISIONAL" for visit in handoff.batch_visits)):
+        raise RuntimeError("HOLD_G5_CANDIDATE_F2_SCOPE_DRIFT")
+    from re import fullmatch
+    if (mode not in ("G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY")
+            or type(write_authorized) is not bool
+            or type(clinically_reviewed) is not bool
+            or type(license_reviewed) is not bool
+            or type(warehouse_snapshot_verified) is not bool):
+        raise RuntimeError("HOLD_G5_CANDIDATE_MODE_OR_FLAGS")
+    if (mode == "G5_CANDIDATE_READBACK_ONLY" and
+            (write_authorized or clinically_reviewed or license_reviewed)):
+        raise RuntimeError("HOLD_G5_CANDIDATE_READBACK_FLAGS")
+    if (mode == "G5_CANDIDATE_WRITE" and not (
+            write_authorized and clinically_reviewed and license_reviewed
+            and warehouse_snapshot_verified)):
+        raise RuntimeError("HOLD_G5_CANDIDATE_RELEASE_REVIEW_REQUIRED")
+    if any(not isinstance(x, str) or not fullmatch(r"[0-9a-f]{64}", x)
+           for x in (clinical_review_sha256, license_review_sha256,
+                     warehouse_snapshot_sha256)):
+        raise RuntimeError("HOLD_G5_CANDIDATE_EVIDENCE_SHA_NOT_PINNED")
+    if warehouse_snapshot_sha256 != scope.identity_snapshot_fingerprint:
+        raise RuntimeError("HOLD_G5_CANDIDATE_WAREHOUSE_SNAPSHOT_DRIFT")
+    paths = _g5_candidate_paths(scope)
+    source = verify_fhir_g5_candidate_source_readonly(
+        spark, request=scope.request_id, manifest_sha=scope.manifest_sha256,
+        allow_write=False, retention_ok=False,
+        strategy="DELTA_RAW_SNAPSHOT_V1",
+        manifest_override="", source_override="", target_override="",
+        patient_contract_json=patient_contract_json,
+        encounter_contract_json=encounter_contract_json)
+    if source != ("FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
+                  "APPROVAL_DELTA_PASS_20261104"):
+        raise RuntimeError("HOLD_G5_CANDIDATE_G4_NOT_APPROVED")
+
+    # Strict source Mapper + F2 preview already produced these frames. We
+    # deliberately DO NOT invent missing clinical values or durable IDs.
+    psha, p_rows = _g5_candidate_content(
+        person_candidate, key="person_id", expected=scope.patient_count)
+    vsha, v_rows = _g5_candidate_content(
+        visit_candidate, key="visit_occurrence_id", expected=scope.encounter_count)
+    _g5_candidate_validate_rows(p_rows, v_rows, handoff)
+    _g5_candidate_verify_mapper_payload(
+        mapper_result, person_candidate, visit_candidate, scope)
+    exists = {key: _g3_delta_exists(spark, path) for key, path in paths.items()}
+    if any(exists.values()) and not all(exists.values()):
+        return "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT"
+
+    def reopened():
+        person = spark.read.format("delta").load(paths["person"])
+        visit = spark.read.format("delta").load(paths["visit"])
+        # Same strict frame/DQ checks on independently persisted rows.
+        if set(person.columns) != set(person_candidate.columns) or (
+                set(visit.columns) != set(visit_candidate.columns)):
+            raise RuntimeError("HOLD_G5_CANDIDATE_READBACK_SCHEMA_DRIFT")
+        saved_p, rows_p = _g5_candidate_content(
+            person, key="person_id", expected=scope.patient_count)
+        saved_v, rows_v = _g5_candidate_content(
+            visit, key="visit_occurrence_id", expected=scope.encounter_count)
+        _g5_candidate_validate_rows(rows_p, rows_v, handoff)
+        if (saved_p != psha or saved_v != vsha):
+            raise RuntimeError("HOLD_G5_CANDIDATE_DATA_BYTES_DRIFT")
+        return saved_p, saved_v
+
+    def approved():
+        proof = spark.read.format("delta").load(paths["approval"]).collect()
+        if len(proof) != 1:
+            raise RuntimeError("HOLD_G5_CANDIDATE_APPROVAL_CARDINALITY")
+        record = proof[0].asDict(recursive=True)
+        required = {
+            "scope_receipt_key": scope.receipt_key,
+            "source_batch_id": scope.source_batch_id,
+            "mapping_sha256": scope.mapping_sha256,
+            "snapshot_fingerprint": scope.identity_snapshot_fingerprint,
+            "clinical_review_sha256": clinical_review_sha256,
+            "license_review_sha256": license_review_sha256,
+            "person_count": scope.patient_count,
+            "visit_count": scope.encounter_count,
+            "person_sha256": psha,
+            "visit_sha256": vsha,
+            "status": "CANDIDATE_APPROVED",
+        }
+        if record != required:
+            raise RuntimeError("HOLD_G5_CANDIDATE_APPROVAL_DRIFT")
+        return record
+
+    if all(exists.values()):
+        try:
+            saved_p, saved_v = reopened()
+            approved()
+        except Exception:
+            return "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT"
+        observation = ObservedCandidate(
+            scope=scope, person_delta_exists=True, visit_delta_exists=True,
+            approval_exists=True, person_count=scope.patient_count,
+            visit_count=scope.encounter_count,
+            person_content_sha256=saved_p, visit_content_sha256=saved_v,
+            approval_status="CANDIDATE_APPROVED", independently_reopened=True,
+            schema_keys_fk_verified=True,
+        )
+        choice = decide_candidate_publication(
+            scope, (observation,), expected_person_content_sha256=psha,
+            expected_visit_content_sha256=vsha)
+        return ("G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD" if
+                choice.decision == "SKIP_VERIFIED_CANDIDATE_ONLY" else
+                "G5_CANDIDATE_HOLD_REPLAY_CONFLICT")
+
+    if mode != "G5_CANDIDATE_WRITE":
+        return "G5_CANDIDATE_HOLD_NOT_FOUND_READONLY"
+    if (decide_candidate_publication(scope, ()).decision
+            != "PLAN_NEW_OFFLINE_ONLY"):
+        return "G5_CANDIDATE_HOLD_PUBLICATION_PLAN"
+    # The coordinator's review and authorization are still a separate
+    # security gate; this code is not a dispatch entrypoint.
+    try:
+        _write_delta(person_candidate, paths["person"])
+        _write_delta(visit_candidate, paths["visit"])
+        reopened()  # independent physical two-Delta readback BEFORE approval
+        receipt = (
+            scope.receipt_key, scope.source_batch_id, scope.mapping_sha256,
+            scope.identity_snapshot_fingerprint, clinical_review_sha256,
+            license_review_sha256, scope.patient_count, scope.encounter_count,
+            psha, vsha, "CANDIDATE_APPROVED",
+        )
+        approval = spark.createDataFrame(
+            [receipt],
+            "scope_receipt_key string, source_batch_id string, "
+            "mapping_sha256 string, snapshot_fingerprint string, "
+            "clinical_review_sha256 string, license_review_sha256 string, "
+            "person_count long, visit_count long, person_sha256 string, "
+            "visit_sha256 string, status string")
+        _write_delta(approval, paths["approval"])  # LAST
+        approved()  # second independent readback
+    except Exception:
+        # Prior Delta may have committed before an unknown ACK; no cleanup,
+        # overwrite or retry. Operator must run independent READBACK first.
+        return "G5_CANDIDATE_VERIFY_READONLY_UNKNOWN_ACK"
+    return "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD"
+
+
+
+def execute_g5_person_visit_business(
+    spark, *, scope, handoff, concepts_from_verified_warehouse,
+    mapping_profile_bytes: bytes, raw_publish_run_id: str,
+    patient_contract_json: str, encounter_contract_json: str,
+    mode: str, write_authorized: bool,
+    clinically_reviewed: bool, license_reviewed: bool,
+    warehouse_snapshot_verified: bool,
+    clinical_review_sha256: str, license_review_sha256: str,
+    warehouse_snapshot_sha256: str,
+) -> str:
+    """Real G5 P3 task: physical Approved Silver -> shared Mapper -> Delta.
+
+    No independent import smoke and no second platform Mapper. The caller
+    supplies independently verified Warehouse Concept/F2 snapshot evidence
+    and real P1 clinical/license review; this function never fabricates them.
+    It cannot be dispatched from Notebook parameters without those real
+    SQL/clinical assets. Re-run uses the writer's independent Delta readback.
+    """
+    from healthcare_data_engine.mapping.omop.candidates import (
+        build_omop_candidates, load_omop_mapping_profile)
+    from healthcare_data_engine.mapping.omop.candidate_publication import (
+        FrozenCandidateScope, PersonVisitCandidateHandoff,
+        freeze_candidate_scope)
+    if (engine_version != "0.1.7"
+            or not isinstance(scope, FrozenCandidateScope)
+            or not isinstance(handoff, PersonVisitCandidateHandoff)
+            or scope.source_batch_id != handoff.source_batch_id
+            or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
+            or scope.mapping_sha256 is None
+            or mode not in ("G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY")):
+        raise RuntimeError("HOLD_G5_BUSINESS_RELEASE_OR_F2_SCOPE")
+    # Actual review evidence is mandatory for a write, but not for building
+    # and classifying a direct real-data mapping error. Fake clinical values
+    # never become OMOP candidates simply because Spark transformations run.
+    if mode == "G5_CANDIDATE_WRITE" and not (
+            write_authorized and clinically_reviewed and license_reviewed
+            and warehouse_snapshot_verified):
+        raise RuntimeError("HOLD_G5_BUSINESS_P1_F2_APPROVAL_MISSING")
+    if (not isinstance(mapping_profile_bytes, bytes)
+            or len(mapping_profile_bytes) > 65536
+            or hashlib.sha256(mapping_profile_bytes).hexdigest()
+                != scope.mapping_sha256):
+        raise RuntimeError("HOLD_G5_BUSINESS_MAPPING_PROFILE_BYTES")
+    # Strict existing Mapper validates the exact source namespace and all
+    # mapped concept IDs. It never guesses unmatched Race/Ethnicity/Visit.
+    load_omop_mapping_profile(
+        mapping_profile_bytes, scope.mapping_sha256, scope.source_system)
+    if (not isinstance(raw_publish_run_id, str)
+            or not raw_publish_run_id
+            or raw_publish_run_id != raw_publish_run_id.strip()):
+        raise RuntimeError("HOLD_G5_BUSINESS_RAW_PUBLICATION_UNPINNED")
+    # Only ever read the physical G4 DataFrames after rechecking exact
+    # original Manifest, Approval, row counts, source keys and FK.
+    verify_fhir_g5_candidate_source_readonly(
+        spark, request=scope.request_id,
+        manifest_sha=scope.manifest_sha256,
+        allow_write=False, retention_ok=False,
+        strategy="DELTA_RAW_SNAPSHOT_V1",
+        manifest_override="", source_override="", target_override="",
+        patient_contract_json=patient_contract_json,
+        encounter_contract_json=encounter_contract_json)
+    paths = _g4_paths(scope.request_id)
+    patient = spark.read.format("delta").load(paths["patient"])
+    encounter = spark.read.format("delta").load(paths["encounter"])
+    approval_rows = spark.read.format("delta").load(paths["approval"]).collect()
+    if len(approval_rows) != 1:
+        raise RuntimeError("HOLD_G5_BUSINESS_G4_APPROVAL_NOT_UNIQUE")
+    approval = approval_rows[0].asDict(recursive=True)
+    if (approval.get("status") != "SILVER_APPROVED"
+            or approval.get("publication_id") != scope.silver_publication_id
+            or approval.get("source_batch_id") != scope.source_batch_id
+            or approval.get("manifest_sha256") != scope.manifest_sha256
+            or approval.get("processing_version") != scope.silver_processing_version
+            or approval.get("patient_count") != scope.patient_count
+            or approval.get("encounter_count") != scope.encounter_count
+            or approval.get("quarantine_count") != 0):
+        raise RuntimeError("HOLD_G5_BUSINESS_G4_APPROVAL_DRIFT")
+    if (concepts_from_verified_warehouse is None
+            or not hasattr(concepts_from_verified_warehouse, "columns")):
+        raise RuntimeError("HOLD_G5_BUSINESS_F1_CONCEPT_SNAPSHOT_MISSING")
+    # F2 provisional IDs stay explicit and are never persisted as Warehouse
+    # Gold or treated as existing committed etl.identity_map records.
+    if not handoff.person_lookup or not handoff.batch_visits:
+        raise RuntimeError("HOLD_G5_BUSINESS_F2_ID_LOOKUP_EMPTY")
+    for person_id in (r.person_id for r in handoff.person_lookup):
+        if type(person_id) is not int or not 0 < person_id <= 2147483647:
+            raise RuntimeError("HOLD_G5_BUSINESS_PERSON_INT_RANGE")
+    for item in handoff.batch_visits:
+        if type(item.visit_occurrence_id) is not int or not (
+                0 < item.visit_occurrence_id <= 2147483647):
+            raise RuntimeError("HOLD_G5_BUSINESS_VISIT_INT_RANGE")
+    id_map = spark.createDataFrame(
+        [("PERSON", p.hospital_id, p.source_system,
+          p.source_business_key, p.person_id) for p in handoff.person_lookup],
+        "entity_type string, hospital_id string, source_system string, "
+        "source_business_key string, omop_id int")
+    mapped = build_omop_candidates(
+        patient, encounter, id_map, concepts_from_verified_warehouse,
+        approval=approval, hospital_id=scope.hospital_id,
+        source_system=scope.source_system,
+        source_batch_id=scope.source_batch_id,
+        manifest_sha256=scope.manifest_sha256,
+        processing_version=scope.silver_processing_version,
+        mapping_profile_bytes=mapping_profile_bytes,
+        mapping_profile_sha256=scope.mapping_sha256,
+        raw_publish_run_id=raw_publish_run_id)
+    if freeze_candidate_scope(
+            handoff, mapped, feed_id=scope.feed_id,
+            request_id=scope.request_id) != scope:
+        raise RuntimeError("HOLD_G5_BUSINESS_MAPPER_F2_SCOPE_CONFLICT")
+    # F2 proposes IDs, Shared Mapper owns every OMOP clinical data column.
+    # Never rewrite mapped output fields in this native coordinator.
+    persons = spark.createDataFrame(
+        [(p.person_id, p.state) for p in handoff.batch_persons],
+        "person_id int, identity_state string")
+    visits = spark.createDataFrame(
+        [(v.source_system, v.source_encounter_id,
+          v.visit_occurrence_id, v.state, v.parent_state)
+         for v in handoff.batch_visits],
+        "source_system string, source_encounter_id string, "
+        "visit_occurrence_id int, identity_state string, "
+        "parent_identity_state string")
+    candidate_person = mapped.person.join(persons, "person_id", "inner")
+    candidate_visit = mapped.visit.join(
+        visits, ["source_system", "source_encounter_id"], "inner")
+    return plan_and_write_g5_candidate_delta(
+        spark, scope=scope, handoff=handoff, mapper_result=mapped,
+        person_candidate=candidate_person,
+        visit_candidate=candidate_visit, mode=mode,
+        write_authorized=write_authorized,
+        clinically_reviewed=clinically_reviewed,
+        license_reviewed=license_reviewed,
+        warehouse_snapshot_verified=warehouse_snapshot_verified,
+        clinical_review_sha256=clinical_review_sha256,
+        license_review_sha256=license_review_sha256,
+        warehouse_snapshot_sha256=warehouse_snapshot_sha256,
+        patient_contract_json=patient_contract_json,
+        encounter_contract_json=encounter_contract_json)
+
+
+
 def verify_fhir_g5_candidate_source_readonly(
     spark, *, request: str, manifest_sha: str, allow_write: bool,
     retention_ok: bool, strategy: str, manifest_override: str,
@@ -913,7 +1344,7 @@ def verify_fhir_g5_candidate_source_readonly(
     """
     if (request != _G5_APPROVED_REQUEST
             or manifest_sha != _G5_APPROVED_MANIFEST_SHA
-            or engine_version != "0.1.6"
+            or engine_version != "0.1.7"
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or allow_write is not False
             or retention_ok is not False
@@ -1317,13 +1748,13 @@ def validate_read_only_runtime_smoke(*, mode: str, allow_write: bool,
             or any(value != "" for value in (request, manifest, source, target))):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_UNSAFE_PARAMETERS")
     import pyspark
-    if engine_version != "0.1.6":
+    if engine_version != "0.1.7":
         raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION")
     if not pyspark.__version__.startswith("4.1."):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_SPARK_VERSION")
     if not callable(parse_fhir_resources) or not callable(normalize_fhir_patient):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_ENGINE_IMPORT_INVALID")
-    return "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_016_SPARK41_PASS_20261106"
+    return "FHIR_BUSINESS_RUNTIME_SMOKE_ENGINE_017_SPARK41_PASS_20261107"
 
 
 def _frozen_fhir_source_context(spark, request: str):
@@ -1338,7 +1769,7 @@ def _frozen_fhir_source_context(spark, request: str):
     }
     if not isinstance(request, str) or request not in frozen:
         raise RuntimeError("HOLD_FHIR_INTAKE_REQUEST_NOT_PINNED")
-    if engine_version != "0.1.6":
+    if engine_version != "0.1.7":
         raise RuntimeError("HOLD_FHIR_INTAKE_WHEEL_MISMATCH")
     expected_manifest_sha, expected_objects = frozen[request]
     prefix = "Files/fhir_landing/clinical/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/" + request

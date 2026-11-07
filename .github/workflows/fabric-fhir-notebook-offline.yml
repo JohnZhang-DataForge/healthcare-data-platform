@@ -28,45 +28,33 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Verify published 0.1.6 Native Wheel and historical 0.1.3 rollback bytes
+      - name: Verify effective GA 0.1.7 Wheel and 0.1.6 immutable rollback baseline
         run: |
           set -Eeuo pipefail
-          # Effective published 0.1.6 is the current sole Git-native Wheel.
-          # Historical 0.1.3 is SHA verified from Git history, never installed.
           python -m pip wheel -w "$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           python -m venv "$RUNNER_TEMP/fabric-offline"
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           LIBS='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
-          # This immutable Git commit existed with the effective GA 0.1.6
-          # Wheel before source 0.1.7 and before 0.1.7 Git-review staging.
-          GA_COMMIT='3e1a036e309e72d8c9c79e5923333987c1c9eef7'
-          GA="$RUNNER_TEMP/healthcare_data_engine-0.1.6-py3-none-any.whl"
-          GA_SHA='473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff'
-          CANDIDATE_SHA='0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301'
-          OLD="$RUNNER_TEMP/healthcare_data_engine-0.1.3-py3-none-any.whl"
-          OLD_SHA='6f5d95a47ab87a553686afcdc405343198ded6c99d244eb57c6ab2907a1fac59'
-          git show "$GA_COMMIT:$LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl" > "$GA"
-          git show 'b56b73207f7abe9d98e3fa4c3603fe045af6e15a:azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.3-py3-none-any.whl' > "$OLD"
-          echo "$GA_SHA  $GA" | sha256sum --check
-          echo "$OLD_SHA  $OLD" | sha256sum --check
+          CURRENT="$LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl"
+          CURRENT_SHA='0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301'
+          HISTORICAL="$RUNNER_TEMP/healthcare_data_engine-0.1.6-py3-none-any.whl"
+          HISTORICAL_SHA='473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff'
+          git show '3e1a036e309e72d8c9c79e5923333987c1c9eef7:azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl' > "$HISTORICAL"
+          echo "$HISTORICAL_SHA  $HISTORICAL" | sha256sum --check
           test "$(find "$LIBS" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
-          # Verify the sole GIT-native Wheel separately from the GA runtime:
-          # source/main branch contains GA 0.1.6; review branch has 0.1.7.
-          if test -f "$LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl"; then
-            echo "$GA_SHA  $LIBS/healthcare_data_engine-0.1.6-py3-none-any.whl" | sha256sum --check
-          elif test -f "$LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl"; then
-            echo "$CANDIDATE_SHA  $LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl" | sha256sum --check
-          else
-            echo 'HOLD_G5_UNREVIEWED_GIT_NATIVE_WHEEL'; exit 1
-          fi
+          echo "$CURRENT_SHA  $CURRENT" | sha256sum --check
           grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
-          # Always run old Native Notebook regression on real GA 0.1.6
-          # bytes, NOT the 0.1.7 staging candidate (never GA Published).
-          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$GA"
-          "$RUNNER_TEMP/fabric-offline/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.6"'
-          echo 'G5_016_GA_NATIVE_NOTEBOOK_OFFLINE_REGRESSION=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'G5_017_GIT_REVIEW_STATE_VERIFIED_NOT_PUBLISHED=PASS' >> "$GITHUB_STEP_SUMMARY"
-          # Notebook HALT, canonical Adapter 0.1.0 and G4 historical engine-0.1.1 stay immutable.
+          "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$CURRENT"
+          "$RUNNER_TEMP/fabric-offline/bin/python" - <<'PY'
+          import healthcare_data_engine as engine
+          from healthcare_data_engine.mapping.omop.candidate_publication import decide_candidate_publication
+          assert engine.__version__ == "0.1.7"
+          assert callable(decide_candidate_publication)
+          print("G5_017_PUBLISHED_BINARY_NATIVE_BUSINESS_TESTS_READY")
+          PY
+          echo 'GA_017_PINNED_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
+          echo 'G5_HISTORICAL_016_PRESERVED_FOR_ROLLBACK=PASS' >> "$GITHUB_STEP_SUMMARY"
+          # No standalone Cloud smoke; business P3 Writer regression is tested directly.
 
       - name: Synthetic Manifest plus local PySpark readback tests; ZERO cloud writes
         env:
@@ -83,8 +71,8 @@ jobs:
               raise SystemExit(f"FABRIC_NOTEBOOK_TEST_FILE_COUNT_INVALID={len(test_files)}; expected=9")
           suite = unittest.TestLoader().discover(start_dir=start, pattern="test_*.py")
           found = suite.countTestCases()
-          print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=89; files={len(test_files)}", flush=True)
-          if found < 89:
+          print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=100; files={len(test_files)}", flush=True)
+          if found < 100:
               raise SystemExit("FABRIC_NOTEBOOK_TEST_DISCOVERY_FAIL")
           result = unittest.TextTestRunner(verbosity=2).run(suite)
           if not result.wasSuccessful():
@@ -100,17 +88,17 @@ jobs:
           test "$result" = 2 || { echo "EXPECTED_P2_RUNTIME_HOLD; got $result"; exit 1; }
           grep -q "HOLD_NATIVE_RUNTIME_DEPLOYMENT" "$RUNNER_TEMP/native-gate.txt"
           echo "NATIVE_GIT_EXPORT_VERIFIED_RUNTIME_HOLD"
-      - name: Archive immutable historical 0.1.3 baseline Wheel (not new publish)
+      - name: Archive historical 0.1.6 rollback Wheel (not re-publish)
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-g5-historical-013-baseline-${{ github.sha }}
-          path: ${{ runner.temp }}/healthcare_data_engine-0.1.3-py3-none-any.whl
+          name: fabric-g5-historical-016-baseline-${{ github.sha }}
+          path: ${{ runner.temp }}/healthcare_data_engine-0.1.6-py3-none-any.whl
           if-no-files-found: error
           retention-days: 30
 
   g5-source-017-native-version-separation:
-    name: G5 unreleased 0.1.7 candidate vs immutable Published 0.1.6 (HALT)
+    name: G5 actual 0.1.7 GA business P3 source API and immutable old 0.1.6
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -176,7 +164,7 @@ jobs:
           PY
           python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
           echo 'G5_017_REPRODUCIBLE_SOURCE_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
-      - name: Prove old 0.1.6 Native Notebook rejects new 0.1.7 until separate Cloud release
+      - name: Validate real P3 business Notebook symbols under GA 0.1.7
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -187,42 +175,25 @@ jobs:
           from pathlib import Path
           import runpy
           import healthcare_data_engine as engine
-          from healthcare_data_engine.mapping.omop.candidate_publication import (
-              decide_candidate_publication, FrozenCandidateScope,
-          )
           from healthcare_data_engine.mapping.omop.candidates import build_omop_candidates
+          from healthcare_data_engine.mapping.omop.candidate_publication import decide_candidate_publication
           from healthcare_data_engine.identity.candidate_handoff import plan_candidate_identity_handoff
-          assert engine.__version__ == importlib.metadata.version('healthcare-data-engine') == '0.1.7'
-          assert callable(build_omop_candidates) and callable(plan_candidate_identity_handoff)
+          assert engine.__version__ == importlib.metadata.version("healthcare-data-engine") == "0.1.7"
+          assert callable(build_omop_candidates)
+          assert callable(plan_candidate_identity_handoff)
           assert callable(decide_candidate_publication)
-          assert FrozenCandidateScope.__module__ == 'healthcare_data_engine.mapping.omop.candidate_publication'
-          path = (Path(os.environ['GITHUB_WORKSPACE']) /
-                  'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py')
-          nb = runpy.run_path(str(path), run_name='_g5_017_offline_only_no_notebook_execution')
-          assert nb['engine_version'] == '0.1.7'
-          assert nb['run_mode'] == 'HALT' and nb['write_authorized'] is False
-          assert nb['retention_preflight_verified'] is False
-          # Production Notebook is still pinned to the GA 0.1.6 Wheel.
-          # The new 0.1.7 candidate MUST fail before Spark/cloud read/write.
-          try:
-              nb['validate_read_only_runtime_smoke'](
-                  mode='RUNTIME_SMOKE', allow_write=False, retention_ok=False,
-                  request='', manifest='', source='', target='')
-          except RuntimeError as exc:
-              assert str(exc) == 'HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION', exc
-          else:
-              raise AssertionError('UNRELEASED_017_ACCEPTED_BY_GA_016_NOTEBOOK')
-          try:
-              nb['prepare_batch'](
-                  object(), context=object(), manifest_bytes=b'',
-                  source_objects=(), patient_contract_bytes=b'',
-                  encounter_contract_bytes=b'')
-          except ValueError as exc:
-              assert str(exc) == 'SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH', exc
-          else:
-              raise AssertionError('UNRELEASED_017_UNSAFELY_ACCEPTED_BY_GA_016_ETL')
-          print('G5_017_SOURCE_WHEEL_API=PASS')
-          print('G5_016_NATIVE_NOTEBOOK_REJECTS_017_BEFORE_IO=PASS')
+          path = (Path(os.environ["GITHUB_WORKSPACE"]) /
+                  "azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py")
+          nb = runpy.run_path(str(path), run_name="_p3_business_symbols_no_spark_job")
+          assert nb["engine_version"] == "0.1.7"
+          assert nb["run_mode"] == "HALT"
+          assert nb["write_authorized"] is False
+          assert nb["retention_preflight_verified"] is False
+          assert callable(nb["plan_and_write_g5_candidate_delta"])
+          assert callable(nb["_g5_candidate_verify_mapper_payload"])
+          assert callable(nb["execute_g5_person_visit_business"])
+          assert "G5_CANDIDATE_WRITE" not in path.read_text().split('if __name__ == "__main__":')[-1]
+          print("G5_017_P3_BUSINESS_WRITER_SYMBOLS_RELEASE_GUARDED_PASS")
           PY
       - name: Existing G5 strict Mapper synthetic parity under installed 0.1.7
         shell: bash
@@ -232,11 +203,11 @@ jobs:
           PYTHONPATH= python -m unittest discover -s "$GITHUB_WORKSPACE/shared-data-engine/tests" -p 'test_omop_candidates.py' -v
           echo 'G5_017_INSTALLED_SOURCE_MAPPER_OFFLINE_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
           echo 'No Fabric Git Update, Environment Publish, Notebook dispatch or Gold data writes.' >> "$GITHUB_STEP_SUMMARY"
-      - name: Archive source-only 0.1.7 candidate (NOT published)
+      - name: Archive independently built 0.1.7 GA matching Wheel
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fabric-g5-017-unreleased-source-only-${{ github.sha }}
+          name: fabric-g5-017-ga-p3-business-${{ github.sha }}
           path: ${{ runner.temp }}/g5-wheel-017/healthcare_data_engine-0.1.7-py3-none-any.whl
           if-no-files-found: error
           retention-days: 14

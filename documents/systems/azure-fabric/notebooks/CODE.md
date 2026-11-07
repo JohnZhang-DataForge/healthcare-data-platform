@@ -80,3 +80,10 @@ The initial generic contract accepts root-level `nb_*.Notebook` items only; movi
 ### P4 原位保留决定
 
 `fhir_ingest_notebook.py` 是 Native Notebook 的 17 行离线兼容导入层，不是生产中的第二套 Notebook；`native_item_readiness.py` 是 63 行只读 Git Native 元数据预检并被 Hosted CI 直接调用。它们目前依赖原相对路径及明确 `PYTHONPATH`，移动将触及测试/Workflow 的执行路径但不会带来可验证的收益，因此**经审计决定两者原位保留，不移动到质量脚本目录**；所有新测试仍放集中质量目录。
+
+## P3 Candidate Writer 0.1.7 direct business — 2026-11-07
+
+- **现行有效依赖**：env_healthcare 正式 Published 0.1.7；修改的是唯一正式 `nb_fhir_ingest.Notebook/notebook-content.py`，历史 G4 canonical Processing 仍 `engine-0.1.1`，默认 `run_mode=HALT` 与写入禁止。本开发任务不用新做一套 standalone Smoke；只在未来获批的真实 Person/Visit Candidate Job 和单独持久读回阶段验收。
+- **实际业务工作入口**：`execute_g5_person_visit_business` 直接从已批准 G4 的实际 Delta 读取 Person/Encounter 及 Approval，使用 Shared `build_omop_candidates` 的唯一严格转换逻辑和可信 F2/Concept Snapshot，构造 Person/Visit Candidate 并调用下述 Native Delta Writer。Caller 必须预先独立验证 Warehouse SQL 身份快照、临床/许可证 Profile 证据；无有效 Profile 则真实任务 HOLD，不能凭合成用例宣称真实工作完成。仍需将上述业务入口接到被审批的正式 Notebook 参数/Runner 执行链路。
+- **实际业务源码实现**：Native P3 Writer 接收严格的 `OmopCandidates`、F2 `PersonVisitCandidateHandoff` 和 `FrozenCandidateScope`，并要求完整 100/5918 主外键、Provisional 状态、全行 DataFrame `exceptAll` 比对，所有 Candidate Person/Visit Delta `errorifexists`，两表独立重开再写 Approval-last，同 Request Verify 后 SKIP；partial/unknown ACK 只读 HOLD，不盲目重试。无 Gold SQL 写入和无第三套 Mapping 算法。
+- **权限/证据边界**：上述代码不是 P3 已物理完成。若 P1 Clinical Mapping Profile/License 或真实 Warehouse F2 快照缺失，真实业务执行会 HOLD，不能用布尔参数/伪 SHA 代替审查。Native Notebook 的用户 Portal 版本当前仍有 Workspace-local `Modified` 记录，合并代码前必须复查 Git 更新冲突和保留所有本地定义（尤其 Environment Binding），禁止为了省 Smoke Test 而跳过这个数据/代码资源保护门禁。此前 Draft PR #773 是历史源码切片，不应直接合并恢复旧依赖。
