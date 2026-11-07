@@ -242,6 +242,14 @@ if __name__ == "__main__":
     except Exception as exc:
         error = str(exc)
         if not re.fullmatch(r"HOLD_OIE_DISPOSABLE_[A-Z0-9_]+", error):
+            # Class name only; never print raw exception body, URL, password
+            # file path or potentially PHI-bearing server response.
+            known = ("PermissionError", "ModuleNotFoundError", "ImportError",
+                     "ValueError", "TypeError", "OSError", "FileNotFoundError",
+                     "AttributeError", "RuntimeError", "HTTPError")
+            cls = type(exc).__name__
+            print("OIE_DISPOSABLE_PYTHON_ERROR_CLASS=" +
+                  (cls if cls in known else "OTHER"), file=sys.stderr)
             error = "HOLD_OIE_DISPOSABLE_UNKNOWN"
         print(error, file=sys.stderr)
         sys.exit(1)
