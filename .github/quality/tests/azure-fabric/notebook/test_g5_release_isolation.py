@@ -1,7 +1,7 @@
-"""OFFLINE ONLY: pinned published 0.1.6 Notebook, 0.1.7 SOURCE candidate, old 0.1.3 HOLD.
+"""OFFLINE ONLY: pinned Published 0.1.7 Native Notebook, historical 0.1.6 runtime HOLD.
 
-Tests install the sole immutable Git-native GA 0.1.6 Wheel while independent\nsource metadata is 0.1.7; simulate a wrong old
-0.1.3 runtime for fail-closed guards. These probes
+Tests load the sole effective 0.1.7 GA Wheel and simulate prior
+0.1.6 runtime mismatch, without executing any cloud job. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
 """
@@ -24,11 +24,11 @@ LIBS = ROOT / (
     "azure-fabric/workspaces/healthcare-omop/"
     "env_healthcare.Environment/Libraries/CustomLibraries")
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
-PUBLISHED_VERSION = "0.1.6"
-LEGACY_VERSION = "0.1.3"
+PUBLISHED_VERSION = "0.1.7"
+LEGACY_VERSION = "0.1.6"
 SOURCE_CANDIDATE_VERSION = "0.1.7"
 PINNED_WHEEL_SHA256 = (
-    "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff")
+    "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
 PINNED_REVIEW_ONLY_017_SHA256 = (
     "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
 REVIEW_ONLY_VERSION = "0.1.7"
@@ -39,9 +39,9 @@ class G5NativeWheelIsolation(unittest.TestCase):
     def setUpClass(cls):
         # A unique non-__main__ name ensures zero runtime entrypoint actions.
         cls.native = runpy.run_path(
-            str(NATIVE), run_name="_g5_016_offline_source_isolation")
+            str(NATIVE), run_name="_g5_017_native_business_source_isolation")
 
-    def test_sole_git_native_wheel_matches_published_016_and_halt(self):
+    def test_sole_git_native_wheel_matches_published_017_and_halt(self):
         self.assertEqual(engine.__version__, PUBLISHED_VERSION)
         self.assertEqual(self.native["engine_version"], PUBLISHED_VERSION)
         self.assertEqual(self.native["run_mode"], "HALT")
@@ -51,30 +51,22 @@ class G5NativeWheelIsolation(unittest.TestCase):
             tomllib.loads(SOURCE_METADATA.read_text(encoding="utf-8"))
             ["project"]["version"], SOURCE_CANDIDATE_VERSION)
         wheel_files = sorted(LIBS.glob("*.whl"))
-        # Source PR: Git-native contains sole GA 0.1.6.
-        # Candidate staging PR: Git-native contains sole review-only 0.1.7.
-        # In BOTH cases the installed test runtime is independently fetched
-        # from immutable GA commit; Git staging is NEVER a Publish assertion.
-        self.assertEqual(len(wheel_files), 1)
-        actual = wheel_files[0].name
-        allowed = {
-            f"healthcare_data_engine-{PUBLISHED_VERSION}-py3-none-any.whl":
-                PINNED_WHEEL_SHA256,
-            f"healthcare_data_engine-{REVIEW_ONLY_VERSION}-py3-none-any.whl":
-                PINNED_REVIEW_ONLY_017_SHA256,
-        }
-        self.assertIn(actual, allowed)
+        # GA 0.1.7 is now effectively Published in the real Fabric
+        # Environment, not merely a review-only Git staging artifact.
+        self.assertEqual(
+            [x.name for x in wheel_files],
+            ["healthcare_data_engine-0.1.7-py3-none-any.whl"])
         self.assertEqual(
             hashlib.sha256(wheel_files[0].read_bytes()).hexdigest(),
-            allowed[actual])
+            PINNED_WHEEL_SHA256)
         source = NATIVE.read_text(encoding="utf-8")
         self.assertEqual(
-            source.count('if engine_version != "0.1.6":'), 3)
+            source.count('if engine_version != "0.1.7":'), 3)
         self.assertIn('run_mode = "HALT"', source)
         self.assertIn('fhir-silver-canonical-v1:engine-0.1.1', source)
         self.assertNotIn("write_authorized = True", source)
 
-    def test_016_notebook_rejects_013_even_with_safe_flags_before_data_reads(self):
+    def test_017_notebook_rejects_016_even_with_safe_flags_before_data_reads(self):
         # G3/G4 historical processing stays unchanged; wrong runtime 0.1.3 MUST HOLD.
         with patch.dict(
             self.native["prepare_batch"].__globals__,
