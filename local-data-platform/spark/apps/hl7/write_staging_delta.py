@@ -86,7 +86,13 @@ def publish_local_delta(rows: list[dict], *, warehouse_uri: str) -> dict:
         spark.sql("CREATE DATABASE IF NOT EXISTS hl7_staging")
         if spark.catalog.tableExists(TABLE):
             prior = spark.table(TABLE)
-            if (prior.schema != df.schema or prior.count() != len(rows)
+            # Delta persists different nullable metadata from the Python
+            # in-memory StructType. Compare semantic columns/types, then exact
+            # row multisets in both directions; do not reject safe replay for
+            # storage-only nullability canonicalization.
+            old_fields = [(v.name, v.dataType.simpleString()) for v in prior.schema.fields]
+            new_fields = [(v.name, v.dataType.simpleString()) for v in df.schema.fields]
+            if (old_fields != new_fields or prior.count() != len(rows)
                     or prior.exceptAll(df).limit(1).count()
                     or df.exceptAll(prior).limit(1).count()):
                 raise ValueError("HL7_EXISTING_DELTA_BATCH_CONFLICT_HOLD")
