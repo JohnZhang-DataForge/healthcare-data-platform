@@ -83,10 +83,39 @@ jobs:
           set -euo pipefail
           "$RUNNER_TEMP/shared-env/bin/pip" install --no-index --no-deps --force-reinstall dist/*.whl
           cd "$RUNNER_TEMP"
-          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.6"; print("WHEEL_IMPORT_PASS",h.__version__,h.__file__)'
+          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.7"; print("WHEEL_IMPORT_PASS",h.__version__,h.__file__)'
+          PYTHONPATH= "$RUNNER_TEMP/shared-env/bin/python" - <<'PY'
+          import importlib.metadata as metadata
+          import healthcare_data_engine as h
+          from healthcare_data_engine.mapping.omop.candidate_publication import (
+              freeze_candidate_scope, decide_candidate_publication,
+              CandidatePublicationPlan, ObservedCandidate,
+          )
+          assert h.__version__ == metadata.version("healthcare-data-engine") == "0.1.7"
+          assert callable(freeze_candidate_scope) and callable(decide_candidate_publication)
+          assert CandidatePublicationPlan.__module__ == "healthcare_data_engine.mapping.omop.candidate_publication"
+          assert ObservedCandidate.__module__ == "healthcare_data_engine.mapping.omop.candidate_publication"
+          assert "site-packages" in h.__file__, h.__file__
+          print("G5_P3_017_INSTALLED_API_IMPORT_PASS")
+          PY
+          # Contrast the NEW source-candidate Wheel with immutable existing GA
+          # Native 0.1.6. Do not imply GA 0.1.7 Publish.
+          "$RUNNER_TEMP/shared-env/bin/python" - <<'PY'
+          import zipfile
+          from pathlib import Path
+          roots=Path("azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries")
+          old=roots/"healthcare_data_engine-0.1.6-py3-none-any.whl"
+          candidate=next(Path("dist").glob("healthcare_data_engine-0.1.7-*.whl"))
+          assert len(list(roots.glob("*.whl"))) == 1, "GA single-wheel violation"
+          with zipfile.ZipFile(old) as prior, zipfile.ZipFile(candidate) as after:
+              api="healthcare_data_engine/mapping/omop/candidate_publication.py"
+              assert api not in prior.namelist(), "expected previously published GA is old"
+              assert api in after.namelist(), "new P3 planner not packed"
+          print("G5_016_GA_VS_017_CANDIDATE_SOURCE_ISOLATED_PASS")
+          PY
       - uses: actions/upload-artifact@v4
         with:
-          name: healthcare-data-engine-0.1.6-wheel-sha
+          name: healthcare-data-engine-0.1.7-wheel-sha
           path: |
             dist/*.whl
             dist/SHA256SUMS
@@ -150,7 +179,7 @@ jobs:
           print('LOCAL_SHARED_PARITY_OFFLINE_PASS_PERSON_VISIT_FULL_TRANSFORM')
           PY
           echo 'FABRIC_P3_PY313_SPARK41_OFFLINE_DATAFRAME_AND_OMOP=PASS' >> "$GITHUB_STEP_SUMMARY"
-      - name: Build and pip-install version 0.1.6 Wheel on Python 3.13
+      - name: Build and pip-install version 0.1.7 Wheel on Python 3.13
         shell: bash
         env:
           SOURCE_DATE_EPOCH: '1704067200'
@@ -160,13 +189,13 @@ jobs:
           mkdir -p "$RUNNER_TEMP/fabric-p3-py313-wheel"
           python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/fabric-p3-py313-wheel" ./shared-data-engine
           sha256sum "$RUNNER_TEMP"/fabric-p3-py313-wheel/*.whl
-          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP"/fabric-p3-py313-wheel/healthcare_data_engine-0.1.6-py3-none-any.whl
+          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP"/fabric-p3-py313-wheel/healthcare_data_engine-0.1.7-py3-none-any.whl
           cd "$RUNNER_TEMP"
           PYTHONPATH= python - <<'PY'
           import healthcare_data_engine as h
           from importlib import metadata
-          assert h.__version__ == "0.1.6", h.__version__
-          assert metadata.version("healthcare-data-engine") == "0.1.6"
+          assert h.__version__ == "0.1.7", h.__version__
+          assert metadata.version("healthcare-data-engine") == "0.1.7"
           requires_python = metadata.metadata("healthcare-data-engine")["Requires-Python"]
           assert ">=3.10" in requires_python and "<3.14" in requires_python, requires_python
           optional_dependencies = metadata.requires("healthcare-data-engine") or []
@@ -175,9 +204,21 @@ jobs:
           print("FABRIC_P3_PY313_WHEEL_INSTALL_IMPORT=PASS", h.__version__, requires_python)
           print("FABRIC_P3_PY313_OPTIONAL_SPARK_MARKERS=PASS")
           PY
+          PYTHONPATH= python - <<'PY'
+          from importlib import metadata
+          import healthcare_data_engine as engine
+          from healthcare_data_engine.mapping.omop.candidate_publication import (
+              decide_candidate_publication, FrozenCandidateScope,
+          )
+          assert metadata.version("healthcare-data-engine") == engine.__version__ == "0.1.7"
+          assert callable(decide_candidate_publication)
+          assert FrozenCandidateScope.__module__ == (
+              "healthcare_data_engine.mapping.omop.candidate_publication")
+          print("FABRIC_017_PY313_INSTALLED_P3_API=PASS")
+          PY
           echo 'FABRIC_P3_PY313_WHEEL_INSTALL_IMPORT=PASS' >> "$GITHUB_STEP_SUMMARY"
           echo 'FABRIC_P3_PY313_OPTIONAL_SPARK_MARKERS=PASS' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Python 3.13 pip installed the 0.1.6 Wheel; no Fabric Environment or Notebook was changed.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Python 3.13 pip installed the 0.1.7 Wheel; no Fabric Environment or Notebook was changed.' >> "$GITHUB_STEP_SUMMARY"
       - name: Inspect packaging metadata separately from source import
         shell: bash
         run: |
@@ -190,7 +231,7 @@ jobs:
           print("FABRIC_RUNTIME_2_TARGET_PYTHON=3.13")
           print("SOURCE_PACKAGE_VERSION=" + project["version"])
           print("SOURCE_REQUIRES_PYTHON=" + spec)
-          if spec == ">=3.10,<3.14" and project["version"] == "0.1.6":
+          if spec == ">=3.10,<3.14" and project["version"] == "0.1.7":
               outcome = "PYTHON313_WHEEL_METADATA_ALLOWED"
           else:
               outcome = "HOLD_RELEASE_METADATA_UNREVIEWED"
