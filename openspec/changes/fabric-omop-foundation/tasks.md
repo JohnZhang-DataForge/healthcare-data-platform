@@ -37,6 +37,7 @@
 
 - [ ] 2.1 实现 Warehouse Writer、Ledger 与原子事务；Person/Visit 真实插入、重放及负向校验（整项仍 OPEN）。
 - [x] 2.1a 实现纯 F2 INT ID Preview Planner + Ledger Replay Fence；离线正负向测试覆盖跨医院、同源重跑、冲突、溢出、Snapshot Map/Gold 不一致。**仅 CODE/STATIC，不是实际 Warehouse 分配或 Gold COMMIT。**
+- [x] 2.1a.1 **F2 SQL 六表行记录转 Shared IdentitySnapshot 的源码桥接**：沿用唯一 Fabric Writer `writer/silver_identity.py`，对调用方提供的完整真实 SQL 行集按 Self-Runner 已有定序 SHA 算法复算并校验双连接结果、Map/Gold/Allocator 与共享 Snapshot 逻辑指纹；默认只提供 `SOURCE_ONLY_NOT_AUTHENTICATED` Preview。零行时虚拟 next_free=1 仅是首次空 Map 的计算起点，不写入 Warehouse；持久数据却没有 allocator 必须 HOLD。纯合成跨医院/重放/漂移负向测试由原 Warehouse CI 四文件测试集承接。**这不是新实机 SQL 验收，也不关闭 2.1、2.1c 或 P3 Candidate/Gold 的授权门禁。**
 - [x] 2.1b **真实多表事务 ROLLBACK PASS**：Self-Runner [Run #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608) 在现有 Fabric DW 验证六张表 BEGIN→合成非 PHI 数据写入→事务内独立行数检查→ROLLBACK→新 SQL 连接六表均为零。实际 SQL SUCCESS，**无 COMMIT、无 Gold 数据持久化**。
 - [ ] 2.1c 实现真实单写入者 Gold 事务：重查 Snapshot → Map/Allocator/Person/Visit/Ledger 原子提交 → 独立读回与 Replay。
 - [ ] 2.1d 补齐 G5 Candidate 的 hospital_id Join 与真实 Vocabulary Mapping Profile，验证后才允许 F2 clinical writes（包含 2.1d.1 与 2.1d.2）。
