@@ -1,6 +1,6 @@
 # Fabric dbt — official source CODE map
 
-**Scope: P3 local Candidate, not an approved production Publisher.** Project owner: `azure-fabric/dbt/hl7-canonical/` with dbt name `hl7_canonical`. The pre-existing dbt implementation under Local DP remains frozen reference and is the only current executable consumer path until separately tested cutover.
+**Scope: P3 local Candidate, not an approved production Publisher.** Project owner: `azure-fabric/dbt/hl7-canonical/` with dbt name `hl7_canonical`. The new dbt project is the single maintained local dbt CI execution path; old dbt SQL/project/profiles remain frozen reference files until separately validated cleanup. No remote Azure/Fabric or production Silver/Gold execution has been authorized.
 
 | Source | Responsibility |
 | --- | --- |
@@ -13,7 +13,7 @@
 | [canonical_encounter.sql](../../../../azure-fabric/dbt/hl7-canonical/models/canonical/canonical_encounter.sql) | Encounter v1 27-column Candidate |
 | [canonical_models.yml](../../../../azure-fabric/dbt/hl7-canonical/models/canonical/canonical_models.yml) | Original six dbt non-null tests |
 | [tests/](../../../../azure-fabric/dbt/hl7-canonical/tests/) | Native dbt SQL tests for unmatched A03, chronological reversal, identity collisions, duplicate controls/keys, orphan Encounter and missing/invalid facts |
-| [profiles.yml](../../../../azure-fabric/dbt/hl7-canonical/profiles/local/profiles.yml) | Credential-free `dbt-fabricspark` local session with isolated `hl7_candidate_p3` schema |
+| [profiles.yml](../../../../azure-fabric/dbt/hl7-canonical/profiles/local/profiles.yml) | Credential-free `dbt-fabricspark` local session with backward-compatible `hl7_candidate` schema |
 
 Unused standard `macros/`, `seeds/`, `snapshots/`, `analyses/` are tracked with `.gitkeep`; `packages.yml` is not needed.
 
@@ -21,7 +21,7 @@ Unused standard `macros/`, `seeds/`, `snapshots/`, `analyses/` are tracked with 
 
 - Contract authority stays [Patient v1](../../../../local-data-platform/spark/contracts/canonical/patient-v1.json) (18) / [Encounter v1](../../../../local-data-platform/spark/contracts/canonical/encounter-v1.json) (27); these are **not copied or redefined** in dbt.
 - Parser, Intake, physical Delta Staging Writer and frozen legacy SQL/config stay owned by [HL7 CODE](../../data-platform/hl7/CODE.md).
-- New [offline hosted P3 acceptance workflow](../../../../.github/workflows/hl7-dbt-canonical-candidate-offline.yml) and [independent candidate readback / isolated negative fixture script](../../../../.github/quality/tests/data-platform/hl7/check_new_dbt_candidate.py) cover the new project separately from the existing [legacy baseline Workflow](../../../../.github/workflows/hl7-local-delta-dbt-offline.yml).
+- New [offline hosted P3 acceptance workflow](../../../../.github/workflows/hl7-dbt-canonical-candidate-offline.yml) and [independent candidate readback / isolated negative fixture script](../../../../.github/quality/tests/data-platform/hl7/check_new_dbt_candidate.py) use the same single governed dbt project as the adapted [legacy baseline Workflow](../../../../.github/workflows/hl7-local-delta-dbt-offline.yml).
 - Business change: [Fabric dbt OpenSpec P3](../../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md). Distinct [HL7 Consumer Change](../../../../openspec/changes/implement-hl7-local-delta-dbt-canonical/tasks.md) owns future real Azure GET, Silver and OMOP integration.
 - All CI data is synthetic, local Spark/Delta only. P3 local PASS never means actual Azure 42-object HL7 intake, Fabric Spark, approved Canonical Silver or OMOP Gold.
-- Only after independent acceptance should a **separate** consumer cutover PR update the sole formal execution path. A later separately validated cleanup PR removes obsolete old dbt SQL/config/profiles, **not** Python parser/intake/writer or required regression tests.
+- Hosted CI consumer cutover updates the existing Workflow to execute only this project, keeping Parser/Writer under Local DP and its prior independent readback; [static cutover test](../../../../.github/quality/tests/data-platform/hl7/test_dbt_entrypoint_cutover.py) guards both dbt Workflow working directories. A later separately validated cleanup PR may remove obsolete old dbt SQL/config/profiles, **not** Python parser/intake/writer or required regression tests.
