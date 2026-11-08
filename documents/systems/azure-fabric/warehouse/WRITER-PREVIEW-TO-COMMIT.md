@@ -1,7 +1,7 @@
 ---
 status: active
 scope: fabric-omop-f2-writer-preview-gate
-last_verified: 2026-11-04
+last_verified: 2026-11-08
 source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 ---
 
@@ -45,7 +45,19 @@ Self-Runner [PR #594](https://github.com/JohnZhang-DataForge/Self-Runner/pull/59
 新增 `silver_identity.py::plan_silver_identity_with_f2_bridge` 不发明新的算法，而是把同一 `F2SnapshotBridge` 中 Map/Gold/Allocator 传给原 `plan_silver_identity`、唯一 F2 `plan_ids` 与 Shared `bridge_f2_person_visit_allocation`，双向核对每一个 Patient/Visit ID、`PERSISTED/PROVISIONAL` 和 Parent FK；新版四文件 Warehouse 合成测试覆盖 100 Patient / 5918 Encounter、跨医院 Replay、空表起点与错误 Approval/HASH。调用方声明的 `physical_silver_readback_verified=True` **不能独立证明真实 G4 Silver 被物理核验**；本轮只对 F2 Warehouse 做了真实 SQL，不是 G4 真实数据的物理读回、临床/License 审批、Candidate Delta 或 Gold Release。原 F1/F2/P3/P4 Gate 继续生效。
 
 
-## 2026-11-08 — 最新真实 G4 OneLake 路径检查：文件集合 HOLD
+## 2026-11-08 — G4 实机 100/5918/0 → F2 Shared Preview PASS（未发布）
+
+Self-Runner [PR #619](https://github.com/JohnZhang-DataForge/Self-Runner/pull/619) 合并 Main `7733b2dce97498a21f6932d6b7032f1819762c42`，真实可信 [Run #42490347923](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42490347923) **SUCCESS**。独立读取聚合证据 Artifact `fabric-f2-g4-silver-readonly-42490347923`（ID `13620899472`）：`G4_REAL_DELTA_KEYS_TO_F2_REAL_SQL_SHARED_PREVIEW_PASS_NOT_RELEASED`。
+
+在冻结的 G4 FHIR Request/Manifest/Lakehouse/Processing 路径下，本次只读程序严格通过原始 Delta V0 及同版本 CRC、确切审定的 Delta Reader v3 / Writer v7 声明，逐 AddFile 验证文件名、字节长度和无实际 Deletion Vector/Remove；从活跃已提交 Parquet 中读取 **100 Patient、5,918 Encounter 的 Canonical v1 身份及来源字段**、一条 `SILVER_APPROVED` Approval，批次/Manifest/Person FK 验证及当前 Processing 的 Quarantine=0 均 PASS。只解码身份与必要溯源列，**不宣称在本轮重复验证全部临床字段内容**；原历史 G4 Spark 全内容验收为独立证据。
+
+OneLake 原始 PathList 带虚拟目录前缀，其他 Processing 的 quarantine 不属于本次审批数据。Approval 目录另有 **1 个未被任何活跃 Delta AddFile 引用的 Parquet**：源码仅记录汇总计数，**没有 GET、解码、计入正式表或日志输出其文件名**；Patient、Encounter 各有 0 个此类额外文件。批准数据完整 Parquet 字节流聚合 SHA256 `a768a3315420f0da5dd34a1c7af3054118721cb5dc438a505a4e6ec363ac8dc6`，读取的 Delta JSON 日志聚合 SHA256 `6c2ffef57d360c2448911a24639bd9fa196b6a8ae1f39472c8c196c2b268dd36`。
+
+同次执行真正开启两条新的 Warehouse OIDC/SQL 连接，六表 `identity_map/allocator/person/visit/ledger/audit` 均 0，物理 SQL 指纹 `0e128f1f9f27f4db42084637da2db9baf74daf03657345788cdff10b133c4890`，调用固定 Healthcare SHA `79f194d1d7bc6b412e82dc96f6c72b479fc9c395` 的**原唯一** Shared Engine 以真实 Silver Person/Visit 业务键进行 Preview，全 6,018 条身份逻辑快照指纹 `30b218f15d59d11d0105e50d9c42f074536a315b6e6a334f662dcd7e936463ba`。所有 ID 仅为 `PROVISIONAL_OR_EXISTING_PREVIEW_ONLY`，无 Map/Allocator/Gold 持久化；没有源业务键/PHI 日志/Artifact，也没有 SQL/Delta DML、Spark、Capacity 改动或 Candidate/Gold COMMIT。
+
+**门禁仍 OPEN**：F1 来源/License/CPT4 治理、正式临床 Concept Mapping Profile 审签、P3 Candidate Delta 发布、P4 Gold 的独立单写者事务及 P5 完整 E2E。此处真实只读验收 PASS **不授予**任何这些写入权限。
+
+## 2026-11-08 — 早期真实 G4 OneLake 路径 HOLD（已由后续物理证据纠偏）
 
 在原 [G5 Pipeline 与独立 Spark Silver 读回 Run #41636454542](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41636454542) 已验收 P100/E5918/Q0 之后，OMOP Foundation 另建 **GET-only** OneLake Storage-audience Delta V0 Reader，在 [Self-Runner PR #598](https://github.com/JohnZhang-DataForge/Self-Runner/pull/598) 开发固定请求/Manifest/GUID/Approval、准入边界与现有 F2 SQL 双连接→唯一 Shared Preview 连接。所有源业务键只驻留工作进程，不写入日志/Artifact，且未执行 Notebook/Delta/SQL DML。PR #599（GUID-only URI）、#600（PathList 可空分页）、#601（GET 网络单次重试）、#602（隔离路径类型不下载内容的安全诊断）均通过离线 CI 并合并。
 
