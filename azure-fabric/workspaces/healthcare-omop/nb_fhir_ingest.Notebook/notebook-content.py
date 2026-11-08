@@ -770,7 +770,7 @@ def prepare_hl7_candidate_bundle_for_silver(
                         raise ValueError("HOLD_HL7_BUNDLE_DATE") from exc
                 elif kind == "timestamp":
                     if (not isinstance(value, str) or
-                            not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z", value)):
+                            not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z", value)):
                         raise ValueError("HOLD_HL7_BUNDLE_TIMESTAMP")
                     try:
                         row[col] = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
@@ -797,7 +797,7 @@ def prepare_hl7_candidate_bundle_for_silver(
                     or row["processing_run_id"] != context.processing_run_id
                     or row["processed_at"] != context.processed_at.astimezone(timezone.utc)
                     or not row["source_file"].startswith(provenance_prefix)
-                    or not re.fullmatch(r"[A-Za-z0-9-]+-(A01|A03)\\.hl7",
+                    or not re.fullmatch(r"[A-Za-z0-9-]+-(A01|A03)\.hl7",
                                         row["source_file"][len(provenance_prefix):])
                     or not re.fullmatch(r"[0-9a-f]{64}", row["source_file_sha256"])
                     or type(row["source_file_size_bytes"]) is not int
