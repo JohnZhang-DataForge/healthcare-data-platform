@@ -60,3 +60,8 @@ jobs:
           dbt run
           dbt test
           python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_local_candidate.py"
+          # Reopen the *same* physical Candidate independently and run the
+          # pinned Shared Canonical v1 DQ / PK-FK handoff, still no Silver write.
+          export HL7_LOCAL_MANIFEST_PATH="$manifest"
+          export PYTHONPATH="$GITHUB_WORKSPACE/shared-data-engine/src:$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7${PYTHONPATH:+:$PYTHONPATH}"
+          python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_silver_handoff.py"
