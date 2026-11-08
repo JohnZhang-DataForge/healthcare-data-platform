@@ -74,7 +74,7 @@ jobs:
           # one-patient run would copy its untracked Hive metastore_db, which
           # causes the new 10-person Delta staging to see the old source.
           mkdir -p "$RUNNER_TEMP/hl7-ten-project"
-          git archive HEAD azure-fabric/dbt/hl7-canonical | tar -x -C "$RUNNER_TEMP/hl7-ten-project"
+          git -C "$GITHUB_WORKSPACE" archive HEAD azure-fabric/dbt/hl7-canonical | tar -x -C "$RUNNER_TEMP/hl7-ten-project"
           cd "$RUNNER_TEMP/hl7-ten-project/azure-fabric/dbt/hl7-canonical"
           export HL7_LOCAL_WAREHOUSE_URI="file:$RUNNER_TEMP/hl7-ten-local-warehouse"
           export DBT_PROFILES_DIR="$PWD/profiles/local"
