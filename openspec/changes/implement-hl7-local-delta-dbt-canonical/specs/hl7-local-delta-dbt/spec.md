@@ -35,3 +35,16 @@ HL7 Candidate SHALL 通过已有统一 Contract/DQ/Approval/Single Writer 门禁
 - **GIVEN** local Delta staging 与 dbt Candidate SQL 完成并返回 PASS
 - **WHEN** 本地 job 返回结果
 - **THEN** SHALL 保持 `CANDIDATE_ONLY`，MUST NOT 启动共享 Silver/OMOP Writer 或发布正式 Gold
+
+### Requirement: HL7 Canonical Candidate transfer must stay source-pinned and fail closed
+Any optional one-shot HL7 Candidate transport into the single Silver Owner SHALL preserve independently verified source Batch identity, original source Manifest SHA, processing version, pinned Canonical v1 Contracts and Candidate content. A self-generated bundle SHA alone SHALL NOT authorize publication. Until independent source proof and an approved channel are available, a transfer remains Candidate-only.
+
+#### Scenario: In-memory transfer integrity
+- **GIVEN** a DQ PASS local Candidate and externally pinned expected transfer Manifest SHA
+- **WHEN** the Native Notebook offline admission helper processes Patient/Encounter transport bytes
+- **THEN** altered SHA, foreign Batch/processing/contract, invalid clinical types, orphan FK, incomplete DQ and unverified original source proof MUST HOLD before any Silver mutation
+
+#### Scenario: Remote transport unapproved
+- **GIVEN** no approved short-lived remote channel or source-retention evidence
+- **WHEN** a caller attempts Fabric Silver release
+- **THEN** it MUST remain HALT; synthetic local Approval is not an official Silver COMMIT and must not create persistent Processing/Cache/Ledger
