@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install pinned parser, local Spark/Delta and dbt
-        run: python -m pip install -r "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/requirements-local.txt"
+        run: python -m pip install -r "$GITHUB_WORKSPACE/azure-fabric/dbt/hl7-canonical/requirements-local.txt"
       - name: Verify frozen source Mapper and fail-closed HL7 source contract
         run: python -m unittest discover -s "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7" -p "test_*.py" -v
       - name: Real physical local Delta staging, replay, dbt and independent candidate readback

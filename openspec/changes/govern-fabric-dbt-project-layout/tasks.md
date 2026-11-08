@@ -15,7 +15,7 @@
 - [x] 3.1 门禁例外完成后，在 `azure-fabric/dbt/hl7-canonical/` 创建**完整标准骨架**，直接按 dbt 分层开发；旧 SQL/config/profile **冻结供参考而非先迁移**。新工程在验收/切换前仅为 Candidate，不能形成第二个正式生产入口。
 - [x] 3.2 新 dbt 工程真实本地 Delta + dbt compile/run/test、Replay、Patient 18/Encounter 27 Contract/负向语义读回 PASS；必要业务扩展按原单独 HL7 Consumer Change 跟踪。
 - [x] 3.3 在受控切换 PR 中审查全部活跃 Workflow/Self-Runner/源码/配置/文档引用，改接唯一新 dbt 工程并复验，不因新 SQL 可以运行就删除旧文件。
-- [ ] 3.4 切换确认后**另一个清理 PR**删除旧 dbt models/project/profiles，更新旧 HL7 CODE、新 Fabric dbt CODE、CI/依赖及全部导航；Python Parser/Intake/Delta Writer 与必要测试继续保留，混合 requirements 按消费者拆分，不做全目录删除。
+- [x] 3.4 切换确认后**另一个清理 PR**删除旧 dbt models/project/profiles，更新旧 HL7 CODE、新 Fabric dbt CODE、CI/依赖及全部导航；Python Parser/Intake/Delta Writer 与必要测试继续保留，混合 requirements 按消费者拆分，不做全目录删除。
 - [x] 3.5 同步 Current Spec 的**真实执行 Owner 和迁移状态**；未来 FHIR/业务项目仍走独立 OpenSpec 准入，不预建。
 
 ## 已采用治理规则
@@ -39,3 +39,19 @@
 - Consumer inventory: all 70 Healthcare GitHub workflows inspected: only original HL7 regression and new P3 acceptance run dbt, both now use governed project. Self-Runner Main `5ccc39fc42261c5fe10481ec10dd8733e1c8d845` HL7/OIE named Workflows inspected: dbt POC remains pinned to historic Healthcare SHA `ecc99b18...` and its **own** `experiments/hl7-dbt-canonical/`, not the current Healthcare dbt consumer. No Self-Runner production dbt cutover was performed.
 - **Scope of DONE 3.3/3.5**: versioned **source and offline CI consumer** migration + Current Spec/CODE owner reconciliation. Does **not** mean Azure 42 real HL7 GET, deployed Fabric Spark, approved Silver or OMOP Gold. 3.4 remains OPEN until separate vetted obsolete-file cleanup PR. Runtime shared resources not touched.
 - This documentation-only evidence commit follows the already tested code head. Any additional workflow runs on this new doc-only SHA must be reviewed before merging.
+
+## P3 3.4 old dbt source cleanup candidate (separate PR, pending acceptance)
+
+- Repo verified Main pre-cleanup: `9bb036ca3062b0305f897d9a1235690b4d5773b8` (#821). There are no overlapping open Healthcare PRs at the start of this cleanup. New dbt source is the sole maintained local CI owner; the two independent Hosted Workflow Run IDs on prior cutover are #42446582767 and #42446582771 (both SUCCESS).
+- Exactly five frozen SQL/config files are removed from current Main-facing source: old `dbt_project.yml`, `models/sources.yml`, `models/canonical_patient.sql`, `models/canonical_encounter.sql`, `profiles/local/profiles.yml`. Keep `parse_oie_v2.py`, `landing_intake.py`, `write_staging_delta.py`, `.github/quality/tests/data-platform/hl7/check_local_candidate.py`, fixture/negative tests and both Hosted Workflows.
+- Split mixed dependencies: old Local DP `requirements-local.txt` retains pinned `hl7apy` / `pyspark` / `delta-spark`, new `azure-fabric/dbt/hl7-canonical/requirements-local.txt` includes the old parser/Delta lock with an explicit relative `-r`, plus pinned `dbt-fabricspark` adapter. Both workflows install from the governed dbt requirement entrypoint.
+- Old file navigation links are replaced with fixed historical PR references. Structural regression changes from expecting frozen old project in live tree to asserting complete retirement while preserving Parser/Writer/source contracts. No remote Azure/Fabric/Silver/Gold operations.
+- **Acceptance HOLD:** mark 3.4 DONE only after exact cleanup PR HEAD passes both real Hosted local Delta/dbt workflows, static source-structure/format/docs/OpenSpec checks, and four GitHub trusted Required Checks. Existing Self-Runner historical isolated POC and Git history are untouched.
+
+## P3 3.4 actual local cleanup acceptance — exact tested source HEAD
+
+- [PR #822](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/822), physical local cleanup code HEAD `94a9984479f1e6b40a4856b962c335624aceb51d`. Five old dbt files have been deleted from the proposed Git tree; Parser/Intake/Delta Writer and existing 18/27 contract/test assets remain. New governed dbt requirements include the single old Parser/Spark/Delta pinned file and pinned dbt adapter. No Azure/Fabric/OIE or shared cluster action was performed.
+- [Old HL7 runner / new dbt consumer regression Run #42447235193](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42447235193) SUCCESS: 12/12 Python tests including anti-rollback/split-requirements, staging CREATED and identical REPLAY SKIP, 5/5 dbt models, 15/15 dbt tests and independent Canonical Patient 18/Encounter 27 physical readback PASS.
+- [Independent P3 physical dbt Run #42447235126](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42447235126) SUCCESS: 5/5 models and 15/15 data tests, physical Patient/Encounter 18/27 Contract readback, logical Replay fingerprint PASS, expected-negative failures all detected for unmatched A03, reversed event time, cross-patient identity collision, duplicate control ID.
+- Four trusted default-branch Required checks, OpenSpec static validation, documentation relative link checks, Component Code Map/Name, extra Local DP Spark manifest and isolated build/smoke checks all SUCCESS on tested cleanup code HEAD. Initial stale Spark CODE links and missing OpenSpec scenario were fixed before the final green Runs. Non-required third-party Cloudflare Workers Build failure is unrelated to HL7 and is not a required check.
+- 3.4 is DONE at **source and GitHub-hosted synthetic local CI level only**. The later documentation-only closeout commit must still pass its own branch Required checks and should not be confused with real Azure 42-HL7 consumption, remote Fabric Spark, approved Silver or OMOP Gold.
