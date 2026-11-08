@@ -32,6 +32,12 @@ References:
 - [Run #41824079608](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41824079608): real `BEGIN TRANSACTION`; six tables contained exactly the expected synthetic rows within one transaction; explicit `ROLLBACK TRANSACTION`; independent new SQL connection verified all six zero rows. **PASS, NO GOLD COMMIT**.
 - The remaining task is an authorized Writer that rechecks verified Candidate inputs and commits stable IDs, clinical rows and Ledger atomically, then reads back for Replay; this rehearsal is not that writer.
 
+## 六表物理 SQL 行集 → Shared IdentitySnapshot 的纯转换边界（F2 SOURCE_ONLY）
+
+已有 Self-Runner `fabric_omop_identity_snapshot_readonly.py` 提供六张表的完整 SQL 行及每表 SHA256（`identity_map`/ `allocator`/ `person`/ `visit`/ `ledger`/ `audit`），通过两条独立 SQL 连接确认，所产生的**物理六表指纹不是** Shared Engine 的 `IdentitySnapshot.fingerprint`。新纯业务入口仍位于唯一 Fabric Writer `silver_identity.py::bridge_f2_sql_readback_rows`，不引入第二套 Mapper/分配器：调用方传入同一个全量有序 SQL 记录集、两连接各自的六 SHA 字典及精确 Warehouse GUID；接口按 Self-Runner 的逐行四字节长度前缀 JSON 编码算法重新算全部六表 SHA，严格匹配双连接指纹，再将 F1 Map/Gold/Allocator/ledger 语义映射到 Shared 的 `PersistedIdentity`/`IdentitySnapshot`，由现有逻辑复核跨医院 INT 唯一、Map/Gold 同步与 counter 不倒退。
+
+只有所有六表皆空的首次预览允许 SOURCE_ONLY 虚拟两个 `next_free=1`，状态依然不是已持久化 ID；已有任何 Ledger/Map/Gold/Audit 而 allocator 为空立即 HOLD。桥接提供不同的 `physical_snapshot_sha256` 和 `shared_snapshot_fingerprint`，后者可直接用于 `bridge_f2_person_visit_allocation` 和 `require_preview_snapshot_unchanged`，前者仅是源行摘要。**调用方自己提供的 SHA/行并不能证明它真的从两条 OIDC/SQL 连接读取；连接认证、物理独立性、短期新鲜度、G4 Silver Approval、正式临床/License 审签、单写入者 Fence 及真候选/Gold 发布必须由可信 Runner/运行控制器独立完成。** 不接受仅有 SHA 而缺少行集的请求，不把 SOURCE_ONLY 桥接结果当临床 Release Gate。
+
 ## Canonical G4 Silver → F2 Identity preview bridge (source-only)
 
 `silver_identity.py` consumes only independently verified canonical Silver Person/Encounter source key columns, exact hospital/source/batch namespace, physical Silver approval and zero-quarantine confirmation. It validates Visit-to-Patient FK, then calls the unchanged global `identity_plan.plan_ids` against a trusted complete Warehouse Map/Gold/Allocator snapshot. Output proposes both `person_id` and `visit_occurrence_id` with each Visit's linked Person INT.
