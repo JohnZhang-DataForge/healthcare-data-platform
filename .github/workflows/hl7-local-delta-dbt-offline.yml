@@ -65,6 +65,40 @@ jobs:
           export HL7_LOCAL_MANIFEST_PATH="$manifest"
           export PYTHONPATH="$GITHUB_WORKSPACE/shared-data-engine/src:$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7${PYTHONPATH:+:$PYTHONPATH}"
           python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_silver_handoff.py"
+      - name: NEW 10-patient V2 A01/A03 physical Delta/dbt and single Silver Writer (offline)
+        run: |
+          set -Eeuo pipefail
+          # A separate cwd isolates the Spark/Hive metastore from the frozen
+          # one-patient regression; it does not create a persistent Processor.
+          mkdir -p "$RUNNER_TEMP/hl7-ten-dbt"
+          cp -a "$GITHUB_WORKSPACE/azure-fabric/dbt/hl7-canonical/." "$RUNNER_TEMP/hl7-ten-dbt/"
+          cd "$RUNNER_TEMP/hl7-ten-dbt"
+          export HL7_LOCAL_WAREHOUSE_URI="file:$RUNNER_TEMP/hl7-ten-local-warehouse"
+          export DBT_PROFILES_DIR="$PWD/profiles/local"
+          export SPARK_LOCAL_IP=127.0.0.1
+          export PYTHONPATH="$GITHUB_WORKSPACE/shared-data-engine/src:$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7:$GITHUB_WORKSPACE/azure-fabric/notebook-development${PYTHONPATH:+:$PYTHONPATH}"
+          python "$GITHUB_WORKSPACE/.github/quality/fixtures/hl7/generate_oie_v2_sample.py" \
+            "$RUNNER_TEMP/oie-v2-ten-source" --patients 10
+          export HL7_LOCAL_MANIFEST_PATH="$RUNNER_TEMP/oie-v2-ten-source/landing-manifest.json"
+          sha="$(sha256sum "$HL7_LOCAL_MANIFEST_PATH" | cut -d' ' -f1)"
+          args=(--manifest "$HL7_LOCAL_MANIFEST_PATH"
+            --blob-root "$RUNNER_TEMP/oie-v2-ten-source/staged-local-blob-keys"
+            --manifest-sha256 "$sha"
+            --source-sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            --request-id "johnscreek-hl7-gh-12345678901"
+            --ingest-date "2026-11-07"
+            --processing-run-id "synthetic-v2-001"
+            --processed-at "2026-11-07 13:00:00"
+            --warehouse-uri "$HL7_LOCAL_WAREHOUSE_URI")
+          python "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/write_staging_delta.py" "${args[@]}"
+          python "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/write_staging_delta.py" "${args[@]}"
+          dbt debug
+          dbt compile
+          dbt run
+          dbt test
+          python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_ten_patient_silver.py"
+          echo "HL7_V2_TEN_NEW_FHIR_PATIENT_SINGLE_SILVER_LOCAL_E2E=PASS"
+          echo "HL7_V2_OIE_BLOB_FABRIC_REMOTE_WRITES=NO"
       # The formal Notebook workflow's source-version gate still assumes
       # Shared Engine 0.1.7, while current shared SOURCE is 0.1.10.
       # Independently test FHIR G4 compatibility with the exact native
