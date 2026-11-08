@@ -271,6 +271,9 @@ def main() -> None:
             mode_first = native.verify_hl7_real_silver(spark, **params)
             if mode_first.status != "SILVER_APPROVED":
                 raise RuntimeError("HL7_NATIVE_SILVER_FIRST_WRITE_HOLD:" + mode_first.status)
+            # The durable Silver fence must survive deletion of temporary
+            # Candidate bytes. Source GET proof is independently rechecked.
+            fake_blobs.clear()
             mode_read = native.verify_hl7_real_silver(
                 spark, **{**params, "mode": "HL7_SILVER_READBACK_ONLY",
                           "allow_write": False, "retention_ok": False})
