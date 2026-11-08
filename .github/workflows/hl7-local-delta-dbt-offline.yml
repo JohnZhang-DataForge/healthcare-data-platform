@@ -1,8 +1,10 @@
-name: HL7 local Delta + dbt Canonical Candidate (offline)
+name: HL7 local Delta + governed canonical dbt regression (offline)
 on:
   pull_request:
     paths:
       - "local-data-platform/spark/apps/hl7/**"
+      - "azure-fabric/dbt/hl7-canonical/**"
+      - "local-data-platform/spark/contracts/canonical/**"
       - ".github/quality/tests/data-platform/hl7/**"
       - ".github/quality/fixtures/hl7/**"
       - ".github/workflows/hl7-local-delta-dbt-offline.yml"
@@ -17,7 +19,7 @@ jobs:
     timeout-minutes: 28
     defaults:
       run:
-        working-directory: local-data-platform/spark/apps/hl7
+        working-directory: azure-fabric/dbt/hl7-canonical
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,9 +32,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install pinned parser, local Spark/Delta and dbt
-        run: python -m pip install -r requirements-local.txt
+        run: python -m pip install -r "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/requirements-local.txt"
       - name: Verify frozen source Mapper and fail-closed HL7 source contract
-        run: python -m unittest discover -s "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7" -v
+        run: python -m unittest discover -s "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7" -p "test_*.py" -v
       - name: Real physical local Delta staging, replay, dbt and independent candidate readback
         run: |
           set -euo pipefail
@@ -51,8 +53,8 @@ jobs:
             --processing-run-id "synthetic-v2-001"
             --processed-at "2026-11-07 13:00:00"
             --warehouse-uri "$HL7_LOCAL_WAREHOUSE_URI")
-          python write_staging_delta.py "${args[@]}"
-          python write_staging_delta.py "${args[@]}"
+          python "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/write_staging_delta.py" "${args[@]}"
+          python "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/write_staging_delta.py" "${args[@]}"
           dbt debug
           dbt compile
           dbt run

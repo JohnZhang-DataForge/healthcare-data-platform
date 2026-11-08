@@ -14,16 +14,28 @@
 ## P3 — 标准工程真正实施（独立源码 PR）
 - [x] 3.1 门禁例外完成后，在 `azure-fabric/dbt/hl7-canonical/` 创建**完整标准骨架**，直接按 dbt 分层开发；旧 SQL/config/profile **冻结供参考而非先迁移**。新工程在验收/切换前仅为 Candidate，不能形成第二个正式生产入口。
 - [x] 3.2 新 dbt 工程真实本地 Delta + dbt compile/run/test、Replay、Patient 18/Encounter 27 Contract/负向语义读回 PASS；必要业务扩展按原单独 HL7 Consumer Change 跟踪。
-- [ ] 3.3 在受控切换 PR 中审查全部活跃 Workflow/Self-Runner/源码/配置/文档引用，改接唯一新 dbt 工程并复验，不因新 SQL 可以运行就删除旧文件。
+- [x] 3.3 在受控切换 PR 中审查全部活跃 Workflow/Self-Runner/源码/配置/文档引用，改接唯一新 dbt 工程并复验，不因新 SQL 可以运行就删除旧文件。
 - [ ] 3.4 切换确认后**另一个清理 PR**删除旧 dbt models/project/profiles，更新旧 HL7 CODE、新 Fabric dbt CODE、CI/依赖及全部导航；Python Parser/Intake/Delta Writer 与必要测试继续保留，混合 requirements 按消费者拆分，不做全目录删除。
-- [ ] 3.5 同步 Current Spec 的**真实执行 Owner 和迁移状态**；未来 FHIR/业务项目仍走独立 OpenSpec 准入，不预建。
+- [x] 3.5 同步 Current Spec 的**真实执行 Owner 和迁移状态**；未来 FHIR/业务项目仍走独立 OpenSpec 准入，不预建。
 
 ## 已采用治理规则
 
-- 2026-11-07：P1 规则随 PR #811 在 Main 生效；Current Spec 正式采用至 `openspec/specs/fabric-dbt-project-layout/spec.md`（与本次 P1 关闭记录配套）。**P1 目录/AI 治理和 P2 可信 Gate 例外均已验证生效；P3 新 dbt 工程开发、验收与切换仍 OPEN。**
+- 2026-11-07：P1 规则随 PR #811 在 Main 生效；Current Spec 正式采用至 `openspec/specs/fabric-dbt-project-layout/spec.md`（与本次 P1 关闭记录配套）。**历史 P1/P2 已生效；P3 3.1/3.2 在 #820 通过真实本地验收、3.3/3.5 由 #821 受控消费者切换和 Owner/Current Spec 同步验收；3.4 旧文件清理仍 OPEN。**
 
 ## P3 Candidate implementation (subject to PR review)
 
 - 3.1: Standard new `hl7_canonical` project, CODE Map, schema tests, isolated local profile and dedicated hosted-only P3 Workflow are authored; legacy Parser/Intake/Writer/SQL/Workflow remain unchanged and sole active entry.
 - 3.2: **Local synthetic runtime ACCEPTED** at [PR #820](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/820), validated exact source HEAD `cc58df1ef202b2d833c1421200ffebc7f761b26f` by [GitHub-hosted Run #42444753385](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42444753385) SUCCESS: real physical local Delta staging 2 rows CREATED + identical replay SKIP, dbt debug/compile PASS, 5/5 models, 15/15 tests, independent physical Patient 18 / Encounter 27 fields + clinical values, second run fingerprint replay PASS; four isolated expected-failure negative scenarios each detected (unpaired A03, reversed time, cross-patient identity collision, duplicate message control). This is offline **local-only Candidate** runtime, not Azure 42 real HL7 objects, Fabric remote Spark, Silver or Gold. First Run #42444412477 failed on test-harness dbt diagnostic phrase despite correctly detected negative; repaired only negative assert matching and reran full acceptance. Latest evidence applies to code SHA above; this documentation-only closeout does not change the tested SQL/Workflow.
-- 3.3–3.5: Consumer cutover, legacy SQL/config cleanup and final live-owner declaration remain separate future PRs. No Azure/Fabric/Silver/Gold action authorized here.
+- 3.3: A separate cutover PR adapts the original HL7 GitHub-hosted regression workflow to the approved `hl7-canonical` project and compatible `hl7_candidate` output schema, retains old Parser/Writer and Contract readback, adds a static anti-fallback test, and documents that Self-Runner historical POC is not a live dbt consumer. Mark 3.3 DONE only after the cutover PR exact HEAD has passed BOTH hosted workflows, four trusted Required Checks and independent physical Candidate readback; no remote runtime touched.
+- 3.4: The obsolete old SQL/project/profiles, any now-unused test/CI dependency, and historical documentation refs require a **separate** consumer-dependency-verified cleanup PR. NOT YET DONE.
+- 3.5: Source owner and runtime *scope* are updated in Current Spec and CODE Maps in this cutover PR; only finalize DONE after actual PR acceptance. No live Azure/Fabric/Silver/Gold claim.
+
+## P3 3.3 / 3.5 hosted consumer cutover acceptance (local-only)
+
+- [PR #821](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/821) tested exact source HEAD `f77eadb7881fc7b2a4bce18b69595e8b610ddf4b`, based on P3 scaffold merged Main `1cde4663162ad3a71163a519ec52bc1e4cedabfa` (#820). Source and workflow changes convert both GitHub-hosted dbt Workflows to the **single** `azure-fabric/dbt/hl7-canonical/` project, local schema `hl7_candidate` preserved. Legacy source remains Parser/Intake/Delta Writer only; old SQL/config/profile frozen, unexecuted.
+- [Existing HL7 regression Run #42446038581](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42446038581) **SUCCESS**: physical local HL7 Delta staging CREATED 2 rows + identical Replay SKIP; dbt **5/5** new models, **15/15** tests; original independent **18/27** Canonical Contract readback PASS. Original Python negative unit tests PASS.
+- [New P3 full acceptance Run #42446038571](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42446038571) **SUCCESS**: dbt 5/5 and 15/15, physical local Patient/Encounter 18/27, same Candidate logical Replay PASS, four deliberately invalid local Delta fixtures each yielded the intended dbt **FAIL** and were counted as expected-negative PASS.
+- All **four** GitHub default-branch trusted Required checks SUCCESS on tested head; OpenSpec, docs links, code naming and active-index checks also PASS. Separate external Cloudflare Workers Build failure is **not** a Required context and unrelated to these HL7 files.
+- Consumer inventory: all 70 Healthcare GitHub workflows inspected: only original HL7 regression and new P3 acceptance run dbt, both now use governed project. Self-Runner Main `5ccc39fc42261c5fe10481ec10dd8733e1c8d845` HL7/OIE named Workflows inspected: dbt POC remains pinned to historic Healthcare SHA `ecc99b18...` and its **own** `experiments/hl7-dbt-canonical/`, not the current Healthcare dbt consumer. No Self-Runner production dbt cutover was performed.
+- **Scope of DONE 3.3/3.5**: versioned **source and offline CI consumer** migration + Current Spec/CODE owner reconciliation. Does **not** mean Azure 42 real HL7 GET, deployed Fabric Spark, approved Silver or OMOP Gold. 3.4 remains OPEN until separate vetted obsolete-file cleanup PR. Runtime shared resources not touched.
+- This documentation-only evidence commit follows the already tested code head. Any additional workflow runs on this new doc-only SHA must be reviewed before merging.

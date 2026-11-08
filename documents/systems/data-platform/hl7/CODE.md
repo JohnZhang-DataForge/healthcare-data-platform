@@ -1,6 +1,6 @@
 # HL7 — official consumer Source CODE map
 
-> **当前唯一可执行 Source Owner：** `local-data-platform/spark/apps/hl7/`。这里的部分 dbt 代码是经过真实**本地合成数据**运行验证的功能基线，**不是只可随便删除的 POC**。未来 Fabric dbt 独立工程目标：[`azure-fabric/dbt/hl7-canonical/` 规则](../../azure-fabric/dbt/README.md)；现为 P3 Candidate（[Fabric dbt CODE](../../azure-fabric/dbt/CODE.md)），尚未完成运行验收或消费者切换。旧 Self-Runner `experiments/hl7-dbt-canonical/` 仅历史隔离 POC。OIE Producer、共享 Silver Writer / OMOP 均不归本组件管理。
+ > **职责已分离：** `local-data-platform/spark/apps/hl7/` 仍是 Parser、Manifest Intake、物理 Delta Staging Writer 的业务 Source Owner；**唯一维护中的本地 dbt 执行工程是** [`azure-fabric/dbt/hl7-canonical/`](../../azure-fabric/dbt/README.md)（[Fabric dbt CODE](../../azure-fabric/dbt/CODE.md)）。旧 dbt SQL/project/profile 已通过历史合成数据验收，但现在只作冻结参考，另经独立清理 PR 删除。旧 Self-Runner `experiments/hl7-dbt-canonical/` 仅历史隔离 POC。OIE Producer、共享 Silver Writer / OMOP 均不归本组件管理。
 
 ## 代码去留标记（Agent 必须先读）
 
@@ -22,10 +22,10 @@
 | [models/canonical_encounter.sql](../../../../local-data-platform/spark/apps/hl7/models/canonical_encounter.sql) | 同批 A01+A03 关联生成 Encounter v1 Candidate | **逻辑参考 → 切换后待退役**：复用配对/时序/去重语义并测试边界，不直接当最终业务模型 |
 | [profiles/local/profiles.yml](../../../../local-data-platform/spark/apps/hl7/profiles/local/profiles.yml) | dbt-fabricspark `method=session` 的 local-only 配置 | **配置参考 → 切换后待退役**：新工程独立配置、无密钥；新项目生效后删旧 |
 | [requirements-local.txt](../../../../local-data-platform/spark/apps/hl7/requirements-local.txt) | 混合锁定 HL7 Parser / Spark / Delta / dbt 依赖 | **拆分复核 / 暂保留**：先清点 CI 与真实执行依赖；分别为 Parser/Writer 与 dbt 提供版本来源后才能拆或删 |
-| [HL7 CI](../../../../.github/workflows/hl7-local-delta-dbt-offline.yml) | GitHub-hosted synthetic HL7 → local Delta/dbt → Replay/Contract readback | **回归基线 / 待改接**：新模型开发时以旧 CI 为验收参考；实际切换时更新 `paths`、工作目录、profiles/requirements 和测试调用，不得提前删 |
+| [HL7 CI](../../../../.github/workflows/hl7-local-delta-dbt-offline.yml) | GitHub-hosted synthetic HL7 → local Delta/dbt → Replay/Contract readback | **已改接新 dbt 工程**：保留原入口名称、Parser/Writer 和旧 18/27 物理回归断言；`cwd`/profiles 指向 `azure-fabric/dbt/hl7-canonical/`，当前合成 CI 不执行旧 SQL |
 | [Synthetic OIE V2 fixture generator](../../../../.github/quality/fixtures/hl7/generate_oie_v2_sample.py) | 用真实 OIE JS Mapper 生成新合成 HL7/Manifest | **回归基线 / 保留**：可供旧/新候选对照，不因 SQL 工程完成就自动删除 |
 | [Offline negative tests](../../../../.github/quality/tests/data-platform/hl7/test_hl7_intake.py) | Manifest/Identity/Raw SHA/A01+A03/路径负向 | **回归基线 / 保留**：针对 Parser/Intake 的测试，业务组件保留时测试也应保留 |
-| [Candidate independent readback](../../../../.github/quality/tests/data-platform/hl7/check_local_candidate.py) | 物理 Delta/_delta_log、Patient 18/Encounter 27 字段 | **回归基线 / 待改接**：新项目独立验收复用语义及合同检查；消费者转移后更新而非机械删除 |
+| [Candidate independent readback](../../../../.github/quality/tests/data-platform/hl7/check_local_candidate.py) | 物理 Delta/_delta_log、Patient 18/Encounter 27 字段 | **保留并复用**：新 dbt 工程输出兼容的 `hl7_candidate` schema，旧 readback 可直接验证新工程，不需删除测试 |
 
 **合同归属：** [Patient v1](../../../../local-data-platform/spark/contracts/canonical/patient-v1.json)、[Encounter v1](../../../../local-data-platform/spark/contracts/canonical/encounter-v1.json)。新工程必须复用现有权威合同，不因目录变化复制第二套 Canonical/OMOP/Publisher。
 
@@ -36,5 +36,7 @@
 3. 已逐项审查 `.github/workflows/`、Self-Runner 调用方、`DBT_PROFILES_DIR`、cwd、`dbt_project.yml` 位置、requirements、源码及 Markdown/CODE 链接，所有**当前活跃消费者**已切到新目录并有对应测试证据。
 4. 最终**一个受控切换/清理 PR**删除旧 `dbt_project.yml`、旧 `models/*.sql/.yml`、旧 `profiles/local/profiles.yml` 及确已无引用的文件；同时更新 CODE Maps/Workflow/OpenSpec，核对新主线 CI。不能删除整个 `spark/apps/hl7/`、Python Parser/Intake/Writer、其负向测试或冻结历史证据。
 5. 若切换失败，旧实现暂留为回退参考且不承担新增开发；记录真实阻断，禁止宣布“旧实现已退役”。是否终止或切换现有运行入口必须按受控 PR 和实际执行权限进行。
+
+**切换审计：** Healthcare 所有 70 个 `.github/workflows/` 已逐文件扫描旧工程名/路径、`DBT_PROFILES_DIR` 和 `dbt run/test`：仅正式本地 HL7 回归 Workflow 与新 P3 验收 Workflow 执行 dbt，两条均指向同一个新 Project；原 Self-Runner `hl7-dbt-core-local-poc.yml` 固定 Healthcare 历史 `ecc99b18...` 且只在独立 `experiments/` 执行，不是 Healthcare 现行 Consumer。受控切换验收以新 PR/CI 为准；未在共享 Runner/Fabric 部署消费者。
 
 **已验证边界：** 现存本地/合成数据 CI [Run #42419252459](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42419252459) 证明过当前 Parser→Delta→dbt Candidate，并**未**真实消费 Azure 已发布的 42 条 HL7、也不等于 Fabric Approved Silver/Gold。上述未来清理计划由 [Fabric dbt OpenSpec](../../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md) 跟踪；历史来源实施的业务 P2/P3 仍由 [HL7 Consumer OpenSpec](../../../../openspec/changes/implement-hl7-local-delta-dbt-canonical/tasks.md) 独立跟踪。

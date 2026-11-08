@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(ROOT / "local-data-platform/spark/apps/hl7"))
 from write_staging_delta import _spark, _warehouse
 
-CANDIDATE = "hl7_candidate_p3"
+CANDIDATE = "hl7_candidate"
 
 
 def physical_delta(spark, name):
