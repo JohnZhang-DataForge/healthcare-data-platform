@@ -44,3 +44,12 @@
 - Once Reader credentials / role are independently ready and no concurrent runtime conflict is present, a separate one-shot marker PR can trigger the already merged workflow for **one** exact source GET + local Delta/dbt Candidate; this is not an unattended/scheduled automation. Keep P2.1 and 2.2 OPEN until live Run/actual independent readback proves success; P2.3 Silver/OMOP remains separate.
 
 - **Definitive Main-context check:** [Self-Runner PR #597](https://github.com/JohnZhang-DataForge/Self-Runner/pull/597) merged `243589a130289508936a533ff1fccbfdc5e1963a` and triggered [Main push Run #42467343863](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42467343863) with only boolean/metadata checks. It returned **`HL7_P2_MAIN_READER_CONFIG=MISSING`** and **`HL7_P2_NO_REMOTE_AZURE_REQUEST=YES`**, eliminating PR event Secret masking as the sole explanation. The live original-42 one-shot marker has **NOT** been added; no Azure 42 GET/physical real-source Candidate can be claimed.
+
+
+## 2026-11-08 ET — P2.1 credential-route correction (supersedes Reader-only prerequisite for this pilot)
+
+- [x] User confirmed **no new Processing persistence/cache/ledger and no architecture change**. Reuse existing reviewed Batch/Canonical/Silver design.
+- [x] Source audit: P3 [Run #42412009780](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42412009780) actually authenticated with existing `AZURE_BLOB_PUBLISHER_*` identity and executed independent 42-object GET/HEAD successfully. The later new `AZURE_BLOB_READER_*` *variable* absence never established a lack of Azure read authorization.
+- [ ] Replace the unconfigured Reader-only one-shot workflow gate with explicit existing Publisher app/tenant/token identity verification **and read-method-only consumer use**. Publisher RBAC grants write capability; review exact code and secrets scope, never call blob PUT/POST/LIST/DELETE, OIE, Silver or Gold. Keep one-shot Main marker and immutable source pins.
+- [ ] Prove no-cloud controller tests and complete relevant GitHub PR/CI before attempting one real-source Azure GET run; verify actual Main-context credential **presence without displaying values**, and audit concurrent runtime workloads.
+- [ ] Execute one approved exact 42-object GET → local temporary Delta/dbt Candidate → independent 18/27 readback, record real Run conclusion. Do not mark P2.1/P2.2 DONE from offline CI. P2.3 remains OPEN.
