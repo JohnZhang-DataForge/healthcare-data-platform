@@ -15,7 +15,7 @@
 | --- | --- | --- |
 | [parse_oie_v2.py](../../../../local-data-platform/spark/apps/hl7/parse_oie_v2.py) | 经审核 OIE V2 的 `hl7apy` 协议解析和临床字段投影 | **保留 / 业务依赖**：下游仍需结构化 HL7；不是 dbt SQL，不能因 dbt 完成删除 |
 | [landing_intake.py](../../../../local-data-platform/spark/apps/hl7/landing_intake.py) | Manifest、Raw SHA、Hospital/Batch/对象身份校验，限本地读取 | **保留 / 业务依赖**：数据真实性 Gate；另行评审共享 Adapter 或新 Consumer 后才可考虑替代 |
-| [azure_blob_readback.py](../../../../local-data-platform/spark/apps/hl7/azure_blob_readback.py) | Approved exact-key Azure GET-only manifest/raw readback into private local input | **Source-only / fake-GET CI 28/28 Python tests PASS at Run #42449129041**; does not authorize Azure or publish Silver |
+| [azure_blob_readback.py](../../../../local-data-platform/spark/apps/hl7/azure_blob_readback.py) | Approved exact-key Azure GET-only manifest/raw readback into private local input | **Source-only / fake-GET CI 28/28 Python tests PASS at Run #42449129041; actual original 42 remote GET + local physical Candidate in Self-Runner Run #42488836550 PASS**. This is one-shot source/Candidate acceptance, not deployed Silver/OMOP. |
 | [requirements-azure-readback.txt](../../../../local-data-platform/spark/apps/hl7/requirements-azure-readback.txt) | Optional runtime-only Azure SDK pins reuse the existing source/Publisher requirements | No cloud SDK dependency in hosted CI |
 | [write_staging_delta.py](../../../../local-data-platform/spark/apps/hl7/write_staging_delta.py) | Spark 3.5 本地 Delta Staging，create / exact replay skip / conflict HOLD | **保留 / 业务依赖**：dbt 需要其结构化 Delta 输入，后续独立替换时才可考虑退役 |
 | [requirements-local.txt](../../../../local-data-platform/spark/apps/hl7/requirements-local.txt) | 保留 HL7 Parser / Spark / Delta 的单一 pinned 依赖源 | **维护**：新工程 [requirements-local.txt](../../../../azure-fabric/dbt/hl7-canonical/requirements-local.txt) 引用本锁定依赖，旧 dbt adapter pin 已从此移除 |
@@ -43,3 +43,5 @@
 ## Azure Raw readback source gate
 
 The new [Azure GET-only operating contract](AZURE-GET-READBACK.md) owns the mandatory independent manifest SHA/source SHA/request and count pins, least-privilege identity, no-LIST policy, private local staging and runtime approval boundary. This source adapter reuses existing Manifest/Parser checks; **actual published 42 HL7 object GET, remote Fabric Silver and OMOP remain OPEN**.
+
+**Actual real Azure Pilot (2026-11-08):** [Self-Runner Run #42488836550](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42488836550) passed exact 42 real Raw/Manifest GET, original Publisher OAuth, local Delta/dbt Candidate and independent Patient 18/Encounter 27 physical readback. No production Silver Writer, durable Processing layer, OIE POST, Azure mutations or OMOP Gold. Source ownership and dbt project paths unchanged; P2.3 in HL7 OpenSpec remains OPEN.
