@@ -9,7 +9,7 @@
 
 ## P2 — 真实来源和共享业务链路（单独资源授权）
 - [ ] 2.1 对 Azure 已发布 42 条 Raw HL7 做 GET-only 最小权限计划与 Batch/资源冲突核查；不重跑历史 P2/P3、不产生 OIE POST。**真实 42 个对象 GET 和资源/授权预检仍 OPEN。**
-- [ ] 2.1a 实施 bounded exact-key Azure GET-only Reader，复用现有 Intake/Parser，负向测试验证后提交 PR/CI；本项仅 Source/Hosted synthetic Test，不执行远端。
+- [ ] 2.4 实施 bounded exact-key Azure GET-only Reader，复用现有 Intake/Parser，负向测试验证后提交 PR/CI；本项仅 Source/Hosted synthetic Test，不执行远端。
 - [ ] 2.2 使用原 42 条真实 HL7 文件和权威 Manifest 进入本 Consumer 的真实 Source/Delta Candidate 验收。
 - [ ] 2.3 接入现有统一 Silver DQ/quarantine/Approval/Single Writer，后续与 FHIR 在已批准 Canonical 汇合；真实 Silver/OMOP 写入需要明确审批与独占窗口。
 
@@ -25,4 +25,4 @@
 
 - Baseline Main: `86ac0c5c96ff8d5e86fad559da5df97c9ec09433` (#822). New source `local-data-platform/spark/apps/hl7/azure_blob_readback.py` requires independently pinned request_id, exact Manifest key/SHA, frozen source Manifest SHA and object count. The only allowed cloud operations, if separately approved, are exact-key HEAD and conditional GET. No List, Blob write, OIE POST, Spark, Fabric or Silver publisher calls.
 - [Operating contract](../../../documents/systems/data-platform/hl7/AZURE-GET-READBACK.md) defines scoped Storage Blob Data Reader identity, exact 42-object resource evidence, shared Runner conflict and private source retention gate. Readback uses original `landing_intake.verified_seed_rows` before the directory becomes visible; matching local replay skips, conflicting output HOLD.
-- Keep P2 2.2 real Azure 42 GET and P2 2.3 shared Silver/OMOP open. No secrets, actual PHI or Azure network calls in hosted tests. 2.1a may only be ticked on actual PR HEAD CI PASS.
+- Keep P2 2.2 real Azure 42 GET and P2 2.3 shared Silver/OMOP open. No secrets, actual PHI or Azure network calls in hosted tests. 2.4 may only be ticked on actual PR HEAD CI PASS.
