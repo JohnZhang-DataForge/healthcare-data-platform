@@ -103,7 +103,7 @@ class HL7SilverDQHandoffTests(unittest.TestCase):
     def test_same_source_deterministic_and_explicitly_no_publication(self):
         a, b = plan(), plan()
         self.assertEqual(a, b)
-        self.assertNotIn("SILVER_APPROVED", a.status)
+        self.assertEqual(a.status, "CANDIDATE_DQ_PASS_NOT_SILVER_APPROVED")
         self.assertFalse(hasattr(a, "publish"))
         self.assertFalse(hasattr(a, "publication_id"))
 
