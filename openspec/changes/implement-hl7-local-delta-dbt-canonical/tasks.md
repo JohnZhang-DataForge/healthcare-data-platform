@@ -67,6 +67,11 @@
 - [x] 2.3.1 Add HL7 source-specific, **pure** Candidate→Shared Canonical DQ handoff using existing pinned v1 Contract, shared PK/FK reconciliation and explicit raw-request → namespaced/hash Batch identity validation. No second Writer/Mapper. **P2.3 Candidate-only source CODED+TEST PASS**, PR #833.
 - [x] 2.3.2 Unit/negative/real local physical synthetic dbt Candidate readback integration: correct 18/27 schema, temporal checks, strict HOLD on scope/PK/FK/DQ, stable deterministic replay. Build evidence with GitHub-hosted CI, update HL7 CODE map and OpenSpec. **CI Run #42490731988 PASS**; P2.3.3 remains OPEN.
 - [ ] 2.3.3 Separately implement/review existing unified Silver Approval/Single Writer integration with Fabric owner; require independent Delta readback and approved exclusive live run before declaring P2.3 DONE. Do not create Processing Cache/Ledger or replay original Azure 42.
+  - [ ] 2.3.3a SOURCE: refactor the existing G4 native Notebook to delegate Patient/Encounter/Approval-LAST physical writing to ONE internal source-neutral helper. Preserve historical FHIR paths/Approval and G4-specific source/replay gates; keep Notebook/Pipeline default HALT.
+  - [ ] 2.3.3b HOSTED PHYSICAL: reuse synthetic HL7 physical dbt Candidate, independently complete Shared DQ, then exercise the same helper against **ephemeral local** Delta only. Assert two-table independent readback, actual Approval-last, existing-path replay rejection and DQ HOLD; run FHIR Notebook regression. No production Silver release.
+  - [ ] 2.3.3c SOURCE/RELEASE: implement exact reviewed HL7 Fabric Input/Manifest/Candidate delivery and approved source-specific readback/replay; independently review whether one-shot ephemeral local Candidate can be transferred to Fabric without an unapproved Processing cache. No unreviewed Cloud dispatch.
+  - [ ] 2.3.3d RUNTIME: separately authorize and serialize exclusive Fabric release, independently read back full canonical Delta + source evidence + Approval-last, verify replay SKIP/unknown-ACK HOLD; then and only then consider P2.3 closure.
+
 
 ### P2.3.1–P2.3.2 first real physical CI acceptance (2026-11-08 ET)
 
