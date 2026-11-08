@@ -36,6 +36,23 @@ The existing HL7 dbt implementation under `local-data-platform/spark/apps/hl7/` 
 - **WHEN** `azure-fabric/dbt/hl7-canonical/` is described but the physical migration is still open
 - **THEN** the Agent SHALL use the existing real CODE Map and MUST NOT report the Fabric path as already deployed or tested.
 
-#### Scenario: An Agent moves dbt code
-- **WHEN** a later PR moves HL7 SQL to the Fabric dbt tree
-- **THEN** it SHALL update all workflow consumers and CODE maps, independently revalidate the local Delta/dbt Contract, and not leave two maintained production dbt sources.
+#### Scenario: An Agent develops the replacement dbt project
+- **WHEN** a later PR introduces a new `azure-fabric/dbt/hl7-canonical/` project while legacy HL7 dbt code remains
+- **THEN** it SHALL freeze old dbt SQL/project/profiles as a reference-only baseline, keep the new project unpromoted, and require a tested consumer cutover and separate old-dbt cleanup before claiming it is the only official source.
+
+### Requirement: Legacy HL7 dbt source disposition SHALL be documented before replacement
+
+Before developing `azure-fabric/dbt/hl7-canonical/`, the existing Local DP HL7 CODE Map SHALL identify each file as a retained runtime dependency, frozen reference pending retirement, mixed dependency requiring review, or regression test/CI. New dbt models MAY coexist temporarily in Git as unpromoted candidates while the old implementation remains the only authoritative execution route. Agents MUST NOT maintain two official production implementations or remove Parser, Manifest Intake, Delta Writer, or their required tests just because the new dbt project succeeds.
+
+#### Scenario: An Agent creates the new standard dbt project while old files still exist
+- **WHEN** the agent starts the approved new project after the repository layout gate is ready
+- **THEN** the old SQL/project/profile SHALL remain frozen reference-only, the new project SHALL remain candidate until approved cutover, and the current CODE Map SHALL stay accurate about the actual execution path.
+
+#### Scenario: A new dbt project passes its local tests
+- **WHEN** the new candidate passes compile, run, dbt tests, physical Delta readback and Canonical Contract checks
+- **THEN** the Agent MUST still inventory and migrate active Workflow, Self-Runner, profile, requirements, test and documentation consumers before deleting old dbt files; such a PASS alone SHALL NOT authorize blanket deletion.
+
+#### Scenario: A clean-up PR removes the old HL7 project
+- **WHEN** the new project has been promoted and all consumers and CODE owners are updated with evidence
+- **THEN** only identified obsolete old dbt SQL, project configuration and profiles MAY be removed in a bounded PR; legacy Python Parser/Intake/Delta Writer, necessary regression tests, and historical acceptance evidence MUST remain unless separately replaced and accepted.
+
