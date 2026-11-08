@@ -38,6 +38,12 @@ References:
 
 只有所有六表皆空的首次预览允许 SOURCE_ONLY 虚拟两个 `next_free=1`，状态依然不是已持久化 ID；已有任何 Ledger/Map/Gold/Audit 而 allocator 为空立即 HOLD。桥接提供不同的 `physical_snapshot_sha256` 和 `shared_snapshot_fingerprint`，后者可直接用于 `bridge_f2_person_visit_allocation` 和 `require_preview_snapshot_unchanged`，前者仅是源行摘要。**调用方自己提供的 SHA/行并不能证明它真的从两条 OIDC/SQL 连接读取；连接认证、物理独立性、短期新鲜度、G4 Silver Approval、正式临床/License 审签、单写入者 Fence 及真候选/Gold 发布必须由可信 Runner/运行控制器独立完成。** 不接受仅有 SHA 而缺少行集的请求，不把 SOURCE_ONLY 桥接结果当临床 Release Gate。
 
+## 2026-11-08 — 实机 F2 与 G4 Silver 双 Planner 一致性边界
+
+Self-Runner [PR #594](https://github.com/JohnZhang-DataForge/Self-Runner/pull/594)、[PR #595](https://github.com/JohnZhang-DataForge/Self-Runner/pull/595) / [Main Run #42466726161](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42466726161) 对现有 `dw-omop-5.4` 完成 Warehouse REST GUID、SQL DB_NAME 和完整六表原始 SQL 行集的两独立新连接比对，再调用固定 Healthcare SHA `21648b0270540ae7044d8ded81f6a1fc9870efe2` 的同一 Shared Bridge。控制器 `b733d1d071096ff0f4e9226fce64af2d9b1637a2`；六表实际全部空；物理 SHA `0e128f1f9f27f4db42084637da2db9baf74daf03657345788cdff10b133c4890`、Shared 语义 SHA `30b218f15d59d11d0105e50d9c42f074536a315b6e6a334f662dcd7e936463ba`；Artifact `fabric-f2-physical-shared-42466726161`（ID `13612340680`）仅含计数/哈希。Run #42466437498 曾在原 F0 SQL 连接 HOLD，诊断增强不绕过门禁，最终复核成功。没有持久化 Source Key/ID、任何 DML、Capacity、Notebook 或 Gold 动作。
+
+新增 `silver_identity.py::plan_silver_identity_with_f2_bridge` 不发明新的算法，而是把同一 `F2SnapshotBridge` 中 Map/Gold/Allocator 传给原 `plan_silver_identity`、唯一 F2 `plan_ids` 与 Shared `bridge_f2_person_visit_allocation`，双向核对每一个 Patient/Visit ID、`PERSISTED/PROVISIONAL` 和 Parent FK；新版四文件 Warehouse 合成测试覆盖 100 Patient / 5918 Encounter、跨医院 Replay、空表起点与错误 Approval/HASH。调用方声明的 `physical_silver_readback_verified=True` **不能独立证明真实 G4 Silver 被物理核验**；本轮只对 F2 Warehouse 做了真实 SQL，不是 G4 真实数据的物理读回、临床/License 审批、Candidate Delta 或 Gold Release。原 F1/F2/P3/P4 Gate 继续生效。
+
 ## Canonical G4 Silver → F2 Identity preview bridge (source-only)
 
 `silver_identity.py` consumes only independently verified canonical Silver Person/Encounter source key columns, exact hospital/source/batch namespace, physical Silver approval and zero-quarantine confirmation. It validates Visit-to-Patient FK, then calls the unchanged global `identity_plan.plan_ids` against a trusted complete Warehouse Map/Gold/Allocator snapshot. Output proposes both `person_id` and `visit_occurrence_id` with each Visit's linked Person INT.

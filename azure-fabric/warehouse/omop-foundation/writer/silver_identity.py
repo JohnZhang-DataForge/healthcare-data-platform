@@ -259,3 +259,114 @@ def bridge_f2_sql_readback_rows(
         raise PlanningHold("F2_PHYSICAL_SHARED_SNAPSHOT_CONFLICT") from None
     return F2SnapshotBridge(
         shared, physical, tuple(sorted(hashes.items())))
+
+
+@dataclass(frozen=True)
+class F2SharedSilverPreview:
+    """Same F2 IDs via the existing Silver planner and Shared preview.
+
+    Source-level consistency only. In particular, neither a booleans-only
+    G4 assertion nor a physical bridge digest is proof of a trusted runtime.
+    """
+    silver: SilverIdentityPreview
+    shared: object
+    physical_snapshot_sha256: str
+    shared_snapshot_fingerprint: str
+    status: str = "F2_G4_TO_SHARED_SOURCE_PREVIEW_NOT_RELEASED"
+    candidate_write_authorized: bool = False
+    gold_committed: bool = False
+
+
+def plan_silver_identity_with_f2_bridge(
+    patients: Sequence[Mapping[str, object]],
+    encounters: Sequence[Mapping[str, object]],
+    *,
+    hospital_id: str,
+    source_system: str,
+    source_batch_id: str,
+    approval: Mapping[str, object],
+    physical_silver_readback_verified: bool,
+    quarantine_zero_verified: bool,
+    physical_bridge: F2SnapshotBridge,
+) -> F2SharedSilverPreview:
+    """Consume ONE existing Warehouse snapshot, not a shadow ID allocator.
+
+    The trusted runtime must independently read the *real* G4 Silver rows,
+    its Approval and DQ, and re-authenticate/freshen the physical SQL F2
+    snapshot. This pure function cannot grant that trust, even when every
+    caller boolean is true. Do not feed provisional IDs directly to Gold.
+    """
+    from healthcare_data_engine.identity.preview import (
+        bridge_f2_person_visit_allocation, require_preview_snapshot_unchanged,
+    )
+    from healthcare_data_engine.mapping.omop.registry import DerivedRowKey
+
+    if (not isinstance(physical_bridge, F2SnapshotBridge)
+            or physical_bridge.status !=
+            "F2_SQL_ROWS_TO_SHARED_SNAPSHOT_SOURCE_ONLY_NOT_AUTHENTICATED"
+            or not isinstance(physical_bridge.physical_snapshot_sha256, str)
+            or not SHA.fullmatch(physical_bridge.physical_snapshot_sha256)
+            or not isinstance(physical_bridge.shared_snapshot_fingerprint, str)
+            or not SHA.fullmatch(physical_bridge.shared_snapshot_fingerprint)
+            or physical_bridge.shared_snapshot_fingerprint !=
+            physical_bridge.snapshot.fingerprint):
+        raise PlanningHold("F2_SHARED_SNAPSHOT_BRIDGE_INVALID")
+    tables = {"cdm.person": "PERSON",
+              "cdm.visit_occurrence": "VISIT_OCCURRENCE"}
+    snapshot = physical_bridge.snapshot
+    if (set(dict(snapshot.next_free)) != set(tables)
+            or set(dict(snapshot.gold_ids)) != set(tables)):
+        raise PlanningHold("F2_SHARED_SNAPSHOT_SCOPE_INVALID")
+    existing = []
+    for entry in snapshot.existing:
+        key = entry.key
+        if (key.target_table not in tables or key.derived_role != "primary"
+                or key.derived_discriminator):
+            raise PlanningHold("F2_SHARED_SNAPSHOT_DERIVED_KEY_UNSUPPORTED")
+        existing.append((
+            IdentityKey(tables[key.target_table], key.hospital_id,
+                        key.source_system, key.source_business_key),
+            entry.omop_id,
+        ))
+    gold = {tables[table]: ids for table, ids in snapshot.gold_ids}
+    next_free = {tables[table]: number for table, number in snapshot.next_free}
+    silver = plan_silver_identity(
+        patients, encounters, hospital_id=hospital_id,
+        source_system=source_system, source_batch_id=source_batch_id,
+        approval=approval,
+        physical_readback_verified=physical_silver_readback_verified,
+        quarantine_zero_verified=quarantine_zero_verified,
+        existing=tuple(existing), next_free=next_free, gold_ids=gold,
+    )
+    try:
+        shared = bridge_f2_person_visit_allocation(silver.allocation, snapshot)
+        require_preview_snapshot_unchanged(shared, snapshot)
+    except Exception:
+        raise PlanningHold("F2_SHARED_ALLOCATION_PREVIEW_MISMATCH") from None
+    by_key = {item.key: item for item in shared.identities}
+    if len(by_key) != len(shared.identities):
+        raise PlanningHold("F2_SHARED_DUPLICATE_PLAN_KEY")
+    seen = set()
+    for source_key, person_id in silver.persons:
+        key = DerivedRowKey("cdm.person", hospital_id, source_system, source_key)
+        item = by_key.get(key)
+        if item is None or item.omop_id != person_id or key in seen:
+            raise PlanningHold("F2_SHARED_PERSON_PLAN_MISMATCH")
+        seen.add(key)
+    person_id_set = {person_id for _, person_id in silver.persons}
+    for source_key, visit_id, parent_id in silver.visits:
+        key = DerivedRowKey("cdm.visit_occurrence", hospital_id, source_system,
+                            source_key)
+        item = by_key.get(key)
+        if item is None or item.omop_id != visit_id or key in seen:
+            raise PlanningHold("F2_SHARED_VISIT_PLAN_MISMATCH")
+        seen.add(key)
+        # Parent IDs must come from the canonical within-hospital Person
+        # set. The earlier plan_silver_identity already checks exact FK.
+        if parent_id not in person_id_set:
+            raise PlanningHold("F2_SHARED_VISIT_PARENT_PLAN_MISMATCH")
+    if len(seen) != len(by_key):
+        raise PlanningHold("F2_SHARED_EXTRA_OR_MISSING_IDENTITIES")
+    return F2SharedSilverPreview(
+        silver, shared, physical_bridge.physical_snapshot_sha256,
+        physical_bridge.shared_snapshot_fingerprint)

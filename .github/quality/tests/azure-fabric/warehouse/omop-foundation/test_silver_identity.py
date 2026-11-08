@@ -7,7 +7,14 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[6] / "azure-fabric/warehouse/omop-foundation/writer"))
 from identity_plan import PlanningHold
-from silver_identity import plan_silver_identity
+from silver_identity import (
+    plan_silver_identity, bridge_f2_sql_readback_rows,
+    plan_silver_identity_with_f2_bridge,
+)
+import hashlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[6] /
+                       "shared-data-engine/src"))
+
 
 SHA = "a" * 64
 
@@ -164,6 +171,124 @@ class SilverToOmopIdentityPreview(unittest.TestCase):
                 "next_free": {"PERSON": 1, "VISIT_OCCURRENCE": 1},
             })
 
+
+
+
+# Real six-table SELECT-shaped rows but entirely SYNTHETIC fixtures. This
+# validates the one existing F2 plan + Shared preview against a physical
+# readback SHAPE; it is not an authenticated Silver/Warehouse cloud receipt.
+def f2_bridge(rows=None):
+    names = ("identity_map", "allocator", "person", "visit", "ledger", "audit")
+    if rows is None:
+        rows = {name: () for name in names}
+    hashes = {}
+    import json
+    for name in names:
+        digest = hashlib.sha256()
+        for row in rows[name]:
+            encoded = json.dumps(tuple(row), ensure_ascii=False,
+                                 separators=(",", ":"), default=str).encode("utf-8")
+            digest.update(len(encoded).to_bytes(4, "big") + encoded)
+        hashes[name] = digest.hexdigest()
+    return bridge_f2_sql_readback_rows(
+        rows, first_table_sha256=hashes, second_table_sha256=hashes,
+        warehouse_id="7a6d08da-278d-4603-8a3b-28640110984c")
+
+
+def with_bridge(arguments=None, *, physical_bridge=None):
+    d = fixture() if arguments is None else dict(arguments)
+    d["physical_silver_readback_verified"] = d.pop("physical_readback_verified")
+    for key in ("existing", "next_free", "gold_ids"):
+        d.pop(key)
+    d["physical_bridge"] = f2_bridge() if physical_bridge is None else physical_bridge
+    return d
+
+
+class F2PhysicalSharedG4SilverPreviewTests(unittest.TestCase):
+    def test_100_5918_synthetic_silver_reuses_exact_single_planner(self):
+        args = with_bridge()
+        outcome = plan_silver_identity_with_f2_bridge(**args)
+        old = plan_silver_identity(**fixture())
+        self.assertEqual(outcome.silver, old)
+        self.assertEqual(len(outcome.shared.identities), 6018)
+        self.assertEqual((len(outcome.silver.persons), len(outcome.silver.visits)),
+                         (100, 5918))
+        self.assertEqual(outcome.shared.snapshot_fingerprint,
+                         outcome.shared_snapshot_fingerprint)
+        self.assertEqual({x.state for x in outcome.shared.identities},
+                         {"PROVISIONAL"})
+        self.assertFalse(outcome.candidate_write_authorized)
+        self.assertFalse(outcome.gold_committed)
+        self.assertEqual(outcome.status, "F2_G4_TO_SHARED_SOURCE_PREVIEW_NOT_RELEASED")
+
+    def test_reverse_order_and_repeated_preview_are_stable(self):
+        args = with_bridge(fixture(people=3, visits=9))
+        original = plan_silver_identity_with_f2_bridge(**args)
+        replay = plan_silver_identity_with_f2_bridge(
+            **{**args, "patients": list(reversed(args["patients"])),
+               "encounters": list(reversed(args["encounters"]))})
+        self.assertEqual(original.silver, replay.silver)
+        self.assertEqual(original.shared, replay.shared)
+        self.assertEqual(original.physical_snapshot_sha256,
+                         replay.physical_snapshot_sha256)
+
+    def test_persisted_first_hospital_and_provisional_second_hospital(self):
+        old = fixture(hospital="hospital-a", people=1, visits=1)
+        rows = {
+            "identity_map": (
+                ("PERSON", "hospital-a", old["source_system"],
+                 "patient-0000", 41, "frozen-b", "v1"),
+                ("VISIT_OCCURRENCE", "hospital-a", old["source_system"],
+                 "encounter-00000", 90, "frozen-b", "v1"),
+            ),
+            "allocator": (("PERSON", 42, "v1"), ("VISIT_OCCURRENCE", 91, "v1")),
+            "person": ((41,),),
+            "visit": ((90, 41),),
+            "ledger": (),
+            "audit": (),
+        }
+        bridge = f2_bridge(rows)
+        same = plan_silver_identity_with_f2_bridge(
+            **with_bridge(old, physical_bridge=bridge))
+        self.assertEqual(same.silver.persons, (("patient-0000", 41),))
+        self.assertEqual(same.silver.visits, (("encounter-00000", 90, 41),))
+        self.assertEqual({x.state for x in same.shared.identities}, {"PERSISTED"})
+        second = plan_silver_identity_with_f2_bridge(
+            **with_bridge(fixture(hospital="hospital-b", people=1, visits=1),
+                          physical_bridge=bridge))
+        self.assertEqual(second.silver.persons, (("patient-0000", 42),))
+        self.assertEqual(second.silver.visits, (("encounter-00000", 91, 42),))
+        self.assertEqual({x.state for x in second.shared.identities},
+                         {"PROVISIONAL"})
+
+    def test_silver_physical_dq_and_approval_are_still_required(self):
+        args = with_bridge(fixture(people=1, visits=1))
+        for changed in (
+            {"physical_silver_readback_verified": False},
+            {"quarantine_zero_verified": False},
+            {"approval": {**args["approval"], "status": "QUARANTINED"}},
+        ):
+            with self.subTest(changed=changed):
+                with self.assertRaises(PlanningHold):
+                    plan_silver_identity_with_f2_bridge(**{**args, **changed})
+
+    def test_missing_or_fake_snapshot_bridge_fails_before_id_plan(self):
+        args = with_bridge(fixture(people=1, visits=1))
+        from dataclasses import replace
+        for tampered in (None, "sha-only", replace(
+                args["physical_bridge"], physical_snapshot_sha256="f" * 5)):
+            with self.subTest(bridge=type(tampered).__name__):
+                with self.assertRaisesRegex(PlanningHold,
+                                            "F2_SHARED_SNAPSHOT_BRIDGE_INVALID"):
+                    plan_silver_identity_with_f2_bridge(
+                        **{**args, "physical_bridge": tampered})
+
+    def test_unknown_f2_allocator_or_map_gold_mismatch_holds(self):
+        rows = {name: () for name in
+                ("identity_map", "allocator", "person", "visit", "ledger", "audit")}
+        rows["person"] = ((41,),)
+        with self.assertRaisesRegex(PlanningHold, "ALLOCATOR_MISSING_WITH_STATE"):
+            f2_bridge(rows)
 
 if __name__ == "__main__":
     unittest.main()
