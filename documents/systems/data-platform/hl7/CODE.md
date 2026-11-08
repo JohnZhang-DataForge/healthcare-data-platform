@@ -15,11 +15,14 @@
 | --- | --- | --- |
 | [parse_oie_v2.py](../../../../local-data-platform/spark/apps/hl7/parse_oie_v2.py) | 经审核 OIE V2 的 `hl7apy` 协议解析和临床字段投影 | **保留 / 业务依赖**：下游仍需结构化 HL7；不是 dbt SQL，不能因 dbt 完成删除 |
 | [landing_intake.py](../../../../local-data-platform/spark/apps/hl7/landing_intake.py) | Manifest、Raw SHA、Hospital/Batch/对象身份校验，限本地读取 | **保留 / 业务依赖**：数据真实性 Gate；另行评审共享 Adapter 或新 Consumer 后才可考虑替代 |
+| [azure_blob_readback.py](../../../../local-data-platform/spark/apps/hl7/azure_blob_readback.py) | Approved exact-key Azure GET-only manifest/raw readback into private local input | **Source-only / offline fake-GET acceptance pending**; does not authorize Azure or publish Silver |
+| [requirements-azure-readback.txt](../../../../local-data-platform/spark/apps/hl7/requirements-azure-readback.txt) | Optional runtime-only Azure SDK pins reuse the existing source/Publisher requirements | No cloud SDK dependency in hosted CI |
 | [write_staging_delta.py](../../../../local-data-platform/spark/apps/hl7/write_staging_delta.py) | Spark 3.5 本地 Delta Staging，create / exact replay skip / conflict HOLD | **保留 / 业务依赖**：dbt 需要其结构化 Delta 输入，后续独立替换时才可考虑退役 |
 | [requirements-local.txt](../../../../local-data-platform/spark/apps/hl7/requirements-local.txt) | 保留 HL7 Parser / Spark / Delta 的单一 pinned 依赖源 | **维护**：新工程 [requirements-local.txt](../../../../azure-fabric/dbt/hl7-canonical/requirements-local.txt) 引用本锁定依赖，旧 dbt adapter pin 已从此移除 |
 | [Historical dbt PR #809](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/809) | 已退役的旧 SQL/Project/Profiles 与首次本地 18/27 验收来源 | **历史证据**：不得从旧 Git SHA 自动恢复为生产入口；当前树不再保留旧 dbt 文件 |
 | [HL7 CI](../../../../.github/workflows/hl7-local-delta-dbt-offline.yml) | GitHub-hosted synthetic HL7 → local Delta/dbt → Replay/Contract readback | **已改接新 dbt 工程**：保留原入口名称、Parser/Writer 和旧 18/27 物理回归断言；`cwd`/profiles 指向 `azure-fabric/dbt/hl7-canonical/`，当前合成 CI 不执行旧 SQL |
 | [Synthetic OIE V2 fixture generator](../../../../.github/quality/fixtures/hl7/generate_oie_v2_sample.py) | 用真实 OIE JS Mapper 生成新合成 HL7/Manifest | **回归基线 / 保留**：可供旧/新候选对照，不因 SQL 工程完成就自动删除 |
+| [GET-only readback test](../../../../.github/quality/tests/data-platform/hl7/test_azure_blob_readback.py) | Synthetic exact-key fake Azure snapshot/manifest, replay, ETag/version/hash and unsafe-key negative tests | No Azure or real patient access |
 | [Offline negative tests](../../../../.github/quality/tests/data-platform/hl7/test_hl7_intake.py) | Manifest/Identity/Raw SHA/A01+A03/路径负向 | **回归基线 / 保留**：针对 Parser/Intake 的测试，业务组件保留时测试也应保留 |
 | [Candidate independent readback](../../../../.github/quality/tests/data-platform/hl7/check_local_candidate.py) | 物理 Delta/_delta_log、Patient 18/Encounter 27 字段 | **保留并复用**：新 dbt 工程输出兼容的 `hl7_candidate` schema，旧 readback 可直接验证新工程，不需删除测试 |
 
@@ -36,3 +39,7 @@
 **切换审计：** Healthcare 所有 70 个 `.github/workflows/` 已逐文件扫描旧工程名/路径、`DBT_PROFILES_DIR` 和 `dbt run/test`：仅正式本地 HL7 回归 Workflow 与新 P3 验收 Workflow 执行 dbt，两条均指向同一个新 Project；原 Self-Runner `hl7-dbt-core-local-poc.yml` 固定 Healthcare 历史 `ecc99b18...` 且只在独立 `experiments/` 执行，不是 Healthcare 现行 Consumer。受控切换验收以新 PR/CI 为准；未在共享 Runner/Fabric 部署消费者。
 
 **已验证边界：** 现存本地/合成数据 CI [Run #42419252459](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42419252459) 证明过当前 Parser→Delta→dbt Candidate，并**未**真实消费 Azure 已发布的 42 条 HL7、也不等于 Fabric Approved Silver/Gold。上述未来清理计划由 [Fabric dbt OpenSpec](../../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md) 跟踪；历史来源实施的业务 P2/P3 仍由 [HL7 Consumer OpenSpec](../../../../openspec/changes/implement-hl7-local-delta-dbt-canonical/tasks.md) 独立跟踪。
+
+## Azure Raw readback source gate
+
+The new [Azure GET-only operating contract](AZURE-GET-READBACK.md) owns the mandatory independent manifest SHA/source SHA/request and count pins, least-privilege identity, no-LIST policy, private local staging and runtime approval boundary. This source adapter reuses existing Manifest/Parser checks; **actual published 42 HL7 object GET, remote Fabric Silver and OMOP remain OPEN**.

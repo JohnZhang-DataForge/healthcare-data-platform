@@ -162,6 +162,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | Source | Summary |
 | --- | --- |
+| [`azure_blob_readback.py`](../../../../local-data-platform/spark/apps/hl7/azure_blob_readback.py) | Azure scoped exact-key GET-only source adapter; independent runtime authorization required |
 | [`landing_intake.py`](../../../../local-data-platform/spark/apps/hl7/landing_intake.py) | 不可变 OIE V2 Manifest/Raw SHA/身份 gate |
 | [`parse_oie_v2.py`](../../../../local-data-platform/spark/apps/hl7/parse_oie_v2.py) | 经批准的 hl7apy V2 Parser |
 | [`write_staging_delta.py`](../../../../local-data-platform/spark/apps/hl7/write_staging_delta.py) | 本地 Delta staging 物理 create/replay |
