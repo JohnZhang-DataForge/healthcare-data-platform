@@ -1,0 +1,9 @@
+version: 2
+sources:
+  - name: oie_v2
+    database: spark_catalog
+    schema: "{{ var('hl7_source_schema', 'hl7_staging') }}"
+    tables:
+      - name: hl7_events
+        description: "Manifest-verified OIE v2.5.1 A01/A03 local Delta input, never approved Silver."
+
