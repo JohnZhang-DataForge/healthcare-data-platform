@@ -62,7 +62,7 @@ def main() -> None:
         for table, count in (
             ("hl7_staging.hl7_events", 17),
             ("hl7_candidate.canonical_patient", 10),
-            ("hl7_candidate.canonical_encounter", 10),
+            ("hl7_candidate.canonical_encounter", 7),
         ):
             detail = spark.sql(f"DESCRIBE DETAIL {table}").first().asDict()
             uri = urlparse(detail["location"])
@@ -92,15 +92,19 @@ def main() -> None:
         raw_patients = [r.asDict(recursive=True) for r in pframe.collect()]
         raw_encounters = [r.asDict(recursive=True) for r in eframe.collect()]
         expect_person = {"patient-" + str(i).zfill(2) for i in range(1, 11)}
-        expect_enc = {"visit-" + str(i).zfill(2) for i in range(1, 11)}
+        completed_enc = {"visit-" + str(i).zfill(2) for i in range(1, 11) if i % 3 != 0}
+        completed_people = {"patient-" + str(i).zfill(2) for i in range(1, 11) if i % 3 != 0}
         if ({r["source_record_id"] for r in raw_patients} != expect_person
-                or {r["source_encounter_id"] for r in raw_encounters} != expect_enc
-                or {r["source_person_id"] for r in raw_encounters} != expect_person):
+                or {r["source_encounter_id"] for r in raw_encounters} != completed_enc
+                or {r["source_person_id"] for r in raw_encounters} != completed_people):
             raise RuntimeError("HL7_V2_TEN_MULTI_PERSON_IDENTITY_HOLD")
         if any(r["source_code"] != "IMP" for r in raw_encounters):
             raise RuntimeError("HL7_V2_TEN_CLINICAL_CLASS_CHANGED")
-        if sum(r["end_datetime"] is None for r in raw_encounters) != 3:
-            raise RuntimeError("HL7_V2_TEN_A03_NOT_ELIGIBLE_COUNT_HOLD")
+        # The current dbt v1 rule purposely admits only completed A01+A03
+        # pairs to Canonical Encounter. The 3 in-progress A01 events remain
+        # present in immutable 17-row Raw/Delta but have NO finished visit.
+        if any(r["end_datetime"] is None for r in raw_encounters):
+            raise RuntimeError("HL7_V2_TEN_COMPLETED_VISIT_MISSING_A03")
         if any(r["start_datetime"] >= r["end_datetime"]
                for r in raw_encounters if r["end_datetime"] is not None):
             raise RuntimeError("HL7_V2_TEN_REVERSED_VISIT_TIME")
@@ -130,7 +134,7 @@ def main() -> None:
             spark_timestamp_timezone="UTC")
         if (result.status != "CANDIDATE_DQ_PASS_NOT_SILVER_APPROVED"
                 or result.metrics["patient_accepted"] != 10
-                or result.metrics["encounter_accepted"] != 10
+                or result.metrics["encounter_accepted"] != 7
                 or any(result.metrics[k] for k in (
                     "patient_rejected", "patient_quarantined",
                     "encounter_rejected", "encounter_quarantined"))):
@@ -145,7 +149,7 @@ def main() -> None:
             context=context, patient_contract_bytes=pc,
             encounter_contract_bytes=ec, source_evidence_verified=True)
         prepared = native.prepare_hl7_candidate_bundle_for_silver(**kwargs)
-        if (prepared.patient_count != 10 or prepared.encounter_count != 10
+        if (prepared.patient_count != 10 or prepared.encounter_count != 7
                 or prepared.publication_id is None):
             raise RuntimeError("HL7_V2_TEN_TRANSFER_ADMISSION_HOLD")
         corrupted = dict(bundle)
@@ -177,11 +181,11 @@ def main() -> None:
             validate_persisted_canonical=readback)
         if (approval.get("status") != "SILVER_APPROVED"
                 or approval["patient_count"] != 10
-                or approval["encounter_count"] != 10):
+                or approval["encounter_count"] != 7):
             raise RuntimeError("HL7_V2_TEN_APPROVAL_LAST_HOLD")
         if (spark.read.format("delta").load(paths["approval"]).count() != 1
                 or spark.read.format("delta").load(paths["patient"]).count() != 10
-                or spark.read.format("delta").load(paths["encounter"]).count() != 10):
+                or spark.read.format("delta").load(paths["encounter"]).count() != 7):
             raise RuntimeError("HL7_V2_TEN_PERSISTED_DELTA_COUNT_DRIFT")
         # Explicitly drop ephemeral Candidate to verify replay cold from
         # physical Delta, pinned original source receipts and Approval only.
@@ -190,7 +194,7 @@ def main() -> None:
         cold = native._hl7_recompute_persisted_approval(
             spark, paths, context, pc, ec, receipts, pinned)
         if (cold.publication_id != prepared.publication_id
-                or cold.patient_count != 10 or cold.encounter_count != 10):
+                or cold.patient_count != 10 or cold.encounter_count != 7):
             raise RuntimeError("HL7_V2_TEN_COLD_SILVER_REPLAY_HOLD")
         try:
             native._write_verified_canonical_silver(
@@ -203,7 +207,7 @@ def main() -> None:
                 raise
         else:
             raise RuntimeError("HL7_V2_TEN_REPLAY_OVERWRITE_NOT_BLOCKED")
-        print("HL7_V2_TEN_PATIENT_SHARED_DQ_AND_SHA_TRANSFER=PASS")
+        print("HL7_V2_TEN_PATIENT_7_COMPLETED_ENCOUNTER_SHARED_DQ_AND_SHA_TRANSFER=PASS")
         print("HL7_V2_TEN_LOCAL_PHYSICAL_SILVER_APPROVAL_LAST_COLD_REPLAY=PASS")
         print("HL7_V2_TEN_REMOTE_FABRIC_SILVER_APPROVED=NO")
     finally:
