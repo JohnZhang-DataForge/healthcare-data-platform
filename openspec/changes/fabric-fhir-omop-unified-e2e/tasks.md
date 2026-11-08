@@ -32,6 +32,8 @@
 
 - [x] 1.15 **P1.4 CPT4 真实物理描述指标独立双 SQL SELECT**：Self-Runner [PR #592](https://github.com/JohnZhang-DataForge/Self-Runner/pull/592) / [Run #42448745622](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42448745622)，Main Controller `d5c58a9dd4a33da490f4a3102fd0286e22689cf9`，Warehouse `dw-omop-5.4`。CPT4 `total=18068`，`missing_names=0`，`names_equal_codes=0`，`suspected_placeholders=0`，`very_short_names=2`；两连接同一聚合 PASS、Artifact `fabric-p1-cpt4-aggregate-42448745622`（ID `13604337591`）。**只验证聚合无显著缺失**；没有逐项完成术语准确性审计、补全前后源文件对账或 CPT4 许可证核实。与 Synthea/FHIR Person/Visit 映射独立；绝不因 CPT4 授权未明确而停止非 CPT4 源码开发，但未批准临床 Profile 的 Candidate/Gold 继续 HOLD。P1.4/F1 License、P1.5、P2.1 主项、P3.1/P4.1/P5.1 仍 OPEN。
 
+- [x] 1.16 **F1 九源来源 Audit 的精确 SQL 受控审阅计划 SOURCE_ONLY**：Self-Runner [PR #593](https://github.com/JohnZhang-DataForge/Self-Runner/pull/593) / [离线 Run #42449629662](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42449629662) 通过 24 项原来源测试与 10 项新增计划测试，基于**已有**九文件固定 SHA、大小、行数准备固定六列 `audit.vocabulary_source_file` 九行 INSERT 参数（不执行）。真实同源下载交易与九份 SHA 验证完成的事件时间尚无充分来源证据，因此当前缺数据时结果 HOLD，绝不自动生成 Release Key、校验时刻或 License 许可。使用者提供的九个合成事件只能形成仍未认证的 REVIEW_ONLY 参数化计划，不能表示 Warehouse 已写入或批准临床。F1 Governance Closure、9/9 物理审计、P1.4/P1.5 Reviewer、F2 正式 Preview/Single Writer、P3/P4/P5 仍 OPEN。
+
 ## P2–P5 — 候选、事务、管线
 
 - [ ] 2.1 以真实 Warehouse 完整 ID/Allocator/Gold/Ledger 快照验证跨医院稳定 INT 分配，保留并发 Single-writer fence。
