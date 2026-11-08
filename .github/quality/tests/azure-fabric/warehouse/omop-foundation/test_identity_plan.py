@@ -408,6 +408,20 @@ class F2PhysicalToSharedBridgeTests(unittest.TestCase):
                 with self.assertRaises(PlanningHold):
                     make_f2_bridge(broken)
 
+    def test_tampered_rows_do_not_match_previous_independent_sql_sha(self):
+        original = f2_physical_rows()
+        pinned = f2_table_digest(original)
+        mutated = dict(original, person=((999,),))
+        with self.assertRaisesRegex(PlanningHold, "TWO_CONNECTION_SHA_MISMATCH"):
+            bridge_f2_sql_readback_rows(
+                mutated, first_table_sha256=pinned,
+                second_table_sha256=pinned, warehouse_id=F2_WAREHOUSE)
+
+    def test_unbounded_physical_readback_is_rejected_before_shared_plan(self):
+        rows = dict(f2_physical_rows(), person=((1,),) * 20001)
+        with self.assertRaisesRegex(PlanningHold, "ROW_BOUND_OR_TYPE"):
+            make_f2_bridge(rows)
+
     def test_nonempty_without_durable_allocator_does_not_invent_ids(self):
         rows = f2_physical_rows()
         for table, value in (
