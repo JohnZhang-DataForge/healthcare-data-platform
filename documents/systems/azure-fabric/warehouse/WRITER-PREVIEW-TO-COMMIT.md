@@ -51,6 +51,8 @@ Self-Runner [PR #594](https://github.com/JohnZhang-DataForge/Self-Runner/pull/59
 
 真实 [Run #42480741491](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42480741491) 及 [#42481082624](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42481082624) 保持 Fabric Warehouse REST/DB_NAME/六表 SELECT 双连接 PASS；OneLake 目录读取现在可成功，但分别触发 `G4_QUARANTINE_PRESENT_HOLD` 和 `G4_FOREIGN_DELTA_CONTENT_HOLD`。**这两种结果仅表明当前物理目录不满足 Reader 的完整三表文件归属检查，不等于已经确认隔离数据行数，也不能断定旧审批失效。** 旧 Spark Q0 不可直接覆盖新目录异常。下一步在固定 G4 路径只读识别额外文件的结构与 Delta Log，而不抓取 Patient/Encounter/Quarantine 正文，确定是否无关文件/历史残留或实质隔离提交。未证实当前 G4 全量 Silver 行集时绝不触发 F2 实际 Preview，也不放行临床 Concept Profile、Candidate Delta、Gold Writer 或 License。
 
+**精确后续观察：** Self-Runner [PR #603](https://github.com/JohnZhang-DataForge/Self-Runner/pull/603) / [Main Run #42481611612](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42481611612)（控制器 `abad92cc1cbe740875d04afdaaf80a4b5d2e629e`）在 F0 REST 和六表 SQL 全部 PASS 之后，将外来文件树归类为 `G4_FOREIGN_NESTED_QUARANTINE_HOLD`，即当前固定 Silver Root 存在非标准**嵌套** `quarantine/` 路径。该类别来自 OneLake LIST 的目录结构，不包含内容/行数与实际 Q0 差异证明。本轮不下载异常文件或放行 Patient/Encounter；原 Spark G4 P100/E5918/Q0 和新的目录结构事实必须先经过来源/Delta 提交元数据审核才可协调，不得自行删改或跳过文件。
+
 
 ## Canonical G4 Silver → F2 Identity preview bridge (source-only)
 
