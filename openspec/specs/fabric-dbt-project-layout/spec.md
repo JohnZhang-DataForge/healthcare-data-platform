@@ -36,7 +36,7 @@ dbt SQL SHALL produce source-specific Contract-aligned Canonical Candidates and 
 - **THEN** the Agent SHALL first obtain a Shared Engine responsibilities decision and an Active OpenSpec Change, avoiding overlapping implementations.
 
 ### Requirement: Planned paths SHALL not be treated as implemented
-The approved HL7 dbt SQL authority SHALL be `azure-fabric/dbt/hl7-canonical/` after a verified consumer cutover. Parser/Manifest Intake/local Delta Writer remain under `local-data-platform/spark/apps/hl7/`; obsolete dbt SQL/project/profiles SHALL remain frozen reference until a separately validated cleanup. This offline source transition MUST NOT be called Azure/Fabric production publishing.
+The approved HL7 dbt SQL authority SHALL be `azure-fabric/dbt/hl7-canonical/` after a verified consumer cutover. Parser/Manifest Intake/local Delta Writer remain under `local-data-platform/spark/apps/hl7/`; obsolete dbt SQL/project/profiles SHALL be removed only by a separately verified cleanup PR, then referenced solely through historical SHA. This offline source transition MUST NOT be called Azure/Fabric production publishing.
 
 #### Scenario: An Agent reads the new Fabric dbt documentation
 - **WHEN** `azure-fabric/dbt/hl7-canonical/` is described but the physical migration is still open
@@ -62,3 +62,7 @@ The authoritative HL7 CODE Map SHALL classify legacy files for retention, refere
 - **WHEN** the new project has been promoted and all consumers and CODE owners are updated with evidence
 - **THEN** only identified obsolete old dbt SQL, project configuration and profiles MAY be removed in a bounded PR; legacy Python Parser/Intake/Delta Writer, necessary regression tests, and historical acceptance evidence MUST remain unless separately replaced and accepted.
 
+
+### Actual P3 retirement boundary (following governed local consumer cutover)
+
+The old Local DP dbt SQL/project/profile files MAY be retired **only** after the single maintained local dbt CI entrypoint is demonstrated on the new project with physical Spark/Delta/dbt/Contract readback and replay/negative tests. The retained HL7 Python Parser/Intake/Delta Writer, legacy regression checks and immutable Source Contracts SHALL NOT be removed by the dbt cleanup. Requirements pins SHOULD retain a single Parser/Delta owner and an explicit dbt adapter extension. A local CI cutover MUST NOT imply remote Fabric Silver/OMOP publication.

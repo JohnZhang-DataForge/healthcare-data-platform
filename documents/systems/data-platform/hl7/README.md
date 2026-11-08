@@ -23,6 +23,6 @@ HL7 v2.5.1 A01/A03 Raw + Manifest (Azure immutable Landing)
 - `.github/workflows/hl7-local-delta-dbt-offline.yml` 只在 GitHub-hosted Runner 上使用真实 OIE JS Mapper **生成全新合成样例**，然后本地物理 Delta/dbt/Contract readback。不会使用 2026-11-07 P3 Azure 的 42 条已提交数据。
 - 未来真实 Raw GET、共享 Approval/Publisher/Silver 需要对应 OpenSpec 和精确权限审批，不能直接复用本地配置写 Fabric。
 
-**源码去留：** 现存 HL7 Python Parser / Intake / Delta Writer 继续作为唯一结构化输入实现；本地 dbt 正式维护入口切到 `azure-fabric/dbt/hl7-canonical/`（[Fabric dbt CODE](../../azure-fabric/dbt/CODE.md)），旧 SQL/Profiles/Project 留在原目录仅作冻结参考，待独立清理 PR 退役。CI/质量测试与依赖不可一并删除，须逐项检查。具体文件级状态及退役条件以 [HL7 CODE](CODE.md) 为准。
+**源码去留：** 现存 HL7 Python Parser / Intake / Delta Writer 继续作为唯一结构化输入实现；本地 dbt 正式维护入口切到 `azure-fabric/dbt/hl7-canonical/`（[Fabric dbt CODE](../../azure-fabric/dbt/CODE.md)），旧 SQL/Profiles/Project 已在 P3 3.4 独立 PR 中退役，历史参考用固定 [PR #809](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/809) / SHA；Parser/Intake/Delta Writer 与本地回归继续保留。CI/质量测试与依赖不可一并删除，须逐项检查。具体文件级状态及退役条件以 [HL7 CODE](CODE.md) 为准。
 
 本组件的源码和测试唯一导航：[HL7 CODE](CODE.md)。OpenSpec 实施计划：[implement-hl7-local-delta-dbt-canonical](../../../../openspec/changes/implement-hl7-local-delta-dbt-canonical/tasks.md)。
