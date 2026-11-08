@@ -11,6 +11,7 @@
 - [x] 2.1 从既有 Local Mapper 抽离唯一无 I/O 的 OMOP Person/Visit Candidate DataFrame 逻辑；稳定 ID Map、Concept Profile、原始 v1/v5.4 Contract 由调用者验证/注入；Candidate-only，不改变 Local Writer。
 - [ ] 2.2 正负向单测：已验证合成 P1/E2、G4 P99/Q26 Approval-denied、跨医院 FK、重复/缺失 ID、未知 Concept、重放一致性；待增加完整 P100/E5918 fixture/映射 Profile 实测，不生成假临床值。
 - [ ] 2.3 更新 Shared CODE-map、边界 CI 与 Wheel 版本；单独构建固定 hash 的新 Wheel，Published Environment 读回后才能进行真正 Fabric import。
+- [x] 2.4 **业务映射 Profile 源值覆盖审查 SOURCE_ONLY（不授权 Candidate）**：Self-Runner [PR #621](https://github.com/JohnZhang-DataForge/Self-Runner/pull/621) / [CI #42495576735](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42495576735) 27/27 PASS、[原 F0/G4/F2 离线 CI #42495576736](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42495576736) PASS；Provider 复用原真实已采集 G4 P1 code inventory、同一个 Shared G5 八字段 Profile 结构验证，不复制第二 Mapper，不运行新的云端 SQL/Spark/Delta。实际 P100/E5918 源值审查范围：gender **2**、race **6**、ethnicity **2**、visit class **5**；Encounter `source_code` **44** 种独立提示、不假造 Person/Visit Target Concept。`UNK` 种族（2）及 `home`/`virtual` 就诊（4/11）需真正临床审阅；哪怕 SOURCE COVERED，审查状态依然 NOT CLINICALLY APPROVED。生产 Reviewer 公钥/签审包为空，F1 9/9 Source Audit、Release/License 与真实 Candidate Approval-last / Replay 均 OPEN；**不关闭原 2.2/2.3 或 3.1–4.4**。
 
 ## 3. Fabric Candidate and Pipeline
 
