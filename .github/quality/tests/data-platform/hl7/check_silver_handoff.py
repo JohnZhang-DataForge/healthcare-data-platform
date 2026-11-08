@@ -229,6 +229,64 @@ def main() -> None:
         if any(native._g3_delta_exists(spark, value)
                for value in bad_paths.values()):
             raise RuntimeError("HL7_LOCAL_BAD_DQ_LEFT_ANY_DELTA")
+        # Also exercise the pinned Native Notebook HL7 run modes via the
+        # SAME real temporary local Delta filesystem. Source I/O is substituted
+        # with independently verified synthetic raw receipts, never Azure.
+        from unittest.mock import patch as mock_patch
+        native_mode_paths = {
+            k: v.replace("/ephemeral-silver-publication-test/",
+                         "/ephemeral-native-mode-test/")
+            for k, v in targets.items()
+        }
+        native_mode_paths["quarantine"] = (
+            native_mode_paths["patient"].rsplit("/", 1)[0] + "/quarantine")
+        source_receipts = {
+            item["source_file"]: (item["source_file_sha256"],
+                                  item["source_file_size_bytes"])
+            for item in accepted_p + accepted_e}
+        root = "Files/fhir_landing/synthetic-pinned-hl7"
+        fake_blobs = {root + "/" + k: v for k, v in bundle.items()}
+        def fake_binary(_spark, path, *, limit):
+            if path not in fake_blobs or not 0 < len(fake_blobs[path]) <= limit:
+                raise ValueError("HOLD_UNKNOWN_CANDIDATE_LOCATION")
+            return fake_blobs[path]
+        params = dict(
+            request=context.request_id,
+            manifest_sha=manifest_pin,
+            mode="HL7_SILVER_WRITE", allow_write=True,
+            retention_ok=True,
+            strategy="VERIFIED_HL7_CANDIDATE_V1",
+            manifest_override="", source_override="", target_override="",
+            patient_contract_json=p_contract.decode(),
+            encounter_contract_json=e_contract.decode())
+        native_globals = native.verify_hl7_real_silver.__globals__
+        with mock_patch.dict(native_globals, {
+                "engine_version": "0.1.7",
+                "_HL7_REAL_REQUEST": context.request_id,
+                "_hl7_source_context": lambda: context,
+                "_hl7_real_paths": lambda _scope: native_mode_paths,
+                "_hl7_transfer_root": lambda _scope: root,
+                "_hl7_verified_original_raw": lambda _spark, _ctx: source_receipts,
+                "_hl7_binary_exact": fake_binary}):
+            mode_first = native.verify_hl7_real_silver(spark, **params)
+            if mode_first.status != "SILVER_APPROVED":
+                raise RuntimeError("HL7_NATIVE_SILVER_FIRST_WRITE_HOLD:" + mode_first.status)
+            mode_read = native.verify_hl7_real_silver(
+                spark, **{**params, "mode": "HL7_SILVER_READBACK_ONLY",
+                          "allow_write": False, "retention_ok": False})
+            mode_replay = native.verify_hl7_real_silver(spark, **params)
+            if (mode_read.status != "SILVER_SKIP_VERIFIED"
+                    or mode_replay.status != "SILVER_SKIP_VERIFIED"):
+                raise RuntimeError("HL7_NATIVE_SILVER_READBACK_REPLAY_HOLD")
+            try:
+                native.verify_hl7_real_silver(
+                    spark, **{**params, "allow_write": False})
+            except RuntimeError as exc:
+                if "HOLD_HL7_RELEASE_MODE_OR_SOURCE_FENCE" not in str(exc):
+                    raise
+            else:
+                raise RuntimeError("HL7_NATIVE_SILVER_UNAUTHORIZED_WRITE_ACCEPTED")
+        print("HL7_NATIVE_SILVER_MODES_LOCAL_WRITE_READBACK_REPLAY=PASS")
         print("HL7_LOCAL_EPHEMERAL_SHARED_SILVER_APPROVAL_LAST_PHYSICAL=PASS")
         print("HL7_LOCAL_EPHEMERAL_REPLAY_AND_DQ_HOLD=PASS")
         print("HL7_CANONICAL_REMOTE_SILVER_APPROVED=NO")
