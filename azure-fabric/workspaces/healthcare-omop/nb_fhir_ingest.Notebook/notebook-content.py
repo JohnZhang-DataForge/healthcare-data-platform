@@ -505,9 +505,14 @@ def _g4_paths(request: str) -> dict[str, str]:
             "quarantine": prefix + "/quarantine"}
 
 
-def _g4_approval_row(context: BatchContext, batch: PreparedBatch,
-                     patient_contract_bytes: bytes,
-                     encounter_contract_bytes: bytes) -> dict:
+def _canonical_silver_approval_row(
+        batch: PreparedBatch, patient_contract_bytes: bytes,
+        encounter_contract_bytes: bytes, *,
+        source_preservation_strategy: str) -> dict:
+    """One approval schema for FHIR and future verified HL7 source adapters."""
+    if source_preservation_strategy not in (
+            "DELTA_RAW_SNAPSHOT_V1", "VERIFIED_HL7_CANDIDATE_V1"):
+        raise ValueError("HOLD_UNREVIEWED_SILVER_SOURCE_PRESERVATION")
     return {
         "source_batch_id": batch.source_batch_id,
         "manifest_sha256": batch.manifest_sha256,
@@ -518,9 +523,18 @@ def _g4_approval_row(context: BatchContext, batch: PreparedBatch,
         "quarantine_count": 0,
         "patient_contract_sha256": hashlib.sha256(patient_contract_bytes).hexdigest(),
         "encounter_contract_sha256": hashlib.sha256(encounter_contract_bytes).hexdigest(),
-        "source_preservation_strategy": "DELTA_RAW_SNAPSHOT_V1",
+        "source_preservation_strategy": source_preservation_strategy,
         "status": "SILVER_APPROVED",
     }
+
+
+def _g4_approval_row(context: BatchContext, batch: PreparedBatch,
+                     patient_contract_bytes: bytes,
+                     encounter_contract_bytes: bytes) -> dict:
+    """Retain the exact historical FHIR G4 approval payload."""
+    return _canonical_silver_approval_row(
+        batch, patient_contract_bytes, encounter_contract_bytes,
+        source_preservation_strategy="DELTA_RAW_SNAPSHOT_V1")
 
 
 def _g4_snapshot_source_objects(spark, path: str,
@@ -550,6 +564,81 @@ def _g4_validate_full_delta(expected, actual, name: str) -> None:
     if (expected.select(*columns).exceptAll(actual.select(*columns)).count()
             or actual.select(*columns).exceptAll(expected.select(*columns)).count()):
         raise ValueError("G4_DELTA_CANONICAL_CONTENT_MISMATCH:" + name)
+
+
+def _write_verified_canonical_silver(
+        spark, *, context: BatchContext, batch: PreparedBatch,
+        paths: dict[str, str], patient_contract_bytes: bytes,
+        encounter_contract_bytes: bytes, source_preservation_strategy: str,
+        validate_persisted_canonical) -> dict:
+    """Single create-only Patient/Encounter/Approval-LAST Delta writer.
+
+    This is an internal physical I/O primitive, NOT a source authorization
+    endpoint. Callers must independently pin/read back immutable source,
+    establish exclusive publication ownership and DQ-pass before invoking.
+    FHIR G4 retains its source-specific guards and replay recovery; HL7 has
+    no cloud dispatcher/authorization in this source-only change.
+    """
+    if (not isinstance(context, BatchContext)
+            or not isinstance(batch, PreparedBatch)
+            or batch.findings or batch.patient_count < 1
+            or batch.encounter_count < 1
+            or batch.source_batch_id != context.source_batch_id
+            or batch.processing_version != context.processing_version
+            or batch.manifest_sha256 != context.manifest_sha256
+            or context.canonical_version != "v1"):
+        raise ValueError("HOLD_SILVER_UNVERIFIED_BATCH_OR_DQ")
+    if (not isinstance(batch.publication_id, str)
+            or len(batch.publication_id) != 64
+            or any(c not in "0123456789abcdef"
+                   for c in batch.publication_id)):
+        raise ValueError("HOLD_SILVER_PUBLICATION_ID")
+    # Pin original contract bytes before the first physical mutation.
+    load_pinned_contract(patient_contract_bytes, "patient")
+    load_pinned_contract(encounter_contract_bytes, "encounter")
+    if not callable(validate_persisted_canonical):
+        raise ValueError("HOLD_SILVER_MISSING_INDEPENDENT_DQ")
+    required = ("patient", "encounter", "approval")
+    if (not isinstance(paths, dict) or
+            any(not isinstance(paths.get(k), str) for k in required)):
+        raise ValueError("HOLD_SILVER_TARGET_PATHS")
+    prefix = paths["patient"].removesuffix("/canonical_patient")
+    if (not prefix or paths["patient"] != prefix + "/canonical_patient"
+            or paths["encounter"] != prefix + "/canonical_encounter"
+            or paths["approval"] != prefix + "/silver_approval"
+            or any(part in ("", ".", "..") for part in prefix.split("/"))
+            or any(c in prefix for c in "*?\\")
+            or not (prefix.startswith("Files/silver/")
+                    or prefix.startswith("file:/"))):
+        raise ValueError("HOLD_SILVER_TARGET_NAMESPACE")
+    # Recheck immediately before write. A partial/unknown ACK must never
+    # enter an append/overwrite or generate an Approval on retry.
+    if any(_g3_delta_exists(spark, paths[k]) for k in required):
+        raise ValueError("HOLD_SILVER_EXISTING_OR_PARTIAL_DELTA")
+    approval_row = _canonical_silver_approval_row(
+        batch, patient_contract_bytes, encounter_contract_bytes,
+        source_preservation_strategy=source_preservation_strategy)
+    _write_delta(batch.patient_df, paths["patient"])
+    _write_delta(batch.encounter_df, paths["encounter"])
+    p = spark.read.format("delta").load(paths["patient"])
+    e = spark.read.format("delta").load(paths["encounter"])
+    validate_persisted_canonical(p, e, batch, context)
+    _g4_validate_full_delta(batch.patient_df, p, "patient")
+    _g4_validate_full_delta(batch.encounter_df, e, "encounter")
+    fields = ("source_batch_id string, manifest_sha256 string, "
+              "processing_version string, publication_id string, "
+              "patient_count long, encounter_count long, quarantine_count long, "
+              "patient_contract_sha256 string, encounter_contract_sha256 string, "
+              "source_preservation_strategy string, status string")
+    keys = [x.split()[0] for x in fields.split(", ")]
+    approval = spark.createDataFrame(
+        [tuple(approval_row[k] for k in keys)], fields)
+    _write_delta(approval, paths["approval"])  # approval fence LAST
+    persisted = spark.read.format("delta").load(paths["approval"]).collect()
+    if (len(persisted) != 1 or
+            persisted[0].asDict(recursive=True) != approval_row):
+        raise ValueError("HOLD_SILVER_APPROVAL_INDEPENDENT_READBACK")
+    return approval_row
 
 
 def _g4_independent_silver_readback(spark, paths: dict[str, str],
@@ -858,23 +947,11 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
         if not _g3_independent_receipt_readback(
                 spark, paths["bronze"], raw_records):
             raise ValueError("G4_POSTWRITE_RAW_SNAPSHOT_MISMATCH")
-        _write_delta(batch.patient_df, paths["patient"])
-        _write_delta(batch.encounter_df, paths["encounter"])
-        p = spark.read.format("delta").load(paths["patient"])
-        e = spark.read.format("delta").load(paths["encounter"])
-        validate_silver_readback(p, e, batch, context)
-        _g4_validate_full_delta(batch.patient_df, p, "patient")
-        _g4_validate_full_delta(batch.encounter_df, e, "encounter")
-        approval_row = _g4_approval_row(context, batch, pb, eb)
-        fields = ("source_batch_id string, manifest_sha256 string, "
-                  "processing_version string, publication_id string, "
-                  "patient_count long, encounter_count long, quarantine_count long, "
-                  "patient_contract_sha256 string, encounter_contract_sha256 string, "
-                  "source_preservation_strategy string, status string")
-        keys = [x.split()[0] for x in fields.split(", ")]
-        approval = spark.createDataFrame(
-            [tuple(approval_row[k] for k in keys)], fields)
-        _write_delta(approval, paths["approval"])  # approval fence LAST
+        _write_verified_canonical_silver(
+            spark, context=context, batch=batch, paths=paths,
+            patient_contract_bytes=pb, encounter_contract_bytes=eb,
+            source_preservation_strategy="DELTA_RAW_SNAPSHOT_V1",
+            validate_persisted_canonical=validate_silver_readback)
         _g4_independent_silver_readback(
             spark, paths, context, manifest_raw, expected, pb, eb)
     except Exception:
