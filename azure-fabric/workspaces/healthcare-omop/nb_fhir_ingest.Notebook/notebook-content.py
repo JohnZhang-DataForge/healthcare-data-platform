@@ -1312,7 +1312,7 @@ def _hl7_reopened_dq(patient_delta, encounter_delta,
 def _hl7_recompute_persisted_approval(
         spark, paths: dict[str, str], context: BatchContext,
         patient_contract_bytes: bytes, encounter_contract_bytes: bytes,
-        original_provenance: dict) -> PreparedBatch:
+        original_provenance: dict, expected_transport_sha256: str) -> PreparedBatch:
     """Transport-independent future Silver readback, after temp Blob cleanup.
 
     Canonical rows are retyped from physically persisted Delta, the original
@@ -1332,7 +1332,7 @@ def _hl7_recompute_persisted_approval(
         "patient": spark.read.format("delta").load(paths["patient"]),
         "encounter": spark.read.format("delta").load(paths["encounter"]),
     }
-    accepted, digests = {}, {}
+    accepted, digests, byte_sizes = {}, {}, {}
     for entity, key in (("patient", "source_record_id"),
                         ("encounter", "source_encounter_id")):
         records, wire = [], []
@@ -1377,6 +1377,7 @@ def _hl7_recompute_persisted_approval(
                          sort_keys=True, ensure_ascii=True,
                          separators=(",", ":"), allow_nan=False).encode()
         digests[entity] = hashlib.sha256(raw).hexdigest()
+        byte_sizes[entity] = len(raw)
     reconciliation = reconcile_patient_encounter(
         TransformResult(accepted["patient"], (), ()),
         TransformResult(accepted["encounter"], (), ()), context)
@@ -1399,6 +1400,41 @@ def _hl7_recompute_persisted_approval(
         processing_version=context.processing_version,
         publication_id=pubid, manifest_sha256=context.manifest_sha256.lower(),
         source_receipts=())
+    # Reconstruct exactly the manifest-last Candidate bytes using persisted
+    # canonical rows. This allows recovery after the short-lived transfer is
+    # removed without trusting a self-reported manifest digest.
+    entity_receipts = {
+        name: {
+            "file": "canonical_" + name + ".json",
+            "sha256": digests[name],
+            "bytes": byte_sizes[name],
+            "rows": len(accepted[name]),
+        }
+        for name in ("patient", "encounter")
+    }
+    sealed_manifest = {
+        "schema": "healthcare-hl7-canonical-transport-v1",
+        "hospital_id": context.hospital_id,
+        "feed_id": context.feed_id,
+        "source_system": context.source_system,
+        "request_id": context.request_id,
+        "source_batch_id": context.source_batch_id,
+        "source_manifest_sha256": context.manifest_sha256.lower(),
+        "processing_version": context.processing_version,
+        "source_version": context.source_version,
+        "adapter_version": context.adapter_version,
+        "canonical_version": context.canonical_version,
+        "patient_contract_sha256": hashlib.sha256(patient_contract_bytes).hexdigest(),
+        "encounter_contract_sha256": hashlib.sha256(encounter_contract_bytes).hexdigest(),
+        "publication_id": pubid,
+        "entities": entity_receipts,
+        "status": "CANDIDATE_ONLY_NOT_SILVER_APPROVED",
+    }
+    sealed_sha = hashlib.sha256(json.dumps(
+        sealed_manifest, sort_keys=True, ensure_ascii=True,
+        separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+    if sealed_sha != expected_transport_sha256:
+        raise ValueError("HOLD_HL7_PERSISTED_TRANSPORT_PIN_CHANGED")
     expected_approval = _canonical_silver_approval_row(
         batch, patient_contract_bytes, encounter_contract_bytes,
         source_preservation_strategy="VERIFIED_HL7_CANDIDATE_V1")
@@ -1459,7 +1495,7 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
                                    ("partial/unknown Silver state",))
         try:
             persisted = _hl7_recompute_persisted_approval(
-                spark, paths, context, pb, eb, raw_provenance)
+                spark, paths, context, pb, eb, raw_provenance, manifest_sha)
         except Exception:
             return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
                                    context.processing_version, None, metrics,
