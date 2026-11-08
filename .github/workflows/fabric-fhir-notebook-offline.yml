@@ -123,7 +123,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
+          # Current branch is ahead of published GA; build the old source SHA below.
           # Rebuild immutable 0.1.7 sources instead of incorrectly requiring
           # the latest 0.1.10 source to pretend it is the published 0.1.7.
           HISTORICAL_SOURCE_SHA='3e1a036e309e72d8c9c79e5923333987c1c9eef7'
