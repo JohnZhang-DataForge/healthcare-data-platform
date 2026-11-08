@@ -287,5 +287,178 @@ class F2GoldTransactionTest(unittest.TestCase):
         self.assertEqual(self._counts(), (2, 2, 1, 1, 1, 2))
         self.assertTrue(independent_gold_readback(self._open, self._batch()))
 
+
+
+# F2 physical Warehouse -> Shared IdentitySnapshot boundary. All synthetic,
+# exactly the Self-Runner six-table SELECT row layout and SHA encoding.
+import hashlib
+import json
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[6] /
+                       "shared-data-engine/src"))
+from silver_identity import bridge_f2_sql_readback_rows
+from healthcare_data_engine.identity.preview import (
+    bridge_f2_person_visit_allocation, require_preview_snapshot_unchanged,
+)
+from healthcare_data_engine.mapping.omop.registry import DerivedRowKey
+
+F2_WAREHOUSE = "7a6d08da-278d-4603-8a3b-28640110984c"
+
+
+def f2_physical_rows():
+    return {name: () for name in ("identity_map", "allocator", "person",
+                                 "visit", "ledger", "audit")}
+
+
+def f2_table_digest(rows):
+    hashes = {}
+    for name, values in rows.items():
+        digest = hashlib.sha256()
+        for row in values:
+            raw = json.dumps(tuple(row), ensure_ascii=False,
+                             separators=(",", ":"), default=str).encode("utf-8")
+            digest.update(len(raw).to_bytes(4, "big") + raw)
+        hashes[name] = digest.hexdigest()
+    return hashes
+
+
+def make_f2_bridge(rows, **changes):
+    d = f2_table_digest(rows)
+    args = dict(first_table_sha256=d, second_table_sha256=d,
+                warehouse_id=F2_WAREHOUSE)
+    args.update(changes)
+    return bridge_f2_sql_readback_rows(rows, **args)
+
+
+class F2PhysicalToSharedBridgeTests(unittest.TestCase):
+    def test_empty_real_shaped_six_table_snapshot_is_preview_only(self):
+        rows = f2_physical_rows()
+        a = make_f2_bridge(rows)
+        b = make_f2_bridge(rows)
+        self.assertEqual(a.physical_snapshot_sha256, b.physical_snapshot_sha256)
+        self.assertEqual(a.shared_snapshot_fingerprint, b.shared_snapshot_fingerprint)
+        self.assertNotEqual(a.physical_snapshot_sha256, a.shared_snapshot_fingerprint)
+        self.assertEqual(a.snapshot.existing, ())
+        self.assertEqual(dict(a.snapshot.next_free), {
+            "cdm.person": 1, "cdm.visit_occurrence": 1})
+        self.assertEqual(a.status, "F2_SQL_ROWS_TO_SHARED_SNAPSHOT_SOURCE_ONLY_NOT_AUTHENTICATED")
+        self.assertEqual(len(a.table_sha256), 6)
+
+    def test_shared_bridge_reuses_f2_allocator_and_preserves_existing_int(self):
+        rows = f2_physical_rows()
+        rows["identity_map"] = (
+            ("PERSON", "hospital-a", "fhir:hospital-a:feed1", "p1", 41, "b1", "v1"),
+            ("VISIT_OCCURRENCE", "hospital-a", "fhir:hospital-a:feed1", "v1", 90, "b1", "v1"),
+        )
+        rows["allocator"] = (("PERSON", 42, "v1"),
+                             ("VISIT_OCCURRENCE", 91, "v1"))
+        rows["person"] = ((41,),)
+        rows["visit"] = ((90, 41),)
+        rows["ledger"] = (
+            ("hospital-a", "fhir:hospital-a:feed1", "b1",
+             "a" * 64, "b" * 64, "writer-1", "COMMITTED", 1, 1, 1, 1),
+        )
+        rows["audit"] = (("b1", "PERSON", 1, 1, "PASS"),)
+        source = make_f2_bridge(rows)
+        self.assertEqual(len(source.snapshot.persisted()), 2)
+        new = IdentityKey("PERSON", "hospital-b", "fhir:hospital-b:feed1", "p1")
+        old = IdentityKey("PERSON", "hospital-a", "fhir:hospital-a:feed1", "p1")
+        physical_existing = (
+            (old, 41),
+            (IdentityKey("VISIT_OCCURRENCE", "hospital-a",
+                         "fhir:hospital-a:feed1", "v1"), 90),
+        )
+        plan = plan_ids([old, new], physical_existing,
+                        {"PERSON": 42, "VISIT_OCCURRENCE": 91},
+                        {"PERSON": (41,), "VISIT_OCCURRENCE": (90,)})
+        shared = bridge_f2_person_visit_allocation(plan, source.snapshot)
+        self.assertEqual(shared.for_key(DerivedRowKey(
+            "cdm.person", "hospital-a", "fhir:hospital-a:feed1",
+            "p1")).state, "PERSISTED")
+        self.assertEqual(shared.for_key(DerivedRowKey(
+            "cdm.person", "hospital-b", "fhir:hospital-b:feed1",
+            "p1")).state, "PROVISIONAL")
+        self.assertEqual(shared.for_key(DerivedRowKey(
+            "cdm.person", "hospital-b", "fhir:hospital-b:feed1",
+            "p1")).omop_id, 42)
+        require_preview_snapshot_unchanged(shared, source.snapshot)
+
+    def test_modified_digest_or_single_connection_is_not_physical_proof(self):
+        rows = f2_physical_rows()
+        d = f2_table_digest(rows)
+        tampered = dict(d, ledger="f" * 64)
+        for change in (
+            {"first_table_sha256": tampered},
+            {"second_table_sha256": tampered},
+            {"first_table_sha256": {}},
+            {"warehouse_id": "wrong"},
+        ):
+            with self.subTest(change=list(change)):
+                with self.assertRaises(PlanningHold):
+                    make_f2_bridge(rows, **change)
+
+    def test_missing_rowsets_or_unsupported_schema_holds(self):
+        rows = f2_physical_rows()
+        for broken in (
+            dict(rows, extra=()),
+            {k: v for k, v in rows.items() if k != "ledger"},
+            dict(rows, person=(("wrong", "extra"),)),
+            dict(rows, allocator=(("PERSON", 1, "v1"),)),
+        ):
+            with self.subTest(names=sorted(broken)):
+                with self.assertRaises(PlanningHold):
+                    make_f2_bridge(broken)
+
+    def test_tampered_rows_do_not_match_previous_independent_sql_sha(self):
+        original = f2_physical_rows()
+        pinned = f2_table_digest(original)
+        mutated = dict(original, person=((999,),))
+        with self.assertRaisesRegex(PlanningHold, "TWO_CONNECTION_SHA_MISMATCH"):
+            bridge_f2_sql_readback_rows(
+                mutated, first_table_sha256=pinned,
+                second_table_sha256=pinned, warehouse_id=F2_WAREHOUSE)
+
+    def test_unbounded_physical_readback_is_rejected_before_shared_plan(self):
+        rows = dict(f2_physical_rows(), person=((1,),) * 20001)
+        with self.assertRaisesRegex(PlanningHold, "ROW_BOUND_OR_TYPE"):
+            make_f2_bridge(rows)
+
+    def test_nonempty_without_durable_allocator_does_not_invent_ids(self):
+        rows = f2_physical_rows()
+        for table, value in (
+            ("person", ((1,),)),
+            ("ledger", (("h", "s", "b", "a" * 64, "b" * 64, "v", "COMMITTED", 1, 0, 1, 0),)),
+            ("audit", (("b", "PERSON", 1, 1, "PASS"),)),
+        ):
+            with self.subTest(table=table):
+                with self.assertRaisesRegex(PlanningHold, "ALLOCATOR_MISSING_WITH_STATE"):
+                    make_f2_bridge(dict(rows, **{table: value}))
+
+    def test_map_gold_drift_and_orphan_visit_hold(self):
+        rows = f2_physical_rows()
+        rows["allocator"] = (("PERSON", 2, "v1"),
+                             ("VISIT_OCCURRENCE", 2, "v1"))
+        rows["identity_map"] = (("PERSON", "h", "fhir:h:f", "p", 1, "b", "v1"),)
+        with self.assertRaisesRegex(PlanningHold, "SHARED_SNAPSHOT_CONFLICT"):
+            make_f2_bridge(rows)
+        rows["person"] = ((1,),)
+        rows["visit"] = ((1, 99),)
+        with self.assertRaisesRegex(PlanningHold, "VISIT_PARENT_MISSING"):
+            make_f2_bridge(rows)
+
+    def test_snapshot_changes_invalidate_shared_preview(self):
+        rows = f2_physical_rows()
+        bridge = make_f2_bridge(rows)
+        key = IdentityKey("PERSON", "h", "fhir:h:f", "p")
+        proposed = plan_ids([key], (), {"PERSON": 1, "VISIT_OCCURRENCE": 1},
+                            {"PERSON": (), "VISIT_OCCURRENCE": ()})
+        preview = bridge_f2_person_visit_allocation(proposed, bridge.snapshot)
+        self.assertEqual(preview.status, "ID_PREVIEW_ONLY_NOT_PERSISTED")
+        changed_rows = dict(rows, allocator=(("PERSON", 1, "v1"),
+                                            ("VISIT_OCCURRENCE", 1, "v1")))
+        changed = make_f2_bridge(changed_rows)
+        with self.assertRaisesRegex(Exception, "SNAPSHOT_CHANGED_BEFORE_COMMIT"):
+            require_preview_snapshot_unchanged(preview, changed.snapshot)
+
+
 if __name__=="__main__":
     unittest.main()
