@@ -23,6 +23,6 @@ HL7 v2.5.1 A01/A03 Raw + Manifest (Azure immutable Landing)
 - `.github/workflows/hl7-local-delta-dbt-offline.yml` 只在 GitHub-hosted Runner 上使用真实 OIE JS Mapper **生成全新合成样例**，然后本地物理 Delta/dbt/Contract readback。不会使用 2026-11-07 P3 Azure 的 42 条已提交数据。
 - 未来真实 Raw GET、共享 Approval/Publisher/Silver 需要对应 OpenSpec 和精确权限审批，不能直接复用本地配置写 Fabric。
 
-**源码未来去留：** 当前 HL7 Python Parser / Intake / Delta Writer 属于继续保留的业务能力；旧 dbt SQL/Profiles/Project 是未来 `azure-fabric/dbt/hl7-canonical/` 新工程的冻结参考，待新工程验收、消费者切换后才可退役。CI/质量测试与依赖不可一并删除，须逐项检查。具体文件级状态及退役条件以 [HL7 CODE](CODE.md) 为准。
+**源码未来去留：** 当前 HL7 Python Parser / Intake / Delta Writer 属于继续保留的业务能力；旧 dbt SQL/Profiles/Project 是 P3 `azure-fabric/dbt/hl7-canonical/` 新 Candidate 的冻结参考（[Fabric dbt CODE](../../azure-fabric/dbt/CODE.md)），待新工程验收、消费者切换后才可退役。CI/质量测试与依赖不可一并删除，须逐项检查。具体文件级状态及退役条件以 [HL7 CODE](CODE.md) 为准。
 
 本组件的源码和测试唯一导航：[HL7 CODE](CODE.md)。OpenSpec 实施计划：[implement-hl7-local-delta-dbt-canonical](../../../../openspec/changes/implement-hl7-local-delta-dbt-canonical/tasks.md)。

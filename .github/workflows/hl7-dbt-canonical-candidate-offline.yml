@@ -1,0 +1,79 @@
+name: HL7 dbt Canonical P3 isolated local Candidate
+on:
+  pull_request:
+    paths:
+      - "azure-fabric/dbt/hl7-canonical/**"
+      - ".github/quality/tests/data-platform/hl7/check_new_dbt_candidate.py"
+      - ".github/quality/fixtures/hl7/**"
+      - ".github/workflows/hl7-dbt-canonical-candidate-offline.yml"
+      - "local-data-platform/spark/contracts/canonical/**"
+permissions:
+  contents: read
+concurrency:
+  group: hl7-dbt-p3-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  candidate-local-delta-dbt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: azure-fabric/dbt/hl7-canonical
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install existing pinned parser Spark Delta and dbt
+        run: python -m pip install -r "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/requirements-local.txt"
+      - name: Run existing intake and parser regression unit tests
+        run: python -m unittest discover -s "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7" -p "test_*.py" -v
+      - name: Physical local Delta, dbt, replay, negative cases and independent readback
+        run: |
+          set -euo pipefail
+          export HL7_LOCAL_WAREHOUSE_URI="file:${RUNNER_TEMP}/hl7-dbt-p3-warehouse"
+          export DBT_PROFILES_DIR="$PWD/profiles/local"
+          export SPARK_LOCAL_IP=127.0.0.1
+          python "$GITHUB_WORKSPACE/.github/quality/fixtures/hl7/generate_oie_v2_sample.py" "$RUNNER_TEMP/hl7-dbt-p3-synthetic"
+          manifest="$RUNNER_TEMP/hl7-dbt-p3-synthetic/landing-manifest.json"
+          sha="$(sha256sum "$manifest" | cut -d' ' -f1)"
+          args=(--manifest "$manifest"
+            --blob-root "$RUNNER_TEMP/hl7-dbt-p3-synthetic/staged-local-blob-keys"
+            --manifest-sha256 "$sha"
+            --source-sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            --request-id "johnscreek-hl7-gh-12345678901"
+            --ingest-date "2026-11-07"
+            --processing-run-id "synthetic-p3-001"
+            --processed-at "2026-11-07 13:00:00"
+            --warehouse-uri "$HL7_LOCAL_WAREHOUSE_URI")
+          python "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/write_staging_delta.py" "${args[@]}"
+          python "$GITHUB_WORKSPACE/local-data-platform/spark/apps/hl7/write_staging_delta.py" "${args[@]}"
+          dbt debug
+          dbt compile
+          dbt run
+          dbt test
+          python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_new_dbt_candidate.py" readback --baseline "$RUNNER_TEMP/p3-candidate.sha256"
+          dbt run
+          python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_new_dbt_candidate.py" readback --baseline "$RUNNER_TEMP/p3-candidate.sha256"
+          python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_new_dbt_candidate.py" prepare-negative
+          for case in "reject_unmatched_discharge:hl7_negative_unmatched" "reject_invalid_event_sequence:hl7_negative_reversed" "reject_source_identity_collision:hl7_negative_collision" "reject_duplicate_control_ids:hl7_negative_duplicate"; do
+            name="${case%%:*}"
+            schema="${case#*:}"
+            set +e
+            dbt test --select "$name" --vars "hl7_source_schema: $schema" > "$RUNNER_TEMP/$name-negative.log" 2>&1
+            rc=$?
+            set -e
+            if [ "$rc" -eq 0 ] || ! grep -q "in test $name" "$RUNNER_TEMP/$name-negative.log" || ! grep -Eq "Got [1-9][0-9]* result" "$RUNNER_TEMP/$name-negative.log"; then
+              cat "$RUNNER_TEMP/$name-negative.log"
+              echo "HL7_P3_NEGATIVE_NOT_DETECTED=$name"
+              exit 1
+            fi
+            echo "HL7_P3_EXPECTED_NEGATIVE_FAIL=PASS case=$name"
+          done
+          echo "HL7_P3_SYNTHETIC_LOCAL_CANDIDATE_ONLY=PASS"

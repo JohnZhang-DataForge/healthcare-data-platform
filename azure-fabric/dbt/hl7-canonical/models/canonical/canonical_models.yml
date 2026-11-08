@@ -1,0 +1,21 @@
+version: 2
+models:
+  - name: canonical_patient
+    description: "HL7 Patient v1 local Delta candidate; NOT Approved Silver."
+    columns:
+      - name: source_record_id
+        data_tests: [not_null]
+      - name: source_system
+        data_tests: [not_null]
+      - name: birth_date
+        data_tests: [not_null]
+  - name: canonical_encounter
+    description: "Completed A01+A03 HL7 Encounter v1 local Delta candidate."
+    columns:
+      - name: source_encounter_id
+        data_tests: [not_null]
+      - name: source_person_id
+        data_tests: [not_null]
+      - name: end_datetime
+        data_tests: [not_null]
+
