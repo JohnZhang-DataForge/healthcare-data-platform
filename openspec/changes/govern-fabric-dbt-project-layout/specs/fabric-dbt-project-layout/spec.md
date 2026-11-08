@@ -42,7 +42,7 @@ The existing HL7 dbt implementation under `local-data-platform/spark/apps/hl7/` 
 
 ### Requirement: Legacy HL7 dbt source disposition SHALL be documented before replacement
 
-Before developing `azure-fabric/dbt/hl7-canonical/`, the existing Local DP HL7 CODE Map SHALL identify each file as a retained runtime dependency, frozen reference pending retirement, mixed dependency requiring review, or regression test/CI. New dbt models MAY coexist temporarily in Git as unpromoted candidates while the old implementation remains the only authoritative execution route. Agents MUST NOT maintain two official production implementations or remove Parser, Manifest Intake, Delta Writer, or their required tests just because the new dbt project succeeds.
+The authoritative HL7 CODE Map SHALL classify legacy files for retention, reference or retirement. A new dbt candidate MAY coexist with frozen legacy files in Git, but only one official execution owner is allowed. Cleanup MUST preserve still-required Parser, Intake, Delta Writer and tests.
 
 #### Scenario: An Agent creates the new standard dbt project while old files still exist
 - **WHEN** the agent starts the approved new project after the repository layout gate is ready
