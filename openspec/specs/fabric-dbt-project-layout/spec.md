@@ -2,7 +2,7 @@
 
 ## Purpose
 
-本规范定义 Healthcare Fabric-oriented dbt Core 工程的长期目标父目录、标准空目录结构、可扩展命名及 AI/Agent 新建目录的强制审批。此治理规则已由 [PR #811](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/811) 合并 Main，**不代表 HL7 dbt SQL 已从 Local DP 迁移**；现存受保护 `tests/` 检查必须先获批精确例外，禁止因本规范绕过 GitHub Required Checks。
+本规范定义 Healthcare Fabric-oriented dbt Core 工程的长期目标父目录、标准空目录结构、可扩展命名及 AI/Agent 新建目录的强制审批。目录规则由 [PR #811](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/811) 合并，**精确 dbt SQL `tests/` 例外已由受保护 [PR #815](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/815) 实现并由真实正向 [#816](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/816)/负向 [#817](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/817) 验证**，四项 GitHub Required Checks 已恢复。**HL7 dbt 工程源码尚未从 Local DP 切换，也未因治理验收自动成为 Fabric Runtime PASS。**
 
 ## Requirements
 
@@ -26,7 +26,7 @@ Each new approved dbt project SHALL contain `dbt_project.yml`, `models/staging/`
 
 #### Scenario: dbt native SQL tests conflict with protected layout policy
 - **WHEN** adding `azure-fabric/dbt/<project>/tests/`, even just `tests/.gitkeep`
-- **THEN** a separately approved, narrowly scoped change to the trusted repository layout checker MUST pass positive/negative CI and applicable Ruleset checks before the source is introduced; other source-area tests remain prohibited.
+- **THEN** only the approved `hl7-canonical` singular `*.sql` or root `.gitkeep` SHALL pass the now-verified trusted repository layout checker (PR #815, positive #816, negative #817); other source-area tests remain prohibited.
 
 ### Requirement: dbt Canonical candidates SHALL not duplicate shared business ownership
 dbt SQL SHALL produce source-specific Contract-aligned Canonical Candidates and MUST NOT create a second authoritative Canonical approval, identity, OMOP concept mapper or Gold publisher without an explicit approved ownership transfer.

@@ -16,5 +16,12 @@ The default-branch `openspec-trusted-change-gate.yml` runs `check_repository_lay
 
 If no administrative procedure is available, keep this exception PR **OPEN/BLOCKED** and do not submit new dbt project `tests/` to Main. No disabling protection silently; if a checker or required context is missing, HOLD.
 
+## Governance enforcement readback — completed
+
+- Admin-reviewed [PR #815](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/815) is merged at `c36ed72ba140d6b2956d71ab97206baa2965bd58`. Protected Main checker implements the exact scoped exception; GitHub Ruleset #25365902 was independently checked Active with all four original Required contexts.
+- [PR #816](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/816), exact `tests/.gitkeep` positive candidate: four required checks success; [PR #817](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/817), unauthorized `tests/test_helper.py` negative candidate: `require-trusted-change` failed with `RULE=new-test-outside-quality`, blocking merge. Both validation PRs closed **unmerged**.
+- Detailed maintenance window timestamps/approver identity were not independently retrievable via the current GitHub access; do not invent that audit trail. The verified outcome is check restoration and positive/negative enforcement, not a guarantee about unobservable admin activity.
+- No business dbt project added by this governance acceptance.
+
 ## 3. Security and rollback
 No Repo Secrets, Azure capacity, Fabric/Delta/warehouse or cloud API. The PR-head policy smoke uses plain `pull_request` with read-only permissions and runs Python unittest on the checkout with no secrets; the protected default-branch gate still executes only trusted base policy. Rollback, if needed, requires the same separately approved maintenance procedure, not a casual bypass.
