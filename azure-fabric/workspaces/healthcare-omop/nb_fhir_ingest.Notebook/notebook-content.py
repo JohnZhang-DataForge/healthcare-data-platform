@@ -641,6 +641,202 @@ def _write_verified_canonical_silver(
     return approval_row
 
 
+def prepare_hl7_candidate_bundle_for_silver(
+        spark, *, bundle: Mapping[str, bytes], bundle_manifest_sha256: str,
+        context: BatchContext, patient_contract_bytes: bytes,
+        encounter_contract_bytes: bytes,
+        source_evidence_verified: bool = False) -> PreparedBatch:
+    """Offline-verifiable HL7 Candidate transport admission, NO Silver write.
+
+    The independent trusted caller supplies the manifest SHA out of band,
+    proves original Raw/Manifest, retention, authorized transport and exclusive
+    Writer window separately. This function only checks supplied bytes; there
+    is deliberately NO HL7 Notebook run_mode or cloud transport in this PR.
+    """
+    from datetime import date, datetime, timezone
+    from decimal import Decimal, InvalidOperation
+    import re
+    from healthcare_data_engine.canonical.validation import validate_row
+    from healthcare_data_engine.quality.result import TransformResult
+
+    schema = "healthcare-hl7-canonical-transport-v1"
+    files = {"canonical_patient.json", "canonical_encounter.json",
+             "candidate_manifest.json"}
+    if (source_evidence_verified is not True
+            or not isinstance(bundle, Mapping) or set(bundle) != files
+            or not isinstance(bundle_manifest_sha256, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", bundle_manifest_sha256)
+            or not isinstance(context, BatchContext)
+            or (context.hospital_id, context.feed_id, context.source_system) != (
+                "johns-creek-hospital-b", "johns-creek-hospital-b-hl7-v2",
+                "johns-creek-hl7")
+            or context.canonical_version != "v1"
+            or context.adapter_version != "1.3.5"
+            or context.source_version != "HL7v2.5.1"):
+        raise ValueError("HOLD_HL7_BUNDLE_UNREVIEWED_SOURCE_OR_APPROVAL")
+    for name in files:
+        value = bundle[name]
+        limit = 16384 if name == "candidate_manifest.json" else 16 * 1024 * 1024
+        if not isinstance(value, bytes) or len(value) > limit or not value:
+            raise ValueError("HOLD_HL7_BUNDLE_BYTES")
+    if hashlib.sha256(bundle["candidate_manifest.json"]).hexdigest() != bundle_manifest_sha256:
+        raise ValueError("HOLD_HL7_BUNDLE_MANIFEST_PIN_CHANGED")
+
+    def load_exact(raw):
+        try:
+            parsed = json.loads(raw.decode("utf-8"))
+            encoded = json.dumps(parsed, sort_keys=True, ensure_ascii=True,
+                                 separators=(",", ":"), allow_nan=False).encode()
+            if encoded != raw:
+                raise ValueError("noncanonical")
+            return parsed
+        except (ValueError, UnicodeError, TypeError, OverflowError) as exc:
+            raise ValueError("HOLD_HL7_BUNDLE_NONCANONICAL_JSON") from exc
+
+    manifest = load_exact(bundle["candidate_manifest.json"])
+    names = {
+        "schema", "hospital_id", "feed_id", "source_system",
+        "request_id", "source_batch_id", "source_manifest_sha256",
+        "processing_version", "source_version", "adapter_version",
+        "canonical_version", "patient_contract_sha256",
+        "encounter_contract_sha256", "publication_id", "entities", "status"}
+    if not isinstance(manifest, dict) or set(manifest) != names:
+        raise ValueError("HOLD_HL7_BUNDLE_MANIFEST_FIELDS")
+    expected = {
+        "schema": schema, "hospital_id": context.hospital_id,
+        "feed_id": context.feed_id, "source_system": context.source_system,
+        "request_id": context.request_id,
+        "source_batch_id": context.source_batch_id,
+        "source_manifest_sha256": context.manifest_sha256.lower(),
+        "processing_version": context.processing_version,
+        "source_version": context.source_version,
+        "adapter_version": context.adapter_version,
+        "canonical_version": "v1",
+        "patient_contract_sha256": hashlib.sha256(patient_contract_bytes).hexdigest(),
+        "encounter_contract_sha256": hashlib.sha256(encounter_contract_bytes).hexdigest(),
+        "status": "CANDIDATE_ONLY_NOT_SILVER_APPROVED",
+    }
+    if any(manifest[k] != val for k, val in expected.items()):
+        raise ValueError("HOLD_HL7_BUNDLE_CONTEXT_CONTRACT_DRIFT")
+    if (not isinstance(manifest["entities"], dict)
+            or set(manifest["entities"]) != {"patient", "encounter"}):
+        raise ValueError("HOLD_HL7_BUNDLE_ENTITY_SET")
+    contracts = {
+        "patient": load_pinned_contract(patient_contract_bytes, "patient"),
+        "encounter": load_pinned_contract(encounter_contract_bytes, "encounter"),
+    }
+    provenance_prefix = (f"clinical/v1/{context.hospital_id}/{context.feed_id}/"
+                         f"{context.request_id}/HL7_V2/hl7/")
+    accepted = {}
+    for entity, key in (("patient", "source_record_id"),
+                        ("encounter", "source_encounter_id")):
+        filename = "canonical_" + entity + ".json"
+        data = bundle[filename]
+        descriptor = manifest["entities"][entity]
+        if (not isinstance(descriptor, dict)
+                or set(descriptor) != {"file", "sha256", "bytes", "rows"}
+                or descriptor["file"] != filename
+                or descriptor["sha256"] != hashlib.sha256(data).hexdigest()
+                or type(descriptor["bytes"]) is not int
+                or descriptor["bytes"] != len(data)
+                or type(descriptor["rows"]) is not int
+                or not 1 <= descriptor["rows"] <= 50000):
+            raise ValueError("HOLD_HL7_BUNDLE_ENTITY_HASH_OR_COUNTS")
+        payload = load_exact(data)
+        if (not isinstance(payload, dict)
+                or set(payload) != {"schema", "entity", "rows"}
+                or payload["schema"] != schema or payload["entity"] != entity
+                or not isinstance(payload["rows"], list)
+                or len(payload["rows"]) != descriptor["rows"]):
+            raise ValueError("HOLD_HL7_BUNDLE_ENTITY_PAYLOAD")
+        records = []
+        field_types = {f["name"]: f["type"] for f in contracts[entity]["fields"]}
+        for original in payload["rows"]:
+            if not isinstance(original, dict) or set(original) != set(field_types):
+                raise ValueError("HOLD_HL7_BUNDLE_ROW_FIELDS")
+            row = dict(original)
+            for col, kind in field_types.items():
+                value = row[col]
+                if value is None:
+                    continue
+                if kind == "date":
+                    if not isinstance(value, str):
+                        raise ValueError("HOLD_HL7_BUNDLE_DATE")
+                    try:
+                        row[col] = date.fromisoformat(value)
+                        if row[col].isoformat() != value:
+                            raise ValueError("noncanonical date")
+                    except ValueError as exc:
+                        raise ValueError("HOLD_HL7_BUNDLE_DATE") from exc
+                elif kind == "timestamp":
+                    if (not isinstance(value, str) or
+                            not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z", value)):
+                        raise ValueError("HOLD_HL7_BUNDLE_TIMESTAMP")
+                    try:
+                        row[col] = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
+                    except ValueError as exc:
+                        raise ValueError("HOLD_HL7_BUNDLE_TIMESTAMP") from exc
+                elif kind.startswith("decimal("):
+                    if not isinstance(value, str):
+                        raise ValueError("HOLD_HL7_BUNDLE_DECIMAL")
+                    try:
+                        number = Decimal(value)
+                        if not number.is_finite() or str(number) != value:
+                            raise ValueError("noncanonical decimal")
+                        row[col] = number
+                    except (InvalidOperation, ValueError) as exc:
+                        raise ValueError("HOLD_HL7_BUNDLE_DECIMAL") from exc
+            if (validate_row(row, contracts[entity])
+                    or row["source_system"] != context.namespaced_source_system
+                    or row["source_batch_id"] != context.source_batch_id
+                    or row["source_version"] != context.source_version
+                    or row["adapter_name"] != "hl7apy"
+                    or row["adapter_version"] != context.adapter_version
+                    or row["canonical_version"] != "v1"
+                    or row["source_ingest_date"] != context.source_ingest_date
+                    or row["processing_run_id"] != context.processing_run_id
+                    or row["processed_at"] != context.processed_at.astimezone(timezone.utc)
+                    or not row["source_file"].startswith(provenance_prefix)
+                    or not re.fullmatch(r"[A-Za-z0-9-]+-(A01|A03)\\.hl7",
+                                        row["source_file"][len(provenance_prefix):])
+                    or not re.fullmatch(r"[0-9a-f]{64}", row["source_file_sha256"])
+                    or type(row["source_file_size_bytes"]) is not int
+                    or row["source_file_size_bytes"] < 1):
+                raise ValueError("HOLD_HL7_BUNDLE_ROW_PROVENANCE_OR_DQ")
+            records.append(row)
+        if [r[key] for r in records] != sorted(r[key] for r in records):
+            raise ValueError("HOLD_HL7_BUNDLE_ORDER_DRIFT")
+        accepted[entity] = tuple(records)
+    identity = hashlib.sha256(json.dumps({
+        "source_batch_id": context.source_batch_id,
+        "processing_version": context.processing_version,
+        "patient_sha256": manifest["entities"]["patient"]["sha256"],
+        "encounter_sha256": manifest["entities"]["encounter"]["sha256"],
+    }, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()).hexdigest()
+    if manifest["publication_id"] != identity:
+        raise ValueError("HOLD_HL7_BUNDLE_PUBLICATION_DRIFT")
+    reconciled = reconcile_patient_encounter(
+        TransformResult(accepted["patient"], (), ()),
+        TransformResult(accepted["encounter"], (), ()), context)
+    metrics = reconciled.metrics
+    if any(metrics[k] for k in (
+            "patient_rejected", "encounter_rejected",
+            "patient_quarantined", "encounter_quarantined")):
+        raise ValueError("HOLD_HL7_BUNDLE_SHARED_PK_FK")
+    return PreparedBatch(
+        patient_df=accepted_dataframe(spark, reconciled.patient.accepted,
+                                      contracts["patient"]),
+        encounter_df=accepted_dataframe(spark, reconciled.encounter.accepted,
+                                        contracts["encounter"]),
+        patient_count=metrics["patient_accepted"],
+        encounter_count=metrics["encounter_accepted"],
+        findings=(), source_batch_id=context.source_batch_id,
+        processing_version=context.processing_version,
+        publication_id=identity,
+        manifest_sha256=context.manifest_sha256.lower(),
+        source_receipts=())
+
+
 def _g4_independent_silver_readback(spark, paths: dict[str, str],
                                     context: BatchContext,
                                     manifest_bytes: bytes,
