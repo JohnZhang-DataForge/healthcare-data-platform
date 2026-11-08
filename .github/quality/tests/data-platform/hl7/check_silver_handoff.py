@@ -243,7 +243,7 @@ def main() -> None:
         source_receipts = {
             item["source_file"]: (item["source_file_sha256"],
                                   item["source_file_size_bytes"])
-            for item in accepted_p + accepted_e}
+            for item in result.patient.accepted + result.encounter.accepted}
         root = "Files/fhir_landing/synthetic-pinned-hl7"
         fake_blobs = {root + "/" + k: v for k, v in bundle.items()}
         def fake_binary(_spark, path, *, limit):
