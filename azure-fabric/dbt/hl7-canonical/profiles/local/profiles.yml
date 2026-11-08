@@ -4,8 +4,8 @@ hl7_canonical:
     local:
       type: fabricspark
       method: session
-      schema: hl7_candidate_p3
-      lakehouse: hl7_candidate_p3
+      schema: hl7_candidate
+      lakehouse: hl7_candidate
       threads: 1
       spark_config:
         name: healthcare-hl7-dbt-p3-local-candidate
