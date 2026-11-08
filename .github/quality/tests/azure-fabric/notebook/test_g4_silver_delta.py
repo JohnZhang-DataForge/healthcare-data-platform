@@ -226,6 +226,28 @@ class G4Offline(unittest.TestCase):
         self.assertEqual(sizes, {k: id(self.spark.delta[v]) for k, v in paths.items()
                                  if v in self.spark.delta})
 
+    def test_g4_delegates_to_the_one_canonical_approval_last_writer(self):
+        # The historical FHIR route must use the shared physical publisher,
+        # not keep a second inline Patient/Encounter/Approval writer.
+        shared = nb._write_verified_canonical_silver
+        recorded = []
+
+        def guarded_writer(*args, **kwargs):
+            self.assertEqual(kwargs["source_preservation_strategy"],
+                             "DELTA_RAW_SNAPSHOT_V1")
+            self.assertEqual(kwargs["paths"], nb._g4_paths(REQUEST))
+            recorded.append("shared-writer-called")
+            return shared(*args, **kwargs)
+
+        with patch.dict(nb.verify_fhir_g4_silver.__globals__, {
+                "_write_verified_canonical_silver": guarded_writer}):
+            result = self.execute()
+        self.assertEqual(result.status, "SILVER_APPROVED")
+        self.assertEqual(recorded, ["shared-writer-called"])
+        paths = nb._g4_paths(REQUEST)
+        self.assertEqual(self.spark.delta[paths["approval"]].rows[0]["status"],
+                         "SILVER_APPROVED")
+
     def test_same_request_manifest_drift_holds_without_new_path(self):
         self.assertEqual(self.execute().status, "SILVER_APPROVED")
         self.raw, self.sha, self.sources = source_fixture(tag="drift")

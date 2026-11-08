@@ -46,6 +46,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 源文件（直接链接） | 职责 / 使用边界 |
 | --- | --- |
+| [`candidate_transport.py`](../../../../local-data-platform/spark/apps/hl7/candidate_transport.py) | **P2.3.3c** 纯内存 Canonical Candidate 来源/Contract/SHA 字节交接，Manifest-last；不上传、不持久化、不直接发布 Silver。详细边界见 [HL7 CODE](../hl7/CODE.md) |
 | [`silver_handoff.py`](../../../../local-data-platform/spark/apps/hl7/silver_handoff.py) | **P2.3** 对已验证的 HL7 dbt Candidate 进行纯内存 Source Identity Bridge + Shared Canonical v1 Contract/PK-FK DQ。只返回 Candidate-only PASS/HOLD，不写 Silver、OMOP 或新 Processing 存储；具体用户文档在 [HL7 CODE](../hl7/CODE.md) |
 
 ## Cross-runtime compatibility smoke (test-only)

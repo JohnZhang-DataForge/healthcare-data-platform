@@ -191,6 +191,58 @@ class HL7SilverDQHandoffTests(unittest.TestCase):
         with self.assertRaises(HL7HandoffHold):
             plan(patients=[p], encounters=[e])
 
+    def test_transport_manifest_last_and_deterministic_full_canonical_fields(self):
+        from candidate_transport import prepare_hl7_candidate_transport
+        import hashlib
+        ctx = context()
+        one = prepare_hl7_candidate_transport(
+            plan(ctx=ctx), context=ctx,
+            patient_contract_bytes=RAW_PATIENT, encounter_contract_bytes=RAW_ENCOUNTER)
+        two = prepare_hl7_candidate_transport(
+            plan(ctx=ctx), context=ctx,
+            patient_contract_bytes=RAW_PATIENT, encounter_contract_bytes=RAW_ENCOUNTER)
+        self.assertEqual(one, two)
+        self.assertEqual(set(one), {
+            "candidate_manifest.json", "canonical_patient.json",
+            "canonical_encounter.json"})
+        m = json.loads(one["candidate_manifest.json"])
+        self.assertEqual(m["source_batch_id"], ctx.source_batch_id)
+        self.assertEqual(m["source_manifest_sha256"], ctx.manifest_sha256)
+        self.assertEqual(m["status"], "CANDIDATE_ONLY_NOT_SILVER_APPROVED")
+        for name in ("patient", "encounter"):
+            entry = m["entities"][name]
+            data = one[entry["file"]]
+            rows = json.loads(data)["rows"]
+            self.assertEqual(entry["sha256"], hashlib.sha256(data).hexdigest())
+            self.assertEqual(entry["rows"], len(rows))
+            self.assertEqual(set(rows[0]), {f["name"] for f in (
+                PATIENT if name == "patient" else ENCOUNTER)["fields"]})
+
+    def test_transport_rejects_dq_hold_and_contract_tamper(self):
+        from candidate_transport import prepare_hl7_candidate_transport
+        ctx = context()
+        p, e = rows(ctx)
+        p["birth_date"] = None
+        params = dict(context=ctx, patient_contract_bytes=RAW_PATIENT,
+                      encounter_contract_bytes=RAW_ENCOUNTER)
+        with self.assertRaisesRegex(HL7HandoffHold, "TRANSFER_REQUIRES_COMPLETE_SHARED_DQ_PASS"):
+            prepare_hl7_candidate_transport(plan(patients=[p], encounters=[e], ctx=ctx), **params)
+        with self.assertRaisesRegex(ValueError, "CONTRACT_SHA256_MISMATCH"):
+            prepare_hl7_candidate_transport(plan(ctx=ctx), **{**params,
+                                      "patient_contract_bytes": RAW_PATIENT + b" "})
+
+    def test_transport_has_no_storage_network_or_approval_side_effects(self):
+        import ast
+        source = (ROOT / "local-data-platform/spark/apps/hl7/candidate_transport.py").read_text()
+        tree = ast.parse(source)
+        prohibited = {"open", "write", "upload", "createDataFrame", "saveAsTable",
+                      "getOrCreate", "requests", "httpx", "BlobServiceClient"}
+        names = {n.func.id for n in ast.walk(tree)
+                 if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+        attrs = {n.func.attr for n in ast.walk(tree)
+                 if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
+        self.assertFalse((names | attrs) & prohibited)
+
     def test_synthetic_row_no_persistent_or_cloud_side_effect_api(self):
         import ast
         src = (ROOT / "local-data-platform/spark/apps/hl7/silver_handoff.py").read_text()
