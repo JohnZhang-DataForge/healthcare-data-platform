@@ -30,6 +30,12 @@ Source OpenSpec: [Fabric OMOP Foundation](../../../../openspec/changes/fabric-om
 - **Not complete:** clinical Concept profile review and approval, Vocabulary release/version/license/CPT4 legal evidence, Source File audit Manifest recording, real OMOP Person/Visit identity allocation/Gold COMMIT, complete E2E. Do not infer clinical authorization from physical Vocabulary readback.
 
 
+## CPT4 描述聚合真实 SQL 查验（2026-11-08 UTC；非 License 或完整性签审）
+
+现有 Self-Runner 可信 Deep DQ Workflow 扩展的 [PR #592](https://github.com/JohnZhang-DataForge/Self-Runner/pull/592)、[真实 Run #42448745622](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42448745622)，主控制器 SHA `d5c58a9dd4a33da490f4a3102fd0286e22689cf9`，Artifact `fabric-p1-cpt4-aggregate-42448745622`（ID `13604337591`）。独立两条 SQL 连接、固定只读 CPT4 聚合一致：`total_cpt4=18068`、`missing_names=0`、`names_equal_codes=0`、`suspected_placeholders=0`、`very_short_names=2`。Artifact/日志均不导出实际 CPT4 term 行或受限描述；不触发 Java UMLS API、Capacity、DDL、DML、Notebook 或 Gold。
+
+**验收边界：** 这些真实聚合说明没有发现空描述、编码冒充名称及所定义常见占位符，不能由此推出全部描述准确或 `cpt4.jar` 曾实际补全源 `CONCEPT.csv`；两条长度 1–2 的名称需要进一步源证据复核但不得仅凭长度判为错误。历史约 18,068 与实机相符，不构成其他 release 强制行数。CPT4 法律授权 / 再分发权必须单独核实；严禁公开复制受限术语到 GitHub。九条来源审计、下载交易、Reviewer 与正式 License/Clinical 批准继续 OPEN；非 CPT4 的 FHIR/Person/Visit 业务源码开发继续进行。
+
 ## F1 来源审计记录设计与 Release/License 审核清单（SOURCE_ONLY；不授权 SQL 写入）
 
 **唯一审计实现入口复用 Self-Runner：**
