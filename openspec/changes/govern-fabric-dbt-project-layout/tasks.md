@@ -9,7 +9,7 @@
 - [x] 1.5 将现有 HL7 文件逐项标记“业务保留 / 冻结参考且待退役 / 混合依赖需复核 / 回归测试需改接”，同步新 dbt 项目规则及开发策略；仅文档更新，不删除或搬动源码（已由 [PR #813](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/813) 合并 Main `de7e904ba9efd28cc8484fdc2097f44be1bfb546`；受保护四项 Required Gates 与 OpenSpec/文档链接检查 PASS）。
 
 ## P2 — 受保护门禁前置（独立治理 PR）
-- [ ] 2.1 只为已审 dbt 原生 SQL `tests/` / `.gitkeep` 设计可信 Layout Gate 精确例外（独立 [permit-dbt-native-sql-test-layout](../permit-dbt-native-sql-test-layout/tasks.md)）；在安全维护窗口更新 checker 并验证正反用例与真实 Required Check，不放宽一般自动化测试目录禁令。
+- [x] 2.1 已通过 [PR #815](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/815) 在 Main `c36ed72ba140d6b2956d71ab97206baa2965bd58` 实施精确 dbt 原生 SQL `tests/` 白名单；Ruleset #25365902 Active、四项 Required 恢复；真实正向 [PR #816](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/816) PASS、负向 [PR #817](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/817) 按预期 blocked，两个临时测试 PR 均已关闭且未合并。详细日志与检查见 [治理任务](../permit-dbt-native-sql-test-layout/tasks.md)。
 
 ## P3 — 标准工程真正实施（独立源码 PR）
 - [ ] 3.1 门禁例外完成后，在 `azure-fabric/dbt/hl7-canonical/` 创建**完整标准骨架**，直接按 dbt 分层开发；旧 SQL/config/profile **冻结供参考而非先迁移**。新工程在验收/切换前仅为 Candidate，不能形成第二个正式生产入口。
@@ -20,4 +20,4 @@
 
 ## 已采用治理规则
 
-- 2026-11-07：P1 规则随 PR #811 在 Main 生效；Current Spec 正式采用至 `openspec/specs/fabric-dbt-project-layout/spec.md`（与本次 P1 关闭记录配套）。**仅目录/AI 治理生效；P2 可信 Gate 例外和 P3 物理项目迁移仍 OPEN。**
+- 2026-11-07：P1 规则随 PR #811 在 Main 生效；Current Spec 正式采用至 `openspec/specs/fabric-dbt-project-layout/spec.md`（与本次 P1 关闭记录配套）。**P1 目录/AI 治理和 P2 可信 Gate 例外均已验证生效；P3 新 dbt 工程开发、验收与切换仍 OPEN。**

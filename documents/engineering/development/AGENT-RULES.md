@@ -34,7 +34,7 @@
 ### Fabric dbt 工程目录专用强制规则（2026-11-07）
 
 - 创建/移动任何 dbt 项目之前必须读 [Fabric dbt 目录与准入](../../systems/azure-fabric/dbt/README.md)、真实 Main/CODE Map 和 [OpenSpec dbt Change](../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md)。未来统一归 `azure-fabric/dbt/<project>/`，首期 `hl7-canonical`，内部名 `hl7_canonical`。**现有可执行工程仍在 Local DP**，文档批准不等于源码已经迁移。
-- 标准完整工程骨架和空目录 `.gitkeep` 为强制要求，但 dbt 原生 `tests/` 触发现有受保护 Layout Gate；**必须先审批独立受信任最小例外及正反 CI**，不能跳过 Required Check。一般 Python 自动化测试仍仅放 `.github/quality/tests/`。
+- 标准完整工程骨架和空目录 `.gitkeep` 为强制要求。**HL7 dbt 原生 `tests/` 狭义例外已通过受保护 [PR #815](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/815) 落地**，真实正向 [#816](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/816) PASS、负向 [#817](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/817) 被阻止，四项 Required 已恢复；允许严格限定的 `azure-fabric/dbt/hl7-canonical/tests/.gitkeep` / singular `.sql`，其他项目仍须独立治理审批。一般 Python 自动化测试仍仅放 `.github/quality/tests/`。
 - 新的 `fhir-canonical` / `csv-canonical` / 共享业务 dbt 工程必须另走 OpenSpec 和唯一 Owner 审查；不允许自行另建 `azure-fabric/ingestion/`、Native 假目录或第二套 Canonical/OMOP 共享 Mapper；迁移时更新 CI、消费路径与 CODE Map。
 
 ## 4. Git / GitHub / Self-Runner
