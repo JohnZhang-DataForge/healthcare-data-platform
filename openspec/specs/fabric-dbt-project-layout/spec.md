@@ -63,6 +63,6 @@ The authoritative HL7 CODE Map SHALL classify legacy files for retention, refere
 - **THEN** only identified obsolete old dbt SQL, project configuration and profiles MAY be removed in a bounded PR; legacy Python Parser/Intake/Delta Writer, necessary regression tests, and historical acceptance evidence MUST remain unless separately replaced and accepted.
 
 
-### Actual P3 retirement boundary (following governed local consumer cutover)
-
-The old Local DP dbt SQL/project/profile files MAY be retired **only** after the single maintained local dbt CI entrypoint is demonstrated on the new project with physical Spark/Delta/dbt/Contract readback and replay/negative tests. The retained HL7 Python Parser/Intake/Delta Writer, legacy regression checks and immutable Source Contracts SHALL NOT be removed by the dbt cleanup. Requirements pins SHOULD retain a single Parser/Delta owner and an explicit dbt adapter extension. A local CI cutover MUST NOT imply remote Fabric Silver/OMOP publication.
+#### Scenario: Verified dbt cleanup does not retire the source parser or publisher boundary
+- **WHEN** the independently verified local dbt consumer has switched to the governed project and the old dbt SQL/project/profiles have no active callers
+- **THEN** only the obsolete dbt artifacts MAY be removed; HL7 Parser/Manifest Intake/Delta Writer, independent regression tests and authoritative Canonical Contracts SHALL remain, dependency pins SHALL retain explicit owners, and local CI MUST NOT be presented as Fabric Silver/OMOP publication.

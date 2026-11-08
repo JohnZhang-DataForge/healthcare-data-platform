@@ -154,7 +154,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 ## HL7 V2 Source-specific Delta/dbt Component（新功能 Owner）
 
-经审核的 Johns Creek OIE V2 Consumer 的 Python Source Parser、Manifest Intake、本地 Delta Writer 和 dbt SQL 模型由 [HL7 CODE](../hl7/CODE.md) **唯一详细维护**；本 Spark CODE 只做跨组件导航，避免维护第二张不同步的源码清单。其结构化 Source Candidate 严格依据本 CODE 上述 `canonical/patient-v1.json` 与 `encounter-v1.json` 合同，后续统一 Shared OMOP/Publisher，未获授权写正式 Fabric Silver。
+经审核的 Johns Creek OIE V2 Consumer 的 Python Source Parser、Manifest Intake、本地 Delta Writer 由 [HL7 CODE](../hl7/CODE.md) 详细维护；**dbt SQL 唯一源码 Owner** 为 [Fabric dbt CODE](../../azure-fabric/dbt/CODE.md)。本 Spark CODE 只做实际留存源码导航，不维护已退役 dbt 文件链接。其结构化 Source Candidate 严格依据本 CODE 上述 `canonical/patient-v1.json` 与 `encounter-v1.json` 合同，后续统一 Shared OMOP/Publisher，未获授权写正式 Fabric Silver。
 
 ### HL7 Spark CODE Gate 按实际源文件建立精确链接
 
@@ -162,11 +162,6 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | Source | Summary |
 | --- | --- |
-| [`dbt_project.yml`](../../../../local-data-platform/spark/apps/hl7/dbt_project.yml) | dbt local Source→Candidate 项目 |
 | [`landing_intake.py`](../../../../local-data-platform/spark/apps/hl7/landing_intake.py) | 不可变 OIE V2 Manifest/Raw SHA/身份 gate |
-| [`models/canonical_encounter.sql`](../../../../local-data-platform/spark/apps/hl7/models/canonical_encounter.sql) | A01+A03 统一 Encounter Candidate |
-| [`models/canonical_patient.sql`](../../../../local-data-platform/spark/apps/hl7/models/canonical_patient.sql) | 统一 Patient Candidate |
-| [`models/sources.yml`](../../../../local-data-platform/spark/apps/hl7/models/sources.yml) | local Delta staging dbt Source |
 | [`parse_oie_v2.py`](../../../../local-data-platform/spark/apps/hl7/parse_oie_v2.py) | 经批准的 hl7apy V2 Parser |
-| [`profiles/local/profiles.yml`](../../../../local-data-platform/spark/apps/hl7/profiles/local/profiles.yml) | local Spark/Delta dbt 配置 |
 | [`write_staging_delta.py`](../../../../local-data-platform/spark/apps/hl7/write_staging_delta.py) | 本地 Delta staging 物理 create/replay |
