@@ -18,7 +18,8 @@ HL7 v2.5.1 A01/A03 Raw + Manifest (Azure immutable Landing)
 
 ## 运行范围与隔离
 - 当前只认实际已审核的 Johns Creek Hospital B OIE V2 `JOHNSCREEKB`、MSH-10、A01/A03 和 CDCREC OMB Code/Display 范围，不臆造医学值。来源 Manifest、所有对象 SHA/大小/医院身份必须完全一致，缺 A03 的 completed Encounter HOLD。
-- `write_staging_delta.py` 仅从**调用方已合法取得的本地 Raw HL7**读取，不做 Azure GET/OIE POST；目标只接受本地 `file:` warehouse URI。已有相同 Delta 数据重跑 SKIP，不同内容 HOLD。
+- `azure_blob_readback.py` 仅在独立获批后对外部固定 Key/SHA 的 Azure Manifest 和对象执行 exact-key HEAD/GET，完整校验后输出私有本地 Raw；不做 Blob LIST/PUT，也不触碰 Fabric。参见 [操作合同](AZURE-GET-READBACK.md)。
+- `write_staging_delta.py` 仅从**调用方已合法取得并核验的本地 Raw HL7**读取，自身不做 Azure GET/OIE POST；只接受本地 `file:` warehouse URI。已有相同 Delta 数据重跑 SKIP，不同内容 HOLD。
 - 运行时按已有 POC 固定 Python 3.11、Java 17、Spark 3.5.5、Delta 3.3.2、hl7apy 1.3.5、dbt-fabricspark 1.13.2；这不代表 Fabric Spark 4.1 兼容性已被确认。
 - `.github/workflows/hl7-local-delta-dbt-offline.yml` 只在 GitHub-hosted Runner 上使用真实 OIE JS Mapper **生成全新合成样例**，然后本地物理 Delta/dbt/Contract readback。不会使用 2026-11-07 P3 Azure 的 42 条已提交数据。
 - 未来真实 Raw GET、共享 Approval/Publisher/Silver 需要对应 OpenSpec 和精确权限审批，不能直接复用本地配置写 Fabric。

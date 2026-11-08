@@ -24,3 +24,7 @@ HL7 **不**转换为 FHIR。Parser 输出结构化记录；历史 `dbt seed` CSV
 
 ## 测试、成本、回滚
 GitHub-hosted workflow 使用冻结源源码 `adt_events_v2.js` 生成新的 synthetic FHIR→HL7，经过严格本地 Manifest/Parser→Delta/_delta_log→dbt run/test→独立 Spark 合同读回，并检验 A01/A03/篡改/重跑冲突。没有云凭据或共享服务访问，不消耗 Fabric Capacity；本地 Spark JVM 开销较 DuckDB 大但其真实物理 Delta 路径已有 POC 实证。CI 通过后记录精确 PR/Run/SHA；任何错误不绕过 Gate，需修复后再合并。清理临时数据仅限 Github-hosted 临时作业；原 Azure P3 不触碰。
+
+## Scoped Azure GET-only intake adapter (runtime separately authorized)
+
+An exact-key GET-only HL7 source reader (under the existing Local HL7 Source Owner) verifies an externally pinned committed Blob Manifest, each object's ETag/Version/metadata/SHA and the existing `landing_intake.verified_seed_rows` clinical/profile Gate before making private local staging visible. It is **not** a second Parser/Mapper, does no Azure List/PUT or OIE POST, and does not call the Delta/Canon/Silver Writer. An authorized caller subsequently passes the files to the existing local Delta/dbt Candidate path; real Azure 42 objects and unified Silver/Gold remain separately gated.
