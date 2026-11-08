@@ -30,6 +30,7 @@ MAX_OBJECT_BYTES = 65536
 CONTENT_HL7 = "application/hl7-v2"
 CONTENT_MANIFEST = "application/json"
 KEY_SUFFIX = "/landing-manifest.json"
+_UNSET = object()
 
 
 def _blocked(code: str):
@@ -72,24 +73,25 @@ def _metadata(sha: str, size: int, request_id: str, source_sha: str,
 
 
 def _snapshot(reader: GetOnly, key: str, *, sha: str, size: int,
-              metadata: dict[str, str], content_type: str,
-              etag: str | None = None, version: str | None = None) -> Snapshot:
+              metadata: dict[str, str] | None, content_type: str,
+              etag: str | None = None, version: object = _UNSET) -> Snapshot:
     try:
         snap = reader.read(key)
     except Exception:
         # Do not disclose Azure SDK exception text, account, SAS, URL or HL7 PHI.
         _blocked("REMOTE_GET_HOLD")
     if (not isinstance(snap.data, bytes)
-            or not 0 < len(snap.data) <= size
-            or len(snap.data) != size or _sha(snap.data) != sha
+            or not 0 < len(snap.data) <= MAX_MANIFEST_BYTES
+            or (size is not None and len(snap.data) != size)
+            or _sha(snap.data) != sha
             or not isinstance(snap.metadata, dict)
             or any(not isinstance(k, str) or not isinstance(v, str)
                    for k, v in snap.metadata.items())
-            or snap.metadata != metadata
+            or (metadata is not None and snap.metadata != metadata)
             or snap.content_type != content_type
             or not isinstance(snap.etag, str) or not snap.etag
             or (etag is not None and snap.etag != etag)
-            or snap.version_id != version):
+            or (version is not _UNSET and snap.version_id != version)):
         _blocked("REMOTE_BYTES_OR_PROVENANCE_HOLD")
     return snap
 
@@ -183,13 +185,8 @@ def stage_exact_readback(reader: GetOnly, *, request_id: str,
     Existing identical local output is replay-skipped without a network request.
     Existing conflicting output always HOLD; no overwrite or delete.
     """
-    if (not isinstance(request_id, str) or not REQUEST.fullmatch(request_id)
-            or manifest_key != f"{ROOT_PREFIX}/{request_id}{KEY_SUFFIX}"
-            or not isinstance(manifest_sha256, str) or not HEX.fullmatch(manifest_sha256)
-            or not isinstance(source_sha256, str) or not HEX.fullmatch(source_sha256)
-            or type(expected_objects) is not int
-            or not 1 <= expected_objects <= MAX_OBJECTS):
-        _blocked("OUT_OF_BAND_SOURCE_PIN_REQUIRED")
+    _validate_pins(request_id, manifest_key, manifest_sha256,
+                   source_sha256, expected_objects)
     root = _safe_output(Path(output_root))
     opts = dict(manifest_sha256=manifest_sha256, source_sha256=source_sha256,
                 request_id=request_id, expected_objects=expected_objects,
@@ -201,11 +198,9 @@ def stage_exact_readback(reader: GetOnly, *, request_id: str,
                 "objects": count, "scope": "LOCAL_SOURCE_CANDIDATE_ONLY"}
     manifest_snapshot = _snapshot(
         reader, manifest_key, sha=manifest_sha256,
-        size=MAX_MANIFEST_BYTES,  # manifest length is independently bounded below
-        metadata={}, content_type=CONTENT_MANIFEST)
-    # Manifest metadata is derived from the verified bytes and source pin;
-    # no prior knowledge of its size is required. Do NOT accept extra metadata.
-    # The strict manifest check is repeated with exact byte size below.
+        size=None, metadata=None, content_type=CONTENT_MANIFEST)
+    # Independently pinned bytes and strict publisher metadata are checked
+    # before any object GET. An exact manifest length is not known beforehand.
     manifest = _manifest(manifest_snapshot.data,
                          manifest_sha256=manifest_sha256,
                          source_sha256=source_sha256,
@@ -255,6 +250,17 @@ def stage_exact_readback(reader: GetOnly, *, request_id: str,
         if temp.exists():
             shutil.rmtree(temp)
 
+
+def _validate_pins(request_id: str, manifest_key: str,
+                   manifest_sha256: str, source_sha256: str,
+                   expected_objects: int) -> None:
+    if (not isinstance(request_id, str) or not REQUEST.fullmatch(request_id)
+            or manifest_key != f"{ROOT_PREFIX}/{request_id}{KEY_SUFFIX}"
+            or not isinstance(manifest_sha256, str) or not HEX.fullmatch(manifest_sha256)
+            or not isinstance(source_sha256, str) or not HEX.fullmatch(source_sha256)
+            or type(expected_objects) is not int
+            or not 1 <= expected_objects <= MAX_OBJECTS):
+        _blocked("OUT_OF_BAND_SOURCE_PIN_REQUIRED")
 
 def _validate_cloud(account_url: str, container: str) -> None:
     url = urlsplit(account_url)
@@ -329,11 +335,11 @@ def main(argv: list[str] | None = None) -> int:
         print("HL7_AZURE_READBACK_NOT_APPROVED", file=sys.stderr)
         return 2
     try:
-        # Validate pins before constructing Azure SDK clients or any network I/O.
-        stage_exact_readback_preflight = (
-            args.request_id, args.manifest_key, args.manifest_sha256,
-            args.source_sha256, args.expected_objects, args.output_root)
-        _ = stage_exact_readback_preflight
+        # Validate out-of-band source scope and local target BEFORE SDK creation.
+        _validate_pins(args.request_id, args.manifest_key,
+                       args.manifest_sha256, args.source_sha256,
+                       args.expected_objects)
+        _safe_output(args.output_root)
         reader = AzureGetOnly.from_env(os.environ)
         result = stage_exact_readback(
             reader, request_id=args.request_id, manifest_key=args.manifest_key,
