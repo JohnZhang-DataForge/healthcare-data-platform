@@ -87,19 +87,56 @@ def main() -> None:
         sys.path.insert(0, str(ROOT/"azure-fabric/notebook-development"))
         import fhir_ingest_notebook as native
 
+        from candidate_transport import prepare_hl7_candidate_transport
         patient_contract = load_pinned_contract(p_contract, "patient")
         encounter_contract = load_pinned_contract(e_contract, "encounter")
-        accepted_p = tuple(result.patient.accepted)
-        accepted_e = tuple(result.encounter.accepted)
-        prepared = native.PreparedBatch(
-            patient_df=accepted_dataframe(spark, accepted_p, patient_contract),
-            encounter_df=accepted_dataframe(spark, accepted_e, encounter_contract),
-            patient_count=len(accepted_p), encounter_count=len(accepted_e),
-            findings=(),
-            source_batch_id=context.source_batch_id,
-            processing_version=context.processing_version,
-            publication_id=native._content_publication_id(context, accepted_p, accepted_e),
-            manifest_sha256=context.manifest_sha256, source_receipts=())
+        # Cross-runtime source → transport bytes → native Notebook verifier.
+        # This is an in-memory synthetic test; no live Blob upload or Fabric read.
+        bundle = prepare_hl7_candidate_transport(
+            result, context=context, patient_contract_bytes=p_contract,
+            encounter_contract_bytes=e_contract)
+        manifest_pin = hashlib.sha256(bundle["candidate_manifest.json"]).hexdigest()
+        common = dict(
+            spark=spark, bundle=bundle, bundle_manifest_sha256=manifest_pin,
+            context=context, patient_contract_bytes=p_contract,
+            encounter_contract_bytes=e_contract,
+            source_evidence_verified=True)
+        prepared = native.prepare_hl7_candidate_bundle_for_silver(**common)
+        if (prepared.patient_count != 1 or prepared.encounter_count != 1
+                or prepared.publication_id is None):
+            raise RuntimeError("HL7_CANDIDATE_BUNDLE_ADMISSION_HOLD")
+
+        # Fail closed before the physical Writer: no independent Manifest SHA,
+        # incomplete source proof, corrupt bytes, wrong source Batch/processing.
+        import json
+        from dataclasses import replace as dc_replace
+        from copy import deepcopy
+        def must_hold(params, marker):
+            try:
+                native.prepare_hl7_candidate_bundle_for_silver(**params)
+            except ValueError as exc:
+                if "HOLD_HL7_BUNDLE" not in str(exc):
+                    raise
+            else:
+                raise RuntimeError("HL7_CANDIDATE_TRANSFER_UNEXPECTED_ACCEPT:" + marker)
+        must_hold({**common, "source_evidence_verified": False}, "UNVERIFIED_SOURCE")
+        must_hold({**common, "bundle_manifest_sha256": "f"*64}, "MANIFEST_PIN_DRIFT")
+        tampered = dict(bundle)
+        tampered["canonical_patient.json"] += b" "
+        must_hold({**common, "bundle": tampered}, "PATIENT_SHA_DRIFT")
+        other = dc_replace(context, request_id="johnscreek-hl7-gh-99999999999")
+        must_hold({**common, "context": other}, "FOREIGN_REQUEST")
+        other = dc_replace(context, processing_version="unreviewed-mapping")
+        must_hold({**common, "context": other}, "FOREIGN_PROCESSING")
+        altered = dict(bundle)
+        manifest_dict = json.loads(bundle["candidate_manifest.json"])
+        manifest_dict["entities"]["patient"]["rows"] += 1
+        altered["candidate_manifest.json"] = json.dumps(
+            manifest_dict, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+        must_hold({**common, "bundle": altered,
+                   "bundle_manifest_sha256": hashlib.sha256(
+                       altered["candidate_manifest.json"]).hexdigest()}, "ROW_COUNT_DRIFT")
+        print("HL7_CANDIDATE_TRANSPORT_PIN_DQ_NEGATIVE=PASS")
         prefix = (
             os.environ["HL7_LOCAL_WAREHOUSE_URI"].rstrip("/")
             + "/ephemeral-silver-publication-test/"
