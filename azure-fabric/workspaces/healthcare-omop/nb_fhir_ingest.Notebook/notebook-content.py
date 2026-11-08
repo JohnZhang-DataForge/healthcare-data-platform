@@ -1270,16 +1270,16 @@ def _hl7_verified_original_raw(spark, context: BatchContext) -> dict:
 
 
 def _hl7_reopened_dq(patient_delta, encounter_delta,
-                     expected: PreparedBatch, context: BatchContext) -> None:
+                     expected: PreparedBatch, context: BatchContext,
+                     patient_contract_bytes: bytes,
+                     encounter_contract_bytes: bytes) -> None:
     """Source-neutral physical readback: pinned Shared v1 Contract + PK/FK."""
     from datetime import datetime, timezone
     from healthcare_data_engine.canonical.validation import validate_row
     from healthcare_data_engine.quality.result import TransformResult
     contracts = {
-        "patient": load_pinned_contract(
-            _HL7_CANONICAL_CONTRACTS["patient"], "patient"),
-        "encounter": load_pinned_contract(
-            _HL7_CANONICAL_CONTRACTS["encounter"], "encounter"),
+        "patient": load_pinned_contract(patient_contract_bytes, "patient"),
+        "encounter": load_pinned_contract(encounter_contract_bytes, "encounter"),
     }
     records = {}
     for entity, frame in (("patient", patient_delta),
@@ -1307,8 +1307,6 @@ def _hl7_reopened_dq(patient_delta, encounter_delta,
     _g4_validate_full_delta(expected.patient_df, patient_delta, "patient")
     _g4_validate_full_delta(expected.encounter_df, encounter_delta, "encounter")
 
-
-_HL7_CANONICAL_CONTRACTS = {}
 
 
 def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
@@ -1368,8 +1366,8 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
                     raw_provenance[key] != (
                         row["source_file_sha256"], row["source_file_size_bytes"])):
                 raise ValueError("HOLD_HL7_CANDIDATE_RAW_ORIGIN_DRIFT")
-    _HL7_CANONICAL_CONTRACTS.clear()
-    _HL7_CANONICAL_CONTRACTS.update(patient=pb, encounter=eb)
+    def validate_reopened(p, e, batch, scope):
+        _hl7_reopened_dq(p, e, batch, scope, pb, eb)
     try:
         exists = {k: _g3_delta_exists(spark, path)
                   for k, path in paths.items()}
@@ -1385,7 +1383,7 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
         try:
             p = spark.read.format("delta").load(paths["patient"])
             e = spark.read.format("delta").load(paths["encounter"])
-            _hl7_reopened_dq(p, e, prepared, context)
+            validate_reopened(p, e, prepared, context)
             expected = _canonical_silver_approval_row(
                 prepared, pb, eb,
                 source_preservation_strategy="VERIFIED_HL7_CANDIDATE_V1")
@@ -1410,7 +1408,7 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
             spark, context=context, batch=prepared, paths=paths,
             patient_contract_bytes=pb, encounter_contract_bytes=eb,
             source_preservation_strategy="VERIFIED_HL7_CANDIDATE_V1",
-            validate_persisted_canonical=_hl7_reopened_dq)
+            validate_persisted_canonical=validate_reopened)
     except Exception:
         return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
                                context.processing_version, None, metrics,
@@ -2596,6 +2594,27 @@ if __name__ == "__main__":
                 f"E{g4.metrics['encounter']}_"
                 f"Q{g4.metrics['quarantine_or_reject']}_DELTA_PASS_20261102")
         raise RuntimeError("HOLD_FHIR_G4_" + g4.status)
+    elif run_mode in ("HL7_SILVER_WRITE", "HL7_SILVER_READBACK_ONLY"):
+        hl7 = verify_hl7_real_silver(
+            spark, request=request_id, manifest_sha=manifest_sha256,
+            mode=run_mode, allow_write=write_authorized,
+            retention_ok=retention_preflight_verified,
+            strategy=source_preservation_strategy,
+            manifest_override=manifest_json, source_override=source_root,
+            target_override=silver_root, patient_contract_json=patient_contract_json,
+            encounter_contract_json=encounter_contract_json)
+        print("HL7_SILVER_STATUS=" + hl7.status)
+        print("HL7_SILVER_SOURCE_BATCH=" + hl7.source_batch_id)
+        print("HL7_SILVER_PUBLICATION=" + str(hl7.publication_id))
+        print("HL7_SILVER_PATIENTS=" + str(hl7.metrics["patient"]))
+        print("HL7_SILVER_ENCOUNTERS=" + str(hl7.metrics["encounter"]))
+        print("HL7_SILVER_QUARANTINE=" + str(hl7.metrics["quarantine_or_reject"]))
+        if hl7.status in ("SILVER_APPROVED", "SILVER_SKIP_VERIFIED"):
+            notebookutils.notebook.exit(
+                f"HL7_{hl7.status}_P{hl7.metrics['patient']}_"
+                f"E{hl7.metrics['encounter']}_"
+                f"Q{hl7.metrics['quarantine_or_reject']}_DELTA_PASS_20261108")
+        raise RuntimeError("HOLD_HL7_SILVER_" + hl7.status)
     elif run_mode == "G5_CANDIDATE_SOURCE_READONLY":
         g5_exit = verify_fhir_g5_candidate_source_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,
