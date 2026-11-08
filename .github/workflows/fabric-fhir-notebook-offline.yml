@@ -43,7 +43,8 @@ jobs:
           echo "$HISTORICAL_SHA  $HISTORICAL" | sha256sum --check
           test "$(find "$LIBS" -maxdepth 1 -name '*.whl' -type f | wc -l)" = 1
           echo "$CURRENT_SHA  $CURRENT" | sha256sum --check
-          grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
+          # Current Shared Engine main has advanced beyond GA 0.1.7; the
+          # effective native Wheel is SHA-pinned above, not built from HEAD.
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --no-deps --force-reinstall "$CURRENT"
           "$RUNNER_TEMP/fabric-offline/bin/python" - <<'PY'
           import healthcare_data_engine as engine
@@ -123,7 +124,13 @@ jobs:
         run: |
           set -Eeuo pipefail
           grep -qx 'version = "0.1.7"' shared-data-engine/pyproject.toml
-          grep -qx '__version__ = "0.1.7"' shared-data-engine/src/healthcare_data_engine/__init__.py
+          # Rebuild immutable 0.1.7 sources instead of incorrectly requiring
+          # the latest 0.1.10 source to pretend it is the published 0.1.7.
+          HISTORICAL_SOURCE_SHA='3e1a036e309e72d8c9c79e5923333987c1c9eef7'
+          mkdir -p "$RUNNER_TEMP/fabric-engine-017"
+          git archive "$HISTORICAL_SOURCE_SHA" shared-data-engine | tar -x -C "$RUNNER_TEMP/fabric-engine-017"
+          grep -qx 'version = "0.1.7"' "$RUNNER_TEMP/fabric-engine-017/shared-data-engine/pyproject.toml"
+          grep -qx '__version__ = "0.1.7"' "$RUNNER_TEMP/fabric-engine-017/shared-data-engine/src/healthcare_data_engine/__init__.py"
           LIBS='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
           GA="$RUNNER_TEMP/healthcare_data_engine-0.1.6-py3-none-any.whl"
           GA_SHA='473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff'
@@ -133,8 +140,8 @@ jobs:
           test "$(find "$LIBS" -maxdepth 1 -name '*.whl' | wc -l)" = 1
           python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1' 'pyspark==4.1.1'
           mkdir -p "$RUNNER_TEMP/g5-wheel-017" "$RUNNER_TEMP/g5-wheel-017-repeat"
-          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-017" ./shared-data-engine
-          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-017-repeat" ./shared-data-engine
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-017" "$RUNNER_TEMP/fabric-engine-017/shared-data-engine"
+          python -m pip wheel --no-deps --no-build-isolation --wheel-dir "$RUNNER_TEMP/g5-wheel-017-repeat" "$RUNNER_TEMP/fabric-engine-017/shared-data-engine"
           WHEEL=healthcare_data_engine-0.1.7-py3-none-any.whl
           test "$(find "$RUNNER_TEMP/g5-wheel-017" -name '*.whl' | wc -l)" = 1
           cmp "$RUNNER_TEMP/g5-wheel-017/$WHEEL" "$RUNNER_TEMP/g5-wheel-017-repeat/$WHEEL"
@@ -200,7 +207,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           cd "$RUNNER_TEMP"
-          PYTHONPATH= python -m unittest discover -s "$GITHUB_WORKSPACE/shared-data-engine/tests" -p 'test_omop_candidates.py' -v
+          PYTHONPATH= python -m unittest discover -s "$RUNNER_TEMP/fabric-engine-017/shared-data-engine/tests" -p 'test_omop_candidates.py' -v
           echo 'G5_017_INSTALLED_SOURCE_MAPPER_OFFLINE_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
           echo 'No Fabric Git Update, Environment Publish, Notebook dispatch or Gold data writes.' >> "$GITHUB_STEP_SUMMARY"
       - name: Archive independently built 0.1.7 GA matching Wheel
