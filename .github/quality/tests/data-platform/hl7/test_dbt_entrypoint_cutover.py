@@ -26,7 +26,9 @@ class GovernedHL7DbtConsumer(unittest.TestCase):
         self.assertIn('CANDIDATE = "hl7_candidate"', (
             ROOT / ".github/quality/tests/data-platform/hl7/check_new_dbt_candidate.py"
         ).read_text())
-        self.assertTrue((LEGACY / "dbt_project.yml").is_file())  # frozen reference only
+        self.assertFalse((LEGACY / "dbt_project.yml").exists())  # retired from live tree
+        self.assertFalse((LEGACY / "models").exists())
+        self.assertFalse((LEGACY / "profiles").exists())
 
     def test_all_active_hl7_dbt_workflows_use_new_project(self):
         for name in WORKFLOWS:
@@ -45,11 +47,23 @@ class GovernedHL7DbtConsumer(unittest.TestCase):
         old_workflow = (ROOT / WORKFLOWS[0]).read_text()
         self.assertIn('local-data-platform/spark/apps/hl7/write_staging_delta.py',
                       old_workflow)
-        self.assertIn('local-data-platform/spark/apps/hl7/requirements-local.txt',
+        self.assertIn('azure-fabric/dbt/hl7-canonical/requirements-local.txt',
                       old_workflow)
         self.assertIn("check_local_candidate.py", old_workflow)
         for name in ("parse_oie_v2.py", "landing_intake.py", "write_staging_delta.py"):
             self.assertTrue((LEGACY / name).is_file())
+
+    def test_requirements_are_split_without_duplication(self):
+        local_pins = (LEGACY / "requirements-local.txt").read_text()
+        governed = (PROJECT / "requirements-local.txt").read_text()
+        self.assertIn("hl7apy==1.3.5", local_pins)
+        self.assertIn("pyspark==3.5.5", local_pins)
+        self.assertIn("delta-spark==3.3.2", local_pins)
+        self.assertNotIn("dbt-fabricspark", local_pins)
+        self.assertIn(
+            "-r ../../../local-data-platform/spark/apps/hl7/requirements-local.txt",
+            governed)
+        self.assertIn("dbt-fabricspark[spark]==1.13.2", governed)
 
     def test_patient_encounter_contracts_not_copied(self):
         for entity, count in (("patient", 18), ("encounter", 27)):

@@ -1,4 +1,3 @@
 hl7apy==1.3.5
-dbt-fabricspark[spark]==1.13.2
 pyspark==3.5.5
 delta-spark==3.3.2
