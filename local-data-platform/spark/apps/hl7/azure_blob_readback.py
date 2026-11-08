@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from datetime import date, datetime
 import hashlib
 import os
 from pathlib import Path, PurePosixPath
@@ -20,7 +21,7 @@ from typing import Mapping, Protocol
 from urllib.parse import urlsplit
 
 from landing_intake import (
-    FEED, HOSPITAL, HEX, REQUEST, ROOT_PREFIX, _manifest,
+    FEED, HOSPITAL, HEX, REQUEST, ROOT_PREFIX, RUN, _manifest,
     verified_seed_rows,
 )
 
@@ -140,8 +141,12 @@ def _safe_output(root: Path) -> Path:
         _blocked("OUTPUT_PATH_HOLD")
     if not root.parent.is_dir() or root.parent.is_symlink():
         _blocked("OUTPUT_PARENT_HOLD")
-    if root.exists() and not root.is_dir() or root.is_symlink():
+    if (root.exists() and not root.is_dir()) or root.is_symlink():
         _blocked("OUTPUT_UNSAFE_HOLD")
+    # Sources may contain identifiable clinical data. The parent must be private,
+    # not e.g. a shared /tmp or a world-readable repository checkout.
+    if root.parent.stat().st_mode & 0o077:
+        _blocked("OUTPUT_PARENT_NOT_PRIVATE_HOLD")
     if any(part.is_symlink() for part in (root.parent, *root.parent.parents)):
         _blocked("OUTPUT_PARENT_SYMLINK_HOLD")
     return root
@@ -187,6 +192,7 @@ def stage_exact_readback(reader: GetOnly, *, request_id: str,
     """
     _validate_pins(request_id, manifest_key, manifest_sha256,
                    source_sha256, expected_objects)
+    _validate_processing(ingest_date, processing_run_id, processed_at)
     root = _safe_output(Path(output_root))
     opts = dict(manifest_sha256=manifest_sha256, source_sha256=source_sha256,
                 request_id=request_id, expected_objects=expected_objects,
@@ -261,6 +267,21 @@ def _validate_pins(request_id: str, manifest_key: str,
             or type(expected_objects) is not int
             or not 1 <= expected_objects <= MAX_OBJECTS):
         _blocked("OUT_OF_BAND_SOURCE_PIN_REQUIRED")
+
+def _validate_processing(ingest_date: str, processing_run_id: str,
+                         processed_at: str) -> None:
+    try:
+        if (not isinstance(ingest_date, str)
+                or date.fromisoformat(ingest_date).isoformat() != ingest_date
+                or not isinstance(processing_run_id, str)
+                or not RUN.fullmatch(processing_run_id)
+                or not isinstance(processed_at, str)
+                or datetime.strptime(processed_at, "%Y-%m-%d %H:%M:%S").strftime(
+                    "%Y-%m-%d %H:%M:%S") != processed_at):
+            _blocked("PROCESSING_METADATA_HOLD")
+    except (ValueError, TypeError):
+        _blocked("PROCESSING_METADATA_HOLD")
+
 
 def _validate_cloud(account_url: str, container: str) -> None:
     url = urlsplit(account_url)
@@ -339,6 +360,8 @@ def main(argv: list[str] | None = None) -> int:
         _validate_pins(args.request_id, args.manifest_key,
                        args.manifest_sha256, args.source_sha256,
                        args.expected_objects)
+        _validate_processing(args.ingest_date, args.processing_run_id,
+                             args.processed_at)
         _safe_output(args.output_root)
         reader = AzureGetOnly.from_env(os.environ)
         result = stage_exact_readback(

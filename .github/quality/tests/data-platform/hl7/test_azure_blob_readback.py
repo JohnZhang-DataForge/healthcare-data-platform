@@ -180,6 +180,19 @@ class ScopedAzureReadbackTests(unittest.TestCase):
         self.assert_hold("OUTPUT_PARENT_HOLD")
         self.assertFalse(self.reader.calls)
 
+    def test_processing_metadata_rejected_before_any_remote_get(self):
+        self.args["processed_at"] = "not-a-timestamp"
+        self.assert_hold("PROCESSING_METADATA_HOLD")
+        self.assertFalse(self.reader.calls)
+
+    def test_public_writable_staging_parent_rejected_before_get(self):
+        public = self.work / "world-readable"
+        public.mkdir(mode=0o755)
+        public.chmod(0o755)
+        self.args["output_root"] = public / "staged"
+        self.assert_hold("OUTPUT_PARENT_NOT_PRIVATE_HOLD")
+        self.assertFalse(self.reader.calls)
+
     def test_cloud_account_allowlist_rejects_sas_and_unsafe_hosts(self):
         _validate_cloud("https://trusted123.blob.core.windows.net", "landing-test")
         for account in (
