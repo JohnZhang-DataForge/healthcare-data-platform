@@ -6,10 +6,10 @@
 - [x] 1.3 更新 Agent 强制入口、开发规则、Fabric 导航和独立 dbt 组件规范文档，明确“目标路径尚未创建”。
 - [x] 1.4 文档治理 [PR #811](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/811) 合并到 Main `16bf09baff3ae150a8ba551d9f13aaf6bddde502`；四项受保护 Required Checks 全部 SUCCESS（[Change](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42426843811)、[Component paths](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42426843544)、[Fabric deployment](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42426843615)、[OpenSpec validate](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42426843584)），文档链接检查亦通过。外部 Cloudflare Workers Build 失败不属于四项 Required Gates，本次 PR 未改 Portal 或部署代码。
 
-- [x] 1.5 将现有 HL7 文件逐项标记“业务保留 / 冻结参考且待退役 / 混合依赖需复核 / 回归测试需改接”，同步新 dbt 项目规则及开发策略；仅文档更新，不删除或搬动源码（验收：本治理 PR 的受保护检查与 Main 合并证据另行核实）。
+- [x] 1.5 将现有 HL7 文件逐项标记“业务保留 / 冻结参考且待退役 / 混合依赖需复核 / 回归测试需改接”，同步新 dbt 项目规则及开发策略；仅文档更新，不删除或搬动源码（已由 [PR #813](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/813) 合并 Main `de7e904ba9efd28cc8484fdc2097f44be1bfb546`；受保护四项 Required Gates 与 OpenSpec/文档链接检查 PASS）。
 
 ## P2 — 受保护门禁前置（独立治理 PR）
-- [ ] 2.1 只为已审 dbt 原生 SQL `tests/` / `.gitkeep` 设计可信 Layout Gate 精确例外；在安全维护窗口更新 checker 并验证正反用例与真实 Required Check，不放宽一般自动化测试目录禁令。
+- [ ] 2.1 只为已审 dbt 原生 SQL `tests/` / `.gitkeep` 设计可信 Layout Gate 精确例外（独立 [permit-dbt-native-sql-test-layout](../permit-dbt-native-sql-test-layout/tasks.md)）；在安全维护窗口更新 checker 并验证正反用例与真实 Required Check，不放宽一般自动化测试目录禁令。
 
 ## P3 — 标准工程真正实施（独立源码 PR）
 - [ ] 3.1 门禁例外完成后，在 `azure-fabric/dbt/hl7-canonical/` 创建**完整标准骨架**，直接按 dbt 分层开发；旧 SQL/config/profile **冻结供参考而非先迁移**。新工程在验收/切换前仅为 Candidate，不能形成第二个正式生产入口。

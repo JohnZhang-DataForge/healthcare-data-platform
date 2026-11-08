@@ -1,0 +1,22 @@
+name: Repository Layout Policy Candidate Tests
+on:
+  pull_request:
+    paths:
+      - ".github/quality/scripts/check_repository_layout.py"
+      - ".github/quality/tests/test_repository_layout.py"
+      - ".github/workflows/repository-layout-policy-unit.yml"
+permissions:
+  contents: read
+jobs:
+  candidate-policy-positive-negative:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run source policy unit tests (PR head only, no secrets)
+        run: python3 -m unittest discover -s .github/quality/tests -p 'test_repository_layout.py' -v

@@ -39,6 +39,20 @@ def is_valid_path(path: str) -> bool:
     )
 
 
+# The only approved source-local dbt singular tests path. No broad source
+# 'tests/' exemption: Python/integration tests still belong to .github/quality.
+DBT_NATIVE_TEST_ROOT = "azure-fabric/dbt/hl7-canonical/tests/"
+DBT_SINGULAR_SQL_RE = re.compile(r"(?:[a-z][a-z0-9_-]*/)*[a-z][a-z0-9_-]*\.sql$")
+
+
+def approved_dbt_native_test(path: str) -> bool:
+    """Exact reviewed dbt project: SQL singular tests or root .gitkeep only."""
+    if not is_valid_path(path) or not path.startswith(DBT_NATIVE_TEST_ROOT):
+        return False
+    relative = path[len(DBT_NATIVE_TEST_ROOT):]
+    return relative == ".gitkeep" or bool(DBT_SINGULAR_SQL_RE.fullmatch(relative))
+
+
 def legacy_violation(path: str) -> bool:
     """Classify only old source-area docs and tests; no wildcard exemptions."""
     if not is_valid_path(path):
@@ -93,7 +107,7 @@ def check_layout(base_paths: set[str], head_paths: set[str], changed: set[str], 
                 errors.add(violation(path, "fabric-native-unapproved-item", "existing root-level Fabric Git Item; Warehouse SQL/Writer: azure-fabric/warehouse/"))
             elif path not in base_paths and NATIVE_OWNERS[item] not in changed:
                 errors.add(violation(path, "fabric-code-map-sync", NATIVE_OWNERS[item]))
-        if legacy_violation(path):
+        if legacy_violation(path) and not approved_dbt_native_test(path):
             if path not in baseline or path not in base_paths:
                 expected = ".github/quality/tests/" if any(part.lower() in ("test", "tests") or part.lower().endswith("_tests") for part in parts[1:-1]) or TEST_NAME.fullmatch(parts[-1]) else "documents/"
                 rule = "new-test-outside-quality" if expected.startswith(".github") else "new-source-document"
