@@ -42,6 +42,12 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`canonical_gate.py`](../../../../local-data-platform/spark/common/canonical_gate.py) | Canonical Schema/Metadata/Unique Key 共用 Gate |
 | [`omop.py`](../../../../local-data-platform/spark/common/omop.py) | OMOP 人口学 Concept 和 Schema/Person 辅助校验 |
 
+## HL7 source-specific shared Canonical DQ handoff (Candidate only)
+
+| 源文件（直接链接） | 职责 / 使用边界 |
+| --- | --- |
+| [`silver_handoff.py`](../../../../local-data-platform/spark/apps/hl7/silver_handoff.py) | **P2.3** 对已验证的 HL7 dbt Candidate 进行纯内存 Source Identity Bridge + Shared Canonical v1 Contract/PK-FK DQ。只返回 Candidate-only PASS/HOLD，不写 Silver、OMOP 或新 Processing 存储；具体用户文档在 [HL7 CODE](../hl7/CODE.md) |
+
 ## Cross-runtime compatibility smoke (test-only)
 
 | 源文件（直接链接） | 职责 / 使用边界 |
