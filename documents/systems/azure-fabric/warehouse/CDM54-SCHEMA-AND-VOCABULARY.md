@@ -55,4 +55,10 @@ Run #42219030641 Artifact `report.json` 原始 SHA256 `d822605d00fb7e741b3d7ab7c
 
 每个条目保留原始 NULL/空值；人工将其分类为「确实允许空的内部分类」或「缺少外部来源版本证据」，并记录真实 Athena release、来源许可证和 reviewer 决策的可验证来源。不允许批量填同一个日期或伪造 Vocabulary Version。临床 `gender/race/ethnicity/visit class/source_code` 需独立核查标准 Concept/Domain/有效性与来源规则；既有证据显示部分 Ethnicity 的词法命中属于 Measurement Domain，不能作为正式 `ethnicity_concept_id`。`UNK`、`virtual`、`home` 在批准真实 Profile 前继续 HOLD。
 
-**验收定义：** 本节为 `SOURCE_ONLY / REVIEW DESIGN`；现有 16 项离线审计负向测试及真实 SELECT 只读证据照旧成立，但九条 Audit 行的数据库持久化、正式 Athena Release 授权、CPT4 许可、临床 Reviewer Signoff、G5 Candidate Delta 和 F2 Gold 均为 **NOT_DONE**。
+### F1 Governance Closure 第一轮：实际审核工作清单已落地（SOURCE_ONLY）
+
+在已有 F1 1.4 设计和真实文件/SQL 历史审计基础上，统一复用 Self-Runner [PR #591](https://github.com/JohnZhang-DataForge/Self-Runner/pull/591) `fabric_p1_release_provenance_preflight.py` 的纯函数 `inspect_f1_governance_worklist`，不是第二套 Manifest、不重新导入九表。真实 [离线 CI #42440786876](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42440786876) **SUCCESS**，Artifact `fabric-f1-governance-review-42440786876` 是由已归档实机 SQL #42219030641、`VOCABULARY.csv` 文件对账 #42322067991 和近期九源 Blob HEAD #42313042119 生成的**历史证据离线审核清单，不是新一轮 SQL SELECT/Blob GET**。报告 `F1_GOVERNANCE_REVIEW_ONLY_HOLD`：源版本空字段 28/47、缺失 SQL Audit 记录 9/9，`vocabulary_release_key`、License、临床签审仍缺；`sql_write_authorized=false`、`license_approved=false`、`clinical_mapping_approved=false`。
+
+28 个原始空 Version 中，**仅作工作路由而非法律结论**：`Korean Revenue Code` 与四个 `UB04` 词表优先进行外部来源版本/使用权限核实，其余 23 个列入“可能为内部/Type 分类”的合法空值审核队列，**不能自动判定合法**。`CPT4` 自带 `2025 Release` 元数据也不等于取得使用/分发许可。报告明确将最近**一份完整 `VOCABULARY.csv` SHA 重验**和其余八份最近 HEAD 长度/ETag 观察分开；这不否认历史九文件加载时的 SHA 验收，但不能冒充本轮重新下载了九份完整内容。下一阶段仍需真实同一 Athena Release/下载证据、正式 License 与 Reviewer 审签、精确受控九行审计补写与独立 SQL 读回。 **该审核清单只反映归档报告的历史观测时点；在受控物理 SQL 重新核验前，不得将 0/9 的历史计数当作永远不变的实时状态。**
+
+**验收定义：** 本节为 `SOURCE_ONLY / REVIEW WORKLIST IMPLEMENTED`；现有 16 项离线审计负向测试及真实 SELECT 只读证据照旧成立，但九条 Audit 行的数据库持久化、正式 Athena Release 授权、CPT4 许可、临床 Reviewer Signoff、G5 Candidate Delta 和 F2 Gold 均为 **NOT_DONE**。
