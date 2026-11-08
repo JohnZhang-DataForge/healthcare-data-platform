@@ -129,6 +129,8 @@ jobs:
           HISTORICAL_SOURCE_SHA='3e1a036e309e72d8c9c79e5923333987c1c9eef7'
           mkdir -p "$RUNNER_TEMP/fabric-engine-017"
           git archive "$HISTORICAL_SOURCE_SHA" shared-data-engine | tar -x -C "$RUNNER_TEMP/fabric-engine-017"
+          # Historical Mapper tests also import the unchanged canonical v1 contracts.
+          git archive "$HISTORICAL_SOURCE_SHA" local-data-platform/spark/contracts/canonical | tar -x -C "$RUNNER_TEMP/fabric-engine-017"
           grep -qx 'version = "0.1.7"' "$RUNNER_TEMP/fabric-engine-017/shared-data-engine/pyproject.toml"
           grep -qx '__version__ = "0.1.7"' "$RUNNER_TEMP/fabric-engine-017/shared-data-engine/src/healthcare_data_engine/__init__.py"
           LIBS='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
