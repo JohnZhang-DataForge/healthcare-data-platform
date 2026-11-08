@@ -8,9 +8,9 @@
 - [x] 1.5 CI 实际 Local Delta/_delta_log、Replay、dbt compile/run/test、独立 Patient 18/Encounter 27 Contract readback 均通过，正式 Healthcare [PR #809](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/809) 已合并 Main `1b0ee1df4baeec986c419e2ee5f36abaf7613782`，四项 Ruleset Required Checks 均 SUCCESS；源码仅为 local Delta + dbt Candidate，不等于真实 Azure HL7 消费或 Silver/Gold。
 
 ## P2 — 真实来源和共享业务链路（单独资源授权）
-- [ ] 2.1 对 Azure 已发布 42 条 Raw HL7 做 GET-only 最小权限计划与 Batch/资源冲突核查；不重跑历史 P2/P3、不产生 OIE POST。**真实 42 个对象 GET 和资源/授权预检仍 OPEN。**
+- [x] 2.1 已批准且完成精准 Batch/权限/并行运行核查；现有 Publisher 身份在只读代码操作下，真实 Azure Blob 42 对象及 Manifest GET/HEAD 成功，独立来源/授权验证 PASS。验收 Run #42488836550（2026-11-08 ET）。不重复 OIE POST，未改变原始 Blob。
 - [x] 2.4 实施 bounded exact-key Azure GET-only Reader，复用现有 Intake/Parser，负向测试验证后提交 PR/CI；本项仅 Source/Hosted synthetic Test，不执行远端。
-- [ ] 2.2 使用原 42 条真实 HL7 文件和权威 Manifest 进入本 Consumer 的真实 Source/Delta Candidate 验收。
+- [x] 2.2 原 42 条真实 HL7 + 固定 Azure Landing/Source Manifest SHA 实际读回；临床来源 42 行、local Delta+Replay SKIP、dbt 5 Models+Data Tests、Patient 18/Encounter 27 字段合同及独立物理 Delta 读回全部 PASS。真实 Run #42488836550。输出为 GitHub-hosted 临时数据，已清理；不等于正式 Silver/OMOP。
 - [ ] 2.3 接入现有统一 Silver DQ/quarantine/Approval/Single Writer，后续与 FHIR 在已批准 Canonical 汇合；真实 Silver/OMOP 写入需要明确审批与独占窗口。
 
 ## 2026-11-07 ET — Actual offline physical Local Delta/dbt acceptance (PR #809)
@@ -53,3 +53,11 @@
 - [ ] Replace the unconfigured Reader-only one-shot workflow gate with explicit existing Publisher app/tenant/token identity verification **and read-method-only consumer use**. Publisher RBAC grants write capability; review exact code and secrets scope, never call blob PUT/POST/LIST/DELETE, OIE, Silver or Gold. Keep one-shot Main marker and immutable source pins.
 - [ ] Prove no-cloud controller tests and complete relevant GitHub PR/CI before attempting one real-source Azure GET run; verify actual Main-context credential **presence without displaying values**, and audit concurrent runtime workloads.
 - [ ] Execute one approved exact 42-object GET → local temporary Delta/dbt Candidate → independent 18/27 readback, record real Run conclusion. Do not mark P2.1/P2.2 DONE from offline CI. P2.3 remains OPEN.
+
+## 2026-11-08 ET — P2.1/P2.2 real-source completed, P2.3 OPEN
+
+- Main-only exact new one-shot marker (original #612 was **SKIPPED**, NO Azure GET; subsequent trigger fix #614 and replacement first-add marker #615). Historical skip [Run #42488454417](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42488454417) must not be mistaken for P2.2.
+- Actual **[Self-Runner Run #42488836550](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42488836550)**, live Job `128756560286`, exact Main SHA `c35554cfbafa071fbede7c6b82191158939da7fc`: one-shot first-add/parent/source pins `PASS`, existing Publisher Storage OAuth `PASS`, read-capable Publisher RBAC clearly **not Reader-only**.
+- Real immutable original 42 Azure HL7 objects + exact Manifest GET `HL7_P2_REAL_AZURE_EXACT42_GET_MANIFEST_AND_BYTES=PASS`; real 42 verified clinical rows `HL7_P2_REAL_42_STRICT_CLINICAL_SOURCE_ROWS=PASS`.
+- Local physical Delta stage + same-source Replay `PASS`; dbt 5 Models/Tests `PASS`; independent Candidate Patient 18 and Encounter 27 contract/source/physical Delta readback `PASS`. No Blob LIST/PUT/POST/DELETE, no OIE POST, no Fabric Silver/Gold writes, no new persistent Processing/Cache/Ledger. Ephemeral raw and Candidate cleanup marker `YES`.
+- **P2.1 and P2.2 DONE.** **P2.3 OPEN**, shared canonical DQ/quarantine/Approval/Single Silver Writer and OMOP require separate scoped development/runtime authorization and coordination with Fabric owners. Do not re-GET/re-POST the 42 batch to demonstrate completion.
