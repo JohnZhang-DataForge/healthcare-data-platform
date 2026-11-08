@@ -63,6 +63,34 @@ class LayoutGateTests(unittest.TestCase):
         result = layout.check_layout(self.old - {p}, self.old, {p}, self.baseline)
         self.assert_rule(result, "new-source-document", p, "documents/")
 
+    def test_approved_hl7_dbt_sql_and_empty_skeleton_pass(self):
+        for path in (
+            "azure-fabric/dbt/hl7-canonical/tests/.gitkeep",
+            "azure-fabric/dbt/hl7-canonical/tests/assert_patient_unique.sql",
+            "azure-fabric/dbt/hl7-canonical/tests/quality/assert_encounter_key.sql",
+        ):
+            with self.subTest(path=path):
+                self.assertEqual([], self.check(additions=[path]))
+
+    def test_other_dbt_projects_and_non_sql_tests_remain_blocked(self):
+        forbidden = (
+            "azure-fabric/dbt/fhir-canonical/tests/.gitkeep",
+            "azure-fabric/dbt/hl7-canonical/tests/test_helper.py",
+            "azure-fabric/dbt/hl7-canonical/tests/assert_patient.yml",
+            "azure-fabric/dbt/hl7-canonical/tests/README.md",
+            "azure-fabric/dbt/hl7-canonical/tests/quality/.gitkeep",
+            "azure-fabric/dbt/hl7-canonical/integration_tests/assert_patient.sql",
+            "azure-fabric/warehouse/tests/assert_patient.sql",
+        )
+        for path in forbidden:
+            with self.subTest(path=path):
+                self.assertTrue(self.check(additions=[path]), path)
+
+    def test_dbt_exception_does_not_relax_unsafe_paths(self):
+        bad = "azure-fabric/dbt/hl7-canonical/tests/../assert_hijack.sql"
+        self.assert_rule(self.check(additions=[bad]), "unsafe-git-path", bad,
+                         "normalized repository relative path")
+
     def test_test_under_old_source_tests_rejected(self):
         p = "local-data-platform/tests/spark/test_new_pipeline.py"
         self.assert_rule(self.check(additions=[p]), "new-test-outside-quality", p, ".github/quality/tests/")
