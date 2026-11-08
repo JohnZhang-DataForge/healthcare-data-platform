@@ -1309,6 +1309,106 @@ def _hl7_reopened_dq(patient_delta, encounter_delta,
 
 
 
+def _hl7_recompute_persisted_approval(
+        spark, paths: dict[str, str], context: BatchContext,
+        patient_contract_bytes: bytes, encounter_contract_bytes: bytes,
+        original_provenance: dict) -> PreparedBatch:
+    """Transport-independent future Silver readback, after temp Blob cleanup.
+
+    Canonical rows are retyped from physically persisted Delta, the original
+    Raw 42 hashes are freshly proven, and the deterministic transport content
+    fingerprint is recomputed. Approval MUST equal the original exact bytes'
+    fingerprint; no local candidate or original staging persists.
+    """
+    from datetime import datetime, date, timezone
+    from decimal import Decimal
+    from healthcare_data_engine.canonical.validation import validate_row
+    from healthcare_data_engine.quality.result import TransformResult
+    contracts = {
+        "patient": load_pinned_contract(patient_contract_bytes, "patient"),
+        "encounter": load_pinned_contract(encounter_contract_bytes, "encounter"),
+    }
+    frames = {
+        "patient": spark.read.format("delta").load(paths["patient"]),
+        "encounter": spark.read.format("delta").load(paths["encounter"]),
+    }
+    accepted, digests = {}, {}
+    for entity, key in (("patient", "source_record_id"),
+                        ("encounter", "source_encounter_id")):
+        records, wire = [], []
+        fields = contracts[entity]["fields"]
+        for item in frames[entity].collect():
+            row = item.asDict(recursive=True)
+            for k, v in row.items():
+                if isinstance(v, datetime) and v.tzinfo is None:
+                    row[k] = v.replace(tzinfo=timezone.utc)
+            if (validate_row(row, contracts[entity])
+                    or row["source_batch_id"] != context.source_batch_id
+                    or row["source_system"] != context.namespaced_source_system
+                    or row["processing_run_id"] != context.processing_run_id
+                    or row["processed_at"] != context.processed_at
+                    or row["source_version"] != context.source_version
+                    or row["source_ingest_date"] != context.source_ingest_date
+                    or row["adapter_version"] != context.adapter_version
+                    or row["adapter_name"] != "hl7apy"
+                    or row["canonical_version"] != "v1"
+                    or original_provenance.get(row["source_file"]) != (
+                        row["source_file_sha256"], row["source_file_size_bytes"])):
+                raise ValueError("HOLD_HL7_PERSISTED_ROW_CONTEXT")
+            typed = {}
+            for field in fields:
+                name, value, kind = field["name"], row[field["name"]], field["type"]
+                if isinstance(value, datetime):
+                    value = value.astimezone(timezone.utc).isoformat(
+                        timespec="microseconds").replace("+00:00", "Z")
+                elif isinstance(value, date):
+                    value = value.isoformat()
+                elif isinstance(value, Decimal):
+                    value = str(value)
+                typed[name] = value
+            records.append(row)
+            wire.append(typed)
+        if not 0 < len(wire) <= 50000:
+            raise ValueError("HOLD_HL7_PERSISTED_COUNT")
+        accepted[entity] = tuple(records)
+        wire.sort(key=lambda item: item[key])
+        raw = json.dumps({"entity": entity, "rows": wire,
+                          "schema": "healthcare-hl7-canonical-transport-v1"},
+                         sort_keys=True, ensure_ascii=True,
+                         separators=(",", ":"), allow_nan=False).encode()
+        digests[entity] = hashlib.sha256(raw).hexdigest()
+    reconciliation = reconcile_patient_encounter(
+        TransformResult(accepted["patient"], (), ()),
+        TransformResult(accepted["encounter"], (), ()), context)
+    metrics = reconciliation.metrics
+    if any(metrics[k] for k in (
+            "patient_quarantined", "encounter_quarantined",
+            "patient_rejected", "encounter_rejected")):
+        raise ValueError("HOLD_HL7_PERSISTED_PK_FK")
+    pubid = hashlib.sha256(json.dumps({
+        "source_batch_id": context.source_batch_id,
+        "processing_version": context.processing_version,
+        "patient_sha256": digests["patient"],
+        "encounter_sha256": digests["encounter"],
+    }, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()).hexdigest()
+    batch = PreparedBatch(
+        patient_df=frames["patient"], encounter_df=frames["encounter"],
+        patient_count=len(accepted["patient"]),
+        encounter_count=len(accepted["encounter"]),
+        findings=(), source_batch_id=context.source_batch_id,
+        processing_version=context.processing_version,
+        publication_id=pubid, manifest_sha256=context.manifest_sha256.lower(),
+        source_receipts=())
+    expected_approval = _canonical_silver_approval_row(
+        batch, patient_contract_bytes, encounter_contract_bytes,
+        source_preservation_strategy="VERIFIED_HL7_CANDIDATE_V1")
+    approved = spark.read.format("delta").load(paths["approval"]).collect()
+    if (len(approved) != 1
+            or approved[0].asDict(recursive=True) != expected_approval):
+        raise ValueError("HOLD_HL7_PERSISTED_APPROVAL_OR_CONTENT_CHANGED")
+    return batch
+
+
 def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
                            mode: str, allow_write: bool, retention_ok: bool,
                            strategy: str, manifest_override: str,
@@ -1344,9 +1444,39 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
                "quarantine_or_reject": 0, "source_objects": 42}
     # Source proof MUST be fresh; a stale historical P2 run is not evidence.
     raw_provenance = _hl7_verified_original_raw(spark, context)
+    try:
+        exists = {k: _g3_delta_exists(spark, path)
+                  for k, path in paths.items()}
+    except Exception:
+        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                               context.processing_version, None, metrics,
+                               ("Silver Delta state unknown",))
+    if any(exists.values()):
+        if (not all(exists[k] for k in ("patient", "encounter", "approval"))
+                or exists["quarantine"]):
+            return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                                   context.processing_version, None, metrics,
+                                   ("partial/unknown Silver state",))
+        try:
+            persisted = _hl7_recompute_persisted_approval(
+                spark, paths, context, pb, eb, raw_provenance)
+        except Exception:
+            return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                                   context.processing_version, None, metrics,
+                                   ("persisted source/content/approval mismatch",))
+        return NotebookOutcome(
+            "SILVER_SKIP_VERIFIED",
+            context.source_batch_id, context.processing_version,
+            persisted.publication_id,
+            {**metrics, "patient": persisted.patient_count,
+             "encounter": persisted.encounter_count}, ())
+    # The transient Candidate is needed ONLY on first creation, not to
+    # independently verify already-approved durable Silver after cleanup.
+    if mode == "HL7_SILVER_READBACK_ONLY":
+        return NotebookOutcome("HOLD_SILVER_NOT_FOUND", context.source_batch_id,
+                               context.processing_version, None, metrics, ())
+    # Candidate transfer is short-lived; load only when target is fully absent.
     root = _hl7_transfer_root(context)
-    # Candidate files are transient, create-only, previously verified from
-    # exact old P2 Raw. Expected manifest hash comes from protected controller.
     bundle = {
         k: _hl7_binary_exact(
             spark, root + "/" + k,
@@ -1361,47 +1491,11 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
     for frame in (prepared.patient_df, prepared.encounter_df):
         for row in frame.select("source_file", "source_file_sha256",
                                 "source_file_size_bytes").distinct().collect():
-            key = row["source_file"]
-            if (key not in raw_provenance or
-                    raw_provenance[key] != (
-                        row["source_file_sha256"], row["source_file_size_bytes"])):
-                raise ValueError("HOLD_HL7_CANDIDATE_RAW_ORIGIN_DRIFT")
+            if raw_provenance.get(row["source_file"]) != (
+                    row["source_file_sha256"], row["source_file_size_bytes"]):
+                raise ValueError("HOLD_HL7_CANDIDATE_RAW_PROVENANCE")
     def validate_reopened(p, e, batch, scope):
         _hl7_reopened_dq(p, e, batch, scope, pb, eb)
-    try:
-        exists = {k: _g3_delta_exists(spark, path)
-                  for k, path in paths.items()}
-    except Exception:
-        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
-                               context.processing_version, None, metrics,
-                               ("Silver Delta state unknown",))
-    if any(exists.values()):
-        if not all(exists[k] for k in ("patient", "encounter", "approval")) or exists["quarantine"]:
-            return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
-                                   context.processing_version, None, metrics,
-                                   ("partial or quarantined Silver",))
-        try:
-            p = spark.read.format("delta").load(paths["patient"])
-            e = spark.read.format("delta").load(paths["encounter"])
-            validate_reopened(p, e, prepared, context)
-            expected = _canonical_silver_approval_row(
-                prepared, pb, eb,
-                source_preservation_strategy="VERIFIED_HL7_CANDIDATE_V1")
-            approval = spark.read.format("delta").load(paths["approval"]).collect()
-            if len(approval) != 1 or approval[0].asDict(recursive=True) != expected:
-                raise ValueError("HOLD_HL7_APPROVAL_MISMATCH")
-        except Exception:
-            return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
-                                   context.processing_version, None, metrics,
-                                   ("persisted Silver/approval drift",))
-        return NotebookOutcome("SILVER_SKIP_VERIFIED",
-                               context.source_batch_id, context.processing_version,
-                               prepared.publication_id,
-                               {**metrics, "patient": prepared.patient_count,
-                                "encounter": prepared.encounter_count}, ())
-    if mode == "HL7_SILVER_READBACK_ONLY":
-        return NotebookOutcome("HOLD_SILVER_NOT_FOUND", context.source_batch_id,
-                               context.processing_version, None, metrics, ())
     # No existing Delta: the single physical Writer owns all Silver writes.
     try:
         _write_verified_canonical_silver(
