@@ -61,3 +61,9 @@
 - Real immutable original 42 Azure HL7 objects + exact Manifest GET `HL7_P2_REAL_AZURE_EXACT42_GET_MANIFEST_AND_BYTES=PASS`; real 42 verified clinical rows `HL7_P2_REAL_42_STRICT_CLINICAL_SOURCE_ROWS=PASS`.
 - Local physical Delta stage + same-source Replay `PASS`; dbt 5 Models/Tests `PASS`; independent Candidate Patient 18 and Encounter 27 contract/source/physical Delta readback `PASS`. No Blob LIST/PUT/POST/DELETE, no OIE POST, no Fabric Silver/Gold writes, no new persistent Processing/Cache/Ledger. Ephemeral raw and Candidate cleanup marker `YES`.
 - **P2.1 and P2.2 DONE.** **P2.3 OPEN**, shared canonical DQ/quarantine/Approval/Single Silver Writer and OMOP require separate scoped development/runtime authorization and coordination with Fabric owners. Do not re-GET/re-POST the 42 batch to demonstrate completion.
+
+## P2.3 incremental delivery — current work
+
+- [ ] 2.3.1 Add HL7 source-specific, **pure** Candidate→Shared Canonical DQ handoff using existing pinned v1 Contract, shared PK/FK reconciliation and explicit raw-request → namespaced/hash Batch identity validation. No second Writer/Mapper.
+- [ ] 2.3.2 Unit/negative/real local physical synthetic dbt Candidate readback integration: correct 18/27 schema, temporal checks, strict HOLD on scope/PK/FK/DQ, stable deterministic replay. Build evidence with GitHub-hosted CI, update HL7 CODE map and OpenSpec.
+- [ ] 2.3.3 Separately implement/review existing unified Silver Approval/Single Writer integration with Fabric owner; require independent Delta readback and approved exclusive live run before declaring P2.3 DONE. Do not create Processing Cache/Ledger or replay original Azure 42.
