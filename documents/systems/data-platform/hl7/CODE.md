@@ -1,6 +1,6 @@
 # HL7 — official consumer Source CODE map
 
-> **当前唯一可执行 Source Owner：** `local-data-platform/spark/apps/hl7/`。这里的部分 dbt 代码是经过真实**本地合成数据**运行验证的功能基线，**不是只可随便删除的 POC**。未来 Fabric dbt 独立工程目标：[`azure-fabric/dbt/hl7-canonical/` 规则](../../azure-fabric/dbt/README.md)；目前尚未创建。旧 Self-Runner `experiments/hl7-dbt-canonical/` 仅历史隔离 POC。OIE Producer、共享 Silver Writer / OMOP 均不归本组件管理。
+> **当前唯一可执行 Source Owner：** `local-data-platform/spark/apps/hl7/`。这里的部分 dbt 代码是经过真实**本地合成数据**运行验证的功能基线，**不是只可随便删除的 POC**。未来 Fabric dbt 独立工程目标：[`azure-fabric/dbt/hl7-canonical/` 规则](../../azure-fabric/dbt/README.md)；现为 P3 Candidate（[Fabric dbt CODE](../../azure-fabric/dbt/CODE.md)），尚未完成运行验收或消费者切换。旧 Self-Runner `experiments/hl7-dbt-canonical/` 仅历史隔离 POC。OIE Producer、共享 Silver Writer / OMOP 均不归本组件管理。
 
 ## 代码去留标记（Agent 必须先读）
 

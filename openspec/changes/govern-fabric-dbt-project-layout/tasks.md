@@ -12,7 +12,7 @@
 - [x] 2.1 已通过 [PR #815](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/815) 在 Main `c36ed72ba140d6b2956d71ab97206baa2965bd58` 实施精确 dbt 原生 SQL `tests/` 白名单；Ruleset #25365902 Active、四项 Required 恢复；真实正向 [PR #816](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/816) PASS、负向 [PR #817](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/817) 按预期 blocked，两个临时测试 PR 均已关闭且未合并。详细日志与检查见 [治理任务](../permit-dbt-native-sql-test-layout/tasks.md)。
 
 ## P3 — 标准工程真正实施（独立源码 PR）
-- [ ] 3.1 门禁例外完成后，在 `azure-fabric/dbt/hl7-canonical/` 创建**完整标准骨架**，直接按 dbt 分层开发；旧 SQL/config/profile **冻结供参考而非先迁移**。新工程在验收/切换前仅为 Candidate，不能形成第二个正式生产入口。
+- [x] 3.1 门禁例外完成后，在 `azure-fabric/dbt/hl7-canonical/` 创建**完整标准骨架**，直接按 dbt 分层开发；旧 SQL/config/profile **冻结供参考而非先迁移**。新工程在验收/切换前仅为 Candidate，不能形成第二个正式生产入口。
 - [ ] 3.2 新 dbt 工程真实本地 Delta + dbt compile/run/test、Replay、Patient 18/Encounter 27 Contract/负向语义读回 PASS；必要业务扩展按原单独 HL7 Consumer Change 跟踪。
 - [ ] 3.3 在受控切换 PR 中审查全部活跃 Workflow/Self-Runner/源码/配置/文档引用，改接唯一新 dbt 工程并复验，不因新 SQL 可以运行就删除旧文件。
 - [ ] 3.4 切换确认后**另一个清理 PR**删除旧 dbt models/project/profiles，更新旧 HL7 CODE、新 Fabric dbt CODE、CI/依赖及全部导航；Python Parser/Intake/Delta Writer 与必要测试继续保留，混合 requirements 按消费者拆分，不做全目录删除。
@@ -21,3 +21,9 @@
 ## 已采用治理规则
 
 - 2026-11-07：P1 规则随 PR #811 在 Main 生效；Current Spec 正式采用至 `openspec/specs/fabric-dbt-project-layout/spec.md`（与本次 P1 关闭记录配套）。**P1 目录/AI 治理和 P2 可信 Gate 例外均已验证生效；P3 新 dbt 工程开发、验收与切换仍 OPEN。**
+
+## P3 Candidate implementation (subject to PR review)
+
+- 3.1: Standard new `hl7_canonical` project, CODE Map, schema tests, isolated local profile and dedicated hosted-only P3 Workflow are authored; legacy Parser/Intake/Writer/SQL/Workflow remain unchanged and sole active entry.
+- 3.2: OPEN until the new exact PR HEAD has actually passed physical local Delta + dbt compile/run/test, replay, four fail-expected cases and independent Patient 18/Encounter 27 Contract readback. No new Run is asserted by this source commit.
+- 3.3–3.5: Consumer cutover, legacy SQL/config cleanup and final live-owner declaration remain separate future PRs. No Azure/Fabric/Silver/Gold action authorized here.

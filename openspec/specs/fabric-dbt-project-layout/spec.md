@@ -2,7 +2,7 @@
 
 ## Purpose
 
-本规范定义 Healthcare Fabric-oriented dbt Core 工程的长期目标父目录、标准空目录结构、可扩展命名及 AI/Agent 新建目录的强制审批。目录规则由 [PR #811](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/811) 合并，**精确 dbt SQL `tests/` 例外已由受保护 [PR #815](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/815) 实现并由真实正向 [#816](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/816)/负向 [#817](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/817) 验证**，四项 GitHub Required Checks 已恢复。**HL7 dbt 工程源码尚未从 Local DP 切换，也未因治理验收自动成为 Fabric Runtime PASS。**
+本规范定义 Healthcare Fabric-oriented dbt Core 工程的长期目标父目录、标准空目录结构、可扩展命名及 AI/Agent 新建目录的强制审批。目录规则由 [PR #811](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/811) 合并，**精确 dbt SQL `tests/` 例外已由受保护 [PR #815](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/815) 实现并由真实正向 [#816](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/816)/负向 [#817](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/817) 验证**，四项 GitHub Required Checks 已恢复。**P3 候选 dbt 标准源码已在独立 PR 中提出，但正式可执行入口尚未从 Local DP 切换，也未因治理验收自动成为 Fabric Runtime PASS。**
 
 ## Requirements
 
