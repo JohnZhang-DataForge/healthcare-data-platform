@@ -353,6 +353,7 @@ def plan_silver_identity_with_f2_bridge(
         if item is None or item.omop_id != person_id or key in seen:
             raise PlanningHold("F2_SHARED_PERSON_PLAN_MISMATCH")
         seen.add(key)
+    person_id_set = {person_id for _, person_id in silver.persons}
     for source_key, visit_id, parent_id in silver.visits:
         key = DerivedRowKey("cdm.visit_occurrence", hospital_id, source_system,
                             source_key)
@@ -362,7 +363,7 @@ def plan_silver_identity_with_f2_bridge(
         seen.add(key)
         # Parent IDs must come from the canonical within-hospital Person
         # set. The earlier plan_silver_identity already checks exact FK.
-        if parent_id not in {number for _, number in silver.persons}:
+        if parent_id not in person_id_set:
             raise PlanningHold("F2_SHARED_VISIT_PARENT_PLAN_MISMATCH")
     if len(seen) != len(by_key):
         raise PlanningHold("F2_SHARED_EXTRA_OR_MISSING_IDENTITIES")
