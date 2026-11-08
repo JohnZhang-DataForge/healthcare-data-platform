@@ -69,7 +69,7 @@ jobs:
             dbt test --select "$name" --vars "hl7_source_schema: $schema" > "$RUNNER_TEMP/$name-negative.log" 2>&1
             rc=$?
             set -e
-            if [ "$rc" -eq 0 ] || ! grep -q "Failure in test $name" "$RUNNER_TEMP/$name-negative.log"; then
+            if [ "$rc" -eq 0 ] || ! grep -q "in test $name" "$RUNNER_TEMP/$name-negative.log" || ! grep -Eq "Got [1-9][0-9]* result" "$RUNNER_TEMP/$name-negative.log"; then
               cat "$RUNNER_TEMP/$name-negative.log"
               echo "HL7_P3_NEGATIVE_NOT_DETECTED=$name"
               exit 1
