@@ -52,8 +52,8 @@ azure-fabric/
 
 新项目必须交代业务范围、是否真需要另一个 Project、数据库适配器与执行地、输入输出 Contract、数据发布授权边界、唯一 CODE Owner 和 CI/模型测试。正式 Canonical Silver 批准与 OMOP Publisher 仍由统一共享路径管理，**dbt Candidate 不是已发布 Silver 或 Gold**。
 
-## 迁移的文件手续
+## 新工程开发与旧实现退役的文件手续
 
-先核对最新 Main、开放 PR、[根 AGENTS 规则](../../../../AGENTS.md)、[OpenSpec Change](../../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md) 和 [Fabric Medallion ADR](../../../architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)。单独解决受保护 Gate 后，再**移动而非复制**现有 HL7 dbt SQL/config/profiles，更新唯一 CODE Map、Workflow/Self-Runner 消费路径、依赖与文档，并重新执行 Local Spark Delta + dbt compile/run/test + Replay + Canonical 合同独立读回。不能因为本文件生效就声称代码已迁移、真实 42 条 Azure HL7 已消费、远端 Fabric 计算已执行或正式 Silver/Gold 已验收。
+先核对最新 Main、开放 PR、[根 AGENTS 规则](../../../../AGENTS.md)、[OpenSpec Change](../../../../openspec/changes/govern-fabric-dbt-project-layout/tasks.md) 和 [Fabric Medallion ADR](../../../architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md)。**采用用户确认的“冻结参考 → 新工程直接开发 → 验收 → 一次切换和清理”**：先解决受保护 Gate；在 `azure-fabric/dbt/hl7-canonical/` 创建独立标准工程，参考旧 HL7 SQL/配置（并非机械搬运），按 dbt 分层开发。**旧 dbt 模型冻结为参考，不再增加新业务功能；新模型在切换前只是 Candidate，不得与旧版同时作为两个正式生产入口。** 新工程经 Local Spark Delta + dbt compile/run/test + Replay + Canonical 独立读回后，逐项迁移 Workflow/Self-Runner 消费者和全部引用，**最后单独清理旧 dbt SQL/project/profiles**；当前 HL7 Python Parser/Intake/Delta Writer、所需测试和混合 requirements 必须按依赖另行审查，不删除整个 HL7 目录。完整逐文件状态、删除门槛见 [HL7 CODE](../../data-platform/hl7/CODE.md)。不能因为本文件生效就声称代码已迁移、真实 42 条 Azure HL7 已消费、远端 Fabric 计算已执行或正式 Silver/Gold 已验收。
 
-**核心原则：一处归属、一份正式源码、先 OpenSpec/Review 再新建目录。**
+**核心原则：旧版本冻结供参考，只有一个正式生产入口；新工程先独立开发验证，消费者切换后再删除旧 dbt 文件。任何实际退役都须有最新 Main 依赖扫描、CI 和 CODE Map 更新。**
