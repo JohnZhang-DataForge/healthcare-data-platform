@@ -9,7 +9,7 @@
 
 ## P2 — 真实来源和共享业务链路（单独资源授权）
 - [ ] 2.1 对 Azure 已发布 42 条 Raw HL7 做 GET-only 最小权限计划与 Batch/资源冲突核查；不重跑历史 P2/P3、不产生 OIE POST。**真实 42 个对象 GET 和资源/授权预检仍 OPEN。**
-- [ ] 2.4 实施 bounded exact-key Azure GET-only Reader，复用现有 Intake/Parser，负向测试验证后提交 PR/CI；本项仅 Source/Hosted synthetic Test，不执行远端。
+- [x] 2.4 实施 bounded exact-key Azure GET-only Reader，复用现有 Intake/Parser，负向测试验证后提交 PR/CI；本项仅 Source/Hosted synthetic Test，不执行远端。
 - [ ] 2.2 使用原 42 条真实 HL7 文件和权威 Manifest 进入本 Consumer 的真实 Source/Delta Candidate 验收。
 - [ ] 2.3 接入现有统一 Silver DQ/quarantine/Approval/Single Writer，后续与 FHIR 在已批准 Canonical 汇合；真实 Silver/OMOP 写入需要明确审批与独占窗口。
 
@@ -26,3 +26,10 @@
 - Baseline Main: `86ac0c5c96ff8d5e86fad559da5df97c9ec09433` (#822). New source `local-data-platform/spark/apps/hl7/azure_blob_readback.py` requires independently pinned request_id, exact Manifest key/SHA, frozen source Manifest SHA and object count. The only allowed cloud operations, if separately approved, are exact-key HEAD and conditional GET. No List, Blob write, OIE POST, Spark, Fabric or Silver publisher calls.
 - [Operating contract](../../../documents/systems/data-platform/hl7/AZURE-GET-READBACK.md) defines scoped Storage Blob Data Reader identity, exact 42-object resource evidence, shared Runner conflict and private source retention gate. Readback uses original `landing_intake.verified_seed_rows` before the directory becomes visible; matching local replay skips, conflicting output HOLD.
 - Keep P2 2.2 real Azure 42 GET and P2 2.3 shared Silver/OMOP open. No secrets, actual PHI or Azure network calls in hosted tests. 2.4 may only be ticked on actual PR HEAD CI PASS.
+
+### P2.4 synthetic-only reader acceptance (exact code HEAD)
+
+- [PR #824](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/824) pre-closeout source HEAD `08b5f58718ae10df82130fd2aa1850ad4560265d` verified in [GitHub-hosted HL7 Run #42449129041](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42449129041) **COMPLETED SUCCESS**: **28/28 Python unit tests** (including 16 new scoped readback positive/negative/replay cases), actual physical local Delta staging CREATED and identical replay SKIP, 5/5 dbt models, 15/15 dbt data tests, independent Patient 18/Encounter 27 Delta Contract readback PASS.
+- Four protected Required Checks and OpenSpec, documentation links, source-map/code naming, Spark manifests, TASK004 and isolated Synthea/Local DP build/smoke static checks SUCCESS at the tested code HEAD. Third-party Cloudflare Workers Build failure remains nonrequired and unrelated to HL7.
+- Reader only executes *mock exact-key Azure snapshots* in this CI; Azure SDK live path, access role and published 42-object input have **NOT** been accessed or tested in the current code release. Real P2.1 resource/approval preflight, P2.2 actual Raw GET → Delta/dbt Candidate and P2.3 Approved Silver/OMOP publishing are **OPEN**. Do not confuse the `--approved-get-only` local invocation flag with user/runtime authorization.
+- This is an OpenSpec/documentation-only evidence closeout atop the proven source SHA; verify the new final HEAD Required Checks and/or hosted CI before merging.

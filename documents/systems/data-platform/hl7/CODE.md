@@ -15,7 +15,7 @@
 | --- | --- | --- |
 | [parse_oie_v2.py](../../../../local-data-platform/spark/apps/hl7/parse_oie_v2.py) | 经审核 OIE V2 的 `hl7apy` 协议解析和临床字段投影 | **保留 / 业务依赖**：下游仍需结构化 HL7；不是 dbt SQL，不能因 dbt 完成删除 |
 | [landing_intake.py](../../../../local-data-platform/spark/apps/hl7/landing_intake.py) | Manifest、Raw SHA、Hospital/Batch/对象身份校验，限本地读取 | **保留 / 业务依赖**：数据真实性 Gate；另行评审共享 Adapter 或新 Consumer 后才可考虑替代 |
-| [azure_blob_readback.py](../../../../local-data-platform/spark/apps/hl7/azure_blob_readback.py) | Approved exact-key Azure GET-only manifest/raw readback into private local input | **Source-only / offline fake-GET acceptance pending**; does not authorize Azure or publish Silver |
+| [azure_blob_readback.py](../../../../local-data-platform/spark/apps/hl7/azure_blob_readback.py) | Approved exact-key Azure GET-only manifest/raw readback into private local input | **Source-only / fake-GET CI 28/28 Python tests PASS at Run #42449129041**; does not authorize Azure or publish Silver |
 | [requirements-azure-readback.txt](../../../../local-data-platform/spark/apps/hl7/requirements-azure-readback.txt) | Optional runtime-only Azure SDK pins reuse the existing source/Publisher requirements | No cloud SDK dependency in hosted CI |
 | [write_staging_delta.py](../../../../local-data-platform/spark/apps/hl7/write_staging_delta.py) | Spark 3.5 本地 Delta Staging，create / exact replay skip / conflict HOLD | **保留 / 业务依赖**：dbt 需要其结构化 Delta 输入，后续独立替换时才可考虑退役 |
 | [requirements-local.txt](../../../../local-data-platform/spark/apps/hl7/requirements-local.txt) | 保留 HL7 Parser / Spark / Delta 的单一 pinned 依赖源 | **维护**：新工程 [requirements-local.txt](../../../../azure-fabric/dbt/hl7-canonical/requirements-local.txt) 引用本锁定依赖，旧 dbt adapter pin 已从此移除 |

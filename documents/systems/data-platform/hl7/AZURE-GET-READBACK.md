@@ -1,6 +1,6 @@
 # HL7 V2 — scoped Azure GET-only source readback
 
-**Status: CODE / OFFLINE SYNTHETIC ONLY until separate real Azure authorization.** This is a non-deploying source adapter governed by [HL7 Consumer Active OpenSpec](../../../../openspec/changes/implement-hl7-local-delta-dbt-canonical/tasks.md), not approval to access existing Blob, OIE, Spark, Fabric or Silver.
+**Status: CODED + OFFLINE SYNTHETIC TEST ACCEPTED (Run #42449129041); real Azure GET still NOT AUTHORIZED/NOT EXECUTED.** This is a non-deploying source adapter governed by [HL7 Consumer Active OpenSpec](../../../../openspec/changes/implement-hl7-local-delta-dbt-canonical/tasks.md), not approval to access existing Blob, OIE, Spark, Fabric or Silver.
 
 ## Exact scope and provenance
 
@@ -37,3 +37,7 @@ The adapter reads exact Azure keys only and then stages validated bytes to a new
 ## Test-only evidence
 
 Centralized `.github/quality/tests/data-platform/hl7/test_azure_blob_readback.py` builds fresh synthetic OIE V2 A01/A03, uses a fake read-only backend (no Azure SDK or credentials), and checks manifest-first, allowed exact keys, local replay, source/clinical facts, SHA, count, ETag, version, metadata, safe paths and changed-manifest rejection. CI success is **source offline test only**, not GET of historical real Azure 42 objects.
+
+## Actual synthetic acceptance (not remote)
+
+[PR #824](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/824), source SHA `08b5f58718ae10df82130fd2aa1850ad4560265d`, [Run #42449129041](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42449129041): 28/28 Parser/Intake and exact GET fake-backend unit tests; actual local staging CREATED/replay SKIP; dbt models 5/5 and tests 15/15; independent physical local Delta Patient 18/Encounter 27 contract readback. No Azure identity loaded and no remote Blob GET, OIE, Fabric CU, Silver or Gold operation.
