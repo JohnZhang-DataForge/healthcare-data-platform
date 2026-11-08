@@ -1,0 +1,4 @@
+# Optional authorized Azure GET-only runtime. Not installed for offline CI.
+# Reuse the single pinned Parser/Spark/Delta set and existing Azure SDK pins.
+-r requirements-local.txt
+-r ../../../apps/clinical_producers/requirements-blob-publisher.txt
