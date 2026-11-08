@@ -1160,6 +1160,268 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
 
 
 
+# HL7 P2.3: one pinned real source, one verified candidate transport,
+# same physical Silver Delta writer as G4. Never an independent Writer/Mapper.
+_HL7_REAL_REQUEST = "johnscreek-hl7-gh-42410482514"
+_HL7_REAL_MANIFEST_SHA = "dfb9895554470b0cb31536a041cd38aef5aaedd11ff762f491ce54e6dd1df114"
+_HL7_REAL_SOURCE_SHA = "3999e773321a76a5d8421d62af23d24d833261a65812ea24e14e7e828f960a93"
+_HL7_REAL_PROCESSING = "hl7-canonical-v1-real-p2.3:engine-0.1.7"
+_HL7_REAL_SOURCE_ROOT = "Files/fhir_landing"
+_HL7_REAL_TRANSFER_ROOT = "Files/fhir_landing/__hl7_candidate_handoff/v1"
+
+
+def _hl7_source_context() -> BatchContext:
+    from datetime import datetime, date, timezone
+    return BatchContext(
+        hospital_id="johns-creek-hospital-b",
+        feed_id="johns-creek-hospital-b-hl7-v2",
+        source_system="johns-creek-hl7",
+        request_id=_HL7_REAL_REQUEST,
+        manifest_sha256=_HL7_REAL_MANIFEST_SHA,
+        processing_version=_HL7_REAL_PROCESSING,
+        processing_run_id="hl7-real-get-42410482514",
+        source_version="HL7v2.5.1",
+        source_ingest_date=date(2026, 11, 8),
+        processed_at=datetime(2026, 11, 8, 9, 0, tzinfo=timezone.utc),
+        adapter_version="1.3.5",
+    )
+
+
+def _hl7_real_paths(context: BatchContext) -> dict[str, str]:
+    if context != _hl7_source_context():
+        raise ValueError("HOLD_HL7_REAL_CONTEXT_DRIFT")
+    suffix = ("/" + context.hospital_id + "/" + context.feed_id + "/"
+              + context.request_id + "/processing="
+              + hashlib.sha256(context.processing_version.encode()).hexdigest())
+    prefix = "Files/silver/hl7_v2" + suffix
+    return {
+        "patient": prefix + "/canonical_patient",
+        "encounter": prefix + "/canonical_encounter",
+        "approval": prefix + "/silver_approval",
+        "quarantine": prefix + "/quarantine",
+    }
+
+
+def _hl7_transfer_root(context: BatchContext) -> str:
+    if context != _hl7_source_context():
+        raise ValueError("HOLD_HL7_REAL_CONTEXT_DRIFT")
+    return (_HL7_REAL_TRANSFER_ROOT + "/" + context.source_batch_id
+            + "/processing="
+            + hashlib.sha256(context.processing_version.encode()).hexdigest())
+
+
+def _hl7_binary_exact(spark, path: str, *, limit: int) -> bytes:
+    if (not path.startswith("Files/fhir_landing/")
+            or ".." in path or any(c in path for c in "*?\\")
+            or limit < 1):
+        raise ValueError("HOLD_HL7_UNAPPROVED_SOURCE_PATH")
+    rows = spark.read.format("binaryFile").load(path).select("content").collect()
+    if len(rows) != 1:
+        raise ValueError("HOLD_HL7_SOURCE_NOT_EXACT_ONE")
+    content = bytes(rows[0].content)
+    if not 0 < len(content) <= limit:
+        raise ValueError("HOLD_HL7_SOURCE_BYTES_LIMIT")
+    return content
+
+
+def _hl7_verified_original_raw(spark, context: BatchContext) -> dict:
+    """Fresh GET-only, full original 42 raw SHA/size fence through existing shortcut."""
+    if context != _hl7_source_context():
+        raise ValueError("HOLD_HL7_SOURCE_CONTEXT")
+    base = (f"{_HL7_REAL_SOURCE_ROOT}/clinical/v1/{context.hospital_id}/"
+            f"{context.feed_id}/{context.request_id}")
+    manifest_bytes = _hl7_binary_exact(
+        spark, base + "/landing-manifest.json", limit=2 * 1024 * 1024)
+    if hashlib.sha256(manifest_bytes).hexdigest() != _HL7_REAL_MANIFEST_SHA:
+        raise ValueError("HOLD_HL7_REAL_SOURCE_MANIFEST_SHA")
+    doc = json.loads(manifest_bytes)
+    if (not isinstance(doc, dict)
+            or doc.get("hospital_id") != context.hospital_id
+            or doc.get("feed_id") != context.feed_id
+            or doc.get("request_id") != context.request_id
+            or doc.get("source_manifest_sha256") != _HL7_REAL_SOURCE_SHA
+            or not isinstance(doc.get("objects"), list)
+            or len(doc["objects"]) != 42):
+        raise ValueError("HOLD_HL7_REAL_42_SOURCE_MANIFEST_FIELDS")
+    seen = {}
+    for o in doc["objects"]:
+        if not isinstance(o, dict) or not all(
+                k in o for k in ("blob_key", "sha256", "size_bytes")):
+            raise ValueError("HOLD_HL7_SOURCE_OBJECT_ENVELOPE")
+        key = o["blob_key"]
+        prefix = (f"clinical/v1/{context.hospital_id}/{context.feed_id}/"
+                  f"{context.request_id}/HL7_V2/hl7/")
+        import re
+        if (not isinstance(key, str) or not key.startswith(prefix)
+                or not re.fullmatch(
+                    r"[A-Za-z0-9-]+-(A01|A03)\.hl7", key[len(prefix):])
+                or key in seen or type(o["size_bytes"]) is not int
+                or not 0 < o["size_bytes"] <= 1024 * 1024
+                or not isinstance(o["sha256"], str)
+                or not re.fullmatch(r"[0-9a-f]{64}", o["sha256"])):
+            raise ValueError("HOLD_HL7_RAW_OBJECT_IDENTITY")
+        raw = _hl7_binary_exact(
+            spark, _HL7_REAL_SOURCE_ROOT + "/" + key, limit=1024 * 1024)
+        if (len(raw) != o["size_bytes"]
+                or hashlib.sha256(raw).hexdigest() != o["sha256"]):
+            raise ValueError("HOLD_HL7_RAW_OBJECT_DRIFT")
+        seen[key] = (o["sha256"], o["size_bytes"])
+    return seen
+
+
+def _hl7_reopened_dq(patient_delta, encounter_delta,
+                     expected: PreparedBatch, context: BatchContext) -> None:
+    """Source-neutral physical readback: pinned Shared v1 Contract + PK/FK."""
+    from datetime import datetime, timezone
+    from healthcare_data_engine.canonical.validation import validate_row
+    from healthcare_data_engine.quality.result import TransformResult
+    contracts = {
+        "patient": load_pinned_contract(
+            _HL7_CANONICAL_CONTRACTS["patient"], "patient"),
+        "encounter": load_pinned_contract(
+            _HL7_CANONICAL_CONTRACTS["encounter"], "encounter"),
+    }
+    records = {}
+    for entity, frame in (("patient", patient_delta),
+                          ("encounter", encounter_delta)):
+        actual = []
+        for item in frame.collect():
+            row = item.asDict(recursive=True)
+            for key, val in row.items():
+                if isinstance(val, datetime) and val.tzinfo is None:
+                    row[key] = val.replace(tzinfo=timezone.utc)
+            if validate_row(row, contracts[entity]):
+                raise ValueError("HOLD_HL7_REOPENED_CONTRACT_" + entity)
+            actual.append(row)
+        records[entity] = tuple(actual)
+    checked = reconcile_patient_encounter(
+        TransformResult(records["patient"], (), ()),
+        TransformResult(records["encounter"], (), ()), context)
+    metrics = checked.metrics
+    if (metrics["patient_accepted"] != expected.patient_count
+            or metrics["encounter_accepted"] != expected.encounter_count
+            or any(metrics[k] for k in (
+                "patient_rejected", "encounter_rejected",
+                "patient_quarantined", "encounter_quarantined"))):
+        raise ValueError("HOLD_HL7_REOPENED_SHARED_DQ")
+    _g4_validate_full_delta(expected.patient_df, patient_delta, "patient")
+    _g4_validate_full_delta(expected.encounter_df, encounter_delta, "encounter")
+
+
+_HL7_CANONICAL_CONTRACTS = {}
+
+
+def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
+                           mode: str, allow_write: bool, retention_ok: bool,
+                           strategy: str, manifest_override: str,
+                           source_override: str, target_override: str,
+                           patient_contract_json: str,
+                           encounter_contract_json: str) -> NotebookOutcome:
+    """One-source Silver release. No auto retry; partial state is read-only HOLD."""
+    import re
+    if (mode not in ("HL7_SILVER_WRITE", "HL7_SILVER_READBACK_ONLY")
+            or request != _HL7_REAL_REQUEST
+            or strategy != "VERIFIED_HL7_CANDIDATE_V1"
+            or any(x != "" for x in (
+                manifest_override, source_override, target_override))
+            or (mode == "HL7_SILVER_WRITE" and
+                (allow_write is not True or retention_ok is not True))
+            or (mode == "HL7_SILVER_READBACK_ONLY" and
+                (allow_write is not False or retention_ok is not False))
+            or engine_version != "0.1.7"
+            or not isinstance(manifest_sha, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", manifest_sha)):
+        raise RuntimeError("HOLD_HL7_RELEASE_MODE_OR_SOURCE_FENCE")
+    if (not isinstance(patient_contract_json, str)
+            or not isinstance(encounter_contract_json, str)
+            or len(patient_contract_json) > 5000
+            or len(encounter_contract_json) > 5000):
+        raise RuntimeError("HOLD_HL7_CONTRACT_INPUT")
+    pb, eb = patient_contract_json.encode(), encounter_contract_json.encode()
+    load_pinned_contract(pb, "patient")
+    load_pinned_contract(eb, "encounter")
+    context = _hl7_source_context()
+    paths = _hl7_real_paths(context)
+    metrics = {"patient": 0, "encounter": 0,
+               "quarantine_or_reject": 0, "source_objects": 42}
+    # Source proof MUST be fresh; a stale historical P2 run is not evidence.
+    raw_provenance = _hl7_verified_original_raw(spark, context)
+    root = _hl7_transfer_root(context)
+    # Candidate files are transient, create-only, previously verified from
+    # exact old P2 Raw. Expected manifest hash comes from protected controller.
+    bundle = {
+        k: _hl7_binary_exact(
+            spark, root + "/" + k,
+            limit=(16384 if k == "candidate_manifest.json" else 16 * 1024 * 1024))
+        for k in ("canonical_patient.json", "canonical_encounter.json",
+                  "candidate_manifest.json")
+    }
+    prepared = prepare_hl7_candidate_bundle_for_silver(
+        spark, bundle=bundle, bundle_manifest_sha256=manifest_sha,
+        context=context, patient_contract_bytes=pb,
+        encounter_contract_bytes=eb, source_evidence_verified=True)
+    for frame in (prepared.patient_df, prepared.encounter_df):
+        for row in frame.select("source_file", "source_file_sha256",
+                                "source_file_size_bytes").distinct().collect():
+            key = row["source_file"]
+            if (key not in raw_provenance or
+                    raw_provenance[key] != (
+                        row["source_file_sha256"], row["source_file_size_bytes"])):
+                raise ValueError("HOLD_HL7_CANDIDATE_RAW_ORIGIN_DRIFT")
+    _HL7_CANONICAL_CONTRACTS.clear()
+    _HL7_CANONICAL_CONTRACTS.update(patient=pb, encounter=eb)
+    try:
+        exists = {k: _g3_delta_exists(spark, path)
+                  for k, path in paths.items()}
+    except Exception:
+        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                               context.processing_version, None, metrics,
+                               ("Silver Delta state unknown",))
+    if any(exists.values()):
+        if not all(exists[k] for k in ("patient", "encounter", "approval")) or exists["quarantine"]:
+            return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                                   context.processing_version, None, metrics,
+                                   ("partial or quarantined Silver",))
+        try:
+            p = spark.read.format("delta").load(paths["patient"])
+            e = spark.read.format("delta").load(paths["encounter"])
+            _hl7_reopened_dq(p, e, prepared, context)
+            expected = _canonical_silver_approval_row(
+                prepared, pb, eb,
+                source_preservation_strategy="VERIFIED_HL7_CANDIDATE_V1")
+            approval = spark.read.format("delta").load(paths["approval"]).collect()
+            if len(approval) != 1 or approval[0].asDict(recursive=True) != expected:
+                raise ValueError("HOLD_HL7_APPROVAL_MISMATCH")
+        except Exception:
+            return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                                   context.processing_version, None, metrics,
+                                   ("persisted Silver/approval drift",))
+        return NotebookOutcome("SILVER_SKIP_VERIFIED",
+                               context.source_batch_id, context.processing_version,
+                               prepared.publication_id,
+                               {**metrics, "patient": prepared.patient_count,
+                                "encounter": prepared.encounter_count}, ())
+    if mode == "HL7_SILVER_READBACK_ONLY":
+        return NotebookOutcome("HOLD_SILVER_NOT_FOUND", context.source_batch_id,
+                               context.processing_version, None, metrics, ())
+    # No existing Delta: the single physical Writer owns all Silver writes.
+    try:
+        _write_verified_canonical_silver(
+            spark, context=context, batch=prepared, paths=paths,
+            patient_contract_bytes=pb, encounter_contract_bytes=eb,
+            source_preservation_strategy="VERIFIED_HL7_CANDIDATE_V1",
+            validate_persisted_canonical=_hl7_reopened_dq)
+    except Exception:
+        return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
+                               context.processing_version, None, metrics,
+                               ("partial/unknown ACK requires independent physical readback",))
+    return NotebookOutcome("SILVER_APPROVED",
+                           context.source_batch_id, context.processing_version,
+                           prepared.publication_id,
+                           {**metrics, "patient": prepared.patient_count,
+                            "encounter": prepared.encounter_count}, ())
+
+
 # G5 source boundary only. This does NOT query an OMOP identity map, map
 # clinical Concepts, persist Candidate Delta or authorize Warehouse Gold.
 # Historical G4 processing=engine-0.1.1 MUST stay pinned for existing Delta.
