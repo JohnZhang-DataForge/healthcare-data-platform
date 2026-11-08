@@ -44,6 +44,14 @@ Self-Runner [PR #594](https://github.com/JohnZhang-DataForge/Self-Runner/pull/59
 
 新增 `silver_identity.py::plan_silver_identity_with_f2_bridge` 不发明新的算法，而是把同一 `F2SnapshotBridge` 中 Map/Gold/Allocator 传给原 `plan_silver_identity`、唯一 F2 `plan_ids` 与 Shared `bridge_f2_person_visit_allocation`，双向核对每一个 Patient/Visit ID、`PERSISTED/PROVISIONAL` 和 Parent FK；新版四文件 Warehouse 合成测试覆盖 100 Patient / 5918 Encounter、跨医院 Replay、空表起点与错误 Approval/HASH。调用方声明的 `physical_silver_readback_verified=True` **不能独立证明真实 G4 Silver 被物理核验**；本轮只对 F2 Warehouse 做了真实 SQL，不是 G4 真实数据的物理读回、临床/License 审批、Candidate Delta 或 Gold Release。原 F1/F2/P3/P4 Gate 继续生效。
 
+
+## 2026-11-08 — 最新真实 G4 OneLake 路径检查：文件集合 HOLD
+
+在原 [G5 Pipeline 与独立 Spark Silver 读回 Run #41636454542](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/41636454542) 已验收 P100/E5918/Q0 之后，OMOP Foundation 另建 **GET-only** OneLake Storage-audience Delta V0 Reader，在 [Self-Runner PR #598](https://github.com/JohnZhang-DataForge/Self-Runner/pull/598) 开发固定请求/Manifest/GUID/Approval、准入边界与现有 F2 SQL 双连接→唯一 Shared Preview 连接。所有源业务键只驻留工作进程，不写入日志/Artifact，且未执行 Notebook/Delta/SQL DML。PR #599（GUID-only URI）、#600（PathList 可空分页）、#601（GET 网络单次重试）、#602（隔离路径类型不下载内容的安全诊断）均通过离线 CI 并合并。
+
+真实 [Run #42480741491](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42480741491) 及 [#42481082624](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42481082624) 保持 Fabric Warehouse REST/DB_NAME/六表 SELECT 双连接 PASS；OneLake 目录读取现在可成功，但分别触发 `G4_QUARANTINE_PRESENT_HOLD` 和 `G4_FOREIGN_DELTA_CONTENT_HOLD`。**这两种结果仅表明当前物理目录不满足 Reader 的完整三表文件归属检查，不等于已经确认隔离数据行数，也不能断定旧审批失效。** 旧 Spark Q0 不可直接覆盖新目录异常。下一步在固定 G4 路径只读识别额外文件的结构与 Delta Log，而不抓取 Patient/Encounter/Quarantine 正文，确定是否无关文件/历史残留或实质隔离提交。未证实当前 G4 全量 Silver 行集时绝不触发 F2 实际 Preview，也不放行临床 Concept Profile、Candidate Delta、Gold Writer 或 License。
+
+
 ## Canonical G4 Silver → F2 Identity preview bridge (source-only)
 
 `silver_identity.py` consumes only independently verified canonical Silver Person/Encounter source key columns, exact hospital/source/batch namespace, physical Silver approval and zero-quarantine confirmation. It validates Visit-to-Patient FK, then calls the unchanged global `identity_plan.plan_ids` against a trusted complete Warehouse Map/Gold/Allocator snapshot. Output proposes both `person_id` and `visit_occurrence_id` with each Visit's linked Person INT.
