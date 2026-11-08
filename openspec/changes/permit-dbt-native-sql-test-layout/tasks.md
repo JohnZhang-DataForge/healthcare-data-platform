@@ -13,3 +13,5 @@
 
 ## P3 — Independent business source
 - [ ] 3.1 Only AFTER P2, allow the actual `azure-fabric/dbt/hl7-canonical/` standard scaffold and SQL candidate; it belongs to a separate business PR. No Legacy HL7 cleanup in this governance Change.
+
+<!-- Ephemeral negative PR-only test fixture. Not for merge into main. -->
