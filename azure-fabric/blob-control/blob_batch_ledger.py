@@ -243,8 +243,10 @@ def precheck(backend: BlobControlBackend, scope: StageScope) -> str:
         except LedgerHold:
             return "VERIFY_READONLY"
         if state.get("identity") != scope.identity():
-            return ("HOLD_VERSION" if state.get("identity", {}).get("batch_id")
-                    == scope.context.source_batch_id else "HOLD_CONFLICT")
+            other = state.get("identity")
+            return ("HOLD_VERSION" if isinstance(other, dict) and
+                    other.get("batch_id") == scope.context.source_batch_id
+                    else "HOLD_CONFLICT")
         return "VERIFY_READONLY" if state.get("status") == "COMPLETED" else "BUSY"
     return decide_replay(scope.context, [])
 
