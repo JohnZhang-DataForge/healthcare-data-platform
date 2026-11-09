@@ -222,6 +222,19 @@ def precheck(backend: BlobControlBackend, scope: StageScope) -> str:
                 or obj.get("version") != scope.version
                 or obj.get("status") != "VERIFIED"):
             return "HOLD_CONFLICT"
+        # A receipt after an unknown ACK may be durable while its claim is
+        # still FINALIZING. Require both immutable receipt and terminal claim.
+        control = _read(backend, scope.claim_key)
+        if control is None:
+            return "VERIFY_READONLY"
+        try:
+            control_state = _decode(control.data)
+        except LedgerHold:
+            return "VERIFY_READONLY"
+        if control_state.get("identity") != scope.identity():
+            return "HOLD_CONFLICT"
+        if control_state.get("status") != "COMPLETED":
+            return "VERIFY_READONLY"
         return decide_replay(scope.context, [_record(scope)])
     claim = _read(backend, scope.claim_key)
     if claim is not None:
