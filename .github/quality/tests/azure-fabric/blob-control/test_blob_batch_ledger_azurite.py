@@ -28,7 +28,12 @@ def canonical(obj):
 class BlobAzuriteTests(unittest.TestCase):
     def setUp(self):
         self.service = BlobServiceClient.from_connection_string(
-            os.environ.get("AZURITE_CONNECTION_STRING", "UseDevelopmentStorage=true"),
+            os.environ.get("AZURITE_CONNECTION_STRING", (
+                "DefaultEndpointsProtocol=http;"
+                "AccountName=devstoreaccount1;"
+                "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+                "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1"
+            )),
             retry_total=0)
         container = "blobcontrol" + uuid.uuid4().hex[:12]
         self.client = self.service.create_container(container)
