@@ -30,6 +30,7 @@ Shared 核心已可支撑 Fabric 主线开发；**Local 进入维护模式**、�
 | OpenLineage Publisher and Listener deployment | [Publisher](../../../azure-fabric/openlineage/) · [OpenLineage CODE](openlineage/CODE.md) |
 | Terraform resources | [IaC modules](../../../azure-fabric/infra-terraform/) · [Terraform CODE](infra-terraform/CODE.md) |
 | dbt Core SQL (future governed owner, not migrated) | [dbt engineering/Agent rules](dbt/README.md); current executable [HL7 CODE](../data-platform/hl7/CODE.md) |
+| Azure Blob Batch Claim / stage Receipt (source-only) | [Blob Control CODE](blob-control/CODE.md) · [OpenSpec](../../../openspec/changes/fabric-blob-batch-control-mvp/tasks.md) |
 | Shared pure Python engine | [Shared Engine](../data-platform/shared-engine/README.md) |
 
 ## Verified scope and acceptance boundaries
