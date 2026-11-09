@@ -588,7 +588,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
 
 class G5TrustedControllerOffline(unittest.TestCase):
-    """P3 controller contract, fake evidence service; NO cloud approvals."""
+    """P3.20 negative guard: even forged approved provider dictionaries MUST HOLD."""
 
     def setUp(self):
         # Share only the fixture, not its inherited test methods: otherwise
@@ -656,7 +656,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
                 self.spark, provider=provider, mode=mode)
 
     def test_g5_controller_missing_provider_holds_before_spark(self):
-        with self.assertRaisesRegex(RuntimeError, "TRUSTED_PROVIDER_MISSING"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled()
         self.assertEqual(self.business_calls, [])
         self.assertFalse(self.spark.delta)
@@ -666,7 +666,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
         original = p.load_pinned_inputs
         p.load_pinned_inputs = lambda: {**original(),
                                       "mapping_profile_bytes": b"unreviewed"}
-        with self.assertRaisesRegex(RuntimeError, "SOURCE_PROFILE_F2_DRIFT"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
         self.assertEqual(self.business_calls, [])
@@ -675,7 +675,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
         p = self.provider()
         p.verify_signed_clinical_review = lambda scope, profile: {
             "status": "PENDING_REVIEW"}
-        with self.assertRaisesRegex(RuntimeError, "CLINICAL_OR_LICENSE"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
         self.assertFalse(self.business_calls)
@@ -683,7 +683,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
     def test_g5_controller_license_denial_never_reads_sql(self):
         p = self.provider()
         p.verify_license_rights = lambda scope, profile: {"status": "PENDING"}
-        with self.assertRaisesRegex(RuntimeError, "CLINICAL_OR_LICENSE"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
 
@@ -692,9 +692,9 @@ class G5TrustedControllerOffline(unittest.TestCase):
         original = p.capture_full_warehouse_snapshot
         p.capture_full_warehouse_snapshot = lambda scope: {
             **original(scope), "connection_id": "same-connection"}
-        with self.assertRaisesRegex(RuntimeError, "CONNECTION_NOT_INDEPENDENT"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
-        self.assertEqual(p.snapshot_number, 2)
+        self.assertEqual(p.snapshot_number, 0)
         self.assertFalse(self.business_calls)
 
     def test_g5_controller_rejects_sql_identity_or_fingerprint_drift(self):
@@ -707,42 +707,36 @@ class G5TrustedControllerOffline(unittest.TestCase):
                 lambda scope, fn=original, mutation=changed:
                 {**fn(scope), **mutation})
             with self.subTest(changed=changed):
-                with self.assertRaisesRegex(RuntimeError, "F2_PHYSICAL_SNAPSHOT"):
+                with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
                     self.controlled(p)
                 self.assertFalse(self.business_calls)
 
     def test_g5_controller_rejects_missing_f1_concept_evidence(self):
         p = self.provider()
         p.read_verified_warehouse_concepts = lambda scope: None
-        with self.assertRaisesRegex(RuntimeError, "F1_PHYSICAL_CONCEPT_MISSING"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertFalse(self.business_calls)
 
-    def test_g5_controller_source_wires_business_without_parameter_bypass(self):
+    def test_g5_controller_forged_complete_provider_cannot_write(self):
         p = self.provider()
-        result = self.controlled(p)
-        self.assertEqual(result, "SYNTHETIC_P3_BUSINESS_ENTRY_CALLED_NOT_CLOUD")
-        self.assertEqual(p.snapshot_number, 2)
-        self.assertEqual(len(self.business_calls), 1)
-        kwargs = self.business_calls[0]
-        self.assertEqual(kwargs["mode"], "G5_CANDIDATE_WRITE")
-        self.assertIs(kwargs["write_authorized"], True)
-        self.assertIs(kwargs["clinically_reviewed"], True)
-        self.assertIs(kwargs["license_reviewed"], True)
-        self.assertIs(kwargs["warehouse_snapshot_verified"], True)
-        self.assertEqual(kwargs["mapping_profile_bytes"], self.profile)
-        self.assertEqual(kwargs["warehouse_snapshot_sha256"],
-                         self.scope.identity_snapshot_fingerprint)
+        # This provider claims all approved receipts, two independent SQL
+        # connections and real F1 concepts. All claims are self-authored.
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+            self.controlled(p)
+        self.assertEqual(p.snapshot_number, 0)
+        self.assertEqual(self.business_calls, [])
         self.assertFalse(self.spark.delta)
 
-    def test_g5_controller_readback_always_disables_write_flags(self):
+    def test_g5_controller_readback_rejects_provider_and_spark(self):
         p = self.provider()
-        result = self.controlled(p, mode="G5_CANDIDATE_READBACK_ONLY")
-        self.assertEqual(result, "SYNTHETIC_P3_BUSINESS_ENTRY_CALLED_NOT_CLOUD")
-        kwargs = self.business_calls[0]
-        self.assertEqual(kwargs["mode"], "G5_CANDIDATE_READBACK_ONLY")
-        for flag in ("write_authorized", "clinically_reviewed", "license_reviewed"):
-            self.assertIs(kwargs[flag], False)
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
+            self.controlled(p, mode="G5_CANDIDATE_READBACK_ONLY")
+        self.assertEqual(p.snapshot_number, 0)
+        self.assertEqual(self.business_calls, [])
+        self.assertFalse(self.spark.delta)
 
     def test_g5_controller_not_exposed_as_public_notebook_write_runmode(self):
         native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"

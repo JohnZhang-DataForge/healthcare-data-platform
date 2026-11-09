@@ -110,5 +110,84 @@ class G5NativeWheelIsolation(unittest.TestCase):
         self.assertEqual(self.native["engine_version"], PUBLISHED_VERSION)
 
 
+    def test_g5_native_legacy_provider_write_denied_before_any_callback(self):
+        # The old duck-typed provider was never a trust boundary. Even a
+        # convincing fake approval/SQL connection cannot enter a write path.
+        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        malicious = Mock()
+        malicious.load_pinned_inputs.return_value = {
+            "status": "SIGNED_CLINICAL_APPROVED",
+            "f2": "INDEPENDENT_SIX_TABLE_SQL_PASS",
+        }
+        spark = Mock()
+        for mode in ("G5_CANDIDATE_WRITE", "SILVER_WRITE", "G5_GOLD_COMMIT"):
+            with self.subTest(mode=mode):
+                with self.assertRaisesRegex(
+                        RuntimeError,
+                        "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+                    method(spark, provider=malicious, mode=mode,
+                           attestation_bytes=b"fake")
+        malicious.load_pinned_inputs.assert_not_called()
+        malicious.verify_signed_clinical_review.assert_not_called()
+        malicious.verify_license_rights.assert_not_called()
+        malicious.capture_full_warehouse_snapshot.assert_not_called()
+        malicious.read_verified_warehouse_concepts.assert_not_called()
+        spark.read.format.assert_not_called()
+        spark.sql.assert_not_called()
+
+    def test_g5_native_readback_rejects_fake_provider_and_spark(self):
+        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        poisoned_provider = Mock()
+        spark = Mock()
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
+            method(spark, provider=poisoned_provider,
+                   mode="G5_CANDIDATE_READBACK_ONLY",
+                   attestation_bytes=b"forged")
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
+            method(None, provider=poisoned_provider,
+                   mode="G5_CANDIDATE_READBACK_ONLY",
+                   attestation_bytes=b"forged")
+        poisoned_provider.load_pinned_inputs.assert_not_called()
+        spark.sql.assert_not_called()
+
+    def test_g5_native_transport_cannot_bypass_effective_wheel_halt(self):
+        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_NATIVE_0111_TRANSPORT_WHEEL_NOT_PUBLISHED"):
+            method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+                   attestation_bytes=b"forged")
+        with patch.dict(method.__globals__, {"run_mode": "G5_CANDIDATE_WRITE"}):
+            with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_RUN_MODE"):
+                method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+                       attestation_bytes=b"forged")
+        with patch.dict(method.__globals__, {"write_authorized": True}):
+            with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_RUN_MODE"):
+                method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+                       attestation_bytes=b"forged")
+        # Hypothetical source-only version must still require actual signed
+        # bytes before importing the future verifier or calling the provider.
+        with patch.dict(method.__globals__, {"engine_version": "0.1.11"}):
+            for bad in (None, "", b"", b"a" * 8193):
+                with self.subTest(bad=type(bad).__name__):
+                    with self.assertRaisesRegex(
+                            RuntimeError,
+                            "HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING"):
+                        method(None, provider=None,
+                               mode="G5_CANDIDATE_READBACK_ONLY",
+                               attestation_bytes=bad)
+        source = NATIVE.read_text(encoding="utf-8")
+        body = source.split(
+            "def execute_g5_candidate_from_trusted_controller(", 1)[1].split(
+            "\ndef execute_g5_person_visit_business(", 1)[0]
+        self.assertNotIn("provider.verify_signed_clinical_review(", body)
+        self.assertNotIn("provider.verify_license_rights(", body)
+        self.assertNotIn("provider.capture_full_warehouse_snapshot(", body)
+        self.assertNotIn("execute_g5_person_visit_business(", body)
+        self.assertIn("G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED", body)
+
+
+
 if __name__ == "__main__":
     unittest.main()
