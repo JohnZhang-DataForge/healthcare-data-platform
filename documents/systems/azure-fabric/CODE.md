@@ -13,6 +13,8 @@ source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 
 ## 组件源码归属
 
+| Fabric Blob Batch Control (new source-only) | [`azure-fabric/blob-control/`](../../../azure-fabric/blob-control/) | [Blob Control CODE](blob-control/CODE.md) | Same `johnzhang/landing`, stage claim/receipt SDK adapter; no new Container/identity, Shared I/O or production run; source CI does not satisfy G5 Gold/P3.19 |
+
 | 组件 | 源码目录 | 唯一组件源码地图 | 约束 |
 | --- | --- | --- | --- |
 | Terraform | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | [Terraform CODE.md](infra-terraform/CODE.md) · [安全设计和历史 Plan](infra-terraform/ARCHITECTURE.md) | 七个 Root/Module，IAM、远程 State、Fabric Item Bootstrap；未证明 Apply |
