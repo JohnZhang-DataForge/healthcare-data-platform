@@ -21,7 +21,7 @@ RECEIPT = re.compile(
 SOURCE = re.compile(
     r"clinical/v1/[a-z][a-z0-9-]{2,63}/[a-z][a-z0-9-]{2,63}/"
     r"[A-Za-z0-9][A-Za-z0-9-]{7,65}/(?:landing-manifest\.json|"
-    r"(?:FHIR_R4|HL7_V2)/[A-Za-z0-9][A-Za-z0-9._/-]{0,220})\Z")
+    r"(?:FHIR_R4|HL7_V2)/[^\\x00-\\x1f\\\\?#%]{1,220})\Z")
 
 
 class AzureBlobBatchBackend:
@@ -65,6 +65,8 @@ class AzureBlobBatchBackend:
 
     def read(self, key: str) -> Snapshot:
         self._read_key(key)
+        if "/../" in key or key.endswith("/..") or "//" in key:
+            raise LedgerHold("READ_PATH_TRAVERSAL")
         from azure.core import MatchConditions
         from azure.core.exceptions import ResourceNotFoundError
         blob = self.container.get_blob_client(key)
