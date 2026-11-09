@@ -54,3 +54,31 @@ jobs:
           print("FABRIC_BLOB_LEDGER_SOURCE_CI_PASS")
           print("REAL_AZURE_PUT=NONE REAL_LEASE=NONE FABRIC_CU=NONE")
           PY
+
+  blob-azurite-sdk-only:
+    name: Azure SDK conditional Blob API on Azurite (emulator only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite:3.33.0
+        ports:
+          - 10000:10000
+    env:
+      AZURITE_ONLY: "1"
+      PYTHONPATH: shared-data-engine/src:azure-fabric/blob-control
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install existing immutable Publisher Azure SDK versions (CI only)
+        run: pip install -r local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt
+      - name: Atomic create, ETag CAS, 60s lease, receipt GET and repeat 409
+        run: |
+          set -Eeuo pipefail
+          python -m unittest discover -s .github/quality/tests/azure-fabric/blob-control -p 'test_blob_batch_ledger_azurite.py' -v
+          echo 'AZURITE_CONDITIONAL_BLOB_SDK_PASS'
+          echo 'PRODUCTION_AZURE_STORAGE=NONE FABRIC_CU=NONE'
