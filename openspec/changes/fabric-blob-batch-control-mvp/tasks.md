@@ -1,6 +1,6 @@
 # Tasks — Fabric Blob Batch Control MVP
 
-> 2026-11-09 用户决定：一个现有 Credential、同一个 `johnzhang/landing` Container，`_control/v1/` 与 `processed/v1/` 虚拟前缀；原始 `clinical/v1/` 完全不动。设计来源 PR #856；Blob Adapter 源码已由 PR #857 合并。只读云审计已受控执行；真实 Blob 状态写入、Fabric E2E 与生产门禁仍保持待验收。
+> 2026-11-09 用户决定：一个现有 Credential、同一个 `johnzhang/landing` Container，`_control/v1/` 与 `processed/v1/` 虚拟前缀；原始 `clinical/v1/` 完全不动。设计来源 PR #856；Blob Adapter 源码已由 PR #857 合并。只读云审计及新合成批次的真实 Blob Claim/CAS/Lease 已通过 Tasks 3.1–3.2；目标物理读回、Completion Receipt、Fabric E2E 与生产门禁仍待验收。
 
 ## 1. Design freeze / session handoff (docs-only)
 
@@ -21,7 +21,7 @@
 
 - [x] 3.1 单独核实一个 Credential 的 `landing` 实际访问与写权限、当前 Blob metadata/Policy、前缀碰撞与活动 HL7/FHIR Job；权限不满足则 HOLD，报告精确原因，不自行创建 IAM 身份。（同一个 Publisher SP 真实 Azure Claim/CAS/Lease PASS；详见 2026-11-09 Azure Run #42630476797。）
 - [x] 3.2 新合成测试批次下执行 Azure conditional create / 412 / ETag / Lease / parallel readback / unknown-ACK（仅受控的已批准执行入口）；保留真实 HTTP/ETag/Request IDs，不写历史已交付对象。（两次独立新合成 Request 的 Azure Run #42630476797 / #42631631148 PASS；412、409 与原始 Request ID 已读回；ACK-loss 为真实 PUT 后客户端模拟故障，不等同真实网络掉线。）
-- [ ] 3.3 测试 `processed` 回执与既有 Fabric 物理目标校验对齐；任何目标未知/源 drift/暂时关闭 Capacity 必须安全返回 VERIFY_READONLY/HOLD，绝不虚构 Gold。先验证 Blob-only SKIP 可以避免不必要的 CU。
+- [ ] 3.3 测试 `processed` 回执与既有 Fabric 物理目标校验对齐；任何目标未知/源 drift/暂时关闭 Capacity 必须安全返回 VERIFY_READONLY/HOLD，绝不虚构 Gold。先验证 Blob-only SKIP 可以避免不必要的 CU。（新源码强制真实 Target Reader 的门禁与 mock/Azurite 测试见下一节；**实际 Fabric Stage Target 独立读回并发行真实 Receipt 尚未执行，不能勾选**。）
 - [ ] 3.4 文档记录真实 Run、成本计数/请求量、重试与异常恢复结果；依测试结论决定是否发布 Adapter。没有必要重新做 G4 P100/E5918 或 F2 六表此前已验收的实机流程。
 
 ## 4. Follow-on integration / hold gates
@@ -62,3 +62,12 @@
 - Valid active Lease + deliberately **wrong If-Match ETag** on a new `_control` claim returned Azure **HTTP 412** with original `x-ms-request-id=00102cae-601e-002c-4953-7072e0000000`; production Adapter again returned `BlobConflict` for stale CAS. Correct leased CAS updated ETag and was physically HEAD/GET read back (HEAD 200 Request IDs `00102c85-601e-002c-2653-7072e0000000` before, `00102dee-601e-002c-6353-7072e0000000` after). Confirmed duplicate conditional create **HTTP 409** / Request ID `00102f8a-601e-002c-4953-7072e0000000`.
 - Concurrent Claim one winner and another `BUSY`, true Lease acquire/renew/release, two parallel exact readbacks, actual PUT + *simulated client ACK loss* followed by independent remote GET/HOLD without retry again PASS. Actual Azure conflict codes are real, while the ACK fault injection is intentionally controlled on the caller side. Real Run explicitly reports **zero** `processed` Receipts, `fabric_capacity=NOT_STARTED`, no clinical stage or OMOP physical output, no new Container/IAM.
 - Thus **Tasks 3.1 and 3.2 are accepted for Blob control real Azure capability only**. Task 3.3 remains OPEN because `processed` verified completion cannot be published without an independently read-back Fabric stage target (and G5 Clinical/F1/F2/signed token/Writer gates); Task 3.4 retains exact request-cost/billing review and release decision. No production signed nonce P3.19 or Gold COMMIT is inferred.
+
+
+## 2026-11-09 — Task 3.3 physical-target evidence gate: source/CI progression only
+
+- 本轮 Healthcare PR 为防止 `TargetProof(verified=True)` 由任意调用方自报而产生虚假的完成回执，在 `finalize` 及 `reconcile_unknown_finalize` 引入**无默认值、显式注入**的 `PhysicalTargetReader.readback(scope)`。执行前必须再次得到完全一致的 Stage/Publication/Approval/Evidence SHA/UTC 证明；读回不可用、字段漂移、来源 Manifest/Payload 在 Claim 后变化必须失败并禁止 Receipt。
+- Receipt 追加 `target_readback_contract=independent-physical-stage-readback-v1`，Blob-only `precheck` 必须精确匹配、验证 COMPLETED Claim 以及 Landing Manifest SHA/ETag 后才 SKIP；否则返回 VERIFY_READONLY/HOLD/BUSY。其本身只读，不调用 Fabric/SQL/Spark/Capacity。
+- Mock 与隔离 Azurite 的 `SyntheticPhysicalTargetReader` **仅仅是 CI Fixture**，不可被生产编排注入，模拟成功时并不证明真实 Fabric Delta/Warehouse 的物理目标。未通过 trusted stage owner 实际独立读回、P1/F1/F2/License/G5 签名等独立门禁，不调用真实 `finalize` 或写 `processed/v1`。
+- 已通过真实 Azure 的前两个非临床 Batch 是纯空 FHIR Bundle，没有 Fabric Delta/Gold 物理目标，**不准**事后补一个伪造 Silver 完成 Receipt；保留它们为 Claim/Lease/ACK 测试的审计对象。
+- Tasks 3.3/3.4 保持 OPEN 直到单独确认真实物理 Stage Target、Receipt 创建与 Blob-only skip，以及成本/请求量归因；本次新门禁代码只属于 SOURCE/CI 进展。

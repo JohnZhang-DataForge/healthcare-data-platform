@@ -141,11 +141,75 @@ class BatchLedgerTest(unittest.TestCase):
             "fabric://healthcare-omop/verified-target",
             "f"*64, "2026-11-09T13:20:00Z", "reviewed-approval-987", True)
 
+    def reader(self):
+        # This reader is explicitly a CI fixture. Production must inject a
+        # stage-specific real Fabric readback owner, never this test double.
+        fixture = self
+
+        class SyntheticPhysicalTargetReader:
+            def readback(self, scope):
+                return fixture.proof(scope)
+
+        return SyntheticPhysicalTargetReader()
+
+    def test_finalize_requires_physical_reader_before_any_write(self):
+        state, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
+        self.assertEqual(state, "CLAIMED")
+        with self.assertRaisesRegex(LedgerHold, "TARGET_PHYSICAL_READER_REQUIRED"):
+            finalize(self.backend, self.scope, claim, self.proof())
+        self.assertEqual(precheck(self.backend, self.scope), "BUSY")
+        self.assertNotIn(self.scope.receipt_key, self.backend.items)
+
+    def test_unavailable_or_mismatched_target_readback_cannot_complete(self):
+        state, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
+        self.assertEqual(state, "CLAIMED")
+
+        class FailedReader:
+            def readback(self, scope):
+                raise TimeoutError("target capacity off")
+
+        with self.assertRaisesRegex(LedgerHold, "TARGET_PHYSICAL_READBACK_UNAVAILABLE"):
+            finalize(self.backend, self.scope, claim, self.proof(),
+                     target_reader=FailedReader())
+
+        class ConflictingTarget:
+            def readback(self, scope):
+                good = self_good
+                from dataclasses import replace
+                return replace(good, evidence_sha256="a"*64)
+
+        self_good = self.proof()
+        with self.assertRaisesRegex(LedgerHold, "TARGET_PHYSICAL_EVIDENCE_MISMATCH"):
+            finalize(self.backend, self.scope, claim, self.proof(),
+                     target_reader=ConflictingTarget())
+        self.assertEqual(precheck(self.backend, self.scope), "BUSY")
+        self.assertNotIn(self.scope.receipt_key, self.backend.items)
+
+    def test_source_drift_after_claim_blocks_receipt(self):
+        state, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
+        self.assertEqual(state, "CLAIMED")
+        self.backend.items[self.scope.source_key] = Snapshot(
+            b"{}", self.scope.landing_manifest_etag)
+        with self.assertRaisesRegex(LedgerHold, "LANDING_MANIFEST_DRIFT"):
+            finalize(self.backend, self.scope, claim, self.proof(),
+                     target_reader=self.reader())
+        self.assertNotIn(self.scope.receipt_key, self.backend.items)
+
+    def test_recovery_requires_a_second_independent_readback(self):
+        state, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
+        self.assertEqual(state, "CLAIMED")
+        self.backend.fail_create_after_write.add(self.scope.receipt_key)
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(),
+                                  target_reader=self.reader()), "VERIFY_READONLY")
+        with self.assertRaisesRegex(LedgerHold, "TARGET_PHYSICAL_READER_REQUIRED"):
+            reconcile_unknown_finalize(self.backend, self.scope, claim, self.proof())
+        self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
+
     def test_complete_and_replay_capacity_offline(self):
         self.assertEqual(precheck(self.backend, self.scope), "NEW")
         result, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
         self.assertEqual(result, "CLAIMED")
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()),
                          "VERIFIED_RECEIPT_WRITTEN")
         self.assertEqual(precheck(self.backend, self.scope), "SKIP")
         self.assertEqual(acquire(self.backend, self.scope, owner="runner-02", attempt=1)[0], "SKIP")
@@ -165,9 +229,9 @@ class BatchLedgerTest(unittest.TestCase):
         state, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
         self.assertEqual(state, "CLAIMED")
         forged = Claim(claim.owner, claim.attempt, '"stale"', claim.lease_id)
-        self.assertEqual(finalize(self.backend, self.scope, forged, self.proof()), "VERIFY_READONLY")
+        self.assertEqual(finalize(self.backend, self.scope, forged, self.proof(), target_reader=self.reader()), "VERIFY_READONLY")
         self.backend.leases[self.scope.claim_key] = "new-owner-lease"
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()), "VERIFY_READONLY")
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()), "VERIFY_READONLY")
         self.assertNotIn(self.scope.receipt_key, self.backend.items)
 
     def test_unknown_claim_ack_no_second_write(self):
@@ -181,7 +245,7 @@ class BatchLedgerTest(unittest.TestCase):
         status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
         self.assertEqual(status, "CLAIMED")
         self.backend.fail_create_after_write.add(self.scope.receipt_key)
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()), "VERIFY_READONLY")
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()), "VERIFY_READONLY")
         self.assertIn(self.scope.receipt_key, self.backend.items)
         self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
 
@@ -189,11 +253,11 @@ class BatchLedgerTest(unittest.TestCase):
         status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
         self.assertEqual(status, "CLAIMED")
         self.backend.fail_create_after_write.add(self.scope.receipt_key)
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()),
                          "VERIFY_READONLY")
         self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
         self.assertEqual(reconcile_unknown_finalize(
-            self.backend, self.scope, claim, self.proof()),
+            self.backend, self.scope, claim, self.proof(), target_reader=self.reader()),
             "VERIFIED_RECEIPT_RECOVERED")
         self.assertEqual(precheck(self.backend, self.scope), "SKIP")
 
@@ -201,17 +265,17 @@ class BatchLedgerTest(unittest.TestCase):
         status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
         self.assertEqual(status, "CLAIMED")
         self.backend.fail_create_after_write.add(self.scope.receipt_key)
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()),
                          "VERIFY_READONLY")
         self.backend.leases[self.scope.claim_key] = "expired-new-holder"
         self.assertEqual(reconcile_unknown_finalize(
-            self.backend, self.scope, claim, self.proof()), "VERIFY_READONLY")
+            self.backend, self.scope, claim, self.proof(), target_reader=self.reader()), "VERIFY_READONLY")
         self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
 
     def test_completed_receipt_source_manifest_drift_not_skip(self):
         status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
         self.assertEqual(status, "CLAIMED")
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()),
                          "VERIFIED_RECEIPT_WRITTEN")
         self.backend.items[self.scope.source_key] = Snapshot(b"{}",
                                                             self.scope.landing_manifest_etag)
@@ -241,7 +305,7 @@ class BatchLedgerTest(unittest.TestCase):
     def test_silver_does_not_approve_gold(self):
         status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
         self.assertEqual(status, "CLAIMED")
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()),
                          "VERIFIED_RECEIPT_WRITTEN")
         gold = self.make_scope(stage="GOLD_COMMITTED")
         self.assertEqual(precheck(self.backend, gold), "NEW")
@@ -258,7 +322,7 @@ class BatchLedgerTest(unittest.TestCase):
             finalize(self.backend, self.scope, claim, bad)
         self.assertNotIn(self.scope.receipt_key, self.backend.items)
         self.backend.fail_cas = True
-        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof(), target_reader=self.reader()),
                          "VERIFY_READONLY")
 
     def test_conflicting_receipt_never_skip(self):
