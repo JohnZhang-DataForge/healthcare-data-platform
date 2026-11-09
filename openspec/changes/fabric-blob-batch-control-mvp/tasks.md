@@ -22,7 +22,7 @@
 - [x] 3.1 单独核实一个 Credential 的 `landing` 实际访问与写权限、当前 Blob metadata/Policy、前缀碰撞与活动 HL7/FHIR Job；权限不满足则 HOLD，报告精确原因，不自行创建 IAM 身份。（同一个 Publisher SP 真实 Azure Claim/CAS/Lease PASS；详见 2026-11-09 Azure Run #42630476797。）
 - [x] 3.2 新合成测试批次下执行 Azure conditional create / 412 / ETag / Lease / parallel readback / unknown-ACK（仅受控的已批准执行入口）；保留真实 HTTP/ETag/Request IDs，不写历史已交付对象。（两次独立新合成 Request 的 Azure Run #42630476797 / #42631631148 PASS；412、409 与原始 Request ID 已读回；ACK-loss 为真实 PUT 后客户端模拟故障，不等同真实网络掉线。）
 - [x] 3.3 已批准的历史 G4 `SILVER_APPROVED` 真实 OneLake 物理目标、Azure `processed/v1` Completion Receipt 与独立 Blob-only Replay `SKIP` 均完成真实验收：Self-Runner Runs #42707893782 / #42708750893，具体证据见文末。仅关闭本任务的 Silver 业务控制验收；不构成 G5 Candidate/Gold、临床/License、签名或生产自动执行批准。
-- [x] 3.4 文档记录真实 Run、成本计数/请求量、重试与异常恢复结果；依测试结论决定是否发布 Adapter。没有必要重新做 G4 P100/E5918 或 F2 六表此前已验收的实机流程。（**审计与发布决定已完成**：Task 3.3 无真实 Fabric Target，生产 Completion-Receipt 发布决定为 **HOLD**；Azure 费用仅凭请求量模型可审计，账单实际收费未取得，见下文。）
+- [x] 3.4 文档记录真实 Run、成本计数/请求量、重试与异常恢复结果；依测试结论决定是否发布 Adapter。没有必要重新做 G4 P100/E5918 或 F2 六表此前已验收的实机流程。（**审计与发布决定已完成**：最初 3.4 审计时因 Task 3.3 缺少真实目标与 Receipt，生产发布决定为 **HOLD**；2026-11-09 随后仅针对历史 G4 `SILVER_APPROVED` 完成真实 Receipt 与 Blob-only SKIP 验收，但**通用生产自动发布仍 HOLD**，需独立完成 Task 4.1 及相关门禁；Azure 费用仅按请求量模型估算，账单实际收费未取得，见文末。）
 
 ## 4. Follow-on integration / hold gates
 
