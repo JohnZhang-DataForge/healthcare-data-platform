@@ -107,6 +107,8 @@ class StageScope:
             raise LedgerHold("UNSAFE_IDENTITY_PATH")
         if self.stage not in STAGES:
             raise LedgerHold("UNAPPROVED_STAGE")
+        if c.source_system not in ("FHIR_R4", "HL7_V2"):
+            raise LedgerHold("UNAPPROVED_SOURCE_FORMAT")
         for value in (self.landing_manifest_sha256, self.mapping_profile_sha256):
             if not isinstance(value, str) or not HEX.fullmatch(value):
                 raise LedgerHold("INVALID_SHA256_PIN")
@@ -234,6 +236,12 @@ def precheck(backend: BlobControlBackend, scope: StageScope) -> str:
         if control_state.get("identity") != scope.identity():
             return "HOLD_CONFLICT"
         if control_state.get("status") != "COMPLETED":
+            return "VERIFY_READONLY"
+        # A tiny Manifest GET is cheaper than waking Fabric and catches a
+        # changed/deleted source even when a prior receipt is unchanged.
+        source = _read(backend, scope.source_key)
+        if (source is None or source.etag != scope.landing_manifest_etag
+                or _sha(source.data) != scope.landing_manifest_sha256):
             return "VERIFY_READONLY"
         return decide_replay(scope.context, [_record(scope)])
     claim = _read(backend, scope.claim_key)
@@ -375,3 +383,47 @@ def finalize(backend: BlobControlBackend, scope: StageScope, claim: Claim,
     except Exception:
         return "VERIFY_READONLY"
     return "VERIFIED_RECEIPT_WRITTEN"
+
+
+def reconcile_unknown_finalize(backend: BlobControlBackend, scope: StageScope,
+                               claim: Claim, proof: TargetProof) -> str:
+    """Recover a lost receipt PUT ACK without creating a second receipt.
+
+    A separately trusted stage owner MUST repeat target physical readback and
+    issue a fresh TargetProof. Retain the original valid lease and attempt;
+    after lease expiry or an uncertain target state, HOLD for manual review.
+    """
+    proof.verify(scope)
+    if not isinstance(claim, Claim) or not claim.lease_id:
+        raise LedgerHold("INVALID_RECOVERY_CLAIM")
+    control = _read(backend, scope.claim_key)
+    if control is None:
+        return "VERIFY_READONLY"
+    state = _decode(control.data)
+    if (state.get("schema_version") != CONTRACT
+            or state.get("identity") != scope.identity()
+            or state.get("owner") != claim.owner
+            or state.get("attempt") != claim.attempt
+            or state.get("status") != "FINALIZING"):
+        return "VERIFY_READONLY"
+    # Re-validate exact immutable source; no historical source mutation.
+    verify_source(backend, scope)
+    receipt = _read(backend, scope.receipt_key)
+    expected = _json({"schema_version": CONTRACT, "identity": scope.identity(),
+                      "version": scope.version, "status": "VERIFIED",
+                      "proof": vars(proof)})
+    if receipt is None or receipt.data != expected:
+        return "VERIFY_READONLY"
+    try:
+        backend.renew_lease(scope.claim_key, claim.lease_id)
+        complete = _json(dict(state, status="COMPLETED"))
+        complete_etag = backend.cas_control(
+            scope.claim_key, complete, control.etag, claim.lease_id)
+        readback = _read(backend, scope.claim_key)
+        if (readback is None or readback.etag != complete_etag
+                or readback.data != complete):
+            return "VERIFY_READONLY"
+        backend.release_lease(scope.claim_key, claim.lease_id)
+    except Exception:
+        return "VERIFY_READONLY"
+    return "VERIFIED_RECEIPT_RECOVERED"
