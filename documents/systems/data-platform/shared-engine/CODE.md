@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **当前候选状态（2026-11-07）：Shared 新映射源码候选版本为 0.1.10，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前候选状态（2026-11-07）：Shared 新映射源码候选版本为 0.1.11，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 当前源码候选 0.1.8；Native Environment Git 唯一旧 Wheel 0.1.7 未被本轮修改；历史 0.1.6 Git 定义/Import 只读 Smoke 已验收；Candidate/Gold 未验收 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 当前源码候选 0.1.11；Native Environment Git 唯一旧 Wheel 0.1.7 未被本轮修改；历史 0.1.6 Git 定义/Import 只读 Smoke 已验收；Candidate/Gold 未验收 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -59,6 +59,10 @@
 | [BUILD-AND-TEST.md](BUILD-AND-TEST.md) | 原源码 README 的离线安装、Python/PySpark 测试、Wheel 构建及 Handoff 操作边界（唯一维护入口） |
 | [src/healthcare_data_engine/mapping/omop/race_resolution.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/race_resolution.py) | 0.1.10 Source/F1 Race **草稿**预检：检查 1002-5 原始 CDC Coding.system、UNK 原始 HL7 NullFlavor Coding.system、F1 输入候选行的 Race 标准域/有效日期；生成仅追加正数 Concept 的新 G5 Profile 草稿、保持 UNK 未映射/0 仅待审，不能替代物理 SQL 或临床审批 |
 | [src/healthcare_data_engine/mapping/omop/local_profile.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/local_profile.py) | 0.1.9 平台无关 Mapping Profile + P100/E5918 **汇总级 CoverageReview**：复用原 LocalDP Person/Visit Concept 权威；检查四类源字段完整性、patient/encounter 总数、版本/manifest SHA、未知码与频数，产出不含 Patient ID 的临床审核缺口清单；不执行 I/O、不分配 OMOP ID、绝不代表 Clinical/License Approval |
+
+| [src/healthcare_data_engine/security/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/security/__init__.py) | P3.18 SOURCE_ONLY 签名传输包目录，无配置或运行期副作用 |
+| [src/healthcare_data_engine/security/provider_attestation.py](../../../../shared-data-engine/src/healthcare_data_engine/security/provider_attestation.py) | 0.1.11 唯一纯来源 Ed25519 Provider→Native 临时证据传递合同：固定 G4/F1/F2/双角色 SHA、工作空间及目标受众，5 分钟有效期、严格 JSON canonical、外部原子 nonce 防重放；生产签名公钥及持久 ledger **保持空**，返回仅为 SOURCE_ONLY，绝不具有 Candidate/Gold 写权 |
+| [P3.18 transport central-quality tests](../../../../.github/quality/tests/shared-data-engine/transport/test_g5_provider_attestation.py) | Python 3.11/3.13 临时合成密钥验证签名/篡改/来源漂移/过期/重复/伪信任根，in-memory nonce 仅为离线替身，非生产安全验收 |
 
 ## Local / Shared 等价性测试（2026-11-06，合成离线限定）
 
@@ -134,3 +138,8 @@
 - `UNK` = Unknown 不能映射为任何现成 Race 身份。OMOP [CDM 5.4 PERSON race_concept_id](https://ohdsi.github.io/CommonDataModel/cdm54.html) 允许无确切信息时用 `0`，**但本期不向正式 G5 Profile 注入 0，也不修改原本严格拒绝 0 的 Shared Mapper / private Runner Provider**。未来需要经批准的类型化 no-information 合同、原始 FHIR Code System 的真实来源证据及单独的临床/法律/发布门禁；不许仅仅因为 FHIR Code 文本为 `UNK` 即改写。
 - 当前 LocalDP Rule 未包含 American Indian/Alaska Native，候选 Profile 仅在**合成 F1 记录满足标准+有效日期**时把此代码添加为对应的**正整数 Concept**，临床未经审批的字节 SHA 与任何正式 Profile 必须区分；仍有 `UNK` 2/100 **HOLD**。现有 Canonical Patient v1 只存 `race_code`，没有单独存 `Coding.system`，需要从冻结、可独立证明的 FHIR 原始资源生成外部来源 Code System 计数；未验收的调用方参数不算真实来源验收。
 - [Positive/negative SOURCE tests](../../../../.github/quality/tests/shared-data-engine/mapping/test_localdp_g5_profile.py) 覆盖 8657 合成行、错误 F1 Domain/Standard/Name/Vocabulary、失效日期、Code System 混淆、错误来源数、缺少 Provenance、跨医院隔离及未知零值，LocalDP 旧实现/数据不修改。本期源码包候选为 0.1.10；现有 Fabric Environment Git Wheel 0.1.7 未改动；**无云端查询/签名审核/真实 Candidate/Gold 写入**。
+
+
+## P3.18 Transport source-only 0.1.11（2026-11-08）
+
+新增 Shared Engine 唯一 Ed25519 证据 envelope 核验模块，独立于 Local/Fabric Mapper。它只能校验固定来源证据和时间/nonce，返回明确 NOT_RELEASE 的不可写回执。生产 Provider signer、Native pinned 公钥、持久原子 nonce ledger、实际 Native Notebook 调用和所有 Human Clinical/License 审批均**未就绪**。新的 0.1.11 只为源码 Wheel 候选；Fabric Environment 已 Published 的唯一 0.1.7 Wheel、Native 默认 HALT 均保持原样。只有另行审阅/发布后才可继续 P3.19 Native 集成；当前不执行 SQL、Delta、Fabric Spark 或持久化身份。

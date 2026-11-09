@@ -1,0 +1,56 @@
+name: Fabric G5 P3.18 Ed25519 Transport Source-only (No Cloud)
+
+# Only pure contract verification. Neither signing authority nor runtime
+# admission, no Native Notebook/Pipeline deployment, no OIDC, SQL, or writes.
+on:
+  pull_request:
+    paths:
+      - 'shared-data-engine/src/healthcare_data_engine/security/**'
+      - '.github/quality/tests/shared-data-engine/transport/test_g5_provider_attestation.py'
+      - 'openspec/changes/fabric-g5-approved-silver-omop-candidate/**'
+      - '.github/workflows/fabric-g5-trusted-transport-offline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'shared-data-engine/src/healthcare_data_engine/security/**'
+      - '.github/quality/tests/shared-data-engine/transport/test_g5_provider_attestation.py'
+      - '.github/workflows/fabric-g5-trusted-transport-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-only-transport:
+    name: Signed P3.18 transport negatives Python ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install only ephemeral fixture signature verifier
+        run: |
+          set -Eeuo pipefail
+          python -m pip install --no-cache-dir --disable-pip-version-check cryptography==44.0.3
+      - name: Verify source-only signed envelope, replay HOLD, and no native release
+        env:
+          PYTHONPATH: shared-data-engine/src
+        run: |
+          set -Eeuo pipefail
+          python -m unittest discover -s .github/quality/tests/shared-data-engine/transport -p 'test_g5_provider_attestation.py' -v
+          python -m py_compile shared-data-engine/src/healthcare_data_engine/security/provider_attestation.py
+          python - <<'PY'
+          from healthcare_data_engine.security import provider_attestation as a
+          assert a.NATIVE_TRUSTED_PROVIDER_KEYS == {}
+          assert a.NATIVE_ATOMIC_DURABLE_NONCE_CLAIM is None
+          assert a.PURPOSE == "PROVENANCE_ONLY_NO_WRITE"
+          print("P3_18_SOURCE_ONLY_SIGNATURE_CONTRACT=PASS")
+          print("P3_18_LIVE_NATIVE_TRANSPORT=NOT_RUN CANDIDATE=NO GOLD=NO SQL_DML=NO")
+          PY
