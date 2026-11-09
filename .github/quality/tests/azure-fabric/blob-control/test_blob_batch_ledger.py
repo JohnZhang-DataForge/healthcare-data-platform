@@ -10,7 +10,7 @@ import unittest
 
 from blob_batch_ledger import (
     BlobConflict, BlobMissing, Claim, LedgerHold, Snapshot, StageScope,
-    TargetProof, acquire, finalize, precheck, verify_source,
+    TargetProof, acquire, finalize, precheck, reconcile_unknown_finalize, verify_source,
 )
 from azure_blob_backend import AzureBlobBatchBackend
 from healthcare_data_engine.models.batch_context import BatchContext
@@ -183,6 +183,38 @@ class BatchLedgerTest(unittest.TestCase):
         self.backend.fail_create_after_write.add(self.scope.receipt_key)
         self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()), "VERIFY_READONLY")
         self.assertIn(self.scope.receipt_key, self.backend.items)
+        self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
+
+    def test_unknown_receipt_ack_reconciles_under_valid_lease(self):
+        status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
+        self.assertEqual(status, "CLAIMED")
+        self.backend.fail_create_after_write.add(self.scope.receipt_key)
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+                         "VERIFY_READONLY")
+        self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
+        self.assertEqual(reconcile_unknown_finalize(
+            self.backend, self.scope, claim, self.proof()),
+            "VERIFIED_RECEIPT_RECOVERED")
+        self.assertEqual(precheck(self.backend, self.scope), "SKIP")
+
+    def test_receipt_unknown_ack_recovery_stale_lease_holds(self):
+        status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
+        self.assertEqual(status, "CLAIMED")
+        self.backend.fail_create_after_write.add(self.scope.receipt_key)
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+                         "VERIFY_READONLY")
+        self.backend.leases[self.scope.claim_key] = "expired-new-holder"
+        self.assertEqual(reconcile_unknown_finalize(
+            self.backend, self.scope, claim, self.proof()), "VERIFY_READONLY")
+        self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
+
+    def test_completed_receipt_source_manifest_drift_not_skip(self):
+        status, claim = acquire(self.backend, self.scope, owner="runner-01", attempt=1)
+        self.assertEqual(status, "CLAIMED")
+        self.assertEqual(finalize(self.backend, self.scope, claim, self.proof()),
+                         "VERIFIED_RECEIPT_WRITTEN")
+        self.backend.items[self.scope.source_key] = Snapshot(b"{}",
+                                                            self.scope.landing_manifest_etag)
         self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
 
     def test_manifest_drift_blocks_new_claim(self):
