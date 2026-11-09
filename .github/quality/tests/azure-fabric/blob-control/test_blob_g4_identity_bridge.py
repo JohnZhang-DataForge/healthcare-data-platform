@@ -144,6 +144,12 @@ class G4IdentityBridgeTests(unittest.TestCase):
         new_scope = replace(self.scope, context=new_context)
         self.assertNotEqual(new_scope.identity()["batch_id"],
                             self.scope.identity()["batch_id"])
+        # A caller cannot smuggle an HL7 logical Batch through a FHIR
+        # delivery by explicitly supplying the wrong target_format bridge.
+        wrong_format = replace(self.context, source_system="HL7_V2",
+                               source_version="HL7_V2")
+        with self.assertRaisesRegex(LedgerHold, "SOURCE_FORMAT_BRIDGE_CONFLICT"):
+            replace(self.scope, context=wrong_format)
 
 
 if __name__ == "__main__":
