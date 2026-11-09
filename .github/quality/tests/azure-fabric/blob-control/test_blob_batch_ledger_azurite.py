@@ -52,8 +52,8 @@ class BlobAzuriteTests(unittest.TestCase):
             processed_at=datetime(2026, 11, 9, tzinfo=timezone.utc))
         root = f"clinical/v1/{self.context.hospital_id}/{self.context.feed_id}/{self.request}"
         payload_key = root + "/FHIR_R4/Bundle-01.json"
-        result = self.client.upload_blob(payload_key, self.payload, overwrite=False)
-        self.payload_etag = result["etag"]
+        self.client.upload_blob(payload_key, self.payload, overwrite=False)
+        self.payload_etag = self.client.get_blob_client(payload_key).get_blob_properties().etag
         self.manifest = {
             "schema_version": "healthcare-azure-blob-landing-manifest-v1",
             "hospital_id": self.context.hospital_id,
@@ -67,8 +67,9 @@ class BlobAzuriteTests(unittest.TestCase):
             }]
         }
         raw = canonical(self.manifest)
-        manifest_etag = self.client.upload_blob(
-            root + "/landing-manifest.json", raw, overwrite=False)["etag"]
+        self.client.upload_blob(root + "/landing-manifest.json", raw, overwrite=False)
+        manifest_etag = self.client.get_blob_client(
+            root + "/landing-manifest.json").get_blob_properties().etag
         self.scope = StageScope(
             self.context, "SILVER_APPROVED", hashlib.sha256(raw).hexdigest(),
             manifest_etag, "mapper-v1", "0.1.11", "a"*64,
