@@ -50,3 +50,11 @@ These are Blob **name prefixes**, not Azure filesystem directories or new contai
 - 单独授权仅对 **全新测试 Batch** 的一次真实 Azure conditional PUT/GET 和 ETag/Lease 读回；测试路径确定、无患者数据、无复制/移动/清理历史原件；使用唯一 Run ID、保留可审计回执。
 - 接入实际 G5 执行之前仍保留原 G4/P3/F1/F2 完整门禁，不重复过往验收，不擅自启用候选写入。
 - 每次实验后须记录准确 Git SHA、Azure Request IDs（非凭据）、source/target SHA、实际状态、CI/Job Run、Unknown ACK 结论。失败不得假定已完成。
+
+## 2026-11-09 — Restricted historical G4 Silver completion registration (accepted)
+
+A single **previously physically approved** historical G4 `SILVER_APPROVED` Stage is the sole reviewed exception to the initial “new synthetic test Batch only” completion acceptance approach: `atlanta-hospital-a/atlanta-hospital-a-fhir-r4/atlanta-fhir-gh-41552666929` with the original Shared Batch ID and distinct delivered vs upstream Manifest SHA pins. The stage was already physically complete in OneLake before Blob Batch Control existed.
+
+For this **one pin-exact case only**, an independent real Delta Parquet/commit/approval readback is required **before** a new control Claim is registered. This new Claim represents the current bounded recovery/control registration attempt, **not a fabricated historical execution Claim**. Reuse normal conditional Claim create, renewable short Lease, ETag CAS, exact Landing Source check, fresh trusted PhysicalTargetReader, immutable `VERIFIED` Receipt create, independent GET and terminal Claim transition. Only after those succeed can a separate Blob-only worker with **no Fabric OIDC or Capacity access** return `SKIP` for the same Scope. Unknown ACK requires GET and valid same-owner Lease/physical revalidation, never blind overwrite or auto lease stealing.
+
+This is a stage-specific state reconciliation, **never a retroactive Silver Writer**, and is not generalized to arbitrary old batches or Stage approvals. The existing source files were not touched. Evidence: Self-Runner Runs [#42707893782](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42707893782) and [#42708750893](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42708750893); full Artifact SHA, request budget and negative checks in `tasks.md`. G5 Candidate/Gold, P1/F1/F2/License/Native signature and formal 4.1 automatic orchestration remain separately gated, with default HALT unchanged. Source-modeled Blob requests are **not** actual Azure billed charges.
