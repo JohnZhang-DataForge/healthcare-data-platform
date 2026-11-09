@@ -6,14 +6,14 @@ on:
   pull_request:
     paths:
       - 'shared-data-engine/src/healthcare_data_engine/security/**'
-      - 'shared-data-engine/tests/test_g5_provider_attestation.py'
+      - '.github/quality/tests/shared-data-engine/transport/test_g5_provider_attestation.py'
       - 'openspec/changes/fabric-g5-approved-silver-omop-candidate/**'
       - '.github/workflows/fabric-g5-trusted-transport-offline.yml'
   push:
     branches: [main]
     paths:
       - 'shared-data-engine/src/healthcare_data_engine/security/**'
-      - 'shared-data-engine/tests/test_g5_provider_attestation.py'
+      - '.github/quality/tests/shared-data-engine/transport/test_g5_provider_attestation.py'
       - '.github/workflows/fabric-g5-trusted-transport-offline.yml'
 
 permissions:
@@ -44,7 +44,7 @@ jobs:
           PYTHONPATH: shared-data-engine/src
         run: |
           set -Eeuo pipefail
-          python -m unittest discover -s shared-data-engine/tests -p 'test_g5_provider_attestation.py' -v
+          python -m unittest discover -s .github/quality/tests/shared-data-engine/transport -p 'test_g5_provider_attestation.py' -v
           python -m py_compile shared-data-engine/src/healthcare_data_engine/security/provider_attestation.py
           python - <<'PY'
           from healthcare_data_engine.security import provider_attestation as a
