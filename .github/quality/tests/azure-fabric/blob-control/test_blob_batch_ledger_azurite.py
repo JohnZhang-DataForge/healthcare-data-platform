@@ -84,6 +84,25 @@ class BlobAzuriteTests(unittest.TestCase):
                            "azurite://simulated-target", "f"*64,
                            "2026-11-09T13:00:00Z", "emulated-approval", True)
 
+    def reader(self):
+        # Emulator-only fake readback; never a real Fabric acceptance proof.
+        fixture = self
+
+        class AzuriteOnlyFakeReader:
+            def readback(self, scope):
+                return fixture.proof()
+
+        return AzuriteOnlyFakeReader()
+
+    def test_no_reader_never_writes_receipt(self):
+        status, claim = acquire(self.backend, self.scope, owner="azurite-01", attempt=1)
+        self.assertEqual(status, "CLAIMED")
+        from blob_batch_ledger import LedgerHold
+        with self.assertRaisesRegex(LedgerHold, "TARGET_PHYSICAL_READER_REQUIRED"):
+            finalize(self.backend, self.scope, claim, self.proof())
+        with self.assertRaises(Exception):
+            self.backend.read(self.scope.receipt_key)
+
     def test_atomic_claim_lease_cas_receipt_and_replay(self):
         with ThreadPoolExecutor(max_workers=2) as workers:
             results = list(workers.map(
@@ -92,7 +111,7 @@ class BlobAzuriteTests(unittest.TestCase):
         self.assertEqual([x[0] for x in results].count("CLAIMED"), 1)
         claimed = next(item[1] for item in results if item[0] == "CLAIMED")
         self.assertEqual(precheck(self.backend, self.scope), "BUSY")
-        self.assertEqual(finalize(self.backend, self.scope, claimed, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claimed, self.proof(), target_reader=self.reader()),
                          "VERIFIED_RECEIPT_WRITTEN")
         self.assertEqual(precheck(self.backend, self.scope), "SKIP")
         self.assertEqual(self.backend.read(self.scope.receipt_key).data[:1], b"{")
@@ -109,7 +128,7 @@ class BlobAzuriteTests(unittest.TestCase):
         with self.assertRaises(BlobConflict):
             self.backend.cas_control(self.scope.claim_key, b"{}", '"wrong-etag"',
                                      claimed.lease_id)
-        self.assertEqual(finalize(self.backend, self.scope, claimed, self.proof()),
+        self.assertEqual(finalize(self.backend, self.scope, claimed, self.proof(), target_reader=self.reader()),
                          "VERIFIED_RECEIPT_WRITTEN")
         with self.assertRaises(Exception):
             self.backend.renew_lease(self.scope.claim_key, claimed.lease_id)
