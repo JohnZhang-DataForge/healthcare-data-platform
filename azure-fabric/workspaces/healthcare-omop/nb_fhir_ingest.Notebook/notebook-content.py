@@ -1160,7 +1160,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
 
 
 
-# HL7 P2.3: one pinned real source, one verified candidate transport,
+# HL7 P2.3: approved bounded source scopes, one verified candidate transport,
 # same physical Silver Delta writer as G4. Never an independent Writer/Mapper.
 _HL7_REAL_REQUEST = "johnscreek-hl7-gh-42410482514"
 _HL7_REAL_MANIFEST_SHA = "dfb9895554470b0cb31536a041cd38aef5aaedd11ff762f491ce54e6dd1df114"
@@ -1262,7 +1262,7 @@ def _hl7_binary_exact(spark, path: str, *, limit: int) -> bytes:
 
 
 def _hl7_verified_original_raw(spark, context: BatchContext) -> dict:
-    """Fresh GET-only, full original 42 raw SHA/size fence through existing shortcut."""
+    """Fresh GET-only, exact 42/16 Raw SHA/size fence through the existing shortcut."""
     if context != _hl7_source_context(context.request_id):
         raise ValueError("HOLD_HL7_SOURCE_CONTEXT")
     base = (f"{_HL7_REAL_SOURCE_ROOT}/clinical/v1/{context.hospital_id}/"
@@ -1354,7 +1354,7 @@ def _hl7_recompute_persisted_approval(
     """Transport-independent future Silver readback, after temp Blob cleanup.
 
     Canonical rows are retyped from physically persisted Delta, the original
-    Raw 42 hashes are freshly proven, and the deterministic transport content
+    Raw hashes of the explicitly approved Request are freshly proven; transport
     fingerprint is recomputed. Approval MUST equal the original exact bytes'
     fingerprint; no local candidate or original staging persists.
     """

@@ -114,3 +114,11 @@
 - [ ] Record exact Fabric Job IDs, real Patient/Encounter accepted counts (derive from actual dbt, **not** fixture), remote Approval-LAST physical readback, unknown ACK HOLD, and temporary Blob deletion readback. Only then claim REAL FABRIC SILVER PASS.
 
 The previously approved FHIR G4 and 42-HL7 physical Silver paths remain byte-identical. Never regenerate or re-POST source \`johnscreek-hl7-gh-42535807666\`: an unknown OIE/Blob/Fabric commit must stop and be reconciled read-only.
+
+
+### P2.3.6 native source alignment (2026-11-08 ET, post-merge)
+
+- [x] Native new16 allowlist and old42 historical isolation code merged in Healthcare PR #847; deployed to Fabric by Self-Runner [Run #42541429471](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42541429471), outcome `AUTO_UPDATE_DEPLOYMENT_READBACK_PASS`, notebook business cells match Git. This was deployment only, **not** a Fabric Silver data write.
+- [x] New16 dedicated controller and strict first-add marker tests merged Self-Runner PR #652. Real OIE persisted 16 and Azure immutable 16 Blob publish are previously verified; no source rePOST or Landing rewrite is required.
+- [ ] After subsequent G5-only main commits, re-align latest Healthcare Git Native SHA via ordinary dispatch and verify canonical Notebook/Workspace exact source before a separately approved Silver marker. The source-handoff whitelist and default HALT are unchanged. No Git-readonly exception should be broadened.
+- [ ] Run the new16 physical Azure GET -> Delta 16/Replay SKIP -> dbt/Shared DQ -> temporary three-part Candidate -> Fabric Native Silver Approval-LAST -> cold readback -> replay; report actual Fabric Jobs, Delta counts and temporary blob conditional removal only from terminal real evidence. No OMOP Gold.
