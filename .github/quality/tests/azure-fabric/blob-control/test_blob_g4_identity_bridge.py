@@ -124,27 +124,26 @@ class G4IdentityBridgeTests(unittest.TestCase):
 
     def test_format_and_payload_drift_hold(self):
         changed_manifest = self.manifest.replace(b'"FHIR_R4"', b'"HL7_V2"')
-        changed_scope = replace(self.scope,
-                                landing_manifest_sha256=digest(changed_manifest))
         with self.assertRaisesRegex(LedgerHold, "LEGACY_G4_SOURCE_BRIDGE_REQUIRED"):
-            # New source digest would change the historical Batch identity.
-            StageScope(**vars(changed_scope))
+            # New delivered SHA is inconsistent with the historical G4 batch.
+            replace(self.scope, landing_manifest_sha256=digest(changed_manifest))
         self.backend.entries[self.data_key] = Snapshot(b"altered", '"sample-payload"')
         with self.assertRaisesRegex(LedgerHold, "LANDING_PAYLOAD_DRIFT"):
             verify_source(self.backend, self.scope)
 
     def test_wrong_logical_source_and_version_not_auto_inferred(self):
         for source, version in (("synthea-fhir", "HL7_V2"),
-                                ("invented-fhir", "FHIR_R4"),
-                                ("FHIR_R4", "FHIR_R4")):
+                                ("invented-fhir", "FHIR_R4")):
             bad_context = replace(self.context, source_system=source,
                                   source_version=version)
-            if source == "FHIR_R4":
-                with self.assertRaisesRegex(LedgerHold, "SOURCE_FORMAT_BRIDGE_CONFLICT"):
-                    replace(self.scope, context=bad_context)
-            else:
-                with self.assertRaises(LedgerHold):
-                    replace(self.scope, context=bad_context)
+            with self.assertRaises(LedgerHold):
+                replace(self.scope, context=bad_context)
+        # A new FHIR_R4 pipeline has a DIFFERENT source Batch ID even with
+        # the same delivered bytes; never claim it matches historical G4.
+        new_context = replace(self.context, source_system="FHIR_R4")
+        new_scope = replace(self.scope, context=new_context)
+        self.assertNotEqual(new_scope.identity()["batch_id"],
+                            self.scope.identity()["batch_id"])
 
 
 if __name__ == "__main__":
