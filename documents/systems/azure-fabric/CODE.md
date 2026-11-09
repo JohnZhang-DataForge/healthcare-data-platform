@@ -13,10 +13,9 @@ source_sha: 5a7bd15977b307c358ff50155888a58f813e06ed
 
 ## 组件源码归属
 
-| Fabric Blob Batch Control (new source-only) | [`azure-fabric/blob-control/`](../../../azure-fabric/blob-control/) | [Blob Control CODE](blob-control/CODE.md) | Same `johnzhang/landing`, stage claim/receipt SDK adapter; no new Container/identity, Shared I/O or production run; source CI does not satisfy G5 Gold/P3.19 |
-
 | 组件 | 源码目录 | 唯一组件源码地图 | 约束 |
 | --- | --- | --- | --- |
+| Fabric Blob Batch Control (new source-only) | [`azure-fabric/blob-control/`](../../../azure-fabric/blob-control/) | [Blob Control CODE](blob-control/CODE.md) | Same `johnzhang/landing`, stage claim/receipt SDK adapter; no new Container/identity, Shared I/O or production run; source CI does not satisfy G5 Gold/P3.19 |
 | Terraform | [`azure-fabric/infra-terraform/`](../../../azure-fabric/infra-terraform/) | [Terraform CODE.md](infra-terraform/CODE.md) · [安全设计和历史 Plan](infra-terraform/ARCHITECTURE.md) | 七个 Root/Module，IAM、远程 State、Fabric Item Bootstrap；未证明 Apply |
 | Notebooks | [`nb_fhir_ingest.Notebook/`](../../../azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/) | [Notebooks CODE.md](notebooks/CODE.md) | 真实 Git Native Notebook 已完成 0.1.6 双格式定义读回和正式 import-only Spark 4.1 RUNTIME_SMOKE；默认仍 HALT，G5 Candidate/Gold E2E 未完成 |
 | Environments | [`env_healthcare.Environment/`](../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/) | [Environments CODE.md](environments/CODE.md) | env_healthcare 唯一 Wheel 0.1.6 GA Published/Staging 独立读回、Spark 4.1 真实 Import PASS；G4 Silver/G5 Source 只读验收独立，Candidate/Gold Pipeline E2E 未完成 |
