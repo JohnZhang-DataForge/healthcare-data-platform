@@ -1889,113 +1889,57 @@ def plan_and_write_g5_candidate_delta(
 
 
 
-def execute_g5_candidate_from_trusted_controller(spark, *, provider, mode: str) -> str:
-    """Connect trusted P1/F2 evidence to the existing P3 business entry.
+def execute_g5_candidate_from_trusted_controller(
+    spark, *, provider=None, mode: str, attestation_bytes: bytes | None = None,
+) -> str:
+    """P3.20 fail-closed Native transport-only preflight, NOT a business entry.
 
-    This function is deliberately NOT exposed through the Native Notebook
-    run_mode/Parameters Cell. An authorized external controller must implement
-    the provider's authenticated evidence/SQL operations. In particular the
-    provider verifies real signed clinical/license decisions, runs both fresh
-    full six-table SQL snapshots on distinct connections, and reopens the
-    actual F1 Concept rows. A status string or SHA from a notebook parameter
-    is never sufficient to create a trusted provider. This is source-only
-    integration until that external implementation is separately accepted.
+    Legacy duck-typed provider calls for "verified" clinical/license and
+    six-table string-receipt bridge were never an authenticated trust boundary:
+    a caller could forge all returned dictionaries. No caller-supplied
+    provider is EVER allowed here.
+
+    P3.19 remains OPEN: real signed reviews, F1 source audit, F2 fresh
+    transaction fence, managed keys, durable atomic nonce claim, and native
+    Wheel Publish have not been accepted. The only eventual positive result
+    from this function is SOURCE-ONLY verification, not Candidate or Gold.
+    This method is NOT connected to Notebook run_mode or Pipeline dispatch.
     """
-    from healthcare_data_engine.mapping.omop.candidate_publication import (
-        FrozenCandidateScope,
-    )
-    from healthcare_data_engine.identity.candidate_handoff import (
-        PersonVisitCandidateHandoff,
-    )
-    if engine_version != "0.1.7" or mode not in (
-            "G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY"):
-        raise RuntimeError("HOLD_G5_CONTROLLER_RELEASE_OR_MODE")
-    methods = ("load_pinned_inputs", "verify_signed_clinical_review",
-               "verify_license_rights", "capture_full_warehouse_snapshot",
-               "read_verified_warehouse_concepts")
-    if provider is None or any(
-            not callable(getattr(provider, key, None)) for key in methods):
-        raise RuntimeError("HOLD_G5_CONTROLLER_TRUSTED_PROVIDER_MISSING")
-
-    # Never accept flags/clinical approvals supplied directly by Pipeline or
-    # Notebook parameters. All inputs originate in the authenticated provider.
-    inputs = provider.load_pinned_inputs()
-    expected = {"scope", "handoff", "mapping_profile_bytes",
-                "raw_publish_run_id", "patient_contract_json",
-                "encounter_contract_json"}
-    if not isinstance(inputs, dict) or set(inputs) != expected:
-        raise RuntimeError("HOLD_G5_CONTROLLER_INPUT_CONTRACT")
-    scope, handoff = inputs["scope"], inputs["handoff"]
-    profile = inputs["mapping_profile_bytes"]
-    if (not isinstance(scope, FrozenCandidateScope)
-            or not isinstance(handoff, PersonVisitCandidateHandoff)
-            or handoff.status != "G5_CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
-            or scope.source_batch_id != handoff.source_batch_id
-            or scope.manifest_sha256 != handoff.manifest_sha256
-            or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
-            or scope.silver_publication_id != handoff.silver_publication_id
-            or scope.hospital_id != handoff.hospital_id
-            or scope.source_system != handoff.source_system
-            or not isinstance(profile, bytes)
-            or not 0 < len(profile) <= 65536
-            or hashlib.sha256(profile).hexdigest() != scope.mapping_sha256):
-        raise RuntimeError("HOLD_G5_CONTROLLER_SOURCE_PROFILE_F2_DRIFT")
-    _g5_candidate_paths(scope)  # exact frozen G4 request, no Spark I/O
-
-    # These provider calls must independently validate reviewer identity,
-    # signature/authority, actual license scope and evidence provenance.
-    clinical = provider.verify_signed_clinical_review(scope, profile)
-    license_receipt = provider.verify_license_rights(scope, profile)
-    def valid_receipt(item, expected_status, digest_key):
-        return (isinstance(item, dict)
-                and item.get("status") == expected_status
-                and item.get("source_batch_id") == scope.source_batch_id
-                and item.get("mapping_sha256") == scope.mapping_sha256
-                and isinstance(item.get("reviewer"), str)
-                and bool(item["reviewer"].strip())
-                and isinstance(item.get(digest_key), str)
-                and len(item[digest_key]) == 64
-                and all(c in "0123456789abcdef" for c in item[digest_key]))
-    if (not valid_receipt(clinical, "SIGNED_CLINICAL_APPROVED", "review_sha256")
-            or not valid_receipt(license_receipt, "LICENSE_USE_APPROVED",
-                                 "license_sha256")):
-        raise RuntimeError("HOLD_G5_CONTROLLER_CLINICAL_OR_LICENSE")
-
-    # Two distinct SQL connections must independently load complete Map,
-    # Allocator, Person, Visit, Ledger and Audit, not merely a cached Preview.
-    first = provider.capture_full_warehouse_snapshot(scope)
-    second = provider.capture_full_warehouse_snapshot(scope)
-    for snap in (first, second):
-        if (not isinstance(snap, dict)
-                or snap.get("status") != "INDEPENDENT_SIX_TABLE_SQL_PASS"
-                or snap.get("warehouse_id") !=
-                    "7a6d08da-278d-4603-8a3b-28640110984c"
-                or snap.get("fingerprint") != scope.identity_snapshot_fingerprint
-                or not isinstance(snap.get("connection_id"), str)
-                or not snap["connection_id"]):
-            raise RuntimeError("HOLD_G5_CONTROLLER_F2_PHYSICAL_SNAPSHOT")
-    if first["connection_id"] == second["connection_id"]:
-        raise RuntimeError("HOLD_G5_CONTROLLER_F2_CONNECTION_NOT_INDEPENDENT")
-    concepts = provider.read_verified_warehouse_concepts(scope)
-    if concepts is None or not hasattr(concepts, "columns"):
-        raise RuntimeError("HOLD_G5_CONTROLLER_F1_PHYSICAL_CONCEPT_MISSING")
-
-    # Only the controller derives the write flags. Direct Notebook/Pipeline
-    # calls still HALT and this wrapper does not grant a Gold commit.
-    is_write = mode == "G5_CANDIDATE_WRITE"
-    return execute_g5_person_visit_business(
-        spark, scope=scope, handoff=handoff,
-        concepts_from_verified_warehouse=concepts,
-        mapping_profile_bytes=profile,
-        raw_publish_run_id=inputs["raw_publish_run_id"],
-        patient_contract_json=inputs["patient_contract_json"],
-        encounter_contract_json=inputs["encounter_contract_json"],
-        mode=mode, write_authorized=is_write,
-        clinically_reviewed=is_write, license_reviewed=is_write,
-        warehouse_snapshot_verified=True,
-        clinical_review_sha256=clinical["review_sha256"],
-        license_review_sha256=license_receipt["license_sha256"],
-        warehouse_snapshot_sha256=scope.identity_snapshot_fingerprint)
+    # Reject write *before* inspecting any source/provider/proof/Spark object.
+    if mode != "G5_CANDIDATE_READBACK_ONLY":
+        raise RuntimeError("HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED")
+    if provider is not None or spark is not None:
+        raise RuntimeError("HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED")
+    if run_mode != "HALT" or write_authorized is not False:
+        raise RuntimeError("HOLD_G5_NATIVE_RUN_MODE_OR_WRITE_FLAG")
+    # The live effective Wheel is 0.1.7; it does not implement the pinned
+    # 0.1.11 signed transport verifier. Leave this HOLD until a separately
+    # authorized wheel release/import and verified Native source deployment.
+    if engine_version != "0.1.11":
+        raise RuntimeError("HOLD_G5_NATIVE_0111_TRANSPORT_WHEEL_NOT_PUBLISHED")
+    if (not isinstance(attestation_bytes, bytes)
+            or not 0 < len(attestation_bytes) <= 8192):
+        raise RuntimeError("HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING")
+    try:
+        from healthcare_data_engine.security.provider_attestation import (
+            TransportHold, VerifiedTransport, verify_native_handoff_source_only,
+        )
+    except ImportError:
+        raise RuntimeError("HOLD_G5_NATIVE_SIGNED_VERIFIER_NOT_PUBLISHED") from None
+    try:
+        verified = verify_native_handoff_source_only(attestation_bytes)
+    except TransportHold:
+        raise RuntimeError("HOLD_G5_NATIVE_SIGNED_TRANSPORT_OR_REPLAY") from None
+    if (not isinstance(verified, VerifiedTransport)
+            or verified.status !=
+                "G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY"
+            or verified.candidate_write_authorized is not False
+            or verified.gold_committed is not False
+            or verified.provisional_ids_persisted is not False):
+        raise RuntimeError("HOLD_G5_NATIVE_NON_SOURCE_ONLY_ATTESTATION")
+    # No provider calls, no source Silver read, no Concept/F2 SQL, no Candidate
+    # writer, and NO capability is returned to execute_g5_person_visit_business.
+    return "G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED"
 
 
 def execute_g5_person_visit_business(
