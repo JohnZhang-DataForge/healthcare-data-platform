@@ -266,6 +266,35 @@ class BatchLedgerTest(unittest.TestCase):
             canonical({"status": "VERIFIED", "schema_version": "wrong"}), '"fake"')
         self.assertEqual(precheck(self.backend, self.scope), "VERIFY_READONLY")
 
+    def test_bad_credential_or_target_fail_closed_without_network(self):
+        with self.assertRaisesRegex(LedgerHold, "UNAPPROVED_STORAGE_TARGET"):
+            AzureBlobBatchBackend.from_existing_publisher_sp(
+                account_url="https://wrong.blob.core.windows.net",
+                container="landing", tenant_id="tenant",
+                client_id="publisher", client_secret="fake")
+        with self.assertRaisesRegex(LedgerHold, "UNAPPROVED_STORAGE_TARGET"):
+            AzureBlobBatchBackend.from_existing_publisher_sp(
+                account_url="https://johnzhang.blob.core.windows.net",
+                container="g5-trust-ledger", tenant_id="tenant",
+                client_id="publisher", client_secret="fake")
+        with self.assertRaisesRegex(LedgerHold, "MISSING_PUBLISHER_CREDENTIAL"):
+            AzureBlobBatchBackend.from_existing_publisher_sp(
+                account_url="https://johnzhang.blob.core.windows.net",
+                container="landing", tenant_id="tenant",
+                client_id="publisher", client_secret="")
+        with self.assertRaisesRegex(LedgerHold, "UNAPPROVED_STORAGE_TARGET"):
+            AzureBlobBatchBackend(object(), account="wrong", container="landing")
+
+    def test_unsupported_format_fails_before_any_blob_read(self):
+        c = self.scope.context
+        from dataclasses import replace
+        altered = replace(c, source_system="../FHIR_R4")
+        with self.assertRaisesRegex(LedgerHold, "UNAPPROVED_SOURCE_FORMAT"):
+            StageScope(altered, self.scope.stage, self.scope.landing_manifest_sha256,
+                       self.scope.landing_manifest_etag, self.scope.mapper_version,
+                       self.scope.wheel_version, self.scope.mapping_profile_sha256,
+                       self.scope.publication_id)
+
     def test_no_delete_and_prefix_allowlist(self):
         backend = AzureBlobBatchBackend(object())
         for key in ("clinical/v1/atlanta-hospital-a/raw.json",
