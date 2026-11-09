@@ -1169,26 +1169,63 @@ _HL7_REAL_PROCESSING = "hl7-canonical-v1-real-p2.3:engine-0.1.7"
 _HL7_REAL_SOURCE_ROOT = "Files/fhir_landing"
 _HL7_REAL_TRANSFER_ROOT = "Files/fhir_landing/__hl7_candidate_handoff/v1"
 
+# A separate, immutable NEW source, published from 10 actual Synthea patients.
+# Run 42535807666 audited 8 A01/8 A03; OIE GET proof 42539430903;
+# Azure 16 Blob GET/HEAD/manifest-last/replay Run 42540024573.
+# The old 42-source scope remains byte-for-byte unchanged and independent.
+_HL7_TEN_REQUEST = "johnscreek-hl7-gh-42535807666"
+_HL7_TEN_MANIFEST_SHA = "5c2f506af86861a4bc539159f26db8077dcc10a27ad872738b19da2443832c81"
+_HL7_TEN_SOURCE_SHA = "a68c7aa7d9fed1b1dcb6d8bb63162a87a98751dfbcfb187df214824de24a5e2f"
+_HL7_TEN_PROCESSING = "hl7-canonical-v1-real-ten-20261108:engine-0.1.7"
+_HL7_SOURCE_SCOPES = {
+    _HL7_REAL_REQUEST: {
+        "manifest_sha": _HL7_REAL_MANIFEST_SHA,
+        "source_sha": _HL7_REAL_SOURCE_SHA,
+        "processing": _HL7_REAL_PROCESSING,
+        "processing_run_id": "hl7-real-get-42410482514",
+        "processed_at": (2026, 11, 8, 9, 0),
+        "source_ingest_date": (2026, 11, 8),
+        "raw_count": 42,
+    },
+    _HL7_TEN_REQUEST: {
+        "manifest_sha": _HL7_TEN_MANIFEST_SHA,
+        "source_sha": _HL7_TEN_SOURCE_SHA,
+        "processing": _HL7_TEN_PROCESSING,
+        "processing_run_id": "hl7-real-get-42535807666",
+        "processed_at": (2026, 11, 9, 0, 30),
+        "source_ingest_date": (2026, 11, 8),
+        "raw_count": 16,
+    },
+}
 
-def _hl7_source_context() -> BatchContext:
+
+def _hl7_approved_scope(request: str) -> dict:
+    # Never derive a new target or accept arbitrary request/manifest overrides.
+    if request not in _HL7_SOURCE_SCOPES:
+        raise ValueError("HOLD_HL7_UNAPPROVED_SOURCE_REQUEST")
+    return _HL7_SOURCE_SCOPES[request]
+
+
+def _hl7_source_context(request: str = _HL7_REAL_REQUEST) -> BatchContext:
     from datetime import datetime, date, timezone
+    scoped = _hl7_approved_scope(request)
     return BatchContext(
         hospital_id="johns-creek-hospital-b",
         feed_id="johns-creek-hospital-b-hl7-v2",
         source_system="johns-creek-hl7",
-        request_id=_HL7_REAL_REQUEST,
-        manifest_sha256=_HL7_REAL_MANIFEST_SHA,
-        processing_version=_HL7_REAL_PROCESSING,
-        processing_run_id="hl7-real-get-42410482514",
+        request_id=request,
+        manifest_sha256=scoped["manifest_sha"],
+        processing_version=scoped["processing"],
+        processing_run_id=scoped["processing_run_id"],
         source_version="HL7v2.5.1",
-        source_ingest_date=date(2026, 11, 8),
-        processed_at=datetime(2026, 11, 8, 9, 0, tzinfo=timezone.utc),
+        source_ingest_date=date(*scoped["source_ingest_date"]),
+        processed_at=datetime(*scoped["processed_at"], tzinfo=timezone.utc),
         adapter_version="1.3.5",
     )
 
 
 def _hl7_real_paths(context: BatchContext) -> dict[str, str]:
-    if context != _hl7_source_context():
+    if context != _hl7_source_context(context.request_id):
         raise ValueError("HOLD_HL7_REAL_CONTEXT_DRIFT")
     suffix = ("/" + context.hospital_id + "/" + context.feed_id + "/"
               + context.request_id + "/processing="
@@ -1203,7 +1240,7 @@ def _hl7_real_paths(context: BatchContext) -> dict[str, str]:
 
 
 def _hl7_transfer_root(context: BatchContext) -> str:
-    if context != _hl7_source_context():
+    if context != _hl7_source_context(context.request_id):
         raise ValueError("HOLD_HL7_REAL_CONTEXT_DRIFT")
     return (_HL7_REAL_TRANSFER_ROOT + "/" + context.source_batch_id
             + "/processing="
@@ -1226,23 +1263,24 @@ def _hl7_binary_exact(spark, path: str, *, limit: int) -> bytes:
 
 def _hl7_verified_original_raw(spark, context: BatchContext) -> dict:
     """Fresh GET-only, full original 42 raw SHA/size fence through existing shortcut."""
-    if context != _hl7_source_context():
+    if context != _hl7_source_context(context.request_id):
         raise ValueError("HOLD_HL7_SOURCE_CONTEXT")
     base = (f"{_HL7_REAL_SOURCE_ROOT}/clinical/v1/{context.hospital_id}/"
             f"{context.feed_id}/{context.request_id}")
     manifest_bytes = _hl7_binary_exact(
         spark, base + "/landing-manifest.json", limit=2 * 1024 * 1024)
-    if hashlib.sha256(manifest_bytes).hexdigest() != _HL7_REAL_MANIFEST_SHA:
+    scope = _hl7_approved_scope(context.request_id)
+    if hashlib.sha256(manifest_bytes).hexdigest() != scope["manifest_sha"]:
         raise ValueError("HOLD_HL7_REAL_SOURCE_MANIFEST_SHA")
     doc = json.loads(manifest_bytes)
     if (not isinstance(doc, dict)
             or doc.get("hospital_id") != context.hospital_id
             or doc.get("feed_id") != context.feed_id
             or doc.get("request_id") != context.request_id
-            or doc.get("source_manifest_sha256") != _HL7_REAL_SOURCE_SHA
+            or doc.get("source_manifest_sha256") != scope["source_sha"]
             or not isinstance(doc.get("objects"), list)
-            or len(doc["objects"]) != 42):
-        raise ValueError("HOLD_HL7_REAL_42_SOURCE_MANIFEST_FIELDS")
+            or len(doc["objects"]) != scope["raw_count"]):
+        raise ValueError("HOLD_HL7_SOURCE_MANIFEST_FIELDS")
     seen = {}
     for o in doc["objects"]:
         if not isinstance(o, dict) or not all(
@@ -1454,7 +1492,7 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
     """One-source Silver release. No auto retry; partial state is read-only HOLD."""
     import re
     if (mode not in ("HL7_SILVER_WRITE", "HL7_SILVER_READBACK_ONLY")
-            or request != _HL7_REAL_REQUEST
+            or request not in _HL7_SOURCE_SCOPES
             or strategy != "VERIFIED_HL7_CANDIDATE_V1"
             or any(x != "" for x in (
                 manifest_override, source_override, target_override))
@@ -1474,10 +1512,11 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
     pb, eb = patient_contract_json.encode(), encounter_contract_json.encode()
     load_pinned_contract(pb, "patient")
     load_pinned_contract(eb, "encounter")
-    context = _hl7_source_context()
+    context = _hl7_source_context(request)
     paths = _hl7_real_paths(context)
     metrics = {"patient": 0, "encounter": 0,
-               "quarantine_or_reject": 0, "source_objects": 42}
+               "quarantine_or_reject": 0,
+               "source_objects": _hl7_approved_scope(request)["raw_count"]}
     # Source proof MUST be fresh; a stale historical P2 run is not evidence.
     raw_provenance = _hl7_verified_original_raw(spark, context)
     try:
