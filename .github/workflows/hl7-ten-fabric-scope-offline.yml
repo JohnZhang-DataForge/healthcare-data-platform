@@ -1,0 +1,42 @@
+name: HL7 real new16 Fabric pinned Silver source contracts (offline)
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py'
+      - '.github/quality/tests/azure-fabric/notebook/test_hl7_real_ten_silver_scope.py'
+      - '.github/workflows/hl7-ten-fabric-scope-offline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py'
+
+permissions:
+  contents: read
+
+jobs:
+  source-isolation:
+    name: New16 and original42 source fences, FHIR G4 untouched (NO Fabric)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Import exact GA Shared Engine 0.1.7 and execute source / writer contracts
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          wheel=azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl
+          echo "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301  $wheel" | sha256sum --check
+          python -m pip install --no-deps "$wheel"
+          python -m py_compile azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py
+          PYTHONPATH="$GITHUB_WORKSPACE/azure-fabric/notebook-development" python -m unittest discover \
+            -s .github/quality/tests/azure-fabric/notebook -p 'test_hl7_real_ten_silver_scope.py' -v
+          PYTHONPATH="$GITHUB_WORKSPACE/azure-fabric/notebook-development" python -m unittest discover \
+            -s .github/quality/tests/azure-fabric/notebook -p 'test_g4_*.py' -v
+          echo HL7_REAL_NEW16_SHARED_FABRIC_WRITER_SOURCE_SCOPE_OFFLINE=PASS
+          echo HL7_NEW16_REAL_FABRIC_SILVER_WRITE=NOT_RUN
