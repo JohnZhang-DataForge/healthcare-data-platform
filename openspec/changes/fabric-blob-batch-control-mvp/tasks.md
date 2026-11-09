@@ -1,6 +1,6 @@
 # Tasks — Fabric Blob Batch Control MVP
 
-> 2026-11-09 用户决定：一个现有 Credential、同一个 `johnzhang/landing` Container，`_control/v1/` 与 `processed/v1/` 虚拟前缀；原始 `clinical/v1/` 完全不动。此 PR 仅设计。以下实现/实机任务必须留 [ ]。
+> 2026-11-09 用户决定：一个现有 Credential、同一个 `johnzhang/landing` Container，`_control/v1/` 与 `processed/v1/` 虚拟前缀；原始 `clinical/v1/` 完全不动。设计来源 PR #856；Blob Adapter 源码已由 PR #857 合并。只读云审计已受控执行；真实 Blob 状态写入、Fabric E2E 与生产门禁仍保持待验收。
 
 ## 1. Design freeze / session handoff (docs-only)
 
@@ -11,7 +11,7 @@
 
 ## 2. Next session — Blob Adapter source & offline CI
 
-- [ ] 2.1 从两仓最新 Main、OpenSpec、现有 Blob publisher、现实 landing prefix 与 data-plane 实际权限只读审计入手；选定**一个**已有可用 Azure Blob Credential；不能假设 Fabric Reader Connection 能写。
+- [x] 2.1 从两仓最新 Main、OpenSpec、现有 Blob publisher、现实 landing prefix 与 data-plane 实际权限只读审计入手；选定**一个**已有可用 Azure Blob Credential；不能假设 Fabric Reader Connection 能写。
 - [x] 2.2 实现小而单一的 Blob state storage adapter：`_control/v1/...` atomic create, ETag CAS, bounded Lease / owner fencing；`processed/v1/.../receipt.json` conditional create + GET readback；严格写路径 allowlist、禁止 DELETE/COPY/MOVE 原始 `clinical/v1`。
 - [x] 2.3 定义版本化、stage-scoped Batch/Receipt JSON 合同：hospital/feed/request/batch/Manifest SHA、processing/Mapper/Wheel version、stage、publication/target proof、claim owner/attempt/ETag、reconciliation；复用 Shared `reconciliation/replay.py`，不重复 Mapper/Replay 决策。
 - [x] 2.4 Mock/Azurite CI 覆盖并发一胜、重复 SKIP、错误源 SHA、跨院碰撞、stale lease、lost ACK、stage-approval-only、部分 Fabric 写入、Cursor/ETag race、path traversal 和无 Delete；Python 3.11/3.13。绝不把 mock 视为真实云验收。
@@ -34,5 +34,13 @@
 
 - Healthcare branch `feature/fabric-blob-batch-control-adapter-20261109` at exact HEAD to be recorded by PR/CI; source entrypoints `azure-fabric/blob-control/blob_batch_ledger.py`, `azure-fabric/blob-control/azure_blob_backend.py`; tests `.github/quality/tests/azure-fabric/blob-control/`; workflow `fabric-blob-batch-control-offline.yml`; system CODE map `documents/systems/azure-fabric/blob-control/CODE.md`.
 - Source implements one-credential client factory, allowlisted conditional create, ETag/Lease fencing, stage/version receipt, independently validated Manifest/Payload hashes and Shared pure `BatchContext/decide_replay`. All operations require a caller: nothing automatically invokes Azure, Fabric, HL7/OIE or existing frozen batches.
-- Tasks 2.2–2.5 are **SOURCE/OFFLINE CI PASS only** under Healthcare PR #857, exact pre-documentation source SHA `f196b61d958555f82dd111f73c14ccc3ad8d34ca`. [CI Run #42626249495](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42626249495) passed Python 3.11/3.13 synthetic tests and isolated Azurite Azure SDK create/ETag/Lease/readback. Exact-key API uses no cursor/list pagination; bounded listing is separately assessed in the read-only SR audit. This is not real Azure/clinical acceptance. Source QA and CODE map complete; versioned Shared package unchanged. Task 2.1 stays OPEN because actual current data-plane permission, live collision-free prefixes, Manifest and active-run runtime audit remain unverified; do not claim the existing Publisher credential has been tested for control CAS/Lease.
+- Tasks 2.2–2.5 are **SOURCE/OFFLINE CI PASS only** under Healthcare PR #857, exact pre-documentation source SHA `f196b61d958555f82dd111f73c14ccc3ad8d34ca`. [CI Run #42626249495](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42626249495) passed Python 3.11/3.13 synthetic tests and isolated Azurite Azure SDK create/ETag/Lease/readback. Exact-key API uses no cursor/list pagination; bounded listing is separately assessed in the read-only SR audit. This is not real Azure/clinical acceptance. Source QA and CODE map complete; versioned Shared package unchanged. Task 2.1 read-only scope was subsequently verified by the existing Publisher SP on live Azure via Self-Runner PR #668 / Run #42627618366; actual conditional create/CAS/Lease **write** permissions remain Task 3.1 OPEN, not implicitly granted by read access.
 - Tasks 3.x and 4.x remain OPEN. No production signer, P3.19 nonce, Clinical License, Candidate/Gold approval or physical Fabric write is authorized by this PR.
+
+## 2026-11-09 — Task 2.1 genuine Azure READ-only audit evidence
+
+- Healthcare source PR [#857](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/857) merged to Main `b7549034530d2cd7dfefe67a6dded356f8e8a580`; source-only offline CI [Run #42626249495](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/42626249495) SUCCESS (Python 3.11/3.13 + isolated Azure SDK Azurite).
+- Self-Runner read-only audit PR [#668](https://github.com/JohnZhang-DataForge/Self-Runner/pull/668) merged to Main `4448ad872bd6dbdcaf8fb83272da04a0a2975cff`; real Main-push [Run #42627618366](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42627618366) **SUCCESS**, artifact `fabric-blob-control-readonly-42627618366` ID `13678843018` (digest `55430552e4a96f026698cdb06b46e4e534162cc828a7f6b743d59ac852c1d35e`).
+- Trusted Publisher SP client used the existing `johnzhang/landing` endpoint with no new account, Container, credential or IAM. Source manifest `clinical/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/atlanta-fhir-gh-41539769718/landing-manifest.json` independently read with SHA256 `2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35`, stable ETag and matching source identity.
+- Log: `BLOB_BATCH_CONTROL_READONLY_STATUS=PASS_READONLY_PREFIXES_EMPTY_IN_BOUNDED_SCAN`; neither `_control/v1/` nor `processed/v1/` had objects in the bounded first-page listing at audit time. Azure Blob source/data read and container listing permission **PASS**. No Azure Blob PUT/COPY/DELETE; no Fabric Capacity use.
+- **Scope boundary:** read/list success is **not** proof of conditional create, ETag/CAS write privilege, Lease permissions, per-object policy or P3.19 production nonce. Tasks 3.1–3.4 and 4.x remain [ ]. Real synthetic new batch must prove writes and independent Fabric target before creating `processed` completion Receipt; do not replay historical G4/F2 or touch ongoing HL7/OIE writes.
