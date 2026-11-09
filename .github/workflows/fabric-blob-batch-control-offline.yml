@@ -1,0 +1,84 @@
+name: Fabric Blob Batch Control MVP Offline
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/blob-control/**'
+      - '.github/quality/tests/azure-fabric/blob-control/**'
+      - '.github/workflows/fabric-blob-batch-control-offline.yml'
+      - 'openspec/changes/fabric-blob-batch-control-mvp/**'
+      - 'documents/systems/azure-fabric/blob-control/**'
+  push:
+    branches: [main]
+    paths:
+      - 'azure-fabric/blob-control/**'
+      - '.github/quality/tests/azure-fabric/blob-control/**'
+      - '.github/workflows/fabric-blob-batch-control-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  blob-ledger-source-only:
+    name: Conditional claim replay contract Python ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile platform implementation with the single Shared Engine
+        run: |
+          set -Eeuo pipefail
+          python -m py_compile azure-fabric/blob-control/*.py
+          python -m py_compile shared-data-engine/src/healthcare_data_engine/reconciliation/replay.py
+      - name: Synthetic conditional claim, concurrency, receipt and negative tests
+        env:
+          PYTHONPATH: shared-data-engine/src:azure-fabric/blob-control
+        run: |
+          set -Eeuo pipefail
+          python - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.discover(
+              ".github/quality/tests/azure-fabric/blob-control", pattern="test_*.py")
+          assert suite.countTestCases() >= 13, "HOLD_BLOB_NEGATIVE_TESTS_NOT_DISCOVERED"
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful(), "BLOB_CONTROL_SOURCE_CONTRACT_FAIL"
+          print("FABRIC_BLOB_LEDGER_SOURCE_CI_PASS")
+          print("REAL_AZURE_PUT=NONE REAL_LEASE=NONE FABRIC_CU=NONE")
+          PY
+
+  blob-azurite-sdk-only:
+    name: Azure SDK conditional Blob API on Azurite (emulator only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite:3.33.0
+        ports:
+          - 10000:10000
+    env:
+      AZURITE_ONLY: "1"
+      PYTHONPATH: shared-data-engine/src:azure-fabric/blob-control
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install existing immutable Publisher Azure SDK versions (CI only)
+        run: pip install -r local-data-platform/apps/clinical_producers/requirements-blob-publisher.txt
+      - name: Atomic create, ETag CAS, 60s lease, receipt GET and repeat 409
+        run: |
+          set -Eeuo pipefail
+          python -m unittest discover -s .github/quality/tests/azure-fabric/blob-control -p 'test_blob_batch_ledger_azurite.py' -v
+          echo 'AZURITE_CONDITIONAL_BLOB_SDK_PASS'
+          echo 'PRODUCTION_AZURE_STORAGE=NONE FABRIC_CU=NONE'
