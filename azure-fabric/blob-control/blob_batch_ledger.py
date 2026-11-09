@@ -96,6 +96,13 @@ class StageScope:
     wheel_version: str
     mapping_profile_sha256: str
     publication_id: str
+    # Optional *explicit* source adapter bridge for historical G4. The G4
+    # Shared BatchContext hashes the delivered Landing Manifest SHA and uses
+    # source_system='synthea-fhir'; the Publisher embeds a DIFFERENT upstream
+    # source Manifest SHA and target_format='FHIR_R4'. Never alter historical
+    # batch identity or assume these two SHA values are interchangeable.
+    publisher_source_manifest_sha256: str | None = None
+    landing_target_format: str | None = None
 
     def __post_init__(self):
         if not isinstance(self.context, BatchContext):
@@ -107,8 +114,22 @@ class StageScope:
             raise LedgerHold("UNSAFE_IDENTITY_PATH")
         if self.stage not in STAGES:
             raise LedgerHold("UNAPPROVED_STAGE")
-        if c.source_system not in ("FHIR_R4", "HL7_V2"):
+        if c.source_system not in ("FHIR_R4", "HL7_V2", "synthea-fhir"):
             raise LedgerHold("UNAPPROVED_SOURCE_FORMAT")
+        if c.source_system == "synthea-fhir":
+            # The exact legacy G4 identity is historical, not a new Mapper.
+            if (c.source_version != "FHIR_R4"
+                    or self.landing_target_format != "FHIR_R4"
+                    or self.publisher_source_manifest_sha256 is None
+                    or c.manifest_sha256.lower() != self.landing_manifest_sha256):
+                raise LedgerHold("LEGACY_G4_SOURCE_BRIDGE_REQUIRED")
+        elif (self.landing_target_format is not None
+              and self.landing_target_format != c.source_system):
+            raise LedgerHold("SOURCE_FORMAT_BRIDGE_CONFLICT")
+        if (self.publisher_source_manifest_sha256 is not None
+                and (not isinstance(self.publisher_source_manifest_sha256, str)
+                     or not HEX.fullmatch(self.publisher_source_manifest_sha256))):
+            raise LedgerHold("INVALID_UPSTREAM_SOURCE_SHA256")
         for value in (self.landing_manifest_sha256, self.mapping_profile_sha256):
             if not isinstance(value, str) or not HEX.fullmatch(value):
                 raise LedgerHold("INVALID_SHA256_PIN")
@@ -149,6 +170,10 @@ class StageScope:
             "mapping_profile_sha256": self.mapping_profile_sha256,
             "publication_id": self.publication_id,
             "stage": self.stage,
+            **({
+                "publisher_source_manifest_sha256": self.publisher_source_manifest_sha256,
+                "landing_target_format": self.landing_target_format,
+            } if c.source_system == "synthea-fhir" else {}),
         }
 
     @property
@@ -310,14 +335,18 @@ def verify_source(backend: BlobControlBackend, scope: StageScope) -> None:
             or obj.get("hospital_id") != c.hospital_id
             or obj.get("feed_id") != c.feed_id
             or obj.get("request_id") != c.request_id
-            or obj.get("source_manifest_sha256") != c.manifest_sha256
-            or obj.get("target_format") != c.source_system):
+            or obj.get("source_manifest_sha256") != (
+                scope.publisher_source_manifest_sha256 or c.manifest_sha256)
+            or obj.get("target_format") != (
+                scope.landing_target_format or c.source_system)):
         raise LedgerHold("LANDING_MANIFEST_IDENTITY_CONFLICT")
     inventory = obj.get("objects")
     if not isinstance(inventory, list) or not 0 < len(inventory) <= 5000:
         raise LedgerHold("LANDING_INVENTORY_INVALID")
     seen = set()
-    data_prefix = f"clinical/v1/{scope.root}/{c.source_system}/"
+    data_prefix = (
+        f"clinical/v1/{scope.root}/"
+        f"{scope.landing_target_format or c.source_system}/")
     for entry in inventory:
         if not isinstance(entry, dict):
             raise LedgerHold("LANDING_INVENTORY_INVALID")
