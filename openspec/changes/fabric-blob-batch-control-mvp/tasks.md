@@ -28,3 +28,11 @@
 
 - [ ] 4.1 经新的独立批准后，在 Self-Runner 受控编排中接入 Blob 控制层，保留 Fabric 原生 Pipeline `HALT` 默认值、审批、G5 Native signed-token 及 F1/F2/License 真门禁。
 - [ ] 4.2 真实 Fabric Candidate Delta / Gold Writer E2E 仍属于 `fabric-g5-approved-silver-omop-candidate` 的独立待办，不因本 Change 标 [x]；本 change 完成不构成生产授权。
+
+
+## 2026-11-09 — Batch Adapter source PR (not cloud acceptance)
+
+- Healthcare branch `feature/fabric-blob-batch-control-adapter-20261109` at exact HEAD to be recorded by PR/CI; source entrypoints `azure-fabric/blob-control/blob_batch_ledger.py`, `azure-fabric/blob-control/azure_blob_backend.py`; tests `.github/quality/tests/azure-fabric/blob-control/`; workflow `fabric-blob-batch-control-offline.yml`; system CODE map `documents/systems/azure-fabric/blob-control/CODE.md`.
+- Source implements one-credential client factory, allowlisted conditional create, ETag/Lease fencing, stage/version receipt, independently validated Manifest/Payload hashes and Shared pure `BatchContext/decide_replay`. All operations require a caller: nothing automatically invokes Azure, Fabric, HL7/OIE or existing frozen batches.
+- Tasks 2.2–2.5 are **SOURCE CANDIDATE / awaiting actual PR CI and review**, not remotely accepted merely from commits. Task 2.1 stays OPEN because actual current data-plane permission, live collision-free prefixes, Manifest and active-run runtime audit remain unverified; do not claim the existing Publisher credential has been tested for control CAS/Lease.
+- Tasks 3.x and 4.x remain OPEN. No production signer, P3.19 nonce, Clinical License, Candidate/Gold approval or physical Fabric write is authorized by this PR.
