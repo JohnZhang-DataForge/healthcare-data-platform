@@ -192,6 +192,40 @@ class TargetProof:
             raise LedgerHold("TARGET_PROOF_UNVERIFIED")
 
 
+class PhysicalTargetReader(Protocol):
+    """Injected TRUSTED stage owner: MUST reread Fabric Delta/Warehouse itself.
+
+    A local lambda or fixture is only a CI simulation, not a live approval.
+    This protocol intentionally provides no default and has no Fabric imports.
+    """
+    def readback(self, scope: StageScope) -> TargetProof: ...
+
+
+TARGET_READBACK_CONTRACT = "independent-physical-stage-readback-v1"
+
+
+def _require_physical_readback(
+    scope: StageScope, proof: TargetProof,
+    target_reader: PhysicalTargetReader | None,
+) -> None:
+    """No completion Receipt may be written from self-declared verified=True.
+
+    The stage owner must explicitly inject a trusted independent physical
+    reader. A test double is appropriate ONLY in mock/Azurite CI.
+    """
+    if target_reader is None or not callable(getattr(target_reader, "readback", None)):
+        raise LedgerHold("TARGET_PHYSICAL_READER_REQUIRED")
+    try:
+        independently_observed = target_reader.readback(scope)
+    except Exception:
+        raise LedgerHold("TARGET_PHYSICAL_READBACK_UNAVAILABLE") from None
+    if not isinstance(independently_observed, TargetProof):
+        raise LedgerHold("TARGET_PHYSICAL_READBACK_INVALID")
+    independently_observed.verify(scope)
+    if independently_observed != proof:
+        raise LedgerHold("TARGET_PHYSICAL_EVIDENCE_MISMATCH")
+
+
 def _read(backend: BlobControlBackend, key: str) -> Snapshot | None:
     try:
         result = backend.read(key)
@@ -225,7 +259,8 @@ def precheck(backend: BlobControlBackend, scope: StageScope) -> str:
         if (obj.get("schema_version") != CONTRACT
                 or obj.get("identity") != scope.identity()
                 or obj.get("version") != scope.version
-                or obj.get("status") != "VERIFIED"):
+                or obj.get("status") != "VERIFIED"
+                or obj.get("target_readback_contract") != TARGET_READBACK_CONTRACT):
             return "HOLD_CONFLICT"
         # A receipt after an unknown ACK may be durable while its claim is
         # still FINALIZING. Require both immutable receipt and terminal claim.
@@ -335,13 +370,18 @@ def acquire(backend: BlobControlBackend, scope: StageScope, *,
 
 
 def finalize(backend: BlobControlBackend, scope: StageScope, claim: Claim,
-             proof: TargetProof) -> str:
+             proof: TargetProof, *,
+             target_reader: PhysicalTargetReader | None = None) -> str:
     """Receipt LAST; target proof MUST precede call; unknown ACK is HOLD.
 
     A lease renewal plus control CAS fences the caller immediately before
     receipt creation. Cross-blob/Blob-to-Fabric atomicity is NOT claimed.
     """
     proof.verify(scope)
+    _require_physical_readback(scope, proof, target_reader)
+    # Revalidate exact original content immediately before a possible
+    # irreversible receipt. A Claim alone does not freeze physical source.
+    verify_source(backend, scope)
     if (not isinstance(claim, Claim) or not SAFE_OWNER.fullmatch(claim.owner)
             or type(claim.attempt) is not int or claim.attempt < 1
             or not claim.etag or not claim.lease_id):
@@ -368,6 +408,7 @@ def finalize(backend: BlobControlBackend, scope: StageScope, claim: Claim,
         return "VERIFY_READONLY"
     payload = _json({"schema_version": CONTRACT, "identity": scope.identity(),
                      "version": scope.version, "status": "VERIFIED",
+                     "target_readback_contract": TARGET_READBACK_CONTRACT,
                      "proof": vars(proof)})
     try:
         receipt_etag = backend.create(scope.receipt_key, payload)
@@ -389,7 +430,8 @@ def finalize(backend: BlobControlBackend, scope: StageScope, claim: Claim,
 
 
 def reconcile_unknown_finalize(backend: BlobControlBackend, scope: StageScope,
-                               claim: Claim, proof: TargetProof) -> str:
+                               claim: Claim, proof: TargetProof, *,
+                               target_reader: PhysicalTargetReader | None = None) -> str:
     """Recover a lost receipt PUT ACK without creating a second receipt.
 
     A separately trusted stage owner MUST repeat target physical readback and
@@ -397,6 +439,7 @@ def reconcile_unknown_finalize(backend: BlobControlBackend, scope: StageScope,
     after lease expiry or an uncertain target state, HOLD for manual review.
     """
     proof.verify(scope)
+    _require_physical_readback(scope, proof, target_reader)
     if not isinstance(claim, Claim) or not claim.lease_id:
         raise LedgerHold("INVALID_RECOVERY_CLAIM")
     control = _read(backend, scope.claim_key)
@@ -414,6 +457,7 @@ def reconcile_unknown_finalize(backend: BlobControlBackend, scope: StageScope,
     receipt = _read(backend, scope.receipt_key)
     expected = _json({"schema_version": CONTRACT, "identity": scope.identity(),
                       "version": scope.version, "status": "VERIFIED",
+                      "target_readback_contract": TARGET_READBACK_CONTRACT,
                       "proof": vars(proof)})
     if receipt is None or receipt.data != expected:
         return "VERIFY_READONLY"
