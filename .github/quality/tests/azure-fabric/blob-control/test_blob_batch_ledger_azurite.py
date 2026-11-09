@@ -9,7 +9,10 @@ import os
 import uuid
 import unittest
 
-from azure.storage.blob import BlobServiceClient
+if os.getenv("AZURITE_ONLY") == "1":
+    from azure.storage.blob import BlobServiceClient
+else:
+    BlobServiceClient = None
 from blob_batch_ledger import (
     BlobConflict, StageScope, TargetProof, acquire, finalize, precheck,
 )
@@ -21,7 +24,7 @@ def canonical(obj):
     return (json.dumps(obj, sort_keys=True, separators=(",", ":")) + "\n").encode()
 
 
-@unittest.skipUnless(os.getenv("AZURITE_ONLY") == "1", "Az urite isolated CI only")
+@unittest.skipUnless(os.getenv("AZURITE_ONLY") == "1", "Azurite isolated CI only")
 class BlobAzuriteTests(unittest.TestCase):
     def setUp(self):
         self.service = BlobServiceClient.from_connection_string(
