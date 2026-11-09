@@ -1489,7 +1489,7 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
                            source_override: str, target_override: str,
                            patient_contract_json: str,
                            encounter_contract_json: str) -> NotebookOutcome:
-    """One-source Silver release. No auto retry; partial state is read-only HOLD."""
+    """One approved source per call (old42 or new16); partial state stays read-only HOLD."""
     import re
     if (mode not in ("HL7_SILVER_WRITE", "HL7_SILVER_READBACK_ONLY")
             or request not in _HL7_SOURCE_SCOPES

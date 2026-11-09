@@ -122,3 +122,10 @@ The previously approved FHIR G4 and 42-HL7 physical Silver paths remain byte-ide
 - [x] New16 dedicated controller and strict first-add marker tests merged Self-Runner PR #652. Real OIE persisted 16 and Azure immutable 16 Blob publish are previously verified; no source rePOST or Landing rewrite is required.
 - [ ] After subsequent G5-only main commits, re-align latest Healthcare Git Native SHA via ordinary dispatch and verify canonical Notebook/Workspace exact source before a separately approved Silver marker. The source-handoff whitelist and default HALT are unchanged. No Git-readonly exception should be broadened.
 - [ ] Run the new16 physical Azure GET -> Delta 16/Replay SKIP -> dbt/Shared DQ -> temporary three-part Candidate -> Fabric Native Silver Approval-LAST -> cold readback -> replay; report actual Fabric Jobs, Delta counts and temporary blob conditional removal only from terminal real evidence. No OMOP Gold.
+
+
+### Post-P3.20 G5 documentation-only source ahead of approved HL7 Native (2026-11-08 ET)
+
+- [x] G5 Native P3.20 hardening commit `8391e3a172ac534963f80bb8154a2f09251098d2` passed HL7 new16/old42 offline regression and was independently synchronized to Fabric in Self-Runner Run #42543484304 (`AUTO_UPDATE_DEPLOYMENT_READBACK_PASS`).
+- [x] Two later Healthcare Main commits through `45c4dfeba6ed016e91f79f49e91064cde2bd74c1` modified only `openspec/changes/fabric-g5-approved-silver-omop-candidate/tasks.md` (verified Git comparison), **no Native Notebook change**. Continue using strict latest-Main Git deployment rather than silently relaxing the release Git preflight.
+- [ ] Final separate Fabric new16 WRITE→Approval-LAST→READBACK_ONLY→Replay SKIP may run only after same SHA exact Git Native readback and separately first-added marker. If G5 again changes Native or Git Head during the release, stop, do not infer a Silver write from local tests or Azure Landing PASS.
