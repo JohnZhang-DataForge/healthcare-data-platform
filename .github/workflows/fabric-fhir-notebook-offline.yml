@@ -68,8 +68,8 @@ jobs:
           import unittest
           start = ".github/quality/tests/azure-fabric/notebook"
           test_files = sorted(Path(start).glob("test_*.py"))
-          if len(test_files) != 9:
-              raise SystemExit(f"FABRIC_NOTEBOOK_TEST_FILE_COUNT_INVALID={len(test_files)}; expected=9")
+          if len(test_files) != 10:
+              raise SystemExit(f"FABRIC_NOTEBOOK_TEST_FILE_COUNT_INVALID={len(test_files)}; expected=10")
           suite = unittest.TestLoader().discover(start_dir=start, pattern="test_*.py")
           found = suite.countTestCases()
           print(f"FABRIC_NOTEBOOK_DISCOVERED={found}; required_min=100; files={len(test_files)}", flush=True)
