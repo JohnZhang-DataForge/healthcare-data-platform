@@ -1,5 +1,8 @@
 # Design — G5 approved Silver → OMOP Candidate / Pipeline
 
+**2026-11-10 CURRENT POLICY (supersedes historical sections below):** No compulsory separate Clinical and License human signatures/reviewer keys for this synthetic FHIR-to-OMOP G5 project. Legacy signature code B2-B8 stays untouched. The current technical gate relies on real immutable Batch/Manifest/StageScope, physical Silver/Quarantine evidence, one Shared Mapper with DQ and explicit missing-value rules, physical F1 nine-source provenance plus valid Concept domains/dates, F2 double SQL/Shared identity fingerprint, trusted controlled Stage execution, Blob fencing and independent target readback. Actual third-party terminology licenses still apply; no fake approval or invented Concept. Old Native/G5 Writer human-review flags must be explicitly migrated rather than filled with fake True or SHA. No Candidate/Gold permission is granted here; Pipeline default HALT. The real F1 audit table remains 0/9 (Run 42844407716).
+
+
 ## Frozen starting point
 
 Healthcare main `57a0e6be93ab1a957fbc4f9129cb3de0a6a5a202`; Self-Runner main `efcfa3eaae192be22099aac83e962c0dccf4c9c1` (read on 2026-11-03). These are change-start baselines; actual latest main wins before merge. Cloud Workspace `745ce03b-15b6-4870-b0e5-8c5750aa18dc`; Lakehouse `e67c42ee-5ab2-4bc8-a013-7bdf9741ef68`. Never treat Git logicalId as physical Item GUID.
