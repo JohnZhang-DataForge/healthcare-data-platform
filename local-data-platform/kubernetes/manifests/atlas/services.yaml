@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: atlas3-ui
+  namespace: dw-atlas
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: atlas3-ui
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapi3
+  namespace: dw-atlas
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: webapi3
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

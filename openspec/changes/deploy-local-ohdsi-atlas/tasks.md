@@ -1,6 +1,6 @@
 # Tasks — Local OHDSI ATLAS 3.0 Deployment
 
-> 当前只完成设计与仓库/官方资料只读核对；**没有实施 K8s、PG DDL/DML、Cloudflare、DNS、Tunnel 或 WebAPI 登录**。本 Change 是唯一开发/验收任务清单；任务勾选必须附准确 PR/Run/SHA 和按范围独立读回。
+> 本轮把 P0/P1 必需项内嵌到 **P2–P4 一次性实施门禁**，不再单独提交一轮冗长调查；OpenSpec 不降低运行时门禁。**本 PR 只有部署源码与只读核查，尚未执行 K8s、PG DDL/DML、Cloudflare、DNS、Tunnel 或 WebAPI 登录。**本 Change 是唯一开发/验收任务清单；任务勾选必须附准确 PR/Run/SHA 和按范围独立读回。
 
 ## P0 — Preflight and governance
 
@@ -11,6 +11,7 @@
 - [x] 0.6 用户确认首发域名 `atlas.johnzhang-dataforge.site`、ATLAS UI/WebAPI 选择 **worker03**（PG17/PG14 所在节点）并采用现有 PG17 存储、非另建 PostgreSQL；这只是设计决策，尚未执行部署或数据操作。
 - [x] 0.7 用户指出并已按现有仓库源码布局核实，ATLAS Kubernetes manifests 的唯一正式路径为 `local-data-platform/kubernetes/manifests/atlas/`（既有 OIE、Synthea 位于相同 `kubernetes/manifests/<component>/` 目录）；不得在 `atlas/kubernetes/` 新增平行清单。本次是 OpenSpec 文档纠偏，尚未创建运行资源；以 PR/CI/Main 验证。
 - [x] 0.5 **实际节点/角色/资源 requests GET-only 盘点**：Self-Runner [#42735302379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735302379) 和 [#42735495480](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735495480) SUCCESS，确认 worker01=storage（SeaweedFS、cloudflared）、worker02=platform（Marquez API/Web/Nginx）、worker03=compute（PG17、PG14、Public Web），PG14 PV nodeAffinity=worker03。Marquez API/Web/Nginx 当前均无 affinity/nodeSelector，ATLAS 还未部署，节点测量只含 requests 而非实时 top。记录在 design §5.1。
+- [x] 0.8 **P2–P4 同轮就绪最小检查**：Self-Runner [#42756234158](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42756234158) GET-only SUCCESS：worker03 Ready、PG17 17.11 在 worker03、OMOP 39 CDM 表、`dw-atlas` 未存在、现有 PG17/PG14 PVC Bound、相关 DB/ATLAS Job 未发现；`concept` 等计数是 pg_class 统计估计，`observation_period` 估计 0，PG17 **备份恢复尚未证实**，未执行任何 K8s/PG 写入。
 
 ## P1 — Local PostgreSQL data readiness (READONLY FIRST)
 
@@ -27,6 +28,7 @@
 - [ ] 2.6 **worker03 硬调度**：ATLAS3/WebAPI3 以 `nodeAffinity.required... kubernetes.io/hostname=worker03` 及实机标签/资源 preflight 固定，PG17/PG14/Public Web **已经**同节点；仅对在 worker02 的 Marquez 主 API/官方 Web/Nginx 做精准选择性隔离/漂移检测，不能对整个 `dw-marquez` 使用硬反亲和，否则 Public Web 导致永远 Pending。worker03 压力过高/节点不 Ready → Pending/HOLD 不自动漂移；负向 CI 拦截错误节点或错误 anti-affinity。
 - [ ] 2.7 **长线隔离漂移风险**：评估 Marquez API/Web/Nginx 的对称 nodeAffinity / 只读漂移检测，但须另行授权；用户明确同意 PG14/Public Web 与 ATLAS 在 worker03 共机，不以全部 Marquez 组件分离为验收门槛；禁止擅自移动 PG14 PV 或重启 Marquez。
 - [ ] 2.8 **缓存持久化选择**：首版核查 TrexSQL 是否为目标功能所需；若关闭，记录即时 Cohort count/inclusion-rule 的差异；若启用，先评估限量 `emptyDir` 缓存，确有保留价值再单独计划 5–10Gi worker03 绑定可重建缓存 PVC，不将缓存备份与 DB 元数据混淆，且不得手动提前新建未选 StorageClass/PV。
+- [ ] 2.9 **一次性 P2→P3→P4 执行**：同一 Session/受控 Runner 依次完成 v3.0.0 pinned GHCR image build/推送及 WebAPI3 digest → PG17 新角色/Schema/Flyway 和独立读回 → `dw-atlas` worker03 私有 Deployment/ClusterIP/真实浏览器 API 调用；每步独立 PASS 才继续，且先核实 PG17 备份、真实 resource usage/磁盘/IO 与非冲突锁。源代码暂在 Healthcare `feature/atlas-p2p4-onepass-20261109`，涉及 `local-data-platform/kubernetes/manifests/atlas/`、`images/atlas3-ui/`、`atlas/config/`、`atlas/sql/`；**源代码验收 ≠ 有副作用执行完成**，不得在尚未有 image Digest、Secret 和实际数据库可恢复证据时自动 `kubectl apply`。
 - [ ] 2.3 完成 WebAPI 3 app DB / source_daimon / CDM/Vocabulary/Results/Temp 数据源初始化的**可审计** migration 预检与最小 PG 角色/Statement timeout；先在隔离环境证明只写专属 Schema，绝不无条件自动迁移现有 `cdm.*`。
 - [ ] 2.4 获授权后在 `dw-atlas` 内部署，执行真实内网 GET/readiness、UI→WebAPI、真实 Concept 查询和 data source readback；保存 K8s image Digest、Git SHA、Run 证据，失败/未知状态先只读验明。
 - [ ] 2.5 在经审批的私有环境实际验证 WebAPI 3 身份/角色管理、未登录 API 401/403、WebAPI 角色不能更新 `cdm`、凭据不出现在 JS/Logs。若采用单用户 Access-only 变体必须写下独立风险决策，不得自动放行外网。

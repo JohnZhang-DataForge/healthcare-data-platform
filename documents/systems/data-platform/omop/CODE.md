@@ -157,3 +157,20 @@ NEW_ONLY Writer 新 GHCR 包名：`ghcr.io/johnzhang-dataforge/healthcare-data-p
 | [`test_omop_snapshot_publisher.py`](../../../../local-data-platform/tests/clinical_producers/test_omop_snapshot_publisher.py) | Fake Azure 正负向、partial retry、认证及静态 K8s Namespace 合同；不是 Azure Live 验收 |
 
 真正运行前需核对读库只读账号和独立 `dw-synthea/omop-snapshot-reader` Secret、PG17 客户端版本、PG Service DNS、Image Digest、容量、Azure 权限及并行作业；必须按 Safe Operations 单独获得真实部署及 Blob PUT 授权。本次 PR 只提供代码、模板和离线测试。
+
+## ATLAS3 / WebAPI3 — OMOP research consumer (new P2–P4)
+
+These deployment and image paths are registered here because this existing OMOP CODE document is a recognized Local DP Image/K8s source owner in the current trusted repository gate. The ATLAS implementation remains a separate research **consumer**, not a second OMOP Writer. See [ATLAS component CODE](../atlas/CODE.md) and its [active OpenSpec](../../../../openspec/changes/deploy-local-ohdsi-atlas/tasks.md).
+
+| Maintained source | Role |
+| --- | --- |
+| [ATLAS3 Dockerfile](../../../../local-data-platform/images/atlas3-ui/Dockerfile) | Pinned upstream Atlas3 3.0.0 frontend image build, main-only publish |
+| [ATLAS Namespace](../../../../local-data-platform/kubernetes/manifests/atlas/namespace.yaml) | New isolated `dw-atlas`, not `dw-postgre` |
+| [ATLAS internal Services](../../../../local-data-platform/kubernetes/manifests/atlas/services.yaml) | ClusterIP only, no public API |
+| [ATLAS frontend gateway](../../../../local-data-platform/kubernetes/manifests/atlas/frontend-gateway-configmap.yaml) | Private single-origin Caddy routing, not Marquez Nginx |
+| [ATLAS UI Deployment](../../../../local-data-platform/kubernetes/manifests/atlas/atlas3-ui-deployment.yaml.tpl) | worker03 + image digest required at runtime |
+| [ATLAS WebAPI Deployment](../../../../local-data-platform/kubernetes/manifests/atlas/webapi3-deployment.yaml.tpl) | worker03 + PG17 dedicated secret/roles, no default passwords |
+| [ATLAS WebAPI private ingress](../../../../local-data-platform/kubernetes/manifests/atlas/webapi3-networkpolicy.yaml) | Only Atlas3 UI pods may access WebAPI3 port 8080 |
+
+**No runtime installation receipt:** this inventory does not authorize database schema creation, credential generation, K8s apply, existing PVC mutation or public routing.
+

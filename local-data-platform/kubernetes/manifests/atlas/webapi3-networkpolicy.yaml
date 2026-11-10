@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: webapi3-private-ingress
+  namespace: dw-atlas
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: webapi3
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: atlas3-ui
+      ports:
+        - protocol: TCP
+          port: 8080

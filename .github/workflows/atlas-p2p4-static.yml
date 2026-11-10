@@ -1,0 +1,28 @@
+name: ATLAS P2-P4 private runtime source guard
+on:
+  pull_request:
+    paths:
+      - 'local-data-platform/kubernetes/manifests/atlas/**'
+      - 'local-data-platform/atlas/**'
+      - 'local-data-platform/images/atlas3-ui/**'
+      - '.github/quality/tests/data-platform/atlas/**'
+      - '.github/workflows/atlas-p2p4-static.yml'
+      - 'openspec/changes/deploy-local-ohdsi-atlas/**'
+permissions:
+  contents: read
+jobs:
+  atlas-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test ATLAS source path, role separation and K8s offline contracts
+        run: python3 -m unittest discover -s .github/quality/tests/data-platform/atlas -p 'test_*.py' -v
+      - name: Source-only boundary
+        run: |
+          echo KUBERNETES_APPLY=NO
+          echo POSTGRES_DDL=NO
+          echo GHCR_PUBLISH=NO
+          echo CLOUDFLARE_DNS_TUNNEL=NO

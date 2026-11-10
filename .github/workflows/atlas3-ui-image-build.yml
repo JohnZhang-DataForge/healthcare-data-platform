@@ -1,0 +1,96 @@
+name: Atlas3 v3.0.0 pinned source build and conditional GHCR publish
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/atlas3-ui-image-build.yml'
+      - 'local-data-platform/images/atlas3-ui/**'
+      - 'local-data-platform/kubernetes/manifests/atlas/**'
+      - 'local-data-platform/atlas/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/atlas3-ui-image-build.yml'
+      - 'local-data-platform/images/atlas3-ui/**'
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout healthcare source
+        uses: actions/checkout@v4
+        with:
+          path: candidate
+          persist-credentials: false
+      - name: Checkout OHDSI Atlas3 immutable v3.0.0 commit
+        uses: actions/checkout@v4
+        with:
+          repository: OHDSI/Atlas3
+          ref: f775da50dfcd8b7fa5c57abc2e2654650d37ee4b
+          path: atlas3-upstream
+          persist-credentials: false
+      - name: Verify source pin and Dockerfile layout
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git -C atlas3-upstream rev-parse HEAD)" = f775da50dfcd8b7fa5c57abc2e2654650d37ee4b
+          test -f atlas3-upstream/package-lock.json
+          test -f atlas3-upstream/docker/config-local.json
+          test -f candidate/local-data-platform/images/atlas3-ui/Dockerfile
+          python3 - <<'PY'
+          import json,pathlib
+          contract=json.loads(pathlib.Path('candidate/local-data-platform/atlas/config/runtime-contract.json').read_text())
+          assert contract['upstream_atlas3_commit']=='f775da50dfcd8b7fa5c57abc2e2654650d37ee4b'
+          assert contract['target_namespace']=='dw-atlas' and contract['target_worker']=='worker03'
+          assert contract['public_route_enabled'] is False
+          print('PINNED_SOURCE_AND_PRIVATE_RUNTIME_CONTRACT=PASS')
+          PY
+      - name: Build exact upstream source with repository-owned Dockerfile
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build --pull -f candidate/local-data-platform/images/atlas3-ui/Dockerfile \
+            -t atlas3-ui:3.0.0-verify atlas3-upstream
+          echo "ATLAS3_LOCAL_IMAGE_ID=$(docker image inspect atlas3-ui:3.0.0-verify --format '{{.Id}}')"
+          echo ATLAS3_UI_PINNED_SOURCE_BUILD=PASS
+      - name: Check static asset files inside image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker run --rm --entrypoint sh atlas3-ui:3.0.0-verify -c \
+            'test -s /srv/atlas/index.html && test -s /srv/atlas/config-local.json && grep -q "/WebAPI" /srv/atlas/config-local.json'
+          echo ATLAS3_UI_BUNDLE_AND_CONFIG=PASS
+      - name: Inspect official WebAPI3 stable release manifest (no deploy)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker buildx imagetools inspect docker.io/ohdsi/webapi:3.0.0 > "$RUNNER_TEMP/webapi-manifest.txt"
+          grep -Eq '^Digest:[[:space:]]+sha256:' "$RUNNER_TEMP/webapi-manifest.txt"
+          awk '/^Digest:[[:space:]]+sha256:/{print "WEBAPI3_PIN_CANDIDATE="$2;exit}' "$RUNNER_TEMP/webapi-manifest.txt"
+          echo WEBAPI3_OFFICIAL_IMAGE_INSPECT=PASS
+      - name: Login to GHCR for main-only publish
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the exact built image on Main only
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          IMAGE="ghcr.io/johnzhang-dataforge/healthcare-atlas3-ui:3.0.0-$SOURCE_SHA"
+          docker tag atlas3-ui:3.0.0-verify "$IMAGE"
+          docker push "$IMAGE"
+          docker buildx imagetools inspect "$IMAGE" | awk '/^Digest:[[:space:]]+sha256:/{print "ATLAS3_UI_PUBLISHED_DIGEST="$2;exit}'
+          echo ATLAS3_UI_GHCR_PUBLISH=PASS
+      - name: Record safety boundary
+        if: always()
+        run: |
+          echo ATLAS3_IMAGE_BUILD_SOURCE=OHDSI_ATLAS3_3.0.0_PINNED
+          echo K8S_PG17_CLOUDFLARE_CHANGES=NONE
