@@ -4,13 +4,11 @@
 
 ```text
 Browser
-  → https://atlas.johnzhang-dataforge.site (USER-CONFIRMED HOSTNAME; DNS/TUNNEL NOT CREATED)
-  → Cloudflare Access (email allowlist / deny all nonmembers)
-  → existing outbound Cloudflare Tunnel connector (new hostname route only)
-  → existing Nginx gateway (inventory before editing)
-       /atlas/       → dw-atlas / atlas3-ui internal ClusterIP
-       /WebAPI/      → dw-atlas / webapi3 internal ClusterIP
-       all other paths → deny or tightly defined redirect
+  → https://atlas.johnzhang-dataforge.site (user-created published hostname)
+  → existing healthcare-marquez-public Cloudflare Tunnel (same connector as lineage, per user screenshot)
+  → direct private ClusterIP atlas3-ui.dw-atlas.svc.cluster.local:8080
+      /atlas/       → static Atlas3 UI (no clinical data in static HTML)
+      /WebAPI/      → internal WebAPI3 service (mandatory DB authentication + RBAC)
   → WebAPI3 (dedicated service; compatible 3.0.0 release)
        → existing PostgreSQL17 OMOP CDM + Vocabulary (read/select)
        → separate WebAPI application schema + results/temp (narrow read/write)
@@ -18,7 +16,7 @@ Browser
 
 - **不要直接将 Service NodePort、WebAPI、CDM PostgreSQL 或 PG14 公网暴露。** 外部只有 Tunnel 出站；无路由器 inbound port mapping。默认新 Namespace `dw-atlas`，真实名称须先检查碰撞。
 - 两条前端路径同一个 Host，避免跨域 OAuth/Access cookie、CORS 和重定向混乱；实际 ATLAS3 的 `base path`/API prefix 由其发行版本测试决定，若官方静态构建只接受根路径，优先保留同域名并通过 Nginx 精确 rewrite（先做离线和浏览器测试），不可凭 2.x URL 假定 3.x path 兼容。
-- Cloudflare Access 必须覆盖整个主机名，包括 `/WebAPI/*`；同源 API 请求也必须经过 Access，禁止浏览器 JS 配置绕过 Access 的内网地址。Nginx 防开放代理、限制路径和上传大小、保持 Host/Forwarded/HTTPS；关闭动态 API 的共享缓存与鉴权响应缓存，登录 Cookie 必须 Secure/HttpOnly/SameSite 适当设置。
+- **用户已明确选择不启用 Cloudflare Access**：这是用户有意识的独立登录架构，不表示免除 WebAPI 安全门禁。只有在 WebAPI DB Authentication、强密码账户、RBAC、匿名 API 负向用例和公网路由读回都 PASS 后，才可接受公网上线。UI 静态 HTML 可由未登录访客看到，但任何受保护 Source/Cohort/Results/写操作必须由 WebAPI 拒绝。后续如需额外身份门禁，可选增加 Cloudflare Access；不要求当前安装。禁止 WebAPI NodePort，保持 Host/HTTPS 转发语义及无敏感响应缓存。
 - **最新实际入口发现**：Self-Runner 受控 GET-only [Run #42735302379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735302379) 于 2026-11-09 20:22 ET 实机确认 `dw-marquez/marquez-showcase-gateway` 是 Nginx Deployment，当前在 `worker02`；`marquez-showcase-cloudflared` 在 `worker01`。Gateway/Tunnel 当前来源与历史维护工作可从 Self-Runner PR #337 和相关部署审计追溯；**仍须单独只读核实 Cloudflare 控制台真实 Tunnel hostname、Access 策略、Nginx ConfigMap 的精确配置与当前 Owner**，不得仅凭名称就改写现存 Marquez 路由。
 
 ## 2. Versions and source provenance
@@ -41,9 +39,9 @@ Browser
 
 ## 4. Authentication/security choice
 
-- **第一层（必须）**：Cloudflare Access Self-hosted Application，精确 allowlist 用户邮箱/身份提供方；所有未授权 UI/API 请求失败，Cookie/JWT 由 Cloudflare 平台管理。用户需在 Dashboard 明确创建 Access 应用与策略，不能以 DNS 记录存在推断 Access 已开启。设置 deny-by-default，验证无 Cookie、未列入用户、URL 编码、不同 HTTP Method 和 API 直接访问。
-- **第二层（首选）**：WebAPI 3.0 Spring Security + 最小 RBAC，选择官方支持的 DB Login 或 OIDC 实现；**Access 登录并不会自动成为 ATLAS 登录**。必要时用户出现二次登录，这是可接受的安全行为；若选择一次登录，须单独证实 OIDC 或受支持的身份桥接，不能直接信任客户端注入的邮箱 Header。
-- 如果 MVP 暂时只有一名访问者并且无法立即接通 WebAPI 内建登录，则 **Access-only 仅可作为明确审签的短期单用户模式**：Access 限一个邮箱、WebAPI 仅由受保护 Host/私有 NetworkPolicy 到达、不能通过内网其他入口绕过、管理能力均视作高权限；绝不用于多人或匿名公网。未通过外网负向验收 → 保留内网模式，不创建可公开访问路由。
+- **第一层（必须）**：WebAPI 3.0 Spring Security `AtlasRegularSecurity` + Database Authentication + RBAC，需验证弱口令/默认账户不存在，未登录用户无法获取受保护的源数据、分析结果或提交 Cohort 任务。
+- **第二层（可选）**：Cloudflare Access 未来可以为同一 Host（包括 `/WebAPI`）增加额外身份校验，但首版明确不启用；Access 身份不能代替 WebAPI 用户/角色权限。
+- **不接受 Access-only 或匿名授权替代**：在 WebAPI 内建登录、角色绑定及请求拒绝未经验证前，保持 UI Deployment 不上线；即使用户已经在 Tunnel Dashboard 创建域名路由，也不得把它视为公网上线完成。
 - 绝不使用 Broadsea 的 `admin/admin` 或 `ohdsi/ohdsi` 示例帐号、示例数据库密码；敏感值只能通过既有 Secrets 管理方式，禁止 Git、公开容器配置和浏览器前端泄露。
 
 ## 5. Runtime ownership, deployments and limits
@@ -79,7 +77,7 @@ Browser
 1. **D0 INVENTORY_ONLY**：只读表结构、9 Vocabulary 与许可、观察期、资源、Tunnel/Nginx 归属；产出差距报告。禁止把 Fabric 成功数字复制为本地状态。
 2. **D1 SOURCE/STATIC**：确认 Atlas3/WebAPI3 匹配稳定版本、锁 Digest、配置/K8s YAML/SQL 迁移预演、单测和恶意路径负向测试；所有代码先在 PR/CI。
 3. **D2 PRIVATE_RUNTIME**：获批后初始化独立 App/Results/Temp，WebAPI 严格权限，K8s 内网部署，Private Ingress/port-forward 真实 UI+API 数据源、Concept 查询；任意 DB 修改必须可回滚、独立 SELECT readback。
-4. **D3 ACCESS_PROTECTED_PUBLIC**：Cloudflare Access allowlist 生效后，再将新 Host 经现有 Tunnel 指向 Nginx；内外权限负向、ATLAS 登录/登出、Cookie、Host 和 API 路由完整验收。公网未授权 401/403/Access redirect 到登录均视为拒绝，绝不可匿名返回临床源数据/启动 cohort。
+4. **D3 WEBAPI_AUTH_PROTECTED_PUBLIC**：现有 Tunnel 下用户已创建 ATLAS Published application，指向 ATLAS UI ClusterIP（不经 Lineage Nginx）；先验证内网 WebAPI 登录/权限/匿名负向，才创建 UI Service/Deployment 使外网路由真正可达。公网未授权受保护 API 401/403、登录/登出/HTTPS/Host/静态资源/回归 Lineage 全部独立 PASS；绝不可匿名返回临床源数据或启动 cohort。
 5. **D4 ANALYTIC_MVP**：在明确观察期/Vocabulary 完整性和授权前提下，用纯合成患者创建最小 Concept Set、保存 Cohort Definition、生成结果并独立 SQL 读回 Results/Temp，重启后查询一致；如数据缺失则标记 BLOCKED_ANALYTICS，不能将 UI UP 记为业务完成。
 
 **Rollback：** 外网先关闭 Access/新 Tunnel hostname route → 停止独立 ATLAS/WebAPI Deployment → 对新建应用 schema/Results 的回退仅依据独立备份和授权，不执行删除既有 PG17 `cdm.*`、Marquez PG14、SeaweedFS、Airflow/Writer/Identity；保留应用结果用于审计时按受控权限留存，撤销新增 ServiceAccount/Secret 与 NetworkPolicy 只在所有权确认后实施。未知 PG DDL/DML ACK 先独立只读查状态，不盲目重放。
