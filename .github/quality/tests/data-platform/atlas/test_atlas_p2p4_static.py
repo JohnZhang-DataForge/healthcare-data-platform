@@ -42,7 +42,7 @@ class AtlasP2P4StaticTests(unittest.TestCase):
     def test_refuses_unpinned_or_unsafe_credentials(self):
         ui = self.read("atlas3-ui-deployment.yaml.tpl")
         web = self.read("webapi3-deployment.yaml.tpl")
-        self.assertIn("__ATLAS3_UI_IMAGE_DIGEST__", ui)
+        self.assertIn("ghcr.io/johnzhang-dataforge/healthcare-data-platform-atlas3-ui@sha256:cb18de851c4510908de7272a51b72d992f10c1250f170541be929b43789df3c9", ui)
         self.assertIn("docker.io/ohdsi/webapi@sha256:16a7fb6446775152421831dc319cf72dda274a7af8cb4cae0bf1e0450af5a6ac", web)
         self.assertIn("dw-postgre.dw-postgre.svc.cluster.local", web)
         self.assertIn("secretKeyRef:", web)
