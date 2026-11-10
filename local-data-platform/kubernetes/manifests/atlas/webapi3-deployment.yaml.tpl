@@ -23,12 +23,12 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: webapi3
-          image: __WEBAPI3_IMAGE_DIGEST__
+          image: docker.io/ohdsi/webapi@sha256:16a7fb6446775152421831dc319cf72dda274a7af8cb4cae0bf1e0450af5a6ac
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 8080}]
           env:
             - {name: DATASOURCE_DRIVERCLASSNAME, value: org.postgresql.Driver}
-            - {name: DATASOURCE_URL, value: "jdbc:postgresql://__PG17_CLUSTERIP_SERVICE__:5432/omop?currentSchema=webapi"}
+            - {name: DATASOURCE_URL, value: "jdbc:postgresql://dw-postgre.dw-postgre.svc.cluster.local:5432/omop?currentSchema=webapi"}
             - {name: DATASOURCE_OHDSI_SCHEMA, value: webapi}
             - {name: SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA, value: webapi}
             - {name: SPRING_BATCH_REPOSITORY_TABLEPREFIX, value: webapi.batch_}
@@ -44,12 +44,12 @@ spec:
             - {name: SPRING_FLYWAY_PLACEHOLDERS_OHDSISCHEMA, value: webapi}
             - {name: SPRING_FLYWAY_BASELINE_VERSION, value: "3.0.0"}
             - {name: SPRING_FLYWAY_TABLE, value: flyway_schema_history}
-            - {name: SPRING_FLYWAY_URL, value: "jdbc:postgresql://__PG17_CLUSTERIP_SERVICE__:5432/omop?currentSchema=webapi"}
+            - {name: SPRING_FLYWAY_URL, value: "jdbc:postgresql://dw-postgre.dw-postgre.svc.cluster.local:5432/omop?currentSchema=webapi"}
             - {name: SECURITY_CORS_ENABLED, value: "true"}
             - {name: SECURITY_CORS_ALLOWED_ORIGINS, value: "https://atlas.johnzhang-dataforge.site"}
             - {name: SECURITY_AUTH_DB_ENABLED, value: "true"}
             - {name: SECURITY_AUTH_OIDC_ENABLED, value: "false"}
-            - {name: SECURITY_AUTH_DB_DATASOURCE_URL, value: "jdbc:postgresql://__PG17_CLUSTERIP_SERVICE__:5432/omop?currentSchema=webapi"}
+            - {name: SECURITY_AUTH_DB_DATASOURCE_URL, value: "jdbc:postgresql://dw-postgre.dw-postgre.svc.cluster.local:5432/omop?currentSchema=webapi"}
             - name: SECURITY_AUTH_DB_DATASOURCE_USERNAME
               valueFrom: {secretKeyRef: {name: atlas-webapi-db, key: app-username}}
             - name: SECURITY_AUTH_DB_DATASOURCE_PASSWORD
