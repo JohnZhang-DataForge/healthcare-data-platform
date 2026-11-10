@@ -238,7 +238,13 @@ class G5NativeWheelIsolation(unittest.TestCase):
         release = Mock(return_value=True)
         arguments["trusted_technical_release_gate"] = release
         physical = Mock(side_effect=RuntimeError("REACHED_PHYSICAL_SILVER_FENCE"))
+        # The real frozen-G4 allowlist is tested elsewhere using P100/E5918.
+        # Isolate Stage release ordering here with a synthetic scoped path.
         with patch.dict(method.__globals__, {
+            "_g5_candidate_paths": lambda _scope: {
+                "person": "synthetic-person", "visit": "synthetic-visit",
+                "approval": "synthetic-approval",
+            },
             "verify_fhir_g5_candidate_source_readonly": physical,
         }):
             with self.assertRaisesRegex(RuntimeError, "REACHED_PHYSICAL_SILVER_FENCE"):
