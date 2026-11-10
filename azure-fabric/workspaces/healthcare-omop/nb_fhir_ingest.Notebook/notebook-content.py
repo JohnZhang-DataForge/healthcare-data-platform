@@ -35,7 +35,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import PurePosixPath
-from typing import Iterable, Mapping, Any
+from typing import Iterable, Mapping, Any, Callable
 
 from healthcare_data_engine import (
     __version__ as engine_version,
@@ -1711,19 +1711,23 @@ def _g5_candidate_verify_mapper_payload(mapper_result, person_candidate,
 def plan_and_write_g5_candidate_delta(
     spark, *, scope, handoff, mapper_result, person_candidate, visit_candidate,
     mode: str, write_authorized: bool,
-    clinically_reviewed: bool, license_reviewed: bool,
+    clinically_reviewed: bool = False, license_reviewed: bool = False,
     warehouse_snapshot_verified: bool,
-    clinical_review_sha256: str, license_review_sha256: str,
+    clinical_review_sha256: str | None = None,
+    license_review_sha256: str | None = None,
     warehouse_snapshot_sha256: str,
     patient_contract_json: str, encounter_contract_json: str,
+    technical_evidence_sha256: str | None = None,
+    trusted_technical_release_gate: Callable | None = None,
 ) -> str:
-    """Offline-reviewed Fabric-native Delta writer; NOT connected to run_mode.
+    """Real G5 Delta writer, never a Notebook/Pipeline parameter entrypoint.
 
-    Required verified input DataFrames are *already* mapped by the sole strict
-    Shared Engine Mapper and joined with F2 IDs, including identity_state.
-    Caller must independently validate real P1 clinical/license review evidence
-    and complete Warehouse F2 snapshot; Boolean flags and asserted SHA alone
-    do not prove real signoff. This adapter ALSO reopens real G4 Silver.
+    The current route binds ONE externally authenticated technical witness,
+    without Clinical/License human signoffs. Legacy signed-v1 remains optional
+    for historical test/replay. A technical SHA ALONE does not permit writing:
+    a protected trusted controller must recheck the exact Stage and witness
+    via trusted_technical_release_gate, plus physical Warehouse/Silver proofs.
+    The actual Fabric Pipeline still defaults to HALT.
     """
     from healthcare_data_engine.mapping.omop.candidate_publication import (
         FrozenCandidateScope, PersonVisitCandidateHandoff as _Unused,
@@ -1758,16 +1762,34 @@ def plan_and_write_g5_candidate_delta(
             or type(license_reviewed) is not bool
             or type(warehouse_snapshot_verified) is not bool):
         raise RuntimeError("HOLD_G5_CANDIDATE_MODE_OR_FLAGS")
-    if (mode == "G5_CANDIDATE_READBACK_ONLY" and
-            (write_authorized or clinically_reviewed or license_reviewed)):
+    technical = technical_evidence_sha256 is not None
+    if technical and (clinically_reviewed or license_reviewed
+                      or clinical_review_sha256 is not None
+                      or license_review_sha256 is not None):
+        raise RuntimeError("HOLD_G5_TECHNICAL_EVIDENCE_CANNOT_FORGE_REVIEWS")
+    if mode == "G5_CANDIDATE_READBACK_ONLY" and (
+            write_authorized or clinically_reviewed or license_reviewed):
         raise RuntimeError("HOLD_G5_CANDIDATE_READBACK_FLAGS")
-    if (mode == "G5_CANDIDATE_WRITE" and not (
-            write_authorized and clinically_reviewed and license_reviewed
-            and warehouse_snapshot_verified)):
-        raise RuntimeError("HOLD_G5_CANDIDATE_RELEASE_REVIEW_REQUIRED")
+    if mode == "G5_CANDIDATE_WRITE":
+        if not (write_authorized and warehouse_snapshot_verified):
+            raise RuntimeError("HOLD_G5_CANDIDATE_TECHNICAL_RELEASE_MISSING")
+        if technical:
+            # The trusted callback must be provided by the protected Stage
+            # controller. No Notebook/Pipeline parameter can supply it.
+            if (not callable(trusted_technical_release_gate)
+                    or trusted_technical_release_gate(
+                        scope, technical_evidence_sha256) is not True):
+                raise RuntimeError("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
+        elif not (clinically_reviewed and license_reviewed):
+            raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
+    digests = (
+        (technical_evidence_sha256, warehouse_snapshot_sha256)
+        if technical else
+        (clinical_review_sha256, license_review_sha256,
+         warehouse_snapshot_sha256)
+    )
     if any(not isinstance(x, str) or not fullmatch(r"[0-9a-f]{64}", x)
-           for x in (clinical_review_sha256, license_review_sha256,
-                     warehouse_snapshot_sha256)):
+           for x in digests):
         raise RuntimeError("HOLD_G5_CANDIDATE_EVIDENCE_SHA_NOT_PINNED")
     if warehouse_snapshot_sha256 != scope.identity_snapshot_fingerprint:
         raise RuntimeError("HOLD_G5_CANDIDATE_WAREHOUSE_SNAPSHOT_DRIFT")
@@ -1822,14 +1844,22 @@ def plan_and_write_g5_candidate_delta(
             "source_batch_id": scope.source_batch_id,
             "mapping_sha256": scope.mapping_sha256,
             "snapshot_fingerprint": scope.identity_snapshot_fingerprint,
-            "clinical_review_sha256": clinical_review_sha256,
-            "license_review_sha256": license_review_sha256,
             "person_count": scope.patient_count,
             "visit_count": scope.encounter_count,
             "person_sha256": psha,
             "visit_sha256": vsha,
             "status": "CANDIDATE_APPROVED",
         }
+        if technical:
+            required.update({
+                "evidence_contract": "G5_TECHNICAL_F1F2_V1",
+                "technical_evidence_sha256": technical_evidence_sha256,
+            })
+        else:
+            required.update({
+                "clinical_review_sha256": clinical_review_sha256,
+                "license_review_sha256": license_review_sha256,
+            })
         if record != required:
             raise RuntimeError("HOLD_G5_CANDIDATE_APPROVAL_DRIFT")
         return record
@@ -1866,19 +1896,36 @@ def plan_and_write_g5_candidate_delta(
         _write_delta(person_candidate, paths["person"])
         _write_delta(visit_candidate, paths["visit"])
         reopened()  # independent physical two-Delta readback BEFORE approval
-        receipt = (
-            scope.receipt_key, scope.source_batch_id, scope.mapping_sha256,
-            scope.identity_snapshot_fingerprint, clinical_review_sha256,
-            license_review_sha256, scope.patient_count, scope.encounter_count,
-            psha, vsha, "CANDIDATE_APPROVED",
-        )
-        approval = spark.createDataFrame(
-            [receipt],
-            "scope_receipt_key string, source_batch_id string, "
-            "mapping_sha256 string, snapshot_fingerprint string, "
-            "clinical_review_sha256 string, license_review_sha256 string, "
-            "person_count long, visit_count long, person_sha256 string, "
-            "visit_sha256 string, status string")
+        if technical:
+            receipt = (
+                scope.receipt_key, scope.source_batch_id,
+                scope.mapping_sha256, scope.identity_snapshot_fingerprint,
+                "G5_TECHNICAL_F1F2_V1", technical_evidence_sha256,
+                scope.patient_count, scope.encounter_count, psha, vsha,
+                "CANDIDATE_APPROVED",
+            )
+            receipt_schema = (
+                "scope_receipt_key string, source_batch_id string, "
+                "mapping_sha256 string, snapshot_fingerprint string, "
+                "evidence_contract string, technical_evidence_sha256 string, "
+                "person_count long, visit_count long, person_sha256 string, "
+                "visit_sha256 string, status string")
+        else:
+            # Historical signed-v1 readback stays byte/column compatible.
+            receipt = (
+                scope.receipt_key, scope.source_batch_id,
+                scope.mapping_sha256, scope.identity_snapshot_fingerprint,
+                clinical_review_sha256, license_review_sha256,
+                scope.patient_count, scope.encounter_count, psha, vsha,
+                "CANDIDATE_APPROVED",
+            )
+            receipt_schema = (
+                "scope_receipt_key string, source_batch_id string, "
+                "mapping_sha256 string, snapshot_fingerprint string, "
+                "clinical_review_sha256 string, license_review_sha256 string, "
+                "person_count long, visit_count long, person_sha256 string, "
+                "visit_sha256 string, status string")
+        approval = spark.createDataFrame([receipt], receipt_schema)
         _write_delta(approval, paths["approval"])  # LAST
         approved()  # second independent readback
     except Exception:
