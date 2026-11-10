@@ -11,10 +11,11 @@
 - 新建 `deploy-local-ohdsi-atlas` Active Change，以功能顺序实施 Local PostgreSQL 数据预检 → ATLAS 3.0 + WebAPI 3.0 配对 → 独立 K8s 部署与数据库权限 → Cloudflare Access / Tunnel / 现有 Nginx 兼容接入 → 真实浏览器和拒绝访问验收。
 - 官方 **2026-10-16** 已发布 Atlas3 3.0.0 与 WebAPI 3.0.0；使用匹配的 3.x 组合、固定发行标签和不可变镜像 Digest（发布前实际验证）。**不得把 Atlas3 连接 Broadsea 当前常见的 2.x WebAPI。** Broadsea 可以作为结构参考，但不是直接部署全套 stack 的命令。
 - 优先重用本地 PG17 已验收 `cdm.person`/`cdm.visit_occurrence`、既有 K8s 和 Cloudflare Tunnel 连接器；新增隔离 ATLAS 应用配置、Results/Temp 存储与最小权限帐号；不修改历史 OMOP Writer、Batch、Ledger、Identity 或 Marquez PG14。
-- 公网架构计划为 `atlas.johnzhang-dataforge.site` → **Cloudflare Access 邮箱 allowlist** → outbound Tunnel → 受控 Nginx reverse proxy → 独立内部 ATLAS UI + WebAPI；**同一受保护 Host 覆盖全部 UI 与 API 路径**，未验收前仅内网可访问。
+- **用户正式选定域名** `atlas.johnzhang-dataforge.site`（仅冻结名称，尚未设置 DNS/Access/Tunnel route）。公网架构为 Cloudflare Access 邮箱 allowlist → 现有 outbound Tunnel → 经现场核实的 Nginx reverse proxy → ATLAS UI + WebAPI；**同一受保护 Host 覆盖全部 UI 与 API 路径**，未验收前仅内网可访问。
 - 具体 Nginx/Tunnel 路由属现场配置，不假定仓库已管理；必须先只读盘点当前已部署配置，采用最小增量，不覆盖 `lineage.johnzhang-dataforge.site` 的 Marquez 路由。
 - WebAPI 3 自带 OAuth/OIDC、角色权限能力；Cloudflare Access 与 WebAPI 自身身份体系是两层不同产品，不得误称自动 SSO。外网启用前必须选择并实际验证 WebAPI 内建安全/RBAC 或经正式风险评审的单用户 Access-only 封闭配置，默认 fail closed。
-- ML 与本次 ATLAS 不互相阻断。ATLAS3 3.0.0 初版**不包含**旧版内置 Patient-Level Prediction 模块；ML 应由后续独立 OMOP 特征/训练 Pipeline 实现。
+- **部署节点隔离**：2026-11-09 ET 真实 K8s 只读盘点显示 Marquez API/Web/Nginx 位于 worker02，Marquez Public Web、PG14 与 Local PG17 位于 worker03，Tunnel 与 SeaweedFS 位于 worker01。MVP 优先将 ATLAS UI/WebAPI 放在 worker01，避开 Marquez 业务层；以节点标签/受控反亲和及容量检查配置，不移动已绑定 worker03 的 PG14/PG17 PV，不重调度现有 Marquez 组件。运行时节点事实可变化，必须部署前后复核；如果调度冲突则 HOLD，不自动放松限制。不能把这种应用层隔离宣称为所有 Marquez 相关组件的物理隔离（Tunnel 已在 worker01）。
+- ML 与本次 ATLAS 不互相阻断.ATLAS3 3.0.0 初版**不包含**旧版内置 Patient-Level Prediction 模块；ML 应由后续独立 OMOP 特征/训练 Pipeline 实现。
 
 ## Capabilities
 
