@@ -1,0 +1,38 @@
+# Tasks — Local OHDSI ATLAS 3.0 Deployment
+
+> 当前只完成设计与仓库/官方资料只读核对；**没有实施 K8s、PG DDL/DML、Cloudflare、DNS、Tunnel 或 WebAPI 登录**。本 Change 是唯一开发/验收任务清单；任务勾选必须附准确 PR/Run/SHA 和按范围独立读回。
+
+## P0 — Preflight and governance
+
+- [x] 0.1 核查 Healthcare main/开放 PR、当前 Local OMOP Writer/Fabric Vocabulary/Marquez 文档、OpenSpec 与安全规则；确立与正在进行的 Fabric Gold、HL7、Marquez 并行工作互不冲突。此项是 Git/Docs 来源审查，**非实时集群验证**。
+- [x] 0.2 对照 OHDSI 2026-10-16 正式版本、ATLAS3↔WebAPI3 兼容边界、Cloudflare Access 外部身份门禁，冻结 MVP 的独立版本与双层网络设计；暂不锁定未核验的容器 Digest。
+- [ ] 0.3 本设计 PR 通过 Trusted Change Gate/OpenSpec Validate，合并 Main 后复核 SHA；后续实现均引用 `OpenSpec-Change: deploy-local-ohdsi-atlas` 及具体 Task。
+- [ ] 0.4 确定 Self-Runner/本地 Agent 实施入口和当前并行执行者；在任何共享 K8s/PG/Cloudflare 操作前再次核验权限、资源占用和执行授权。
+
+## P1 — Local PostgreSQL data readiness (READONLY FIRST)
+
+- [ ] 1.1 双连接只读清点 PG17 实际 Schema/39 表/432 列差异、Person/Visit/Observation Period 和九张 Vocabulary 表及统计、source ID 与 FK，留存脱敏报告（**不能**采用 Fabric 28,703,753 替代）。
+- [ ] 1.2 核查现有 Athena Vocabulary 使用许可、Release、CPT4/UB04 处理与本地导入适用性；若本地缺失，先提交精确可恢复的补全计划，独立批准后才执行真实导入/读回，绝不再分发受限词项。
+- [ ] 1.3 只读确认 PG17 当前负载、存储、连接数、角色以及备份恢复方案；输出精确的 WebAPI app schema、Results/Temp schema 与最小权限 SQL 计划，不触碰 `cdm` 生产业务行。
+- [ ] 1.4 观察期缺失时定义准确 MVP 功能范围和阻断报告；补齐研究级 Observation Period 的规则作为独立业务 Change，不在 ATLAS UI PR 内盲写。
+
+## P2 — ATLAS3/WebAPI3 code and private rollout
+
+- [ ] 2.1 锁定与实际运行架构兼容的 ATLAS3 3.0.0 / WebAPI 3.0.0 稳定镜像/源码，SHA/Digest、应用配置、API base path、Java21/PG 兼容性、License 和版本矩阵；拒绝 `latest` / `3.0-dev` / Broadsea 2.x 混配。
+- [ ] 2.2 新增独立 Local ATLAS3/WebAPI3 K8s ConfigMaps/Secrets refs、ClusterIP、Resource limits、probes、namespace/networkpolicy 与 Nginx 受控路由变更计划，提供离线 Fake upstream/Host/path/未授权 API 测试；不要修改 Marquez Gateway。
+- [ ] 2.3 完成 WebAPI 3 app DB / source_daimon / CDM/Vocabulary/Results/Temp 数据源初始化的**可审计** migration 预检与最小 PG 角色/Statement timeout；先在隔离环境证明只写专属 Schema，绝不无条件自动迁移现有 `cdm.*`。
+- [ ] 2.4 获授权后在 `dw-atlas` 内部署，执行真实内网 GET/readiness、UI→WebAPI、真实 Concept 查询和 data source readback；保存 K8s image Digest、Git SHA、Run 证据，失败/未知状态先只读验明。
+- [ ] 2.5 在经审批的私有环境实际验证 WebAPI 3 身份/角色管理、未登录 API 401/403、WebAPI 角色不能更新 `cdm`、凭据不出现在 JS/Logs。若采用单用户 Access-only 变体必须写下独立风险决策，不得自动放行外网。
+
+## P3 — Cloudflare / Nginx / protected public release
+
+- [ ] 3.1 只读发现实际 cloudflared/Tunnel 及 Nginx 的所在 Repo/Namespace/Deployment、Host 路由和已有 Marquez Gateway，确定单一配置 Owner；检测 `atlas.johnzhang-dataforge.site` DNS/route 冲突。
+- [ ] 3.2 由具备权限的用户/受控执行者创建 Cloudflare Access Self-hosted Application，精确邮箱 allowlist 默认 DENY；覆盖整个 Atlas Host（包括 /WebAPI），记录应用/策略状态但不记录 Token/PII。
+- [ ] 3.3 在前置验证通过后，新增 **仅一个** Tunnel Host→Nginx 路由与对应 path mapping，不新增路由器端口，不破坏 `lineage.johnzhang-dataforge.site`；独立 browser/API GET/POST/OPTIONS、redirect、HTTPS、Cookie/CORS 和无授权否定测试 PASS。
+- [ ] 3.4 证明未授权用户无法访问 HTML、静态配置、API、source/sources、运行队列及 cohort；确认没有 NodePort/直达内网 WebAPI 绕过。未通过则撤销新 Host route，保持私有部署。
+
+## P4 — Research acceptance / operational handoff
+
+- [ ] 4.1 在 Vocabulary/Observation Period 数据条件满足时，以少量合成记录实测 Concept Set → Cohort Definition → Cohort generation → Results 独立 PG readback；未满足则保持 ANALYTIC_MVP_BLOCKED，不能写成完成。
+- [ ] 4.2 准备独立应用 DB/Results 的备份与可恢复测试、升级/失败回退清单、资源/查询超时、访问日志与最小运维 Runbook；确认不影响 Airflow、Spark、PG17 Writer 和 PG14/Marquez。
+- [ ] 4.3 形成浏览器可展示的最终事实：版本、地址、单/双登录行为、公开范围（Access 保护）、真实 OMOP 统计与不可用的临床域；仅在适用的全部运行验收通过后关闭本 Change。
