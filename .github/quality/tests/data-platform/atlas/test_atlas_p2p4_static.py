@@ -22,6 +22,10 @@ class AtlasP2P4StaticTests(unittest.TestCase):
         self.assertIn("name: atlas3-ui", svc)
         self.assertIn("name: webapi3", svc)
         self.assertNotIn("nodePort:", svc)
+        network = self.read("webapi3-networkpolicy.yaml")
+        self.assertIn("kind: NetworkPolicy", network)
+        self.assertIn("name: webapi3-private-ingress", network)
+        self.assertIn("app.kubernetes.io/name: atlas3-ui", network)
 
     def test_host_placement_and_limits(self):
         for f in ("atlas3-ui-deployment.yaml.tpl", "webapi3-deployment.yaml.tpl"):
