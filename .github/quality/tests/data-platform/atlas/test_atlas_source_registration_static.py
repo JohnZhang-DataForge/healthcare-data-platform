@@ -43,6 +43,7 @@ class AtlasSourceContractTests(unittest.TestCase):
         self.assertIn(b'"key":"LOCAL_OMOP"',body)
         self.assertIn(b'"password":"dummy-value"',body)
         self.assertIn(b'"daimonType":"Vocabulary"',body)
+        self.assertIn(b'"krbAuthMethod":"default"',body)
 
     def test_script_requires_explicit_execute_and_readonly_sql(self):
         code=SCRIPT.read_text(encoding="utf-8")
