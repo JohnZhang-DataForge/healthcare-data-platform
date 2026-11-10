@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atlas3-frontend-gateway
+  namespace: dw-atlas
+data:
+  Caddyfile: |
+    :8080 {
+      redir / /atlas/ 302
+      redir /atlas /atlas/ 302
+      handle /WebAPI/* {
+        reverse_proxy webapi3.dw-atlas.svc.cluster.local:8080
+      }
+      handle /atlas/* {
+        root * /srv
+        try_files {path} /atlas/index.html
+        file_server
+      }
+      handle {
+        respond "Not Found" 404
+      }
+    }
