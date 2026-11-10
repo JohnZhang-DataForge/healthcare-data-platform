@@ -15,7 +15,8 @@ import json
 import re
 from typing import Callable, Mapping
 
-SCHEMA = "fabric-g5-provider-attestation-v1"
+SCHEMA = "fabric-g5-provider-attestation-v1"  # Legacy human-review envelope
+TECHNICAL_SCHEMA = "fabric-g5-technical-evidence-transport-v2"
 ISSUER = "g5-trusted-evidence-provider"
 AUDIENCE = "fabric-g5-native-controller"
 PURPOSE = "PROVENANCE_ONLY_NO_WRITE"
@@ -44,6 +45,11 @@ PAYLOAD_FIELDS = frozenset({
     "provider_commit_sha", "native_controller_sha256",
     "nonce_hex", "issued_at_utc", "expires_at_utc",
 })
+# Current technical contract has no two-person reviewer signatures.
+TECHNICAL_PAYLOAD_FIELDS = (
+    PAYLOAD_FIELDS - {"clinical_review_sha256", "license_review_sha256"}
+    | {"technical_evidence_sha256"}
+)
 ENVELOPE_FIELDS = frozenset({"payload", "key_id", "signature_ed25519"})
 
 # Intentionally EMPTY. Only a separately reviewed immutable Native release
@@ -70,6 +76,22 @@ class VerifiedTransport:
     f2_identity_snapshot_fingerprint: str
     clinical_review_sha256: str
     license_review_sha256: str
+    provider_commit_sha: str
+    expires_at_utc: str
+    candidate_write_authorized: bool = False
+    gold_committed: bool = False
+    provisional_ids_persisted: bool = False
+
+
+@dataclass(frozen=True)
+class VerifiedTechnicalTransport:
+    """Signed technical provenance ONLY; not a Stage/Writer release."""
+    status: str
+    attestation_sha256: str
+    mapping_profile_sha256: str
+    f1_release_metadata_sha256: str
+    f2_identity_snapshot_fingerprint: str
+    technical_evidence_sha256: str
     provider_commit_sha: str
     expires_at_utc: str
     candidate_write_authorized: bool = False
@@ -126,10 +148,13 @@ def _utc(text: object) -> datetime:
 
 def _validate_payload(payload: object, *, expected_provider_commit: str,
                       expected_controller_sha256: str, now: datetime) -> datetime:
-    if not isinstance(payload, dict) or set(payload) != PAYLOAD_FIELDS:
+    schema = payload.get("schema_version") if isinstance(payload, dict) else None
+    fields = (PAYLOAD_FIELDS if schema == SCHEMA else
+              TECHNICAL_PAYLOAD_FIELDS if schema == TECHNICAL_SCHEMA else None)
+    if fields is None or set(payload) != fields:
         raise TransportHold("G5_TRANSPORT_PAYLOAD_SCHEMA_INVALID")
     required = {
-        "schema_version": SCHEMA, "issuer": ISSUER, "audience": AUDIENCE,
+        "schema_version": schema, "issuer": ISSUER, "audience": AUDIENCE,
         "purpose": PURPOSE, "workspace_id": WORKSPACE_ID,
         "warehouse_id": WAREHOUSE_ID, "request_id": REQUEST_ID,
         "source_batch_id": SOURCE_BATCH_ID, "manifest_sha256": MANIFEST_SHA,
@@ -139,10 +164,13 @@ def _validate_payload(payload: object, *, expected_provider_commit: str,
     }
     if any(payload.get(field) != value for field, value in required.items()):
         raise TransportHold("G5_TRANSPORT_SCOPE_OR_CODE_PIN_DRIFT")
+    evidence_fields = (
+        ("clinical_review_sha256", "license_review_sha256")
+        if schema == SCHEMA else ("technical_evidence_sha256",)
+    )
     for field in (
         "f1_release_metadata_sha256", "f2_identity_snapshot_fingerprint",
-        "clinical_review_sha256", "license_review_sha256",
-        "native_controller_sha256",
+        *evidence_fields, "native_controller_sha256",
     ):
         if not isinstance(payload[field], str) or not SHA64.fullmatch(payload[field]):
             raise TransportHold("G5_TRANSPORT_EVIDENCE_DIGEST_INVALID")
@@ -171,7 +199,7 @@ def _verify_source_only(
     expected_controller_sha256: str,
     atomic_durable_nonce_claim: Callable[[str, datetime], bool] | None,
     now: datetime,
-) -> VerifiedTransport:
+) -> VerifiedTransport | VerifiedTechnicalTransport:
     """INTERNAL pure contract test seam. No release authority is returned.
 
     The caller at eventual Native runtime must derive pins and durable nonce
@@ -218,7 +246,7 @@ def _verify_source_only(
     # per-process memory or a caller-supplied boolean, and is required even
     # for a transport-only receipt. Claim AFTER verifying all other evidence.
     claim_key = hashlib.sha256(
-        canonical_json([SCHEMA, ISSUER, WORKSPACE_ID, AUDIENCE,
+        canonical_json([payload["schema_version"], ISSUER, WORKSPACE_ID, AUDIENCE,
                         payload["nonce_hex"]])).hexdigest()
     try:
         accepted = atomic_durable_nonce_claim(claim_key, expiry)
@@ -226,6 +254,17 @@ def _verify_source_only(
         raise TransportHold("G5_TRANSPORT_REPLAY_LEDGER_UNAVAILABLE") from None
     if accepted is not True:
         raise TransportHold("G5_TRANSPORT_REPLAY_OR_LEDGER_HOLD")
+    if payload["schema_version"] == TECHNICAL_SCHEMA:
+        return VerifiedTechnicalTransport(
+            status="G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE",
+            attestation_sha256=hashlib.sha256(raw).hexdigest(),
+            mapping_profile_sha256=payload["mapping_profile_sha256"],
+            f1_release_metadata_sha256=payload["f1_release_metadata_sha256"],
+            f2_identity_snapshot_fingerprint=payload["f2_identity_snapshot_fingerprint"],
+            technical_evidence_sha256=payload["technical_evidence_sha256"],
+            provider_commit_sha=payload["provider_commit_sha"],
+            expires_at_utc=payload["expires_at_utc"],
+        )
     return VerifiedTransport(
         status="G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
         attestation_sha256=hashlib.sha256(raw).hexdigest(),
@@ -239,7 +278,7 @@ def _verify_source_only(
     )
 
 
-def verify_native_handoff_source_only(raw: bytes) -> VerifiedTransport:
+def verify_native_handoff_source_only(raw: bytes) -> VerifiedTransport | VerifiedTechnicalTransport:
     """Non-overridable runtime surface. DEFAULT UNCONDITIONALLY HOLD.
 
     No Notebook/Pipeline input can supply verifier keys or replay callback.
