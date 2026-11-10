@@ -16,10 +16,11 @@
   "source_clinical_schema": "cdm",
   "public_route_enabled": false,
   "cache_mode": "ephemeral",
-  "atlas_image_status": "BUILD_PENDING",
+  "atlas_image_status": "GHCR_PUBLISH_RETRY_PENDING",
   "webapi_digest_status": "VERIFIED_PR_CI",
   "pg_migration_status": "NOT_EXECUTED",
   "cluster_apply_status": "NOT_EXECUTED",
   "webapi_image_digest": "docker.io/ohdsi/webapi@sha256:16a7fb6446775152421831dc319cf72dda274a7af8cb4cae0bf1e0450af5a6ac",
-  "pg_service_status": "VERIFIED_LIVE_READONLY"
+  "pg_service_status": "VERIFIED_LIVE_READONLY",
+  "atlas_image_repository": "ghcr.io/johnzhang-dataforge/healthcare-data-platform-atlas3-ui"
 }
