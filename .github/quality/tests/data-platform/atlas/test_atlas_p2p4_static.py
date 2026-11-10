@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import unittest
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[5]
 K8S = ROOT / "local-data-platform/kubernetes/manifests/atlas"
 APP = ROOT / "local-data-platform/atlas"
 IMAGE = ROOT / "local-data-platform/images/atlas3-ui/Dockerfile"
