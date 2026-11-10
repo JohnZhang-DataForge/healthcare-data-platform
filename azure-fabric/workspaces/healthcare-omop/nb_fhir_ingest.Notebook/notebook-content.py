@@ -1779,6 +1779,8 @@ def plan_and_write_g5_candidate_delta(
     if any(not isinstance(x, str) or not fullmatch(r"[0-9a-f]{64}", x)
            for x in digests):
         raise RuntimeError("HOLD_G5_CANDIDATE_EVIDENCE_SHA_NOT_PINNED")
+    if warehouse_snapshot_sha256 != scope.identity_snapshot_fingerprint:
+        raise RuntimeError("HOLD_G5_CANDIDATE_WAREHOUSE_SNAPSHOT_DRIFT")
     if mode == "G5_CANDIDATE_WRITE":
         if not (write_authorized and warehouse_snapshot_verified):
             raise RuntimeError("HOLD_G5_CANDIDATE_TECHNICAL_RELEASE_MISSING")
@@ -1791,8 +1793,6 @@ def plan_and_write_g5_candidate_delta(
                 raise RuntimeError("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
         elif not (clinically_reviewed and license_reviewed):
             raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
-    if warehouse_snapshot_sha256 != scope.identity_snapshot_fingerprint:
-        raise RuntimeError("HOLD_G5_CANDIDATE_WAREHOUSE_SNAPSHOT_DRIFT")
     paths = _g5_candidate_paths(scope)
     source = verify_fhir_g5_candidate_source_readonly(
         spark, request=scope.request_id, manifest_sha=scope.manifest_sha256,
