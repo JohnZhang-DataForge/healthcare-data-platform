@@ -25,6 +25,7 @@ Browser
 
 - OHDSI 官方 [Atlas3 3.0.0](https://github.com/OHDSI/Atlas3) 配套 [WebAPI 3.0.0](https://github.com/OHDSI/WebAPI/releases/tag/v3.0.0)，2026-10-16 首发。WebAPI 3.0 基于 Java21/Spring Boot 3.5，配置形式/数据库迁移与 2.x 不兼容。发布前核实实际稳定镜像仓库、tag、architecture、签名/源代码和 Digest；`latest` 和 `3.0-dev` 不可作为稳定部署锁。
 - Broadsea 3.5 常见 Compose 使用 Atlas 2.x/WebAPI 2.x；不能用 Broadsea 快速启动脚本作为 Atlas3 直接部署基础。可以参考 HTTP routing、DB schema 和 source_daimon 配置思想，但必须逐字段适配 3.0。
+- 镜像策略：OHDSI Atlas3 3.0.0 的官方 tag 提供 Vue/Caddy Dockerfile，但其公开 Compose 前端使用 `ghcr.io/ohdsi/atlas3:dev`（不可作为正式锁定版本）。先基于上游 `v3.0.0` / 精确 SHA 受控构建静态 UI 镜像并发布至项目 GHCR，锁定最终 digest；不修改/复制上游业务源码。官方 Docker Hub 已提供 `ohdsi/webapi:3.0.0`，先检查多架构版本、完整 digest、默认配置及 plugins；仅当启用 TrexSQL 或其他必须改造内容时才基于上游 pinned Dockerfile 生成项目派生 WebAPI 镜像。不得误用 `ohdsi/atlas:2.15` 与 `ghcr.io/ohdsi/atlas3:dev` 作为生产版本。
 - 保留版本矩阵、镜像 Digest、源码 Git tag/commit 和升级测试证据；初次部署 **不从既有 2.x DB 原地升级**，新建/隔离 WebAPI 应用 Schema，并冻结初始化 DDL/迁移状态。
 
 ## 3. Database and readiness
@@ -33,8 +34,9 @@ Browser
 
 - PG17 核查实际 DB Name、Schema、表清单和实际行数：`cdm.person`, `cdm.visit_occurrence`, `cdm.observation_period`, `cdm.concept`, `cdm.concept_ancestor`, `cdm.concept_relationship`, `cdm.vocabulary`, `cdm.cdm_source`，及其余官方 39 表/432 列的差异。检查 9 Vocabulary 表、Release、行数、Concept FK 和概念检索索引，核对应用的 PostgreSQL 方言。历史 Local 100 Person / 15,742 Visit 仅代表旧 Run，不是实时 PG 行数。
 - Fabric 9 Vocabulary / 28,703,753 是**独立 Warehouse 实体**，不能算本地已就绪。若 PG 缺少 Vocabulary：优先审查既有授权 Athena 来源、许可与当前 Fabric F1 工作中受限制词汇（CPT4/UB04）；取得允许的本地使用证据后，受控导入至本地新建/已审核 schema、逐表读回；绝不直接公开/再分发原词表、自动下载未经授权的内容。
-- **WebAPI 应用元数据** 与 **OHDSI Results/Temp** 要求独立命名空间和最小权限；优先在现有 PG17 实例中隔离数据库角色/Schema，减少新的 StatefulSet/PVC。具体 WebAPI 3.0 是否允许应用配置 DB 与 CDM/Results 跨 DB 的部署方式，以版本实测为准；如果不兼容，选一个版本匹配、权限隔离且可备份的单实例布局，不能用跨库引用的假设拼凑。
+- **WebAPI 应用元数据** 与 **OHDSI Results/Temp** 要求独立命名空间和最小权限；优先在现有 PG17 实例中隔离数据库角色/Schema，减少新的 StatefulSet/PVC。**用户无需提前手工创建新的数据库 PVC、目录或第二套 PostgreSQL**：WebAPI app/meta、accounts、concept-set/cohort-definition 和 Results 是持久化 DB 内容，应纳入 PG17 已有实际备份与恢复范围；实现 PR 审核 DDL/角色后才在 PG17 上创建独立 Schema/DB。具体 WebAPI 3.0 是否允许应用配置 DB 与 CDM/Results 跨 DB 的部署方式，以版本实测为准；如果不兼容，选一个版本匹配、权限隔离且可备份的单实例布局，不能用跨库引用的假设拼凑。
 - WebAPI CDM Role 对 `cdm`/Vocabulary 只 SELECT，Results/Temp 只在专属 `atlas_results`/`atlas_temp` 写；WebAPI 应用 schema 独立所有者。任何可能更改 `cdm` 的迁移自动化均须拦截。数据库创建/迁移前：备份、差异/事务/锁影响预检、具名授权和独立结果读回。
+- ATLAS3 官方 Compose 的 WebAPI `/data/cache` 是 TrexSQL 插件的**可重建派生缓存**，与上面 PG17 主数据、Cohort Results 区分：MVP 可以先关闭 TrexSQL 或限制 `emptyDir.sizeLimit` 的缓存空间来验收 UI/API、基础 Cohort（官方部分即时 patient-count/inclusion-rule 功能可能不可用），以后确需保留缓存才评估独立小容量 `local-path` PVC（例：5–10Gi 为预算估计，须依据真实占用和现有 StorageClass/worker03 NodeAffinity 确定）。若使用 `emptyDir`，Pod 重启缓存丢失并需重建；不可把缓存当作不需备份的 WebAPI 用户数据。
 - Observation Period 缺失时仍可验证 UI、API 和 Concept 搜索，但不得声称完整 cohort/IR 可用；必须先复核观察期定义、Person/Visit FK 与基于合成数据的测试语义，不能仅用所有 Visit 最小/最大日期盲填成研究可用观察区间。
 
 ## 4. Authentication/security choice
@@ -63,13 +65,12 @@ Browser
 
 各节点 Ready=True；这组值是**资源 requests**，并非 CPU/RAM 实时消耗；`kubectl top nodes` 未提供指标。PG14 `dw-postgre14-data` 的绑定 PV 的 `nodeAffinity` 精确锁定 `worker03`；不可为 ATLAS 隔离而移动/重建此卷。Marquez API/Web/Public Web/Nginx/cloudflared 的 Deployment 均无 `nodeSelector` 和 `affinity`，未来重调度可能改变落点。
 
-**MVP placement decision:**
+**MVP placement decision — user-confirmed worker03 (overrides earlier worker01 recommendation):**
 
-1. ATLAS UI + WebAPI 使用 `dw-atlas`，先对 `workload=storage` 角色执行**调度前硬检查**，当前唯一符合者为 `worker01`。在版本化 YAML 中使用经过验证的 `nodeAffinity requiredDuringSchedulingIgnoredDuringExecution`（标签角色，而非写死 Node hostname）限定 worker01，且不得落入 master01。
-2. 另配 `podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution`，其 namespace/label selectors 应由**部署当时真实 Marquez API、官方 Web、Public Web、Nginx Gateway Pod labels 只读发现**后冻结，以 `kubernetes.io/hostname` 隔离主要应用层。不要误把 cloudflared 这个边缘连接器与 Marquez 应用等同，否则现有 3 Worker 方案可能无可用节点。两个 ATLAS Pod 可同节点；不得不必要地互相硬反亲和。
-3. 这是**首发调度/验收时的应用层隔离**，不是所有 Marquez 组件（例如 cloudflared/PG14）的绝对物理隔离，也**不是永久迁移保证**：Kubernetes `IgnoredDuringExecution` 不会驱逐以后迁来的 Marquez Pod。要保证长线稳定，后续需经过单独评审为 Marquez API/Web/Nginx 增加对称调度约束或做定期只读漂移检查；不能以 ATLAS 一侧规则宣称永久隔离。
-4. `worker01` 运行 SeaweedFS，所以部署前必须实查实时可用资源、磁盘/内存压力和节点污点，并以 WebAPI CPU/Memory limits、connection pool、cohort 并发与查询超时保护存储。当前 requests 看似宽裕**不证明**实时空闲。若 `worker01` 不可用、标签/规则冲突、资源不足或现有 Marquez App 也占用 worker01，则**新 Pod Pending / 发布 HOLD**；严禁自动软化 hard affinity 或挤进 worker02/03。
-5. 所有 Atlas/WebAPI 业务查询最终仍需要连接 `worker03` 的 PG17，**应用 Pod 隔离不能隔离数据库负载**；Results 查询限速和 PG17 监控为上线前置。
+1. `dw-atlas` 的 Atlas3 UI / WebAPI3 Deployment **精确固定在 `worker03`**。先只读确认 `kubernetes.io/hostname=worker03` 和 `workload=compute`、Node Ready/taints、可分配容量及 PG17/PG14 的实际负载；Pod 模板使用 `requiredDuringSchedulingIgnoredDuringExecution` hostname 节点亲和（必要时辅以 compute label）及资源 requests/limits，不能仅用 `workload=compute` 假定以后永远只有 worker03。条件不满足 → Pending/HOLD，不自动放到 worker01/02。
+2. `worker03` 现存 `dw-postgre` PG17、`dw-postgre14` PG14、`marquez-public-web`、pgAdmin：**用户选择本机数据邻近并明确接受这些共机事实**。Marquez API/官方 Web/Nginx 在 `worker02`，但四个 Marquez Deployment 当前没有硬 node affinity，后续可能迁移。不得对 Public Web 配置导致 ATLAS 永远 Pending 的硬反亲和；如需防止与 **Marquez 主 API/Web/Nginx** 共机，须基于实机精准标签加选择性 anti-affinity 并证明实际可调度；不得以 Namespace 粗匹配整个 `dw-marquez`。API/Web/Nginx 的长期节点约束属于未来独立授权维护项，不能直接变更。
+3. `worker03` 为共用数据库节点，最主要风险是 WebAPI cohort SQL 引发 PG17 CPU/IO/locks/连接数与 PG14 争用；设置 PG connection pool、statement_timeout、WebAPI 工作线程/并发、CPU/Memory 上限和 Results/Temp 存储限额，部署前需真实 CPU/内存/IO/磁盘/数据库压力检查（上表 requests 不是实时 metrics）。无 Metrics Server 可用时采取系统监测/PG 查询等只读替代证据，不可宣称已验证实际空闲。
+4. **不移动** PG17/PG14 本地 PV，绝不为了隔离而迁移 Marquez Public Web、改写其 Nginx/Tunnel 或重启已有工作负载；上线后记录所有 Pod 实际 `spec.nodeName`，新增只读漂移检查或告警，说明 `IgnoredDuringExecution` 的限制。
 
 - 不新增 Fabric Capacity 或 Fabric→Local 自动同步。未来 Fabric Warehouse 若要对接 ATLAS/WebAPI 需单独兼容性研究（OHDSI SQLRender、JDBC、cohort SQL、Results 写入）；与本 MVP 无关。
 
