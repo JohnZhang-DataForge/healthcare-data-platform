@@ -207,10 +207,20 @@ ROLLBACK;""")
         print("ATLAS_CONCEPT_TEST=HOLD_NO_GENDER_CONCEPT");return
     cid=int(ids[0])
     code,concept=http("GET",f"/vocabulary/LOCAL_OMOP/concept/{cid}",jwt=jwt)
+    print("ATLAS_CONCEPT_GET_HTTP="+str(code))
+    print("ATLAS_CONCEPT_GET_BODY_TYPE="+type(concept).__name__)
+    if isinstance(concept,dict):
+        print("ATLAS_CONCEPT_GET_KEYS="+",".join(sorted(concept.keys())[:18]))
+    # One independent search is attempted even if single-concept GET fails;
+    # never print backend error bodies, credentials or clinical rows.
+    search_code,results=http("GET","/vocabulary/LOCAL_OMOP/search?query=Male",jwt=jwt,timeout=35)
+    print("ATLAS_CONCEPT_SEARCH_HTTP="+str(search_code))
+    print("ATLAS_CONCEPT_SEARCH_BODY_TYPE="+type(results).__name__)
+    if isinstance(results,list):
+        print("ATLAS_CONCEPT_SEARCH_RESULT_COUNT="+str(len(results)))
     assert code==200 and isinstance(concept,dict) and int(concept.get("conceptId",-1))==cid, "CONCEPT_GET_FAILED"
     print("ATLAS_CONCEPT_PG17_HTTP_ID_AGREE=PASS")
-    code,results=http("GET","/vocabulary/LOCAL_OMOP/search?query=Male",jwt=jwt,timeout=35)
-    assert code==200 and isinstance(results,list) and len(results)>0, "CONCEPT_SEARCH_FAILED"
+    assert search_code==200 and isinstance(results,list) and len(results)>0, "CONCEPT_SEARCH_FAILED"
     print("ATLAS_CONCEPT_SEARCH_REAL_PG17=PASS")
 
 def main():
