@@ -70,6 +70,28 @@ A public ATLAS hostname SHALL require Cloudflare Access authorization on all UI 
 - **WHEN** an external release is proposed
 - **THEN** the release SHALL HALT and remain private
 
+### Requirement: ATLAS workload placement separates research API from Marquez application nodes
+
+The initial ATLAS UI and WebAPI Pod templates SHALL require the reviewed `workload=storage` node role and verified cross-namespace, hostname-scoped anti-affinity against Marquez API, web, public web and Nginx Gateway application Pods; placement SHALL be reverified from actual Pod nodeName at rollout and SHALL fail closed if no eligible node has sufficient resources. This SHALL NOT relocate PG14/PG17 local PVs, automatically change live Marquez Deployments or describe the Tunnel connector as fully isolated.
+
+#### Scenario: Existing three-worker placement
+
+- **GIVEN** live evidence that worker01 has label `workload=storage`, Marquez application Pods are on worker02/worker03, and worker01 meets resource limits
+- **WHEN** approved ATLAS UI and WebAPI Deployments are admitted
+- **THEN** both Atlas components are scheduled to worker01 with no co-location with Marquez application Pods, and runtime Pod nodeName is independently read back
+
+#### Scenario: Required separation cannot be scheduled
+
+- **GIVEN** worker01 lacks capacity, is tainted/NotReady, or hosts a matching Marquez application Pod
+- **WHEN** Kubernetes evaluates the required placement constraints
+- **THEN** the ATLAS rollout remains Pending/HOLD and SHALL NOT relax constraints or schedule to another worker without a reviewed placement change
+
+#### Scenario: Marquez moves after ATLAS starts
+
+- **GIVEN** Kubernetes required anti-affinity with `IgnoredDuringExecution` does not evict existing Pods
+- **WHEN** a future Marquez rollout would move an application onto ATLAS's node
+- **THEN** the operation MUST be separately checked against the separation policy; permanent guarantees require symmetrical constraints or live placement drift detection, not a claim based only on ATLAS scheduling rules
+
 ### Requirement: Preserve existing Marquez and business workloads
 
 The implementation SHALL avoid changing Marquez, PG14, OMOP Writer, existing Source Batch/Identity records, Cloudflare lineage host routes, or Fabric capacity state.
