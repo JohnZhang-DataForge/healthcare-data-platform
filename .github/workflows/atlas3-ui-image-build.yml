@@ -67,8 +67,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           docker buildx imagetools inspect docker.io/ohdsi/webapi:3.0.0 > "$RUNNER_TEMP/webapi-manifest.txt"
-          grep -q 'Digest: sha256:' "$RUNNER_TEMP/webapi-manifest.txt"
-          awk '/^Digest: sha256:/{print "WEBAPI3_PIN_CANDIDATE="$2;exit}' "$RUNNER_TEMP/webapi-manifest.txt"
+          grep -Eq '^Digest:[[:space:]]+sha256:' "$RUNNER_TEMP/webapi-manifest.txt"
+          awk '/^Digest:[[:space:]]+sha256:/{print "WEBAPI3_PIN_CANDIDATE="$2;exit}' "$RUNNER_TEMP/webapi-manifest.txt"
           echo WEBAPI3_OFFICIAL_IMAGE_INSPECT=PASS
       - name: Login to GHCR for main-only publish
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -87,7 +87,7 @@ jobs:
           IMAGE="ghcr.io/johnzhang-dataforge/healthcare-atlas3-ui:3.0.0-$SOURCE_SHA"
           docker tag atlas3-ui:3.0.0-verify "$IMAGE"
           docker push "$IMAGE"
-          docker buildx imagetools inspect "$IMAGE" | awk '/^Digest: sha256:/{print "ATLAS3_UI_PUBLISHED_DIGEST="$2;exit}'
+          docker buildx imagetools inspect "$IMAGE" | awk '/^Digest:[[:space:]]+sha256:/{print "ATLAS3_UI_PUBLISHED_DIGEST="$2;exit}'
           echo ATLAS3_UI_GHCR_PUBLISH=PASS
       - name: Record safety boundary
         if: always()
