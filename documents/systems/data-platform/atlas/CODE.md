@@ -15,6 +15,7 @@ This source map owns **the new OHDSI ATLAS research consumer only**. It does not
 | [ATLAS3 UI Deployment](../../../../local-data-platform/kubernetes/manifests/atlas/atlas3-ui-deployment.yaml.tpl) | immutable image placeholder, mandatory worker03 placement, bounded resources |
 | [WebAPI3 Deployment](../../../../local-data-platform/kubernetes/manifests/atlas/webapi3-deployment.yaml.tpl) | immutable WebAPI image placeholder, PG17 ClusterIP hostname placeholder, secret refs, startup gates |
 | [Internal UI gateway](../../../../local-data-platform/kubernetes/manifests/atlas/frontend-gateway-configmap.yaml) | private Caddy path routing; not the shared Marquez Nginx Gateway |
+| [WebAPI3 NetworkPolicy](../../../../local-data-platform/kubernetes/manifests/atlas/webapi3-networkpolicy.yaml) | Restrict ingress to Atlas3 UI pods only |
 | [Atlas3 UI Dockerfile](../../../../local-data-platform/images/atlas3-ui/Dockerfile) | builds only pinned upstream OHDSI/Atlas3 v3.0.0 SHA, not a floating branch |
 | [Application schema SQL](../../../../local-data-platform/atlas/sql/prepare-webapi-schemas.sql) | transactional **authorized-only** WebAPI / Results / Temp preparation; **never execute directly during source validation** |
 | [Runtime contract](../../../../local-data-platform/atlas/config/runtime-contract.json) | version/source/worker/namespace and unexecuted status |
