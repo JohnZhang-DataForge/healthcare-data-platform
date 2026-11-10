@@ -157,6 +157,7 @@ def multipart_source(c,dbuser,dbpassword):
         "name":c["source_name"],"dialect":"postgresql","key":c["source_key"],
         "connectionString":c["connection_string"],
         "username":dbuser,"password":dbpassword,
+        "krbAuthMethod":"default", # Required by WebAPI3 getByName; unused for PostgreSQL.
         "checkConnection":True,"daimons":c["daimons"],
     }
     boundary="atlas3source"+uuid.uuid4().hex
