@@ -72,7 +72,7 @@ A public ATLAS hostname SHALL require Cloudflare Access authorization on all UI 
 
 ### Requirement: ATLAS workload placement separates research API from Marquez application nodes
 
-The initial ATLAS UI and WebAPI Pod templates SHALL require the reviewed `workload=storage` node role and verified cross-namespace, hostname-scoped anti-affinity against Marquez API, web, public web and Nginx Gateway application Pods; placement SHALL be reverified from actual Pod nodeName at rollout and SHALL fail closed if no eligible node has sufficient resources. This SHALL NOT relocate PG14/PG17 local PVs, automatically change live Marquez Deployments or describe the Tunnel connector as fully isolated.
+The ATLAS UI and WebAPI SHALL require the verified `workload=storage` node role and hostname-scoped anti-affinity to Marquez application Pods. A rollout SHALL HALT without a suitable node and SHALL verify actual Pod placement. Existing PG14/PG17 volumes SHALL remain unchanged.
 
 #### Scenario: Existing three-worker placement
 
