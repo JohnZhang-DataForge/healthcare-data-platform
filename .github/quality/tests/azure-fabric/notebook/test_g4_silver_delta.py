@@ -533,9 +533,9 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             self.assertFalse(self.rechecked_source)
             self.assertFalse(self.writes)
 
-    def test_real_business_entry_fails_on_missing_clinical_review_before_spark(self):
+    def test_real_business_entry_fails_on_missing_technical_release_before_spark(self):
         with self.assertRaisesRegex(RuntimeError,
-                                    "HOLD_G5_BUSINESS_P1_F2_APPROVAL_MISSING"):
+                                    "HOLD_G5_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING"):
             nb.execute_g5_person_visit_business(
                 self.spark, scope=self.scope, handoff=self.handoff,
                 concepts_from_verified_warehouse=None,
@@ -544,10 +544,8 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
                 patient_contract_json=PATIENT,
                 encounter_contract_json=ENCOUNTER,
                 mode="G5_CANDIDATE_WRITE", write_authorized=True,
-                clinically_reviewed=False, license_reviewed=False,
                 warehouse_snapshot_verified=False,
-                clinical_review_sha256="d"*64,
-                license_review_sha256="e"*64,
+                technical_evidence_sha256="d"*64,
                 warehouse_snapshot_sha256=self.scope.identity_snapshot_fingerprint)
         self.assertFalse(self.writes)
         self.assertFalse(self.spark.delta)
