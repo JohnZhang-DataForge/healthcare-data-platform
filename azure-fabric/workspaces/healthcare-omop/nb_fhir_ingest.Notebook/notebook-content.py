@@ -1770,18 +1770,6 @@ def plan_and_write_g5_candidate_delta(
     if mode == "G5_CANDIDATE_READBACK_ONLY" and (
             write_authorized or clinically_reviewed or license_reviewed):
         raise RuntimeError("HOLD_G5_CANDIDATE_READBACK_FLAGS")
-    if mode == "G5_CANDIDATE_WRITE":
-        if not (write_authorized and warehouse_snapshot_verified):
-            raise RuntimeError("HOLD_G5_CANDIDATE_TECHNICAL_RELEASE_MISSING")
-        if technical:
-            # The trusted callback must be provided by the protected Stage
-            # controller. No Notebook/Pipeline parameter can supply it.
-            if (not callable(trusted_technical_release_gate)
-                    or trusted_technical_release_gate(
-                        scope, technical_evidence_sha256) is not True):
-                raise RuntimeError("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
-        elif not (clinically_reviewed and license_reviewed):
-            raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
     digests = (
         (technical_evidence_sha256, warehouse_snapshot_sha256)
         if technical else
@@ -1791,6 +1779,18 @@ def plan_and_write_g5_candidate_delta(
     if any(not isinstance(x, str) or not fullmatch(r"[0-9a-f]{64}", x)
            for x in digests):
         raise RuntimeError("HOLD_G5_CANDIDATE_EVIDENCE_SHA_NOT_PINNED")
+    if mode == "G5_CANDIDATE_WRITE":
+        if not (write_authorized and warehouse_snapshot_verified):
+            raise RuntimeError("HOLD_G5_CANDIDATE_TECHNICAL_RELEASE_MISSING")
+        if technical:
+            # The trusted callback is code from the protected Stage controller,
+            # not a value supplied by Notebook/Pipeline user parameters.
+            if (not callable(trusted_technical_release_gate)
+                    or trusted_technical_release_gate(
+                        scope, technical_evidence_sha256) is not True):
+                raise RuntimeError("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
+        elif not (clinically_reviewed and license_reviewed):
+            raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
     if warehouse_snapshot_sha256 != scope.identity_snapshot_fingerprint:
         raise RuntimeError("HOLD_G5_CANDIDATE_WAREHOUSE_SNAPSHOT_DRIFT")
     paths = _g5_candidate_paths(scope)
@@ -2032,6 +2032,10 @@ def execute_g5_person_visit_business(
                       or clinical_review_sha256 is not None
                       or license_review_sha256 is not None):
         raise RuntimeError("HOLD_G5_BUSINESS_FAKE_REVIEW_IN_TECHNICAL_PATH")
+    if technical and (not isinstance(technical_evidence_sha256, str)
+                      or not __import__("re").fullmatch(
+                          r"[0-9a-f]{64}", technical_evidence_sha256)):
+        raise RuntimeError("HOLD_G5_BUSINESS_TECHNICAL_EVIDENCE_SHA_INVALID")
     if mode == "G5_CANDIDATE_WRITE" and not (
             write_authorized and warehouse_snapshot_verified
             and ((technical and callable(trusted_technical_release_gate))
