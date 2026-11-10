@@ -22,6 +22,7 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 | Airflow Orchestration | [Airflow 组件说明](airflow/README.md) · [CODE 源码导航](airflow/CODE.md) | `local-data-platform/airflow/dags/`，手工受控 NEW_ONLY Consumer 与独立 Discovery |
 | Spark Canonical / DQ | [Spark](spark/README.md) · [CODE](spark/CODE.md) | `local-data-platform/spark/apps/person/`、`local-data-platform/spark/apps/visit/`、`local-data-platform/spark/common/` |
 | OMOP Writer / PostgreSQL | [OMOP](omop/README.md) · [CODE](omop/CODE.md) | `local-data-platform/apps/omop_writer/`、`local-data-platform/sql/`，原子事务、Mapping、Reconciliation |
+| **OHDSI ATLAS3 / WebAPI3 (new private research consumer)** | [ATLAS CODE](atlas/CODE.md) | `local-data-platform/kubernetes/manifests/atlas/` 统一 K8s、`local-data-platform/images/atlas3-ui/` 构建镜像、`local-data-platform/atlas/` app/SQL；用户指定 `worker03`、`dw-atlas`，复用 PG17，不改变 OMOP Writer |
 
 **横切边界（2026-11-05 架构对齐）**：[Portal / Marquez](../platform-portal/README.md) 是独立观测系统；[Azure/Fabric](../azure-fabric/README.md) 已经有单独的 **FHIR→Bronze→Canonical Silver→OMOP Gold** 开发主线，原 Local PG→Fabric 分析副本只是另一条尚未实现的产品路线，不能继续把整个 Fabric 定义为 PG 复制。两种 Runtime 各自拥有物理 Writer，不共享 PG/Fabric SQL 实现。权威：[总架构](../../architecture/SYSTEM-OVERVIEW.md) · [Canonical Medallion ADR](../../architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) · [Shared Engine Owner](../../engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md)。
 
