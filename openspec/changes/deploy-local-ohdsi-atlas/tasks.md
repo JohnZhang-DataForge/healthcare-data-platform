@@ -21,8 +21,8 @@
 
 - [ ] 2.1 锁定与实际运行架构兼容的 ATLAS3 3.0.0 / WebAPI 3.0.0 稳定镜像/源码，SHA/Digest、应用配置、API base path、Java21/PG 兼容性、License 和版本矩阵；拒绝 `latest` / `3.0-dev` / Broadsea 2.x 混配。
 - [ ] 2.2 新增独立 Local ATLAS3/WebAPI3 K8s ConfigMaps/Secrets refs、ClusterIP、Resource limits、probes、namespace/networkpolicy 与 Nginx 受控路由变更计划，提供离线 Fake upstream/Host/path/未授权 API 测试；不要修改 Marquez Gateway。
-- [ ] 2.2a **硬隔离调度**：根据现场有效 Node label 和 Marquez Pod labels 在 ATLAS3/WebAPI3 manifest 使用 `nodeAffinity.required... workload=storage`、`podAntiAffinity.required...` 避开 Marquez API/Web/Public Web/Nginx，部署前验证 worker01 可用容量、SeaweedFS 风险及策略可调度，资源不足/反亲和冲突 → Pending/HOLD 不自动降级；模拟变更的负向 CI 必须能阻止与 Marquez 应用同 Worker 的部署。
-- [ ] 2.2b **长线隔离失效风险**：评估对 Marquez API/Web/Nginx 实施对称标签/nodeAffinity 的独立维护 PR/现场授权，或增加只读实际 Pod nodeName 漂移审查；不能仅靠 ATLAS 一侧 IgnoredDuringExecution 就宣称永久隔离，禁止擅自重启 Marquez 或移动 PG14 PV。
+- [ ] 2.6 **硬隔离调度**：根据现场有效 Node label 和 Marquez Pod labels 在 ATLAS3/WebAPI3 manifest 使用 `nodeAffinity.required... workload=storage`、`podAntiAffinity.required...` 避开 Marquez API/Web/Public Web/Nginx，部署前验证 worker01 可用容量、SeaweedFS 风险及策略可调度，资源不足/反亲和冲突 → Pending/HOLD 不自动降级；模拟变更的负向 CI 必须能阻止与 Marquez 应用同 Worker 的部署。
+- [ ] 2.7 **长线隔离失效风险**：评估对 Marquez API/Web/Nginx 实施对称标签/nodeAffinity 的独立维护 PR/现场授权，或增加只读实际 Pod nodeName 漂移审查；不能仅靠 ATLAS 一侧 IgnoredDuringExecution 就宣称永久隔离，禁止擅自重启 Marquez 或移动 PG14 PV。
 - [ ] 2.3 完成 WebAPI 3 app DB / source_daimon / CDM/Vocabulary/Results/Temp 数据源初始化的**可审计** migration 预检与最小 PG 角色/Statement timeout；先在隔离环境证明只写专属 Schema，绝不无条件自动迁移现有 `cdm.*`。
 - [ ] 2.4 获授权后在 `dw-atlas` 内部署，执行真实内网 GET/readiness、UI→WebAPI、真实 Concept 查询和 data source readback；保存 K8s image Digest、Git SHA、Run 证据，失败/未知状态先只读验明。
 - [ ] 2.5 在经审批的私有环境实际验证 WebAPI 3 身份/角色管理、未登录 API 401/403、WebAPI 角色不能更新 `cdm`、凭据不出现在 JS/Logs。若采用单用户 Access-only 变体必须写下独立风险决策，不得自动放行外网。
