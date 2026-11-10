@@ -104,6 +104,54 @@ class G5ProviderAttestationOffline(unittest.TestCase):
         self.assertEqual(len(self.store.attempts), 1)
         self.assertEqual(self.store.attempts[0][1], NOW + timedelta(seconds=120))
 
+    def test_technical_v2_uses_one_evidence_hash_not_two_human_signatures(self):
+        packet = claims()
+        packet["schema_version"] = t.TECHNICAL_SCHEMA
+        del packet["clinical_review_sha256"]
+        del packet["license_review_sha256"]
+        packet["technical_evidence_sha256"] = "e" * 64
+        checked = self.check(self.sign(packet))
+        self.assertIsInstance(checked, t.VerifiedTechnicalTransport)
+        self.assertEqual(checked.technical_evidence_sha256, "e" * 64)
+        self.assertEqual(checked.mapping_profile_sha256, t.MAPPING_PROFILE_SHA)
+        self.assertFalse(checked.candidate_write_authorized)
+        self.assertFalse(checked.gold_committed)
+        self.assertFalse(hasattr(checked, "clinical_review_sha256"))
+        self.assertFalse(hasattr(checked, "license_review_sha256"))
+        with self.assertRaisesRegex(t.TransportHold, "REPLAY_OR_LEDGER"):
+            self.check(self.sign(packet))
+
+    def test_technical_v2_rejects_forged_reviewer_fields_and_bad_sha(self):
+        packet = claims()
+        packet["schema_version"] = t.TECHNICAL_SCHEMA
+        packet["technical_evidence_sha256"] = "e" * 64
+        with self.assertRaisesRegex(t.TransportHold, "PAYLOAD_SCHEMA"):
+            self.check(self.sign(packet))
+        del packet["clinical_review_sha256"]
+        del packet["license_review_sha256"]
+        packet["technical_evidence_sha256"] = "invalid"
+        with self.assertRaisesRegex(t.TransportHold, "EVIDENCE_DIGEST"):
+            self.check(self.sign(packet))
+        packet["technical_evidence_sha256"] = "e" * 64
+        packet["candidate_write_authorized"] = True
+        with self.assertRaisesRegex(t.TransportHold, "PAYLOAD_SCHEMA"):
+            self.check(self.sign(packet))
+        self.assertEqual(self.store.attempts, [])
+
+    def test_technical_v2_preserves_scope_and_source_only_default_hold(self):
+        packet = claims()
+        packet["schema_version"] = t.TECHNICAL_SCHEMA
+        del packet["clinical_review_sha256"]
+        del packet["license_review_sha256"]
+        packet["technical_evidence_sha256"] = "e" * 64
+        packet["manifest_sha256"] = "f" * 64
+        with self.assertRaisesRegex(t.TransportHold, "SCOPE_OR_CODE_PIN_DRIFT"):
+            self.check(self.sign(packet))
+        packet["manifest_sha256"] = t.MANIFEST_SHA
+        with self.assertRaisesRegex(t.TransportHold, "NOT_ONBOARDED"):
+            t.verify_native_handoff_source_only(self.sign(packet))
+        self.assertEqual(self.store.attempts, [])
+
     def test_no_production_keys_or_ledger_and_no_runtime_overrides(self):
         self.assertEqual(t.NATIVE_TRUSTED_PROVIDER_KEYS, {})
         self.assertIsNone(t.NATIVE_PINNED_PROVIDER_COMMIT)
