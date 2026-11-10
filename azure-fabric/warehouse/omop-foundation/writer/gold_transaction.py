@@ -52,22 +52,34 @@ class GoldBatch:
     persons: tuple[Mapping[str, object], ...]
     visits: tuple[Mapping[str, object], ...]
     mapping_version: str
-    clinical_review_sha256: str
-    license_review_sha256: str
-    candidate_approval_sha256: str
+    clinical_review_sha256: str | None = None  # Deprecated legacy signed-v1
+    license_review_sha256: str | None = None   # Deprecated legacy signed-v1
+    candidate_approval_sha256: str | None = None
+    technical_evidence_sha256: str | None = None  # Current non-human G5 path
 
 
 def _require_batch(batch: GoldBatch) -> None:
     if not isinstance(batch, GoldBatch):
         raise GoldHold("GOLD_BATCH_TYPE")
+    technical = batch.technical_evidence_sha256 is not None
+    if technical:
+        # A technical-only batch must NEVER be dressed up as two signed reviews.
+        if (batch.clinical_review_sha256 is not None
+                or batch.license_review_sha256 is not None
+                or not isinstance(batch.technical_evidence_sha256, str)
+                or not SHA.fullmatch(batch.technical_evidence_sha256)):
+            raise GoldHold("GOLD_TECHNICAL_EVIDENCE_OR_FAKE_REVIEW")
+    elif any(not isinstance(h, str) or not SHA.fullmatch(h) for h in
+             (batch.clinical_review_sha256, batch.license_review_sha256)):
+        # Historical signed-v1 contract remains reproducible, NOT mandatory.
+        raise GoldHold("GOLD_EVIDENCE_NOT_PRESENT")
     if (len(batch.persons) != batch.fence.person_count
             or len(batch.visits) != batch.fence.visit_count
             or not 0 < len(batch.persons) + len(batch.visits) <= MAX_ROWS
             or not isinstance(batch.mapping_version, str)
             or not 0 < len(batch.mapping_version) <= 32
-            or any(not isinstance(s, str) or not SHA.fullmatch(s) for s in
-                   (batch.clinical_review_sha256, batch.license_review_sha256,
-                    batch.candidate_approval_sha256))):
+            or not isinstance(batch.candidate_approval_sha256, str)
+            or not SHA.fullmatch(batch.candidate_approval_sha256)):
         raise GoldHold("GOLD_UNVERIFIED_SCOPE_OR_EVIDENCE")
     ids = dict(batch.identities)
     if len(ids) != len(batch.identities) or len(ids) != len(batch.persons) + len(batch.visits):
@@ -231,12 +243,15 @@ def independent_gold_readback(new_connection: Callable[[], object],
 def execute_gold_transaction(connection, batch: GoldBatch, *,
                              single_writer_fence: Callable[[], bool],
                              release_gate: Callable[[GoldBatch], bool]) -> str:
-    """Writes only after trusted external review/fence. No automatic retry.
+    """Writes only after independently authenticated Stage release/fence.
 
-    Caller must separately authenticate reviewer, license, real P3 Candidate
-    Approval, full F2 physical snapshot, target Warehouse, and exclusive
-    cross-workflow writer lease. Boolean/SHA supplied from Notebook parameters
-    is *never* a trusted release_gate. A true return is not clinical signoff.
+    The CURRENT technical path uses one technical_evidence_sha256 instead of
+    two human-review signatures. The external trusted release_gate MUST still
+    authenticate real F1 lineage/Concepts, F2 physical identity snapshot,
+    actual P3 Candidate Approval, applicable vocabulary-use rights, target
+    Warehouse, and single-writer fence. A SHA or caller Boolean alone is not
+    authorization. Legacy signed-v1 inputs remain optional for old tests.
+    Unknown COMMIT ACK must be reconciled using separate read-only SQL.
     """
     _require_batch(batch)  # reject invalid mappings before any SQL
     if (not callable(single_writer_fence) or not callable(release_gate)
