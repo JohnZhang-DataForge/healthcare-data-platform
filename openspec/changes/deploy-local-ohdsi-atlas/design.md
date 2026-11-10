@@ -48,7 +48,7 @@ Browser
 
 ## 5. Runtime ownership, deployments and limits
 
-- 新源代码/Manifest 计划放在 `local-data-platform/atlas/` 下按功能分组（`kubernetes/`, `config/`, `sql/`），仅在本 Change 的实现 PR 中创建；tests 统一 `.github/quality/tests/data-platform/atlas/`；系统文档在 `documents/systems/data-platform/atlas/`，维护所属 Local DP CODE 导航。不得创建新的源码 README 或重复部署一个 OMOP Mapper/ETL。
+- **唯一 Kubernetes 清单归属**：全部 ATLAS3/WebAPI3 Namespace、Deployment、Service、ConfigMap/Secret *引用*、RBAC、NetworkPolicy、PVC（如果未来审批确实需要）、resource limits 与调度策略置于 `local-data-platform/kubernetes/manifests/atlas/`；不得在 `local-data-platform/atlas/kubernetes/` 创建第二套 YAML。ATLAS 特有的应用配置模板、SQL 初始化脚本可位于 `local-data-platform/atlas/config/`、`local-data-platform/atlas/sql/`；Docker build context 和 Dockerfile 应符合现有统一 `local-data-platform/images/` 规范，例如 `images/atlas3-ui/`（如需派生 WebAPI 则为 `images/atlas-webapi/`），不在 `atlas/images/` 复制镜像工程。仅在本 Change 的实现 PR 中创建；tests 统一 `.github/quality/tests/data-platform/atlas/`；系统文档 `documents/systems/data-platform/atlas/` 并更新实际所属 CODE 导航。不得创建新的源码 README 或重复部署一个 OMOP Mapper/ETL。
 - Atlas UI Deployment + WebAPI Deployment 使用 ClusterIP、readiness/liveness probe、受限 ServiceAccount、ResourceQuota/LimitRange、CPU/Memory requests 和合理 job/thread/pool 上限。WebAPI 生成 cohort/分析可写 Results/Temp，但默认不触发昂贵全库扫描；限时/并发、PG statement timeout 和监控不可省略。
 - 只读审计现有 PG17 负载、Pool 限额/存储、节点剩余资源、Ingress/Tunnel 的路由策略；避免干扰 Airflow、Spark、Marquez PG14、Local PG Writer 和 Fabric 批次。
 
