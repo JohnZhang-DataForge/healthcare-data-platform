@@ -149,12 +149,16 @@ def _utc(text: object) -> datetime:
 def _validate_payload(payload: object, *, expected_provider_commit: str,
                       expected_controller_sha256: str, now: datetime) -> datetime:
     schema = payload.get("schema_version") if isinstance(payload, dict) else None
-    fields = (PAYLOAD_FIELDS if schema == SCHEMA else
-              TECHNICAL_PAYLOAD_FIELDS if schema == TECHNICAL_SCHEMA else None)
+    fields = (TECHNICAL_PAYLOAD_FIELDS if schema == TECHNICAL_SCHEMA else
+              PAYLOAD_FIELDS if isinstance(payload, dict) and
+              set(payload) == PAYLOAD_FIELDS else None)
     if fields is None or set(payload) != fields:
         raise TransportHold("G5_TRANSPORT_PAYLOAD_SCHEMA_INVALID")
+    # Preserve historical v1 negative contract: a v1-shaped forged version
+    # fails as a pinned scope/code drift, not silently becoming a new schema.
     required = {
-        "schema_version": schema, "issuer": ISSUER, "audience": AUDIENCE,
+        "schema_version": (
+            TECHNICAL_SCHEMA if schema == TECHNICAL_SCHEMA else SCHEMA), "issuer": ISSUER, "audience": AUDIENCE,
         "purpose": PURPOSE, "workspace_id": WORKSPACE_ID,
         "warehouse_id": WAREHOUSE_ID, "request_id": REQUEST_ID,
         "source_batch_id": SOURCE_BATCH_ID, "manifest_sha256": MANIFEST_SHA,
