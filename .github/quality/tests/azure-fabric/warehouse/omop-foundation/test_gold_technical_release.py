@@ -13,7 +13,7 @@ import sys
 import unittest
 from unittest.mock import Mock
 
-ROOT = Path(__file__).resolve().parents[5]
+ROOT = Path(__file__).resolve().parents[6]
 sys.path.insert(0, str(ROOT / "azure-fabric/warehouse/omop-foundation/writer"))
 
 from identity_plan import BatchFence, IdentityKey
