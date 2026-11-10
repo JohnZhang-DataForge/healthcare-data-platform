@@ -48,27 +48,33 @@ The WebAPI service SHALL use dedicated application/Results/Temp storage and data
 - **WHEN** the preflight applies its allowlist
 - **THEN** the change is rejected without executing the operation
 
-### Requirement: Cloudflare and gateway access must protect UI and WebAPI together
+### Requirement: Tunnel routing and WebAPI-native authorization must protect clinical APIs
 
-A public ATLAS hostname SHALL require Cloudflare Access authorization on all UI and API routes, SHALL forward solely through the existing outbound Tunnel and approved gateway, and SHALL NOT expose WebAPI or PostgreSQL on a public NodePort or router ingress. Internal WebAPI authentication and Access authentication SHALL NOT be conflated.
+A public ATLAS hostname SHALL use the existing Cloudflare Tunnel and the internal Atlas3 frontend Service, SHALL enforce WebAPI3 Database Authentication and least-privilege RBAC on all sensitive API operations, and SHALL NOT expose PostgreSQL/WebAPI directly through router ingress, NodePort or bypass routes. Cloudflare Zero Trust Access MAY be added later but is not required by the user-selected initial architecture.
 
-#### Scenario: Unauthorized API request
+#### Scenario: Unauthenticated API access is rejected
 
-- **GIVEN** a browser without an allowed Cloudflare Access session
-- **WHEN** it requests `/WebAPI/source/sources` or posts a cohort operation
-- **THEN** access is denied before origin WebAPI and no patient data or job execution is returned
+- **GIVEN** the Tunnel route is already configured and a browser has no valid WebAPI login
+- **WHEN** it requests sensitive Sources, Cohort, Results, or attempts an analysis write
+- **THEN** WebAPI rejects it with the appropriate 401/403 and returns no protected clinical or task data
 
-#### Scenario: Allowed identity
+#### Scenario: Valid login with scoped role
 
-- **GIVEN** an allowlisted identity with a valid Access session
-- **WHEN** it opens the ATLAS UI and invokes its API
-- **THEN** matching-host API requests reach internal WebAPI only through the accepted gateway and the configured WebAPI identity layer is independently enforced where enabled
+- **GIVEN** a newly established non-default WebAPI Database Auth user with an authorized RBAC role
+- **WHEN** it logs in and accesses allowed resources
+- **THEN** the request reaches WebAPI via the same ATLAS hostname and authorized actions complete without modifying CDM clinical tables
 
-#### Scenario: Misconfigured Access or route
+#### Scenario: Existing Lineage Tunnel remains unmodified
 
-- **GIVEN** Access is disabled, API is publicly reachable directly or the Tunnel route bypasses the gateway
-- **WHEN** an external release is proposed
-- **THEN** the release SHALL HALT and remain private
+- **GIVEN** a user-established `healthcare-marquez-public` Tunnel hosts `lineage` and `atlas` Published application routes
+- **WHEN** the ATLAS private origin Service becomes ready
+- **THEN** the existing Lineage route and Marquez Gateway remain untouched, and independent Lineage regression readback still passes
+
+#### Scenario: Missing auth or unsafe exposure
+
+- **GIVEN** DB login, WebAPI permission enforcement or the public route fail an independent negative test
+- **WHEN** external ATLAS acceptance is requested
+- **THEN** public acceptance HALTS, with the UI origin held private or removed until authenticated API tests pass
 
 ### Requirement: ATLAS workload placement separates research API from Marquez application nodes
 

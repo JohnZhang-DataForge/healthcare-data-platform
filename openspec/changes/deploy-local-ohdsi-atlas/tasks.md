@@ -37,8 +37,8 @@
 ## P3 — Cloudflare / Nginx / protected public release
 
 - [ ] 3.1 Nginx/Cloudflared 的 K8s 实体及落点已在 Run #42735302379 核实（Gateway worker02；Tunnel worker01），**仍需**只读核对其真实 ConfigMap 精确 Host/path、Git/现场唯一 Owner、Cloudflare Dashboard Tunnel/Access/DNS 与 `atlas.johnzhang-dataforge.site` 冲突，因此主项保持 OPEN。用户已确定最终 hostname，不是提议名。
-- [ ] 3.2 由具备权限的用户/受控执行者创建 Cloudflare Access Self-hosted Application，精确邮箱 allowlist 默认 DENY；覆盖整个 Atlas Host（包括 /WebAPI），记录应用/策略状态但不记录 Token/PII。
-- [ ] 3.3 在前置验证通过后，新增 **仅一个** Tunnel Host→Nginx 路由与对应 path mapping，不新增路由器端口，不破坏 `lineage.johnzhang-dataforge.site`；独立 browser/API GET/POST/OPTIONS、redirect、HTTPS、Cookie/CORS 和无授权否定测试 PASS。
+- [x] 3.2 **用户安全决策**：本轮沿用 Lineage 的 Cloudflare Tunnel（用户截图显示 `healthcare-marquez-public` 的 Routes 同时有 `lineage` 与 `atlas`）；明确不需要 Cloudflare Zero Trust Access App。WebAPI DB 登录 + RBAC 是独立硬门禁，必须通过匿名访问负向检查才可让 Atlas3 UI 对公网有可用后端；新建的独立 `healthcare-atlas-public` Tunnel 当前不承担该截图中的 ATLAS Published application，不启动多余 Connector。
+- [ ] 3.3 **用户已在 Cloudflare 界面新增** `atlas.johnzhang-dataforge.site` Published application（与 Lineage 同一现有 Tunnel），意向服务 URL 为 `http://atlas3-ui.dw-atlas.svc.cluster.local:8080`；无额外 Nginx Host 修改。仍须独立核实 Dashboard 实际 Route URL、Cloudflared DNS/联网、外网 GET/POST/OPTIONS、HTTPS/重定向/CORS、未登录 API 拒绝与 Lineage 完整回归。
 - [ ] 3.4 证明未授权用户无法访问 HTML、静态配置、API、source/sources、运行队列及 cohort；确认没有 NodePort/直达内网 WebAPI 绕过。未通过则撤销新 Host route，保持私有部署。
 
 ## P4 — Research acceptance / operational handoff
