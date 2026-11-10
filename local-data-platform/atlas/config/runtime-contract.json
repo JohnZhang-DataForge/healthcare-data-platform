@@ -14,7 +14,7 @@
   "temp_schema": "atlas_temp",
   "credential_secret": "atlas-webapi-db",
   "source_clinical_schema": "cdm",
-  "public_route_enabled": true,
+  "public_route_enabled": false,
   "cache_mode": "ephemeral",
   "atlas_image_status": "GHCR_PUBLISHED_VERIFIED",
   "webapi_digest_status": "VERIFIED_PR_CI",
@@ -37,5 +37,8 @@
   "vocabulary_indexed_get_search_status": "UNVERIFIED_TIMEOUT",
   "observation_period_exact_count": 0,
   "cohort_results_status": "NOT_INITIALIZED",
-  "research_cohort_status": "BLOCKED_OBSERVATION_PERIOD"
+  "research_cohort_status": "BLOCKED_OBSERVATION_PERIOD",
+  "public_route_verified": true,
+  "public_route_verification_run": "42840709079",
+  "public_route_contract_note": "This repository does not own/enable Cloudflare route. Route exists externally and was verified by independent HTTP readback."
 }
