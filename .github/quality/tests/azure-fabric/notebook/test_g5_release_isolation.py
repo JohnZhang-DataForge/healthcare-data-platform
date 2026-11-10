@@ -26,7 +26,7 @@ LIBS = ROOT / (
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
 PUBLISHED_VERSION = "0.1.7"
 LEGACY_VERSION = "0.1.6"
-SOURCE_CANDIDATE_VERSION = "0.1.11"
+SOURCE_CANDIDATE_VERSION = "0.1.12"
 PINNED_WHEEL_SHA256 = (
     "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
 PINNED_REVIEW_ONLY_017_SHA256 = (
@@ -155,7 +155,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
     def test_g5_native_transport_cannot_bypass_effective_wheel_halt(self):
         method = self.native["execute_g5_candidate_from_trusted_controller"]
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_NATIVE_0111_TRANSPORT_WHEEL_NOT_PUBLISHED"):
+                RuntimeError, "HOLD_G5_NATIVE_0112_TRANSPORT_WHEEL_NOT_PUBLISHED"):
             method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
                    attestation_bytes=b"forged")
         with patch.dict(method.__globals__, {"run_mode": "G5_CANDIDATE_WRITE"}):
@@ -168,7 +168,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
                        attestation_bytes=b"forged")
         # Hypothetical source-only version must still require actual signed
         # bytes before importing the future verifier or calling the provider.
-        with patch.dict(method.__globals__, {"engine_version": "0.1.11"}):
+        with patch.dict(method.__globals__, {"engine_version": "0.1.12"}):
             for bad in (None, "", b"", b"a" * 8193):
                 with self.subTest(bad=type(bad).__name__):
                     with self.assertRaisesRegex(
