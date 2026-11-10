@@ -4,7 +4,7 @@
 
 ```text
 Browser
-  → https://atlas.johnzhang-dataforge.site (PROPOSED, NOT CREATED)
+  → https://atlas.johnzhang-dataforge.site (USER-CONFIRMED HOSTNAME; DNS/TUNNEL NOT CREATED)
   → Cloudflare Access (email allowlist / deny all nonmembers)
   → existing outbound Cloudflare Tunnel connector (new hostname route only)
   → existing Nginx gateway (inventory before editing)
@@ -19,7 +19,7 @@ Browser
 - **不要直接将 Service NodePort、WebAPI、CDM PostgreSQL 或 PG14 公网暴露。** 外部只有 Tunnel 出站；无路由器 inbound port mapping。默认新 Namespace `dw-atlas`，真实名称须先检查碰撞。
 - 两条前端路径同一个 Host，避免跨域 OAuth/Access cookie、CORS 和重定向混乱；实际 ATLAS3 的 `base path`/API prefix 由其发行版本测试决定，若官方静态构建只接受根路径，优先保留同域名并通过 Nginx 精确 rewrite（先做离线和浏览器测试），不可凭 2.x URL 假定 3.x path 兼容。
 - Cloudflare Access 必须覆盖整个主机名，包括 `/WebAPI/*`；同源 API 请求也必须经过 Access，禁止浏览器 JS 配置绕过 Access 的内网地址。Nginx 防开放代理、限制路径和上传大小、保持 Host/Forwarded/HTTPS；关闭动态 API 的共享缓存与鉴权响应缓存，登录 Cookie 必须 Secure/HttpOnly/SameSite 适当设置。
-- 当前 Healthcare 仓库未发现维护 Nginx/Tunnel 的唯一源码，现有对外路线在部分历史部署/用户手工 Cloudflare 中。**实施前通过只读查实：cloudflared Namespace/Deployment、Tunnel ingress、实际 Nginx ConfigMap/Pod、已经注册的 Host、Marquez route 及其安全网关；若 Nginx 实际位于另一仓库/外部，先确定唯一配置 Owner。** 不假定历史文本即当前实机状态。
+- **最新实际入口发现**：Self-Runner 受控 GET-only [Run #42735302379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735302379) 于 2026-11-09 20:22 ET 实机确认 `dw-marquez/marquez-showcase-gateway` 是 Nginx Deployment，当前在 `worker02`；`marquez-showcase-cloudflared` 在 `worker01`。Gateway/Tunnel 当前来源与历史维护工作可从 Self-Runner PR #337 和相关部署审计追溯；**仍须单独只读核实 Cloudflare 控制台真实 Tunnel hostname、Access 策略、Nginx ConfigMap 的精确配置与当前 Owner**，不得仅凭名称就改写现存 Marquez 路由。
 
 ## 2. Versions and source provenance
 
@@ -49,6 +49,28 @@ Browser
 - 新源代码/Manifest 计划放在 `local-data-platform/atlas/` 下按功能分组（`kubernetes/`, `config/`, `sql/`），仅在本 Change 的实现 PR 中创建；tests 统一 `.github/quality/tests/data-platform/atlas/`；系统文档在 `documents/systems/data-platform/atlas/`，维护所属 Local DP CODE 导航。不得创建新的源码 README 或重复部署一个 OMOP Mapper/ETL。
 - Atlas UI Deployment + WebAPI Deployment 使用 ClusterIP、readiness/liveness probe、受限 ServiceAccount、ResourceQuota/LimitRange、CPU/Memory requests 和合理 job/thread/pool 上限。WebAPI 生成 cohort/分析可写 Results/Temp，但默认不触发昂贵全库扫描；限时/并发、PG statement timeout 和监控不可省略。
 - 只读审计现有 PG17 负载、Pool 限额/存储、节点剩余资源、Ingress/Tunnel 的路由策略；避免干扰 Airflow、Spark、Marquez PG14、Local PG Writer 和 Fabric 批次。
+
+### 5.1 Real K8s node placement (2026-11-09 20:22–20:24 ET)
+
+**GET-only physical evidence:** Self-Runner [Run #42735302379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735302379) Pod.nodeName/Deployment scheduling/PV affinity PASS；补充 [Run #42735495480](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735495480) 节点全部工作负载与 requests/allocatable PASS。两个运行均未执行 rollout、patch、apply、Job 或 PostgreSQL DML。
+
+| Node | Label | 现有核心 Pod（只读采集时点） | Requested CPU / allocatable | Requested Mem / allocatable |
+| --- | --- | --- | --- | --- |
+| worker01 | workload=storage | SeaweedFS 4 Pod、cloudflared、Self-Runner | 1.10 / 5.60 cores | 2118 / 22771 Mi |
+| worker02 | workload=platform | Marquez API + 官方 Web + Nginx Gateway、Airflow、Spark Operator | 1.55 / 5.60 cores | 2694 / 22771 Mi |
+| worker03 | workload=compute | Local PG17、Marquez PG14、Marquez Public Web、pgAdmin | 1.70 / 5.60 cores | 2642 / 22771 Mi |
+| master01 | no workload label | kube-system | 0.90 / 1.60 cores | 70 / 1650 Mi |
+
+各节点 Ready=True；这组值是**资源 requests**，并非 CPU/RAM 实时消耗；`kubectl top nodes` 未提供指标。PG14 `dw-postgre14-data` 的绑定 PV 的 `nodeAffinity` 精确锁定 `worker03`；不可为 ATLAS 隔离而移动/重建此卷。Marquez API/Web/Public Web/Nginx/cloudflared 的 Deployment 均无 `nodeSelector` 和 `affinity`，未来重调度可能改变落点。
+
+**MVP placement decision:**
+
+1. ATLAS UI + WebAPI 使用 `dw-atlas`，先对 `workload=storage` 角色执行**调度前硬检查**，当前唯一符合者为 `worker01`。在版本化 YAML 中使用经过验证的 `nodeAffinity requiredDuringSchedulingIgnoredDuringExecution`（标签角色，而非写死 Node hostname）限定 worker01，且不得落入 master01。
+2. 另配 `podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution`，其 namespace/label selectors 应由**部署当时真实 Marquez API、官方 Web、Public Web、Nginx Gateway Pod labels 只读发现**后冻结，以 `kubernetes.io/hostname` 隔离主要应用层。不要误把 cloudflared 这个边缘连接器与 Marquez 应用等同，否则现有 3 Worker 方案可能无可用节点。两个 ATLAS Pod 可同节点；不得不必要地互相硬反亲和。
+3. 这是**首发调度/验收时的应用层隔离**，不是所有 Marquez 组件（例如 cloudflared/PG14）的绝对物理隔离，也**不是永久迁移保证**：Kubernetes `IgnoredDuringExecution` 不会驱逐以后迁来的 Marquez Pod。要保证长线稳定，后续需经过单独评审为 Marquez API/Web/Nginx 增加对称调度约束或做定期只读漂移检查；不能以 ATLAS 一侧规则宣称永久隔离。
+4. `worker01` 运行 SeaweedFS，所以部署前必须实查实时可用资源、磁盘/内存压力和节点污点，并以 WebAPI CPU/Memory limits、connection pool、cohort 并发与查询超时保护存储。当前 requests 看似宽裕**不证明**实时空闲。若 `worker01` 不可用、标签/规则冲突、资源不足或现有 Marquez App 也占用 worker01，则**新 Pod Pending / 发布 HOLD**；严禁自动软化 hard affinity 或挤进 worker02/03。
+5. 所有 Atlas/WebAPI 业务查询最终仍需要连接 `worker03` 的 PG17，**应用 Pod 隔离不能隔离数据库负载**；Results 查询限速和 PG17 监控为上线前置。
+
 - 不新增 Fabric Capacity 或 Fabric→Local 自动同步。未来 Fabric Warehouse 若要对接 ATLAS/WebAPI 需单独兼容性研究（OHDSI SQLRender、JDBC、cohort SQL、Results 写入）；与本 MVP 无关。
 
 ## 6. Stages, acceptance and rollback
