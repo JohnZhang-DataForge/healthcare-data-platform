@@ -170,6 +170,7 @@ These deployment and image paths are registered here because this existing OMOP 
 | [ATLAS frontend gateway](../../../../local-data-platform/kubernetes/manifests/atlas/frontend-gateway-configmap.yaml) | Private single-origin Caddy routing, not Marquez Nginx |
 | [ATLAS UI Deployment](../../../../local-data-platform/kubernetes/manifests/atlas/atlas3-ui-deployment.yaml.tpl) | worker03 + image digest required at runtime |
 | [ATLAS WebAPI Deployment](../../../../local-data-platform/kubernetes/manifests/atlas/webapi3-deployment.yaml.tpl) | worker03 + PG17 dedicated secret/roles, no default passwords |
+| [ATLAS WebAPI private ingress](../../../../local-data-platform/kubernetes/manifests/atlas/webapi3-networkpolicy.yaml) | Only Atlas3 UI pods may access WebAPI3 port 8080 |
 
 **No runtime installation receipt:** this inventory does not authorize database schema creation, credential generation, K8s apply, existing PVC mutation or public routing.
 
