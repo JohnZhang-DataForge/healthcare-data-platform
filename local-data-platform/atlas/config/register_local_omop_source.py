@@ -218,7 +218,7 @@ ROLLBACK;""")
     # search endpoint invokes the index-backed SearchProvider and its first
     # build can time out on the 1.95M-row local Vocabulary; avoid repeating
     # that potentially costly query in the shared PG17 environment.
-    payload=json.dumps({"query":"Male","vocabularyId":["Gender"],"isLexical":False}).encode()
+    payload=json.dumps({"QUERY":"Male","VOCABULARY_ID":["Gender"],"IS_LEXICAL":False}).encode()
     search_code,results=http("POST","/vocabulary/LOCAL_OMOP/search",body=payload,
                              content_type="application/json",jwt=jwt,timeout=25)
     print("ATLAS_CONCEPT_SQL_SEARCH_HTTP="+str(search_code))
