@@ -108,6 +108,22 @@ WebAPI user/configuration and analytic Results SHALL persist in approved Postgre
 - **WHEN** release preflight runs
 - **THEN** the release is rejected before creating or changing storage
 
+### Requirement: Kubernetes manifests follow the centralized Local DP source owner
+
+All ATLAS and WebAPI Kubernetes resources SHALL be authored only under `local-data-platform/kubernetes/manifests/atlas/`. The implementation SHALL NOT create a parallel `local-data-platform/atlas/kubernetes/` manifest tree.
+
+#### Scenario: Implementing ATLAS deployments
+
+- **GIVEN** a change adds ATLAS3 and WebAPI3 Deployments, Services, Namespace, RBAC, resource or placement policies
+- **WHEN** their source is checked for review
+- **THEN** all Kubernetes manifests are in the centralized Atlas component directory while image build contexts remain under `local-data-platform/images/`
+
+#### Scenario: Duplicate Kubernetes path
+
+- **GIVEN** a change adds deployment YAML under `local-data-platform/atlas/kubernetes/`
+- **WHEN** the repository ownership gate runs
+- **THEN** the addition is rejected until consolidated in `local-data-platform/kubernetes/manifests/atlas/`
+
 ### Requirement: Preserve existing Marquez and business workloads
 
 The implementation SHALL avoid changing Marquez, PG14, OMOP Writer, existing Source Batch/Identity records, Cloudflare lineage host routes, or Fabric capacity state.
