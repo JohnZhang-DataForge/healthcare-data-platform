@@ -8,21 +8,24 @@
 - [x] 0.2 对照 OHDSI 2026-10-16 正式版本、ATLAS3↔WebAPI3 兼容边界、Cloudflare Access 外部身份门禁，冻结 MVP 的独立版本与双层网络设计；暂不锁定未核验的容器 Digest。
 - [x] 0.3 设计 PR [Healthcare #868](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/868) 7/7 CI SUCCESS、2026-11-09 ET 已合并并实际读回 Main `8646292794e354781c930c23bfa07db69bd035f7`；后续实现均引用 `OpenSpec-Change: deploy-local-ohdsi-atlas` 及具体 Task。
 - [ ] 0.4 确定 Self-Runner/本地 Agent 实施入口和当前并行执行者；在任何共享 K8s/PG/Cloudflare 操作前再次核验权限、资源占用和执行授权。
+- [x] 0.6 用户确认首发域名 `atlas.johnzhang-dataforge.site`、ATLAS UI/WebAPI 选择 **worker03**（PG17/PG14 所在节点）并采用现有 PG17 存储、非另建 PostgreSQL；这只是设计决策，尚未执行部署或数据操作。
 - [x] 0.5 **实际节点/角色/资源 requests GET-only 盘点**：Self-Runner [#42735302379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735302379) 和 [#42735495480](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735495480) SUCCESS，确认 worker01=storage（SeaweedFS、cloudflared）、worker02=platform（Marquez API/Web/Nginx）、worker03=compute（PG17、PG14、Public Web），PG14 PV nodeAffinity=worker03。Marquez API/Web/Nginx 当前均无 affinity/nodeSelector，ATLAS 还未部署，节点测量只含 requests 而非实时 top。记录在 design §5.1。
 
 ## P1 — Local PostgreSQL data readiness (READONLY FIRST)
 
 - [ ] 1.1 双连接只读清点 PG17 实际 Schema/39 表/432 列差异、Person/Visit/Observation Period 和九张 Vocabulary 表及统计、source ID 与 FK，留存脱敏报告（**不能**采用 Fabric 28,703,753 替代）。
 - [ ] 1.2 核查现有 Athena Vocabulary 使用许可、Release、CPT4/UB04 处理与本地导入适用性；若本地缺失，先提交精确可恢复的补全计划，独立批准后才执行真实导入/读回，绝不再分发受限词项。
-- [ ] 1.3 只读确认 PG17 当前负载、存储、连接数、角色以及备份恢复方案；输出精确的 WebAPI app schema、Results/Temp schema 与最小权限 SQL 计划，不触碰 `cdm` 生产业务行。
+- [ ] 1.3 只读确认 PG17 当前负载、存储、连接数、角色以及备份恢复方案；输出精确的 WebAPI app schema、Results/Temp schema 与最小权限 SQL 计划，不触碰 `cdm` 生产业务行；确认现有 PG17 PVC/备份能覆盖新增持久化研究元数据与 Results，**不创建第二个 PG PVC/StatefulSet**。
+- [ ] 1.5 真实核查 worker03 CPU/RAM/磁盘/IO/PG17/PG14 压力、实际 Pod nodeName 和存储容量，不以 requests=free/`kubectl top` 不可用代表空闲；在数据库节点设定 WebAPI SQL timeout、connection pool、cohort 并发及资源上限。
 - [ ] 1.4 观察期缺失时定义准确 MVP 功能范围和阻断报告；补齐研究级 Observation Period 的规则作为独立业务 Change，不在 ATLAS UI PR 内盲写。
 
 ## P2 — ATLAS3/WebAPI3 code and private rollout
 
-- [ ] 2.1 锁定与实际运行架构兼容的 ATLAS3 3.0.0 / WebAPI 3.0.0 稳定镜像/源码，SHA/Digest、应用配置、API base path、Java21/PG 兼容性、License 和版本矩阵；拒绝 `latest` / `3.0-dev` / Broadsea 2.x 混配。
+- [ ] 2.1 锁定 ATLAS3 3.0.0 上游 tag/SHA 并构建自己的固定 GHCR UI 镜像；检查官方 `ohdsi/webapi:3.0.0` 的镜像 digest、运行配置与必要插件（若需要 TrexSQL 再制作经过审计的派生 WebAPI 镜像）；保存两镜像最终 Digest、Java21/PG兼容性和版本矩阵；拒绝 `latest` / `3.0-dev` / `ohdsi/atlas:2.x` 混配。
 - [ ] 2.2 新增独立 Local ATLAS3/WebAPI3 K8s ConfigMaps/Secrets refs、ClusterIP、Resource limits、probes、namespace/networkpolicy 与 Nginx 受控路由变更计划，提供离线 Fake upstream/Host/path/未授权 API 测试；不要修改 Marquez Gateway。
-- [ ] 2.6 **硬隔离调度**：根据现场有效 Node label 和 Marquez Pod labels 在 ATLAS3/WebAPI3 manifest 使用 `nodeAffinity.required... workload=storage`、`podAntiAffinity.required...` 避开 Marquez API/Web/Public Web/Nginx，部署前验证 worker01 可用容量、SeaweedFS 风险及策略可调度，资源不足/反亲和冲突 → Pending/HOLD 不自动降级；模拟变更的负向 CI 必须能阻止与 Marquez 应用同 Worker 的部署。
-- [ ] 2.7 **长线隔离失效风险**：评估对 Marquez API/Web/Nginx 实施对称标签/nodeAffinity 的独立维护 PR/现场授权，或增加只读实际 Pod nodeName 漂移审查；不能仅靠 ATLAS 一侧 IgnoredDuringExecution 就宣称永久隔离，禁止擅自重启 Marquez 或移动 PG14 PV。
+- [ ] 2.6 **worker03 硬调度**：ATLAS3/WebAPI3 以 `nodeAffinity.required... kubernetes.io/hostname=worker03` 及实机标签/资源 preflight 固定，PG17/PG14/Public Web **已经**同节点；仅对在 worker02 的 Marquez 主 API/官方 Web/Nginx 做精准选择性隔离/漂移检测，不能对整个 `dw-marquez` 使用硬反亲和，否则 Public Web 导致永远 Pending。worker03 压力过高/节点不 Ready → Pending/HOLD 不自动漂移；负向 CI 拦截错误节点或错误 anti-affinity。
+- [ ] 2.7 **长线隔离漂移风险**：评估 Marquez API/Web/Nginx 的对称 nodeAffinity / 只读漂移检测，但须另行授权；用户明确同意 PG14/Public Web 与 ATLAS 在 worker03 共机，不以全部 Marquez 组件分离为验收门槛；禁止擅自移动 PG14 PV 或重启 Marquez。
+- [ ] 2.8 **缓存持久化选择**：首版核查 TrexSQL 是否为目标功能所需；若关闭，记录即时 Cohort count/inclusion-rule 的差异；若启用，先评估限量 `emptyDir` 缓存，确有保留价值再单独计划 5–10Gi worker03 绑定可重建缓存 PVC，不将缓存备份与 DB 元数据混淆，且不得手动提前新建未选 StorageClass/PV。
 - [ ] 2.3 完成 WebAPI 3 app DB / source_daimon / CDM/Vocabulary/Results/Temp 数据源初始化的**可审计** migration 预检与最小 PG 角色/Statement timeout；先在隔离环境证明只写专属 Schema，绝不无条件自动迁移现有 `cdm.*`。
 - [ ] 2.4 获授权后在 `dw-atlas` 内部署，执行真实内网 GET/readiness、UI→WebAPI、真实 Concept 查询和 data source readback；保存 K8s image Digest、Git SHA、Run 证据，失败/未知状态先只读验明。
 - [ ] 2.5 在经审批的私有环境实际验证 WebAPI 3 身份/角色管理、未登录 API 401/403、WebAPI 角色不能更新 `cdm`、凭据不出现在 JS/Logs。若采用单用户 Access-only 变体必须写下独立风险决策，不得自动放行外网。
