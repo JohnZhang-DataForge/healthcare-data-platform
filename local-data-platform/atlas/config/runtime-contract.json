@@ -1,0 +1,23 @@
+{
+  "change": "deploy-local-ohdsi-atlas",
+  "phase": "P2-P4 source / gated runtime",
+  "upstream_atlas3_version": "v3.0.0",
+  "upstream_atlas3_commit": "f775da50dfcd8b7fa5c57abc2e2654650d37ee4b",
+  "upstream_webapi_version": "v3.0.0",
+  "upstream_webapi_commit": "817bae8043decf683f0bde08efbd0e67247ccab8",
+  "target_namespace": "dw-atlas",
+  "target_worker": "worker03",
+  "pg_database": "omop",
+  "pg_service": "dw-postgre.dw-postgre.svc.cluster.local",
+  "application_schema": "webapi",
+  "results_schema": "atlas_results",
+  "temp_schema": "atlas_temp",
+  "credential_secret": "atlas-webapi-db",
+  "source_clinical_schema": "cdm",
+  "public_route_enabled": false,
+  "cache_mode": "ephemeral",
+  "atlas_image_status": "BUILD_PENDING",
+  "webapi_digest_status": "INSPECT_PENDING",
+  "pg_migration_status": "NOT_EXECUTED",
+  "cluster_apply_status": "NOT_EXECUTED"
+}
