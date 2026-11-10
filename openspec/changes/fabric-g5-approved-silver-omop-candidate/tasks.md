@@ -1,5 +1,12 @@
 # Tasks — G5
 
+**2026-11-10 UPDATED BUSINESS POLICY — SUPERSEDES HISTORICAL DUAL-REVIEW GATES BELOW.** This personal synthetic-data G5 FHIR-to-OMOP project DOES NOT REQUIRE two different Clinical and License human reviewers, Ed25519 detached signatures, reviewer public-key onboarding, human-signoff expiry, or separate human approval packets. B2-B8 signed-review code and CI remain preserved as historical/optional experiments, not the current FHIR→Candidate→Gold prerequisite. Never forge human approval names, signatures, hashes or license grants to make legacy code pass.
+
+The active path still requires: authentic StageScope and immutable Landing Manifest SHA/ETag; physically approved Silver plus Quarantine/replay checks; the ONE Shared Mapping Profile with source-code coverage, null/UNK policy, PK/FK and DQ; real Warehouse F1 vocabulary source lineage + target Concept domain/standard/validity; twice-independent Warehouse F2 SQL and its actual Shared identity fingerprint; protected Stage execution, conditional Blob Claim+Lease+CAS, independent target readback and Receipt LAST. Legal CPT4 / other restricted vocabulary usage must comply with actual licenses, but does not require two project reviewers.
+
+Self-Runner now has a distinct unsigned technical source/read-only F1/F2 code path reusing the established G5 provider and B7 strict StageScope/Profile parser. Existing Native Notebook/Gold legacy review flags and receipt hashes remain an interface migration item for later Writer commissioning: do not set fake reviewed=True or arbitrary SHA to bypass them. Pipeline remains HALT; Candidate/Gold live write is NOT authorized. Real F1 source-audit table has 0/9 mandatory rows (verified Run 42844407716); this is a genuine technical hold, NOT a human-signoff hold. Do not repeat full Vocabulary import or invent audit metadata.
+
+
 ## 1. Scope / contract
 
 - [x] 1.1 只读核对双仓当前 main、原生 Pipeline HALT、G4 物理 Silver Approval/Quarantine 与唯一 Shared Engine 的实际缺口（2026-11-03；本 Change 起始基线记录在 design.md）。
