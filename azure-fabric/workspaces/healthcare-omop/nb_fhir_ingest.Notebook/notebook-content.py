@@ -1946,8 +1946,8 @@ def execute_g5_candidate_from_trusted_controller(
     a caller could forge all returned dictionaries. No caller-supplied
     provider is EVER allowed here.
 
-    P3.19 remains OPEN: real signed reviews, F1 source audit, F2 fresh
-    transaction fence, managed keys, durable atomic nonce claim, and native
+    P3.19 remains OPEN: technical F1 source audit, F2 fresh transaction
+    fence, managed provider keys, durable atomic nonce claim, and native
     Wheel Publish have not been accepted. The only eventual positive result
     from this function is SOURCE-ONLY verification, not Candidate or Gold.
     This method is NOT connected to Notebook run_mode or Pipeline dispatch.
@@ -1969,7 +1969,8 @@ def execute_g5_candidate_from_trusted_controller(
         raise RuntimeError("HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING")
     try:
         from healthcare_data_engine.security.provider_attestation import (
-            TransportHold, VerifiedTransport, verify_native_handoff_source_only,
+            TransportHold, VerifiedTransport, VerifiedTechnicalTransport,
+            verify_native_handoff_source_only,
         )
     except ImportError:
         raise RuntimeError("HOLD_G5_NATIVE_SIGNED_VERIFIER_NOT_PUBLISHED") from None
@@ -1977,9 +1978,10 @@ def execute_g5_candidate_from_trusted_controller(
         verified = verify_native_handoff_source_only(attestation_bytes)
     except TransportHold:
         raise RuntimeError("HOLD_G5_NATIVE_SIGNED_TRANSPORT_OR_REPLAY") from None
-    if (not isinstance(verified, VerifiedTransport)
-            or verified.status !=
-                "G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY"
+    if (not isinstance(verified, (VerifiedTransport, VerifiedTechnicalTransport))
+            or verified.status not in (
+                "G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
+                "G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
             or verified.candidate_write_authorized is not False
             or verified.gold_committed is not False
             or verified.provisional_ids_persisted is not False):
@@ -1994,18 +1996,20 @@ def execute_g5_person_visit_business(
     mapping_profile_bytes: bytes, raw_publish_run_id: str,
     patient_contract_json: str, encounter_contract_json: str,
     mode: str, write_authorized: bool,
-    clinically_reviewed: bool, license_reviewed: bool,
+    clinically_reviewed: bool = False, license_reviewed: bool = False,
     warehouse_snapshot_verified: bool,
-    clinical_review_sha256: str, license_review_sha256: str,
+    clinical_review_sha256: str | None = None,
+    license_review_sha256: str | None = None,
     warehouse_snapshot_sha256: str,
+    technical_evidence_sha256: str | None = None,
+    trusted_technical_release_gate: Callable | None = None,
 ) -> str:
-    """Real G5 P3 task: physical Approved Silver -> shared Mapper -> Delta.
+    """P3 physical Silver -> the ONE Shared Mapper -> technical Candidate Delta.
 
-    No independent import smoke and no second platform Mapper. The caller
-    supplies independently verified Warehouse Concept/F2 snapshot evidence
-    and real P1 clinical/license review; this function never fabricates them.
-    It cannot be dispatched from Notebook parameters without those real
-    SQL/clinical assets. Re-run uses the writer's independent Delta readback.
+    Current path uses verified technical F1/F2 source evidence, not two human
+    Clinical/License signatures. An untrusted SHA/Boolean from Notebook
+    parameters still cannot grant writes: the protected Stage owner must
+    supply an independent release gate; __main__/Pipeline remain HALT.
     """
     from healthcare_data_engine.mapping.omop.candidates import (
         build_omop_candidates, load_omop_mapping_profile)
@@ -2020,13 +2024,19 @@ def execute_g5_person_visit_business(
             or scope.mapping_sha256 is None
             or mode not in ("G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY")):
         raise RuntimeError("HOLD_G5_BUSINESS_RELEASE_OR_F2_SCOPE")
-    # Actual review evidence is mandatory for a write, but not for building
-    # and classifying a direct real-data mapping error. Fake clinical values
-    # never become OMOP candidates simply because Spark transformations run.
+    # Preserve clinical data integrity but do not require two humans.
+    # A digest by itself is NEVER a release; the actual Stage owner must
+    # independently authenticate it and provide the protected callback.
+    technical = technical_evidence_sha256 is not None
+    if technical and (clinically_reviewed or license_reviewed
+                      or clinical_review_sha256 is not None
+                      or license_review_sha256 is not None):
+        raise RuntimeError("HOLD_G5_BUSINESS_FAKE_REVIEW_IN_TECHNICAL_PATH")
     if mode == "G5_CANDIDATE_WRITE" and not (
-            write_authorized and clinically_reviewed and license_reviewed
-            and warehouse_snapshot_verified):
-        raise RuntimeError("HOLD_G5_BUSINESS_P1_F2_APPROVAL_MISSING")
+            write_authorized and warehouse_snapshot_verified
+            and ((technical and callable(trusted_technical_release_gate))
+                 or (not technical and clinically_reviewed and license_reviewed))):
+        raise RuntimeError("HOLD_G5_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING")
     if (not isinstance(mapping_profile_bytes, bytes)
             or len(mapping_profile_bytes) > 65536
             or hashlib.sha256(mapping_profile_bytes).hexdigest()
@@ -2126,7 +2136,9 @@ def execute_g5_person_visit_business(
         license_review_sha256=license_review_sha256,
         warehouse_snapshot_sha256=warehouse_snapshot_sha256,
         patient_contract_json=patient_contract_json,
-        encounter_contract_json=encounter_contract_json)
+        encounter_contract_json=encounter_contract_json,
+        technical_evidence_sha256=technical_evidence_sha256,
+        trusted_technical_release_gate=trusted_technical_release_gate)
 
 
 
