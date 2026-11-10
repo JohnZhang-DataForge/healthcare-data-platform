@@ -8,6 +8,9 @@ COPY . .
 RUN npm run build
 
 FROM caddy:2-alpine
+LABEL org.opencontainers.image.source="https://github.com/JohnZhang-DataForge/healthcare-data-platform" \\
+      org.opencontainers.image.title="Healthcare ATLAS3 UI" \\
+      org.opencontainers.image.version="3.0.0"
 COPY --from=build /app/dist /srv/atlas
 COPY docker/config-local.json /srv/atlas/config-local.json
 # /etc/caddy/Caddyfile is injected by the version-controlled K8s ConfigMap.
