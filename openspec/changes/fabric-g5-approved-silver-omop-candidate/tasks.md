@@ -22,6 +22,8 @@ Self-Runner now has a distinct unsigned technical source/read-only F1/F2 code pa
 
 - [x] 2.5 **2026-11-10 强制双人 Clinical/License 审签取消：设计决议与技术准入源码/离线 CI**。按用户确认取消额外人工签名作为独立个人合成数据平台前置条件，保留旧签名代码不再作为当前主线。Self-Runner PR #732 新增现有 Provider + StageScope/Mapper 的无双签 F1/F2/Concept 技术证据接口和严格合同测试，保留 F1 9/9、F2 指纹及只读默认；真实 F1 当前 0/9，Native/Gold legacy reviewer 字段后续开发时迁移，禁止用虚假 True/SHA。此项仅核销政策/源码，**不**表示 Candidate/Gold 云写入、许可权利或 Task 3.x/4.x 已完成。
 
+- [ ] 2.6 **G5 Native Candidate/Gold 双审核残留代码迁移（SOURCE_ONLY、非生产 Release）**：Native `plan_and_write_g5_candidate_delta` / `execute_g5_person_visit_business` 新技术路径使用单一 `technical_evidence_sha256`，必须与真实 F2 Snapshot 和源 StageScope 对齐，Native 写入前额外需要受保护的独立 Stage release_gate；不能仅凭来源 SHA、用户传入布尔值或旧 Clinical/License 审核字段写入。Candidate Approval-LAST v2 保存 `evidence_contract=G5_TECHNICAL_F1F2_V1` + 单一技术证据 SHA，并与历史双审核 Approval 精确隔离/重读。GoldBatch 可不用两个审核字段，但仍要求独立外部真 Release、单写者锁、Candidate Approval、F1/F2 和许可使用边界。Shared Native `provider_attestation` 增加无两人签名的 v2 **机器签发技术证据传输**（仍只是 PROVENANCE_ONLY、不能写入，保留旧 v1）；双方不得伪造人工审核结论或通用 Writer 授权。现阶段真实 F1 来源审计仍 0/9、Native 已部署 Wheel 0.1.7 尚未含 v2，Fabric 默认 `HALT`，P3/P4/P5 实机任务不因离线测试核销。由本轮 PR 的 Native/Gold/Transport CI 和后续 Main readback 共同决定是否关闭这个源码子项。
+
 ## 3. Fabric Candidate and Pipeline
 
 - [ ] 3.1 原生 Notebook 保留 HALT 与 Fabric cell 格式，增加 approved Silver 真正独立读回入口；要求精确批次 SHA/processing/Approval，不触碰已通过 G4 数据。
