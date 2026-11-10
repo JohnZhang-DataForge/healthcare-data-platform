@@ -9,6 +9,7 @@
 - [x] 0.3 设计 PR [Healthcare #868](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/868) 7/7 CI SUCCESS、2026-11-09 ET 已合并并实际读回 Main `8646292794e354781c930c23bfa07db69bd035f7`；后续实现均引用 `OpenSpec-Change: deploy-local-ohdsi-atlas` 及具体 Task。
 - [ ] 0.4 确定 Self-Runner/本地 Agent 实施入口和当前并行执行者；在任何共享 K8s/PG/Cloudflare 操作前再次核验权限、资源占用和执行授权。
 - [x] 0.6 用户确认首发域名 `atlas.johnzhang-dataforge.site`、ATLAS UI/WebAPI 选择 **worker03**（PG17/PG14 所在节点）并采用现有 PG17 存储、非另建 PostgreSQL；这只是设计决策，尚未执行部署或数据操作。
+- [x] 0.7 用户指出并已按现有仓库源码布局核实，ATLAS Kubernetes manifests 的唯一正式路径为 `local-data-platform/kubernetes/manifests/atlas/`（既有 OIE、Synthea 位于相同 `kubernetes/manifests/<component>/` 目录）；不得在 `atlas/kubernetes/` 新增平行清单。本次是 OpenSpec 文档纠偏，尚未创建运行资源；以 PR/CI/Main 验证。
 - [x] 0.5 **实际节点/角色/资源 requests GET-only 盘点**：Self-Runner [#42735302379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735302379) 和 [#42735495480](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735495480) SUCCESS，确认 worker01=storage（SeaweedFS、cloudflared）、worker02=platform（Marquez API/Web/Nginx）、worker03=compute（PG17、PG14、Public Web），PG14 PV nodeAffinity=worker03。Marquez API/Web/Nginx 当前均无 affinity/nodeSelector，ATLAS 还未部署，节点测量只含 requests 而非实时 top。记录在 design §5.1。
 
 ## P1 — Local PostgreSQL data readiness (READONLY FIRST)
@@ -22,7 +23,7 @@
 ## P2 — ATLAS3/WebAPI3 code and private rollout
 
 - [ ] 2.1 锁定 ATLAS3 3.0.0 上游 tag/SHA 并构建自己的固定 GHCR UI 镜像；检查官方 `ohdsi/webapi:3.0.0` 的镜像 digest、运行配置与必要插件（若需要 TrexSQL 再制作经过审计的派生 WebAPI 镜像）；保存两镜像最终 Digest、Java21/PG兼容性和版本矩阵；拒绝 `latest` / `3.0-dev` / `ohdsi/atlas:2.x` 混配。
-- [ ] 2.2 新增独立 Local ATLAS3/WebAPI3 K8s ConfigMaps/Secrets refs、ClusterIP、Resource limits、probes、namespace/networkpolicy 与 Nginx 受控路由变更计划，提供离线 Fake upstream/Host/path/未授权 API 测试；不要修改 Marquez Gateway。
+- [ ] 2.2 **所有** Local ATLAS3/WebAPI3 的 Namespace、Deployment、Service、ConfigMaps/Secrets refs、ClusterIP、Resource limits、probes、networkpolicy 和调度规则统一新增到 `local-data-platform/kubernetes/manifests/atlas/`；`atlas/config/` 和 `atlas/sql/` 仅容纳应用配置与数据库初始化，不创建 `atlas/kubernetes/`；Image Dockerfile/build contexts 走统一 `local-data-platform/images/`。制定 Nginx 受控路由变更计划，提供离线 Fake upstream/Host/path/未授权 API 测试；不要修改 Marquez Gateway。
 - [ ] 2.6 **worker03 硬调度**：ATLAS3/WebAPI3 以 `nodeAffinity.required... kubernetes.io/hostname=worker03` 及实机标签/资源 preflight 固定，PG17/PG14/Public Web **已经**同节点；仅对在 worker02 的 Marquez 主 API/官方 Web/Nginx 做精准选择性隔离/漂移检测，不能对整个 `dw-marquez` 使用硬反亲和，否则 Public Web 导致永远 Pending。worker03 压力过高/节点不 Ready → Pending/HOLD 不自动漂移；负向 CI 拦截错误节点或错误 anti-affinity。
 - [ ] 2.7 **长线隔离漂移风险**：评估 Marquez API/Web/Nginx 的对称 nodeAffinity / 只读漂移检测，但须另行授权；用户明确同意 PG14/Public Web 与 ATLAS 在 worker03 共机，不以全部 Marquez 组件分离为验收门槛；禁止擅自移动 PG14 PV 或重启 Marquez。
 - [ ] 2.8 **缓存持久化选择**：首版核查 TrexSQL 是否为目标功能所需；若关闭，记录即时 Cohort count/inclusion-rule 的差异；若启用，先评估限量 `emptyDir` 缓存，确有保留价值再单独计划 5–10Gi worker03 绑定可重建缓存 PVC，不将缓存备份与 DB 元数据混淆，且不得手动提前新建未选 StorageClass/PV。
