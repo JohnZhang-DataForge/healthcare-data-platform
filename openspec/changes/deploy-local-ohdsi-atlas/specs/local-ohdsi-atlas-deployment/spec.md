@@ -72,17 +72,17 @@ A public ATLAS hostname SHALL require Cloudflare Access authorization on all UI 
 
 ### Requirement: ATLAS workload placement separates research API from Marquez application nodes
 
-The ATLAS UI and WebAPI SHALL require the verified `workload=storage` node role and hostname-scoped anti-affinity to Marquez application Pods. A rollout SHALL HALT without a suitable node and SHALL verify actual Pod placement. Existing PG14/PG17 volumes SHALL remain unchanged.
+The ATLAS UI and WebAPI SHALL schedule on the user-selected `worker03` node, with verified hostname constraints and runtime capacity gates. Placement SHALL NOT move PG17/PG14 volumes or modify running Marquez Pods. Existing PG14 and the Marquez Public Web may remain on worker03.
 
 #### Scenario: Existing three-worker placement
 
-- **GIVEN** live evidence that worker01 has label `workload=storage`, Marquez application Pods are on worker02/worker03, and worker01 meets resource limits
+- **GIVEN** worker03 is Ready with sufficient verified resources, contains PG17 and PG14, and is the user-approved node
 - **WHEN** approved ATLAS UI and WebAPI Deployments are admitted
-- **THEN** both Atlas components are scheduled to worker01 with no co-location with Marquez application Pods, and runtime Pod nodeName is independently read back
+- **THEN** both Atlas components schedule on worker03; public Marquez Web and PG14 co-location is permitted, while Marquez API/Nginx remain unchanged, and real Pod nodeName is independently read back
 
 #### Scenario: Required separation cannot be scheduled
 
-- **GIVEN** worker01 lacks capacity, is tainted/NotReady, or hosts a matching Marquez application Pod
+- **GIVEN** worker03 lacks capacity, is tainted/NotReady, or violates reviewed constraints
 - **WHEN** Kubernetes evaluates the required placement constraints
 - **THEN** the ATLAS rollout remains Pending/HOLD and SHALL NOT relax constraints or schedule to another worker without a reviewed placement change
 
@@ -91,6 +91,22 @@ The ATLAS UI and WebAPI SHALL require the verified `workload=storage` node role 
 - **GIVEN** Kubernetes required anti-affinity with `IgnoredDuringExecution` does not evict existing Pods
 - **WHEN** a future Marquez rollout would move an application onto ATLAS's node
 - **THEN** the operation MUST be separately checked against the separation policy; permanent guarantees require symmetrical constraints or live placement drift detection, not a claim based only on ATLAS scheduling rules
+
+### Requirement: Distinguish persisted research records from reconstructible cache
+
+WebAPI user/configuration and analytic Results SHALL persist in approved PostgreSQL storage covered by backup. The Atlas3 static UI SHALL NOT require a PVC, and TrexSQL cache MAY use bounded ephemeral storage unless persistence has been separately approved.
+
+#### Scenario: Restart WebAPI with ephemeral cache
+
+- **GIVEN** Cohort Definitions and Results exist in PostgreSQL while TrexSQL cache uses emptyDir
+- **WHEN** the WebAPI Pod restarts
+- **THEN** user/configuration and analytic results remain available, while cache must be reconstructed
+
+#### Scenario: Unexpected database storage replacement
+
+- **GIVEN** a deployment proposes a fresh PostgreSQL PVC or replacement of the current OMOP PVC without approval
+- **WHEN** release preflight runs
+- **THEN** the release is rejected before creating or changing storage
 
 ### Requirement: Preserve existing Marquez and business workloads
 
