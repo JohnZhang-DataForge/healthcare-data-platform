@@ -29,6 +29,7 @@ spec:
           env:
             - {name: SERVER_SERVLET_CONTEXT_PATH, value: "/WebAPI"}
             - {name: SECURITY_PROVIDER, value: AtlasRegularSecurity}
+            - {name: SECURITY_ADMIN_LOGIN, value: "atlas_admin"}
             - {name: SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE, value: "8"}
             - {name: SPRING_DATASOURCE_HIKARI_MINIMUMIDLE, value: "1"}
             - {name: SECURITY_AUTH_DB_DATASOURCE_DRIVERCLASSNAME, value: org.postgresql.Driver}
