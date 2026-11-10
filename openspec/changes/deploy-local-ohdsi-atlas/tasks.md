@@ -6,8 +6,9 @@
 
 - [x] 0.1 核查 Healthcare main/开放 PR、当前 Local OMOP Writer/Fabric Vocabulary/Marquez 文档、OpenSpec 与安全规则；确立与正在进行的 Fabric Gold、HL7、Marquez 并行工作互不冲突。此项是 Git/Docs 来源审查，**非实时集群验证**。
 - [x] 0.2 对照 OHDSI 2026-10-16 正式版本、ATLAS3↔WebAPI3 兼容边界、Cloudflare Access 外部身份门禁，冻结 MVP 的独立版本与双层网络设计；暂不锁定未核验的容器 Digest。
-- [ ] 0.3 本设计 PR 通过 Trusted Change Gate/OpenSpec Validate，合并 Main 后复核 SHA；后续实现均引用 `OpenSpec-Change: deploy-local-ohdsi-atlas` 及具体 Task。
+- [x] 0.3 设计 PR [Healthcare #868](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/868) 7/7 CI SUCCESS、2026-11-09 ET 已合并并实际读回 Main `8646292794e354781c930c23bfa07db69bd035f7`；后续实现均引用 `OpenSpec-Change: deploy-local-ohdsi-atlas` 及具体 Task。
 - [ ] 0.4 确定 Self-Runner/本地 Agent 实施入口和当前并行执行者；在任何共享 K8s/PG/Cloudflare 操作前再次核验权限、资源占用和执行授权。
+- [x] 0.5 **实际节点/角色/资源 requests GET-only 盘点**：Self-Runner [#42735302379](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735302379) 和 [#42735495480](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42735495480) SUCCESS，确认 worker01=storage（SeaweedFS、cloudflared）、worker02=platform（Marquez API/Web/Nginx）、worker03=compute（PG17、PG14、Public Web），PG14 PV nodeAffinity=worker03。Marquez API/Web/Nginx 当前均无 affinity/nodeSelector，ATLAS 还未部署，节点测量只含 requests 而非实时 top。记录在 design §5.1。
 
 ## P1 — Local PostgreSQL data readiness (READONLY FIRST)
 
@@ -20,13 +21,15 @@
 
 - [ ] 2.1 锁定与实际运行架构兼容的 ATLAS3 3.0.0 / WebAPI 3.0.0 稳定镜像/源码，SHA/Digest、应用配置、API base path、Java21/PG 兼容性、License 和版本矩阵；拒绝 `latest` / `3.0-dev` / Broadsea 2.x 混配。
 - [ ] 2.2 新增独立 Local ATLAS3/WebAPI3 K8s ConfigMaps/Secrets refs、ClusterIP、Resource limits、probes、namespace/networkpolicy 与 Nginx 受控路由变更计划，提供离线 Fake upstream/Host/path/未授权 API 测试；不要修改 Marquez Gateway。
+- [ ] 2.2a **硬隔离调度**：根据现场有效 Node label 和 Marquez Pod labels 在 ATLAS3/WebAPI3 manifest 使用 `nodeAffinity.required... workload=storage`、`podAntiAffinity.required...` 避开 Marquez API/Web/Public Web/Nginx，部署前验证 worker01 可用容量、SeaweedFS 风险及策略可调度，资源不足/反亲和冲突 → Pending/HOLD 不自动降级；模拟变更的负向 CI 必须能阻止与 Marquez 应用同 Worker 的部署。
+- [ ] 2.2b **长线隔离失效风险**：评估对 Marquez API/Web/Nginx 实施对称标签/nodeAffinity 的独立维护 PR/现场授权，或增加只读实际 Pod nodeName 漂移审查；不能仅靠 ATLAS 一侧 IgnoredDuringExecution 就宣称永久隔离，禁止擅自重启 Marquez 或移动 PG14 PV。
 - [ ] 2.3 完成 WebAPI 3 app DB / source_daimon / CDM/Vocabulary/Results/Temp 数据源初始化的**可审计** migration 预检与最小 PG 角色/Statement timeout；先在隔离环境证明只写专属 Schema，绝不无条件自动迁移现有 `cdm.*`。
 - [ ] 2.4 获授权后在 `dw-atlas` 内部署，执行真实内网 GET/readiness、UI→WebAPI、真实 Concept 查询和 data source readback；保存 K8s image Digest、Git SHA、Run 证据，失败/未知状态先只读验明。
 - [ ] 2.5 在经审批的私有环境实际验证 WebAPI 3 身份/角色管理、未登录 API 401/403、WebAPI 角色不能更新 `cdm`、凭据不出现在 JS/Logs。若采用单用户 Access-only 变体必须写下独立风险决策，不得自动放行外网。
 
 ## P3 — Cloudflare / Nginx / protected public release
 
-- [ ] 3.1 只读发现实际 cloudflared/Tunnel 及 Nginx 的所在 Repo/Namespace/Deployment、Host 路由和已有 Marquez Gateway，确定单一配置 Owner；检测 `atlas.johnzhang-dataforge.site` DNS/route 冲突。
+- [ ] 3.1 Nginx/Cloudflared 的 K8s 实体及落点已在 Run #42735302379 核实（Gateway worker02；Tunnel worker01），**仍需**只读核对其真实 ConfigMap 精确 Host/path、Git/现场唯一 Owner、Cloudflare Dashboard Tunnel/Access/DNS 与 `atlas.johnzhang-dataforge.site` 冲突，因此主项保持 OPEN。用户已确定最终 hostname，不是提议名。
 - [ ] 3.2 由具备权限的用户/受控执行者创建 Cloudflare Access Self-hosted Application，精确邮箱 allowlist 默认 DENY；覆盖整个 Atlas Host（包括 /WebAPI），记录应用/策略状态但不记录 Token/PII。
 - [ ] 3.3 在前置验证通过后，新增 **仅一个** Tunnel Host→Nginx 路由与对应 path mapping，不新增路由器端口，不破坏 `lineage.johnzhang-dataforge.site`；独立 browser/API GET/POST/OPTIONS、redirect、HTTPS、Cookie/CORS 和无授权否定测试 PASS。
 - [ ] 3.4 证明未授权用户无法访问 HTML、静态配置、API、source/sources、运行队列及 cohort；确认没有 NodePort/直达内网 WebAPI 绕过。未通过则撤销新 Host route，保持私有部署。
