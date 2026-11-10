@@ -189,5 +189,122 @@ class G5NativeWheelIsolation(unittest.TestCase):
 
 
 
+    @staticmethod
+    def _g5_synthetic_technical_fixture():
+        """GA 0.1.7 typed scope; no fake reviewer/signature or Fabric IO."""
+        from healthcare_data_engine.identity.candidate_handoff import (
+            CandidatePersonId, CandidateVisitId, PersonVisitCandidateHandoff)
+        from healthcare_data_engine.mapping.omop.candidates import OmopCandidates
+        from healthcare_data_engine.mapping.omop.candidate_publication import (
+            freeze_candidate_scope)
+        hospital, feed = "atlanta-hospital-a", "atlanta-hospital-a-fhir-r4"
+        source = "synthea-fhir:" + hospital + ":" + feed
+        person = CandidatePersonId(
+            hospital, source, "patient-000", 1, "PROVISIONAL")
+        visit = CandidateVisitId(
+            hospital, source, "encounter-000", "patient-000",
+            1, 1, "PROVISIONAL", "PROVISIONAL")
+        handoff = PersonVisitCandidateHandoff(
+            person_lookup=(person,), batch_persons=(person,),
+            batch_visits=(visit,), hospital_id=hospital,
+            source_system=source,
+            source_batch_id="2e110eb1971fcfa3ebb4dda6782c49a7608955855a2de45a3d77ada47fea8adb",
+            manifest_sha256="a" * 64,
+            processing_version="fhir-silver-canonical-v1:engine-0.1.1",
+            silver_publication_id="synthetic-silver-001",
+            snapshot_fingerprint="b" * 64)
+        mapper = OmopCandidates(object(), object(), "c" * 64, 1, 1)
+        scope = freeze_candidate_scope(
+            handoff, mapper, feed_id=feed,
+            request_id="atlanta-fhir-gh-41552666929")
+        return scope, handoff, mapper
+
+    def _candidate_technical_args(self):
+        scope, handoff, mapper = self._g5_synthetic_technical_fixture()
+        return {
+            "scope": scope, "handoff": handoff, "mapper_result": mapper,
+            "person_candidate": object(), "visit_candidate": object(),
+            "mode": "G5_CANDIDATE_WRITE", "write_authorized": True,
+            "warehouse_snapshot_verified": True,
+            "warehouse_snapshot_sha256": scope.identity_snapshot_fingerprint,
+            "patient_contract_json": "SYNTHETIC",
+            "encounter_contract_json": "SYNTHETIC",
+            "technical_evidence_sha256": "d" * 64,
+        }
+
+    def test_g5_technical_stage_proof_reaches_real_silver_fence_no_humans(self):
+        method = self.native["plan_and_write_g5_candidate_delta"]
+        arguments = self._candidate_technical_args()
+        release = Mock(return_value=True)
+        arguments["trusted_technical_release_gate"] = release
+        physical = Mock(side_effect=RuntimeError("REACHED_PHYSICAL_SILVER_FENCE"))
+        with patch.dict(method.__globals__, {
+            "verify_fhir_g5_candidate_source_readonly": physical,
+        }):
+            with self.assertRaisesRegex(RuntimeError, "REACHED_PHYSICAL_SILVER_FENCE"):
+                method(None, **arguments)
+        release.assert_called_once_with(
+            arguments["scope"], arguments["technical_evidence_sha256"])
+        physical.assert_called_once()
+        self.assertIs(self.native["write_authorized"], False)
+        self.assertEqual(self.native["run_mode"], "HALT")
+
+    def test_g5_technical_release_rejects_missing_or_untrusted_owner(self):
+        method = self.native["plan_and_write_g5_candidate_delta"]
+        arguments = self._candidate_technical_args()
+        with self.assertRaisesRegex(RuntimeError, "STAGE_RELEASE_UNTRUSTED"):
+            method(None, **arguments)
+        release = Mock(return_value=False)
+        arguments["trusted_technical_release_gate"] = release
+        with self.assertRaisesRegex(RuntimeError, "STAGE_RELEASE_UNTRUSTED"):
+            method(None, **arguments)
+        release.assert_called_once()
+
+    def test_g5_technical_bad_f2_and_fake_review_hold_before_callback(self):
+        method = self.native["plan_and_write_g5_candidate_delta"]
+        arguments = self._candidate_technical_args()
+        release = Mock(side_effect=AssertionError("UNTRUSTED_CALLBACK"))
+        arguments["trusted_technical_release_gate"] = release
+        bad = dict(arguments, technical_evidence_sha256="BAD")
+        with self.assertRaisesRegex(RuntimeError, "EVIDENCE_SHA_NOT_PINNED"):
+            method(None, **bad)
+        bad = dict(arguments, clinical_review_sha256="e" * 64)
+        with self.assertRaisesRegex(RuntimeError, "CANNOT_FORGE_REVIEWS"):
+            method(None, **bad)
+        bad = dict(arguments, warehouse_snapshot_sha256="a" * 64)
+        # Physical F2 fingerprint mismatch MUST fail closed (it must never
+        # result in a verified Stage release).
+        with self.assertRaises(RuntimeError):
+            method(None, **bad)
+        release.assert_not_called()
+
+    def test_g5_business_accepts_technical_evidence_shape_without_reviewer(self):
+        method = self.native["execute_g5_person_visit_business"]
+        args = self._candidate_technical_args()
+        arguments = {
+            "scope": args["scope"], "handoff": args["handoff"],
+            "concepts_from_verified_warehouse": object(),
+            "mapping_profile_bytes": b"NOT_REACHED",
+            "raw_publish_run_id": "synthetic-run",
+            "patient_contract_json": "SYNTHETIC",
+            "encounter_contract_json": "SYNTHETIC",
+            "mode": "G5_CANDIDATE_WRITE",
+            "write_authorized": True,
+            "warehouse_snapshot_verified": True,
+            "warehouse_snapshot_sha256": args["warehouse_snapshot_sha256"],
+            "technical_evidence_sha256": args["technical_evidence_sha256"],
+        }
+        with self.assertRaisesRegex(RuntimeError, "TECHNICAL_STAGE_RELEASE_MISSING"):
+            method(None, **arguments)
+        arguments["trusted_technical_release_gate"] = Mock(return_value=False)
+        # This path proceeds to validate immutable Profile before any Spark.
+        with self.assertRaisesRegex(RuntimeError, "MAPPING_PROFILE_BYTES"):
+            method(None, **arguments)
+        arguments["technical_evidence_sha256"] = "bad sha"
+        with self.assertRaisesRegex(RuntimeError, "TECHNICAL_EVIDENCE_SHA_INVALID"):
+            method(None, **arguments)
+
+
+
 if __name__ == "__main__":
     unittest.main()
