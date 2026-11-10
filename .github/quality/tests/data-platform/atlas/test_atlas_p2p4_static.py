@@ -87,7 +87,8 @@ class AtlasP2P4StaticTests(unittest.TestCase):
         self.assertEqual(contract["target_namespace"], "dw-atlas")
         self.assertEqual(contract["upstream_atlas3_version"], "v3.0.0")
         # Runtime contract was updated by real Self-Runner PG17 / Source evidence.
-        self.assertTrue(contract["public_route_enabled"])
+        self.assertFalse(contract["public_route_enabled"])
+        self.assertTrue(contract["public_route_verified"])
         self.assertEqual(contract["pg_migration_status"], "EXECUTED_VERIFIED")
         self.assertEqual(contract["cluster_apply_status"], "EXECUTED_VERIFIED")
         self.assertEqual(contract["local_omop_source_key"], "LOCAL_OMOP")
