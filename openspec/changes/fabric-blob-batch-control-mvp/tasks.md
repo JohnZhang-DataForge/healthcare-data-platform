@@ -1,5 +1,10 @@
 # Tasks — Fabric Blob Batch Control MVP
 
+**2026-11-10 POLICY SUPERSESSION — REMOVE TWO-HUMAN-REVIEW PREREQUISITE.** Old B2/B4/B5/B6/B7 Clinical and License Ed25519 human-signature work is preserved unchanged for history; none of those two-person signoffs is a mandatory prerequisite for the synthetic FHIR→OMOP development path. New technical-only admission reuses existing Healthcare StageScope/Profile and the single G5 F1 nine-source/F2 six-table SQL and Concept readers; there is no fake approval or automatic writer release. Task 4.1 now means verified source and technical evidence followed by controlled Stage execution, not finding two human reviewers.
+
+Still require real Batch Manifest, Data Quality / actual Concept mapping, F1 audit, F2 independent physical proof, Blob Claim/Lease/CAS/replay, independent Stage target and Receipt-last. Preserve one johnzhang/landing Container and one Credential. Third-party rights including CPT4 must be respected. Existing Native/Gold legacy human-review fields are NOT permission to fabricate signatures or boolean approval, and must be migrated at actual Writer integration. Pipeline HALT and no auto-run unchanged. F1 real Warehouse audit.vocabulary_source_file has 0/9 source provenance records (Run 42844407716); fixing it from verifiable existing 9 source files is a technical prerequisite, not an approval exercise. Task 4.1/4.2 and real Candidate/Gold remain OPEN.
+
+
 > 2026-11-09 用户决定：一个现有 Credential、同一个 `johnzhang/landing` Container，`_control/v1/` 与 `processed/v1/` 虚拟前缀；原始 `clinical/v1/` 完全不动。设计来源 PR #856；Blob Adapter 源码已由 PR #857 合并。Tasks 3.1–3.2 真实 Blob Claim/CAS/Lease 已通过；**Task 3.3 的历史已批准 G4 SILVER_APPROVED 真实 Target/Receipt/Blob-only SKIP 已于 2026-11-09 单独验收 PASS**，仅限该历史 Stage 的受控 completion registration。G5 Candidate/Gold、原生 E2E、F1/F2/License/Native 和生产自动发布仍未授权。
 
 ## 1. Design freeze / session handoff (docs-only)
@@ -26,7 +31,7 @@
 
 ## 4. Follow-on integration / hold gates
 
-- [ ] 4.1 经新的独立批准后，在 Self-Runner 受控编排中接入 Blob 控制层，保留 Fabric 原生 Pipeline `HALT` 默认值、审批、G5 Native signed-token 及 F1/F2/License 真门禁。
+- [ ] 4.1 在新 Batch 来源/F1/F2/Mapping/DQ 技术证据真实验证后接入受控 Blob 控制与原生 Fabric Stage，仍须原子 Claim/Lease、独立物理读回和合法词汇使用；不再要求两个人类审核者单独签名。保留 HALT，现有 Notebook 旧 reviewer 字段在 Writer 集成阶段迁移，禁止伪造。
 - [ ] 4.2 真实 Fabric Candidate Delta / Gold Writer E2E 仍属于 `fabric-g5-approved-silver-omop-candidate` 的独立待办，不因本 Change 标 [x]；本 change 完成不构成生产授权。
 
 
