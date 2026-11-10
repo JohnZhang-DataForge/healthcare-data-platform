@@ -14,7 +14,9 @@
 - **用户正式选定域名** `atlas.johnzhang-dataforge.site`（仅冻结名称，尚未设置 DNS/Access/Tunnel route）。公网架构为 Cloudflare Access 邮箱 allowlist → 现有 outbound Tunnel → 经现场核实的 Nginx reverse proxy → ATLAS UI + WebAPI；**同一受保护 Host 覆盖全部 UI 与 API 路径**，未验收前仅内网可访问。
 - 具体 Nginx/Tunnel 路由属现场配置，不假定仓库已管理；必须先只读盘点当前已部署配置，采用最小增量，不覆盖 `lineage.johnzhang-dataforge.site` 的 Marquez 路由。
 - WebAPI 3 自带 OAuth/OIDC、角色权限能力；Cloudflare Access 与 WebAPI 自身身份体系是两层不同产品，不得误称自动 SSO。外网启用前必须选择并实际验证 WebAPI 内建安全/RBAC 或经正式风险评审的单用户 Access-only 封闭配置，默认 fail closed。
-- **部署节点隔离**：2026-11-09 ET 真实 K8s 只读盘点显示 Marquez API/Web/Nginx 位于 worker02，Marquez Public Web、PG14 与 Local PG17 位于 worker03，Tunnel 与 SeaweedFS 位于 worker01。MVP 优先将 ATLAS UI/WebAPI 放在 worker01，避开 Marquez 业务层；以节点标签/受控反亲和及容量检查配置，不移动已绑定 worker03 的 PG14/PG17 PV，不重调度现有 Marquez 组件。运行时节点事实可变化，必须部署前后复核；如果调度冲突则 HOLD，不自动放松限制。不能把这种应用层隔离宣称为所有 Marquez 相关组件的物理隔离（Tunnel 已在 worker01）。
+- **部署节点隔离**：2026-11-09 ET 真实 K8s 只读盘点显示 Marquez API/Web/Nginx 位于 worker02，Marquez Public Web、PG14 与 Local PG17 位于 worker03，Tunnel 与 SeaweedFS 位于 worker01。**用户已最终选定 ATLAS UI/WebAPI 部署在 worker03**，与 PG17 同节点（节点标签 `workload=compute`）；以 `kubernetes.io/hostname=worker03` 硬约束防止误调度，部署前再核对 Node 标签、资源压力与 PG17/PG14 性能。保留 worker02 的 Marquez API/Web/Nginx，worker01 的 Tunnel/SeaweedFS，并**明确接受 worker03 已有的 PG14 + Marquez Public Web 共机**，不为了 ATLAS 擅自迁移/重启它们。不得宣称 Marquez 全组件与 ATLAS 完全隔离，或因 K8s 后续调度而保证永久隔离。
+- **持久化**：沿用 `dw-postgre` PG17 的现有数据库/PVC；在该实例隔离创建 WebAPI 应用元数据及 Results/Temp（仅授权后操作），前端无 PVC，WebAPI 的 TrexSQL `/data/cache` 属于可重建缓存，初期可关闭或限量 `emptyDir`，按真实功能需要才新增独立缓存 PVC；不重建 PG17、PG14 或复制 OMOP 数据。
+- **镜像**：ATLAS3 3.0.0 前端优先以官方 v3.0.0 源码/tag 和 Dockerfile 构建固定 GHCR 镜像；WebAPI3 3.0.0 优先验证官方 `ohdsi/webapi:3.0.0` 镜像并固定 Digest，只有需要 TrexSQL 等额外插件/配置时才创建受控派生镜像。拒绝 `atlas:2.x` 和开发浮动 tag。
 - ML 与本次 ATLAS 不互相阻断.ATLAS3 3.0.0 初版**不包含**旧版内置 Patient-Level Prediction 模块；ML 应由后续独立 OMOP 特征/训练 Pipeline 实现。
 
 ## Capabilities
