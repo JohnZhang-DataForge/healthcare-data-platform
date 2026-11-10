@@ -1,0 +1,50 @@
+{
+  "change": "deploy-local-ohdsi-atlas",
+  "source_name": "Local PG17 OMOP CDM 5.4",
+  "source_key": "LOCAL_OMOP",
+  "dialect": "postgresql",
+  "connection_string": "jdbc:postgresql://dw-postgre.dw-postgre.svc.cluster.local:5432/omop?connectTimeout=5&socketTimeout=25&ApplicationName=atlas3-local-omop",
+  "source_roles": {
+    "cdm": "cdm",
+    "vocabulary": "cdm",
+    "results": "atlas_results",
+    "temp": "atlas_temp"
+  },
+  "daimons": [
+    {
+      "daimonType": "CDM",
+      "tableQualifier": "cdm",
+      "priority": 0
+    },
+    {
+      "daimonType": "Vocabulary",
+      "tableQualifier": "cdm",
+      "priority": 1
+    },
+    {
+      "daimonType": "Results",
+      "tableQualifier": "atlas_results",
+      "priority": 0
+    },
+    {
+      "daimonType": "Temp",
+      "tableQualifier": "atlas_temp",
+      "priority": 0
+    }
+  ],
+  "db_secret": {
+    "namespace": "dw-atlas",
+    "name": "atlas-webapi-db",
+    "user_key": "app-username",
+    "password_key": "app-password"
+  },
+  "login_secret": {
+    "namespace": "dw-atlas",
+    "name": "atlas-initial-login",
+    "user_key": "username",
+    "password_key": "password"
+  },
+  "expected_database": "omop",
+  "target_node": "worker03",
+  "live_operation": "WebAPI 3.0 admin authenticated POST /WebAPI/source, at most once; no CDM DML/DDL"
+}
