@@ -27,6 +27,11 @@ spec:
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 8080}]
           env:
+            - {name: SERVER_SERVLET_CONTEXT_PATH, value: "/WebAPI"}
+            - {name: SECURITY_PROVIDER, value: AtlasRegularSecurity}
+            - {name: SPRING_DATASOURCE_HIKARI_MAXIMUMPOOLSIZE, value: "8"}
+            - {name: SPRING_DATASOURCE_HIKARI_MINIMUMIDLE, value: "1"}
+            - {name: SECURITY_AUTH_DB_DATASOURCE_DRIVERCLASSNAME, value: org.postgresql.Driver}
             - {name: DATASOURCE_DRIVERCLASSNAME, value: org.postgresql.Driver}
             - {name: DATASOURCE_URL, value: "jdbc:postgresql://dw-postgre.dw-postgre.svc.cluster.local:5432/omop?currentSchema=webapi"}
             - {name: DATASOURCE_OHDSI_SCHEMA, value: webapi}
@@ -49,12 +54,20 @@ spec:
             - {name: SECURITY_CORS_ALLOWED_ORIGINS, value: "https://atlas.johnzhang-dataforge.site"}
             - {name: SECURITY_AUTH_DB_ENABLED, value: "true"}
             - {name: SECURITY_AUTH_OIDC_ENABLED, value: "false"}
+            - {name: SECURITY_AUTH_LDAP_ENABLED, value: "false"}
+            - {name: SECURITY_AUTH_AD_ENABLED, value: "false"}
+            - {name: SECURITY_AUTH_WINDOWS_ENABLED, value: "false"}
+            - {name: SECURITY_AUTH_KERBEROS_ENABLED, value: "false"}
+            - {name: SECURITY_AUTH_OAUTH_GOOGLE_ENABLED, value: "false"}
+            - {name: SECURITY_AUTH_OAUTH_FACEBOOK_ENABLED, value: "false"}
+            - {name: SECURITY_AUTH_OAUTH_GITHUB_ENABLED, value: "false"}
             - {name: SECURITY_AUTH_DB_DATASOURCE_URL, value: "jdbc:postgresql://dw-postgre.dw-postgre.svc.cluster.local:5432/omop?currentSchema=webapi"}
             - name: SECURITY_AUTH_DB_DATASOURCE_USERNAME
               valueFrom: {secretKeyRef: {name: atlas-webapi-db, key: app-username}}
             - name: SECURITY_AUTH_DB_DATASOURCE_PASSWORD
               valueFrom: {secretKeyRef: {name: atlas-webapi-db, key: app-password}}
             - {name: SECURITY_AUTH_DB_DATASOURCE_SCHEMA, value: webapi}
+            - {name: SECURITY_AUTH_DB_DATASOURCE_MAXIMUMPOOLSIZE, value: "3"}
             - {name: SECURITY_ALLOWANONYMOUSACCESS, value: "false"}
             - name: SECURITY_JWT_SECRET
               valueFrom: {secretKeyRef: {name: atlas-webapi-db, key: jwt-secret}}
