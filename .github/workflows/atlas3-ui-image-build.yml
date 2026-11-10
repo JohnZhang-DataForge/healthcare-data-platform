@@ -84,7 +84,7 @@ jobs:
           SOURCE_SHA: ${{ github.sha }}
         run: |
           set -Eeuo pipefail
-          IMAGE="ghcr.io/johnzhang-dataforge/healthcare-atlas3-ui:3.0.0-$SOURCE_SHA"
+          IMAGE="ghcr.io/johnzhang-dataforge/healthcare-data-platform-atlas3-ui:3.0.0-$SOURCE_SHA"
           docker tag atlas3-ui:3.0.0-verify "$IMAGE"
           docker push "$IMAGE"
           docker buildx imagetools inspect "$IMAGE" | awk '/^Digest:[[:space:]]+sha256:/{print "ATLAS3_UI_PUBLISHED_DIGEST="$2;exit}'
