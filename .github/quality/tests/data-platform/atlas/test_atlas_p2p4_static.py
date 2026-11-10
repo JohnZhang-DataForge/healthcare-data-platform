@@ -86,9 +86,16 @@ class AtlasP2P4StaticTests(unittest.TestCase):
         self.assertEqual(contract["target_worker"], "worker03")
         self.assertEqual(contract["target_namespace"], "dw-atlas")
         self.assertEqual(contract["upstream_atlas3_version"], "v3.0.0")
-        self.assertFalse(contract["public_route_enabled"])
-        self.assertEqual(contract["pg_migration_status"], "NOT_EXECUTED")
-        self.assertEqual(contract["cluster_apply_status"], "NOT_EXECUTED")
+        # Runtime contract was updated by real Self-Runner PG17 / Source evidence.
+        self.assertTrue(contract["public_route_enabled"])
+        self.assertEqual(contract["pg_migration_status"], "EXECUTED_VERIFIED")
+        self.assertEqual(contract["cluster_apply_status"], "EXECUTED_VERIFIED")
+        self.assertEqual(contract["local_omop_source_key"], "LOCAL_OMOP")
+        self.assertEqual(contract["local_omop_source_id"], 1)
+        self.assertEqual(contract["local_omop_source_status"], "REGISTERED_VERIFIED")
+        self.assertEqual(contract["vocabulary_sql_search_status"], "PASS_2_REAL_RESULTS")
+        self.assertEqual(contract["observation_period_exact_count"], 0)
+        self.assertEqual(contract["cohort_results_status"], "NOT_INITIALIZED")
 
 
 if __name__ == "__main__":
