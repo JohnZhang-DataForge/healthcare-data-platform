@@ -67,3 +67,14 @@ Self-Runner merged [PR #705](https://github.com/JohnZhang-DataForge/Self-Runner/
 - Existing `.github/workflows/fabric-blob-task41-new-batch-source-offline.yml`: **41 tests** B1+B2+B3 passing [Run #42755316754](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42755316754); no Azure credential or Fabric OIDC
 
 Future actual Stage Writer binding must preserve **one existing Healthcare Ledger** and native clinical mapper, verified signed release and independent target readback, renewable Claim Lease heartbeat through compute, receipt-last and zero blind retries on unknown Job/PUT ACK. No new Blob container, account, identity, or G5 Gold permission is created by B3. OpenSpec Task 4.1/4.2 remain OPEN.
+
+
+## Task 4.1 B4 — Ed25519 Stage-specific release contract (SOURCE/OFFLINE ONLY)
+
+Self-Runner [PR #709](https://github.com/JohnZhang-DataForge/Self-Runner/pull/709) merged Main `d00f60d8bfc6fead7a25dac8209a1ba943d01634`:
+- `src/ci/fabric_blob_task41_b4_signed_stage_release.py` — source-level **independent** Ed25519 release verifier for exact StageScope, Batch, Manifest, Clinical/License, F1/F2/Native, version, Writer/Reader/target hashes, short UTC time window and nonce. Reuses the **one Shared Native canonical JSON**. It is not the existing G5 provenance-only attestation, contains **no private signing key or live issuer**, and cannot accept job-supplied production public roots. The production entry remains HALT.
+- `tests/ci/test_fabric_blob_task41_b4_signed_stage_release.py` — 18 new positive/negative source-only tests with ephemeral, test-only Ed25519 keypairs. Their positive signature result is NOT a production release or permission for Claim/Capacity/Writer.
+- `scripts/ci/fabric_blob_task41_b4_release_readiness.py` — sanitized authority-gap audit (zero native nonce, Blob claims and Fabric jobs); compiled/verified together with B1+B2+B3 through the existing `.github/workflows/fabric-blob-task41-new-batch-source-offline.yml`.
+- Actual [Run #42758578858](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42758578858) on ARC `dw-runner-set` SUCCESS: **12+12+17+18 = 59 PASS**. Artifact ID `13736846192`, ZIP SHA256 `7a785d240d06666c4ca22ddd388c6753c71c94a4515d7c7bd0af5903a1e7d9c9`. Hosted retries before this run failed at runner allocation without steps and are not code-test failures or accepted PASS.
+
+The next production work must onboard separate approved Clinical+License human keys, F1/F2 fresh evidence, Native protected signer/durable replay, reviewed stage-specific Writer and independent Target Reader, and continuous Lease renewal. Neither a B4 cryptographic fixture nor a Stage Claim bypasses those gates. Task 4.1 and 4.2 remain OPEN. Do not create a second Blob account/container or attach a production Fabric write identity in this source-only change.
