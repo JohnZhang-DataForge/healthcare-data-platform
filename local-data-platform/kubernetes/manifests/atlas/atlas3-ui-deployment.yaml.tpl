@@ -28,7 +28,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: atlas3-ui
-          image: __ATLAS3_UI_IMAGE_DIGEST__
+          image: ghcr.io/johnzhang-dataforge/healthcare-data-platform-atlas3-ui@sha256:cb18de851c4510908de7272a51b72d992f10c1250f170541be929b43789df3c9
           imagePullPolicy: IfNotPresent
           ports: [{name: http, containerPort: 8080}]
           readinessProbe:
