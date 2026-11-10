@@ -1,5 +1,8 @@
 # Design — single-container Blob Batch Control / Processed receipts (MVP)
 
+**2026-11-10 CURRENT POLICY (supersedes historical sections below):** No compulsory separate Clinical and License human signatures/reviewer keys for this synthetic FHIR-to-OMOP G5 project. Legacy signature code B2-B8 stays untouched. The current technical gate relies on real immutable Batch/Manifest/StageScope, physical Silver/Quarantine evidence, one Shared Mapper with DQ and explicit missing-value rules, physical F1 nine-source provenance plus valid Concept domains/dates, F2 double SQL/Shared identity fingerprint, trusted controlled Stage execution, Blob fencing and independent target readback. Actual third-party terminology licenses still apply; no fake approval or invented Concept. Old Native/G5 Writer human-review flags must be explicitly migrated rather than filled with fake True or SHA. No Candidate/Gold permission is granted here; Pipeline default HALT. The real F1 audit table remains 0/9 (Run 42844407716).
+
+
 ## 决策与唯一边界
 
 **已接受**：existing `johnzhang/landing` + one existing authorized Azure credential + two new virtual prefixes. 禁止新 `g5-trust-ledger` Container；禁止因这个 MVP 增加新的 Azure Storage Account、Identity、WORM 或 Fabric Capacity。一个 Credential 暂时贯穿本 MVP 的允许 Blob 操作；这个业务便利不意味着跳过真实性、哈希、身份和单次执行检查。不扩大原只读 Fabric WorkspaceIdentity Connection 的角色来碰运气：先只读确认现有 Blob Publisher/SP data-plane 权限是否足够；不足时保持 HOLD 并最小化单次授权请求。
