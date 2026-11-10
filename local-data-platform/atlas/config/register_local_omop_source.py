@@ -211,16 +211,22 @@ ROLLBACK;""")
     print("ATLAS_CONCEPT_GET_BODY_TYPE="+type(concept).__name__)
     if isinstance(concept,dict):
         print("ATLAS_CONCEPT_GET_KEYS="+",".join(sorted(concept.keys())[:18]))
-    # One independent search is attempted even if single-concept GET fails;
-    # never print backend error bodies, credentials or clinical rows.
-    search_code,results=http("GET","/vocabulary/LOCAL_OMOP/search?query=Male",jwt=jwt,timeout=35)
-    print("ATLAS_CONCEPT_SEARCH_HTTP="+str(search_code))
-    print("ATLAS_CONCEPT_SEARCH_BODY_TYPE="+type(results).__name__)
-    if isinstance(results,list):
-        print("ATLAS_CONCEPT_SEARCH_RESULT_COUNT="+str(len(results)))
-    assert code==200 and isinstance(concept,dict) and int(concept.get("conceptId",-1))==cid, "CONCEPT_GET_FAILED"
+    # v3.0.0 Concept JSON uses uppercase OMOP column names, not camelCase.
+    assert code==200 and isinstance(concept,dict) and int(concept.get("CONCEPT_ID",-1))==cid, "CONCEPT_GET_FAILED"
     print("ATLAS_CONCEPT_PG17_HTTP_ID_AGREE=PASS")
-    assert search_code==200 and isinstance(results,list) and len(results)>0, "CONCEPT_SEARCH_FAILED"
+    # Use v3 POST SQL-search API with tight Vocabulary filter. The v3 GET
+    # search endpoint invokes the index-backed SearchProvider and its first
+    # build can time out on the 1.95M-row local Vocabulary; avoid repeating
+    # that potentially costly query in the shared PG17 environment.
+    payload=json.dumps({"query":"Male","vocabularyId":["Gender"],"isLexical":False}).encode()
+    search_code,results=http("POST","/vocabulary/LOCAL_OMOP/search",body=payload,
+                             content_type="application/json",jwt=jwt,timeout=25)
+    print("ATLAS_CONCEPT_SQL_SEARCH_HTTP="+str(search_code))
+    print("ATLAS_CONCEPT_SQL_SEARCH_BODY_TYPE="+type(results).__name__)
+    if isinstance(results,list):
+        print("ATLAS_CONCEPT_SQL_SEARCH_RESULT_COUNT="+str(len(results)))
+    assert search_code==200 and isinstance(results,list) and len(results)>0, "CONCEPT_SQL_SEARCH_FAILED"
+    assert all(x.get("VOCABULARY_ID")=="Gender" for x in results), "CONCEPT_SEARCH_VOCABULARY_FILTER_MISMATCH"
     print("ATLAS_CONCEPT_SEARCH_REAL_PG17=PASS")
 
 def main():
