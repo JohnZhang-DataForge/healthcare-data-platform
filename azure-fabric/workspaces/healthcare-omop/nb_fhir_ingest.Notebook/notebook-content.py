@@ -1617,6 +1617,62 @@ def _g5_candidate_paths(scope) -> dict[str, str]:
             "approval": prefix + "/candidate_approval"}
 
 
+def _g5_dynamic_fhir_candidate_paths_source_only(scope, *, trusted_scope) -> dict[str, str]:
+    """Plan a NEW FHIR Candidate path bound to independently pinned v3 scope.
+
+    SOURCE_ONLY: deriving deterministic output paths is never a publication
+    approval, Stage release token, proof of Silver, or Delta write capability.
+    The protected controller must later verify the physical Silver, F1/F2,
+    source Manifest and Blob Claim before invoking any Native Writer.
+    Existing frozen P100/E5918 readback and Candidate paths stay unchanged.
+    """
+    # The published Fabric 0.1.7 Wheel cannot validate the v3 contract.
+    # Reject before importing newer APIs and before any Spark/Blob activity.
+    if engine_version != "0.1.13":
+        raise RuntimeError("HOLD_G5_DYNAMIC_0113_WHEEL_NOT_PUBLISHED")
+    from healthcare_data_engine.mapping.omop.candidate_publication import (
+        FrozenCandidateScope,
+    )
+    from healthcare_data_engine.security.provider_attestation import (
+        TrustedTechnicalScope, TransportHold,
+    )
+    if (type(scope) is not FrozenCandidateScope
+            or type(trusted_scope) is not TrustedTechnicalScope):
+        raise RuntimeError("HOLD_G5_DYNAMIC_TRUSTED_SCOPE_TYPE")
+    try:
+        trusted_scope.validate()
+    except TransportHold:
+        raise RuntimeError("HOLD_G5_DYNAMIC_TRUSTED_SCOPE_INVALID") from None
+    if (trusted_scope.source_format != "FHIR_R4"
+            or trusted_scope.stage != "CANDIDATE_APPROVED"
+            or scope.request_id != trusted_scope.request_id
+            or scope.source_system != trusted_scope.source_system
+            or scope.source_batch_id != trusted_scope.source_batch_id
+            or scope.manifest_sha256 != trusted_scope.manifest_sha256
+            or scope.mapping_sha256 != trusted_scope.mapping_profile_sha256
+            or scope.identity_snapshot_fingerprint
+                != trusted_scope.f2_identity_snapshot_fingerprint):
+        raise RuntimeError("HOLD_G5_DYNAMIC_STAGE_BATCH_OR_EVIDENCE_DRIFT")
+    # The existing small-batch physical content verifier caps each table at
+    # 10k rows. Larger batches require a separately reviewed chunked writer.
+    if scope.patient_count > 10000 or scope.encounter_count > 10000:
+        raise RuntimeError("HOLD_G5_DYNAMIC_UNSUPPORTED_LARGE_BATCH")
+    # These are safe, validated path components (FrozenCandidateScope + v3
+    # TrustedTechnicalScope each enforce strict grammar, no slash/traversal).
+    prefix = (
+        f"Files/omop_candidate/fhir_r4/{scope.hospital_id}/"
+        f"{scope.feed_id}/{scope.request_id}/"
+        f"stage={trusted_scope.stage_scope_version}/"
+        f"source_batch={scope.source_batch_id}/"
+        f"mapping={scope.mapping_sha256}"
+    )
+    return {
+        "person": prefix + "/person_candidate",
+        "visit": prefix + "/visit_candidate",
+        "approval": prefix + "/candidate_approval",
+    }
+
+
 def _g5_candidate_content(frame, *, key: str, expected: int) -> tuple[str, list[dict]]:
     """Bounded deterministic full-row digest; never log protected row values."""
     if (type(expected) is not int or not 0 < expected <= 10000
