@@ -152,6 +152,131 @@ class G5ProviderAttestationOffline(unittest.TestCase):
             t.verify_native_handoff_source_only(self.sign(packet))
         self.assertEqual(self.store.attempts, [])
 
+    @staticmethod
+    def dynamic_packet(source_format):
+        """SOURCE ONLY synthetic fixture: the expected scope is separately pinned."""
+        p = claims()
+        p["schema_version"] = t.DYNAMIC_TECHNICAL_SCHEMA
+        del p["clinical_review_sha256"]
+        del p["license_review_sha256"]
+        p.update(
+            source_format=source_format,
+            source_system=(
+                "synthea-fhir:atlanta-hospital-a:feed-11"
+                if source_format == "FHIR_R4"
+                else "hl7-v2:atlanta-hospital-a:adt-a01"),
+            request_id=("fhir-request-11" if source_format == "FHIR_R4"
+                        else "hl7-request-17"),
+            source_batch_id=("a" if source_format == "FHIR_R4" else "b") * 64,
+            manifest_sha256=("c" if source_format == "FHIR_R4" else "d") * 64,
+            mapping_profile_sha256=("e" if source_format == "FHIR_R4" else "f") * 64,
+            stage_scope_version=("3" if source_format == "FHIR_R4" else "4") * 64,
+            stage="CANDIDATE_APPROVED",
+            technical_evidence_sha256=("5" if source_format == "FHIR_R4"
+                                        else "6") * 64,
+            nonce_hex=("7" if source_format == "FHIR_R4" else "8") * 32,
+        )
+        scope = t.TrustedTechnicalScope(
+            request_id=p["request_id"],
+            source_batch_id=p["source_batch_id"],
+            manifest_sha256=p["manifest_sha256"],
+            mapping_profile_sha256=p["mapping_profile_sha256"],
+            stage_scope_version=p["stage_scope_version"],
+            source_format=p["source_format"],
+            source_system=p["source_system"],
+            stage=p["stage"],
+            f1_release_metadata_sha256=p["f1_release_metadata_sha256"],
+            f2_identity_snapshot_fingerprint=p["f2_identity_snapshot_fingerprint"],
+            technical_evidence_sha256=p["technical_evidence_sha256"],
+        )
+        return p, scope
+
+    def test_dynamic_v3_fhir_hl7_without_human_review_or_writer_authority(self):
+        for source_format in ("FHIR_R4", "HL7_V2"):
+            with self.subTest(source_format=source_format):
+                p, scope = self.dynamic_packet(source_format)
+                result = self.check(
+                    self.sign(p), expected_technical_scope=scope)
+                self.assertIsInstance(result, t.VerifiedTechnicalTransport)
+                self.assertEqual(
+                    result.status,
+                    "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
+                self.assertEqual(result.source_format, source_format)
+                self.assertEqual(result.source_batch_id, scope.source_batch_id)
+                self.assertEqual(result.stage_scope_version, scope.stage_scope_version)
+                self.assertEqual(result.technical_evidence_sha256,
+                                 scope.technical_evidence_sha256)
+                self.assertFalse(result.candidate_write_authorized)
+                self.assertFalse(result.gold_committed)
+                self.assertFalse(hasattr(result, "clinical_review_sha256"))
+                self.assertFalse(hasattr(result, "license_review_sha256"))
+                with self.assertRaisesRegex(t.TransportHold, "REPLAY_OR_LEDGER"):
+                    self.check(self.sign(p), expected_technical_scope=scope)
+
+    def test_dynamic_v3_denied_without_independent_trusted_scope(self):
+        p, scope = self.dynamic_packet("HL7_V2")
+        with self.assertRaisesRegex(
+                t.TransportHold, "TRUSTED_STAGE_SCOPE_REQUIRED"):
+            self.check(self.sign(p))
+        with self.assertRaisesRegex(
+                t.TransportHold, "TRUSTED_STAGE_SCOPE_REQUIRED"):
+            self.check(self.sign(p), expected_technical_scope=dict(scope.__dict__))
+        self.assertEqual(self.store.attempts, [])
+
+    def test_dynamic_v3_pins_every_stage_source_and_evidence_dimension(self):
+        p, scope = self.dynamic_packet("FHIR_R4")
+        for key, value in (
+            ("request_id", "another-request"), ("source_batch_id", "f" * 64),
+            ("source_format", "HL7_V2"),
+            ("source_system", "hl7-v2:atlanta-hospital-a:adt-a01"),
+            ("manifest_sha256", "f" * 64),
+            ("mapping_profile_sha256", "f" * 64),
+            ("stage", "GOLD_COMMITTED"),
+            ("stage_scope_version", "e" * 64),
+            ("f1_release_metadata_sha256", "f" * 64),
+            ("f2_identity_snapshot_fingerprint", "f" * 64),
+            ("technical_evidence_sha256", "f" * 64),
+        ):
+            with self.subTest(key=key):
+                bad = dict(p, **{key: value})
+                with self.assertRaisesRegex(
+                        t.TransportHold, "SCOPE_OR_CODE_PIN_DRIFT"):
+                    self.check(self.sign(bad), expected_technical_scope=scope)
+        self.assertEqual(self.store.attempts, [])
+
+    def test_dynamic_v3_strict_source_schema_and_signed_tamper(self):
+        p, scope = self.dynamic_packet("HL7_V2")
+        for wrong in (
+            {**p, "clinical_review_sha256": "7" * 64},
+            {**p, "license_review_sha256": "8" * 64},
+            {**p, "candidate_write_authorized": True},
+        ):
+            with self.assertRaisesRegex(t.TransportHold, "PAYLOAD_SCHEMA_INVALID"):
+                self.check(self.sign(wrong), expected_technical_scope=scope)
+        obj = __import__("json").loads(self.sign(p).decode("utf-8"))
+        obj["payload"]["manifest_sha256"] = "c" * 64
+        with self.assertRaises(t.TransportHold):
+            self.check(t.canonical_json(obj), expected_technical_scope=scope)
+        self.assertEqual(self.store.attempts, [])
+        with self.assertRaisesRegex(
+                t.TransportHold, "NOT_ONBOARDED"):
+            t.verify_native_handoff_source_only(self.sign(p))
+
+    def test_dynamic_v3_bad_trusted_scope_denied_before_nonce(self):
+        p, scope = self.dynamic_packet("FHIR_R4")
+        for bad in (
+            replace(scope, source_format="CSV"),
+            replace(scope, source_system="../other-source"),
+            replace(scope, stage="HALT"),
+            replace(scope, stage_scope_version="untrusted"),
+            replace(scope, request_id="../escape"),
+        ):
+            with self.subTest(bad=bad):
+                with self.assertRaisesRegex(
+                        t.TransportHold, "TRUSTED_STAGE_SCOPE_INVALID"):
+                    self.check(self.sign(p), expected_technical_scope=bad)
+        self.assertEqual(self.store.attempts, [])
+
     def test_no_production_keys_or_ledger_and_no_runtime_overrides(self):
         self.assertEqual(t.NATIVE_TRUSTED_PROVIDER_KEYS, {})
         self.assertIsNone(t.NATIVE_PINNED_PROVIDER_COMMIT)
