@@ -1,5 +1,5 @@
 # OpenSpec-Change: deploy-local-ohdsi-atlas
-# OpenSpec-Task: 4.0.4/4.0.5, operator-controlled job only.
+# OpenSpec-Task: 4.0.4; operator-controlled job only.
 # Apply with __RUN_ID__ replaced by controlled Self-Runner, never from main.
 # Reuses exactly the immutable Achilles image and DB role in the prior official job.
 apiVersion: batch/v1
