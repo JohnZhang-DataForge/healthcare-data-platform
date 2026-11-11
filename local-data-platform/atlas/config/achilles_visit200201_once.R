@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # OpenSpec-Change: deploy-local-ohdsi-atlas
-# OpenSpec-Task: 4.0.4, 4.0.5
+# OpenSpec-Task: 4.0.4
 # Exactly official OHDSI Achilles 1.7.2 analysis IDs 200 and 201.
 # NO full Achilles rerun; NO table recreation, no JSON export or CDM writes.
 # Only existing atlas_results.achilles_results rows for these IDs may mutate.
