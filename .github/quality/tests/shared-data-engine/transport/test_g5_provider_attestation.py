@@ -174,6 +174,7 @@ class G5ProviderAttestationOffline(unittest.TestCase):
             stage="CANDIDATE_APPROVED",
             technical_evidence_sha256=("5" if source_format == "FHIR_R4"
                                         else "6") * 64,
+            nonce_hex=("7" if source_format == "FHIR_R4" else "8") * 32,
         )
         scope = t.TrustedTechnicalScope(
             request_id=p["request_id"],
