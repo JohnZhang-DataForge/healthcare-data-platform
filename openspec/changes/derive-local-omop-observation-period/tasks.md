@@ -9,7 +9,7 @@
 
 ## P1 — candidate/writer and tests
 
-- [ ] 1.1 在已有 OMOP 组件目录建立唯一 SQL Candidate/Writer 合同，不重建 FHIR/HL7/CSV Mapper；测试起止日期、概念类型、空表默认停、重复/并发/PK/权限/日期漂移的拒绝边界。**源码候选已提交至** `local-data-platform/apps/omop_writer/observation_period_encounter_v1.sql` 与 `tests/omop_writer/test_observation_period_encounter_v1.py`，仅 PR CI 通过并合并后可勾选；无真实 DB 写入。
+- [ ] 1.1 在已有 OMOP 组件目录建立唯一 SQL Candidate/Writer 合同，不重建 FHIR/HL7/CSV Mapper；测试起止日期、概念类型、空表默认停、重复/并发/PK/权限/日期漂移的拒绝边界。**源码候选已提交至** `local-data-platform/apps/omop_writer/observation_period_encounter_v1.sql` 与 `.github/quality/tests/data-platform/omop/test_observation_period_encounter_v1.py`，仅 PR CI 通过并合并后可勾选；无真实 DB 写入。
 - [ ] 1.2 用独立 Self-Runner 仅执行 READ ONLY 候选值与 PG 角色边界审计，固定源计数 1394/200556、全部 ID 映射且观察期确实为0；不记录任何原始病人字段。
 
 ## P2 — protected live backup and rollback
