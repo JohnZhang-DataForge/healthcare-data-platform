@@ -108,7 +108,9 @@ class TrustedTechnicalScope:
         if (type(self) is not TrustedTechnicalScope
                 or not isinstance(self.request_id, str)
                 or not REQUEST.fullmatch(self.request_id)
+                or type(self.source_format) is not str
                 or self.source_format not in SOURCE_FORMATS
+                or type(self.stage) is not str
                 or self.stage not in STAGES
                 or not isinstance(self.source_system, str)
                 or not NAMESPACED_SOURCE.fullmatch(self.source_system)
