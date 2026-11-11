@@ -10,6 +10,8 @@
 - Native plan_and_write_g5_candidate_delta / execute_g5_person_visit_business already contain technical_evidence_sha256 + trusted_technical_release_gate; GoldBatch / gold_transaction already accept technical evidence with a separate release_gate and single_writer_fence. Legacy reviewer parameters remain backward-compatibility alternatives, not current policy. **Implementation of a protected live Stage controller and real released batches is missing**, so G5 task 2.6 stays open until integrated acceptance.
 - Self-Runner Main still includes deprecated F1 human-quorum blockers in fabric_p1_release_provenance_preflight.py; PR #748 proposes the technical-only policy correction. PR #753 proposes exact nine Blob full-bytes SHA streaming + UTC verification-event receipts, without Warehouse DML. Both OPEN and lack passing CI because GitHub-hosted job allocation failed with runner_id=0, steps=0. F1 physical source-audit was last independently reported 0/9; this is not a fresh SQL assertion. Do not invent nine verified audit entries or original release transaction provenance.
 
+- **Task interpretation**: G5 2.6 is not an instruction to rewrite the existing technical Candidate/Gold branches; it stays unchecked for authenticated live Controller wiring, F1/F2 evidence, version-isolated runtime and physical release/readback. This coordinating OpenSpec does not supersede the source owners' executable task ledgers.
+
 ## 2. Authoritative data / trust boundaries
 
 Source-specific, **owned separately**:
