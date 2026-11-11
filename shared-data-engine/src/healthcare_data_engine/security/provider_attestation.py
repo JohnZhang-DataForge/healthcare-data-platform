@@ -16,7 +16,15 @@ import re
 from typing import Callable, Mapping
 
 SCHEMA = "fabric-g5-provider-attestation-v1"  # Legacy human-review envelope
-TECHNICAL_SCHEMA = "fabric-g5-technical-evidence-transport-v2"
+TECHNICAL_SCHEMA = "fabric-g5-technical-evidence-transport-v2"  # Legacy frozen FHIR
+DYNAMIC_TECHNICAL_SCHEMA = "fabric-g5-technical-evidence-transport-v3"
+SOURCE_FORMATS = frozenset({"FHIR_R4", "HL7_V2"})
+STAGES = frozenset({"CANDIDATE_APPROVED", "GOLD_COMMITTED"})
+REQUEST = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{1,127}\Z")
+NAMESPACED_SOURCE = re.compile(
+    r"[A-Za-z][A-Za-z0-9_.-]{0,47}:[A-Za-z0-9][A-Za-z0-9_.-]{0,95}:"
+    r"[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\Z"
+)
 ISSUER = "g5-trusted-evidence-provider"
 AUDIENCE = "fabric-g5-native-controller"
 PURPOSE = "PROVENANCE_ONLY_NO_WRITE"
@@ -50,6 +58,12 @@ TECHNICAL_PAYLOAD_FIELDS = (
     PAYLOAD_FIELDS - {"clinical_review_sha256", "license_review_sha256"}
     | {"technical_evidence_sha256"}
 )
+# New-batch v3 is source-neutral: exact FHIR/HL7 StageScope and verified F1/F2
+# fingerprints are independently pinned by the controller, never trusted
+# merely because the provider signed a caller-supplied JSON dictionary.
+DYNAMIC_TECHNICAL_FIELDS = TECHNICAL_PAYLOAD_FIELDS | {
+    "source_format", "source_system", "stage", "stage_scope_version",
+}
 ENVELOPE_FIELDS = frozenset({"payload", "key_id", "signature_ed25519"})
 
 # Intentionally EMPTY. Only a separately reviewed immutable Native release
@@ -59,10 +73,55 @@ NATIVE_TRUSTED_PROVIDER_KEYS: dict[str, bytes] = {}
 NATIVE_PINNED_PROVIDER_COMMIT: str | None = None
 NATIVE_PINNED_CONTROLLER_SHA256: str | None = None
 NATIVE_ATOMIC_DURABLE_NONCE_CLAIM: Callable[[str, datetime], bool] | None = None
+# Unpopulated until controller independently validates a physical StageScope
+# against real approved Silver, Mapping, F1/F2 and authorized runtime identity.
+NATIVE_EXPECTED_TECHNICAL_SCOPE: TrustedTechnicalScope | None = None
 
 
 class TransportHold(ValueError):
     """Stable non-PHI diagnostics: never echo untrusted evidence or signatures."""
+
+
+@dataclass(frozen=True)
+class TrustedTechnicalScope:
+    """Independently authenticated Stage evidence supplied by protected code.
+
+    Neither this structure alone nor a signed transport permits SQL/Delta
+    writes. Only a trusted controller may construct it from independently
+    validated physical Batch/Manifest/StageScope + F1/F2/Concept evidence.
+    """
+    request_id: str
+    source_batch_id: str
+    manifest_sha256: str
+    mapping_profile_sha256: str
+    stage_scope_version: str
+    source_format: str
+    source_system: str
+    stage: str
+    f1_release_metadata_sha256: str
+    f2_identity_snapshot_fingerprint: str
+    technical_evidence_sha256: str
+    workspace_id: str = WORKSPACE_ID
+    warehouse_id: str = WAREHOUSE_ID
+
+    def validate(self) -> None:
+        if (type(self) is not TrustedTechnicalScope
+                or not isinstance(self.request_id, str)
+                or not REQUEST.fullmatch(self.request_id)
+                or self.source_format not in SOURCE_FORMATS
+                or self.stage not in STAGES
+                or not isinstance(self.source_system, str)
+                or not NAMESPACED_SOURCE.fullmatch(self.source_system)
+                or self.workspace_id != WORKSPACE_ID
+                or self.warehouse_id != WAREHOUSE_ID
+                or any(not isinstance(value, str) or not SHA64.fullmatch(value)
+                       for value in (
+                           self.source_batch_id, self.manifest_sha256,
+                           self.mapping_profile_sha256, self.stage_scope_version,
+                           self.f1_release_metadata_sha256,
+                           self.f2_identity_snapshot_fingerprint,
+                           self.technical_evidence_sha256))):
+            raise TransportHold("G5_TRANSPORT_TRUSTED_STAGE_SCOPE_INVALID")
 
 
 @dataclass(frozen=True)
@@ -94,6 +153,13 @@ class VerifiedTechnicalTransport:
     technical_evidence_sha256: str
     provider_commit_sha: str
     expires_at_utc: str
+    source_format: str | None = None
+    source_system: str | None = None
+    request_id: str | None = None
+    source_batch_id: str | None = None
+    manifest_sha256: str | None = None
+    stage_scope_version: str | None = None
+    stage: str | None = None
     candidate_write_authorized: bool = False
     gold_committed: bool = False
     provisional_ids_persisted: bool = False
@@ -147,25 +213,51 @@ def _utc(text: object) -> datetime:
 
 
 def _validate_payload(payload: object, *, expected_provider_commit: str,
-                      expected_controller_sha256: str, now: datetime) -> datetime:
+                      expected_controller_sha256: str, now: datetime,
+                      expected_technical_scope: TrustedTechnicalScope | None = None
+                      ) -> datetime:
     schema = payload.get("schema_version") if isinstance(payload, dict) else None
-    fields = (TECHNICAL_PAYLOAD_FIELDS if schema == TECHNICAL_SCHEMA else
-              PAYLOAD_FIELDS if isinstance(payload, dict) and
-              set(payload) == PAYLOAD_FIELDS else None)
+    fields = (
+        DYNAMIC_TECHNICAL_FIELDS if schema == DYNAMIC_TECHNICAL_SCHEMA else
+        TECHNICAL_PAYLOAD_FIELDS if schema == TECHNICAL_SCHEMA else
+        PAYLOAD_FIELDS if isinstance(payload, dict)
+        and set(payload) == PAYLOAD_FIELDS else None
+    )
     if fields is None or set(payload) != fields:
         raise TransportHold("G5_TRANSPORT_PAYLOAD_SCHEMA_INVALID")
-    # Preserve historical v1 negative contract: a v1-shaped forged version
-    # fails as a pinned scope/code drift, not silently becoming a new schema.
     required = {
         "schema_version": (
-            TECHNICAL_SCHEMA if schema == TECHNICAL_SCHEMA else SCHEMA), "issuer": ISSUER, "audience": AUDIENCE,
-        "purpose": PURPOSE, "workspace_id": WORKSPACE_ID,
-        "warehouse_id": WAREHOUSE_ID, "request_id": REQUEST_ID,
-        "source_batch_id": SOURCE_BATCH_ID, "manifest_sha256": MANIFEST_SHA,
-        "mapping_profile_sha256": MAPPING_PROFILE_SHA,
+            schema if schema in (TECHNICAL_SCHEMA, DYNAMIC_TECHNICAL_SCHEMA)
+            else SCHEMA),
+        "issuer": ISSUER, "audience": AUDIENCE, "purpose": PURPOSE,
+        "workspace_id": WORKSPACE_ID, "warehouse_id": WAREHOUSE_ID,
         "provider_commit_sha": expected_provider_commit,
         "native_controller_sha256": expected_controller_sha256,
     }
+    if schema == DYNAMIC_TECHNICAL_SCHEMA:
+        # New FHIR/HL7 batches must be pinned from a distinct trusted source.
+        # A signature alone authenticates only the issuer, NOT business facts.
+        if type(expected_technical_scope) is not TrustedTechnicalScope:
+            raise TransportHold("G5_TRANSPORT_TRUSTED_STAGE_SCOPE_REQUIRED")
+        expected_technical_scope.validate()
+        required.update({
+            field: getattr(expected_technical_scope, field)
+            for field in (
+                "request_id", "source_batch_id", "manifest_sha256",
+                "mapping_profile_sha256", "source_format", "source_system",
+                "stage", "stage_scope_version",
+                "f1_release_metadata_sha256", "f2_identity_snapshot_fingerprint",
+                "technical_evidence_sha256",
+            )
+        })
+    else:
+        # Legacy frozen FHIR v1/v2 intentionally retain their exact pins and
+        # original negative-test semantics. Never recast one as dynamic v3.
+        required.update({
+            "request_id": REQUEST_ID, "source_batch_id": SOURCE_BATCH_ID,
+            "manifest_sha256": MANIFEST_SHA,
+            "mapping_profile_sha256": MAPPING_PROFILE_SHA,
+        })
     if any(payload.get(field) != value for field, value in required.items()):
         raise TransportHold("G5_TRANSPORT_SCOPE_OR_CODE_PIN_DRIFT")
     evidence_fields = (
@@ -203,6 +295,7 @@ def _verify_source_only(
     expected_controller_sha256: str,
     atomic_durable_nonce_claim: Callable[[str, datetime], bool] | None,
     now: datetime,
+    expected_technical_scope: TrustedTechnicalScope | None = None,
 ) -> VerifiedTransport | VerifiedTechnicalTransport:
     """INTERNAL pure contract test seam. No release authority is returned.
 
@@ -222,6 +315,7 @@ def _verify_source_only(
     expiry = _validate_payload(
         payload, expected_provider_commit=expected_provider_commit,
         expected_controller_sha256=expected_controller_sha256, now=now,
+        expected_technical_scope=expected_technical_scope,
     )
     key_id = envelope["key_id"]
     if not isinstance(key_id, str) or not SHA64.fullmatch(key_id):
@@ -258,9 +352,13 @@ def _verify_source_only(
         raise TransportHold("G5_TRANSPORT_REPLAY_LEDGER_UNAVAILABLE") from None
     if accepted is not True:
         raise TransportHold("G5_TRANSPORT_REPLAY_OR_LEDGER_HOLD")
-    if payload["schema_version"] == TECHNICAL_SCHEMA:
+    if payload["schema_version"] in (TECHNICAL_SCHEMA, DYNAMIC_TECHNICAL_SCHEMA):
+        dynamic = payload["schema_version"] == DYNAMIC_TECHNICAL_SCHEMA
         return VerifiedTechnicalTransport(
-            status="G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE",
+            status=(
+                "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"
+                if dynamic else
+                "G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"),
             attestation_sha256=hashlib.sha256(raw).hexdigest(),
             mapping_profile_sha256=payload["mapping_profile_sha256"],
             f1_release_metadata_sha256=payload["f1_release_metadata_sha256"],
@@ -268,6 +366,13 @@ def _verify_source_only(
             technical_evidence_sha256=payload["technical_evidence_sha256"],
             provider_commit_sha=payload["provider_commit_sha"],
             expires_at_utc=payload["expires_at_utc"],
+            source_format=payload["source_format"] if dynamic else None,
+            source_system=payload["source_system"] if dynamic else None,
+            request_id=payload["request_id"] if dynamic else None,
+            source_batch_id=payload["source_batch_id"] if dynamic else None,
+            manifest_sha256=payload["manifest_sha256"] if dynamic else None,
+            stage_scope_version=payload["stage_scope_version"] if dynamic else None,
+            stage=payload["stage"] if dynamic else None,
         )
     return VerifiedTransport(
         status="G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
@@ -300,4 +405,5 @@ def verify_native_handoff_source_only(raw: bytes) -> VerifiedTransport | Verifie
         expected_controller_sha256=NATIVE_PINNED_CONTROLLER_SHA256,
         atomic_durable_nonce_claim=NATIVE_ATOMIC_DURABLE_NONCE_CLAIM,
         now=datetime.now(timezone.utc),
+        expected_technical_scope=NATIVE_EXPECTED_TECHNICAL_SCOPE,
     )
