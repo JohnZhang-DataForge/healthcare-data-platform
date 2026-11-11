@@ -36,9 +36,21 @@
   "vocabulary_concept_get_status": "PASS",
   "vocabulary_indexed_get_search_status": "UNVERIFIED_TIMEOUT",
   "observation_period_exact_count": 0,
-  "cohort_results_status": "NOT_INITIALIZED",
+  "cohort_results_status": "SCHEMA_INITIALIZED_VERIFIED",
   "research_cohort_status": "BLOCKED_OBSERVATION_PERIOD",
   "public_route_verified": true,
   "public_route_verification_run": "42840709079",
-  "public_route_contract_note": "This repository does not own/enable Cloudflare route. Route exists externally and was verified by independent HTTP readback."
+  "public_route_contract_note": "This repository does not own/enable Cloudflare route. Route exists externally and was verified by independent HTTP readback.",
+  "cohort_results_total_tables": 26,
+  "cohort_results_new_tables": 23,
+  "cohort_results_valid_new_indexes": 2,
+  "cohort_results_disabled_stale_heracles_indexes": 12,
+  "cohort_results_upstream_ddl_sha256": "efa013295577197e2824e3a847f8073c32f8f4641d0f53730dc8272f5efaf3e1",
+  "cohort_results_compatible_ddl_sha256": "59919cda369cbd23bba3e73ef5020beaf96532f3aca5e2c2b33d328a9b7ee769",
+  "cohort_results_real_pg_readback_run": "42984162727",
+  "atlas_research_private_backup_run": "42982698266",
+  "atlas_research_private_backup_sha256": "5624643d1255757e6836dcecd56e641685eb8d51ef8c1e85b7a27279a3a3c340",
+  "atlas_research_private_backup_verified": true,
+  "atlas_research_full_restore_drill_verified": false,
+  "observation_coverage_profile_run": "42984417059"
 }
