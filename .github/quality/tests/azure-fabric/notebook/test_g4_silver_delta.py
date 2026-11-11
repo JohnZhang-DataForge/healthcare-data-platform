@@ -435,6 +435,65 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         self.assertEqual(len(self.writes), 3)
         self.assertEqual(len(self.rechecked_source), 2)
 
+    @staticmethod
+    def technical_kwargs():
+        return {
+            "clinically_reviewed": False,
+            "license_reviewed": False,
+            "clinical_review_sha256": None,
+            "license_review_sha256": None,
+            "technical_evidence_sha256": "f" * 64,
+            # SOURCE-ONLY synthetic protected Stage callback. This fixture
+            # cannot onboard a real trusted controller or publish to Fabric.
+            "trusted_technical_release_gate": lambda _scope, _digest: True,
+        }
+
+    def test_p3_technical_only_approval_last_and_replay_without_humans(self):
+        args = self.technical_kwargs()
+        self.assertEqual(
+            self.invoke(**args), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        paths = nb._g5_candidate_paths(self.scope)
+        self.assertEqual(self.writes, [
+            paths["person"], paths["visit"], paths["approval"]])
+        receipt = self.spark.delta[paths["approval"]].rows[0]
+        self.assertEqual(
+            receipt["evidence_contract"], "G5_TECHNICAL_F1F2_V1")
+        self.assertEqual(
+            receipt["technical_evidence_sha256"], "f" * 64)
+        self.assertNotIn("clinical_review_sha256", receipt)
+        self.assertNotIn("license_review_sha256", receipt)
+        self.assertEqual(
+            self.invoke(**args), "G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
+        self.assertEqual(len(self.writes), 3)
+        # Historical signed-v1 cannot mistake a v2 technical receipt for
+        # an old two-human approved Candidate or silently overwrite it.
+        self.assertEqual(
+            self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
+        self.assertEqual(len(self.writes), 3)
+        self.assertEqual(
+            self.invoke(
+                mode="G5_CANDIDATE_READBACK_ONLY", write_authorized=False,
+                **{**args, "trusted_technical_release_gate": None}),
+            "G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
+        self.assertEqual(len(self.writes), 3)
+
+    def test_p3_technical_only_no_stage_owner_does_not_write(self):
+        args = self.technical_kwargs()
+        args["trusted_technical_release_gate"] = None
+        with self.assertRaisesRegex(RuntimeError, "STAGE_RELEASE_UNTRUSTED"):
+            self.invoke(**args)
+        self.assertFalse(self.rechecked_source)
+        self.assertFalse(self.writes)
+        args["technical_evidence_sha256"] = "bad SHA"
+        with self.assertRaisesRegex(RuntimeError, "EVIDENCE_SHA_NOT_PINNED"):
+            self.invoke(**args)
+        self.assertFalse(self.writes)
+        args["technical_evidence_sha256"] = "f" * 64
+        args["clinical_review_sha256"] = "d" * 64
+        with self.assertRaisesRegex(RuntimeError, "CANNOT_FORGE_REVIEWS"):
+            self.invoke(**args)
+        self.assertFalse(self.writes)
+
     def test_p3_partial_write_or_unknown_ack_requires_readback_not_retry(self):
         self.fail_after_first = True
         self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_UNKNOWN_ACK")
@@ -533,9 +592,9 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             self.assertFalse(self.rechecked_source)
             self.assertFalse(self.writes)
 
-    def test_real_business_entry_fails_on_missing_clinical_review_before_spark(self):
+    def test_real_business_entry_fails_on_missing_technical_release_before_spark(self):
         with self.assertRaisesRegex(RuntimeError,
-                                    "HOLD_G5_BUSINESS_P1_F2_APPROVAL_MISSING"):
+                                    "HOLD_G5_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING"):
             nb.execute_g5_person_visit_business(
                 self.spark, scope=self.scope, handoff=self.handoff,
                 concepts_from_verified_warehouse=None,
@@ -544,10 +603,8 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
                 patient_contract_json=PATIENT,
                 encounter_contract_json=ENCOUNTER,
                 mode="G5_CANDIDATE_WRITE", write_authorized=True,
-                clinically_reviewed=False, license_reviewed=False,
                 warehouse_snapshot_verified=False,
-                clinical_review_sha256="d"*64,
-                license_review_sha256="e"*64,
+                technical_evidence_sha256="d"*64,
                 warehouse_snapshot_sha256=self.scope.identity_snapshot_fingerprint)
         self.assertFalse(self.writes)
         self.assertFalse(self.spark.delta)
