@@ -1,7 +1,7 @@
 """Offline guard for scoped ACHILLES analyses 200/201.
 
 OpenSpec-Change: deploy-local-ohdsi-atlas
-OpenSpec-Task: 4.0.4, 4.0.5
+OpenSpec-Task: 4.0.4
 """
 from pathlib import Path
 import re
