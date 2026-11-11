@@ -83,6 +83,84 @@ class TargetConceptPreflightTests(unittest.TestCase):
         self.assertEqual(dict(((a, b), c) for a, b, c in
                               result.observed_counts)[VISIT], 5)
 
+    @staticmethod
+    def technical_profile(source):
+        p = profile_dict()
+        p["schema_version"] = "target-concept-v2"
+        p["source_system"] = source
+        del p["clinical_review_sha256"]
+        del p["license_review_sha256"]
+        raw, digest = encode(p)
+        return load_target_concept_profile(raw, digest, source)
+
+    def test_technical_v2_both_fhir_and_hl7_share_concept_preflight(self):
+        for name in (
+            "synthea-fhir:atlanta-hospital-a:feed-a",
+            "hl7-v2:atlanta-hospital-a:adt-a01",
+        ):
+            with self.subTest(source=name):
+                profile = self.technical_profile(name)
+                self.assertIsNone(profile.clinical_review_sha256)
+                self.assertIsNone(profile.license_review_sha256)
+                result = self.run_preflight(
+                    profile=profile, source_system=name)
+                self.assertEqual(
+                    result.status,
+                    "TARGET_CONCEPT_TECHNICAL_PREFLIGHT_ONLY_NOT_RELEASE")
+                self.assertEqual(result.concept_count, 3)
+
+    def test_technical_v2_requires_exact_profile_and_no_fake_review(self):
+        for name in ("fhir_r4:hospital-a:feed", "hl7_v2:hospital-a:feed"):
+            with self.subTest(name=name):
+                p = profile_dict()
+                p["schema_version"] = "target-concept-v2"
+                p["source_system"] = name
+                p.pop("clinical_review_sha256")
+                p.pop("license_review_sha256")
+                for modified in (
+                    {**p, "clinical_review_sha256": B},
+                    {**p, "license_review_sha256": C},
+                    {**p, "approved": True},
+                ):
+                    raw, digest = encode(modified)
+                    with self.assertRaisesRegex(
+                            TargetConceptHold, "PROFILE_SCHEMA_INVALID"):
+                        load_target_concept_profile(raw, digest, name)
+                raw, digest = encode(p)
+                with self.assertRaisesRegex(
+                        TargetConceptHold, "PROFILE_SHA_CONFLICT"):
+                    load_target_concept_profile(raw, B, name)
+                with self.assertRaisesRegex(
+                        TargetConceptHold, "SOURCE_OR_VERSION_MISMATCH"):
+                    load_target_concept_profile(raw, digest, "wrong:source:id")
+
+    def test_technical_v2_still_enforces_real_domain_and_vocab_date(self):
+        profile = self.technical_profile(SOURCE)
+        bad = fixture()["vocabulary_rows"]
+        bad[0]["valid_end_date"] = "2022-01-01"
+        with self.assertRaisesRegex(TargetConceptHold, "OUTSIDE_VALID_DATE"):
+            self.run_preflight(profile=profile, vocabulary_rows=bad)
+        bad = fixture()["vocabulary_rows"]
+        bad[1]["domain_id"] = "Measurement"
+        with self.assertRaisesRegex(TargetConceptHold, "WRONG_DOMAIN"):
+            self.run_preflight(profile=profile, vocabulary_rows=bad)
+        with self.assertRaisesRegex(TargetConceptHold, "VOCABULARY_RELEASE_MISMATCH"):
+            self.run_preflight(profile=profile, vocabulary_manifest_sha256=C)
+
+    def test_technical_v2_domain_policy_not_human_review_or_auto_approval(self):
+        profile = self.technical_profile(SOURCE)
+        good = self.run_preflight(
+            profile=profile, technical_field_domains={GENDER: "Gender"})
+        self.assertIn("NOT_RELEASE", good.status)
+        with self.assertRaisesRegex(TargetConceptHold, "DOMAIN_POLICY_AMBIGUOUS"):
+            self.run_preflight(
+                profile=profile,
+                reviewed_field_domains={GENDER: "Gender"},
+                technical_field_domains={GENDER: "Gender"})
+        with self.assertRaisesRegex(TargetConceptHold, "DOMAIN_OVERRIDE_FORBIDDEN"):
+            self.run_preflight(
+                profile=profile, technical_field_domains={RACE: "Measurement"})
+
     def test_wrong_domain_race_loinc_measurement_hold(self):
         bad = fixture()["vocabulary_rows"]
         bad[1]["domain_id"] = "Measurement"
