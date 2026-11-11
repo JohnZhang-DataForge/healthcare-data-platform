@@ -45,3 +45,10 @@ THEN SHALL 拒绝，而不是以 IF NOT EXISTS、UPSERT 或仅更新不匹配数
 ### Requirement: Observation Period readiness SHALL NOT imply Cohort study completion
 
 - Observation Period 完成后，ATLAS 的真实 Concept Set、Cohort Definition、Generation、Results 物理 E2E SHALL 分开验收。还没有执行 Cohort 的状态 MUST 标为未完成。
+
+#### Scenario: Observation Period is present but no Cohort has been generated
+
+GIVEN `cdm.observation_period` 的受控写入和独立只读验收均 PASS
+WHEN ATLAS 用户尚未执行真实 Cohort Definition/Generation 与 Results 物理查询
+THEN SHALL 仅标记 Observation Period 数据就绪
+AND SHALL NOT 将 ATLAS Cohort E2E 标为 PASS。
