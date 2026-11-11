@@ -27,9 +27,14 @@ DEFAULT_FIELD_DOMAINS = {
     ("cdm.visit_occurrence", "visit_concept_id"): "Visit",
     ("cdm.visit_occurrence", "visit_type_concept_id"): "Type Concept",
 }
-_FIELDS = frozenset({"schema_version", "source_system", "mapping_version",
-                     "vocabulary_manifest_sha256", "clinical_review_sha256",
-                     "license_review_sha256", "rules"})
+_LEGACY_FIELDS = frozenset({"schema_version", "source_system", "mapping_version",
+                            "vocabulary_manifest_sha256", "clinical_review_sha256",
+                            "license_review_sha256", "rules"})
+# New FHIR/HL7 Technical Admission profile binds Vocabulary and explicit
+# target rules, not nonexistent human reviewer receipts.
+_TECHNICAL_FIELDS = _LEGACY_FIELDS - {
+    "clinical_review_sha256", "license_review_sha256",
+}
 _RULE_FIELDS = frozenset({"target_table", "target_field", "source_code",
                           "concept_id", "domain_id"})
 _VOCAB_FIELDS = frozenset({"concept_id", "domain_id", "standard_concept",
@@ -91,8 +96,8 @@ class TargetConceptProfile:
     source_system: str
     mapping_version: str
     vocabulary_manifest_sha256: str
-    clinical_review_sha256: str
-    license_review_sha256: str
+    clinical_review_sha256: str | None
+    license_review_sha256: str | None
     mapping_sha256: str
     rules: tuple[TargetConceptRule, ...]
     status: str = "SOURCE_PROFILE_ONLY_NOT_CLINICALLY_APPROVED"
@@ -127,17 +132,25 @@ def load_target_concept_profile(
         data = json.loads(raw.decode("utf-8"), object_pairs_hook=unique)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise TargetConceptHold("TARGET_CONCEPT_PROFILE_INVALID_JSON") from exc
-    if not isinstance(data, dict) or set(data) != _FIELDS:
+    schema = data.get("schema_version") if isinstance(data, dict) else None
+    expected_fields = (
+        _LEGACY_FIELDS if schema == "target-concept-v1"
+        else _TECHNICAL_FIELDS if schema == "target-concept-v2" else None
+    )
+    if expected_fields is None or set(data) != expected_fields:
         raise TargetConceptHold("TARGET_CONCEPT_PROFILE_SCHEMA_INVALID")
-    if (data["schema_version"] != "target-concept-v1"
-            or not isinstance(source_system, str) or not source_system
+    if (not isinstance(source_system, str) or not source_system
             or data["source_system"] != source_system
             or not isinstance(data["mapping_version"], str)
             or not data["mapping_version"].strip()):
         raise TargetConceptHold("TARGET_CONCEPT_SOURCE_OR_VERSION_MISMATCH")
     vocab = _sha(data["vocabulary_manifest_sha256"])
-    clinical = _sha(data["clinical_review_sha256"])
-    license_sha = _sha(data["license_review_sha256"])
+    if schema == "target-concept-v1":
+        clinical = _sha(data["clinical_review_sha256"])
+        license_sha = _sha(data["license_review_sha256"])
+    else:
+        # A technical v2 source profile is not a disguised human attestation.
+        clinical = license_sha = None
     if not isinstance(data["rules"], list) or not data["rules"]:
         raise TargetConceptHold("TARGET_CONCEPT_RULES_EMPTY")
     rules = []
@@ -151,9 +164,14 @@ def load_target_concept_profile(
             raise TargetConceptHold("TARGET_CONCEPT_SOURCE_COLLATION_COLLISION")
         seen.add(identity)
         rules.append(rule)
+    status = (
+        "SOURCE_TECHNICAL_CONCEPT_PROFILE_ONLY_NOT_RELEASE"
+        if schema == "target-concept-v2"
+        else "SOURCE_PROFILE_ONLY_NOT_CLINICALLY_APPROVED"
+    )
     return TargetConceptProfile(source_system, data["mapping_version"], vocab,
                                 clinical, license_sha, expected_sha256,
-                                tuple(rules))
+                                tuple(rules), status=status)
 
 
 def inspect_target_concepts(
@@ -165,12 +183,15 @@ def inspect_target_concepts(
     effective_date: date,
     registry: EntityRegistry = DEFAULT_OMOP_REGISTRY,
     reviewed_field_domains: Mapping[tuple[str, str], str] | None = None,
+    technical_field_domains: Mapping[tuple[str, str], str] | None = None,
 ) -> TargetConceptPreflight:
-    """Pure structural/domain/validity preflight, never review signoff.
+    """Pure source/code/domain/validity preflight, never writer authority.
 
-    The caller MUST independently prove Vocabulary release/license rights,
-    clinical reviewer signoff, source counts and real physical readback.
-    Hashes of claimed evidence do not substitute for those real checks.
+    v2 does not require a human Clinical/License signature. The caller MUST
+    still independently check actual source-code semantics, Vocabulary
+    provenance and usage rights, physical SQL, DQ and readback. A claimed
+    digest or technically valid Concept does not prove clinical equivalence.
+    The older reviewed_field_domains alias is retained for legacy callers.
     """
     if not isinstance(profile, TargetConceptProfile) or profile.source_system != source_system:
         raise TargetConceptHold("TARGET_CONCEPT_SOURCE_MISMATCH")
@@ -180,8 +201,16 @@ def inspect_target_concepts(
     if not isinstance(registry, EntityRegistry):
         raise TargetConceptHold("TARGET_CONCEPT_REGISTRY_INVALID")
     tables = {t.table for d in registry.definitions for t in d.targets}
+    if reviewed_field_domains is not None and technical_field_domains is not None:
+        raise TargetConceptHold("TARGET_CONCEPT_DOMAIN_POLICY_AMBIGUOUS")
+    additional_domains = (
+        technical_field_domains if technical_field_domains is not None
+        else reviewed_field_domains
+    )
+    if additional_domains is not None and not isinstance(additional_domains, Mapping):
+        raise TargetConceptHold("TARGET_CONCEPT_DOMAIN_POLICY_INVALID")
     allowed = dict(DEFAULT_FIELD_DOMAINS)
-    for field, domain in (reviewed_field_domains or {}).items():
+    for field, domain in (additional_domains or {}).items():
         if (not isinstance(field, tuple) or len(field) != 2
                 or not isinstance(domain, str) or not domain
                 or field in allowed and allowed[field] != domain):
@@ -238,6 +267,11 @@ def inspect_target_concepts(
             raise TargetConceptHold("TARGET_CONCEPT_NONSTANDARD_OR_INVALID")
         if not _day(item["valid_start_date"]) <= as_of <= _day(item["valid_end_date"]):
             raise TargetConceptHold("TARGET_CONCEPT_OUTSIDE_VALID_DATE")
+    status = (
+        "TARGET_CONCEPT_TECHNICAL_PREFLIGHT_ONLY_NOT_RELEASE"
+        if profile.status == "SOURCE_TECHNICAL_CONCEPT_PROFILE_ONLY_NOT_RELEASE"
+        else "TARGET_CONCEPT_PREFLIGHT_ONLY_NOT_CLINICALLY_APPROVED"
+    )
     return TargetConceptPreflight(profile.mapping_sha256,
                                   profile.vocabulary_manifest_sha256,
-                                  len(actual), tuple(sorted(totals)))
+                                  len(actual), tuple(sorted(totals)), status=status)
