@@ -1,5 +1,10 @@
 # Design — single-container Blob Batch Control / Processed receipts (MVP)
 
+### 2026-11-10 Shared technical evidence transport update
+
+The common Shared Engine source-only admission contracts are now `target-concept-v2` (FHIR/HL7 shared Concept rules without two human review SHAs) and the **new** `fabric-g5-technical-evidence-transport-v3` for dynamic FHIR_R4/HL7_V2 batches. The v3 trusted controller MUST independently pin physical source BatchContext/StageScope, delivered Manifest SHA, mapping Profile, real F1/F2 evidence and Stage before accepting a signed technical envelope; it cannot derive its expected scope from that same envelope. Historical fixed-FHIR signed-v1 and technical-v2 remain unchanged. This does not replace Blob Claim/Lease/CAS, Native transport onboarding, independent Delta/Warehouse readback, receipt-last, legal Vocabulary-use requirements or the current F1 source audit 0/9 HOLD. Shared source Wheel 0.1.13 is not automatically deployed or a Writer capability.
+
+
 **2026-11-10 CURRENT POLICY (supersedes historical sections below):** No compulsory separate Clinical and License human signatures/reviewer keys for this synthetic FHIR-to-OMOP G5 project. Legacy signature code B2-B8 stays untouched. The current technical gate relies on real immutable Batch/Manifest/StageScope, physical Silver/Quarantine evidence, one Shared Mapper with DQ and explicit missing-value rules, physical F1 nine-source provenance plus valid Concept domains/dates, F2 double SQL/Shared identity fingerprint, trusted controlled Stage execution, Blob fencing and independent target readback. Actual third-party terminology licenses still apply; no fake approval or invented Concept. Old Native/G5 Writer human-review flags must be explicitly migrated rather than filled with fake True or SHA. No Candidate/Gold permission is granted here; Pipeline default HALT. The real F1 audit table remains 0/9 (Run 42844407716).
 
 
