@@ -22,6 +22,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`generate_second_new_only_fenced_rollback.py`](../../../../local-data-platform/apps/omop_writer/generate_second_new_only_fenced_rollback.py) | 历史第二批 Fenced Writer 回滚语句生成 |
 | [`joint_s3_rollback.py`](../../../../local-data-platform/apps/omop_writer/joint_s3_rollback.py) | Person/Visit 联合诊断回滚；注意 Sequence 副作用 |
 | [`new_only_airflow_writer.py`](../../../../local-data-platform/apps/omop_writer/new_only_airflow_writer.py) | Airflow KPO 调用的受控 NEW_ONLY 原子 Writer |
+| [`observation_period_encounter_v1.sql`](../../../../local-data-platform/apps/omop_writer/observation_period_encounter_v1.sql) | **新独立业务 Change** `derive-local-omop-observation-period`：仅在精确备份/ROLLBACK/门禁后生成纯合成数据的 `cdm.observation_period`；源为已物化 Visit，**不是新的 Person/Visit Mapper**，也不允许 Main 合并自动执行 |
 | [`precommit_gate.py`](../../../../local-data-platform/apps/omop_writer/precommit_gate.py) | Batch/Person/Visit/外键/数据库来源冲突只读 Precommit Guard |
 | [`verify_real_postgres_readonly.py`](../../../../local-data-platform/apps/omop_writer/verify_real_postgres_readonly.py) | PG cdm_reader 权限和 Precommit 只读验证 |
 
