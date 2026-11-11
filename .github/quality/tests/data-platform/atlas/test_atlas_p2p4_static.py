@@ -95,7 +95,15 @@ class AtlasP2P4StaticTests(unittest.TestCase):
         self.assertEqual(contract["local_omop_source_id"], 1)
         self.assertEqual(contract["local_omop_source_status"], "REGISTERED_VERIFIED")
         self.assertEqual(contract["vocabulary_sql_search_status"], "PASS_2_REAL_RESULTS")
-        self.assertEqual(contract["observation_period_exact_count"], 0)
+        self.assertEqual(contract["observation_period_exact_count"], 1394)
+        self.assertEqual(contract["observation_period_type_concept_id"], 44814724)
+        self.assertEqual(contract["observation_period_physical_commit_run"], "43014735694")
+        self.assertEqual(contract["cohort_definition_id"], 1)
+        self.assertEqual(contract["cohort_execution_id"], 1)
+        self.assertEqual(contract["cohort_native_generation_status"], "COMPLETED")
+        self.assertEqual(contract["cohort_results_rows"], 1394)
+        self.assertEqual(contract["cohort_results_distinct_persons"], 1394)
+        self.assertEqual(contract["cohort_generation_concept_sets_used"], 0)
         self.assertEqual(contract["cohort_results_status"], "SCHEMA_INITIALIZED_VERIFIED")
         self.assertEqual(contract["cohort_results_total_tables"], 26)
         self.assertEqual(contract["cohort_results_new_tables"], 23)
@@ -105,7 +113,7 @@ class AtlasP2P4StaticTests(unittest.TestCase):
         self.assertEqual(contract["atlas_research_private_backup_run"], "42982698266")
         self.assertTrue(contract["atlas_research_private_backup_verified"])
         self.assertFalse(contract["atlas_research_full_restore_drill_verified"])
-        self.assertEqual(contract["research_cohort_status"], "BLOCKED_OBSERVATION_PERIOD")
+        self.assertEqual(contract["research_cohort_status"], "VISIT_COHORT_REAL_GENERATION_PASS_CONCEPT_SET_PENDING")
 
 
 if __name__ == "__main__":
