@@ -52,7 +52,8 @@ class FabricGitNativeContract(unittest.TestCase):
 
     def test_g5_engine_package_016_is_distinct_from_adapter_record_010(self):
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
-        self.assertEqual(content.count('if engine_version != "0.1.7":'), 3)  # ETL, runtime smoke and source-only intake
+        self.assertEqual(content.count('if engine_version != "0.1.7":'), 2)  # old P2 runtime and G4 intake still pinned
+        self.assertIn('if engine_version not in ("0.1.7", "0.1.13"):', content)
         self.assertNotIn('if engine_version != "0.1.0":', content)
         self.assertIn('(F.col("adapter_version") != "0.1.0")', content)
         # Engine is a published dependency version; adapter_version is the

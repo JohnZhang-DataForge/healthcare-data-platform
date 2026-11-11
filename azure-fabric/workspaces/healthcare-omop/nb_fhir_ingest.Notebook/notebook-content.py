@@ -238,7 +238,9 @@ def prepare_batch(spark, *, context: BatchContext, manifest_bytes: bytes,
                   source_objects: Iterable[SourceObject],
                   patient_contract_bytes: bytes, encounter_contract_bytes: bytes) -> PreparedBatch:
     """Offline-executable conversion using injected SparkSession, no persisted output."""
-    if engine_version != "0.1.7":
+    # New G5 source-only readback may reproduce Canonical bytes with 0.1.13.
+    # All historical G3/G4 entrypoints still independently pin GA 0.1.7.
+    if engine_version not in ("0.1.7", "0.1.13"):
         raise ValueError("SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH")
     objects = tuple(source_objects)
     receipts = verify_source_objects(manifest_bytes, objects, context)
@@ -1671,6 +1673,114 @@ def _g5_dynamic_fhir_candidate_paths_source_only(scope, *, trusted_scope) -> dic
         "visit": prefix + "/visit_candidate",
         "approval": prefix + "/candidate_approval",
     }
+
+
+def verify_fhir_g5_dynamic_silver_source_readonly(
+    spark, *, scope, trusted_scope, source_ingest_date,
+    patient_contract_json: str, encounter_contract_json: str,
+) -> str:
+    """Reopen and independently recompute NEW FHIR G4 Silver, SOURCE_ONLY.
+
+    The trusted controller must supply exact previously persisted Stage/Batch
+    identity and original source-ingest date. All actual source objects are
+    reread from durable Bronze bytes and reprocessed through the SINGLE
+    existing Shared FHIR adapter and Canonical engine. Persisted Patient,
+    Encounter, Quarantine absence and exact Approval-LAST are independently
+    reopened and checked. This function does NOT verify F1/F2 Gold authority,
+    Azure external Blob WORM, Stage Claim/Lease or receipt; NO Writer dispatch.
+    """
+    # Fail before even touching Spark: the published Fabric wheel is still
+    # 0.1.7, and Notebook/Pipeline must retain a separate HALT fence.
+    if engine_version != "0.1.13":
+        raise RuntimeError("HOLD_G5_DYNAMIC_0113_WHEEL_NOT_PUBLISHED")
+    if run_mode != "HALT" or write_authorized is not False:
+        raise RuntimeError("HOLD_G5_DYNAMIC_SILVER_NONHALT_OR_WRITE_FLAG")
+    from datetime import date, datetime, timezone
+    if (type(source_ingest_date) is not date
+            or scope is None
+            or scope.hospital_id != _G3_HOSPITAL
+            or scope.feed_id != _G3_FEED
+            or scope.silver_processing_version != _G4_PROCESSING):
+        raise RuntimeError("HOLD_G5_DYNAMIC_G4_SOURCE_VERSION_OR_DATE")
+    # This planner is a pure, typed v3 trust-scope/batch boundary. It never
+    # returns authority to publish and is deliberately not the Writer path.
+    _g5_dynamic_fhir_candidate_paths_source_only(
+        scope, trusted_scope=trusted_scope)
+    if (not isinstance(patient_contract_json, str)
+            or not isinstance(encounter_contract_json, str)
+            or not 0 < len(patient_contract_json) <= 5000
+            or not 0 < len(encounter_contract_json) <= 5000):
+        raise RuntimeError("HOLD_G5_DYNAMIC_CANONICAL_CONTRACT_BYTES")
+    pb = patient_contract_json.encode("utf-8")
+    eb = encounter_contract_json.encode("utf-8")
+    load_pinned_contract(pb, "patient")
+    load_pinned_contract(eb, "encounter")
+    context = BatchContext(
+        hospital_id=scope.hospital_id,
+        feed_id=scope.feed_id,
+        source_system="synthea-fhir", request_id=scope.request_id,
+        manifest_sha256=scope.manifest_sha256,
+        processing_version=_G4_PROCESSING,
+        processing_run_id="g4:" + scope.request_id,
+        source_version="FHIR_R4",
+        source_ingest_date=source_ingest_date,
+        processed_at=datetime.now(timezone.utc),
+    )
+    if context.source_batch_id != scope.source_batch_id:
+        raise RuntimeError("HOLD_G5_DYNAMIC_DERIVED_BATCH_SHA_DRIFT")
+    # Read original, fixed Landing Manifest bytes from the existing approved
+    # hospital/feed namespace, never from an arbitrary path or query argument.
+    original_manifest = (
+        f"{_G3_SOURCE_ROOT}/clinical/v1/{_G3_HOSPITAL}/"
+        f"{_G3_FEED}/{scope.request_id}/landing-manifest.json")
+    rows = spark.read.format("binaryFile").load(
+        original_manifest).select("content").collect()
+    if (len(rows) != 1
+            or not isinstance(rows[0].content,
+                              (bytes, bytearray, memoryview))):
+        raise RuntimeError("HOLD_G5_DYNAMIC_LANDING_MANIFEST_NOT_ONE")
+    manifest_bytes = bytes(rows[0].content)
+    if hashlib.sha256(manifest_bytes).hexdigest() != scope.manifest_sha256:
+        raise RuntimeError("HOLD_G5_DYNAMIC_LANDING_MANIFEST_SHA_DRIFT")
+    specs = _manifest_objects(manifest_bytes, context)
+    if not 1 <= len(specs) <= 5000:
+        raise RuntimeError("HOLD_G5_DYNAMIC_SOURCE_OBJECT_COUNT")
+    expected = _g3_expected_receipts(context, specs)
+    paths = _g4_paths(scope.request_id)
+    exists = {key: _g3_delta_exists(spark, path)
+              for key, path in paths.items()}
+    if (not all(exists[k] for k in
+                ("bronze", "patient", "encounter", "approval"))
+            or exists["quarantine"]):
+        raise RuntimeError("HOLD_G5_DYNAMIC_SILVER_PARTIAL_OR_QUARANTINED")
+    # Reopen original raw Bronze bytes, and then re-run only the existing
+    # Shared FHIR normalizers and the canonical DQ/reconciliation logic.
+    sources = _g4_snapshot_source_objects(
+        spark, paths["bronze"], expected, context)
+    batch = prepare_batch(
+        spark, context=context, manifest_bytes=manifest_bytes,
+        source_objects=sources, patient_contract_bytes=pb,
+        encounter_contract_bytes=eb)
+    if (batch.findings or batch.patient_count != scope.patient_count
+            or batch.encounter_count != scope.encounter_count
+            or batch.source_batch_id != scope.source_batch_id
+            or batch.manifest_sha256 != scope.manifest_sha256
+            or batch.processing_version != scope.silver_processing_version
+            or batch.publication_id != scope.silver_publication_id):
+        raise RuntimeError("HOLD_G5_DYNAMIC_RECOMPUTED_DQ_OR_PUBLICATION")
+    # Two fresh Silver Delta reads, full-row multiset comparison, PK/FK,
+    # source namespace, canonical version and bounded exact Stage counts.
+    patient = spark.read.format("delta").load(paths["patient"])
+    encounter = spark.read.format("delta").load(paths["encounter"])
+    validate_silver_readback(patient, encounter, batch, context)
+    _g4_validate_full_delta(batch.patient_df, patient, "patient")
+    _g4_validate_full_delta(batch.encounter_df, encounter, "encounter")
+    approved = spark.read.format("delta").load(paths["approval"]).collect()
+    expected_approval = _g4_approval_row(context, batch, pb, eb)
+    if (len(approved) != 1
+            or approved[0].asDict(recursive=True) != expected_approval):
+        raise RuntimeError("HOLD_G5_DYNAMIC_APPROVAL_LAST_FENCE_DRIFT")
+    return "G5_DYNAMIC_FHIR_SILVER_PHYSICAL_RECOMPUTE_PASS_SOURCE_ONLY_NO_RELEASE"
 
 
 def _g5_candidate_content(frame, *, key: str, expected: int) -> tuple[str, list[dict]]:

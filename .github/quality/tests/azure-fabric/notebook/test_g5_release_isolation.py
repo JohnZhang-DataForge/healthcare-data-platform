@@ -61,7 +61,8 @@ class G5NativeWheelIsolation(unittest.TestCase):
             PINNED_WHEEL_SHA256)
         source = NATIVE.read_text(encoding="utf-8")
         self.assertEqual(
-            source.count('if engine_version != "0.1.7":'), 3)
+            source.count('if engine_version != "0.1.7":'), 2)
+        self.assertIn('if engine_version not in ("0.1.7", "0.1.13"):', source)
         self.assertIn('run_mode = "HALT"', source)
         self.assertIn('fhir-silver-canonical-v1:engine-0.1.1', source)
         self.assertNotIn("write_authorized = True", source)
