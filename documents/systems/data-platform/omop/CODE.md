@@ -56,6 +56,7 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 
 | 真实跨组件源码 | 职责和唯一部署归属 |
 | --- | --- |
+| [ATLAS3 官方 Visit-only ACHILLES 修复 Job](../../../../local-data-platform/kubernetes/manifests/atlas/achilles-visit200201-once-job.yaml.tpl) | 官方面向 `analysisIds=200,201` 计算 Visit 统计，仅写已有 `atlas_results`；由 ATLAS 唯一执行归属（[ATLAS CODE](../atlas/CODE.md)）。这里仅登记存量镜像/Kubernetes 单独清单的仓库 CODE map 强制所有权，绝不由 OMOP Writer 自动启动。 |
 | [ATLAS3 官方 ACHILLES 一次性 Job](../../../../local-data-platform/kubernetes/manifests/atlas/achilles-local-omop-once-job.yaml) | 对 CDM 做只读聚合、只写 atlas_results；**由 ATLAS 组件实际所有**（[ATLAS CODE](../atlas/CODE.md)），此处仅为既有统一 image/k8s 索引检查器尚未识别 ATLAS 新组件的兼容入口，不得由 OMOP Writer 执行或变更 |
 
 ## 关联入口
