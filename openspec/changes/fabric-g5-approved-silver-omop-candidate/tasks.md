@@ -30,6 +30,7 @@ Self-Runner now has a distinct unsigned technical source/read-only F1/F2 code pa
 ## 3. Fabric Candidate and Pipeline
 
 - [ ] 3.1 原生 Notebook 保留 HALT 与 Fabric cell 格式，增加 approved Silver 真正独立读回入口；要求精确批次 SHA/processing/Approval，不触碰已通过 G4 数据。
+- [ ] 3.1.1 **FHIR Native dynamic StageScope path preflight (SOURCE_ONLY)**: use the single Shared 0.1.13 v3 typed trusted scope plus frozen F2 Candidate scope to plan collision-isolated FHIR paths per Request/Batch/StageScope/Mapping; reject HL7, Gold, SHA or namespace drift, invalid controller scope, unsupported count, and un-Published 0.1.13; retain frozen G4 P100/E5918, current Fabric 0.1.7, run_mode HALT, and existing Native Writer fence. This does NOT perform dynamic Silver physical proof, connect a Stage release gate, install wheel, or approve Candidate/Gold. Full 3.1/3.2–4.x remain OPEN.
 - [ ] 3.2 Candidate-only 物理 Delta 首次写入、独立完整重读、Approval-last fence、异常/HOLD 与 replay SKIP；不冒充 OMOP Gold。
 - [ ] 3.3 原生 pl_fhir_ingest 编排 fail-closed read-only → Candidate；无 schedule、retry=0、默认 HALT；Pipeline SUCCESS 不代替 Candidate 读回。
 - [ ] 3.4 Native + Notebook + Pipeline 代码/参数的离线 CI/安全负向测试 PASS，并完成云端真实 definition 独立读回。
