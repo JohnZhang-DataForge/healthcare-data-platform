@@ -1,0 +1,31 @@
+name: Local OMOP Observation Period v1 source and no-DML execution guard
+# OpenSpec-Change: derive-local-omop-observation-period
+# OpenSpec-Task: 1.1
+on:
+  pull_request:
+    paths:
+      - local-data-platform/apps/omop_writer/observation_period_encounter_v1.sql
+      - local-data-platform/tests/omop_writer/test_observation_period_encounter_v1.py
+      - .github/workflows/omop-observation-period-source-guard.yml
+      - openspec/changes/derive-local-omop-observation-period/**
+  push:
+    branches: [main]
+    paths:
+      - local-data-platform/apps/omop_writer/observation_period_encounter_v1.sql
+      - local-data-platform/tests/omop_writer/test_observation_period_encounter_v1.py
+permissions: {contents: read}
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - name: Unit tests for fixed-snapshot one-table SQL
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 -m unittest discover -s local-data-platform/tests/omop_writer -p test_observation_period_encounter_v1.py -v
+          sha256sum local-data-platform/apps/omop_writer/observation_period_encounter_v1.sql
+          echo OP_V1_SOURCE_STATIC_CONTRACT=PASS
+          echo OP_V1_PG_K8S_AZURE_WRITES=NONE
