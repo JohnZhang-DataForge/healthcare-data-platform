@@ -5,11 +5,11 @@
 - [x] 0.1 重新核对 Healthcare/Self-Runner Main、并行 PR/Actions、现有 ATLAS3 Results 实体、PG17 物理 Person/Visit/OP 及 OHDSI CDM 5.4 规则。
 - [x] 0.2 只读来源 Map/Stage/Batch/Manifest SHA 与历史差额预检：19 个 Task004 Ledger、18 个 Landing 精确匹配，当前 Stage 1281/194757、完整 Person/Visit ID Map 1394/200556；历史 pre-Stage 113/5799 与未匹配 Batch 23/3592 均明确告警，不假装补完。
 - [x] 0.3 只读核实 `44814724`（Period covering healthcare encounters）有效，1,394 个人的 event-bounded 候选全合法，2 个跨度 <30 天；禁止把推断观察期当作保险覆盖或全部长期完备病史。
-- [ ] 0.4 本独立业务 Change 的 OpenSpec Spec/Tasks/Design 与 CI PASS、合并后独立读取 Main；前面 G0 项的核实仅代表运行时只读成功。
+- [x] 0.4 本独立业务 Change 的 OpenSpec Spec/Tasks/Design 已经通过 4 项正式 CI 并合并 Healthcare [PR #894](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/894)、Main `ddff8069dea7f0b97bcd066b78b1c59f7defb0a9`；本轮仅规划、尚未执行 OP 写入。
 
 ## P1 — candidate/writer and tests
 
-- [ ] 1.1 在已有 OMOP 组件目录建立唯一 SQL Candidate/Writer 合同，不重建 FHIR/HL7/CSV Mapper；测试起止日期、概念类型、空表默认停、重复/并发/PK/权限/日期漂移的拒绝边界。
+- [ ] 1.1 在已有 OMOP 组件目录建立唯一 SQL Candidate/Writer 合同，不重建 FHIR/HL7/CSV Mapper；测试起止日期、概念类型、空表默认停、重复/并发/PK/权限/日期漂移的拒绝边界。**源码候选已提交至** `local-data-platform/apps/omop_writer/observation_period_encounter_v1.sql` 与 `tests/omop_writer/test_observation_period_encounter_v1.py`，仅 PR CI 通过并合并后可勾选；无真实 DB 写入。
 - [ ] 1.2 用独立 Self-Runner 仅执行 READ ONLY 候选值与 PG 角色边界审计，固定源计数 1394/200556、全部 ID 映射且观察期确实为0；不记录任何原始病人字段。
 
 ## P2 — protected live backup and rollback
