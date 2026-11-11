@@ -51,6 +51,12 @@ source_sha: d019429332e794e412426cf9c5053bafa043c05e
 | [`step04d_visit_sql_builder.py`](../../../../local-data-platform/apps/task004/step04d_visit_sql_builder.py) | 历史固定批次 Visit 事务 SQL Builder |
 | [`task004_step04b_replay_contract.py`](../../../../local-data-platform/apps/task004/task004_step04b_replay_contract.py) | 历史 Batch 幂等和重放策略纯模拟 |
 
+## 跨组件报表 Job 兼容源码索引
+
+| 真实跨组件源码 | 职责和唯一部署归属 |
+| --- | --- |
+| [ATLAS3 官方 ACHILLES 一次性 Job](../../../../local-data-platform/kubernetes/manifests/atlas/achilles-local-omop-once-job.yaml) | 对 CDM 做只读聚合、只写 atlas_results；**由 ATLAS 组件实际所有**（[ATLAS CODE](../atlas/CODE.md)），此处仅为既有统一 image/k8s 索引检查器尚未识别 ATLAS 新组件的兼容入口，不得由 OMOP Writer 执行或变更 |
+
 ## 关联入口
 
 [Writer Dockerfile](../../../../local-data-platform/images/new-only-omop-writer/Dockerfile) · [CDM Reader Dockerfile](../../../../local-data-platform/images/task004-cdm-runtime/Dockerfile)（只读 Plan/Reader 模块打包，也包含独立 Rollback 测试辅助；不可直接执行） · [CDM Reader Build Workflow](../../../../.github/workflows/task004-cdm-pg-read-publish.yml)（PR 本地 Clean Build/离线回归，保留动态 Row Adapters、Fake-S3 Source 和 Rollback 七组合同测试；GHCR 发布仅独立手工批准） · [Writer Build Workflow](../../../../.github/workflows/build-new-only-omop-writer.yml)（PR 仅离线 Clean Build/回归；GHCR 发布须手动显式批准） · [Writer Contract](../../../../local-data-platform/contracts/omop-writer/writer-batch-identity-v1.json) · [Writer Tests](../../../../local-data-platform/tests/omop_writer) · [SQL 源目录](../../../../local-data-platform/sql)

@@ -1,0 +1,86 @@
+# OpenSpec-Change: deploy-local-ohdsi-atlas
+# OpenSpec-Task: 4.0.4
+# CONTROLLED ONE-SHOT ONLY. Never auto-apply on main or during a PR.
+# Official OHDSI Broadsea-Achilles immutable registry index verified by
+# Self-Runner Run 42948334684. Image contains OHDSI Achilles v1.7.2.
+# Reads cdm only; creates real summary tables in atlas_results.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: atlas3-achilles-local-omop-once-20261110
+  namespace: dw-atlas
+  labels:
+    app.kubernetes.io/name: atlas3-achilles
+    app.kubernetes.io/part-of: local-omop-research
+    app.kubernetes.io/managed-by: healthcare-data-platform
+spec:
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  activeDeadlineSeconds: 2400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: atlas3-achilles
+        app.kubernetes.io/part-of: local-omop-research
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: worker03
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: achilles
+          image: docker.io/ohdsi/broadsea-achilles@sha256:9bae4871c3e1465f1a721fe3215f8a5fec5f2c2928408d9330a64ab32bfd6866
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: ACHILLES_SOURCE
+              value: LOCAL_OMOP
+            - name: ACHILLES_DB_URI
+              value: postgresql://dw-postgre.dw-postgre.svc.cluster.local:5432/omop
+            - name: ACHILLES_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: atlas-webapi-db
+                  key: app-username
+            - name: ACHILLES_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: atlas-webapi-db
+                  key: app-password
+            - name: ACHILLES_CDM_SCHEMA
+              value: cdm
+            - name: ACHILLES_VOCAB_SCHEMA
+              value: cdm
+            - name: ACHILLES_RES_SCHEMA
+              value: atlas_results
+            - name: ACHILLES_OUTPUT_BASE
+              value: /opt/achilles/workspace
+            - name: ACHILLES_CDM_VERSION
+              value: "5.4"
+            - name: ACHILLES_NUM_THREADS
+              value: "1"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              cpu: "1"
+              memory: 4Gi
+          volumeMounts:
+            - name: export-workspace
+              mountPath: /opt/achilles/workspace
+      volumes:
+        - name: export-workspace
+          emptyDir:
+            sizeLimit: 1Gi

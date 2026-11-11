@@ -25,6 +25,8 @@ This source map owns **the new OHDSI ATLAS research consumer only**. It does not
 | [Source compatibility tests](../../../../.github/quality/tests/data-platform/atlas/test_atlas_source_registration_static.py) | v3 REST JSON fields, isolated Source config and security guarantees |
 | [Atlas image build CI](../../../../.github/workflows/atlas3-ui-image-build.yml) | PR: build/inspect only; Main: immutable GHCR publication |
 | [Static tests CI](../../../../.github/workflows/atlas-p2p4-static.yml) | no Kubernetes/PG/Cloudflare mutation |
+| [ACHILLES one-shot Job](../../../../local-data-platform/kubernetes/manifests/atlas/achilles-local-omop-once-job.yaml) | official image digest pinned after actual Docker Hub lookup; generates real OMOP Data Sources summaries in atlas_results only; manual launch, no CDM write |
+| [ACHILLES job contract tests](../../../../.github/quality/tests/data-platform/atlas/test_atlas_achilles_job_contract.py) | immutable digest, secret refs, dedicated result schema, resource caps and no auto-deploy |
 
 ## Actual runtime / acceptance as of 2026-11-10
 
