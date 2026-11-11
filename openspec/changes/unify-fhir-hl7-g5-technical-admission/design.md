@@ -12,6 +12,10 @@
 
 - **Task interpretation**: G5 2.6 is not an instruction to rewrite the existing technical Candidate/Gold branches; it stays unchecked for authenticated live Controller wiring, F1/F2 evidence, version-isolated runtime and physical release/readback. This coordinating OpenSpec does not supersede the source owners' executable task ledgers.
 
+## P2.1 SOURCE-ONLY bridge accepted (2026-11-11 ET, after initial plan)
+
+Self-Runner [PR #762](https://github.com/JohnZhang-DataForge/Self-Runner/pull/762) merged Main `18dd107fd035ca384ec7703bbe3ab1bb7efadb9c` after [Run #43085053262](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/43085053262) SUCCESS. A single pure `fabric_g5_v3_source_only_stage_binding.preview_v3_scope_only` consumes existing typed NewBatchReviewInputs (already parsed BatchContext/StageScope/Shared Mapper profile) and existing technical F1/F2 witness report, strictly checks FHIR/HL7 batch, Manifest, Mapping SHA, StageScope version, F1/F2 and technical witness digest, and verifies the Shared v3 `TrustedTechnicalScope` field/schema **only in local memory**. It returns a non-authoritative digest with `G5_V3_EXPECTED_SCOPE_SOURCE_ONLY_HOLD_NO_STAGE_RELEASE`, no trusted scope object, release callback, signed transport, Controller or Writer capability. Synthetic positive and negative tests for both formats, GOLD-vs-CANDIDATE, fake dual signer, false rights/Silver proof, missing F1, F2 drift and no network/write calls passed. Uses exact reviewed Healthcare Shared source SHA `c02da9e1` for offline CI and existing ephemeral ARC same-repository PR runner. This is not physically authenticated Silver, real F1/rights, actual signed transport, durable nonce or release. **P2.2–P2.5 and all production gates remain open**.
+
 ## 2. Authoritative data / trust boundaries
 
 Source-specific, **owned separately**:
