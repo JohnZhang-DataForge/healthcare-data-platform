@@ -66,6 +66,35 @@ class G5NoHumanQuorumRegression(unittest.TestCase):
                       ast.get_source_segment(source, parents[0].body[0]))
         self.assertIn("HOLD_G5_TECHNICAL_EVIDENCE_CANNOT_FORGE_REVIEWS", text)
 
+    def test_hl7_adapter_and_gold_shared_writer_have_no_active_human_quorum(self):
+        hl7 = ROOT / "local-data-platform/spark/apps/hl7/candidate_transport.py"
+        hl7_source = hl7.read_text(encoding="utf-8")
+        self.assertIn("prepare_hl7_candidate_transport", hl7_source)
+        for forbidden in ("PENDING_AUTHORIZED_HUMAN", "clinically_reviewed",
+                          "license_reviewed", "clinical_review_sha256",
+                          "license_review_sha256"):
+            self.assertNotIn(forbidden, hl7_source)
+
+        gold = ROOT / "azure-fabric/warehouse/omop-foundation/writer/gold_transaction.py"
+        gold_source = gold.read_text(encoding="utf-8")
+        gold_functions = {
+            node.name: node for node in ast.parse(gold_source).body
+            if isinstance(node, ast.FunctionDef)
+        }
+        validate = ast.get_source_segment(gold_source, gold_functions["_require_batch"])
+        write = ast.get_source_segment(
+            gold_source, gold_functions["execute_gold_transaction"])
+        # Technical evidence and optional historical reviewer fields are
+        # mutually exclusive; the technical branch does not demand quorum.
+        self.assertIn("technical = batch.technical_evidence_sha256 is not None", validate)
+        self.assertIn("if technical:", validate)
+        self.assertIn("GOLD_TECHNICAL_EVIDENCE_OR_FAKE_REVIEW", validate)
+        self.assertIn("GOLD_EVIDENCE_NOT_PRESENT", validate)
+        # A technical SHA is never a protected Gold release authorization.
+        self.assertIn("single_writer_fence()", write)
+        self.assertIn("release_gate(batch)", write)
+        self.assertIn("GOLD_RELEASE_OR_SINGLE_WRITER_HOLD", write)
+
     def test_v3_transport_is_source_only_not_writer_authorization(self):
         source = PROVIDER.read_text(encoding="utf-8")
         self.assertIn("G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE", source)
