@@ -50,5 +50,6 @@
 ## P5 — Exit criteria
 
 - [ ] 5.1 Remove mandatory two-human-signoff from all **active** FHIR and HL7 technical admission branches; retain legacy versioned historical compatibility with strict isolation, no fake approvals.
+  - [ ] 5.1.1 A-line source-only verification: PR #917 checks v3 technical evidence versus legacy quorum, FHIR Native technical writer gate, plus strict source-only transport. CI must pass; audit Self-Runner protected Controller/workflows and quarantined legacy review join references before closing 5.1. No F1/F2, physical Silver, signer/nonce, Stage release, Candidate/Gold writes.
 - [ ] 5.2 Prove same Stage/evidence/Writer contracts with two different real source formats and independent physical readback, plus F1/rights/F2/cost/replay fences. No source-specific second Mapper/Writer/Controller.
 - [ ] 5.3 All intended PRs have real applicable CI success and are merged against latest Main; production Wheel and actual Fabric state independently confirmed. Document remaining blockers, never mark Gold COMPLETED from Candidate/Silver status.
