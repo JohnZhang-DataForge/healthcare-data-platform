@@ -17,6 +17,7 @@ This source map owns **the new OHDSI ATLAS research consumer only**. It does not
 | [Internal UI gateway](../../../../local-data-platform/kubernetes/manifests/atlas/frontend-gateway-configmap.yaml) | private Caddy path routing; not the shared Marquez Nginx Gateway |
 | [WebAPI3 NetworkPolicy](../../../../local-data-platform/kubernetes/manifests/atlas/webapi3-networkpolicy.yaml) | Restrict ingress to Atlas3 UI pods only |
 | [Atlas3 UI Dockerfile](../../../../local-data-platform/images/atlas3-ui/Dockerfile) | builds only pinned upstream OHDSI/Atlas3 v3.0.0 SHA, not a floating branch |
+| [Atlas3 Data Sources report-state overlay](../../../../local-data-platform/images/atlas3-ui/patch-datasources.mjs) | apply after fixed-upstream SHA verification; prevents stale Drug Era errors from poisoning Person/Visit/Observation Period, with embedded upstream unit regression tests; CI-only, no runtime mutation |
 | [Application schema SQL](../../../../local-data-platform/atlas/sql/prepare-webapi-schemas.sql) | transactional **authorized-only** WebAPI / Results / Temp preparation; **never execute directly during source validation** |
 | [Runtime contract](../../../../local-data-platform/atlas/config/runtime-contract.json) | pinned version/digest and actual 2026-11-10 deploy/Source/Concept readback status |
 | [Source guard tests](../../../../.github/quality/tests/data-platform/atlas/test_atlas_p2p4_static.py) | path, worker03 and existing SQL ownership scope, actual deployment contract |
