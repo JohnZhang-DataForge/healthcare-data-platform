@@ -47,6 +47,14 @@ jobs:
           assert contract['public_route_enabled'] is False
           print('PINNED_SOURCE_AND_PRIVATE_RUNTIME_CONTRACT=PASS')
           PY
+      - name: Apply reviewed Atlas3 Data Sources recovery overlay (no runtime access)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          node candidate/local-data-platform/images/atlas3-ui/patch-datasources.mjs atlas3-upstream
+          git -C atlas3-upstream diff --check
+          git -C atlas3-upstream diff --stat
+          echo ATLAS3_DATASOURCES_OVERLAY_VALIDATION=PASS
       - name: Build exact upstream source with repository-owned Dockerfile
         shell: bash
         run: |
