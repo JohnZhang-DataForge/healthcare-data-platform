@@ -1,6 +1,6 @@
 """OFFLINE ONLY: pinned Published 0.1.7 Native Notebook, historical 0.1.6 runtime HOLD.
 
-Tests load the sole effective 0.1.7 GA Wheel while current source is 0.1.11; simulate prior
+Tests load the sole effective 0.1.7 GA Wheel while current source is 0.1.13; simulate prior
 0.1.6 runtime mismatch, without executing any cloud job. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
@@ -8,6 +8,8 @@ Delta read/write, Warehouse SQL, or ID allocation.
 from __future__ import annotations
 
 import hashlib
+import sys
+from types import ModuleType
 from pathlib import Path
 import runpy
 import tomllib
@@ -156,7 +158,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
     def test_g5_native_transport_cannot_bypass_effective_wheel_halt(self):
         method = self.native["execute_g5_candidate_from_trusted_controller"]
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_NATIVE_0112_TRANSPORT_WHEEL_NOT_PUBLISHED"):
+                RuntimeError, "HOLD_G5_NATIVE_0113_TRANSPORT_WHEEL_NOT_PUBLISHED"):
             method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
                    attestation_bytes=b"forged")
         with patch.dict(method.__globals__, {"run_mode": "G5_CANDIDATE_WRITE"}):
@@ -169,7 +171,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
                        attestation_bytes=b"forged")
         # Hypothetical source-only version must still require actual signed
         # bytes before importing the future verifier or calling the provider.
-        with patch.dict(method.__globals__, {"engine_version": "0.1.12"}):
+        with patch.dict(method.__globals__, {"engine_version": "0.1.13"}):
             for bad in (None, "", b"", b"a" * 8193):
                 with self.subTest(bad=type(bad).__name__):
                     with self.assertRaisesRegex(
@@ -187,6 +189,89 @@ class G5NativeWheelIsolation(unittest.TestCase):
         self.assertNotIn("provider.capture_full_warehouse_snapshot(", body)
         self.assertNotIn("execute_g5_person_visit_business(", body)
         self.assertIn("G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED", body)
+
+
+
+    def test_dynamic_fhir_hl7_v3_transport_is_source_only_never_release(self):
+        """Future verified 0.1.13 can inspect v3, never dispatch a Writer.
+
+        The synthetic module stands in only for the import contract. It is NOT
+        a real signature, identity proof, physical Silver or release receipt.
+        """
+        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        class LegacyVerified:
+            pass
+
+        class TechnicalVerified:
+            def __init__(self, *, status, source_format,
+                         candidate_write_authorized=False,
+                         gold_committed=False, provisional_ids_persisted=False):
+                self.status = status
+                self.source_format = source_format
+                self.candidate_write_authorized = candidate_write_authorized
+                self.gold_committed = gold_committed
+                self.provisional_ids_persisted = provisional_ids_persisted
+
+        class SyntheticTransportHold(Exception):
+            pass
+
+        security = ModuleType("healthcare_data_engine.security")
+        security.__path__ = []
+        transport = ModuleType(
+            "healthcare_data_engine.security.provider_attestation")
+        transport.TransportHold = SyntheticTransportHold
+        transport.VerifiedTransport = LegacyVerified
+        transport.VerifiedTechnicalTransport = TechnicalVerified
+        marker = (
+            "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
+        cases = (
+            ("FHIR_R4", TechnicalVerified(
+                status=marker, source_format="FHIR_R4")),
+            ("HL7_V2", TechnicalVerified(
+                status=marker, source_format="HL7_V2")),
+        )
+        for source_format, receipt in cases:
+            with self.subTest(source_format=source_format):
+                verifier = Mock(return_value=receipt)
+                transport.verify_native_handoff_source_only = verifier
+                with patch.dict(sys.modules, {
+                        "healthcare_data_engine.security": security,
+                        "healthcare_data_engine.security.provider_attestation":
+                            transport}), patch.dict(method.__globals__, {
+                        "engine_version": "0.1.13"}):
+                    result = method(
+                        None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+                        attestation_bytes=b"synthetic-envelope-only")
+                self.assertEqual(
+                    result, "G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED")
+                verifier.assert_called_once_with(b"synthetic-envelope-only")
+
+                # Even a signer returning forged release or persisted-ID flags
+                # cannot elevate the transport-only Notebook preflight.
+                for flags in (
+                    {"candidate_write_authorized": True},
+                    {"gold_committed": True},
+                    {"provisional_ids_persisted": True},
+                ):
+                    with self.subTest(source_format=source_format, flags=flags):
+                        transport.verify_native_handoff_source_only = Mock(
+                            return_value=TechnicalVerified(
+                                status=marker, source_format=source_format,
+                                **flags))
+                        with patch.dict(sys.modules, {
+                                "healthcare_data_engine.security": security,
+                                "healthcare_data_engine.security.provider_attestation":
+                                    transport}), patch.dict(method.__globals__, {
+                                "engine_version": "0.1.13"}):
+                            with self.assertRaisesRegex(
+                                    RuntimeError,
+                                    "HOLD_G5_NATIVE_NON_SOURCE_ONLY_ATTESTATION"):
+                                method(None, provider=None,
+                                       mode="G5_CANDIDATE_READBACK_ONLY",
+                                       attestation_bytes=b"synthetic-envelope-only")
+
+        # The actual 0.1.7 remains a strict HOLD, regardless of fake bytes.
+        self.assertEqual(self.native["engine_version"], "0.1.7")
 
 
 
