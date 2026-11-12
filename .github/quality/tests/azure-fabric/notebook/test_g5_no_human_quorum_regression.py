@@ -45,8 +45,25 @@ class G5NoHumanQuorumRegression(unittest.TestCase):
         self.assertIn("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED", text)
         self.assertIn("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE", text)
         self.assertIn("elif not (clinically_reviewed and license_reviewed)", text)
-        # The only two-human quorum is explicitly under the legacy branch.
-        self.assertNotIn("if not (clinically_reviewed and license_reviewed)", text)
+        # Structural check: the legacy quorum is *only* the else branch
+        # of the technical gate; substring checks falsely match "elif".
+        legacy_condition = "not (clinically_reviewed and license_reviewed)"
+        legacy_if_nodes = [
+            n for n in ast.walk(writer)
+            if isinstance(n, ast.If)
+            and ast.get_source_segment(source, n.test) == legacy_condition
+        ]
+        self.assertEqual(len(legacy_if_nodes), 1)
+        legacy_if = legacy_if_nodes[0]
+        parents = [
+            n for n in ast.walk(writer)
+            if isinstance(n, ast.If)
+            and isinstance(n.test, ast.Name) and n.test.id == "technical"
+            and n.orelse == [legacy_if]
+        ]
+        self.assertEqual(len(parents), 1, "Legacy quorum must be technical-only else")
+        self.assertIn("trusted_technical_release_gate",
+                      ast.get_source_segment(source, parents[0].body[0]))
         self.assertIn("HOLD_G5_TECHNICAL_EVIDENCE_CANNOT_FORGE_REVIEWS", text)
 
     def test_v3_transport_is_source_only_not_writer_authorization(self):
