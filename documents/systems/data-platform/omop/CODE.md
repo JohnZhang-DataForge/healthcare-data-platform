@@ -173,6 +173,7 @@ These deployment and image paths are registered here because this existing OMOP 
 | Maintained source | Role |
 | --- | --- |
 | [ATLAS3 Dockerfile](../../../../local-data-platform/images/atlas3-ui/Dockerfile) | Pinned upstream Atlas3 3.0.0 frontend image build, main-only publish |
+| [ATLAS3 Data Sources report-state overlay](../../../../local-data-platform/images/atlas3-ui/patch-datasources.mjs) | Compatibility entry for repository image/K8s owner gate; implementation owned by [ATLAS CODE](../atlas/CODE.md), applied only to pinned frontend build; no OMOP Writer or database mutation |
 | [ATLAS Namespace](../../../../local-data-platform/kubernetes/manifests/atlas/namespace.yaml) | New isolated `dw-atlas`, not `dw-postgre` |
 | [ATLAS internal Services](../../../../local-data-platform/kubernetes/manifests/atlas/services.yaml) | ClusterIP only, no public API |
 | [ATLAS frontend gateway](../../../../local-data-platform/kubernetes/manifests/atlas/frontend-gateway-configmap.yaml) | Private single-origin Caddy routing, not Marquez Nginx |
