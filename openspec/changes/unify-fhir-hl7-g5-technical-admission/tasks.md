@@ -8,6 +8,7 @@
 - [x] 0.2 Confirm business decision: remove mandatory TWO HUMAN Clinical/License signatures for the synthetic-data G5; retain actual vocabulary use rights, semantic mapping validity, F1/F2, Batch/StageScope, DQ, nonce and physical write/readback.
 - [x] 0.3 Confirm existing merged code MUST be reused: Shared v3 and target-concept-v2, FHIR #892/#895/#897, Native Silver #837, HL7 Native #847, Self-Runner HL7 Controller #625, technical-only provider #732 and existing GoldBatch/Candidate technical branches. Do not build replacements.
 - [ ] 0.4 Before coding, reconcile current deployed Fabric Notebook/Published Wheel, running Actions, pending F1 #748/#753 and exclusive source ownership. Do not assume current Main has been synced to Fabric.
+- [ ] 0.5 **SOURCE-ONLY Native transport compatibility; PR #906 pending full CI:** update the existing Native Notebook readback-only transport gate from obsolete 0.1.12 to pinned Shared source 0.1.13, accept exact dynamic FHIR_R4/HL7_V2 v3 SOURCE-ONLY verification status and add negative tests for forged release, Gold and persisted-ID flags. Remains HALT on effective GA 0.1.7; no controller release, keys, nonce, Fabric deployment, Candidate or Gold. Close this task only after CI passes and PR #906 is merged.
 
 ## P1 — Single F1 technical governance and evidence (Self-Runner)
 
