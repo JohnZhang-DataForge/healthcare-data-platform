@@ -5,6 +5,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Guard against stale report errors when switching from empty Drug Era to populated Person.
+RUN npm run test:unit:run -- tests/unit/stores/datasources.spec.ts
 RUN npm run build
 
 FROM caddy:2-alpine
