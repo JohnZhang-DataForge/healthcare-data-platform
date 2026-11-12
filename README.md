@@ -1,12 +1,14 @@
 # Healthcare Data Platform
 
-**A working vertical slice of a unified data platform — from source-specific ingestion to trusted, traceable data.**
+**Unified data platform engineering — source integration, Canonical standardization, reusable transformations, governed publication, lineage, and research analytics.**
 
-Different systems rarely agree on schemas, identifiers, or delivery formats. The engineering challenge is not just moving their data into one place; it is preserving where it came from, applying consistent rules, detecting bad or incomplete loads, and making the results safe to reuse.
+A unified data platform is more than a set of ETL jobs. New source systems should be onboarded through repeatable contracts, and downstream users should receive data with known meaning, quality, provenance, and replay behavior. This independent project explores those problems using synthetic healthcare data and the same architectural patterns applicable to enterprise research and operational data platforms.
 
-This independent project tackles those problems with synthetic healthcare data. It has a **verified local CSV-to-OMOP pipeline**, working Airflow/Spark lineage, and separately developing FHIR R4, HL7 v2, and Microsoft Fabric integrations. It is an engineering lab, not a hospital integration or a production EHR system.
+It combines **Synthea CSV, FHIR R4, and HL7 v2** source paths, a shared **Patient/Encounter Canonical model**, a portable **Shared Data Engine**, **Local Kubernetes/PostgreSQL**, **Microsoft Fabric/OneLake/Warehouse**, **OpenLineage/Marquez**, and **OHDSI ATLAS 3.0** for research consumption. Not every source-to-target path has reached the same acceptance milestone; the sections below explicitly separate implemented capabilities from planned integrations.
 
-> **[Explore the live data lineage viewer](https://lineage.johnzhang-dataforge.site)** — Inspect real Spark jobs, upstream/downstream datasets, and Patient field mappings in Marquez. The self-hosted demo may be temporarily unavailable.
+**Explore:** [Live lineage viewer](https://lineage.johnzhang-dataforge.site) · [OHDSI ATLAS 3 research UI](https://atlas.johnzhang-dataforge.site/atlas/) (authenticated; demo-user browser acceptance in progress) · [Data-flow architecture](documents/architecture/DATA-FLOW.md)
+
+> **Scope:** An independent, synthetic-data portfolio project. It is not affiliated with Emory University or Emory Healthcare, is not connected to a hospital production EHR, and makes no HIPAA-certification or production-SLA claim.
 
 ## Browse the repository (human-first)
 
@@ -14,10 +16,10 @@ The source tree is organized by **system and function**, not by development task
 
 | Folder | What you find there | Human-readable map |
 | --- | --- | --- |
-| [`local-data-platform/`](local-data-platform/) | Existing Local Synthea, Airflow, Spark and OMOP workflows; historical `taskNNN/` paths still have live consumers | [Local components](documents/systems/data-platform/README.md) |
+| [`local-data-platform/`](local-data-platform/) | Local Synthea, Airflow, Spark, PostgreSQL OMOP and OHDSI ATLAS/WebAPI; some legacy paths remain active | [Local components](documents/systems/data-platform/README.md) · [ATLAS](documents/systems/data-platform/atlas/CODE.md) |
 | [`azure-fabric/`](azure-fabric/) | Fabric-native Items, Writer business code, deployment SQL/config and Terraform | [Fabric components](documents/systems/azure-fabric/README.md) |
 | [`platform-portal/`](platform-portal/) | Marquez, OpenLineage, public viewer and metadata storage | [Portal components](documents/systems/platform-portal/README.md) |
-| [`shared-data-engine/`](shared-data-engine/) | One portable Python library and scoped Agent instructions | [Shared Engine](documents/systems/data-platform/shared-engine/README.md) |
+| [`shared-data-engine/`](shared-data-engine/) | Platform-neutral Python Wheel for FHIR/Canonical, OMOP Candidate rules, Concept/Identity/FK validation, reconciliation and replay planning | [Shared Engine](documents/systems/data-platform/shared-engine/README.md) · [Code map](documents/systems/data-platform/shared-engine/CODE.md) |
 | [`documents/`](documents/) | Canonical architecture, component README/CODE and runbooks | [Docs index](documents/README.md) |
 | [`openspec/`](openspec/) | Adopted specs, active changes, archived accepted history | [Change lifecycle](documents/engineering/development/OPENSPEC-DEVELOPMENT-LIFECYCLE.md) |
 | [`.github/`](.github/) | Workflows and centralized quality/test assets | [Developer CODE map](documents/engineering/development/CODE.md) |
@@ -26,7 +28,7 @@ The Local DP task-named directories are **operational compatibility paths**, not
 
 ## The platform problem
 
-A new source system should not require a completely new pipeline. But a shared ingestion framework also cannot assume that CSV, FHIR, HL7, and future enterprise feeds have the same structure or semantics.
+A unified data platform should onboard a new source without reinventing an end-to-end pipeline. But a shared ingestion framework also cannot assume that CSV, FHIR, HL7, and future enterprise feeds have the same structure or semantics.
 
 I designed the pipeline around a few practical questions:
 
@@ -40,52 +42,69 @@ I designed the pipeline around a few practical questions:
 
 The reusable part is **source onboarding, provenance, validation, reconciliation, and observability**. OMOP is the target model for this *clinical* example—not a universal model for HR, finance, student, or research administration data. Other domains would reuse the platform patterns with their own models and business rules.
 
-## Canonical-first shared processing (approved architecture)
+## Canonical-first design and the Shared Data Engine
 
-The [Medallion Canonical ADR](documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md) fixes the long-term design: **source-specific CSV/FHIR/HL7 adapters → one canonical Patient/Encounter contract → one portable OMOP mapping, DQ, identity-planning and reconciliation engine**. Data sources supply independently reviewed code-to-Concept profiles; the Local PostgreSQL and Fabric Warehouse publishers remain platform-specific. The single `healthcare_data_engine` Wheel 0.1.3 has FHIR/Canonical/OMOP Candidate code and passed isolated Fabric import, but the **Local production mapper has not yet been fully migrated to it**. Fabric's synthetic FHIR Approved Silver milestone (100 Patient / 5,918 Encounter) is physically accepted; Fabric clinical Candidate/Gold COMMIT and end-to-end pipeline are not. The separate Local PG→Fabric analytical snapshot route remains a future product. [Current data flow](documents/architecture/DATA-FLOW.md).
+The core pattern is **source-specific adapter → single Canonical Patient/Encounter v1 contract → reusable business rules → platform-specific publishing → analytics/research consumption**.
 
-## Architecture: different sources, common Canonical contract
+- **Source onboarding:** CSV, FHIR R4 and HL7 v2 retain their format-specific ingestion, source identifiers, immutable manifests and batch provenance. HL7 follows OIE ADT A01/A03 → Azure Blob → Python Parser → local Delta → dbt; it does **not** require conversion through FHIR.
+- **Canonical Silver:** One frozen Patient/Encounter v1 contract standardizes field semantics and identity references. Fabric FHIR Approved Silver Delta has independent physical readback; the HL7 shared Silver publisher is not yet accepted.
+- **Shared business processing:** `healthcare_data_engine` is the *single* portable Python implementation for FHIR adaptation, Canonical DQ, OMOP Person/Visit Candidate mapping, versioned Concept profiles, identity/FK preflight, reconciliation and replay decisions. It never performs cloud, Delta or SQL writes itself.
+- **Governed publication:** A Local PostgreSQL Writer and Fabric Warehouse Writer implement different physical transaction mechanisms. They share business contracts, **not** writer SQL. Identity checks, DQ, stable source identity, access controls, replay protection and independent readback are release conditions.
+- **Consumption and observability:** OHDSI ATLAS/WebAPI/ACHILLES provides clinical research access to the existing Local OMOP CDM; Airflow/Spark OpenLineage events flow to Marquez.
+
+**Status as of November 12, 2026:** The [Shared Engine package metadata](shared-data-engine/pyproject.toml) declares source version **0.1.13**; its isolated Fabric Spark 4.1 source/transport test is recorded in [PR #911](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/911). Fabric's existing GA Environment retains its separately validated **0.1.7** Wheel until a controlled promotion. The verified Local CSV-to-PostgreSQL pipeline still includes a historical Local mapper; the **full Local runtime has not been migrated to the shared Wheel**. Source-only and isolated tests do not constitute Fabric Stage Release, Candidate publication or Gold COMMIT.
+
+This is a **domain-extensible unified data platform pattern**, not a claim that OMOP is suitable for every data domain. A finance, student, HR or research-administration workload would reuse ingestion, validation, governance and observability patterns with its own canonical/target models. See the [Medallion Canonical ADR](documents/architecture/design/FABRIC-MEDALLION-CANONICAL-ADR-20261030.md), [system architecture](documents/architecture/SYSTEM-OVERVIEW.md) and [Shared Engine ownership rules](documents/engineering/development/SHARED-DATA-ENGINE-STRUCTURE-AND-OWNERSHIP.md).
+
+## Architecture: heterogeneous sources, consistent contracts
 
 ```mermaid
 flowchart TB
-    subgraph LOCAL["Local CSV path — verified PG17 COMMIT"]
-        CSV["Synthea CSV"] --> S3["SeaweedFS + immutable manifest"]
-        S3 --> AF["Airflow batch gate"] --> LSP["Local Spark adapter / Canonical / legacy OMOP mapping"]
-        LSP --> PGW["PG guarded Writer"] --> PG[("PostgreSQL OMOP Person / Visit")]
-    end
+    CSV["Synthetic Synthea CSV"] --> LOCAL["SeaweedFS / Airflow / PySpark"]
+    LOCAL --> LMAP["Local Canonical and existing OMOP Mapper"]
+    LMAP --> LPUB["Guarded PostgreSQL Writer"]
+    LPUB --> PG[("PostgreSQL 17 OMOP CDM")]
 
-    subgraph FABRIC["Fabric FHIR R4 path — approved Silver; Gold still open"]
-        FHIR["FHIR R4 source"] --> BLOB["Azure Blob manifest / source SHA"]
-        BLOB --> NB["Native Fabric Notebook / source verification"]
-        NB --> BRONZE["G3 verified Bronze raw receipt"] --> FAD["Shared FHIR Adapter / Canonical DQ"] --> SILVER[("G4 Canonical Silver Delta — approved / read back")]
-        SILVER -. "G5 Concept/Identity/Gold not yet committed" .-> CAND["OMOP Candidate / Warehouse Writer"] 
-        CAND -. "not yet accepted" .-> DW[("Fabric OMOP Gold")]
-    end
+    FHIR["Synthetic FHIR R4"] --> AZ["Azure Blob / native Fabric Notebook"]
+    AZ --> FAD["Shared FHIR Adapter and Canonical DQ"]
+    FAD --> SILVER[("Fabric Canonical Silver Delta - verified")]
 
-    subgraph SHARED["Shared business architecture — single code owner"]
-        CONTRACT["ONE Canonical Patient/Encounter v1 Contract"]
-        ENGINE["healthcare_data_engine: post-Canonical Mapper / DQ / Reconciliation"]
-        CONTRACT --> ENGINE
-    end
+    HL7["Synthetic HL7 v2 via OIE"] --> HDBT["Azure landing / Parser / Delta / local dbt"]
+    HDBT --> HC["HL7 Canonical Candidate"]
+    HC -. "shared Silver integration pending" .-> SILVER
 
-    LSP -. "contract compliant; legacy Local implementation" .-> CONTRACT
-    FAD -. "same frozen contract" .-> CONTRACT
-    AF -. "Airflow event metadata" .-> LINEAGE["OpenLineage / Marquez"]
-    LSP -. "Spark event metadata" .-> LINEAGE
-    HL7["HL7 v2 / OIE — future shared Adapter"] -. "future Canonical integration" .-> CONTRACT
+    CAN["One Canonical Patient / Encounter v1 contract"]
+    LMAP -. "conforms to contract" .-> CAN
+    SILVER -. "conforms to contract" .-> CAN
+    CAN --> ENG["Shared Data Engine: OMOP Candidate / DQ / Identity / Concept / Replay"]
+    SILVER --> ENG
+    ENG -. "Candidate and Gold release pending" .-> FWRITE["Fabric-controlled Writer"]
+    FWRITE -. "Gold COMMIT not accepted" .-> DW[("Fabric Warehouse OMOP Gold")]
+
+    PG --> ATLAS["OHDSI ATLAS 3 / WebAPI 3 / ACHILLES"]
+    LOCAL -. "OpenLineage metadata" .-> MARQ["Marquez lineage viewer"]
 ```
 
-**Reading the diagram:** Solid arrows are established local or Fabric Bronze/Silver component flows; dotted arrows identify unaccepted Fabric Gold, future HL7 integration, metadata, or logical contract relationships—not proof of a common deployed runtime. Source-specific adapters converge on a single *contract*, and post-Canonical business logic belongs to the shared code owner. The verified Local path retains its existing mapper until equivalence-tested incremental migration; no second Fabric business engine or cross-database SQL Writer is authorized. For exact stage acceptance see [Data Flow](documents/architecture/DATA-FLOW.md) and [current E2E tasks](openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md).
+Solid arrows describe implemented component paths; the Local CSV → PostgreSQL → ATLAS and the FHIR Bronze/Canonical Silver segments have physical evidence. Dashed arrows identify shared contracts, observability metadata or unfinished publication paths. They are **not** evidence of a single deployed cross-source runtime or an already synchronized Local PG and Fabric Warehouse. For stage-by-stage acceptance see the [detailed data flow](documents/architecture/DATA-FLOW.md).
 
 ## What has been demonstrated
 
-| Capability | Verified result |
+| Capability | Verified outcome and boundary |
 | --- | --- |
-| **End-to-end clinical processing** | Synthea source data through S3-compatible landing, Airflow, PySpark, reconciliation, and OMOP **Person / Visit Occurrence** writes. |
-| **Durable data quality checks** | A fresh October 25, 2026 batch committed **100 Person** and **15,742 Visit Occurrence** rows, confirmed by an independent PostgreSQL readback. |
-| **Safe retries** | Reprocessing the same completed batch followed the skip path, with no further database changes. |
-| **Real lineage** | The public Marquez UI has shown Patient and Encounter table-level paths, plus six real Patient column mappings. |
-| **Repeatable infrastructure** | Kubernetes workloads, container builds, GitHub Actions checks, and Terraform-managed Azure/Fabric infrastructure. |
+| **Local end-to-end OMOP** | Synthea CSV → S3-compatible SeaweedFS → Airflow → PySpark → PostgreSQL OMOP Person/Visit; atomic guarded COMMIT, independent readback and same-batch replay SKIP. A historical October 25 batch committed **100 Person / 15,742 Visit** rows (batch-specific counts, not current totals). |
+| **FHIR R4 → Canonical Silver** | Fabric synthetic FHIR Bronze and **100 Patient / 5,918 Encounter** Approved Silver Delta, zero quarantine, real readback and replay evidence. Clinical Gold remains uncommitted. |
+| **HL7 v2 interoperability** | Synthetic ADT A01/A03 ingestion through OIE and Azure Blob with local Python Parser → Delta → dbt Canonical Candidate. Shared Fabric Silver and Gold are not yet accepted. |
+| **Shared Data Engine** | Portable Python Wheel with FHIR Adapter, Canonical v1 validation, Person/Visit Candidate, Concept/Identity/FK checks, DQ, reconciliation and replay. **0.1.13** is current source; **0.1.7** remains deployed Fabric GA. Full Local replacement remains open. |
+| **OHDSI research consumption** | ATLAS 3.0 + WebAPI 3.0 deployed on Kubernetes, registered `LOCAL_OMOP` Source/Daimons, verified Vocabulary access, ACHILLES reports, Concept Sets, Results schema, and native Cohorts (**1,394** and **1,207** distinct patient results). Demo browser access is still being checked. |
+| **Lineage and operations** | Airflow/Spark OpenLineage → Marquez job/dataset relationships and Patient column mappings; Kubernetes, Terraform, GitHub Actions CI, immutable build/deployment contracts. Cross-platform Fabric business lineage remains a later acceptance scope. |
+
+### OHDSI ATLAS 3.0 — research and analytics layer
+
+ATLAS is a **downstream OMOP consumer** rather than another ETL engine. ATLAS 3/WebAPI 3 runs in the `dw-atlas` namespace on `worker03`, reuses existing PostgreSQL 17 `cdm` data, and maintains separate `webapi`, `atlas_results`, and `atlas_temp` schemas. Its `LOCAL_OMOP` Source exposes CDM and Vocabulary through a dedicated database identity without granting clinical source-table writes.
+
+The integration includes WebAPI Source registration, authenticated dashboard endpoints, SQL-backed Concept/Vocabulary readback, Achilles data-source reports, initialized cohort tables, Concept Sets and native cohort-generation jobs. The research UI, demo-account permissions, indexed search performance, some downstream clinical domains and an isolated full restore drill are **not fully accepted**. Credentials and connection secrets are not stored in this README.
+
+See [ATLAS code and acceptance map](documents/systems/data-platform/atlas/CODE.md) · [Kubernetes manifests](local-data-platform/kubernetes/manifests/atlas/) · [Source configuration](local-data-platform/atlas/config/local-omop-source.json).
 
 ### Inspect a transformation, not a slide
 
@@ -114,13 +133,15 @@ The goal is to keep the shared controls stable while allowing each source to hav
 
 This approach is deliberately not tied to one message standard or one processing runtime. It demonstrates a platform *pattern* using healthcare data, while leaving room for other business domains and their distinct models.
 
-## Microsoft Fabric and the next integration milestones
+## Microsoft Fabric and governed data products
 
-The Azure/Fabric foundation is provisioned with Terraform, including a Fabric workspace and OneLake Lakehouse. Azure Blob publishing has been exercised separately. **A complete FHIR/HL7 → Fabric Notebook/Pipeline → curated OneLake load has not yet passed end-to-end acceptance.**
+The Fabric foundation contains Blob landing, OneLake Lakehouse, Notebook/Pipeline/Environment assets and an OMOP 5.4 Warehouse/Vocabulary. The current verified clinical path reaches **FHIR → Bronze → Approved Canonical Silver**. A complete FHIR/HL7-to-Fabric **Candidate/Gold business COMMIT and replay E2E remains open**.
 
-The next milestones are to complete the vetted FHIR-to-OMOP Concept Mapping Profile, durable Identity/Gold transaction and independently verified Candidate/Gold/Pipeline replay, then gradually migrate Local pure transformations to the same Shared Engine. New CSV/HL7 Fabric adapters and the separate PG snapshot export product are later, individually scoped work. Data quality, lineage, replay behavior, and evidence of durable writes will remain acceptance criteria—not optional reporting features.
+The G5 release direction replaces the historical two-person manual approval gate with **automated technical admission**: source integrity, schema/DQ, identity/FK and Concept validation, idempotent replay, security controls, authorized physical writes and independent readback. Removing the dual signature is **not** permission to skip these validations or to publish unaccepted Gold. An isolated 0.1.13 Spark/transport PASS does not authorize Stage Release or a Writer action.
 
-The project uses **synthetic records only**. It does not contain real patient data, and it makes no HIPAA certification, institution-wide production-readiness, or always-on availability claim.
+Next milestones include HL7 Candidate → shared Canonical Silver, a consistent Shared Engine → Fabric Candidate path, independently verified Warehouse Gold transaction/replay, and gradual Local pure-function parity migration. Local PostgreSQL → Fabric analytical snapshot is a **separate future product**, not a prerequisite for Fabric-native FHIR ingestion. The authoritative task state lives in the [Fabric E2E OpenSpec](openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md).
+
+Only **synthetic records** are used. The platform is an engineering demonstration with carefully scoped runtime evidence, not a certified or always-on clinical production service.
 
 ## Explore the source code
 
@@ -132,6 +153,9 @@ These links go directly to implementation and build locations.
 | Source onboarding, FHIR, and HL7 producers | [Clinical producer code](local-data-platform/apps/clinical_producers/) |
 | Spark normalization and clinical mapping | [PySpark applications](local-data-platform/spark/apps/) |
 | Reconciliation and controlled writes | [OMOP writer](local-data-platform/apps/omop_writer/) |
+| Shared Canonical, OMOP Candidate and quality/identity rules | [Shared Data Engine source](shared-data-engine/src/healthcare_data_engine/) · [component map](documents/systems/data-platform/shared-engine/CODE.md) |
+| HL7 Parser/Delta and dbt transformations | [HL7 component](documents/systems/data-platform/hl7/README.md) · [dbt project](azure-fabric/dbt/hl7-canonical/) |
+| OHDSI ATLAS 3 / WebAPI 3 research layer | [ATLAS code map](documents/systems/data-platform/atlas/CODE.md) · [application configuration](local-data-platform/atlas/) |
 | Input and output contracts | [Data contracts](local-data-platform/contracts/) |
 | Kubernetes deployment definitions | [Kubernetes manifests](local-data-platform/kubernetes/manifests/) |
 | Marquez integration | [Marquez component](platform-portal/marquez/) |
@@ -151,4 +175,4 @@ For permission requests, contact the repository owner.
 
 ---
 
-*Independent data engineering project · Synthetic clinical data · Verified local processing, with multi-source and Fabric ingestion under development.*
+*Independent unified healthcare data platform project · Synthetic data · Verified Local OMOP and OHDSI research flows · Canonical-first multi-source and Fabric Gold integration in progress.*
