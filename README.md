@@ -6,7 +6,7 @@ A unified data platform is more than a set of ETL jobs. New source systems shoul
 
 It combines **Synthea CSV, FHIR R4, and HL7 v2** source paths, a shared **Patient/Encounter Canonical model**, a portable **Shared Data Engine**, **Local Kubernetes/PostgreSQL**, **Microsoft Fabric/OneLake/Warehouse**, **OpenLineage/Marquez**, and **OHDSI ATLAS 3.0** for research consumption. Not every source-to-target path has reached the same acceptance milestone; the sections below explicitly separate implemented capabilities from planned integrations.
 
-**Explore:** [Live lineage viewer](https://lineage.johnzhang-dataforge.site) · [OHDSI ATLAS 3 research UI](https://atlas.johnzhang-dataforge.site/atlas/) (authenticated; demo-user browser acceptance in progress) · [Data-flow architecture](documents/architecture/DATA-FLOW.md)
+**Explore:** [Live lineage viewer](https://lineage.johnzhang-dataforge.site) · [OHDSI ATLAS 3 research UI](https://atlas.johnzhang-dataforge.site/atlas/) (authenticated; demo-user browser acceptance in progress) · [Unified Platform Architecture](documents/architecture/SYSTEM-OVERVIEW.md)
 
 > **Scope:** An independent, synthetic-data portfolio project. It is not affiliated with Emory University or Emory Healthcare, is not connected to a hospital production EHR, and makes no HIPAA-certification or production-SLA claim.
 
@@ -85,7 +85,7 @@ flowchart TB
     LOCAL -. "OpenLineage metadata" .-> MARQ["Marquez lineage viewer"]
 ```
 
-Solid arrows describe implemented component paths; the Local CSV → PostgreSQL → ATLAS and the FHIR Bronze/Canonical Silver segments have physical evidence. Dashed arrows identify shared contracts, observability metadata or unfinished publication paths. They are **not** evidence of a single deployed cross-source runtime or an already synchronized Local PG and Fabric Warehouse. For stage-by-stage acceptance see the [detailed data flow](documents/architecture/DATA-FLOW.md).
+Solid arrows describe implemented component paths; the Local CSV → PostgreSQL → ATLAS and the FHIR Bronze/Canonical Silver segments have physical evidence. Dashed arrows identify shared contracts, observability metadata or unfinished publication paths. They are **not** evidence of a single deployed cross-source runtime or an already synchronized Local PG and Fabric Warehouse. For architecture and runtime boundaries see the [Unified Platform Architecture](documents/architecture/SYSTEM-OVERVIEW.md); the [active Fabric E2E tasks](openspec/changes/fabric-fhir-omop-unified-e2e/tasks.md) track outstanding release gates.
 
 ## What has been demonstrated
 
