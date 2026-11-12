@@ -2125,11 +2125,12 @@ def execute_g5_candidate_from_trusted_controller(
         raise RuntimeError("HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED")
     if run_mode != "HALT" or write_authorized is not False:
         raise RuntimeError("HOLD_G5_NATIVE_RUN_MODE_OR_WRITE_FLAG")
-    # The live effective Wheel is 0.1.7; it does not implement the pinned
-    # 0.1.12 signed technical transport verifier. Leave this HOLD until a separately
-    # authorized wheel release/import and verified Native source deployment.
-    if engine_version != "0.1.12":
-        raise RuntimeError("HOLD_G5_NATIVE_0112_TRANSPORT_WHEEL_NOT_PUBLISHED")
+    # The live effective Wheel is 0.1.7; the cross-source v3 technical
+    # transport is available only in source 0.1.13. A future isolated,
+    # independently verified 0.1.13 publish is required before import.
+    # This remains SOURCE-ONLY even after a verified runtime upgrade.
+    if engine_version != "0.1.13":
+        raise RuntimeError("HOLD_G5_NATIVE_0113_TRANSPORT_WHEEL_NOT_PUBLISHED")
     if (not isinstance(attestation_bytes, bytes)
             or not 0 < len(attestation_bytes) <= 8192):
         raise RuntimeError("HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING")
@@ -2147,7 +2148,8 @@ def execute_g5_candidate_from_trusted_controller(
     if (not isinstance(verified, (VerifiedTransport, VerifiedTechnicalTransport))
             or verified.status not in (
                 "G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
-                "G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
+                "G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE",
+                "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
             or verified.candidate_write_authorized is not False
             or verified.gold_committed is not False
             or verified.provisional_ids_persisted is not False):
