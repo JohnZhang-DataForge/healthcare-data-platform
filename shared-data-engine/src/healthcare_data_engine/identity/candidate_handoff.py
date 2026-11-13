@@ -53,14 +53,14 @@ class CandidatePersonId:
     person_id: int
     state: str
 
+    def f1_lookup(self) -> tuple[str, str, str, str, int, str]:
+        """Historical caller compatibility; no F1 SQL or persistence."""
+        return self.person_identity_lookup_row()
+
     def person_identity_lookup_row(self) -> tuple[str, str, str, str, int, str]:
         """Mapper-compatible Person lookup with explicit identity state."""
         return ("PERSON", self.hospital_id, self.source_system,
                 self.source_business_key, self.person_id, self.state)
-
-    def f1_lookup(self) -> tuple[str, str, str, str, int, str]:
-        """Legacy caller compatibility; use person_identity_lookup_row."""
-        return self.person_identity_lookup_row()
 
 
 @dataclass(frozen=True)
