@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "azure-fabric/warehouse/omop-foundation/writer"))
 from identity_plan import IdentityKey, plan_ids
 
 from healthcare_data_engine.identity.preview import (
-    IdentitySnapshot, PersistedIdentity, bridge_f2_person_visit_allocation,
+    IdentitySnapshot, PersistedIdentity, adapt_person_visit_allocation_preview,
 )
 from healthcare_data_engine.identity.candidate_handoff import (
     CandidateIdentityHold, plan_candidate_identity_handoff,
@@ -85,7 +85,7 @@ def state_with_preview(rows, existing=(), next_free=None):
         for encounter in rows["encounters"]
     ]
     plan = plan_ids(incoming, existing, next_free, gold)
-    preview = bridge_f2_person_visit_allocation(plan, current)
+    preview = adapt_person_visit_allocation_preview(plan, current)
     return current, preview
 
 
