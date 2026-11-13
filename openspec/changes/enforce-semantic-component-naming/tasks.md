@@ -8,3 +8,5 @@
 - [ ] 3.1 Both repositories now include candidate trusted default-branch `pull_request_target` workflow `require-semantic-source-names`, but it needs merge, subsequent real positive/negative PR verification, and Required status setup. Healthcare Ruleset #25365902 still requires only its original four contexts; updating trusted Existing Checker in a normal PR is prohibited.
 - [ ] 3.2 Confirm both repositories have protected Required status; only then mark enforceable governance complete.
 - [ ] 4.1 Inventory and migrate legacy stage-number interfaces via separate compatibility-tested OpenSpec; preserve historical schema/error readers and no cloud writes during naming refactor.
+
+> Negative-control PR for task 3.1: intentionally invalid `test_g5_rejected_demo.py` and `verify_g5_candidate` must be rejected by the new semantic naming gate. **Never merge this test PR**.
