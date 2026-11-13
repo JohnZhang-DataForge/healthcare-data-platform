@@ -46,7 +46,7 @@ __all__ += [
 from healthcare_data_engine.identity.preview import (
     IdentityPreviewHold, PersistedIdentity, IdentitySnapshot, PlannedIdentity,
     IdentityPreview, verify_allocation_proposal, bridge_f2_person_visit_allocation,
-    require_preview_snapshot_unchanged,
+    adapt_person_visit_allocation_preview, require_preview_snapshot_unchanged,
 )
 from healthcare_data_engine.identity.references import (
     ReferenceHold, ResolvedParent, resolve_parent_reference,
@@ -60,7 +60,8 @@ from healthcare_data_engine.mapping.omop.target_concepts import (
 __all__ += [
     "IdentityPreviewHold", "PersistedIdentity", "IdentitySnapshot",
     "PlannedIdentity", "IdentityPreview", "verify_allocation_proposal",
-    "bridge_f2_person_visit_allocation", "require_preview_snapshot_unchanged",
+    "bridge_f2_person_visit_allocation", "adapt_person_visit_allocation_preview",
+    "require_preview_snapshot_unchanged",
     "ReferenceHold", "ResolvedParent", "resolve_parent_reference",
     "resolve_declared_dependencies",
     "TargetConceptHold", "TargetConceptRule", "TargetConceptProfile",
