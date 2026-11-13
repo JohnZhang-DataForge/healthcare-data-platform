@@ -20,7 +20,6 @@ DOCUMENT_ROOTS = ("documents/", "docs/", "openspec/")
 SOURCE_EXTENSIONS = {".py", ".sh", ".sql", ".yml", ".yaml", ".json", ".toml", ".js", ".ts"}
 PHASE = re.compile(
     r"(?i)(?<![A-Za-z0-9])(?:g[0-9]|p[0-9]|f[0-9]|b[0-9])(?=$|[^A-Za-z0-9])"
-    r"|(?<![A-Za-z0-9])(?:G[0-9]|P[0-9]|F[0-9]|B[0-9])(?=[A-Z])"
 )
 TASK_STEP = re.compile(
     r"(?i)(?<![A-Za-z0-9])(?:task|step)[_-]?\d+[a-z]?(?![A-Za-z0-9])"
@@ -32,7 +31,11 @@ JS_DECL = re.compile(
     r"(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)\b"
 )
 SHELL_DECL = re.compile(r"^\s*(?:function\s+)?([A-Za-z_]\w*)\s*\(\)\s*\{")
-JSON_MEMBER = re.compile(r'^\s*["\']([^"\']+)["\']\s*:\s*(.*)
+JSON_MEMBER = re.compile(r"""^\s*["']([^"']+)["']\s*:\s*(.*)$""")
+PUBLIC_MEMBER = re.compile(
+    r"""["'](?:schema|schema_version|status|error_code|issuer|audience|protocol|job_name|dag_id)["']\s*:\s*["']([^"']+)["']""",
+    re.IGNORECASE,
+)
 BIND = re.compile(r"^\s*(?:export\s+)?([A-Za-z_]\w*)\s*(?::[^=]+)?\s*=\s*(.+)$")
 FIELD = re.compile(r"^\s*([A-Za-z_]\w*)\s*:\s*[^=:]+(?:\s*=.*)?$")
 YAML = re.compile(r"^\s*([A-Za-z_][\w-]*)\s*:\s*(.+)$")
