@@ -2888,22 +2888,22 @@ if __name__ == "__main__":
         )
         notebookutils.notebook.exit(intake_exit)
     elif run_mode in ("BRONZE_RECEIPT", "BRONZE_READBACK_ONLY"):
-        bronze_outcome = process_fhir_bronze_snapshot(
+        g3 = verify_fhir_g3_bronze(
             spark, request=request_id, manifest_sha=manifest_sha256,
             mode=run_mode, allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
             manifest_override=manifest_json, source_override=source_root,
             target_override=silver_root,
             strategy=source_preservation_strategy)
-        print("FHIR_G3_BRONZE_STATUS=" + bronze_outcome.status)
-        print("FHIR_G3_BRONZE_SOURCE_BATCH_ID=" + bronze_outcome.source_batch_id)
-        print("FHIR_G3_BRONZE_SOURCE_OBJECTS=" + str(bronze_outcome.metrics["source_objects"]))
+        print("FHIR_G3_BRONZE_STATUS=" + g3.status)
+        print("FHIR_G3_BRONZE_SOURCE_BATCH_ID=" + g3.source_batch_id)
+        print("FHIR_G3_BRONZE_SOURCE_OBJECTS=" + str(g3.metrics["source_objects"]))
         print("FHIR_G3_BRONZE_DELTA_PATH=" + _bronze_source_receipt_path(request_id))
-        if bronze_outcome.status in ("BRONZE_WRITTEN", "BRONZE_SKIP_VERIFIED"):
+        if g3.status in ("BRONZE_WRITTEN", "BRONZE_SKIP_VERIFIED"):
             notebookutils.notebook.exit(
-                "FHIR_G3_" + bronze_outcome.status + "_" +
-                str(bronze_outcome.metrics["source_objects"]) + "_DELTA_READBACK_PASS_20261102")
-        raise RuntimeError("HOLD_FHIR_G3_" + bronze_outcome.status)
+                "FHIR_G3_" + g3.status + "_" +
+                str(g3.metrics["source_objects"]) + "_DELTA_READBACK_PASS_20261102")
+        raise RuntimeError("HOLD_FHIR_G3_" + g3.status)
     elif run_mode in ("SILVER_DQ_QUARANTINE_WRITE", "SILVER_DQ_READBACK_ONLY"):
         dq = verify_fhir_g4_dq_negative(
             spark, request=request_id, manifest_sha=manifest_sha256,
@@ -2928,7 +2928,7 @@ if __name__ == "__main__":
                 "APPROVAL_DENIED_DELTA_PASS_20261102")
         raise RuntimeError("HOLD_FHIR_G4_" + dq.status)
     elif run_mode in ("SILVER_WRITE", "SILVER_READBACK_ONLY"):
-        silver_outcome = process_fhir_silver_publication(
+        g4 = verify_fhir_g4_silver(
             spark, request=request_id, manifest_sha=manifest_sha256,
             mode=run_mode, allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
@@ -2937,20 +2937,20 @@ if __name__ == "__main__":
             target_override=silver_root,
             patient_contract_json=patient_contract_json,
             encounter_contract_json=encounter_contract_json)
-        print("FHIR_G4_SILVER_STATUS=" + silver_outcome.status)
-        print("FHIR_G4_SILVER_SOURCE_BATCH_ID=" + silver_outcome.source_batch_id)
-        print("FHIR_G4_SILVER_PUBLICATION_ID=" + str(silver_outcome.publication_id))
-        print("FHIR_G4_SILVER_PATIENTS=" + str(silver_outcome.metrics["patient"]))
-        print("FHIR_G4_SILVER_ENCOUNTERS=" + str(silver_outcome.metrics["encounter"]))
-        print("FHIR_G4_SILVER_QUARANTINE=" + str(silver_outcome.metrics["quarantine_or_reject"]))
+        print("FHIR_G4_SILVER_STATUS=" + g4.status)
+        print("FHIR_G4_SILVER_SOURCE_BATCH_ID=" + g4.source_batch_id)
+        print("FHIR_G4_SILVER_PUBLICATION_ID=" + str(g4.publication_id))
+        print("FHIR_G4_SILVER_PATIENTS=" + str(g4.metrics["patient"]))
+        print("FHIR_G4_SILVER_ENCOUNTERS=" + str(g4.metrics["encounter"]))
+        print("FHIR_G4_SILVER_QUARANTINE=" + str(g4.metrics["quarantine_or_reject"]))
         print("FHIR_G4_SILVER_DELTA_PATHS=" +
               json.dumps(_silver_publication_paths(request_id), sort_keys=True))
-        if silver_outcome.status in ("SILVER_APPROVED", "SILVER_SKIP_VERIFIED"):
+        if g4.status in ("SILVER_APPROVED", "SILVER_SKIP_VERIFIED"):
             notebookutils.notebook.exit(
-                f"FHIR_G4_{silver_outcome.status}_P{silver_outcome.metrics['patient']}_"
-                f"E{silver_outcome.metrics['encounter']}_"
-                f"Q{silver_outcome.metrics['quarantine_or_reject']}_DELTA_PASS_20261102")
-        raise RuntimeError("HOLD_FHIR_G4_" + silver_outcome.status)
+                f"FHIR_G4_{g4.status}_P{g4.metrics['patient']}_"
+                f"E{g4.metrics['encounter']}_"
+                f"Q{g4.metrics['quarantine_or_reject']}_DELTA_PASS_20261102")
+        raise RuntimeError("HOLD_FHIR_G4_" + g4.status)
     elif run_mode in ("HL7_SILVER_WRITE", "HL7_SILVER_READBACK_ONLY"):
         hl7 = verify_hl7_real_silver(
             spark, request=request_id, manifest_sha=manifest_sha256,
