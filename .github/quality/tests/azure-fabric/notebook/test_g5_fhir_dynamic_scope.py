@@ -217,14 +217,14 @@ class DynamicG5SourceOnly(unittest.TestCase):
             "run_mode": "HALT", "write_authorized": False,
             "load_pinned_contract": Mock(return_value=object()),
             "_manifest_objects": Mock(return_value=({"path": "fhir/one.json"},)),
-            "_g3_expected_receipts": Mock(return_value=[{"source_path": "x"}]),
-            "_g3_delta_exists": Mock(
+            "_expected_bronze_source_receipts": Mock(return_value=[{"source_path": "x"}]),
+            "_delta_snapshot_exists": Mock(
                 side_effect=lambda spark, path: not path.endswith("/quarantine")),
-            "_g4_snapshot_source_objects": Mock(return_value=(object(),)),
+            "_snapshot_silver_source_objects": Mock(return_value=(object(),)),
             "prepare_batch": Mock(return_value=candidate),
             "validate_silver_readback": Mock(),
-            "_g4_validate_full_delta": Mock(),
-            "_g4_approval_row": Mock(return_value=approval),
+            "_validate_silver_delta_contents": Mock(),
+            "_silver_approval_row": Mock(return_value=approval),
         }
         return spark, scope, trusted, functions, loaded
 
@@ -264,9 +264,9 @@ class DynamicG5SourceOnly(unittest.TestCase):
         self.assertTrue(paths[3].endswith("/silver_approval"))
         self.assertEqual(fns["prepare_batch"].call_count, 1)
         self.assertEqual(fns["validate_silver_readback"].call_count, 1)
-        self.assertEqual(fns["_g4_validate_full_delta"].call_count, 2)
-        self.assertEqual(fns["_g3_delta_exists"].call_count, 5)
-        self.assertEqual(fns["_g4_snapshot_source_objects"].call_count, 1)
+        self.assertEqual(fns["_validate_silver_delta_contents"].call_count, 2)
+        self.assertEqual(fns["_delta_snapshot_exists"].call_count, 5)
+        self.assertEqual(fns["_snapshot_silver_source_objects"].call_count, 1)
         self.assertNotIn("candidate", " ".join(paths))
         self.assertNotIn("gold", " ".join(paths))
 
@@ -299,10 +299,10 @@ class DynamicG5SourceOnly(unittest.TestCase):
                 scope = replace(scope, silver_processing_version="wrong")
                 reason = "SOURCE_VERSION_OR_DATE"
             elif what == "quarantine":
-                fns["_g3_delta_exists"].side_effect = lambda *_: True
+                fns["_delta_snapshot_exists"].side_effect = lambda *_: True
                 reason = "PARTIAL_OR_QUARANTINED"
             elif what == "lost_approval":
-                fns["_g3_delta_exists"].side_effect = (
+                fns["_delta_snapshot_exists"].side_effect = (
                     lambda spark, path: not path.endswith(
                         ("/quarantine", "/silver_approval")))
                 reason = "PARTIAL_OR_QUARANTINED"
@@ -312,7 +312,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
                     **(vars(original) | {"patient_count": 777}))
                 reason = "RECOMPUTED_DQ_OR_PUBLICATION"
             else:
-                fns["_g4_approval_row"].return_value = {"status": "OTHER"}
+                fns["_silver_approval_row"].return_value = {"status": "OTHER"}
                 reason = "APPROVAL_LAST_FENCE_DRIFT"
             with self.subTest(case=what):
                 with self.assertRaisesRegex(RuntimeError, reason):
