@@ -1,0 +1,39 @@
+name: Semantic Naming Trusted Source Gate
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  require-semantic-source-names:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout trusted default-branch policy only
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: policy
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Checkout PR Git files as untrusted passive data
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Run default-branch policy negative and positive tests
+        working-directory: policy
+        run: python3 -m unittest discover -s .github/quality/tests -p 'test_semantic_naming.py' -v
+      - name: Inspect untrusted candidate Git diff using trusted policy
+        working-directory: candidate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          python3 ../policy/.github/quality/scripts/check_semantic_naming.py --base "$BASE_SHA" --head "$HEAD_SHA"
