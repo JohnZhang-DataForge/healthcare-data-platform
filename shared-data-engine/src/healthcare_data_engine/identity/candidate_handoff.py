@@ -53,10 +53,14 @@ class CandidatePersonId:
     person_id: int
     state: str
 
-    def f1_lookup(self) -> tuple[str, str, str, str, int, str]:
-        """Candidate lookup row includes REQUIRED identity_state, not F1 DML."""
+    def person_identity_lookup_row(self) -> tuple[str, str, str, str, int, str]:
+        """Mapper-compatible Person lookup with explicit identity state."""
         return ("PERSON", self.hospital_id, self.source_system,
                 self.source_business_key, self.person_id, self.state)
+
+    def f1_lookup(self) -> tuple[str, str, str, str, int, str]:
+        """Legacy caller compatibility; use person_identity_lookup_row."""
+        return self.person_identity_lookup_row()
 
 
 @dataclass(frozen=True)
@@ -95,7 +99,7 @@ class PersonVisitCandidateHandoff:
 
     def person_lookup_rows(self) -> tuple[tuple[str, str, str, str, int, str], ...]:
         """Legacy mapper-compatible columns + `identity_state` (never F1 DML)."""
-        return tuple(row.f1_lookup() for row in self.person_lookup)
+        return tuple(row.person_identity_lookup_row() for row in self.person_lookup)
 
     def visit_id_rows(self) -> tuple[tuple[str, str, int, str], ...]:
         """Input for later target Visit ID join, NOT a Gold destination table."""
