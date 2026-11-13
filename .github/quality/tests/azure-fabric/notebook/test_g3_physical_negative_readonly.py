@@ -31,9 +31,9 @@ class G3PhysicalProbe(unittest.TestCase):
             source_version="FHIR_R4", source_ingest_date=date(2026, 11, 2),
             processed_at=datetime(2026, 11, 2, tzinfo=timezone.utc))
         specs = nb._manifest_objects(raw, context)
-        receipts = nb._g3_expected_receipts(context, specs)
+        receipts = nb._expected_bronze_source_receipts(context, specs)
         payloads = {x.source_file: x.payload for x in sources}
-        path = nb._g3_receipt_path(REQUEST)
+        path = nb._bronze_source_receipt_path(REQUEST)
         self.spark.delta[path] = [
             {**x, "source_payload": payloads[x["source_path"]]} for x in receipts]
         self.args = dict(
@@ -47,7 +47,7 @@ class G3PhysicalProbe(unittest.TestCase):
         g = nb.verify_fhir_g3_negative_readonly.__globals__
         with patch.dict(g, {
             "_G3_NEGATIVE_MANIFEST_SHA": self.args["manifest_sha"],
-            "_g3_delta_exists": lambda spark, path: path in spark.delta,
+            "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "_write_delta": lambda df, path: self.fail("read-only probe attempted a write"),
         }):
             return nb.verify_fhir_g3_negative_readonly(
@@ -63,7 +63,7 @@ class G3PhysicalProbe(unittest.TestCase):
             "FHIR_G3_READONLY_ACK_RECOVERY_PATH_VERIFIED_5_DELTA_PASS_20261102")
 
     def test_corrupt_raw_snapshot_never_passes_recovery_or_drift(self):
-        path = nb._g3_receipt_path(REQUEST)
+        path = nb._bronze_source_receipt_path(REQUEST)
         self.spark.delta[path][0]["source_payload"] = b"corrupted"
         for scenario in ("BRONZE_ACK_RECOVERY_PROBE", "BRONZE_DRIFT_PROBE"):
             with self.subTest(scenario=scenario), self.assertRaisesRegex(
