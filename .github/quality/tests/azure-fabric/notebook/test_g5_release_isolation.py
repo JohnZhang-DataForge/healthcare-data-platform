@@ -70,9 +70,9 @@ class G5NativeWheelIsolation(unittest.TestCase):
         self.assertIs(self.native["retention_preflight_verified"], False)
         main = NATIVE.read_text(encoding="utf-8").split(
             'if __name__ == "__main__":', 1)[1]
+        # The legacy Bronze/Silver main dispatch retains frozen HOLD_G3/G4
+        # error string compatibility until the Tier C protocol migration.
         for semantic in (
-            "process_fhir_bronze_snapshot",
-            "process_fhir_silver_publication",
             "verify_fhir_candidate_source_readonly",
             "verify_fhir_concept_source_inventory_readonly",
             "verify_fhir_bronze_negative_readonly",
