@@ -70,6 +70,13 @@ class SemanticNamingTests(unittest.TestCase):
             'HL7_VERSION = "v2"',
         ]}), [])
 
+    def test_reject_suffixed_public_schema_constant(self):
+        path = "shared-data-engine/src/healthcare_data_engine/security/provider.py"
+        self.assertTrue(guard.line_violations(
+            path, 'DYNAMIC_TECHNICAL_SCHEMA = "fabric-g5-technical-evidence-transport-v3"'))
+        self.assertTrue(guard.line_violations(
+            path, 'ADMISSION_STATUS = "G5_STAGE_SOURCE_ONLY"'))
+
     def test_multilanguage_and_embedded_camelcase_identifiers(self):
         cases = (
             ("platform-portal/portal/web/controller.ts", "export const G5Candidate = 1;"),
