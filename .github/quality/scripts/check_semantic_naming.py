@@ -20,6 +20,7 @@ DOCUMENT_ROOTS = ("documents/", "docs/", "openspec/")
 SOURCE_EXTENSIONS = {".py", ".sh", ".sql", ".yml", ".yaml", ".json", ".toml", ".js", ".ts"}
 PHASE = re.compile(
     r"(?i)(?<![A-Za-z0-9])(?:g[0-9]|p[0-9]|f[0-9]|b[0-9])(?=$|[^A-Za-z0-9])"
+    r"|(?<![A-Za-z0-9])(?:G[0-9]|P[0-9]|F[0-9]|B[0-9])(?=[A-Z])"
 )
 TASK_STEP = re.compile(
     r"(?i)(?<![A-Za-z0-9])(?:task|step)[_-]?\d+[a-z]?(?![A-Za-z0-9])"
