@@ -43,6 +43,43 @@ class G5NativeWheelIsolation(unittest.TestCase):
         cls.native = runpy.run_path(
             str(NATIVE), run_name="_g5_017_native_business_source_isolation")
 
+    def test_semantic_public_names_preserve_legacy_identity_and_halt(self):
+        aliases = {
+            "process_fhir_bronze_snapshot": "verify_fhir_g3_bronze",
+            "process_fhir_silver_publication": "verify_fhir_g4_silver",
+            "verify_fhir_dynamic_silver_source_readonly":
+                "verify_fhir_g5_dynamic_silver_source_readonly",
+            "plan_and_write_omop_candidate_delta": "plan_and_write_g5_candidate_delta",
+            "verify_candidate_transport_source_only":
+                "execute_g5_candidate_from_trusted_controller",
+            "execute_person_visit_candidate_publication":
+                "execute_g5_person_visit_business",
+            "verify_fhir_candidate_source_readonly":
+                "verify_fhir_g5_candidate_source_readonly",
+            "verify_fhir_concept_source_inventory_readonly":
+                "verify_fhir_g5_concept_source_inventory_readonly",
+            "verify_fhir_bronze_negative_readonly":
+                "verify_fhir_g3_negative_readonly",
+        }
+        for semantic, legacy in aliases.items():
+            with self.subTest(semantic=semantic):
+                self.assertIs(self.native[semantic], self.native[legacy])
+                self.assertTrue(callable(self.native[semantic]))
+        self.assertEqual(self.native["run_mode"], "HALT")
+        self.assertIs(self.native["write_authorized"], False)
+        self.assertIs(self.native["retention_preflight_verified"], False)
+        main = NATIVE.read_text(encoding="utf-8").split(
+            'if __name__ == "__main__":', 1)[1]
+        # The legacy Bronze/Silver main dispatch retains frozen HOLD_G3/G4
+        # error string compatibility until the Tier C protocol migration.
+        for semantic in (
+            "verify_fhir_candidate_source_readonly",
+            "verify_fhir_concept_source_inventory_readonly",
+            "verify_fhir_bronze_negative_readonly",
+        ):
+            self.assertIn(semantic + "(", main)
+            self.assertNotIn(aliases[semantic] + "(", main)
+
     def test_sole_git_native_wheel_matches_published_017_and_halt(self):
         self.assertEqual(engine.__version__, PUBLISHED_VERSION)
         self.assertEqual(self.native["engine_version"], PUBLISHED_VERSION)

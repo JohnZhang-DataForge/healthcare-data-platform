@@ -2859,6 +2859,19 @@ def verify_fhir_canonical_readonly(spark, *, request: str, allow_write: bool,
     return f"FHIR_CANONICAL_READONLY_{expected_objects}_SPARK_PK_FK_PASS_20261102"
 
 
+# Semantic public call sites. Keep the established legacy function objects
+# callable under their historical names for fixed Workflow/Notebook consumers;
+# alias identity preserves signatures, guards, Stage authority, and exceptions.
+process_fhir_bronze_snapshot = verify_fhir_g3_bronze
+process_fhir_silver_publication = verify_fhir_g4_silver
+verify_fhir_dynamic_silver_source_readonly = verify_fhir_g5_dynamic_silver_source_readonly
+plan_and_write_omop_candidate_delta = plan_and_write_g5_candidate_delta
+verify_candidate_transport_source_only = execute_g5_candidate_from_trusted_controller
+execute_person_visit_candidate_publication = execute_g5_person_visit_business
+verify_fhir_candidate_source_readonly = verify_fhir_g5_candidate_source_readonly
+verify_fhir_concept_source_inventory_readonly = verify_fhir_g5_concept_source_inventory_readonly
+verify_fhir_bronze_negative_readonly = verify_fhir_g3_negative_readonly
+
 if __name__ == "__main__":
     if run_mode == "RUNTIME_SMOKE":
         smoke_exit = validate_read_only_runtime_smoke(
@@ -2960,7 +2973,7 @@ if __name__ == "__main__":
                 f"Q{hl7.metrics['quarantine_or_reject']}_DELTA_PASS_20261108")
         raise RuntimeError("HOLD_HL7_SILVER_" + hl7.status)
     elif run_mode == "G5_CANDIDATE_SOURCE_READONLY":
-        g5_exit = verify_fhir_g5_candidate_source_readonly(
+        candidate_source_result = verify_fhir_candidate_source_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,
             allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
@@ -2970,9 +2983,9 @@ if __name__ == "__main__":
             target_override=silver_root,
             patient_contract_json=patient_contract_json,
             encounter_contract_json=encounter_contract_json)
-        notebookutils.notebook.exit(g5_exit)
+        notebookutils.notebook.exit(candidate_source_result)
     elif run_mode == "G5_CONCEPT_SOURCE_INVENTORY_READONLY":
-        inventory_exit = verify_fhir_g5_concept_source_inventory_readonly(
+        inventory_exit = verify_fhir_concept_source_inventory_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,
             allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
@@ -2984,7 +2997,7 @@ if __name__ == "__main__":
             encounter_contract_json=encounter_contract_json)
         notebookutils.notebook.exit(inventory_exit)
     elif run_mode in ("BRONZE_DRIFT_PROBE", "BRONZE_ACK_RECOVERY_PROBE"):
-        result = verify_fhir_g3_negative_readonly(
+        result = verify_fhir_bronze_negative_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,
             scenario=run_mode, allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
