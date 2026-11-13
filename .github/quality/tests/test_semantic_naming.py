@@ -70,6 +70,20 @@ class SemanticNamingTests(unittest.TestCase):
             'HL7_VERSION = "v2"',
         ]}), [])
 
+    def test_multilanguage_and_embedded_camelcase_identifiers(self):
+        cases = (
+            ("platform-portal/portal/web/controller.ts", "export const G5Candidate = 1;"),
+            ("platform-portal/portal/web/controller.ts", "function verifyP2Stage() {}"),
+            ("local-data-platform/sql/omop/schema.sql", "CREATE TABLE etl.g5_candidate (id int);"),
+            ("local-data-platform/scripts/omop/release.sh", "export FABRIC_B4_RELEASE=1"),
+            ("azure-fabric/deployment/contract.json", '  "schema_version": "fabric-g5-transport-v3",'),
+            ("shared-data-engine/src/healthcare_data_engine/mapping/omop/candidates.py",
+             'return {"status": "G5_NEW_RELEASE_UNVERIFIED"}'),
+        )
+        for path, line in cases:
+            with self.subTest(path=path, line=line):
+                self.assertTrue(guard.line_violations(path, line))
+
     def test_legacy_paths_unchanged_are_not_blocked(self):
         self.assertEqual(guard.evaluate([], {}), [])
         self.assertEqual(guard.evaluate(
