@@ -105,20 +105,20 @@ class G3OfflineTests(unittest.TestCase):
         parameters = dict(self.params, **updates)
         g = nb.verify_fhir_g3_bronze.__globals__
         with patch.dict(g, {
-            "_g3_delta_exists": lambda spark, path: path in spark.delta,
+            "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "read_source_objects_native": lambda spark, **kw: self.objects,
             "_write_delta": lambda df, path: self.spark.delta.setdefault(path, df),
         }):
             return nb.verify_fhir_g3_bronze(self.spark, **parameters)
 
     def test_pinned_path_is_request_scoped_and_traversal_rejected(self):
-        self.assertEqual(nb._g3_receipt_path(REQUEST),
+        self.assertEqual(nb._bronze_source_receipt_path(REQUEST),
                          "Files/bronze/fhir_r4/atlanta-hospital-a/"
                          "atlanta-hospital-a-fhir-r4/" + REQUEST + "/bronze_source_snapshot")
         for request in ("../other", "", "atlanta-fhir-gh-123/evil", "another-source"):
             with self.subTest(request=request):
                 with self.assertRaisesRegex(RuntimeError, "UNAPPROVED_REQUEST"):
-                    nb._g3_receipt_path(request)
+                    nb._bronze_source_receipt_path(request)
 
     def test_no_read_without_correct_write_and_retention_guards(self):
         for key, value in (
@@ -136,7 +136,7 @@ class G3OfflineTests(unittest.TestCase):
         result = self.execute()
         self.assertEqual(result.status, "BRONZE_WRITTEN")
         self.assertEqual(result.metrics["source_objects"], 5)
-        path = nb._g3_receipt_path(REQUEST)
+        path = nb._bronze_source_receipt_path(REQUEST)
         self.assertIn(path, self.spark.delta)
         self.assertEqual(len(self.spark.delta[path]), 5)
         self.assertEqual({r["manifest_sha256"] for r in self.spark.delta[path]}, {self.sha})
@@ -149,9 +149,9 @@ class G3OfflineTests(unittest.TestCase):
 
     def test_replay_skip_with_independent_delta_read_and_no_write(self):
         self.assertEqual(self.execute().status, "BRONZE_WRITTEN")
-        before = self.spark.delta[nb._g3_receipt_path(REQUEST)]
+        before = self.spark.delta[nb._bronze_source_receipt_path(REQUEST)]
         self.assertEqual(self.execute().status, "BRONZE_SKIP_VERIFIED")
-        self.assertIs(before, self.spark.delta[nb._g3_receipt_path(REQUEST)])
+        self.assertIs(before, self.spark.delta[nb._bronze_source_receipt_path(REQUEST)])
         self.assertEqual(self.execute(mode="BRONZE_READBACK_ONLY",
                                       allow_write=False, retention_ok=False).status,
                          "BRONZE_SKIP_VERIFIED")
@@ -171,7 +171,7 @@ class G3OfflineTests(unittest.TestCase):
             raise TimeoutError("simulated unknown ACK")
         g = nb.verify_fhir_g3_bronze.__globals__
         with patch.dict(g, {
-            "_g3_delta_exists": lambda spark, path: path in spark.delta,
+            "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "read_source_objects_native": lambda spark, **kw: self.objects,
             "_write_delta": unknown_ack,
         }):
@@ -182,20 +182,20 @@ class G3OfflineTests(unittest.TestCase):
                          "BRONZE_SKIP_VERIFIED")
 
     def test_corrupt_or_partial_stored_receipt_never_overwritten(self):
-        self.spark.delta[nb._g3_receipt_path(REQUEST)] = [{"source_path": "bad"}]
+        self.spark.delta[nb._bronze_source_receipt_path(REQUEST)] = [{"source_path": "bad"}]
         self.assertEqual(self.execute().status, "HOLD_REQUEST_DRIFT")
-        self.assertEqual(len(self.spark.delta[nb._g3_receipt_path(REQUEST)]), 1)
+        self.assertEqual(len(self.spark.delta[nb._bronze_source_receipt_path(REQUEST)]), 1)
 
     def test_snapshot_raw_payload_tamper_holds_on_replay(self):
         self.assertEqual(self.execute().status, "BRONZE_WRITTEN")
-        path = nb._g3_receipt_path(REQUEST)
+        path = nb._bronze_source_receipt_path(REQUEST)
         self.spark.delta[path][0]["source_payload"] = b"changed-by-attacker"
         self.assertEqual(self.execute().status, "HOLD_REQUEST_DRIFT")
         self.assertEqual(len(self.spark.delta), 1)
 
     def test_legacy_metadata_only_receipt_never_approves_snapshotted_source(self):
         self.assertEqual(self.execute().status, "BRONZE_WRITTEN")
-        path = nb._g3_receipt_path(REQUEST)
+        path = nb._bronze_source_receipt_path(REQUEST)
         del self.spark.delta[path][0]["source_payload"]
         self.assertEqual(self.execute(mode="BRONZE_READBACK_ONLY",
                                       allow_write=False, retention_ok=False).status,

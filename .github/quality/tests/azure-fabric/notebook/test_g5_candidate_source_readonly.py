@@ -22,7 +22,7 @@ ENCOUNTER = ROOT / "local-data-platform/spark/contracts/canonical/encounter-v1.j
 CODE = runpy.run_path(str(NB), run_name="_g5_synthetic_no_fabric_execution")
 CHECK = CODE["verify_fhir_g5_candidate_source_readonly"]
 INVENTORY = CODE["verify_fhir_g5_concept_source_inventory_readonly"]
-PATHS = CODE["_g4_paths"]("atlanta-fhir-gh-41552666929")
+PATHS = CODE["_silver_publication_paths"]("atlanta-fhir-gh-41552666929")
 BATCH = "a" * 64
 SOURCE = "synthea-fhir:atlanta-hospital-a:atlanta-hospital-a-fhir-r4"
 APPROVAL = {

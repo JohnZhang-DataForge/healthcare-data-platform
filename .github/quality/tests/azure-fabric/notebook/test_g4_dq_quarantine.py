@@ -49,7 +49,7 @@ class G4DQOffline(unittest.TestCase):
         with patch.dict(g, {
             "read_source_objects_native": lambda *_args, **kw: self.fixture.sources,
             "prepare_batch": self.prepared,
-            "_g3_delta_exists": lambda spark, path: path in spark.delta,
+            "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "_write_delta": persist,
             "validate_silver_readback": lambda *_args, **kw: None,
         }):
@@ -60,7 +60,7 @@ class G4DQOffline(unittest.TestCase):
         r = self.execute()
         self.assertEqual(r.status, "DQ_QUARANTINED")
         self.assertEqual(r.metrics["patient"], 99)
-        paths = nb._g4_paths(self.params["request"])
+        paths = nb._silver_publication_paths(self.params["request"])
         self.assertEqual(set(self.spark.delta), {paths["quarantine"]})
         self.assertEqual(self.spark.delta[paths["quarantine"]].count(), 1)
         self.assertEqual(self.spark.delta[paths["quarantine"]].rows[0]["reason"],
@@ -77,7 +77,7 @@ class G4DQOffline(unittest.TestCase):
 
     def test_altered_physical_quarantine_or_approval_never_skips(self):
         self.assertEqual(self.execute().status, "DQ_QUARANTINED")
-        paths = nb._g4_paths(self.params["request"])
+        paths = nb._silver_publication_paths(self.params["request"])
         self.spark.delta[paths["quarantine"]].rows[0]["reason"] = "WRONG"
         self.assertEqual(self.execute(
             mode="SILVER_DQ_READBACK_ONLY", allow_write=False,
