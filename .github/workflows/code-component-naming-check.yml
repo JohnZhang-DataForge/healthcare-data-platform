@@ -47,6 +47,11 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: python3 .github/quality/scripts/check_shared_fabric_boundaries.py --base "$BASE_SHA" --head "$HEAD_SHA"
+      - name: Reject new project-stage identifiers in source changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/quality/scripts/check_semantic_naming.py --base "$BASE_SHA" --head "$HEAD_SHA"
       - name: Reject new Task/Step-named code
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
