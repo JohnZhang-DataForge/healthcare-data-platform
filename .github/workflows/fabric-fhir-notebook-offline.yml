@@ -200,7 +200,7 @@ jobs:
           assert nb["write_authorized"] is False
           assert nb["retention_preflight_verified"] is False
           assert callable(nb["plan_and_write_g5_candidate_delta"])
-          assert callable(nb["_g5_candidate_verify_mapper_payload"])
+          assert callable(nb["_verify_candidate_mapper_payload"])
           assert callable(nb["execute_g5_person_visit_business"])
           assert "G5_CANDIDATE_WRITE" not in path.read_text().split('if __name__ == "__main__":')[-1]
           print("G5_017_P3_BUSINESS_WRITER_SYMBOLS_RELEASE_GUARDED_PASS")
