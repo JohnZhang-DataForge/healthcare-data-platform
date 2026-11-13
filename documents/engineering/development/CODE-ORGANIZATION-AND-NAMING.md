@@ -11,6 +11,10 @@ source_sha: 2c85b485381a72425506829fd321d93b164a231d
 
 ## 一、唯一规则
 
+**不允许把任何项目开发阶段号作为新增业务源码、函数、类、字段、状态/错误码、协议 Schema、Workflow 名称。** 例如 G3/G4/G5、P1/P2/P3、F1/F2、B2/B4、taskNNN、stepNNN 均为开发进度代号，不是稳定业务名。应采用 bronze_ingestion、silver_publication、technical_admission、identity_snapshot、candidate_publication、gold_publication 等职责命名。FHIR R4、HL7 v2、OMOP CDM 5.4、Python Wheel 0.1.13 等真实标准与版本号不受此限制。历史已发布协议与旧代码只能受控兼容读取，不能作为新代码命名模板。
+
+**新增的语义命名检查**：[`check_semantic_naming.py`](../../../.github/quality/scripts/check_semantic_naming.py) 对 PR Git diff 中新增源码路径和新增声明/部分外部契约进行静态检测，另有负向测试；已接入 `Component Code Naming` 非 Required 工作流。检查器目前不覆盖所有动态生成字符串/语言，**也尚未进入可信 Required Gate**，因此不能将 advisory PASS 说成治理完成。现有受保护 checker 禁止普通 PR 直接改动，必须另行授权升级默认分支可信策略并通过 GitHub Ruleset 实际负向验收。
+
 **Task / Step 用来管理开发过程，不能用来命名新增的正式业务代码。** Task/Step 编号只出现在 Issue/PR、规划、验收、OpenSpec tasks、运行记录、历史文件中。Python 模块、包、函数、类、DAG ID、SQL 文件、正式 Shell、镜像、K8s Manifest、Workflow、测试路径均必须**按照组件 + 业务能力 + 操作**命名。
 
 现有 `task001`、`task003`、`task004` 文件、导入、数据库表、镜像与 Batch Contract **暂时原样保留**。禁止为了让目录好看而批量替换已经接受验收的接口；要按 [Legacy Refactor Plan](LEGACY-CODE-REFACTOR-PLAN.md) 逐模块改造并验证。
