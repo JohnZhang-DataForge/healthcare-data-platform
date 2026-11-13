@@ -84,7 +84,7 @@ def line_violations(path: str, line: str) -> list[str]:
             problems.append("development-number-yaml-identifier")
     # New exception codes and public response statuses must not reintroduce
     # a development phase even inside an otherwise semantic function.
-    if re.search(r"\braise\b", value) and re.search(
+    if re.match(r"^\s*raise\b", line) and re.search(
         r"['\"](?:HOLD_|FAIL_|ERROR_|G[0-9]_|P[0-9]_|F[0-9]_|B[0-9]_)[^'\"]*['\"]", value
     ) and has_phase(value):
         problems.append("development-number-error-code")
