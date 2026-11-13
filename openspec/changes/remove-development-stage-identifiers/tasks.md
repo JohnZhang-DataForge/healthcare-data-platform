@@ -2,7 +2,7 @@
 
 - [x] 0.1 Inspect both latest Main SHAs, current open PRs and existing naming governance.
 - [x] 0.2 Establish Tier A/B/C ownership, freeze published contract identifiers and list initial 12 private Notebook helper mappings.
-- [ ] 1.1 Inventory all Tier A Notebook references and negative source-introspection tests.
+- [x] 1.1 Inventory all Tier A Notebook references and source-introspection tests: 12 private helpers appear in Notebook (64+ exact occurrences); six existing Notebook test modules reference the selected names and must update in this same PR. Current externally published versioned schema/flags remain frozen.
 - [ ] 1.2 Rename Tier A helpers/call sites in a separate isolated PR; no business logic, mode/status/schema/path changes.
 - [ ] 1.3 Exact-HEAD offline Notebook CI and other required checks PASS; merge to Main only when safe.
 - [ ] 2.1 Inventory Shared Engine and Self-Runner Tier B public entrypoints and all cross-repo callers.
