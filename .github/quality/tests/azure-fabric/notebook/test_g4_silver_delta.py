@@ -165,14 +165,14 @@ class G4Offline(unittest.TestCase):
             "read_source_objects_native": lambda *_args, **_kw: self.sources,
             "prepare_batch": self.prepared,
             "validate_silver_readback": lambda *_args, **_kw: None,
-            "_g3_delta_exists": lambda spark, path: path in spark.delta,
+            "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "_write_delta": write,
         }):
             return nb.verify_fhir_g4_silver(self.spark, **params)
 
     def test_physical_paths_stable_and_path_traversal_rejected(self):
-        paths = nb._g4_paths(REQUEST)
-        self.assertEqual(paths["bronze"], nb._g3_receipt_path(REQUEST))
+        paths = nb._silver_publication_paths(REQUEST)
+        self.assertEqual(paths["bronze"], nb._bronze_source_receipt_path(REQUEST))
         self.assertTrue(paths["patient"].endswith("/canonical_patient"))
         self.assertTrue(paths["encounter"].endswith("/canonical_encounter"))
         self.assertTrue(paths["approval"].endswith("/silver_approval"))
@@ -181,7 +181,7 @@ class G4Offline(unittest.TestCase):
         for bad in ("../sibling", "atlanta-fhir-gh-123/evil", ""):
             with self.subTest(bad=bad), self.assertRaisesRegex(
                     RuntimeError, "HOLD_G3_UNAPPROVED_REQUEST_NAMESPACE"):
-                nb._g4_paths(bad)
+                nb._silver_publication_paths(bad)
 
     def test_fail_closed_parameter_and_contract_checks_before_source_read(self):
         cases = (
@@ -208,7 +208,7 @@ class G4Offline(unittest.TestCase):
         self.assertEqual(a.status, "SILVER_APPROVED")
         self.assertEqual((a.metrics["patient"], a.metrics["encounter"],
                           a.metrics["quarantine_or_reject"]), (100, 121, 0))
-        paths = nb._g4_paths(REQUEST)
+        paths = nb._silver_publication_paths(REQUEST)
         self.assertEqual(set(self.spark.delta), {
             paths[k] for k in ("bronze", "patient", "encounter", "approval")})
         self.assertEqual(self.spark.delta[paths["bronze"]].count(), 100)
@@ -235,7 +235,7 @@ class G4Offline(unittest.TestCase):
         def guarded_writer(*args, **kwargs):
             self.assertEqual(kwargs["source_preservation_strategy"],
                              "DELTA_RAW_SNAPSHOT_V1")
-            self.assertEqual(kwargs["paths"], nb._g4_paths(REQUEST))
+            self.assertEqual(kwargs["paths"], nb._silver_publication_paths(REQUEST))
             recorded.append("shared-writer-called")
             return shared(*args, **kwargs)
 
@@ -244,7 +244,7 @@ class G4Offline(unittest.TestCase):
             result = self.execute()
         self.assertEqual(result.status, "SILVER_APPROVED")
         self.assertEqual(recorded, ["shared-writer-called"])
-        paths = nb._g4_paths(REQUEST)
+        paths = nb._silver_publication_paths(REQUEST)
         self.assertEqual(self.spark.delta[paths["approval"]].rows[0]["status"],
                          "SILVER_APPROVED")
 
@@ -263,7 +263,7 @@ class G4Offline(unittest.TestCase):
         self.assertFalse(self.spark.delta)
 
     def test_partial_unknown_ack_approval_missing_stays_readonly(self):
-        paths = nb._g4_paths(REQUEST)
+        paths = nb._silver_publication_paths(REQUEST)
         self.spark.delta[paths["bronze"]] = Frame([{"source_path": "corrupt"}])
         outcome = self.execute()
         self.assertEqual(outcome.status, "HOLD_REQUEST_DRIFT")
@@ -271,7 +271,7 @@ class G4Offline(unittest.TestCase):
 
     def test_corrupt_saved_bytes_and_approval_rejected(self):
         self.assertEqual(self.execute().status, "SILVER_APPROVED")
-        paths = nb._g4_paths(REQUEST)
+        paths = nb._silver_publication_paths(REQUEST)
         self.spark.delta[paths["bronze"]].rows[0]["source_payload"] = b"tampered"
         self.assertEqual(self.execute(mode="SILVER_READBACK_ONLY",
                                       allow_write=False, retention_ok=False).status,
@@ -279,7 +279,7 @@ class G4Offline(unittest.TestCase):
 
     def test_missing_approval_fence_never_resumes_partial_writes(self):
         self.assertEqual(self.execute().status, "SILVER_APPROVED")
-        paths = nb._g4_paths(REQUEST)
+        paths = nb._silver_publication_paths(REQUEST)
         del self.spark.delta[paths["approval"]]
         self.assertEqual(self.execute().status, "VERIFY_READONLY")
         self.assertNotIn(paths["approval"], self.spark.delta)
@@ -292,14 +292,14 @@ class G4Offline(unittest.TestCase):
                                          source_file="example.json"),)
         outcome = self.execute()
         self.assertEqual(outcome.status, "HOLD_DQ")
-        paths = nb._g4_paths(REQUEST)
+        paths = nb._silver_publication_paths(REQUEST)
         self.assertEqual(set(self.spark.delta), {paths["quarantine"]})
         self.assertEqual(self.spark.delta[paths["quarantine"]].count(), 1)
         self.assertNotIn(paths["approval"], self.spark.delta)
 
     def test_corrupt_approval_count_never_skips(self):
         self.assertEqual(self.execute().status, "SILVER_APPROVED")
-        paths = nb._g4_paths(REQUEST)
+        paths = nb._silver_publication_paths(REQUEST)
         self.spark.delta[paths["approval"]].rows[0]["patient_count"] = 9
         self.assertEqual(self.execute(mode="SILVER_READBACK_ONLY",
                                       allow_write=False, retention_ok=False).status,
@@ -417,7 +417,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         args.update(overrides)
         with patch.dict(nb.plan_and_write_g5_candidate_delta.__globals__, {
             "_write_delta": self.write,
-            "_g3_delta_exists": lambda spark, path: path in self.spark.delta,
+            "_delta_snapshot_exists": lambda spark, path: path in self.spark.delta,
             "verify_fhir_g5_candidate_source_readonly": self.fake_source_fence,
         }):
             return nb.plan_and_write_g5_candidate_delta(self.spark, **args)
