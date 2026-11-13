@@ -277,6 +277,11 @@ def bridge_f2_person_visit_allocation(
                                       rows(f2_allocation.inserted), next_free)
 
 
+# Business name for the existing Fabric AllocationPlan-to-IdentityPreview
+# adapter. Historical F2 callers remain byte-for-byte compatible.
+adapt_person_visit_allocation_preview = bridge_f2_person_visit_allocation
+
+
 def require_preview_snapshot_unchanged(
     preview: IdentityPreview, current_snapshot: IdentitySnapshot,
 ) -> IdentityPreview:
