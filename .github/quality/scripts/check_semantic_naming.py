@@ -50,6 +50,18 @@ YAML_KEYS = frozenset({
 })
 
 
+PUBLIC_SUFFIXES = (
+    "_SCHEMA", "_SCHEMA_VERSION", "_STATUS", "_ERROR_CODE",
+    "_ISSUER", "_AUDIENCE", "_PROTOCOL", "_MARKER", "_CONFIRM",
+    "_DAG_ID", "_JOB_ID", "_WORKFLOW_NAME",
+)
+
+
+def public_binding(identifier: str) -> bool:
+    name = identifier.upper()
+    return name in PUBLIC_KEYS or name.endswith(PUBLIC_SUFFIXES)
+
+
 def has_phase(value: str) -> bool:
     return bool(PHASE.search(value) or CAMEL_PHASE.search(value) or TASK_STEP.search(value))
 
@@ -91,7 +103,7 @@ def line_violations(path: str, line: str) -> list[str]:
         identifier, rhs = assignment.groups()
         if has_phase(identifier):
             problems.append("development-number-binding")
-        if identifier.upper() in PUBLIC_KEYS and has_phase(rhs):
+        if public_binding(identifier) and has_phase(rhs):
             problems.append("development-number-public-contract")
     field = FIELD.match(line) if path.endswith(".py") else None
     if field and has_phase(field.group(1)):
