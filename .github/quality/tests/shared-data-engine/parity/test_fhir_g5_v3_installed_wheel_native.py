@@ -76,7 +76,7 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
 
     def test_actual_typed_v3_scope_wires_to_native_fhir_planner(self):
         source, trusted = synthetic_scopes()
-        paths = self.native["_g5_dynamic_fhir_candidate_paths_source_only"](
+        paths = self.native["_plan_fhir_candidate_paths_from_trusted_scope"](
             source, trusted_scope=trusted)
         self.assertEqual(set(paths), {"person", "visit", "approval"})
         self.assertIn(source.request_id, paths["person"])
@@ -88,7 +88,7 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
 
     def test_tampered_source_format_stage_f2_and_manifest_fail_closed(self):
         source, trusted = synthetic_scopes()
-        fn = self.native["_g5_dynamic_fhir_candidate_paths_source_only"]
+        fn = self.native["_plan_fhir_candidate_paths_from_trusted_scope"]
         invalids = (
             replace(trusted, source_format="HL7_V2"),
             replace(trusted, stage="GOLD_COMMITTED"),
