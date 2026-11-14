@@ -145,11 +145,11 @@ class G5NativeWheelIsolation(unittest.TestCase):
                     source_objects=(), patient_contract_bytes=b"",
                     encounter_contract_bytes=b"")
 
-        g4_guard = Mock(side_effect=AssertionError("NO_G4_SPARK_READ_ALLOWED"))
+        legacy_silver_read_guard = Mock(side_effect=AssertionError("NO_G4_SPARK_READ_ALLOWED"))
         with patch.dict(
             self.native["verify_fhir_g5_candidate_source_readonly"].__globals__,
             {"engine_version": LEGACY_VERSION,
-             "verify_fhir_g4_silver": g4_guard},
+             "verify_fhir_g4_silver": legacy_silver_read_guard},
         ):
             with self.assertRaisesRegex(RuntimeError, "HOLD_G5_SOURCE_PIN"):
                 self.native["verify_fhir_g5_candidate_source_readonly"](
@@ -161,7 +161,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
                     manifest_override="", source_override="",
                     target_override="", patient_contract_json="",
                     encounter_contract_json="")
-        g4_guard.assert_not_called()
+        legacy_silver_read_guard.assert_not_called()
 
         with patch.dict(
             self.native["validate_read_only_runtime_smoke"].__globals__,
