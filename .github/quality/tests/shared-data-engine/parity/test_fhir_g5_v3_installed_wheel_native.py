@@ -9,9 +9,11 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+from types import ModuleType
 import runpy
+import sys
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import healthcare_data_engine as engine
 from healthcare_data_engine.mapping.omop.candidate_publication import (
@@ -74,13 +76,15 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
 
-    def test_published_legacy_wheel_remains_denied_for_new_scope(self):
-        from unittest.mock import patch
+    def test_missing_typed_contract_is_denied_even_for_candidate_wheel(self):
         source, trusted = synthetic_scopes()
         fn = self.native["_g5_dynamic_fhir_candidate_paths_source_only"]
-        with patch.dict(fn.__globals__, {"engine_version": "0.1.7"}):
+        unavailable = ModuleType("healthcare_data_engine.security.provider_attestation")
+        with patch.dict(sys.modules, {
+            "healthcare_data_engine.security.provider_attestation": unavailable
+        }):
             with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_DYNAMIC_SOURCE_WHEEL_NOT_AVAILABLE"
+                RuntimeError, "HOLD_CANDIDATE_SOURCE_CONTRACT_UNAVAILABLE"
             ):
                 fn(source, trusted_scope=trusted)
 
