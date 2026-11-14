@@ -101,19 +101,20 @@ class G5NativeWheelIsolation(unittest.TestCase):
         source = NATIVE.read_text(encoding="utf-8")
         self.assertEqual(
             source.count('if engine_version != "0.1.7":'), 2)
-        self.assertIn('if engine_version not in ("0.1.7", "0.1.13"):', source)
+        self.assertIn("SHARED_FHIR_CONVERTER_CAPABILITY_UNAVAILABLE", source)
         self.assertIn('run_mode = "HALT"', source)
         self.assertIn('fhir-silver-canonical-v1:engine-0.1.1', source)
         self.assertNotIn("write_authorized = True", source)
 
-    def test_017_notebook_rejects_016_even_with_safe_flags_before_data_reads(self):
-        # G3/G4 historical processing stays unchanged; wrong runtime 0.1.3 MUST HOLD.
+    def test_missing_converter_capability_and_historical_entrypoints_hold(self):
+        # Source-only conversion rejects missing adapter APIs regardless of
+        # version; historical G3/G4 run entrypoints retain their own pins.
         with patch.dict(
             self.native["prepare_batch"].__globals__,
-            {"engine_version": LEGACY_VERSION},
+            {"parse_fhir_resources": None},
         ):
             with self.assertRaisesRegex(
-                    ValueError, "SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH"):
+                    ValueError, "SHARED_FHIR_CONVERTER_CAPABILITY_UNAVAILABLE"):
                 self.native["prepare_batch"](
                     object(), context=object(), manifest_bytes=b"",
                     source_objects=(), patient_contract_bytes=b"",
@@ -195,7 +196,8 @@ class G5NativeWheelIsolation(unittest.TestCase):
     def test_g5_native_transport_cannot_bypass_effective_wheel_halt(self):
         method = self.native["execute_g5_candidate_from_trusted_controller"]
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_NATIVE_0113_TRANSPORT_WHEEL_NOT_PUBLISHED"):
+                RuntimeError,
+                "HOLD_G5_NATIVE_SIGNED_(VERIFIER_NOT_PUBLISHED|TRANSPORT_OR_REPLAY)"):
             method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
                    attestation_bytes=b"forged")
         with patch.dict(method.__globals__, {"run_mode": "G5_CANDIDATE_WRITE"}):
@@ -206,17 +208,15 @@ class G5NativeWheelIsolation(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_RUN_MODE"):
                 method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
                        attestation_bytes=b"forged")
-        # Hypothetical source-only version must still require actual signed
-        # bytes before importing the future verifier or calling the provider.
-        with patch.dict(method.__globals__, {"engine_version": "0.1.13"}):
-            for bad in (None, "", b"", b"a" * 8193):
-                with self.subTest(bad=type(bad).__name__):
-                    with self.assertRaisesRegex(
-                            RuntimeError,
-                            "HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING"):
-                        method(None, provider=None,
-                               mode="G5_CANDIDATE_READBACK_ONLY",
-                               attestation_bytes=bad)
+        # Attestation byte validation is independent of the Wheel label.
+        for bad in (None, "", b"", b"a" * 8193):
+            with self.subTest(bad=type(bad).__name__):
+                with self.assertRaisesRegex(
+                        RuntimeError,
+                        "HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING"):
+                    method(None, provider=None,
+                           mode="G5_CANDIDATE_READBACK_ONLY",
+                           attestation_bytes=bad)
         source = NATIVE.read_text(encoding="utf-8")
         body = source.split(
             "def execute_g5_candidate_from_trusted_controller(", 1)[1].split(
