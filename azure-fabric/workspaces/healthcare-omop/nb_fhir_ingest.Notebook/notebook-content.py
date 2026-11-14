@@ -1630,8 +1630,8 @@ def _g5_dynamic_fhir_candidate_paths_source_only(scope, *, trusted_scope) -> dic
     """
     # The published Fabric 0.1.7 Wheel cannot validate the v3 contract.
     # Reject before importing newer APIs and before any Spark/Blob activity.
-    if engine_version != "0.1.13":
-        raise RuntimeError("HOLD_G5_DYNAMIC_0113_WHEEL_NOT_PUBLISHED")
+    if engine_version not in ("0.1.13", "0.1.14"):
+        raise RuntimeError("HOLD_G5_DYNAMIC_SOURCE_WHEEL_NOT_AVAILABLE")
     from healthcare_data_engine.mapping.omop.candidate_publication import (
         FrozenCandidateScope,
     )
