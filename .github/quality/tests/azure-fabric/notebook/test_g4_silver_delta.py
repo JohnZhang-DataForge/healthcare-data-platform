@@ -424,7 +424,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_p3_first_write_approval_last_then_replay_skip(self):
         self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
-        paths = nb._g5_candidate_paths(self.scope)
+        paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.assertEqual(self.writes, [paths["person"], paths["visit"],
                                        paths["approval"]])
         approval = self.spark.delta[paths["approval"]].rows
@@ -452,7 +452,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         args = self.technical_kwargs()
         self.assertEqual(
             self.invoke(**args), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
-        paths = nb._g5_candidate_paths(self.scope)
+        paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.assertEqual(self.writes, [
             paths["person"], paths["visit"], paths["approval"]])
         receipt = self.spark.delta[paths["approval"]].rows[0]
@@ -558,21 +558,21 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_p3_readback_tamper_refuses_skip(self):
         self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
-        paths = nb._g5_candidate_paths(self.scope)
+        paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.spark.delta[paths["visit"]].rows[0]["visit_concept_id"] = 99999
         self.assertEqual(self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
         self.assertEqual(len(self.writes), 3)
 
     def test_p3_bad_approval_refuses_skip(self):
         self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
-        paths = nb._g5_candidate_paths(self.scope)
+        paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.spark.delta[paths["approval"]].rows[0]["status"] = "GOLD_COMMITTED"
         self.assertEqual(self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
         self.assertEqual(len(self.writes), 3)
 
     def test_p3_missing_approval_requires_readback_before_any_retry(self):
         self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
-        paths = nb._g5_candidate_paths(self.scope)
+        paths = nb._frozen_fhir_candidate_paths(self.scope)
         del self.spark.delta[paths["approval"]]
         self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT")
         self.assertEqual(len(self.writes), 3)
