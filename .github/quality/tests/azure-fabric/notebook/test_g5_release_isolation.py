@@ -1,6 +1,6 @@
 """OFFLINE ONLY: pinned Published 0.1.7 Native Notebook, historical 0.1.6 runtime HOLD.
 
-Tests load the sole effective 0.1.7 GA Wheel while current source is 0.1.13; simulate prior
+Tests load the sole effective 0.1.7 GA Wheel while candidate source is 0.1.14; simulate prior
 0.1.6 runtime mismatch, without executing any cloud job. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
@@ -28,7 +28,7 @@ LIBS = ROOT / (
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
 PUBLISHED_VERSION = "0.1.7"
 LEGACY_VERSION = "0.1.6"
-SOURCE_CANDIDATE_VERSION = "0.1.13"
+SOURCE_CANDIDATE_VERSION = "0.1.14"
 PINNED_WHEEL_SHA256 = (
     "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
 PINNED_REVIEW_ONLY_017_SHA256 = (

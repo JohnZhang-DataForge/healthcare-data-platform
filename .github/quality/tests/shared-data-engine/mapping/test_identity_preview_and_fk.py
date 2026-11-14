@@ -16,7 +16,8 @@ sys.path.insert(0, str(ROOT / "azure-fabric/warehouse/omop-foundation/writer"))
 from identity_plan import IdentityKey, plan_ids
 from healthcare_data_engine.identity.preview import (
     IdentityPreview, IdentityPreviewHold, IdentitySnapshot, PersistedIdentity,
-    PlannedIdentity, bridge_f2_person_visit_allocation, verify_allocation_proposal,
+    PlannedIdentity, bridge_f2_person_visit_allocation, adapt_person_visit_allocation_preview,
+    verify_allocation_proposal,
     require_preview_snapshot_unchanged,
 )
 from healthcare_data_engine.identity.references import (
@@ -67,7 +68,7 @@ def plan(snapshot_state, keys):
         {"PERSON": dict(snapshot_state.gold_ids)[PERSON],
          "VISIT_OCCURRENCE": dict(snapshot_state.gold_ids)[VISIT]},
     )
-    return bridge_f2_person_visit_allocation(legacy_plan, snapshot_state)
+    return adapt_person_visit_allocation_preview(legacy_plan, snapshot_state)
 
 
 def condition_registry():
@@ -82,6 +83,18 @@ def condition_registry():
 
 
 class SnapshotAndIdentityPreviewTests(unittest.TestCase):
+    def test_semantic_preview_adapter_is_exact_legacy_callable(self):
+        import healthcare_data_engine as engine
+        self.assertIs(
+            adapt_person_visit_allocation_preview,
+            bridge_f2_person_visit_allocation,
+        )
+        self.assertIs(
+            engine.adapt_person_visit_allocation_preview,
+            engine.bridge_f2_person_visit_allocation,
+        )
+
+
     def test_first_person_visit_batch_id_preview_not_commit(self):
         state = snapshot()
         result = plan(state, [legacy_key(), legacy_key("VISIT_OCCURRENCE", key="v1")])
