@@ -1,14 +1,15 @@
-"""FHIR G5 dynamic v3 StageScope path planning; OFFLINE and SOURCE_ONLY.
+"""FHIR source-scope path planning; OFFLINE and SOURCE_ONLY.
 
 This does not dispatch a Spark job, activate Fabric, or authorize Candidate/Gold.
-The active published Wheel remains 0.1.7, so its runtime must fail closed.
+The effective Wheel must supply the typed source contract; the version label
+alone neither grants nor denies read-only computation.
 """
 from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date, datetime, timezone
 import hashlib
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 import importlib.util
 from pathlib import Path
 import runpy
@@ -82,20 +83,27 @@ class DynamicG5SourceOnly(unittest.TestCase):
 
     def invoke(self, scope, trusted):
         method = self.nb["_plan_fhir_candidate_paths_from_trusted_scope"]
-        with patch.dict(method.__globals__, {"engine_version": "0.1.13"}):
-            with patch.dict(sys.modules, {
-                "healthcare_data_engine.security.provider_attestation":
-                    self.contract
-            }):
-                return method(scope, trusted_scope=trusted)
+        with patch.dict(sys.modules, {
+            "healthcare_data_engine.security.provider_attestation":
+                self.contract
+        }):
+            return method(scope, trusted_scope=trusted)
 
-    def test_published_017_remains_halt_before_v3_import(self):
+    def test_missing_typed_contract_halts_without_version_whitelist(self):
+        scope, trusted = self.scopes()
+        method = self.nb["_plan_fhir_candidate_paths_from_trusted_scope"]
+        missing = ModuleType("healthcare_data_engine.security.provider_attestation")
+        with patch.dict(sys.modules, {
+            "healthcare_data_engine.security.provider_attestation": missing,
+        }):
+            with self.assertRaisesRegex(
+                RuntimeError, "HOLD_CANDIDATE_SOURCE_CONTRACT_UNAVAILABLE"
+            ):
+                method(scope, trusted_scope=trusted)
+        # Installed GA can still run legacy paths without gaining write authority.
         self.assertEqual(self.nb["engine_version"], "0.1.7")
         self.assertEqual(self.nb["run_mode"], "HALT")
         self.assertIs(self.nb["write_authorized"], False)
-        method = self.nb["_plan_fhir_candidate_paths_from_trusted_scope"]
-        with self.assertRaisesRegex(RuntimeError, "WHEEL_NOT_PUBLISHED"):
-            method(object(), trusted_scope=object())
 
     def test_new_batch_path_is_dynamic_and_stage_isolated(self):
         scope, trusted = self.scopes()
@@ -213,7 +221,6 @@ class DynamicG5SourceOnly(unittest.TestCase):
         reader.format.return_value.load.side_effect = load
         spark = SimpleNamespace(read=reader)
         functions = {
-            "engine_version": "0.1.13",
             "run_mode": "HALT", "write_authorized": False,
             "load_pinned_contract": Mock(return_value=object()),
             "_manifest_objects": Mock(return_value=({"path": "fhir/one.json"},)),
@@ -242,10 +249,10 @@ class DynamicG5SourceOnly(unittest.TestCase):
                     patient_contract_json="patient-contract",
                     encounter_contract_json="encounter-contract")
 
-    def test_dynamic_silver_published_017_halts_before_any_spark_read(self):
+    def test_dynamic_silver_invalid_input_halts_before_any_spark_read(self):
         method = self.nb["verify_fhir_g5_dynamic_silver_source_readonly"]
         spark = Mock()
-        with self.assertRaisesRegex(RuntimeError, "WHEEL_NOT_PUBLISHED"):
+        with self.assertRaisesRegex(RuntimeError, "SOURCE_VERSION_OR_DATE"):
             method(spark, scope=None, trusted_scope=None,
                    source_ingest_date=None, patient_contract_json="",
                    encounter_contract_json="")
@@ -318,22 +325,23 @@ class DynamicG5SourceOnly(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, reason):
                     self.invoke_physical(spark, scope, trusted, fns)
 
-    def test_dynamic_shared_recompute_gate_requires_exact_wheel(self):
+    def test_shared_converter_requires_callable_apis_not_version_string(self):
         method = self.nb["prepare_batch"]
-        # A newly published 0.1.13 can enter the ORIGINAL Shared converter
-        # without copying any FHIR transformation or OMOP mapper.
         sentinel = ValueError("REACHED_SINGLE_SHARED_CONVERTER")
         with patch.dict(method.__globals__, {
-            "engine_version": "0.1.13",
+            "engine_version": "0.1.14",
             "verify_source_objects": Mock(side_effect=sentinel),
         }):
             with self.assertRaisesRegex(ValueError, "REACHED_SINGLE_SHARED"):
                 method(object(), context=object(), manifest_bytes=b"",
                        source_objects=(),
                        patient_contract_bytes=b"", encounter_contract_bytes=b"")
-        with patch.dict(method.__globals__, {"engine_version": "0.1.6"}):
+        with patch.dict(method.__globals__, {
+            "engine_version": "0.1.14",
+            "parse_fhir_resources": None,
+        }):
             with self.assertRaisesRegex(
-                ValueError, "SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH"
+                ValueError, "SHARED_FHIR_CONVERTER_CAPABILITY_UNAVAILABLE"
             ):
                 method(object(), context=object(), manifest_bytes=b"",
                        source_objects=(),

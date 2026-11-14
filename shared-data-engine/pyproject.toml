@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "healthcare-data-engine"
-version = "0.1.13"
+version = "0.1.14"
 description = "Pure platform-neutral healthcare Canonical and multi-entity OMOP candidate engine"
 requires-python = ">=3.10,<3.14"
 dependencies = []

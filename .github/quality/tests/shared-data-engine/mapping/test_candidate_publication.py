@@ -288,7 +288,7 @@ class CandidatePublicationPlanTests(unittest.TestCase):
             (Path(__file__).resolve().parents[5] /
              "shared-data-engine/pyproject.toml").read_text())["project"]
         self.assertEqual(project["version"], engine.__version__)
-        self.assertEqual(engine.__version__, "0.1.13")
+        self.assertEqual(engine.__version__, "0.1.14")
         self.assertIs(engine.FrozenCandidateScope, FrozenCandidateScope)
         self.assertIs(engine.ObservedCandidate, ObservedCandidate)
         self.assertIs(engine.CandidatePublicationPlan, CandidatePublicationPlan)

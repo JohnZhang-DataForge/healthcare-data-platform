@@ -223,16 +223,17 @@ class OfflineSparkCanonical(unittest.TestCase):
                                     patient_contract_bytes=PATIENT.read_bytes(),
                                     encounter_contract_bytes=ENCOUNTER.read_bytes())
 
-    def test_engine_016_published_version_required_and_legacy_010_rejected(self):
-        # The business Adapter contract remains independently versioned at
-        # 0.1.0; the PACKAGE version must match Fabric Environment 0.1.7.
+    def test_converter_capability_and_adapter_record_version_are_independent(self):
+        # The installed GA Wheel is distinct from the serialized Adapter
+        # record version; pure conversion rejects missing APIs, not a version
+        # string that has no authority to publish.
         self.assertEqual(ingest.engine_version, "0.1.7")
         ctx, manifest, obj = make_batch()
-        with patch.dict(ingest.prepare_batch.__globals__, {"engine_version": "0.1.0"}):
-            with self.assertRaisesRegex(ValueError, "SHARED_WHEEL_EFFECTIVE_VERSION_MISMATCH"):
+        with patch.dict(ingest.prepare_batch.__globals__, {"parse_fhir_resources": None}):
+            with self.assertRaisesRegex(ValueError, "SHARED_FHIR_CONVERTER_CAPABILITY_UNAVAILABLE"):
                 self.prepared(ctx, manifest, obj)
-        # Return to actual Wheel 0.1.7, and verify synthetic canonical output
-        # maintains its separate data-record adapter_version contract 0.1.0.
+        # Reuse the actual installed Wheel, checking the canonical adapter
+        # record version independently from package metadata.
         batch = self.prepared(ctx, manifest, obj)
         self.assertEqual(batch.patient_df.select("adapter_version").first()[0], "0.1.0")
         self.assertEqual(batch.encounter_df.select("adapter_version").first()[0], "0.1.0")

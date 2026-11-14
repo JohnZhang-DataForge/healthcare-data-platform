@@ -1,17 +1,19 @@
-"""0.1.13 source and *installed* Wheel ↔ existing FHIR Native v3 parity.
+"""Candidate source and *installed* Wheel ↔ existing FHIR Native v3 parity.
 
 Synthetic-only, no Fabric network, no environment publish, no Delta/SQL writes.
 The CI calls this once with source PYTHONPATH and again after installing the
-actual freshly built SHA-pinned 0.1.13 Wheel in an isolated venv.
+actual freshly built candidate Wheel in an isolated venv.
 """
 from __future__ import annotations
 
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+from types import ModuleType
 import runpy
+import sys
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import healthcare_data_engine as engine
 from healthcare_data_engine.mapping.omop.candidate_publication import (
@@ -68,11 +70,23 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
             str(NATIVE), run_name="_g5_0113_wheel_native_pure_parity")
 
     def test_runtime_013_and_native_halt_fence(self):
-        self.assertEqual(engine.__version__, "0.1.13")
-        self.assertEqual(self.native["engine_version"], "0.1.13")
+        self.assertEqual(engine.__version__, "0.1.14")
+        self.assertEqual(self.native["engine_version"], "0.1.14")
         self.assertEqual(self.native["run_mode"], "HALT")
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
+
+    def test_missing_typed_contract_is_denied_even_for_candidate_wheel(self):
+        source, trusted = synthetic_scopes()
+        fn = self.native["_plan_fhir_candidate_paths_from_trusted_scope"]
+        unavailable = ModuleType("healthcare_data_engine.security.provider_attestation")
+        with patch.dict(sys.modules, {
+            "healthcare_data_engine.security.provider_attestation": unavailable
+        }):
+            with self.assertRaisesRegex(
+                RuntimeError, "HOLD_CANDIDATE_SOURCE_CONTRACT_UNAVAILABLE"
+            ):
+                fn(source, trusted_scope=trusted)
 
     def test_actual_typed_v3_scope_wires_to_native_fhir_planner(self):
         source, trusted = synthetic_scopes()
