@@ -389,7 +389,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         # The real frozen-G4 allowlist is tested elsewhere using P100/E5918.
         # Isolate Stage release ordering here with a synthetic scoped path.
         with patch.dict(method.__globals__, {
-            "_g5_candidate_paths": lambda _scope: {
+            "_frozen_fhir_candidate_paths": lambda _scope: {
                 "person": "synthetic-person", "visit": "synthetic-visit",
                 "approval": "synthetic-approval",
             },
