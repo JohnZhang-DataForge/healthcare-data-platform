@@ -74,6 +74,16 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
 
+    def test_published_legacy_wheel_remains_denied_for_new_scope(self):
+        from unittest.mock import patch
+        source, trusted = synthetic_scopes()
+        fn = self.native["_g5_dynamic_fhir_candidate_paths_source_only"]
+        with patch.dict(fn.__globals__, {"engine_version": "0.1.7"}):
+            with self.assertRaisesRegex(
+                RuntimeError, "HOLD_G5_DYNAMIC_SOURCE_WHEEL_NOT_AVAILABLE"
+            ):
+                fn(source, trusted_scope=trusted)
+
     def test_actual_typed_v3_scope_wires_to_native_fhir_planner(self):
         source, trusted = synthetic_scopes()
         paths = self.native["_g5_dynamic_fhir_candidate_paths_source_only"](
