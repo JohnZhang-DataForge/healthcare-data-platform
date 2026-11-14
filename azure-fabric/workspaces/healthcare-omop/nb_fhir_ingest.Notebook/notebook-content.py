@@ -1601,7 +1601,7 @@ _G5_APPROVED_PATIENTS = 100
 _G5_APPROVED_ENCOUNTERS = 5918
 
 
-def _g5_candidate_paths(scope) -> dict[str, str]:
+def _frozen_fhir_candidate_paths(scope) -> dict[str, str]:
     _bronze_source_receipt_path(scope.request_id)  # no traversal or unapproved request
     if (scope.request_id != _G5_APPROVED_REQUEST
             or scope.manifest_sha256 != _G5_APPROVED_MANIFEST_SHA
@@ -1619,7 +1619,7 @@ def _g5_candidate_paths(scope) -> dict[str, str]:
             "approval": prefix + "/candidate_approval"}
 
 
-def _g5_dynamic_fhir_candidate_paths_source_only(scope, *, trusted_scope) -> dict[str, str]:
+def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> dict[str, str]:
     """Plan a NEW FHIR Candidate path bound to independently pinned v3 scope.
 
     SOURCE_ONLY: deriving deterministic output paths is never a publication
@@ -1704,7 +1704,7 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
         raise RuntimeError("HOLD_G5_DYNAMIC_G4_SOURCE_VERSION_OR_DATE")
     # This planner is a pure, typed v3 trust-scope/batch boundary. It never
     # returns authority to publish and is deliberately not the Writer path.
-    _g5_dynamic_fhir_candidate_paths_source_only(
+    _plan_fhir_candidate_paths_from_trusted_scope(
         scope, trusted_scope=trusted_scope)
     if (not isinstance(patient_contract_json, str)
             or not isinstance(encounter_contract_json, str)
@@ -1959,7 +1959,7 @@ def plan_and_write_g5_candidate_delta(
                 raise RuntimeError("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
         elif not (clinically_reviewed and license_reviewed):
             raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
-    paths = _g5_candidate_paths(scope)
+    paths = _frozen_fhir_candidate_paths(scope)
     source = verify_fhir_g5_candidate_source_readonly(
         spark, request=scope.request_id, manifest_sha=scope.manifest_sha256,
         allow_write=False, retention_ok=False,

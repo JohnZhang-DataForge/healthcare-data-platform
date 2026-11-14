@@ -81,7 +81,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
         return scope, trusted
 
     def invoke(self, scope, trusted):
-        method = self.nb["_g5_dynamic_fhir_candidate_paths_source_only"]
+        method = self.nb["_plan_fhir_candidate_paths_from_trusted_scope"]
         with patch.dict(method.__globals__, {"engine_version": "0.1.13"}):
             with patch.dict(sys.modules, {
                 "healthcare_data_engine.security.provider_attestation":
@@ -93,7 +93,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
         self.assertEqual(self.nb["engine_version"], "0.1.7")
         self.assertEqual(self.nb["run_mode"], "HALT")
         self.assertIs(self.nb["write_authorized"], False)
-        method = self.nb["_g5_dynamic_fhir_candidate_paths_source_only"]
+        method = self.nb["_plan_fhir_candidate_paths_from_trusted_scope"]
         with self.assertRaisesRegex(RuntimeError, "WHEEL_NOT_PUBLISHED"):
             method(object(), trusted_scope=object())
 
