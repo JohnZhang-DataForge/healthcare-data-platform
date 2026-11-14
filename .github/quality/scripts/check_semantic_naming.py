@@ -7,6 +7,7 @@ a candidate checkout; never execute candidate code.
 from __future__ import annotations
 
 import argparse
+import ast
 import re
 import subprocess
 from pathlib import Path
@@ -179,6 +180,154 @@ def read_diff(base: str, head: str) -> tuple[list[str], dict[str, list[str]]]:
     return added, lines
 
 
+
+# Structural validation complements, but does not replace, the diff text guard.
+# Only Python source is parsed; it is NEVER imported or executed.
+VAGUE_FUNCTION = re.compile(
+    r"^(?:do_stuff|handle_it|temp_func|process_data\d+|final_v\d+)$"
+    r"|(?:^|_)(?:foo|bar|baz|stuff|dummy|placeholder)(?:_|$)",
+    re.IGNORECASE,
+)
+PUBLIC_JSON_KEYS = frozenset({
+    "schema", "schema_version", "status", "error", "error_code",
+    "issuer", "audience", "protocol", "dag_id", "job_id",
+})
+
+
+def _static_text(node: ast.AST | None) -> str | None:
+    if node is None:
+        return None
+    try:
+        value = ast.literal_eval(node)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        return None
+    return value if isinstance(value, str) else None
+
+
+def _python_inventory(source: str) -> tuple[
+    dict[tuple[str, str], str],
+    dict[str, str | None],
+    set[tuple[str, str]],
+]:
+    """Extract scoped symbols and literal public contracts without executing code.
+
+    Existing stage-number names are retained through a baseline inventory.
+    Public contract *value* changes are checked even for pre-existing bindings.
+    """
+    tree = ast.parse(source)
+    symbols: dict[tuple[str, str], str] = {}
+    public: dict[str, str | None] = {}
+    dictionaries: set[tuple[str, str]] = set()
+
+    class Scan(ast.NodeVisitor):
+        def __init__(self) -> None:
+            self.scope: list[str] = []
+
+        def _record(self, kind: str, name: str, value: ast.AST | None = None) -> None:
+            key = ".".join((*self.scope, name))
+            symbols[(kind, key)] = name
+            if public_binding(name):
+                public[key] = _static_text(value)
+
+        def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+            self._record("function", node.name)
+            self.scope.append(node.name)
+            self.generic_visit(node)
+            self.scope.pop()
+
+        def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+            self._record("function", node.name)
+            self.scope.append(node.name)
+            self.generic_visit(node)
+            self.scope.pop()
+
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:
+            self._record("class", node.name)
+            self.scope.append(node.name)
+            self.generic_visit(node)
+            self.scope.pop()
+
+        def visit_Assign(self, node: ast.Assign) -> None:
+            for target in node.targets:
+                for item in ast.walk(target):
+                    if isinstance(item, ast.Name):
+                        self._record("binding", item.id, node.value)
+            self.generic_visit(node)
+
+        def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+            if isinstance(node.target, ast.Name):
+                self._record("binding", node.target.id, node.value)
+            self.generic_visit(node)
+
+        def visit_Dict(self, node: ast.Dict) -> None:
+            for key, value in zip(node.keys, node.values):
+                label, literal = _static_text(key), _static_text(value)
+                if label is not None and label.lower() in PUBLIC_JSON_KEYS and literal is not None:
+                    dictionaries.add((label.lower(), literal))
+            self.generic_visit(node)
+
+    Scan().visit(tree)
+    return symbols, public, dictionaries
+
+
+def python_ast_violations(path: str, old_source: str, new_source: str) -> list[str]:
+    """Compare Python ASTs; ignore existing names but reject newly introduced ones."""
+    if not owned_source(path) or not path.endswith(".py"):
+        return []
+    try:
+        old_symbols, old_public, old_dicts = _python_inventory(old_source)
+        new_symbols, new_public, new_dicts = _python_inventory(new_source)
+    except SyntaxError as exc:
+        return [f"python-ast-parse-error:{exc.msg}"]
+
+    errors = []
+    for (kind, qualified), name in sorted(new_symbols.items()):
+        if (kind, qualified) in old_symbols:
+            continue
+        if has_phase(name):
+            errors.append(f"python-ast-development-phase-{kind}:{qualified}")
+        if kind in ("function", "class") and VAGUE_FUNCTION.search(name):
+            errors.append(f"python-ast-vague-{kind}:{qualified}")
+    # A changed published Schema/status must not escape detection by moving
+    # the string onto another line; unchanged legacy values remain permitted.
+    if "/tests/" not in path and not Path(path).name.startswith("test_"):
+        for qualified, literal in sorted(new_public.items()):
+            if literal is not None and has_phase(literal) and old_public.get(qualified) != literal:
+                errors.append(f"python-ast-public-contract:{qualified}")
+        for key, literal in sorted(new_dicts - old_dicts):
+            if has_phase(literal):
+                errors.append(f"python-ast-public-dict:{key}")
+    return errors
+
+
+def _read_git_source(ref: str, path: str, *, missing_ok: bool = False) -> str:
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{path}"], capture_output=True, timeout=45,
+        check=False,
+    )
+    if result.returncode:
+        if missing_ok:
+            return ""
+        raise ValueError(f"cannot read source at {ref}:{path}")
+    return result.stdout.decode("utf-8")
+
+
+def inspect_python_ast_diff(
+    base: str, head: str, changed_paths: list[str], added_paths: list[str],
+) -> list[str]:
+    """Git object reads only; no imports or execution of untrusted code."""
+    errors: list[str] = []
+    added = set(added_paths)
+    for path in sorted(set(changed_paths)):
+        if not path.endswith(".py") or not owned_source(path):
+            continue
+        previous = "" if path in added else _read_git_source(base, path)
+        current = _read_git_source(head, path)
+        errors.extend(f"{path}:{item}" for item in
+                      python_ast_violations(path, previous, current))
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", required=True)
@@ -187,6 +336,8 @@ def main() -> int:
     try:
         added, new_lines = read_diff(args.base, args.head)
         errors = evaluate(added, new_lines)
+        errors.extend(inspect_python_ast_diff(
+            args.base, args.head, list(new_lines), added))
     except (subprocess.CalledProcessError, UnicodeError, ValueError,
             subprocess.TimeoutExpired) as exc:
         print(f"SEMANTIC_NAMING=FAIL; scanner-error={exc}")
