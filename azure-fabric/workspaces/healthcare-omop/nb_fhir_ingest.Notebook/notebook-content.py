@@ -326,18 +326,18 @@ def _write_delta(df, path: str) -> None:
 # G3: one request-scoped immutable-mode RAW BYTE snapshot + receipt,
 # not a Silver publication or proof of Azure container-level WORM.
 # The exact source bytes and provenance commit atomically into Lakehouse Delta.
-_G3_SOURCE_ROOT = "Files/fhir_landing"
-_G3_BRONZE_ROOT = "Files/bronze/fhir_r4"
-_G3_HOSPITAL = "atlanta-hospital-a"
-_G3_FEED = "atlanta-hospital-a-fhir-r4"
-_G3_PROCESSING = "fhir-bronze-raw-snapshot-v1:engine-0.1.1"
+_FHIR_SOURCE_LANDING_ROOT = "Files/fhir_landing"
+_FHIR_BRONZE_SNAPSHOT_ROOT = "Files/bronze/fhir_r4"
+_FHIR_SOURCE_HOSPITAL_ID = "atlanta-hospital-a"
+_FHIR_SOURCE_FEED_ID = "atlanta-hospital-a-fhir-r4"
+_FHIR_BRONZE_PROCESSING_VERSION = "fhir-bronze-raw-snapshot-v1:engine-0.1.1"
 
 
 def _bronze_source_receipt_path(request: str) -> str:
     import re
     if not isinstance(request, str) or not re.fullmatch(r"atlanta-fhir-gh-[0-9]{8,14}", request):
         raise RuntimeError("HOLD_G3_UNAPPROVED_REQUEST_NAMESPACE")
-    return (f"{_G3_BRONZE_ROOT}/{_G3_HOSPITAL}/{_G3_FEED}/"
+    return (f"{_FHIR_BRONZE_SNAPSHOT_ROOT}/{_FHIR_SOURCE_HOSPITAL_ID}/{_FHIR_SOURCE_FEED_ID}/"
             f"{request}/bronze_source_snapshot")
 
 
@@ -422,14 +422,14 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
 
     from datetime import date, datetime, timezone
     context = BatchContext(
-        hospital_id=_G3_HOSPITAL, feed_id=_G3_FEED,
+        hospital_id=_FHIR_SOURCE_HOSPITAL_ID, feed_id=_FHIR_SOURCE_FEED_ID,
         source_system="synthea-fhir", request_id=request,
-        manifest_sha256=manifest_sha, processing_version=_G3_PROCESSING,
+        manifest_sha256=manifest_sha, processing_version=_FHIR_BRONZE_PROCESSING_VERSION,
         processing_run_id="g3:" + request, source_version="FHIR_R4",
         source_ingest_date=date(2026, 11, 2),
         processed_at=datetime.now(timezone.utc))
-    root = (f"{_G3_SOURCE_ROOT}/clinical/v1/{_G3_HOSPITAL}/"
-            f"{_G3_FEED}/{request}/landing-manifest.json")
+    root = (f"{_FHIR_SOURCE_LANDING_ROOT}/clinical/v1/{_FHIR_SOURCE_HOSPITAL_ID}/"
+            f"{_FHIR_SOURCE_FEED_ID}/{request}/landing-manifest.json")
     manifest_rows = spark.read.format("binaryFile").load(root).select("content").collect()
     if len(manifest_rows) != 1:
         raise RuntimeError("HOLD_G3_MANIFEST_NOT_ONE_FILE")
@@ -463,7 +463,7 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
     try:
         # This reads each original source object and verifies exact object SHA/size.
         sources = read_source_objects_native(
-            spark, source_root=_G3_SOURCE_ROOT, manifest_bytes=raw, context=context)
+            spark, source_root=_FHIR_SOURCE_LANDING_ROOT, manifest_bytes=raw, context=context)
         verified = verify_source_objects(raw, sources, context)
         if verified != tuple(specs):
             raise ValueError("G3_SOURCE_RECEIPTS_CHANGED")
@@ -497,13 +497,13 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
 # G4: reuse Shared Engine's canonical transform, existing G3 raw-byte snapshot
 # verification and native Delta writing. Only this publication coordinator is new.
 _G4_PROCESSING = "fhir-silver-canonical-v1:engine-0.1.1"
-_G4_SILVER_ROOT = "Files/silver/fhir_r4"
+_FHIR_SILVER_PUBLICATION_ROOT = "Files/silver/fhir_r4"
 
 
 def _silver_publication_paths(request: str) -> dict[str, str]:
     _bronze_source_receipt_path(request)  # namespace/path traversal validation
     digest = hashlib.sha256(_G4_PROCESSING.encode("utf-8")).hexdigest()
-    prefix = (f"{_G4_SILVER_ROOT}/{_G3_HOSPITAL}/{_G3_FEED}/"
+    prefix = (f"{_FHIR_SILVER_PUBLICATION_ROOT}/{_FHIR_SOURCE_HOSPITAL_ID}/{_FHIR_SOURCE_FEED_ID}/"
               f"{request}/processing={digest}")
     return {"bronze": _bronze_source_receipt_path(request),
             "patient": prefix + "/canonical_patient",
@@ -911,14 +911,14 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
     load_pinned_contract(eb, "encounter")
     from datetime import datetime, date, timezone
     context = BatchContext(
-        hospital_id=_G3_HOSPITAL, feed_id=_G3_FEED,
+        hospital_id=_FHIR_SOURCE_HOSPITAL_ID, feed_id=_FHIR_SOURCE_FEED_ID,
         source_system="synthea-fhir", request_id=request,
         manifest_sha256=manifest_sha, processing_version=_G4_PROCESSING,
         processing_run_id="g4:" + request, source_version="FHIR_R4",
         source_ingest_date=date(2026, 11, 2),
         processed_at=datetime.now(timezone.utc))
-    source_file = (f"{_G3_SOURCE_ROOT}/clinical/v1/{_G3_HOSPITAL}/"
-                   f"{_G3_FEED}/{request}/landing-manifest.json")
+    source_file = (f"{_FHIR_SOURCE_LANDING_ROOT}/clinical/v1/{_FHIR_SOURCE_HOSPITAL_ID}/"
+                   f"{_FHIR_SOURCE_FEED_ID}/{request}/landing-manifest.json")
     raw = spark.read.format("binaryFile").load(
         source_file).select("content").collect()
     if len(raw) != 1:
@@ -961,7 +961,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
     try:
         # Separate Spark reads and independent Shared Engine recomputation.
         sources = read_source_objects_native(
-            spark, source_root=_G3_SOURCE_ROOT,
+            spark, source_root=_FHIR_SOURCE_LANDING_ROOT,
             manifest_bytes=manifest_bytes, context=context)
         batch = prepare_batch(
             spark, context=context, manifest_bytes=manifest_bytes,
@@ -1039,7 +1039,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
     load_pinned_contract(eb, "encounter")  # verify both RAW SHA pins before source read
     from datetime import date, datetime, timezone
     context = BatchContext(
-        hospital_id=_G3_HOSPITAL, feed_id=_G3_FEED,
+        hospital_id=_FHIR_SOURCE_HOSPITAL_ID, feed_id=_FHIR_SOURCE_FEED_ID,
         source_system="synthea-fhir", request_id=request,
         manifest_sha256=manifest_sha, processing_version=_G4_PROCESSING,
         processing_run_id="g4:" + request, source_version="FHIR_R4",
@@ -1047,8 +1047,8 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
         processed_at=datetime.now(timezone.utc))
     metrics = {"patient": 0, "encounter": 0, "source_objects": 100,
                "quarantine_or_reject": 0}
-    root = (f"{_G3_SOURCE_ROOT}/clinical/v1/{_G3_HOSPITAL}/"
-            f"{_G3_FEED}/{request}/landing-manifest.json")
+    root = (f"{_FHIR_SOURCE_LANDING_ROOT}/clinical/v1/{_FHIR_SOURCE_HOSPITAL_ID}/"
+            f"{_FHIR_SOURCE_FEED_ID}/{request}/landing-manifest.json")
     data = spark.read.format("binaryFile").load(root).select("content").collect()
     if len(data) != 1:
         raise RuntimeError("HOLD_G4_MANIFEST_SOURCE_NOT_ONE")
@@ -1097,7 +1097,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
                                context.processing_version, None, metrics, ())
     # First write only: all other output paths verified EMPTY and trusted.
     sources = read_source_objects_native(
-        spark, source_root=_G3_SOURCE_ROOT,
+        spark, source_root=_FHIR_SOURCE_LANDING_ROOT,
         manifest_bytes=manifest_raw, context=context)
     batch = prepare_batch(
         spark, context=context, manifest_bytes=manifest_raw,
@@ -1606,16 +1606,16 @@ _G5_APPROVED_PATIENTS = 100
 _G5_APPROVED_ENCOUNTERS = 5918
 
 
-def _g5_candidate_paths(scope) -> dict[str, str]:
+def _frozen_fhir_candidate_paths(scope) -> dict[str, str]:
     _bronze_source_receipt_path(scope.request_id)  # no traversal or unapproved request
     if (scope.request_id != _G5_APPROVED_REQUEST
             or scope.manifest_sha256 != _G5_APPROVED_MANIFEST_SHA
             or scope.silver_processing_version != _G4_PROCESSING
             or scope.patient_count != _G5_APPROVED_PATIENTS
             or scope.encounter_count != _G5_APPROVED_ENCOUNTERS
-            or scope.hospital_id != _G3_HOSPITAL
-            or scope.feed_id != _G3_FEED
-            or scope.source_system != "synthea-fhir:" + _G3_HOSPITAL + ":" + _G3_FEED):
+            or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
+            or scope.feed_id != _FHIR_SOURCE_FEED_ID
+            or scope.source_system != "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID):
         raise RuntimeError("HOLD_G5_CANDIDATE_SOURCE_SCOPE")
     prefix = (f"Files/omop_candidate/fhir_r4/{scope.hospital_id}/"
               f"{scope.feed_id}/{scope.request_id}/mapping={scope.mapping_sha256}")
@@ -1624,7 +1624,7 @@ def _g5_candidate_paths(scope) -> dict[str, str]:
             "approval": prefix + "/candidate_approval"}
 
 
-def _g5_dynamic_fhir_candidate_paths_source_only(scope, *, trusted_scope) -> dict[str, str]:
+def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> dict[str, str]:
     """Plan a NEW FHIR Candidate path bound to independently pinned v3 scope.
 
     SOURCE_ONLY: deriving deterministic output paths is never a publication
@@ -1704,13 +1704,13 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
     from datetime import date, datetime, timezone
     if (type(source_ingest_date) is not date
             or scope is None
-            or scope.hospital_id != _G3_HOSPITAL
-            or scope.feed_id != _G3_FEED
+            or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
+            or scope.feed_id != _FHIR_SOURCE_FEED_ID
             or scope.silver_processing_version != _G4_PROCESSING):
         raise RuntimeError("HOLD_G5_DYNAMIC_G4_SOURCE_VERSION_OR_DATE")
     # This planner is a pure, typed v3 trust-scope/batch boundary. It never
     # returns authority to publish and is deliberately not the Writer path.
-    _g5_dynamic_fhir_candidate_paths_source_only(
+    _plan_fhir_candidate_paths_from_trusted_scope(
         scope, trusted_scope=trusted_scope)
     if (not isinstance(patient_contract_json, str)
             or not isinstance(encounter_contract_json, str)
@@ -1737,8 +1737,8 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
     # Read original, fixed Landing Manifest bytes from the existing approved
     # hospital/feed namespace, never from an arbitrary path or query argument.
     original_manifest = (
-        f"{_G3_SOURCE_ROOT}/clinical/v1/{_G3_HOSPITAL}/"
-        f"{_G3_FEED}/{scope.request_id}/landing-manifest.json")
+        f"{_FHIR_SOURCE_LANDING_ROOT}/clinical/v1/{_FHIR_SOURCE_HOSPITAL_ID}/"
+        f"{_FHIR_SOURCE_FEED_ID}/{scope.request_id}/landing-manifest.json")
     rows = spark.read.format("binaryFile").load(
         original_manifest).select("content").collect()
     if (len(rows) != 1
@@ -1965,7 +1965,7 @@ def plan_and_write_g5_candidate_delta(
                 raise RuntimeError("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
         elif not (clinically_reviewed and license_reviewed):
             raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
-    paths = _g5_candidate_paths(scope)
+    paths = _frozen_fhir_candidate_paths(scope)
     source = verify_fhir_g5_candidate_source_readonly(
         spark, request=scope.request_id, manifest_sha=scope.manifest_sha256,
         allow_write=False, retention_ok=False,
@@ -2402,7 +2402,7 @@ def verify_fhir_g5_candidate_source_readonly(
     if (patient.count() != _G5_APPROVED_PATIENTS
             or encounter.count() != _G5_APPROVED_ENCOUNTERS):
         raise RuntimeError("HOLD_G5_SILVER_COUNTS_DRIFT")
-    source_system = "synthea-fhir:" + _G3_HOSPITAL + ":" + _G3_FEED
+    source_system = "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID
     for frame, key, name in (
         (patient, "source_record_id", "PATIENT"),
         (encounter, "source_encounter_id", "ENCOUNTER"),
@@ -2510,7 +2510,7 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
             raise RuntimeError("HOLD_P1_SOURCE_CODE_FREQUENCY_COUNT_DRIFT")
         counts[field] = dict(sorted(values.items()))
 
-    source_system = "synthea-fhir:" + _G3_HOSPITAL + ":" + _G3_FEED
+    source_system = "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID
     payload = json.dumps({
         "status": "P1_G4_CODE_INVENTORY_PHYSICAL_READONLY_ONLY",
         "request_id": read_only_args["request"],
@@ -2518,7 +2518,7 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
         "source_batch_id": approval["source_batch_id"],
         "processing_version": _G4_PROCESSING,
         "source_system": source_system,
-        "hospital_id": _G3_HOSPITAL,
+        "hospital_id": _FHIR_SOURCE_HOSPITAL_ID,
         "patient_count": _G5_APPROVED_PATIENTS,
         "encounter_count": _G5_APPROVED_ENCOUNTERS,
         "code_counts": counts,

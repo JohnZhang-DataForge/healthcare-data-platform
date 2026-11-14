@@ -80,6 +80,31 @@ class G5NativeWheelIsolation(unittest.TestCase):
             self.assertIn(semantic + "(", main)
             self.assertNotIn(aliases[semantic] + "(", main)
 
+    def test_fhir_storage_constant_names_keep_frozen_values(self):
+        fixed = {
+            "_FHIR_SOURCE_LANDING_ROOT": "Files/fhir_landing",
+            "_FHIR_BRONZE_SNAPSHOT_ROOT": "Files/bronze/fhir_r4",
+            "_FHIR_SOURCE_HOSPITAL_ID": "atlanta-hospital-a",
+            "_FHIR_SOURCE_FEED_ID": "atlanta-hospital-a-fhir-r4",
+            "_FHIR_BRONZE_PROCESSING_VERSION":
+                "fhir-bronze-raw-snapshot-v1:engine-0.1.1",
+            "_FHIR_SILVER_PUBLICATION_ROOT": "Files/silver/fhir_r4",
+        }
+        historical_names = (
+            "_G3_SOURCE_ROOT", "_G3_BRONZE_ROOT",
+            "_G3_HOSPITAL", "_G3_FEED", "_G3_PROCESSING",
+            "_G4_SILVER_ROOT",
+        )
+        for name, value in fixed.items():
+            with self.subTest(name=name):
+                self.assertEqual(self.native[name], value)
+        for name in historical_names:
+            with self.subTest(name=name):
+                self.assertNotIn(name, self.native)
+        self.assertEqual(self.native["run_mode"], "HALT")
+        self.assertIs(self.native["write_authorized"], False)
+        self.assertIs(self.native["retention_preflight_verified"], False)
+
     def test_sole_git_native_wheel_matches_published_017_and_halt(self):
         self.assertEqual(engine.__version__, PUBLISHED_VERSION)
         self.assertEqual(self.native["engine_version"], PUBLISHED_VERSION)
@@ -364,7 +389,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         # The real frozen-G4 allowlist is tested elsewhere using P100/E5918.
         # Isolate Stage release ordering here with a synthetic scoped path.
         with patch.dict(method.__globals__, {
-            "_g5_candidate_paths": lambda _scope: {
+            "_frozen_fhir_candidate_paths": lambda _scope: {
                 "person": "synthetic-person", "visit": "synthetic-visit",
                 "approval": "synthetic-approval",
             },

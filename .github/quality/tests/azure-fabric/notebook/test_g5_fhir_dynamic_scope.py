@@ -82,7 +82,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
         return scope, trusted
 
     def invoke(self, scope, trusted):
-        method = self.nb["_g5_dynamic_fhir_candidate_paths_source_only"]
+        method = self.nb["_plan_fhir_candidate_paths_from_trusted_scope"]
         with patch.dict(sys.modules, {
             "healthcare_data_engine.security.provider_attestation":
                 self.contract
@@ -91,7 +91,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
 
     def test_missing_typed_contract_halts_without_version_whitelist(self):
         scope, trusted = self.scopes()
-        method = self.nb["_g5_dynamic_fhir_candidate_paths_source_only"]
+        method = self.nb["_plan_fhir_candidate_paths_from_trusted_scope"]
         missing = ModuleType("healthcare_data_engine.security.provider_attestation")
         with patch.dict(sys.modules, {
             "healthcare_data_engine.security.provider_attestation": missing,
