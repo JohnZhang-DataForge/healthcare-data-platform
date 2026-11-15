@@ -263,7 +263,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
         result = self.invoke_physical(spark, scope, trusted, fns)
         self.assertEqual(
             result,
-            "G5_DYNAMIC_FHIR_SILVER_PHYSICAL_RECOMPUTE_PASS_SOURCE_ONLY_NO_RELEASE")
+            "CANDIDATE_DYNAMIC_FHIR_SILVER_PHYSICAL_RECOMPUTE_PASS_SOURCE_ONLY_NO_RELEASE")
         self.assertEqual(len(paths), 4)
         self.assertTrue(paths[0].endswith("/landing-manifest.json"))
         self.assertTrue(paths[1].endswith("/canonical_patient"))
@@ -279,7 +279,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
 
     def test_dynamic_silver_nonhalt_and_wrong_source_date_pre_io(self):
         for changes, date_value, code in (
-            ({"run_mode": "G5_CANDIDATE_WRITE"}, date(2026, 11, 11),
+            ({"run_mode": "CANDIDATE_WRITE"}, date(2026, 11, 11),
              "NONHALT_OR_WRITE"),
             ({"write_authorized": True}, date(2026, 11, 11),
              "NONHALT_OR_WRITE"),
