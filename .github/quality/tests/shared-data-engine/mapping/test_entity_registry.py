@@ -164,8 +164,8 @@ class CandidateAdapterTest(unittest.TestCase):
 
     def test_old_mapper_failure_propagates_without_approval(self):
         with patch("healthcare_data_engine.mapping.omop.entity_candidates.build_omop_candidates",
-                   side_effect=ValueError("G5_UNKNOWN_MAPPING_CODE")):
-            with self.assertRaisesRegex(ValueError, "G5_UNKNOWN_MAPPING_CODE"):
+                   side_effect=ValueError("OMOP_UNKNOWN_MAPPING_CODE")):
+            with self.assertRaisesRegex(ValueError, "OMOP_UNKNOWN_MAPPING_CODE"):
                 build_registered_person_visit_candidates(
                     None, None, None, None,
                     approval={}, hospital_id="hospital-a",
