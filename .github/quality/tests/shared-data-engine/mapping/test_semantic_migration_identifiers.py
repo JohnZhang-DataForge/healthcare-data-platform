@@ -56,10 +56,8 @@ class SemanticIdentifiersTests(unittest.TestCase):
     def test_all_shared_and_fhir_notebook_business_symbols_are_stage_free(self):
         """Inspect actual Python symbols, not PR diff or comment-only matches."""
         phase = re.compile(r"(?:^|_)(?:g[1-9]\\d?|f[1-9]\\d?|p[1-9]\\d?)(?:_|$)", re.I)
-        # These two symbols are signed wire keys/attributes in existing external
-        # attestation payloads; changing them without issuer migration breaks signatures.
-        signed_wire = {"f1_release_metadata_sha256",
-                       "f2_identity_snapshot_fingerprint"}
+        # No production Python symbol exemptions: frozen legacy names are
+        # JSON payload keys only, not classes, function parameters or attributes.
         for path in (*sorted(PACKAGE.rglob("*.py")), NOTEBOOK):
             source = path.read_text(encoding="utf-8")
             syntax = ast.parse(source, filename=str(path))
@@ -74,7 +72,7 @@ class SemanticIdentifiersTests(unittest.TestCase):
                     symbol = node.arg
                 elif isinstance(node, ast.keyword):
                     symbol = node.arg
-                if symbol and phase.search(symbol) and symbol not in signed_wire:
+                if symbol and phase.search(symbol):
                     found.append((getattr(node, "lineno", None), symbol))
             with self.subTest(path=str(path.relative_to(ROOT))):
                 self.assertEqual(found, [])
