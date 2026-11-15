@@ -74,8 +74,8 @@ class DynamicG5SourceOnly(unittest.TestCase):
             source_format="FHIR_R4",
             source_system=scope.source_system,
             stage="CANDIDATE_APPROVED",
-            f1_release_metadata_sha256="e" * 64,
-            f2_identity_snapshot_fingerprint=scope.identity_snapshot_fingerprint,
+            vocabulary_release_metadata_sha256="e" * 64,
+            identity_snapshot_fingerprint=scope.identity_snapshot_fingerprint,
             technical_evidence_sha256="f" * 64,
         )
         trusted.validate()
@@ -129,7 +129,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
             ("source_batch_id", "9" * 64),
             ("manifest_sha256", "8" * 64),
             ("mapping_profile_sha256", "7" * 64),
-            ("f2_identity_snapshot_fingerprint", "6" * 64),
+            ("identity_snapshot_fingerprint", "6" * 64),
             ("request_id", "different-fhir-request"),
             ("source_system", "synthea-fhir:other-hospital:other-feed"),
         ]
