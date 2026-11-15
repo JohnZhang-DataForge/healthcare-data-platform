@@ -248,17 +248,17 @@ def adapt_person_visit_allocation_preview(
     Future entity kinds are held, not implicitly allocated with this adapter.
     """
     if set(dict(snapshot.next_free)) != set(_PERSON_VISIT_TARGETS.values()):
-        raise IdentityPreviewHold("IDENTITY_F2_SCOPE_PERSON_VISIT_ONLY")
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_SCOPE_PERSON_VISIT_ONLY")
     if not all(hasattr(f2_allocation, attr)
                for attr in ("assigned", "inserted", "next_free")):
-        raise IdentityPreviewHold("IDENTITY_F2_ALLOCATION_INVALID")
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_ALLOCATION_INVALID")
 
     def rows(source: Iterable[tuple[Any, int]]):
         result = []
         for legacy_key, number in source:
             kind = getattr(legacy_key, "entity_type", None)
             if kind not in _PERSON_VISIT_TARGETS:
-                raise IdentityPreviewHold("IDENTITY_F2_KIND_NOT_REVIEWED")
+                raise IdentityPreviewHold("IDENTITY_ALLOCATION_KIND_NOT_REVIEWED")
             result.append((
                 DerivedRowKey(_PERSON_VISIT_TARGETS[kind], legacy_key.hospital_id,
                               legacy_key.source_system, legacy_key.source_business_key),
@@ -270,9 +270,9 @@ def adapt_person_visit_allocation_preview(
         next_free = {_PERSON_VISIT_TARGETS[kind]: number
                      for kind, number in f2_allocation.next_free}
     except (KeyError, TypeError, ValueError) as exc:
-        raise IdentityPreviewHold("IDENTITY_F2_COUNTERS_INVALID") from exc
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_COUNTERS_INVALID") from exc
     if len(next_free) != len(_PERSON_VISIT_TARGETS):
-        raise IdentityPreviewHold("IDENTITY_F2_COUNTERS_INVALID")
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_COUNTERS_INVALID")
     return verify_allocation_proposal(snapshot, rows(f2_allocation.assigned),
                                       rows(f2_allocation.inserted), next_free)
 
