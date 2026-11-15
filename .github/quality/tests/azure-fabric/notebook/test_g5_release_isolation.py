@@ -155,7 +155,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
             {"engine_version": LEGACY_VERSION,
              "verify_fhir_g4_silver": legacy_silver_read_guard},
         ):
-            with self.assertRaisesRegex(RuntimeError, "HOLD_G5_SOURCE_PIN"):
+            with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_SOURCE_PIN"):
                 self.native["verify_fhir_candidate_source_readonly"](
                     object(),
                     request=self.native["_PINNED_FHIR_REQUEST"],
@@ -190,11 +190,11 @@ class G5NativeWheelIsolation(unittest.TestCase):
             "f2": "INDEPENDENT_SIX_TABLE_SQL_PASS",
         }
         spark = Mock()
-        for mode in ("G5_CANDIDATE_WRITE", "SILVER_WRITE", "G5_GOLD_COMMIT"):
+        for mode in ("CANDIDATE_WRITE", "SILVER_WRITE", "CANDIDATE_GOLD_COMMIT"):
             with self.subTest(mode=mode):
                 with self.assertRaisesRegex(
                         RuntimeError,
-                        "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+                        "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
                     method(spark, provider=malicious, mode=mode,
                            attestation_bytes=b"fake")
         malicious.load_pinned_inputs.assert_not_called()
@@ -210,14 +210,14 @@ class G5NativeWheelIsolation(unittest.TestCase):
         poisoned_provider = Mock()
         spark = Mock()
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
+                RuntimeError, "HOLD_CANDIDATE_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
             method(spark, provider=poisoned_provider,
-                   mode="G5_CANDIDATE_READBACK_ONLY",
+                   mode="CANDIDATE_READBACK_ONLY",
                    attestation_bytes=b"forged")
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
+                RuntimeError, "HOLD_CANDIDATE_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
             method(None, provider=poisoned_provider,
-                   mode="G5_CANDIDATE_READBACK_ONLY",
+                   mode="CANDIDATE_READBACK_ONLY",
                    attestation_bytes=b"forged")
         poisoned_provider.load_pinned_inputs.assert_not_called()
         spark.sql.assert_not_called()
@@ -226,25 +226,25 @@ class G5NativeWheelIsolation(unittest.TestCase):
         method = self.native["verify_candidate_transport_source_only"]
         with self.assertRaisesRegex(
                 RuntimeError,
-                "HOLD_G5_NATIVE_SIGNED_(VERIFIER_NOT_PUBLISHED|TRANSPORT_OR_REPLAY)"):
-            method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+                "HOLD_CANDIDATE_NATIVE_SIGNED_(VERIFIER_NOT_PUBLISHED|TRANSPORT_OR_REPLAY)"):
+            method(None, provider=None, mode="CANDIDATE_READBACK_ONLY",
                    attestation_bytes=b"forged")
-        with patch.dict(method.__globals__, {"run_mode": "G5_CANDIDATE_WRITE"}):
-            with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_RUN_MODE"):
-                method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+        with patch.dict(method.__globals__, {"run_mode": "CANDIDATE_WRITE"}):
+            with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_RUN_MODE"):
+                method(None, provider=None, mode="CANDIDATE_READBACK_ONLY",
                        attestation_bytes=b"forged")
         with patch.dict(method.__globals__, {"write_authorized": True}):
-            with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_RUN_MODE"):
-                method(None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+            with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_RUN_MODE"):
+                method(None, provider=None, mode="CANDIDATE_READBACK_ONLY",
                        attestation_bytes=b"forged")
         # Attestation byte validation is independent of the Wheel label.
         for bad in (None, "", b"", b"a" * 8193):
             with self.subTest(bad=type(bad).__name__):
                 with self.assertRaisesRegex(
                         RuntimeError,
-                        "HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING"):
+                        "HOLD_CANDIDATE_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING"):
                     method(None, provider=None,
-                           mode="G5_CANDIDATE_READBACK_ONLY",
+                           mode="CANDIDATE_READBACK_ONLY",
                            attestation_bytes=bad)
         source = NATIVE.read_text(encoding="utf-8")
         body = source.split(
@@ -254,7 +254,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         self.assertNotIn("provider.verify_license_rights(", body)
         self.assertNotIn("provider.capture_full_warehouse_snapshot(", body)
         self.assertNotIn("execute_person_visit_candidate_publication(", body)
-        self.assertIn("G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED", body)
+        self.assertIn("CANDIDATE_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED", body)
 
 
 
@@ -289,7 +289,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         transport.VerifiedTransport = LegacyVerified
         transport.VerifiedTechnicalTransport = TechnicalVerified
         marker = (
-            "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
+            "DYNAMIC_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
         cases = (
             ("FHIR_R4", TechnicalVerified(
                 status=marker, source_format="FHIR_R4")),
@@ -306,10 +306,10 @@ class G5NativeWheelIsolation(unittest.TestCase):
                             transport}), patch.dict(method.__globals__, {
                         "engine_version": "0.1.13"}):
                     result = method(
-                        None, provider=None, mode="G5_CANDIDATE_READBACK_ONLY",
+                        None, provider=None, mode="CANDIDATE_READBACK_ONLY",
                         attestation_bytes=b"synthetic-envelope-only")
                 self.assertEqual(
-                    result, "G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED")
+                    result, "CANDIDATE_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED")
                 verifier.assert_called_once_with(b"synthetic-envelope-only")
 
                 # Even a signer returning forged release or persisted-ID flags
@@ -331,9 +331,9 @@ class G5NativeWheelIsolation(unittest.TestCase):
                                 "engine_version": "0.1.13"}):
                             with self.assertRaisesRegex(
                                     RuntimeError,
-                                    "HOLD_G5_NATIVE_NON_SOURCE_ONLY_ATTESTATION"):
+                                    "HOLD_CANDIDATE_NATIVE_NON_SOURCE_ONLY_ATTESTATION"):
                                 method(None, provider=None,
-                                       mode="G5_CANDIDATE_READBACK_ONLY",
+                                       mode="CANDIDATE_READBACK_ONLY",
                                        attestation_bytes=b"synthetic-envelope-only")
 
         # The actual 0.1.7 remains a strict HOLD, regardless of fake bytes.
@@ -376,7 +376,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         return {
             "scope": scope, "handoff": handoff, "mapper_result": mapper,
             "person_candidate": object(), "visit_candidate": object(),
-            "mode": "G5_CANDIDATE_WRITE", "write_authorized": True,
+            "mode": "CANDIDATE_WRITE", "write_authorized": True,
             "warehouse_snapshot_verified": True,
             "warehouse_snapshot_sha256": scope.identity_snapshot_fingerprint,
             "patient_contract_json": "SYNTHETIC",
@@ -446,7 +446,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
             "raw_publish_run_id": "synthetic-run",
             "patient_contract_json": "SYNTHETIC",
             "encounter_contract_json": "SYNTHETIC",
-            "mode": "G5_CANDIDATE_WRITE",
+            "mode": "CANDIDATE_WRITE",
             "write_authorized": True,
             "warehouse_snapshot_verified": True,
             "warehouse_snapshot_sha256": args["warehouse_snapshot_sha256"],
