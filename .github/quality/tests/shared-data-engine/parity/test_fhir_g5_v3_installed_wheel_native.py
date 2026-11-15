@@ -121,7 +121,7 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
         spark = Mock()
         fn = self.native["verify_fhir_dynamic_silver_source_readonly"]
         with self.assertRaisesRegex(
-            RuntimeError, "G4_SOURCE_VERSION_OR_DATE"
+            RuntimeError, "SILVER_SOURCE_VERSION_OR_DATE"
         ):
             fn(spark, scope=source, trusted_scope=trusted,
                source_ingest_date="2026-11-11",
