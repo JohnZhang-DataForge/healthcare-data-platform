@@ -178,7 +178,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
             hospital_id=scope.hospital_id, feed_id=scope.feed_id,
             source_system="synthea-fhir", request_id=scope.request_id,
             manifest_sha256=manifest_sha,
-            processing_version=self.nb["_G4_PROCESSING"],
+            processing_version=self.nb["_SILVER_PROCESSING"],
             processing_run_id="g4:" + scope.request_id,
             source_version="FHIR_R4", source_ingest_date=date(2026, 11, 11),
             processed_at=datetime.now(timezone.utc),
@@ -186,7 +186,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
         scope = replace(
             scope, manifest_sha256=manifest_sha,
             source_batch_id=context.source_batch_id,
-            silver_processing_version=self.nb["_G4_PROCESSING"],
+            silver_processing_version=self.nb["_SILVER_PROCESSING"],
             silver_publication_id="e" * 64,
         )
         trusted = replace(
