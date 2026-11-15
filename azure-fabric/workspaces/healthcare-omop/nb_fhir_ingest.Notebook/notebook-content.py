@@ -26,7 +26,7 @@
 
 # CELL ********************
 
-"""Git-native P2 FHIR Notebook; staged, not released for cloud writes."""
+"""Git-native FHIR Notebook; staged, not released for cloud writes."""
 from __future__ import annotations
 
 # Git-to-Fabric transport smoke marker (2026-11-01): no runtime/write authorization.
@@ -97,7 +97,7 @@ def _manifest_objects(manifest_bytes: bytes, context: BatchContext) -> tuple[dic
         raise ValueError("INVALID_MANIFEST_SCHEMA")
 
     # The real Azure Publisher v1 emits blob_key (full container-relative URI),
-    # not the old isolated P2 test shape with relative 'path' / source_system.
+    # not the old isolated adapter test shape with relative 'path' / source_system.
     # NEVER infer that source_manifest_sha256 is this delivered Manifest's hash:
     # it names the upstream Generator manifest, whereas context.manifest_sha256
     # has already been checked against the actual published Azure Manifest bytes.
@@ -397,7 +397,7 @@ def process_fhir_bronze_snapshot(spark, *, request: str, manifest_sha: str,
                           target_override: str, strategy: str) -> NotebookOutcome:
     """Bronze path-pinned raw FHIR Delta snapshot, replay and separate readback.
 
-    The external Azure container did NOT show locked WORM/Legal Hold (G0 HOLD).
+    The external Azure container did NOT show locked WORM/Legal Hold (WORM policy HOLD).
     The approved dev alternative *atomically stores original verified bytes*
     and all receipt metadata in immutable-mode Delta with errorifexists.
     Retention preflight means this explicit snapshot strategy was authorized,
@@ -1167,7 +1167,7 @@ def process_fhir_silver_publication(spark, *, request: str, manifest_sha: str,
 
 
 
-# HL7 P2.3: approved bounded source scopes, one verified candidate transport,
+# HL7 canonical ingestion: approved bounded source scopes, one verified candidate transport,
 # same physical Silver Delta writer as Silver. Never an independent Writer/Mapper.
 _HL7_REAL_REQUEST = "johnscreek-hl7-gh-42410482514"
 _HL7_REAL_MANIFEST_SHA = "dfb9895554470b0cb31536a041cd38aef5aaedd11ff762f491ce54e6dd1df114"
@@ -1524,7 +1524,7 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
     metrics = {"patient": 0, "encounter": 0,
                "quarantine_or_reject": 0,
                "source_objects": _hl7_approved_scope(request)["raw_count"]}
-    # Source proof MUST be fresh; a stale historical P2 run is not evidence.
+    # Source proof MUST be fresh; a stale historical FHIR run is not evidence.
     raw_provenance = _hl7_verified_original_raw(spark, context)
     try:
         exists = {k: _delta_snapshot_exists(spark, path)
@@ -2440,7 +2440,7 @@ def verify_fhir_candidate_source_readonly(
 
 
 def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> str:
-    """P1 real Silver Silver code inventory; NEVER maps IDs, Concepts or writes.
+    """Physical Silver source-code inventory; NEVER maps IDs, Concepts or writes.
 
     Only run AFTER the exact Candidate source physical gate has independently verified
     the Silver Manifest, Delta Patient/Encounter, one Approval and P100/E5918/Q0.
