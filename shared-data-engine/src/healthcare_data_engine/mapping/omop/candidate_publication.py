@@ -42,13 +42,13 @@ class CandidatePublicationHold(ValueError):
 
 def _name(value: object, label: str) -> str:
     if not isinstance(value, str) or not _SOURCE_ID.fullmatch(value):
-        raise CandidatePublicationHold("P3_INVALID_" + label)
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_INVALID_" + label)
     return value
 
 
 def _sha(value: object, label: str) -> str:
     if not isinstance(value, str) or not _SHA.fullmatch(value):
-        raise CandidatePublicationHold("P3_INVALID_" + label)
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_INVALID_" + label)
     return value
 
 
@@ -80,16 +80,16 @@ class FrozenCandidateScope:
         parts = self.source_system.split(":")
         if (len(parts) != 3 or parts[1] != self.hospital_id
                 or parts[2] != self.feed_id):
-            raise CandidatePublicationHold("P3_SOURCE_NAMESPACE_CONFLICT")
+            raise CandidatePublicationHold("CANDIDATE_PUBLICATION_SOURCE_NAMESPACE_CONFLICT")
         if (type(self.patient_count) is not int or self.patient_count <= 0
                 or type(self.encounter_count) is not int or self.encounter_count <= 0):
-            raise CandidatePublicationHold("P3_SOURCE_COUNTS_INVALID")
+            raise CandidatePublicationHold("CANDIDATE_PUBLICATION_SOURCE_COUNTS_INVALID")
         for count, total in (
             (self.provisional_person_count, self.patient_count),
             (self.provisional_visit_count, self.encounter_count),
         ):
             if type(count) is not int or not 0 <= count <= total:
-                raise CandidatePublicationHold("P3_PROVISIONAL_COUNTS_INVALID")
+                raise CandidatePublicationHold("CANDIDATE_PUBLICATION_PROVISIONAL_COUNTS_INVALID")
 
     @property
     def receipt_key(self) -> str:
@@ -108,34 +108,34 @@ def freeze_candidate_scope(
 ) -> FrozenCandidateScope:
     """Bridge existing F2 preview + strict Mapper without recomputing either."""
     if (not isinstance(handoff, PersonVisitCandidateHandoff)
-            or handoff.status != "G5_CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
+            or handoff.status != "CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
             or not isinstance(candidates, OmopCandidates)
             or candidates.status != "OMOP_CANDIDATE_ONLY_NOT_PUBLISHED"):
-        raise CandidatePublicationHold("P3_UNTRUSTED_SOURCE_HANDOFF")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_UNTRUSTED_SOURCE_HANDOFF")
     if (type(candidates.person_count) is not int
             or type(candidates.visit_count) is not int
             or candidates.person_count != len(handoff.batch_persons)
             or candidates.visit_count != len(handoff.batch_visits)
             or candidates.person is None or candidates.visit is None):
-        raise CandidatePublicationHold("P3_MAPPER_HANDOFF_COUNTS_MISMATCH")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_MAPPER_HANDOFF_COUNTS_MISMATCH")
     persons = {(r.source_business_key, r.person_id): r
                for r in handoff.batch_persons}
     visits = {(r.source_encounter_id, r.visit_occurrence_id): r
               for r in handoff.batch_visits}
     if len(persons) != candidates.person_count or len(visits) != candidates.visit_count:
-        raise CandidatePublicationHold("P3_DUPLICATE_CANDIDATE_IDENTITY")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_DUPLICATE_CANDIDATE_IDENTITY")
     valid_persons = {r.person_id for r in handoff.batch_persons}
     if len(valid_persons) != candidates.person_count:
-        raise CandidatePublicationHold("P3_DUPLICATE_PERSON_IDS")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_DUPLICATE_PERSON_IDS")
     valid_visits = {r.visit_occurrence_id for r in handoff.batch_visits}
     if len(valid_visits) != candidates.visit_count:
-        raise CandidatePublicationHold("P3_DUPLICATE_VISIT_IDS")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_DUPLICATE_VISIT_IDS")
     for p in handoff.batch_persons:
         if (p.hospital_id != handoff.hospital_id
                 or p.source_system != handoff.source_system
                 or p.state not in _ID_STATES
                 or type(p.person_id) is not int or p.person_id <= 0):
-            raise CandidatePublicationHold("P3_PERSON_HANDOFF_SCOPE_INVALID")
+            raise CandidatePublicationHold("CANDIDATE_PUBLICATION_PERSON_HANDOFF_SCOPE_INVALID")
     for v in handoff.batch_visits:
         if (v.hospital_id != handoff.hospital_id
                 or v.source_system != handoff.source_system
@@ -145,7 +145,7 @@ def freeze_candidate_scope(
                 or type(v.person_id) is not int or v.person_id not in valid_persons
                 or (v.source_person_id, v.person_id) not in persons
                 or persons[(v.source_person_id, v.person_id)].state != v.parent_state):
-            raise CandidatePublicationHold("P3_VISIT_PARENT_OR_SCOPE_INVALID")
+            raise CandidatePublicationHold("CANDIDATE_PUBLICATION_VISIT_PARENT_OR_SCOPE_INVALID")
     return FrozenCandidateScope(
         hospital_id=handoff.hospital_id, feed_id=feed_id,
         source_system=handoff.source_system, request_id=request_id,
@@ -181,21 +181,21 @@ class ObservedCandidate:
 
     def __post_init__(self) -> None:
         if not isinstance(self.scope, FrozenCandidateScope):
-            raise CandidatePublicationHold("P3_OBSERVATION_SCOPE_INVALID")
+            raise CandidatePublicationHold("CANDIDATE_PUBLICATION_OBSERVATION_SCOPE_INVALID")
         for field in ("person_delta_exists", "visit_delta_exists", "approval_exists",
                       "independently_reopened", "schema_keys_fk_verified"):
             if type(getattr(self, field)) is not bool:
-                raise CandidatePublicationHold("P3_OBSERVATION_BOOL_INVALID")
+                raise CandidatePublicationHold("CANDIDATE_PUBLICATION_OBSERVATION_BOOL_INVALID")
         for field in ("person_count", "visit_count"):
             count = getattr(self, field)
             if count is not None and (type(count) is not int or count < 0):
-                raise CandidatePublicationHold("P3_OBSERVATION_COUNT_INVALID")
+                raise CandidatePublicationHold("CANDIDATE_PUBLICATION_OBSERVATION_COUNT_INVALID")
         for field in ("person_content_sha256", "visit_content_sha256"):
             digest = getattr(self, field)
             if digest is not None:
                 _sha(digest, "OBSERVATION_SHA")
         if self.approval_status not in (None, "CANDIDATE_APPROVED", "HOLD"):
-            raise CandidatePublicationHold("P3_OBSERVATION_APPROVAL_INVALID")
+            raise CandidatePublicationHold("CANDIDATE_PUBLICATION_OBSERVATION_APPROVAL_INVALID")
 
 
 @dataclass(frozen=True)
@@ -219,12 +219,12 @@ def decide_candidate_publication(
     responsibility. Unknown ACK and partial output always re-read first.
     """
     if not isinstance(scope, FrozenCandidateScope):
-        raise CandidatePublicationHold("P3_SCOPE_INVALID")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_SCOPE_INVALID")
     if type(unknown_write_ack) is not bool or not isinstance(prior, (tuple, list)):
-        raise CandidatePublicationHold("P3_OBSERVATIONS_INVALID")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_OBSERVATIONS_INVALID")
     if (expected_person_content_sha256 is None) != (
             expected_visit_content_sha256 is None):
-        raise CandidatePublicationHold("P3_EXPECTED_REPLAY_DIGEST_PAIR_REQUIRED")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_EXPECTED_REPLAY_DIGEST_PAIR_REQUIRED")
     if expected_person_content_sha256 is not None:
         _sha(expected_person_content_sha256, "EXPECTED_PERSON_SHA")
         _sha(expected_visit_content_sha256, "EXPECTED_VISIT_SHA")
@@ -233,7 +233,7 @@ def decide_candidate_publication(
     matched = []
     for item in prior:
         if not isinstance(item, ObservedCandidate):
-            raise CandidatePublicationHold("P3_OBSERVATION_INVALID")
+            raise CandidatePublicationHold("CANDIDATE_PUBLICATION_OBSERVATION_INVALID")
         # Request identity is scoped to hospital/feed, not a global string.
         if (item.scope.hospital_id, item.scope.feed_id, item.scope.request_id) != (
                 scope.hospital_id, scope.feed_id, scope.request_id):
@@ -277,14 +277,14 @@ def classify_mapping_failure(code: str) -> str:
     batch policy; publication still waits for separately reviewed DQ policy.
     """
     if not isinstance(code, str) or not code:
-        raise CandidatePublicationHold("P3_FAILURE_CODE_INVALID")
+        raise CandidatePublicationHold("CANDIDATE_PUBLICATION_FAILURE_CODE_INVALID")
     # Translate only known diagnostic prefixes from the EXISTING strict
     # Mapper/P1 validator. Their suffixes name a source COLUMN, not a patient
     # value. The caller still keeps its strict batch HOLD until a separately
     # approved record-level DQ/Quarantine contract is implemented.
     source_columns = {"gender_code", "race_code", "ethnicity_code",
                       "encounter_class"}
-    mapper_unmapped = (code.startswith("G5_UNKNOWN_MAPPING_CODE:")
+    mapper_unmapped = (code.startswith("OMOP_UNKNOWN_MAPPING_CODE:")
                        and code.partition(":")[2] in source_columns)
     profile_unmapped = (code.startswith("P1_UNMAPPED_SOURCE_CODE:")
                         and code.partition(":")[2] in source_columns)

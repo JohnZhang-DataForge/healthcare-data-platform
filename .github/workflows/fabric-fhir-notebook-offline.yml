@@ -199,10 +199,10 @@ jobs:
           assert nb["run_mode"] == "HALT"
           assert nb["write_authorized"] is False
           assert nb["retention_preflight_verified"] is False
-          assert callable(nb["plan_and_write_g5_candidate_delta"])
+          assert callable(nb["plan_and_write_omop_candidate_delta"])
           assert callable(nb["_verify_candidate_mapper_payload"])
-          assert callable(nb["execute_g5_person_visit_business"])
-          assert "G5_CANDIDATE_WRITE" not in path.read_text().split('if __name__ == "__main__":')[-1]
+          assert callable(nb["execute_person_visit_candidate_publication"])
+          assert "CANDIDATE_WRITE" not in path.read_text().split('if __name__ == "__main__":')[-1]
           print("G5_017_P3_BUSINESS_WRITER_SYMBOLS_RELEASE_GUARDED_PASS")
           PY
       - name: Existing G5 strict Mapper synthetic parity under installed 0.1.7

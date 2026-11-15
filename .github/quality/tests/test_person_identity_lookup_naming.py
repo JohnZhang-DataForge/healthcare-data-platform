@@ -1,4 +1,4 @@
-"""Source-only, dependency-light Person mapping lookup compatibility regression.
+"""Source-only Person identity lookup contract after semantic API migration.
 
 This test imports source code (not any historically pinned Fabric GA Wheel).
 No Spark, Azure, Warehouse, Fabric or database operations are invoked.
@@ -19,7 +19,7 @@ from healthcare_data_engine.identity.candidate_handoff import (
 
 
 class PersonIdentityLookupNamingTests(unittest.TestCase):
-    def test_new_business_method_matches_old_lookup_api(self):
+    def test_person_identity_lookup_uses_one_semantic_api(self):
         person = CandidatePersonId(
             hospital_id="synthetic-hospital", source_system="synthetic:synthetic-hospital:fhir",
             source_business_key="person-synthetic", person_id=147, state="PROVISIONAL",
@@ -28,11 +28,8 @@ class PersonIdentityLookupNamingTests(unittest.TestCase):
                     "synthetic:synthetic-hospital:fhir", "person-synthetic",
                     147, "PROVISIONAL")
         self.assertEqual(person.person_identity_lookup_row(), expected)
-        self.assertEqual(person.f1_lookup(), expected)
-        self.assertEqual(
-            CandidatePersonId.f1_lookup(person),
-            CandidatePersonId.person_identity_lookup_row(person),
-        )
+        self.assertFalse(hasattr(person, "f1_lookup"))
+        self.assertFalse(hasattr(CandidatePersonId, "f1_lookup"))
 
     def test_handoff_uses_semantic_method_and_retains_state(self):
         person = CandidatePersonId(
@@ -53,7 +50,7 @@ class PersonIdentityLookupNamingTests(unittest.TestCase):
             person.person_identity_lookup_row(),
         ))
         self.assertEqual(handoff.person_lookup_rows()[0][-1], "PERSISTED")
-        self.assertEqual(handoff.status, "G5_CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED")
+        self.assertEqual(handoff.status, "CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED")
 
 
 if __name__ == "__main__":

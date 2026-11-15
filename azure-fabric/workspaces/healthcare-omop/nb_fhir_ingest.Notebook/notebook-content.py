@@ -1599,24 +1599,24 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
 # G5 source boundary only. This does NOT query an OMOP identity map, map
 # clinical Concepts, persist Candidate Delta or authorize Warehouse Gold.
 # Historical G4 processing=engine-0.1.1 MUST stay pinned for existing Delta.
-_G5_APPROVED_REQUEST = "atlanta-fhir-gh-41552666929"
-_G5_APPROVED_MANIFEST_SHA = (
+_PINNED_FHIR_REQUEST = "atlanta-fhir-gh-41552666929"
+_PINNED_FHIR_MANIFEST_SHA = (
     "425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1")
-_G5_APPROVED_PATIENTS = 100
-_G5_APPROVED_ENCOUNTERS = 5918
+_PINNED_FHIR_PATIENTS = 100
+_PINNED_FHIR_ENCOUNTERS = 5918
 
 
 def _frozen_fhir_candidate_paths(scope) -> dict[str, str]:
     _bronze_source_receipt_path(scope.request_id)  # no traversal or unapproved request
-    if (scope.request_id != _G5_APPROVED_REQUEST
-            or scope.manifest_sha256 != _G5_APPROVED_MANIFEST_SHA
+    if (scope.request_id != _PINNED_FHIR_REQUEST
+            or scope.manifest_sha256 != _PINNED_FHIR_MANIFEST_SHA
             or scope.silver_processing_version != _G4_PROCESSING
-            or scope.patient_count != _G5_APPROVED_PATIENTS
-            or scope.encounter_count != _G5_APPROVED_ENCOUNTERS
+            or scope.patient_count != _PINNED_FHIR_PATIENTS
+            or scope.encounter_count != _PINNED_FHIR_ENCOUNTERS
             or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
             or scope.feed_id != _FHIR_SOURCE_FEED_ID
             or scope.source_system != "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID):
-        raise RuntimeError("HOLD_G5_CANDIDATE_SOURCE_SCOPE")
+        raise RuntimeError("HOLD_CANDIDATE_SOURCE_SCOPE")
     prefix = (f"Files/omop_candidate/fhir_r4/{scope.hospital_id}/"
               f"{scope.feed_id}/{scope.request_id}/mapping={scope.mapping_sha256}")
     return {"person": prefix + "/person_candidate",
@@ -1648,11 +1648,11 @@ def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> di
         raise RuntimeError("HOLD_CANDIDATE_SOURCE_CONTRACT_UNAVAILABLE")
     if (type(scope) is not FrozenCandidateScope
             or type(trusted_scope) is not TrustedTechnicalScope):
-        raise RuntimeError("HOLD_G5_DYNAMIC_TRUSTED_SCOPE_TYPE")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_TRUSTED_SCOPE_TYPE")
     try:
         trusted_scope.validate()
     except TransportHold:
-        raise RuntimeError("HOLD_G5_DYNAMIC_TRUSTED_SCOPE_INVALID") from None
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_TRUSTED_SCOPE_INVALID") from None
     if (trusted_scope.source_format != "FHIR_R4"
             or trusted_scope.stage != "CANDIDATE_APPROVED"
             or scope.request_id != trusted_scope.request_id
@@ -1662,11 +1662,11 @@ def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> di
             or scope.mapping_sha256 != trusted_scope.mapping_profile_sha256
             or scope.identity_snapshot_fingerprint
                 != trusted_scope.f2_identity_snapshot_fingerprint):
-        raise RuntimeError("HOLD_G5_DYNAMIC_STAGE_BATCH_OR_EVIDENCE_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_STAGE_BATCH_OR_EVIDENCE_DRIFT")
     # The existing small-batch physical content verifier caps each table at
     # 10k rows. Larger batches require a separately reviewed chunked writer.
     if scope.patient_count > 10000 or scope.encounter_count > 10000:
-        raise RuntimeError("HOLD_G5_DYNAMIC_UNSUPPORTED_LARGE_BATCH")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_UNSUPPORTED_LARGE_BATCH")
     # These are safe, validated path components (FrozenCandidateScope + v3
     # TrustedTechnicalScope each enforce strict grammar, no slash/traversal).
     prefix = (
@@ -1683,7 +1683,7 @@ def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> di
     }
 
 
-def verify_fhir_g5_dynamic_silver_source_readonly(
+def verify_fhir_dynamic_silver_source_readonly(
     spark, *, scope, trusted_scope, source_ingest_date,
     patient_contract_json: str, encounter_contract_json: str,
 ) -> str:
@@ -1700,14 +1700,14 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
     # Read-only verification keeps the HALT/write fence. Typed API checks
     # are performed by the source-scope planner before Spark or Blob I/O.
     if run_mode != "HALT" or write_authorized is not False:
-        raise RuntimeError("HOLD_G5_DYNAMIC_SILVER_NONHALT_OR_WRITE_FLAG")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_SILVER_NONHALT_OR_WRITE_FLAG")
     from datetime import date, datetime, timezone
     if (type(source_ingest_date) is not date
             or scope is None
             or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
             or scope.feed_id != _FHIR_SOURCE_FEED_ID
             or scope.silver_processing_version != _G4_PROCESSING):
-        raise RuntimeError("HOLD_G5_DYNAMIC_G4_SOURCE_VERSION_OR_DATE")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_SILVER_SOURCE_VERSION_OR_DATE")
     # This planner is a pure, typed v3 trust-scope/batch boundary. It never
     # returns authority to publish and is deliberately not the Writer path.
     _plan_fhir_candidate_paths_from_trusted_scope(
@@ -1716,7 +1716,7 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
             or not isinstance(encounter_contract_json, str)
             or not 0 < len(patient_contract_json) <= 5000
             or not 0 < len(encounter_contract_json) <= 5000):
-        raise RuntimeError("HOLD_G5_DYNAMIC_CANONICAL_CONTRACT_BYTES")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_CANONICAL_CONTRACT_BYTES")
     pb = patient_contract_json.encode("utf-8")
     eb = encounter_contract_json.encode("utf-8")
     load_pinned_contract(pb, "patient")
@@ -1733,7 +1733,7 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
         processed_at=datetime.now(timezone.utc),
     )
     if context.source_batch_id != scope.source_batch_id:
-        raise RuntimeError("HOLD_G5_DYNAMIC_DERIVED_BATCH_SHA_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_DERIVED_BATCH_SHA_DRIFT")
     # Read original, fixed Landing Manifest bytes from the existing approved
     # hospital/feed namespace, never from an arbitrary path or query argument.
     original_manifest = (
@@ -1744,13 +1744,13 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
     if (len(rows) != 1
             or not isinstance(rows[0].content,
                               (bytes, bytearray, memoryview))):
-        raise RuntimeError("HOLD_G5_DYNAMIC_LANDING_MANIFEST_NOT_ONE")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_LANDING_MANIFEST_NOT_ONE")
     manifest_bytes = bytes(rows[0].content)
     if hashlib.sha256(manifest_bytes).hexdigest() != scope.manifest_sha256:
-        raise RuntimeError("HOLD_G5_DYNAMIC_LANDING_MANIFEST_SHA_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_LANDING_MANIFEST_SHA_DRIFT")
     specs = _manifest_objects(manifest_bytes, context)
     if not 1 <= len(specs) <= 5000:
-        raise RuntimeError("HOLD_G5_DYNAMIC_SOURCE_OBJECT_COUNT")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_SOURCE_OBJECT_COUNT")
     expected = _expected_bronze_source_receipts(context, specs)
     paths = _silver_publication_paths(scope.request_id)
     exists = {key: _delta_snapshot_exists(spark, path)
@@ -1758,7 +1758,7 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
     if (not all(exists[k] for k in
                 ("bronze", "patient", "encounter", "approval"))
             or exists["quarantine"]):
-        raise RuntimeError("HOLD_G5_DYNAMIC_SILVER_PARTIAL_OR_QUARANTINED")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_SILVER_PARTIAL_OR_QUARANTINED")
     # Reopen original raw Bronze bytes, and then re-run only the existing
     # Shared FHIR normalizers and the canonical DQ/reconciliation logic.
     sources = _snapshot_silver_source_objects(
@@ -1773,7 +1773,7 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
             or batch.manifest_sha256 != scope.manifest_sha256
             or batch.processing_version != scope.silver_processing_version
             or batch.publication_id != scope.silver_publication_id):
-        raise RuntimeError("HOLD_G5_DYNAMIC_RECOMPUTED_DQ_OR_PUBLICATION")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_RECOMPUTED_DQ_OR_PUBLICATION")
     # Two fresh Silver Delta reads, full-row multiset comparison, PK/FK,
     # source namespace, canonical version and bounded exact Stage counts.
     patient = spark.read.format("delta").load(paths["patient"])
@@ -1785,8 +1785,8 @@ def verify_fhir_g5_dynamic_silver_source_readonly(
     expected_approval = _silver_approval_row(context, batch, pb, eb)
     if (len(approved) != 1
             or approved[0].asDict(recursive=True) != expected_approval):
-        raise RuntimeError("HOLD_G5_DYNAMIC_APPROVAL_LAST_FENCE_DRIFT")
-    return "G5_DYNAMIC_FHIR_SILVER_PHYSICAL_RECOMPUTE_PASS_SOURCE_ONLY_NO_RELEASE"
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_APPROVAL_LAST_FENCE_DRIFT")
+    return "CANDIDATE_DYNAMIC_FHIR_SILVER_PHYSICAL_RECOMPUTE_PASS_SOURCE_ONLY_NO_RELEASE"
 
 
 def _candidate_delta_content(frame, *, key: str, expected: int) -> tuple[str, list[dict]]:
@@ -1794,13 +1794,13 @@ def _candidate_delta_content(frame, *, key: str, expected: int) -> tuple[str, li
     if (type(expected) is not int or not 0 < expected <= 10000
             or key not in frame.columns
             or len(frame.columns) != len(set(frame.columns))):
-        raise RuntimeError("HOLD_G5_CANDIDATE_SCHEMA_OR_BOUNDS")
+        raise RuntimeError("HOLD_CANDIDATE_SCHEMA_OR_BOUNDS")
     rows = [r.asDict(recursive=True) for r in frame.collect()]
     if len(rows) != expected:
-        raise RuntimeError("HOLD_G5_CANDIDATE_COUNT")
+        raise RuntimeError("HOLD_CANDIDATE_COUNT")
     if len({r.get(key) for r in rows}) != expected or any(
             type(r.get(key)) is not int or r[key] <= 0 for r in rows):
-        raise RuntimeError("HOLD_G5_CANDIDATE_DUPLICATE_OR_INVALID_ID")
+        raise RuntimeError("HOLD_CANDIDATE_DUPLICATE_OR_INVALID_ID")
     import datetime
     import decimal
     def encode(value):
@@ -1810,11 +1810,11 @@ def _candidate_delta_content(frame, *, key: str, expected: int) -> tuple[str, li
             return str(value)
         if isinstance(value, (bytes, bytearray)):
             return bytes(value).hex()
-        raise TypeError("G5_UNSUPPORTED_CANDIDATE_DATATYPE")
+        raise TypeError("CANDIDATE_UNSUPPORTED_CANDIDATE_DATATYPE")
     digest = hashlib.sha256()
     for row in sorted(rows, key=lambda x: x[key]):
         if set(row) != set(frame.columns):
-            raise RuntimeError("HOLD_G5_CANDIDATE_ROW_SCHEMA")
+            raise RuntimeError("HOLD_CANDIDATE_ROW_SCHEMA")
         raw = json.dumps(row, sort_keys=True, separators=(",", ":"),
                          default=encode, allow_nan=False).encode("utf-8")
         digest.update(len(raw).to_bytes(8, "big"))
@@ -1837,14 +1837,14 @@ def _validate_candidate_rows(person_rows, visit_rows, handoff) -> None:
                        v.state, v.parent_state) for v in handoff.batch_visits}
     if (len(persons) != len(person_rows) or persons != expected_person
             or len(visits) != len(visit_rows) or visits != expected_visit):
-        raise RuntimeError("HOLD_G5_CANDIDATE_IDENTITY_OR_FK_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_IDENTITY_OR_FK_DRIFT")
     # Candidate is allowed provisional INT IDs; Gold is NOT.
     if any(p.state not in ("PROVISIONAL", "PERSISTED") for p in handoff.batch_persons):
-        raise RuntimeError("HOLD_G5_CANDIDATE_ID_STATE")
+        raise RuntimeError("HOLD_CANDIDATE_ID_STATE")
     if any(v.state not in ("PROVISIONAL", "PERSISTED") or
            v.parent_state not in ("PROVISIONAL", "PERSISTED")
            for v in handoff.batch_visits):
-        raise RuntimeError("HOLD_G5_CANDIDATE_ID_STATE")
+        raise RuntimeError("HOLD_CANDIDATE_ID_STATE")
 
 
 
@@ -1868,7 +1868,7 @@ def _verify_candidate_mapper_payload(mapper_result, person_candidate,
             or {"source_encounter_id", "source_person_id", "person_id"} - v_columns
             or p_base.count() != scope.patient_count
             or v_base.count() != scope.encounter_count):
-        raise RuntimeError("HOLD_G5_MAPPER_CANDIDATE_SCHEMA_OR_COUNT")
+        raise RuntimeError("HOLD_CANDIDATE_MAPPER_CANDIDATE_SCHEMA_OR_COUNT")
     for mapped, candidate, columns in (
         (p_base, person_candidate, sorted(p_columns)),
         (v_base, visit_candidate, sorted(v_columns)),
@@ -1877,10 +1877,10 @@ def _verify_candidate_mapper_payload(mapper_result, person_candidate,
         target = candidate.select(*columns)
         if (target.exceptAll(source).limit(1).count()
                 or source.exceptAll(target).limit(1).count()):
-            raise RuntimeError("HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED")
+            raise RuntimeError("HOLD_CANDIDATE_MAPPER_CANDIDATE_PAYLOAD_CHANGED")
 
 
-def plan_and_write_g5_candidate_delta(
+def plan_and_write_omop_candidate_delta(
     spark, *, scope, handoff, mapper_result, person_candidate, visit_candidate,
     mode: str, write_authorized: bool,
     clinically_reviewed: bool = False, license_reviewed: bool = False,
@@ -1926,22 +1926,22 @@ def plan_and_write_g5_candidate_delta(
                 p.state == "PROVISIONAL" for p in handoff.batch_persons)
             or scope.provisional_visit_count != sum(
                 visit.state == "PROVISIONAL" for visit in handoff.batch_visits)):
-        raise RuntimeError("HOLD_G5_CANDIDATE_F2_SCOPE_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_IDENTITY_SCOPE_DRIFT")
     from re import fullmatch
-    if (mode not in ("G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY")
+    if (mode not in ("CANDIDATE_WRITE", "CANDIDATE_READBACK_ONLY")
             or type(write_authorized) is not bool
             or type(clinically_reviewed) is not bool
             or type(license_reviewed) is not bool
             or type(warehouse_snapshot_verified) is not bool):
-        raise RuntimeError("HOLD_G5_CANDIDATE_MODE_OR_FLAGS")
+        raise RuntimeError("HOLD_CANDIDATE_MODE_OR_FLAGS")
     technical = technical_evidence_sha256 is not None
     if technical and (clinically_reviewed or license_reviewed
                       or clinical_review_sha256 is not None
                       or license_review_sha256 is not None):
-        raise RuntimeError("HOLD_G5_TECHNICAL_EVIDENCE_CANNOT_FORGE_REVIEWS")
-    if mode == "G5_CANDIDATE_READBACK_ONLY" and (
+        raise RuntimeError("HOLD_CANDIDATE_TECHNICAL_EVIDENCE_CANNOT_FORGE_REVIEWS")
+    if mode == "CANDIDATE_READBACK_ONLY" and (
             write_authorized or clinically_reviewed or license_reviewed):
-        raise RuntimeError("HOLD_G5_CANDIDATE_READBACK_FLAGS")
+        raise RuntimeError("HOLD_CANDIDATE_READBACK_FLAGS")
     digests = (
         (technical_evidence_sha256, warehouse_snapshot_sha256)
         if technical else
@@ -1950,32 +1950,32 @@ def plan_and_write_g5_candidate_delta(
     )
     if any(not isinstance(x, str) or not fullmatch(r"[0-9a-f]{64}", x)
            for x in digests):
-        raise RuntimeError("HOLD_G5_CANDIDATE_EVIDENCE_SHA_NOT_PINNED")
+        raise RuntimeError("HOLD_CANDIDATE_EVIDENCE_SHA_NOT_PINNED")
     if warehouse_snapshot_sha256 != scope.identity_snapshot_fingerprint:
-        raise RuntimeError("HOLD_G5_CANDIDATE_WAREHOUSE_SNAPSHOT_DRIFT")
-    if mode == "G5_CANDIDATE_WRITE":
+        raise RuntimeError("HOLD_CANDIDATE_WAREHOUSE_SNAPSHOT_DRIFT")
+    if mode == "CANDIDATE_WRITE":
         if not (write_authorized and warehouse_snapshot_verified):
-            raise RuntimeError("HOLD_G5_CANDIDATE_TECHNICAL_RELEASE_MISSING")
+            raise RuntimeError("HOLD_CANDIDATE_TECHNICAL_RELEASE_MISSING")
         if technical:
             # The trusted callback is code from the protected Stage controller,
             # not a value supplied by Notebook/Pipeline user parameters.
             if (not callable(trusted_technical_release_gate)
                     or trusted_technical_release_gate(
                         scope, technical_evidence_sha256) is not True):
-                raise RuntimeError("HOLD_G5_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
+                raise RuntimeError("HOLD_CANDIDATE_TECHNICAL_STAGE_RELEASE_UNTRUSTED")
         elif not (clinically_reviewed and license_reviewed):
-            raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
+            raise RuntimeError("HOLD_CANDIDATE_LEGACY_SIGNED_RELEASE_INCOMPLETE")
     paths = _frozen_fhir_candidate_paths(scope)
-    source = verify_fhir_g5_candidate_source_readonly(
+    source = verify_fhir_candidate_source_readonly(
         spark, request=scope.request_id, manifest_sha=scope.manifest_sha256,
         allow_write=False, retention_ok=False,
         strategy="DELTA_RAW_SNAPSHOT_V1",
         manifest_override="", source_override="", target_override="",
         patient_contract_json=patient_contract_json,
         encounter_contract_json=encounter_contract_json)
-    if source != ("FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
+    if source != ("FHIR_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
                   "APPROVAL_DELTA_PASS_20261104"):
-        raise RuntimeError("HOLD_G5_CANDIDATE_G4_NOT_APPROVED")
+        raise RuntimeError("HOLD_CANDIDATE_SILVER_NOT_APPROVED")
 
     # Strict source Mapper + F2 preview already produced these frames. We
     # deliberately DO NOT invent missing clinical values or durable IDs.
@@ -1988,7 +1988,7 @@ def plan_and_write_g5_candidate_delta(
         mapper_result, person_candidate, visit_candidate, scope)
     exists = {key: _delta_snapshot_exists(spark, path) for key, path in paths.items()}
     if any(exists.values()) and not all(exists.values()):
-        return "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT"
+        return "CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT"
 
     def reopened():
         person = spark.read.format("delta").load(paths["person"])
@@ -1996,20 +1996,20 @@ def plan_and_write_g5_candidate_delta(
         # Same strict frame/DQ checks on independently persisted rows.
         if set(person.columns) != set(person_candidate.columns) or (
                 set(visit.columns) != set(visit_candidate.columns)):
-            raise RuntimeError("HOLD_G5_CANDIDATE_READBACK_SCHEMA_DRIFT")
+            raise RuntimeError("HOLD_CANDIDATE_READBACK_SCHEMA_DRIFT")
         saved_p, rows_p = _candidate_delta_content(
             person, key="person_id", expected=scope.patient_count)
         saved_v, rows_v = _candidate_delta_content(
             visit, key="visit_occurrence_id", expected=scope.encounter_count)
         _validate_candidate_rows(rows_p, rows_v, handoff)
         if (saved_p != psha or saved_v != vsha):
-            raise RuntimeError("HOLD_G5_CANDIDATE_DATA_BYTES_DRIFT")
+            raise RuntimeError("HOLD_CANDIDATE_DATA_BYTES_DRIFT")
         return saved_p, saved_v
 
     def approved():
         proof = spark.read.format("delta").load(paths["approval"]).collect()
         if len(proof) != 1:
-            raise RuntimeError("HOLD_G5_CANDIDATE_APPROVAL_CARDINALITY")
+            raise RuntimeError("HOLD_CANDIDATE_APPROVAL_CARDINALITY")
         record = proof[0].asDict(recursive=True)
         required = {
             "scope_receipt_key": scope.receipt_key,
@@ -2024,7 +2024,7 @@ def plan_and_write_g5_candidate_delta(
         }
         if technical:
             required.update({
-                "evidence_contract": "G5_TECHNICAL_F1F2_V1",
+                "evidence_contract": "CANDIDATE_TECHNICAL_F1F2_V1",
                 "technical_evidence_sha256": technical_evidence_sha256,
             })
         else:
@@ -2033,7 +2033,7 @@ def plan_and_write_g5_candidate_delta(
                 "license_review_sha256": license_review_sha256,
             })
         if record != required:
-            raise RuntimeError("HOLD_G5_CANDIDATE_APPROVAL_DRIFT")
+            raise RuntimeError("HOLD_CANDIDATE_APPROVAL_DRIFT")
         return record
 
     if all(exists.values()):
@@ -2041,7 +2041,7 @@ def plan_and_write_g5_candidate_delta(
             saved_p, saved_v = reopened()
             approved()
         except Exception:
-            return "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT"
+            return "CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT"
         observation = ObservedCandidate(
             scope=scope, person_delta_exists=True, visit_delta_exists=True,
             approval_exists=True, person_count=scope.patient_count,
@@ -2053,15 +2053,15 @@ def plan_and_write_g5_candidate_delta(
         choice = decide_candidate_publication(
             scope, (observation,), expected_person_content_sha256=psha,
             expected_visit_content_sha256=vsha)
-        return ("G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD" if
+        return ("CANDIDATE_SKIP_VERIFIED_NOT_GOLD" if
                 choice.decision == "SKIP_VERIFIED_CANDIDATE_ONLY" else
-                "G5_CANDIDATE_HOLD_REPLAY_CONFLICT")
+                "CANDIDATE_HOLD_REPLAY_CONFLICT")
 
-    if mode != "G5_CANDIDATE_WRITE":
-        return "G5_CANDIDATE_HOLD_NOT_FOUND_READONLY"
+    if mode != "CANDIDATE_WRITE":
+        return "CANDIDATE_HOLD_NOT_FOUND_READONLY"
     if (decide_candidate_publication(scope, ()).decision
             != "PLAN_NEW_OFFLINE_ONLY"):
-        return "G5_CANDIDATE_HOLD_PUBLICATION_PLAN"
+        return "CANDIDATE_HOLD_PUBLICATION_PLAN"
     # The coordinator's review and authorization are still a separate
     # security gate; this code is not a dispatch entrypoint.
     try:
@@ -2072,7 +2072,7 @@ def plan_and_write_g5_candidate_delta(
             receipt = (
                 scope.receipt_key, scope.source_batch_id,
                 scope.mapping_sha256, scope.identity_snapshot_fingerprint,
-                "G5_TECHNICAL_F1F2_V1", technical_evidence_sha256,
+                "CANDIDATE_TECHNICAL_F1F2_V1", technical_evidence_sha256,
                 scope.patient_count, scope.encounter_count, psha, vsha,
                 "CANDIDATE_APPROVED",
             )
@@ -2103,12 +2103,12 @@ def plan_and_write_g5_candidate_delta(
     except Exception:
         # Prior Delta may have committed before an unknown ACK; no cleanup,
         # overwrite or retry. Operator must run independent READBACK first.
-        return "G5_CANDIDATE_VERIFY_READONLY_UNKNOWN_ACK"
-    return "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD"
+        return "CANDIDATE_VERIFY_READONLY_UNKNOWN_ACK"
+    return "CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD"
 
 
 
-def execute_g5_candidate_from_trusted_controller(
+def verify_candidate_transport_source_only(
     spark, *, provider=None, mode: str, attestation_bytes: bytes | None = None,
 ) -> str:
     """P3.20 fail-closed Native transport-only preflight, NOT a business entry.
@@ -2125,43 +2125,43 @@ def execute_g5_candidate_from_trusted_controller(
     This method is NOT connected to Notebook run_mode or Pipeline dispatch.
     """
     # Reject write *before* inspecting any source/provider/proof/Spark object.
-    if mode != "G5_CANDIDATE_READBACK_ONLY":
-        raise RuntimeError("HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED")
+    if mode != "CANDIDATE_READBACK_ONLY":
+        raise RuntimeError("HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED")
     if provider is not None or spark is not None:
-        raise RuntimeError("HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED")
+        raise RuntimeError("HOLD_CANDIDATE_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED")
     if run_mode != "HALT" or write_authorized is not False:
-        raise RuntimeError("HOLD_G5_NATIVE_RUN_MODE_OR_WRITE_FLAG")
+        raise RuntimeError("HOLD_CANDIDATE_NATIVE_RUN_MODE_OR_WRITE_FLAG")
     # This is a pure transport verifier, not a writer or release grant.
     # Verify evidence shape and actual verifier API instead of a version label.
     if (not isinstance(attestation_bytes, bytes)
             or not 0 < len(attestation_bytes) <= 8192):
-        raise RuntimeError("HOLD_G5_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING")
+        raise RuntimeError("HOLD_CANDIDATE_NATIVE_SIGNED_ATTESTATION_BYTES_MISSING")
     try:
         from healthcare_data_engine.security.provider_attestation import (
             TransportHold, VerifiedTransport, VerifiedTechnicalTransport,
             verify_native_handoff_source_only,
         )
     except ImportError:
-        raise RuntimeError("HOLD_G5_NATIVE_SIGNED_VERIFIER_NOT_PUBLISHED") from None
+        raise RuntimeError("HOLD_CANDIDATE_NATIVE_SIGNED_VERIFIER_NOT_PUBLISHED") from None
     try:
         verified = verify_native_handoff_source_only(attestation_bytes)
     except TransportHold:
-        raise RuntimeError("HOLD_G5_NATIVE_SIGNED_TRANSPORT_OR_REPLAY") from None
+        raise RuntimeError("HOLD_CANDIDATE_NATIVE_SIGNED_TRANSPORT_OR_REPLAY") from None
     if (not isinstance(verified, (VerifiedTransport, VerifiedTechnicalTransport))
             or verified.status not in (
-                "G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
-                "G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE",
-                "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
+                "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
+                "DYNAMIC_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE",
+                "FROZEN_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
             or verified.candidate_write_authorized is not False
             or verified.gold_committed is not False
             or verified.provisional_ids_persisted is not False):
-        raise RuntimeError("HOLD_G5_NATIVE_NON_SOURCE_ONLY_ATTESTATION")
+        raise RuntimeError("HOLD_CANDIDATE_NATIVE_NON_SOURCE_ONLY_ATTESTATION")
     # No provider calls, no source Silver read, no Concept/F2 SQL, no Candidate
-    # writer, and NO capability is returned to execute_g5_person_visit_business.
-    return "G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED"
+    # writer, and NO capability is returned to execute_person_visit_candidate_publication.
+    return "CANDIDATE_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED"
 
 
-def execute_g5_person_visit_business(
+def execute_person_visit_candidate_publication(
     spark, *, scope, handoff, concepts_from_verified_warehouse,
     mapping_profile_bytes: bytes, raw_publish_run_id: str,
     patient_contract_json: str, encounter_contract_json: str,
@@ -2192,8 +2192,8 @@ def execute_g5_person_visit_business(
             or scope.source_batch_id != handoff.source_batch_id
             or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
             or scope.mapping_sha256 is None
-            or mode not in ("G5_CANDIDATE_WRITE", "G5_CANDIDATE_READBACK_ONLY")):
-        raise RuntimeError("HOLD_G5_BUSINESS_RELEASE_OR_F2_SCOPE")
+            or mode not in ("CANDIDATE_WRITE", "CANDIDATE_READBACK_ONLY")):
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_RELEASE_OR_IDENTITY_SCOPE")
     # Preserve clinical data integrity but do not require two humans.
     # A digest by itself is NEVER a release; the actual Stage owner must
     # independently authenticate it and provide the protected callback.
@@ -2201,21 +2201,21 @@ def execute_g5_person_visit_business(
     if technical and (clinically_reviewed or license_reviewed
                       or clinical_review_sha256 is not None
                       or license_review_sha256 is not None):
-        raise RuntimeError("HOLD_G5_BUSINESS_FAKE_REVIEW_IN_TECHNICAL_PATH")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_FAKE_REVIEW_IN_TECHNICAL_PATH")
     if technical and (not isinstance(technical_evidence_sha256, str)
                       or not __import__("re").fullmatch(
                           r"[0-9a-f]{64}", technical_evidence_sha256)):
-        raise RuntimeError("HOLD_G5_BUSINESS_TECHNICAL_EVIDENCE_SHA_INVALID")
-    if mode == "G5_CANDIDATE_WRITE" and not (
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_TECHNICAL_EVIDENCE_SHA_INVALID")
+    if mode == "CANDIDATE_WRITE" and not (
             write_authorized and warehouse_snapshot_verified
             and ((technical and callable(trusted_technical_release_gate))
                  or (not technical and clinically_reviewed and license_reviewed))):
-        raise RuntimeError("HOLD_G5_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING")
     if (not isinstance(mapping_profile_bytes, bytes)
             or len(mapping_profile_bytes) > 65536
             or hashlib.sha256(mapping_profile_bytes).hexdigest()
                 != scope.mapping_sha256):
-        raise RuntimeError("HOLD_G5_BUSINESS_MAPPING_PROFILE_BYTES")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_MAPPING_PROFILE_BYTES")
     # Strict existing Mapper validates the exact source namespace and all
     # mapped concept IDs. It never guesses unmatched Race/Ethnicity/Visit.
     load_omop_mapping_profile(
@@ -2223,10 +2223,10 @@ def execute_g5_person_visit_business(
     if (not isinstance(raw_publish_run_id, str)
             or not raw_publish_run_id
             or raw_publish_run_id != raw_publish_run_id.strip()):
-        raise RuntimeError("HOLD_G5_BUSINESS_RAW_PUBLICATION_UNPINNED")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_RAW_PUBLICATION_UNPINNED")
     # Only ever read the physical G4 DataFrames after rechecking exact
     # original Manifest, Approval, row counts, source keys and FK.
-    verify_fhir_g5_candidate_source_readonly(
+    verify_fhir_candidate_source_readonly(
         spark, request=scope.request_id,
         manifest_sha=scope.manifest_sha256,
         allow_write=False, retention_ok=False,
@@ -2239,7 +2239,7 @@ def execute_g5_person_visit_business(
     encounter = spark.read.format("delta").load(paths["encounter"])
     approval_rows = spark.read.format("delta").load(paths["approval"]).collect()
     if len(approval_rows) != 1:
-        raise RuntimeError("HOLD_G5_BUSINESS_G4_APPROVAL_NOT_UNIQUE")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_SILVER_APPROVAL_NOT_UNIQUE")
     approval = approval_rows[0].asDict(recursive=True)
     if (approval.get("status") != "SILVER_APPROVED"
             or approval.get("publication_id") != scope.silver_publication_id
@@ -2249,21 +2249,21 @@ def execute_g5_person_visit_business(
             or approval.get("patient_count") != scope.patient_count
             or approval.get("encounter_count") != scope.encounter_count
             or approval.get("quarantine_count") != 0):
-        raise RuntimeError("HOLD_G5_BUSINESS_G4_APPROVAL_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_SILVER_APPROVAL_DRIFT")
     if (concepts_from_verified_warehouse is None
             or not hasattr(concepts_from_verified_warehouse, "columns")):
-        raise RuntimeError("HOLD_G5_BUSINESS_F1_CONCEPT_SNAPSHOT_MISSING")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_VOCABULARY_SNAPSHOT_MISSING")
     # F2 provisional IDs stay explicit and are never persisted as Warehouse
     # Gold or treated as existing committed etl.identity_map records.
     if not handoff.person_lookup or not handoff.batch_visits:
-        raise RuntimeError("HOLD_G5_BUSINESS_F2_ID_LOOKUP_EMPTY")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_IDENTITY_LOOKUP_EMPTY")
     for person_id in (r.person_id for r in handoff.person_lookup):
         if type(person_id) is not int or not 0 < person_id <= 2147483647:
-            raise RuntimeError("HOLD_G5_BUSINESS_PERSON_INT_RANGE")
+            raise RuntimeError("HOLD_CANDIDATE_BUSINESS_PERSON_INT_RANGE")
     for item in handoff.batch_visits:
         if type(item.visit_occurrence_id) is not int or not (
                 0 < item.visit_occurrence_id <= 2147483647):
-            raise RuntimeError("HOLD_G5_BUSINESS_VISIT_INT_RANGE")
+            raise RuntimeError("HOLD_CANDIDATE_BUSINESS_VISIT_INT_RANGE")
     id_map = spark.createDataFrame(
         [("PERSON", p.hospital_id, p.source_system,
           p.source_business_key, p.person_id) for p in handoff.person_lookup],
@@ -2282,7 +2282,7 @@ def execute_g5_person_visit_business(
     if freeze_candidate_scope(
             handoff, mapped, feed_id=scope.feed_id,
             request_id=scope.request_id) != scope:
-        raise RuntimeError("HOLD_G5_BUSINESS_MAPPER_F2_SCOPE_CONFLICT")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_MAPPER_IDENTITY_SCOPE_CONFLICT")
     # F2 proposes IDs, Shared Mapper owns every OMOP clinical data column.
     # Never rewrite mapped output fields in this native coordinator.
     persons = spark.createDataFrame(
@@ -2298,7 +2298,7 @@ def execute_g5_person_visit_business(
     candidate_person = mapped.person.join(persons, "person_id", "inner")
     candidate_visit = mapped.visit.join(
         visits, ["source_system", "source_encounter_id"], "inner")
-    return plan_and_write_g5_candidate_delta(
+    return plan_and_write_omop_candidate_delta(
         spark, scope=scope, handoff=handoff, mapper_result=mapped,
         person_candidate=candidate_person,
         visit_candidate=candidate_visit, mode=mode,
@@ -2316,7 +2316,7 @@ def execute_g5_person_visit_business(
 
 
 
-def verify_fhir_g5_candidate_source_readonly(
+def verify_fhir_candidate_source_readonly(
     spark, *, request: str, manifest_sha: str, allow_write: bool,
     retention_ok: bool, strategy: str, manifest_override: str,
     source_override: str, target_override: str,
@@ -2330,21 +2330,21 @@ def verify_fhir_g5_candidate_source_readonly(
     namespace, counts, uniqueness and Encounter-to-Patient FK. The result
     means SOURCE_READONLY_PASS, not an OMOP mapping/commit receipt.
     """
-    if (request != _G5_APPROVED_REQUEST
-            or manifest_sha != _G5_APPROVED_MANIFEST_SHA
+    if (request != _PINNED_FHIR_REQUEST
+            or manifest_sha != _PINNED_FHIR_MANIFEST_SHA
             or engine_version != "0.1.7"
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or allow_write is not False
             or retention_ok is not False
             or any(x != "" for x in (
                 manifest_override, source_override, target_override))):
-        raise RuntimeError("HOLD_G5_SOURCE_PIN_OR_READONLY_GATE")
+        raise RuntimeError("HOLD_CANDIDATE_SOURCE_PIN_OR_READONLY_GATE")
     # Only the supplied exact Local canonical original bytes are accepted.
     if (not isinstance(patient_contract_json, str)
             or not isinstance(encounter_contract_json, str)
             or not 0 < len(patient_contract_json) <= 5000
             or not 0 < len(encounter_contract_json) <= 5000):
-        raise RuntimeError("HOLD_G5_CANONICAL_CONTRACTS_REQUIRED")
+        raise RuntimeError("HOLD_CANDIDATE_CANONICAL_CONTRACTS_REQUIRED")
     patient_bytes = patient_contract_json.encode("utf-8")
     encounter_bytes = encounter_contract_json.encode("utf-8")
     load_pinned_contract(patient_bytes, "patient")
@@ -2353,21 +2353,21 @@ def verify_fhir_g5_candidate_source_readonly(
     # G4 independently verifies delivered manifest bytes, Bronze snapshot,
     # re-computed canonical data, persisted Approval and Quarantine fence.
     # Existing approved G4 physical data is NEVER written/overwritten.
-    g4 = verify_fhir_g4_silver(
+    silver_publication = verify_fhir_g4_silver(
         spark, request=request, manifest_sha=manifest_sha,
         mode="SILVER_READBACK_ONLY", allow_write=False,
         retention_ok=False, strategy=strategy,
         manifest_override="", source_override="", target_override="",
         patient_contract_json=patient_contract_json,
         encounter_contract_json=encounter_contract_json)
-    if (g4.status != "SILVER_SKIP_VERIFIED"
-            or g4.processing_version != _G4_PROCESSING
-            or g4.metrics.get("patient") != _G5_APPROVED_PATIENTS
-            or g4.metrics.get("encounter") != _G5_APPROVED_ENCOUNTERS
-            or g4.metrics.get("quarantine_or_reject") != 0
-            or not isinstance(g4.publication_id, str)
-            or not g4.publication_id):
-        raise RuntimeError("HOLD_G5_G4_PHYSICAL_APPROVAL_NOT_VERIFIED")
+    if (silver_publication.status != "SILVER_SKIP_VERIFIED"
+            or silver_publication.processing_version != _G4_PROCESSING
+            or silver_publication.metrics.get("patient") != _PINNED_FHIR_PATIENTS
+            or silver_publication.metrics.get("encounter") != _PINNED_FHIR_ENCOUNTERS
+            or silver_publication.metrics.get("quarantine_or_reject") != 0
+            or not isinstance(silver_publication.publication_id, str)
+            or not silver_publication.publication_id):
+        raise RuntimeError("HOLD_CANDIDATE_SILVER_PHYSICAL_APPROVAL_NOT_VERIFIED")
 
     # Independent new Spark physical scans, not the G4 in-memory frames.
     from pyspark.sql import functions as F
@@ -2376,32 +2376,32 @@ def verify_fhir_g5_candidate_source_readonly(
     encounter = spark.read.format("delta").load(paths["encounter"])
     approvals = spark.read.format("delta").load(paths["approval"]).collect()
     if len(approvals) != 1:
-        raise RuntimeError("HOLD_G5_APPROVAL_ROW_CARDINALITY")
+        raise RuntimeError("HOLD_CANDIDATE_APPROVAL_ROW_CARDINALITY")
     approval = approvals[0].asDict(recursive=True)
     expected = {
         "status": "SILVER_APPROVED",
-        "source_batch_id": g4.source_batch_id,
+        "source_batch_id": silver_publication.source_batch_id,
         "manifest_sha256": manifest_sha,
         "processing_version": _G4_PROCESSING,
-        "publication_id": g4.publication_id,
-        "patient_count": _G5_APPROVED_PATIENTS,
-        "encounter_count": _G5_APPROVED_ENCOUNTERS,
+        "publication_id": silver_publication.publication_id,
+        "patient_count": _PINNED_FHIR_PATIENTS,
+        "encounter_count": _PINNED_FHIR_ENCOUNTERS,
         "quarantine_count": 0,
         "patient_contract_sha256": hashlib.sha256(patient_bytes).hexdigest(),
         "encounter_contract_sha256": hashlib.sha256(encounter_bytes).hexdigest(),
         "source_preservation_strategy": "DELTA_RAW_SNAPSHOT_V1",
     }
     if approval != expected:
-        raise RuntimeError("HOLD_G5_APPROVAL_FENCE_CHANGED")
+        raise RuntimeError("HOLD_CANDIDATE_APPROVAL_FENCE_CHANGED")
     required_patient = {"source_system", "source_batch_id", "source_record_id"}
     required_encounter = {"source_system", "source_batch_id",
                           "source_encounter_id", "source_person_id"}
     if (not required_patient.issubset(patient.columns)
             or not required_encounter.issubset(encounter.columns)):
-        raise RuntimeError("HOLD_G5_CANONICAL_COLUMNS_DRIFT")
-    if (patient.count() != _G5_APPROVED_PATIENTS
-            or encounter.count() != _G5_APPROVED_ENCOUNTERS):
-        raise RuntimeError("HOLD_G5_SILVER_COUNTS_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_CANONICAL_COLUMNS_DRIFT")
+    if (patient.count() != _PINNED_FHIR_PATIENTS
+            or encounter.count() != _PINNED_FHIR_ENCOUNTERS):
+        raise RuntimeError("HOLD_CANDIDATE_SILVER_COUNTS_DRIFT")
     source_system = "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID
     for frame, key, name in (
         (patient, "source_record_id", "PATIENT"),
@@ -2411,19 +2411,19 @@ def verify_fhir_g5_candidate_source_readonly(
             F.col("source_system").isNull()
             | (F.col("source_system") != source_system)
             | F.col("source_batch_id").isNull()
-            | (F.col("source_batch_id") != g4.source_batch_id)
+            | (F.col("source_batch_id") != silver_publication.source_batch_id)
             | F.col(key).isNull()
             | (F.trim(F.col(key)) == "")
         ).limit(1).count():
-            raise RuntimeError("HOLD_G5_" + name + "_NAMESPACE_OR_KEY")
+            raise RuntimeError("HOLD_CANDIDATE_" + name + "_NAMESPACE_OR_KEY")
         if frame.groupBy("source_system", key).count().filter(
             "count != 1").limit(1).count():
-            raise RuntimeError("HOLD_G5_" + name + "_DUPLICATE_SOURCE_KEY")
+            raise RuntimeError("HOLD_CANDIDATE_" + name + "_DUPLICATE_SOURCE_KEY")
     if encounter.filter(
         F.col("source_person_id").isNull()
         | (F.trim(F.col("source_person_id")) == "")
     ).limit(1).count():
-        raise RuntimeError("HOLD_G5_ENCOUNTER_PERSON_KEY_MISSING")
+        raise RuntimeError("HOLD_CANDIDATE_ENCOUNTER_PERSON_KEY_MISSING")
     if encounter.join(
         patient.select(
             F.col("source_system").alias("p_source_system"),
@@ -2432,14 +2432,14 @@ def verify_fhir_g5_candidate_source_readonly(
         & (F.col("source_person_id") == F.col("p_record_id")),
         "left_anti"
     ).limit(1).count():
-        raise RuntimeError("HOLD_G5_ENCOUNTER_PERSON_FK_ORPHAN")
+        raise RuntimeError("HOLD_CANDIDATE_ENCOUNTER_PERSON_FK_ORPHAN")
 
     # Intentionally no Candidate Delta or Warehouse/ID/Concept access.
-    return "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_APPROVAL_DELTA_PASS_20261104"
+    return "FHIR_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_APPROVAL_DELTA_PASS_20261104"
 
 
 
-def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) -> str:
+def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> str:
     """P1 real G4 Silver code inventory; NEVER maps IDs, Concepts or writes.
 
     Only run AFTER the exact G5 source physical gate has independently verified
@@ -2447,10 +2447,10 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
     Raw patient/encounter identifiers are NOT returned. Source codes are
     synthetic G4 terminology data, with bounded output and no clinical IDs.
     """
-    accepted = verify_fhir_g5_candidate_source_readonly(
+    accepted = verify_fhir_candidate_source_readonly(
         spark, **read_only_args)
     if accepted != (
-        "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
+        "FHIR_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
         "APPROVAL_DELTA_PASS_20261104"
     ):
         raise RuntimeError("HOLD_P1_SOURCE_PHYSICAL_GATE_NOT_VERIFIED")
@@ -2463,14 +2463,14 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
         raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
     approval = approvals[0].asDict(recursive=True)
     if (approval.get("status") != "SILVER_APPROVED"
-            or approval.get("manifest_sha256") != _G5_APPROVED_MANIFEST_SHA
+            or approval.get("manifest_sha256") != _PINNED_FHIR_MANIFEST_SHA
             or approval.get("processing_version") != _G4_PROCESSING
-            or approval.get("patient_count") != _G5_APPROVED_PATIENTS
-            or approval.get("encounter_count") != _G5_APPROVED_ENCOUNTERS
+            or approval.get("patient_count") != _PINNED_FHIR_PATIENTS
+            or approval.get("encounter_count") != _PINNED_FHIR_ENCOUNTERS
             or approval.get("quarantine_count") != 0):
         raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
-    if patient.count() != _G5_APPROVED_PATIENTS or (
-            encounter.count() != _G5_APPROVED_ENCOUNTERS):
+    if patient.count() != _PINNED_FHIR_PATIENTS or (
+            encounter.count() != _PINNED_FHIR_ENCOUNTERS):
         raise RuntimeError("HOLD_P1_SOURCE_ROW_COUNT_CHANGED")
 
     if "source_record_id" not in patient.columns or patient.filter(
@@ -2480,11 +2480,11 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
         # Person.person_source_value in official CDM 5.4 is VARCHAR(50).
         raise RuntimeError("HOLD_P1_PERSON_SOURCE_VALUE_TOO_LONG_OR_NULL")
     roles = (
-        ("gender_code", patient, _G5_APPROVED_PATIENTS),
-        ("race_code", patient, _G5_APPROVED_PATIENTS),
-        ("ethnicity_code", patient, _G5_APPROVED_PATIENTS),
-        ("encounter_class", encounter, _G5_APPROVED_ENCOUNTERS),
-        ("source_code", encounter, _G5_APPROVED_ENCOUNTERS),
+        ("gender_code", patient, _PINNED_FHIR_PATIENTS),
+        ("race_code", patient, _PINNED_FHIR_PATIENTS),
+        ("ethnicity_code", patient, _PINNED_FHIR_PATIENTS),
+        ("encounter_class", encounter, _PINNED_FHIR_ENCOUNTERS),
+        ("source_code", encounter, _PINNED_FHIR_ENCOUNTERS),
     )
     counts = {}
     for field, frame, expected in roles:
@@ -2514,18 +2514,18 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
     payload = json.dumps({
         "status": "P1_G4_CODE_INVENTORY_PHYSICAL_READONLY_ONLY",
         "request_id": read_only_args["request"],
-        "delivered_manifest_sha256": _G5_APPROVED_MANIFEST_SHA,
+        "delivered_manifest_sha256": _PINNED_FHIR_MANIFEST_SHA,
         "source_batch_id": approval["source_batch_id"],
         "processing_version": _G4_PROCESSING,
         "source_system": source_system,
         "hospital_id": _FHIR_SOURCE_HOSPITAL_ID,
-        "patient_count": _G5_APPROVED_PATIENTS,
-        "encounter_count": _G5_APPROVED_ENCOUNTERS,
+        "patient_count": _PINNED_FHIR_PATIENTS,
+        "encounter_count": _PINNED_FHIR_ENCOUNTERS,
         "code_counts": counts,
     }, sort_keys=True, separators=(",", ":"))
     if len(payload.encode("utf-8")) > 16000:
         raise RuntimeError("HOLD_P1_SOURCE_INVENTORY_RECEIPT_TOO_LARGE")
-    return "FHIR_G5_CONCEPT_SOURCE_INVENTORY_READONLY_PASS|" + payload
+    return "FHIR_CANDIDATE_CONCEPT_SOURCE_INVENTORY_READONLY_PASS|" + payload
 
 _G3_NEGATIVE_REQUEST = "atlanta-fhir-gh-41539769718"
 _G3_NEGATIVE_MANIFEST_SHA = "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
@@ -2866,12 +2866,6 @@ def verify_fhir_canonical_readonly(spark, *, request: str, allow_write: bool,
 # alias identity preserves signatures, guards, Stage authority, and exceptions.
 process_fhir_bronze_snapshot = verify_fhir_g3_bronze
 process_fhir_silver_publication = verify_fhir_g4_silver
-verify_fhir_dynamic_silver_source_readonly = verify_fhir_g5_dynamic_silver_source_readonly
-plan_and_write_omop_candidate_delta = plan_and_write_g5_candidate_delta
-verify_candidate_transport_source_only = execute_g5_candidate_from_trusted_controller
-execute_person_visit_candidate_publication = execute_g5_person_visit_business
-verify_fhir_candidate_source_readonly = verify_fhir_g5_candidate_source_readonly
-verify_fhir_concept_source_inventory_readonly = verify_fhir_g5_concept_source_inventory_readonly
 verify_fhir_bronze_negative_readonly = verify_fhir_g3_negative_readonly
 
 if __name__ == "__main__":
@@ -2974,7 +2968,7 @@ if __name__ == "__main__":
                 f"E{hl7.metrics['encounter']}_"
                 f"Q{hl7.metrics['quarantine_or_reject']}_DELTA_PASS_20261108")
         raise RuntimeError("HOLD_HL7_SILVER_" + hl7.status)
-    elif run_mode == "G5_CANDIDATE_SOURCE_READONLY":
+    elif run_mode == "CANDIDATE_SOURCE_READONLY":
         candidate_source_result = verify_fhir_candidate_source_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,
             allow_write=write_authorized,
@@ -2986,7 +2980,7 @@ if __name__ == "__main__":
             patient_contract_json=patient_contract_json,
             encounter_contract_json=encounter_contract_json)
         notebookutils.notebook.exit(candidate_source_result)
-    elif run_mode == "G5_CONCEPT_SOURCE_INVENTORY_READONLY":
+    elif run_mode == "CANDIDATE_CONCEPT_SOURCE_INVENTORY_READONLY":
         inventory_exit = verify_fhir_concept_source_inventory_readonly(
             spark, request=request_id, manifest_sha=manifest_sha256,
             allow_write=write_authorized,

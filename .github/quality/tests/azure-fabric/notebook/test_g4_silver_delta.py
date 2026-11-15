@@ -337,7 +337,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             hospital_id=hospital, feed_id=feed, source_system=source,
             request_id="atlanta-fhir-gh-41552666929",
             source_batch_id="a"*64,
-            manifest_sha256=nb._G5_APPROVED_MANIFEST_SHA,
+            manifest_sha256=nb._PINNED_FHIR_MANIFEST_SHA,
             silver_processing_version=nb._G4_PROCESSING,
             silver_publication_id="synthetic-silver-approval",
             mapping_sha256="c"*64,
@@ -385,7 +385,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         self.assertIs(kw["allow_write"], False)
         self.assertIs(kw["retention_ok"], False)
         self.assertEqual(kw["request"], self.scope.request_id)
-        return ("FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
+        return ("FHIR_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
                 "APPROVAL_DELTA_PASS_20261104")
 
     def write(self, frame, path):
@@ -400,7 +400,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         if self.fail_after_first and len(self.writes) == 1:
             raise OSError("synthetic unknown storage acknowledgement")
 
-    def invoke(self, *, mode="G5_CANDIDATE_WRITE", **overrides):
+    def invoke(self, *, mode="CANDIDATE_WRITE", **overrides):
         args = dict(
             scope=self.scope, handoff=self.handoff,
             mapper_result=self.mapper_result,
@@ -415,15 +415,15 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             encounter_contract_json="synthetic-contract-for-offline-only",
         )
         args.update(overrides)
-        with patch.dict(nb.plan_and_write_g5_candidate_delta.__globals__, {
+        with patch.dict(nb.plan_and_write_omop_candidate_delta.__globals__, {
             "_write_delta": self.write,
             "_delta_snapshot_exists": lambda spark, path: path in self.spark.delta,
-            "verify_fhir_g5_candidate_source_readonly": self.fake_source_fence,
+            "verify_fhir_candidate_source_readonly": self.fake_source_fence,
         }):
-            return nb.plan_and_write_g5_candidate_delta(self.spark, **args)
+            return nb.plan_and_write_omop_candidate_delta(self.spark, **args)
 
     def test_p3_first_write_approval_last_then_replay_skip(self):
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        self.assertEqual(self.invoke(), "CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
         paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.assertEqual(self.writes, [paths["person"], paths["visit"],
                                        paths["approval"]])
@@ -431,7 +431,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         self.assertEqual(len(approval), 1)
         self.assertEqual(approval[0]["status"], "CANDIDATE_APPROVED")
         self.assertEqual(approval[0]["scope_receipt_key"], self.scope.receipt_key)
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
+        self.assertEqual(self.invoke(), "CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
         self.assertEqual(len(self.writes), 3)
         self.assertEqual(len(self.rechecked_source), 2)
 
@@ -451,30 +451,30 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
     def test_p3_technical_only_approval_last_and_replay_without_humans(self):
         args = self.technical_kwargs()
         self.assertEqual(
-            self.invoke(**args), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+            self.invoke(**args), "CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
         paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.assertEqual(self.writes, [
             paths["person"], paths["visit"], paths["approval"]])
         receipt = self.spark.delta[paths["approval"]].rows[0]
         self.assertEqual(
-            receipt["evidence_contract"], "G5_TECHNICAL_F1F2_V1")
+            receipt["evidence_contract"], "CANDIDATE_TECHNICAL_F1F2_V1")
         self.assertEqual(
             receipt["technical_evidence_sha256"], "f" * 64)
         self.assertNotIn("clinical_review_sha256", receipt)
         self.assertNotIn("license_review_sha256", receipt)
         self.assertEqual(
-            self.invoke(**args), "G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
+            self.invoke(**args), "CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
         self.assertEqual(len(self.writes), 3)
         # Historical signed-v1 cannot mistake a v2 technical receipt for
         # an old two-human approved Candidate or silently overwrite it.
         self.assertEqual(
-            self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
+            self.invoke(), "CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
         self.assertEqual(len(self.writes), 3)
         self.assertEqual(
             self.invoke(
-                mode="G5_CANDIDATE_READBACK_ONLY", write_authorized=False,
+                mode="CANDIDATE_READBACK_ONLY", write_authorized=False,
                 **{**args, "trusted_technical_release_gate": None}),
-            "G5_CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
+            "CANDIDATE_SKIP_VERIFIED_NOT_GOLD")
         self.assertEqual(len(self.writes), 3)
 
     def test_p3_technical_only_no_stage_owner_does_not_write(self):
@@ -496,9 +496,9 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_p3_partial_write_or_unknown_ack_requires_readback_not_retry(self):
         self.fail_after_first = True
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_UNKNOWN_ACK")
+        self.assertEqual(self.invoke(), "CANDIDATE_VERIFY_READONLY_UNKNOWN_ACK")
         self.assertEqual(len(self.writes), 1)
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT")
+        self.assertEqual(self.invoke(), "CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT")
         self.assertEqual(len(self.writes), 1)
 
     def test_p3_bad_flags_and_missing_review_rejected_before_any_io(self):
@@ -517,9 +517,9 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_p3_readback_mode_never_writes(self):
         self.assertEqual(self.invoke(
-            mode="G5_CANDIDATE_READBACK_ONLY", write_authorized=False,
+            mode="CANDIDATE_READBACK_ONLY", write_authorized=False,
             clinically_reviewed=False, license_reviewed=False),
-            "G5_CANDIDATE_HOLD_NOT_FOUND_READONLY")
+            "CANDIDATE_HOLD_NOT_FOUND_READONLY")
         self.assertFalse(self.writes)
         self.assertEqual(len(self.rechecked_source), 1)
 
@@ -527,7 +527,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         broken = Frame([{**r, "person_id":9999} if idx == 0 else r
                          for idx, r in enumerate(self.patient.rows)])
         with self.assertRaisesRegex(RuntimeError,
-                                    "HOLD_G5_CANDIDATE_IDENTITY_OR_FK_DRIFT"):
+                                    "HOLD_CANDIDATE_IDENTITY_OR_FK_DRIFT"):
             self.invoke(person_candidate=broken)
         self.assertEqual(self.writes, [])
 
@@ -536,7 +536,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             {**r, "gender_concept_id":999999} if i == 0 else r
             for i, r in enumerate(self.patient.rows)])
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED"):
+                RuntimeError, "HOLD_CANDIDATE_MAPPER_CANDIDATE_PAYLOAD_CHANGED"):
             self.invoke(person_candidate=bad_person)
         self.assertFalse(self.writes)
 
@@ -544,7 +544,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             {**r, "visit_concept_id":999999} if i == 0 else r
             for i, r in enumerate(self.visit.rows)])
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED"):
+                RuntimeError, "HOLD_CANDIDATE_MAPPER_CANDIDATE_PAYLOAD_CHANGED"):
             self.invoke(visit_candidate=bad_visit)
         self.assertFalse(self.writes)
 
@@ -552,29 +552,29 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
         extra = Frame([{**r, "fabric_invented_concept":123}
                        for r in self.patient.rows])
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_MAPPER_CANDIDATE_SCHEMA_OR_COUNT"):
+                RuntimeError, "HOLD_CANDIDATE_MAPPER_CANDIDATE_SCHEMA_OR_COUNT"):
             self.invoke(person_candidate=extra)
         self.assertFalse(self.writes)
 
     def test_p3_readback_tamper_refuses_skip(self):
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        self.assertEqual(self.invoke(), "CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
         paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.spark.delta[paths["visit"]].rows[0]["visit_concept_id"] = 99999
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
+        self.assertEqual(self.invoke(), "CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
         self.assertEqual(len(self.writes), 3)
 
     def test_p3_bad_approval_refuses_skip(self):
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        self.assertEqual(self.invoke(), "CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
         paths = nb._frozen_fhir_candidate_paths(self.scope)
         self.spark.delta[paths["approval"]].rows[0]["status"] = "GOLD_COMMITTED"
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
+        self.assertEqual(self.invoke(), "CANDIDATE_HOLD_READBACK_OR_APPROVAL_CONFLICT")
         self.assertEqual(len(self.writes), 3)
 
     def test_p3_missing_approval_requires_readback_before_any_retry(self):
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
+        self.assertEqual(self.invoke(), "CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
         paths = nb._frozen_fhir_candidate_paths(self.scope)
         del self.spark.delta[paths["approval"]]
-        self.assertEqual(self.invoke(), "G5_CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT")
+        self.assertEqual(self.invoke(), "CANDIDATE_VERIFY_READONLY_PARTIAL_OUTPUT")
         self.assertEqual(len(self.writes), 3)
 
     def test_p3_scope_drift_blocks_before_any_source_read(self):
@@ -594,15 +594,15 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_real_business_entry_fails_on_missing_technical_release_before_spark(self):
         with self.assertRaisesRegex(RuntimeError,
-                                    "HOLD_G5_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING"):
-            nb.execute_g5_person_visit_business(
+                                    "HOLD_CANDIDATE_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING"):
+            nb.execute_person_visit_candidate_publication(
                 self.spark, scope=self.scope, handoff=self.handoff,
                 concepts_from_verified_warehouse=None,
                 mapping_profile_bytes=b"{}",
                 raw_publish_run_id="source-real",
                 patient_contract_json=PATIENT,
                 encounter_contract_json=ENCOUNTER,
-                mode="G5_CANDIDATE_WRITE", write_authorized=True,
+                mode="CANDIDATE_WRITE", write_authorized=True,
                 warehouse_snapshot_verified=False,
                 technical_evidence_sha256="d"*64,
                 warehouse_snapshot_sha256=self.scope.identity_snapshot_fingerprint)
@@ -611,15 +611,15 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_real_business_entry_rejects_unpinned_mapping_before_spark(self):
         with self.assertRaisesRegex(RuntimeError,
-                                    "HOLD_G5_BUSINESS_MAPPING_PROFILE_BYTES"):
-            nb.execute_g5_person_visit_business(
+                                    "HOLD_CANDIDATE_BUSINESS_MAPPING_PROFILE_BYTES"):
+            nb.execute_person_visit_candidate_publication(
                 self.spark, scope=self.scope, handoff=self.handoff,
                 concepts_from_verified_warehouse=None,
                 mapping_profile_bytes=b'{"unapproved": true}',
                 raw_publish_run_id="source-real",
                 patient_contract_json=PATIENT,
                 encounter_contract_json=ENCOUNTER,
-                mode="G5_CANDIDATE_WRITE", write_authorized=True,
+                mode="CANDIDATE_WRITE", write_authorized=True,
                 clinically_reviewed=True, license_reviewed=True,
                 warehouse_snapshot_verified=True,
                 clinical_review_sha256="d"*64,
@@ -630,15 +630,15 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_p3_notebook_has_no_write_runmode_dispatch(self):
         import inspect
-        src = inspect.getsource(nb.plan_and_write_g5_candidate_delta)
-        self.assertIn("G5_CANDIDATE_WRITE", src)
-        self.assertTrue(callable(nb.execute_g5_person_visit_business))
+        src = inspect.getsource(nb.plan_and_write_omop_candidate_delta)
+        self.assertIn("CANDIDATE_WRITE", src)
+        self.assertTrue(callable(nb.execute_person_visit_candidate_publication))
         self.assertIn("_write_delta(person_candidate", src)
         self.assertIn("_write_delta(approval, paths", src)
         native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"
                   "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
         main = native.split('if __name__ == "__main__":')[-1]
-        self.assertNotIn('run_mode == "G5_CANDIDATE_WRITE"', main)
+        self.assertNotIn('run_mode == "CANDIDATE_WRITE"', main)
         self.assertIn('run_mode = "HALT"', native)
 
 
@@ -700,20 +700,20 @@ class G5TrustedControllerOffline(unittest.TestCase):
                 return Frame([{"concept_id": 1}])
         return FakeProvider()
 
-    def controlled(self, provider=None, mode="G5_CANDIDATE_WRITE"):
+    def controlled(self, provider=None, mode="CANDIDATE_WRITE"):
         def business(spark, **kwargs):
             self.assertIs(spark, self.spark)
             self.business_calls.append(kwargs)
-            return "SYNTHETIC_P3_BUSINESS_ENTRY_CALLED_NOT_CLOUD"
+            return "SYNTHETIC_CANDIDATE_PUBLICATION_BUSINESS_ENTRY_CALLED_NOT_CLOUD"
         with patch.dict(
-            nb.execute_g5_candidate_from_trusted_controller.__globals__,
-            {"execute_g5_person_visit_business": business},
+            nb.verify_candidate_transport_source_only.__globals__,
+            {"execute_person_visit_candidate_publication": business},
         ):
-            return nb.execute_g5_candidate_from_trusted_controller(
+            return nb.verify_candidate_transport_source_only(
                 self.spark, provider=provider, mode=mode)
 
     def test_g5_controller_missing_provider_holds_before_spark(self):
-        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled()
         self.assertEqual(self.business_calls, [])
         self.assertFalse(self.spark.delta)
@@ -723,7 +723,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
         original = p.load_pinned_inputs
         p.load_pinned_inputs = lambda: {**original(),
                                       "mapping_profile_bytes": b"unreviewed"}
-        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
         self.assertEqual(self.business_calls, [])
@@ -732,7 +732,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
         p = self.provider()
         p.verify_signed_clinical_review = lambda scope, profile: {
             "status": "PENDING_REVIEW"}
-        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
         self.assertFalse(self.business_calls)
@@ -740,7 +740,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
     def test_g5_controller_license_denial_never_reads_sql(self):
         p = self.provider()
         p.verify_license_rights = lambda scope, profile: {"status": "PENDING"}
-        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
 
@@ -749,7 +749,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
         original = p.capture_full_warehouse_snapshot
         p.capture_full_warehouse_snapshot = lambda scope: {
             **original(scope), "connection_id": "same-connection"}
-        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
         self.assertFalse(self.business_calls)
@@ -764,14 +764,14 @@ class G5TrustedControllerOffline(unittest.TestCase):
                 lambda scope, fn=original, mutation=changed:
                 {**fn(scope), **mutation})
             with self.subTest(changed=changed):
-                with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+                with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
                     self.controlled(p)
                 self.assertFalse(self.business_calls)
 
     def test_g5_controller_rejects_missing_f1_concept_evidence(self):
         p = self.provider()
         p.read_verified_warehouse_concepts = lambda scope: None
-        with self.assertRaisesRegex(RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertFalse(self.business_calls)
 
@@ -780,7 +780,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
         # This provider claims all approved receipts, two independent SQL
         # connections and real F1 concepts. All claims are self-authored.
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
+                RuntimeError, "HOLD_CANDIDATE_NATIVE_CANDIDATE_WRITE_OR_MODE_DISABLED"):
             self.controlled(p)
         self.assertEqual(p.snapshot_number, 0)
         self.assertEqual(self.business_calls, [])
@@ -789,8 +789,8 @@ class G5TrustedControllerOffline(unittest.TestCase):
     def test_g5_controller_readback_rejects_provider_and_spark(self):
         p = self.provider()
         with self.assertRaisesRegex(
-                RuntimeError, "HOLD_G5_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
-            self.controlled(p, mode="G5_CANDIDATE_READBACK_ONLY")
+                RuntimeError, "HOLD_CANDIDATE_NATIVE_CALLER_PROVIDER_OR_SPARK_UNTRUSTED"):
+            self.controlled(p, mode="CANDIDATE_READBACK_ONLY")
         self.assertEqual(p.snapshot_number, 0)
         self.assertEqual(self.business_calls, [])
         self.assertFalse(self.spark.delta)
@@ -799,8 +799,8 @@ class G5TrustedControllerOffline(unittest.TestCase):
         native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"
                   "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
         main = native.split('if __name__ == "__main__":')[-1]
-        self.assertNotIn("execute_g5_candidate_from_trusted_controller(", main)
-        self.assertNotIn('run_mode == "G5_CANDIDATE_WRITE"', main)
+        self.assertNotIn("verify_candidate_transport_source_only(", main)
+        self.assertNotIn('run_mode == "CANDIDATE_WRITE"', main)
         self.assertIn('run_mode = "HALT"', native)
 
 

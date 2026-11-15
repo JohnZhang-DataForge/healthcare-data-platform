@@ -70,8 +70,8 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
             str(NATIVE), run_name="_g5_0113_wheel_native_pure_parity")
 
     def test_runtime_013_and_native_halt_fence(self):
-        self.assertEqual(engine.__version__, "0.1.14")
-        self.assertEqual(self.native["engine_version"], "0.1.14")
+        self.assertEqual(engine.__version__, "0.1.15")
+        self.assertEqual(self.native["engine_version"], "0.1.15")
         self.assertEqual(self.native["run_mode"], "HALT")
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
@@ -119,9 +119,9 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
     def test_dynamic_readback_bad_date_fails_before_spark_io(self):
         source, trusted = synthetic_scopes()
         spark = Mock()
-        fn = self.native["verify_fhir_g5_dynamic_silver_source_readonly"]
+        fn = self.native["verify_fhir_dynamic_silver_source_readonly"]
         with self.assertRaisesRegex(
-            RuntimeError, "G4_SOURCE_VERSION_OR_DATE"
+            RuntimeError, "SILVER_SOURCE_VERSION_OR_DATE"
         ):
             fn(spark, scope=source, trusted_scope=trusted,
                source_ingest_date="2026-11-11",

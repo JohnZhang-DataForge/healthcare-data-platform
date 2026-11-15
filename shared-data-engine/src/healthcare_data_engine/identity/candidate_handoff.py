@@ -35,13 +35,13 @@ class CandidateIdentityHold(ValueError):
 def _source(value: object, label: str, limit: int = 256) -> str:
     if (not isinstance(value, str) or not value or value != value.strip()
             or len(value) > limit or any(ord(c) < 32 for c in value)):
-        raise CandidateIdentityHold("G5_PREVIEW_INVALID_" + label)
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_INVALID_" + label)
     return value
 
 
 def _hash(value: object, label: str) -> str:
     if not isinstance(value, str) or not _SHA.fullmatch(value):
-        raise CandidateIdentityHold("G5_PREVIEW_INVALID_" + label)
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_INVALID_" + label)
     return value
 
 
@@ -52,10 +52,6 @@ class CandidatePersonId:
     source_business_key: str
     person_id: int
     state: str
-
-    def f1_lookup(self) -> tuple[str, str, str, str, int, str]:
-        """Historical caller compatibility; no F1 SQL or persistence."""
-        return self.person_identity_lookup_row()
 
     def person_identity_lookup_row(self) -> tuple[str, str, str, str, int, str]:
         """Mapper-compatible Person lookup with explicit identity state."""
@@ -95,7 +91,7 @@ class PersonVisitCandidateHandoff:
     processing_version: str
     silver_publication_id: str
     snapshot_fingerprint: str
-    status: str = "G5_CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
+    status: str = "CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
 
     def person_lookup_rows(self) -> tuple[tuple[str, str, str, str, int, str], ...]:
         """Legacy mapper-compatible columns + `identity_state` (never F1 DML)."""
@@ -136,10 +132,10 @@ def plan_candidate_identity_handoff(
     processing_version = _source(processing_version, "PROCESSING_VERSION", 128)
     parts = source_system.split(":")
     if len(parts) != 3 or not all(parts) or parts[1] != hospital_id:
-        raise CandidateIdentityHold("G5_PREVIEW_SOURCE_NAMESPACE_MISMATCH")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_SOURCE_NAMESPACE_MISMATCH")
     if not isinstance(patients, (tuple, list)) or not isinstance(
             encounters, (tuple, list)) or not patients or not encounters:
-        raise CandidateIdentityHold("G5_PREVIEW_SOURCE_ROWS_INVALID")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_SOURCE_ROWS_INVALID")
     if (not isinstance(approval, Mapping)
             or approval.get("status") != "SILVER_APPROVED"
             or approval.get("source_batch_id") != source_batch_id
@@ -153,18 +149,18 @@ def plan_candidate_identity_handoff(
             or approval["quarantine_count"] != 0
             or not isinstance(approval.get("publication_id"), str)
             or not approval["publication_id"]):
-        raise CandidateIdentityHold("G5_PREVIEW_APPROVAL_NOT_MATCHED")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_APPROVAL_NOT_MATCHED")
     try:
         require_preview_snapshot_unchanged(preview, snapshot)
     except IdentityPreviewHold as exc:
-        raise CandidateIdentityHold("G5_PREVIEW_SNAPSHOT_CHANGED_OR_INVALID") from exc
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_SNAPSHOT_CHANGED_OR_INVALID") from exc
     # The snapshot must be warehouse-wide for BOTH required targets. No
     # hospital-only Map subset may be passed as a substitute for global state.
     if set(dict(snapshot.next_free)) != {_PERSON, _VISIT}:
-        raise CandidateIdentityHold("G5_PREVIEW_TARGET_SCOPE_INCOMPLETE")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_TARGET_SCOPE_INCOMPLETE")
     if ({table for table, _ in preview.next_free}
             != {table for table, _ in snapshot.next_free}):
-        raise CandidateIdentityHold("G5_PREVIEW_ALLOCATOR_SCOPE_INVALID")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_ALLOCATOR_SCOPE_INVALID")
 
     # Build the exact proposal lookup once: G4 currently contains 5,918
     # encounters, and repeated IdentityPreview.for_key scans would be O(n²).
@@ -174,7 +170,7 @@ def plan_candidate_identity_handoff(
         key = candidate.key
         if (key in proposals or key.folded() in folded_proposals
                 or candidate.snapshot_fingerprint != preview.snapshot_fingerprint):
-            raise CandidateIdentityHold("G5_PREVIEW_DUPLICATE_OR_DRIFTED_ID")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_DUPLICATE_OR_DRIFTED_ID")
         proposals[key] = candidate
         folded_proposals.add(key.folded())
     persisted = snapshot.persisted()
@@ -188,18 +184,18 @@ def plan_candidate_identity_handoff(
 
     for item in preview.identities:
         if item.key.target_table not in {_PERSON, _VISIT}:
-            raise CandidateIdentityHold("G5_PREVIEW_UNEXPECTED_TARGET")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_UNEXPECTED_TARGET")
         if item.key.derived_role != "primary" or item.key.derived_discriminator:
-            raise CandidateIdentityHold("G5_PREVIEW_DERIVED_KEY_UNSUPPORTED")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_DERIVED_KEY_UNSUPPORTED")
         if item.key.target_table != _PERSON:
             continue
         current = lookup.get(item.key)
         if current is not None:
             if current.person_id != item.omop_id or item.state != "PERSISTED":
-                raise CandidateIdentityHold("G5_PREVIEW_PERSISTED_MAP_CONFLICT")
+                raise CandidateIdentityHold("CANDIDATE_IDENTITY_PERSISTED_MAP_CONFLICT")
         else:
             if item.state != "PROVISIONAL":
-                raise CandidateIdentityHold("G5_PREVIEW_UNBACKED_PERSISTED_ID")
+                raise CandidateIdentityHold("CANDIDATE_IDENTITY_UNBACKED_PERSISTED_ID")
         lookup[item.key] = CandidatePersonId(
             item.key.hospital_id, item.key.source_system,
             item.key.source_business_key, item.omop_id, item.state,
@@ -211,21 +207,21 @@ def plan_candidate_identity_handoff(
     target_ids = {(key.target_table, item.omop_id)
                   for key, item in proposals.items()}
     if len(target_ids) != len(proposals):
-        raise CandidateIdentityHold("G5_PREVIEW_TARGET_ID_COLLISION")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_TARGET_ID_COLLISION")
 
     # Prevent global duplicated prospective Person IDs and case-insensitive
     # source collisions even when the underlying Warehouse constraints are
     # declared NOT ENFORCED.
     if len({row.person_id for row in lookup.values()}) != len(lookup):
-        raise CandidateIdentityHold("G5_PREVIEW_DUPLICATE_PERSON_ID")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_DUPLICATE_PERSON_ID")
     if len({key.folded() for key in lookup}) != len(lookup):
-        raise CandidateIdentityHold("G5_PREVIEW_PERSON_COLLATION_CONFLICT")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_PERSON_COLLATION_CONFLICT")
 
     def validate_row(row: object, pk: str) -> str:
         if (not isinstance(row, Mapping)
                 or row.get("source_system") != source_system
                 or row.get("source_batch_id") != source_batch_id):
-            raise CandidateIdentityHold("G5_PREVIEW_SOURCE_ROW_SCOPE_DRIFT")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_SOURCE_ROW_SCOPE_DRIFT")
         return _source(row.get(pk), "SOURCE_ID")
 
     seen_person: set[str] = set()
@@ -234,18 +230,18 @@ def plan_candidate_identity_handoff(
     for row in patients:
         key = validate_row(row, "source_record_id")
         if key.casefold() in seen_person:
-            raise CandidateIdentityHold("G5_PREVIEW_DUPLICATE_PERSON_SOURCE")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_DUPLICATE_PERSON_SOURCE")
         seen_person.add(key.casefold())
         # OMOP person_source_value has a varchar(50) target. No truncation.
         _source(key, "PERSON_SOURCE_VALUE_LENGTH", 50)
         planned = proposals.get(DerivedRowKey(
             _PERSON, hospital_id, source_system, key))
         if planned is None:
-            raise CandidateIdentityHold("G5_PREVIEW_PERSON_ID_NOT_FOUND")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_PERSON_ID_NOT_FOUND")
         item = lookup.get(planned.key)
         if (item is None or item.person_id != planned.omop_id
                 or item.state != planned.state):
-            raise CandidateIdentityHold("G5_PREVIEW_PERSON_LOOKUP_MISMATCH")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_PERSON_LOOKUP_MISMATCH")
         batch_persons.append(item)
         person_by_source[key] = item
 
@@ -257,21 +253,21 @@ def plan_candidate_identity_handoff(
         visit_class = _source(row.get("encounter_class"),
                               "VISIT_SOURCE_VALUE_LENGTH", 50)
         if source_visit.casefold() in seen_visit:
-            raise CandidateIdentityHold("G5_PREVIEW_DUPLICATE_VISIT_SOURCE")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_DUPLICATE_VISIT_SOURCE")
         seen_visit.add(source_visit.casefold())
         parent = person_by_source.get(parent_source)
         if parent is None:
-            raise CandidateIdentityHold("G5_PREVIEW_PARENT_PERSON_NOT_IN_SILVER")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_PARENT_PERSON_NOT_IN_SILVER")
         target = proposals.get(DerivedRowKey(
             _VISIT, hospital_id, source_system, source_visit))
         if target is None:
-            raise CandidateIdentityHold("G5_PREVIEW_VISIT_ID_NOT_FOUND")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_VISIT_ID_NOT_FOUND")
         # The F2 preview must be exact and must not be allowed to switch a
         # proposed ID to PERSISTED when there is no matching Warehouse map.
         original = persisted.get(target.key)
         if ((target.state == "PERSISTED" and original != target.omop_id)
                 or (target.state == "PROVISIONAL" and original is not None)):
-            raise CandidateIdentityHold("G5_PREVIEW_VISIT_PERSISTENCE_CONFLICT")
+            raise CandidateIdentityHold("CANDIDATE_IDENTITY_VISIT_PERSISTENCE_CONFLICT")
         batch_visits.append(CandidateVisitId(
             hospital_id, source_system, source_visit, parent_source,
             target.omop_id, parent.person_id, target.state, parent.state))
@@ -286,7 +282,7 @@ def plan_candidate_identity_handoff(
         for row in batch_visits
     )
     if {entry.key for entry in preview.identities} != batch_expected:
-        raise CandidateIdentityHold("G5_PREVIEW_EXTRA_OR_MISSING_BATCH_IDS")
+        raise CandidateIdentityHold("CANDIDATE_IDENTITY_EXTRA_OR_MISSING_BATCH_IDS")
     return PersonVisitCandidateHandoff(
         tuple(sorted(lookup.values(), key=lambda x: (
             x.hospital_id, x.source_system, x.source_business_key))),

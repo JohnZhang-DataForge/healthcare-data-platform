@@ -19,7 +19,7 @@ from healthcare_data_engine.mapping.omop.registry import (
 
 MAX_OMOP_INT = 2_147_483_647
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
-_F2_TARGETS = {"PERSON": "cdm.person", "VISIT_OCCURRENCE": "cdm.visit_occurrence"}
+_PERSON_VISIT_TARGETS = {"PERSON": "cdm.person", "VISIT_OCCURRENCE": "cdm.visit_occurrence"}
 
 
 class IdentityPreviewHold(ValueError):
@@ -240,46 +240,42 @@ def verify_allocation_proposal(
     return IdentityPreview(planned, pinned, tuple(sorted(proposed_next.items())))
 
 
-def bridge_f2_person_visit_allocation(
+def adapt_person_visit_allocation_preview(
     f2_allocation: Any, snapshot: IdentitySnapshot,
 ) -> IdentityPreview:
     """Translate the EXISTING Fabric F2 AllocationPlan without importing it.
 
     Future entity kinds are held, not implicitly allocated with this adapter.
     """
-    if set(dict(snapshot.next_free)) != set(_F2_TARGETS.values()):
-        raise IdentityPreviewHold("IDENTITY_F2_SCOPE_PERSON_VISIT_ONLY")
+    if set(dict(snapshot.next_free)) != set(_PERSON_VISIT_TARGETS.values()):
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_SCOPE_PERSON_VISIT_ONLY")
     if not all(hasattr(f2_allocation, attr)
                for attr in ("assigned", "inserted", "next_free")):
-        raise IdentityPreviewHold("IDENTITY_F2_ALLOCATION_INVALID")
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_ALLOCATION_INVALID")
 
     def rows(source: Iterable[tuple[Any, int]]):
         result = []
         for legacy_key, number in source:
             kind = getattr(legacy_key, "entity_type", None)
-            if kind not in _F2_TARGETS:
-                raise IdentityPreviewHold("IDENTITY_F2_KIND_NOT_REVIEWED")
+            if kind not in _PERSON_VISIT_TARGETS:
+                raise IdentityPreviewHold("IDENTITY_ALLOCATION_KIND_NOT_REVIEWED")
             result.append((
-                DerivedRowKey(_F2_TARGETS[kind], legacy_key.hospital_id,
+                DerivedRowKey(_PERSON_VISIT_TARGETS[kind], legacy_key.hospital_id,
                               legacy_key.source_system, legacy_key.source_business_key),
                 number,
             ))
         return tuple(result)
 
     try:
-        next_free = {_F2_TARGETS[kind]: number
+        next_free = {_PERSON_VISIT_TARGETS[kind]: number
                      for kind, number in f2_allocation.next_free}
     except (KeyError, TypeError, ValueError) as exc:
-        raise IdentityPreviewHold("IDENTITY_F2_COUNTERS_INVALID") from exc
-    if len(next_free) != len(_F2_TARGETS):
-        raise IdentityPreviewHold("IDENTITY_F2_COUNTERS_INVALID")
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_COUNTERS_INVALID") from exc
+    if len(next_free) != len(_PERSON_VISIT_TARGETS):
+        raise IdentityPreviewHold("IDENTITY_ALLOCATION_COUNTERS_INVALID")
     return verify_allocation_proposal(snapshot, rows(f2_allocation.assigned),
                                       rows(f2_allocation.inserted), next_free)
 
-
-# Business name for the existing Fabric AllocationPlan-to-IdentityPreview
-# adapter. Historical F2 callers remain byte-for-byte compatible.
-adapt_person_visit_allocation_preview = bridge_f2_person_visit_allocation
 
 
 def require_preview_snapshot_unchanged(

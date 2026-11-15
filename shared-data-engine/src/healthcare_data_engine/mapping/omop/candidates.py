@@ -28,40 +28,40 @@ def load_omop_mapping_profile(raw: bytes, expected_sha256: str,
     if (not isinstance(raw, bytes) or not isinstance(expected_sha256, str)
             or len(expected_sha256) != 64 or
             any(ch not in "0123456789abcdef" for ch in expected_sha256)):
-        raise ValueError("G5_MAPPING_PROFILE_PIN_MISSING")
+        raise ValueError("OMOP_MAPPING_PROFILE_PIN_MISSING")
     if hashlib.sha256(raw).hexdigest() != expected_sha256:
-        raise ValueError("G5_MAPPING_PROFILE_SHA_CONFLICT")
+        raise ValueError("OMOP_MAPPING_PROFILE_SHA_CONFLICT")
     def no_duplicate_keys(pairs):
         result = {}
         for key, value in pairs:
             if key in result:
-                raise ValueError("G5_MAPPING_PROFILE_DUPLICATE_KEY")
+                raise ValueError("OMOP_MAPPING_PROFILE_DUPLICATE_KEY")
             result[key] = value
         return result
     try:
         profile = json.loads(raw.decode("utf-8"), object_pairs_hook=no_duplicate_keys)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise ValueError("G5_MAPPING_PROFILE_INVALID_JSON") from exc
+        raise ValueError("OMOP_MAPPING_PROFILE_INVALID_JSON") from exc
     keys = {"mapping_name", "mapping_version", "source_system",
             "gender_concepts", "race_concepts", "ethnicity_concepts",
             "visit_class_concepts", "visit_type_concept_id"}
     if not isinstance(profile, dict) or set(profile) != keys:
-        raise ValueError("G5_MAPPING_PROFILE_UNREVIEWED_SCHEMA")
+        raise ValueError("OMOP_MAPPING_PROFILE_UNREVIEWED_SCHEMA")
     if (profile["source_system"] != source_system or
             not isinstance(source_system, str) or not source_system or
             not all(isinstance(profile[k], str) and profile[k].strip()
                     for k in ("mapping_name", "mapping_version"))):
-        raise ValueError("G5_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH")
+        raise ValueError("OMOP_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH")
     for key in ("gender_concepts", "race_concepts", "ethnicity_concepts",
                 "visit_class_concepts"):
         mapping = profile[key]
         if (not isinstance(mapping, dict) or not mapping or
                 not all(isinstance(code, str) and code and type(cid) is int
                         and cid > 0 for code, cid in mapping.items())):
-            raise ValueError("G5_MAPPING_PROFILE_CONCEPTS_INVALID:" + key)
+            raise ValueError("OMOP_MAPPING_PROFILE_CONCEPTS_INVALID:" + key)
     if (type(profile["visit_type_concept_id"]) is not int or
             profile["visit_type_concept_id"] <= 0):
-        raise ValueError("G5_MAPPING_PROFILE_VISIT_TYPE_INVALID")
+        raise ValueError("OMOP_MAPPING_PROFILE_VISIT_TYPE_INVALID")
     return profile
 
 
@@ -70,22 +70,22 @@ def _require_source(df, *, entity: str, required: tuple[str, ...],
     from pyspark.sql import functions as F
 
     if not set(required).issubset(df.columns):
-        raise ValueError("G5_" + entity + "_CANONICAL_SCHEMA_MISMATCH")
+        raise ValueError("CANDIDATE_" + entity + "_CANONICAL_SCHEMA_MISMATCH")
     count = df.count()
     if count <= 0:
-        raise ValueError("G5_" + entity + "_EMPTY")
+        raise ValueError("CANDIDATE_" + entity + "_EMPTY")
     if df.filter(
         F.col("source_system").isNull() |
         (F.col("source_system") != source_system) |
         F.col("source_batch_id").isNull() |
         (F.col("source_batch_id") != source_batch_id)
     ).limit(1).count():
-        raise ValueError("G5_" + entity + "_SOURCE_NAMESPACE_OR_BATCH_DRIFT")
+        raise ValueError("CANDIDATE_" + entity + "_SOURCE_NAMESPACE_OR_BATCH_DRIFT")
     pk = "source_record_id" if entity == "PATIENT" else "source_encounter_id"
     if df.filter(F.col(pk).isNull() | (F.trim(F.col(pk)) == "")).limit(1).count():
-        raise ValueError("G5_" + entity + "_NULL_PK")
+        raise ValueError("CANDIDATE_" + entity + "_NULL_PK")
     if df.groupBy("source_system", pk).count().filter("count != 1").limit(1).count():
-        raise ValueError("G5_" + entity + "_DUPLICATE_PK")
+        raise ValueError("CANDIDATE_" + entity + "_DUPLICATE_PK")
     return count
 
 
@@ -93,7 +93,7 @@ def _verify_codes(df, column: str, lookup: Mapping[str, int]) -> None:
     from pyspark.sql import functions as F
 
     if df.filter(F.col(column).isNull() | ~F.col(column).isin(*tuple(lookup))).limit(1).count():
-        raise ValueError("G5_UNKNOWN_MAPPING_CODE:" + column)
+        raise ValueError("OMOP_UNKNOWN_MAPPING_CODE:" + column)
 
 
 def _verify_concepts(concepts, profile: Mapping[str, Any]) -> None:
@@ -104,13 +104,13 @@ def _verify_concepts(concepts, profile: Mapping[str, Any]) -> None:
                  "visit_class_concepts"):
         expected.update(profile[name].values())
     if not {"concept_id", "standard_concept", "invalid_reason"}.issubset(concepts.columns):
-        raise ValueError("G5_CONCEPT_LOOKUP_SCHEMA_INVALID")
+        raise ValueError("CANDIDATE_CONCEPT_LOOKUP_SCHEMA_INVALID")
     rows = concepts.filter(F.col("concept_id").isin(*sorted(expected))).select(
         "concept_id", "standard_concept", "invalid_reason").collect()
     if (len(rows) != len(expected) or
             {r.concept_id for r in rows} != expected or
             any(r.standard_concept != "S" or r.invalid_reason is not None for r in rows)):
-        raise ValueError("G5_OMOP_STANDARD_CONCEPT_LOOKUP_NOT_VERIFIED")
+        raise ValueError("OMOP_STANDARD_CONCEPT_LOOKUP_NOT_VERIFIED")
 
 
 def _concept_expr(F, column: str, lookup: Mapping[str, int]):
@@ -141,10 +141,10 @@ def build_omop_candidates(
     # and then join to the real Warehouse F1 map on all namespace dimensions.
     if (not isinstance(hospital_id, str) or not hospital_id
             or hospital_id != hospital_id.strip()):
-        raise ValueError("G5_HOSPITAL_ID_REQUIRED")
+        raise ValueError("CANDIDATE_HOSPITAL_ID_REQUIRED")
     parts = source_system.split(":") if isinstance(source_system, str) else []
     if (len(parts) != 3 or not all(parts) or parts[1] != hospital_id):
-        raise ValueError("G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH")
+        raise ValueError("CANDIDATE_HOSPITAL_SOURCE_CONTEXT_MISMATCH")
 
     profile = load_omop_mapping_profile(
         mapping_profile_bytes, mapping_profile_sha256, source_system)
@@ -152,11 +152,11 @@ def build_omop_candidates(
             not isinstance(manifest_sha256, str) or len(manifest_sha256) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha256) or
             not processing_version):
-        raise ValueError("G5_SOURCE_OR_PROVENANCE_PIN_MISSING")
+        raise ValueError("CANDIDATE_SOURCE_OR_PROVENANCE_PIN_MISSING")
     required = {"status", "source_batch_id", "manifest_sha256", "processing_version",
                 "patient_count", "encounter_count", "quarantine_count", "publication_id"}
     if not isinstance(approval, Mapping) or not required.issubset(approval):
-        raise ValueError("G5_SILVER_APPROVAL_MISSING")
+        raise ValueError("CANDIDATE_SILVER_APPROVAL_MISSING")
     if (approval["status"] != "SILVER_APPROVED" or
             approval["source_batch_id"] != source_batch_id or
             approval["manifest_sha256"] != manifest_sha256 or
@@ -165,7 +165,7 @@ def build_omop_candidates(
             approval["quarantine_count"] != 0 or
             not isinstance(approval["publication_id"], str) or
             not approval["publication_id"]):
-        raise ValueError("G5_SILVER_APPROVAL_DENIED_OR_CONFLICT")
+        raise ValueError("CANDIDATE_SILVER_APPROVAL_DENIED_OR_CONFLICT")
 
     pc = _require_source(
         patients, entity="PATIENT", source_system=source_system,
@@ -185,14 +185,14 @@ def build_omop_candidates(
     if (type(approval["patient_count"]) is not int or
             type(approval["encounter_count"]) is not int or
             approval["patient_count"] != pc or approval["encounter_count"] != ec):
-        raise ValueError("G5_SILVER_APPROVAL_COUNTS_MISMATCH")
+        raise ValueError("CANDIDATE_SILVER_APPROVAL_COUNTS_MISMATCH")
     if patients.filter(F.col("birth_date").isNull()).limit(1).count():
-        raise ValueError("G5_PATIENT_DATE_MISSING")
+        raise ValueError("CANDIDATE_PATIENT_DATE_MISSING")
     if encounters.filter(
         F.col("start_datetime").isNull() | F.col("end_datetime").isNull() |
         (F.col("start_datetime") > F.col("end_datetime"))
     ).limit(1).count():
-        raise ValueError("G5_ENCOUNTER_DATES_INVALID")
+        raise ValueError("CANDIDATE_ENCOUNTER_DATES_INVALID")
     for df, column, mapping in (
         (patients, "gender_code", profile["gender_concepts"]),
         (patients, "race_code", profile["race_concepts"]),
@@ -205,7 +205,7 @@ def build_omop_candidates(
     required_map = {"entity_type", "hospital_id", "source_system",
                     "source_business_key", "omop_id"}
     if not required_map.issubset(identity_map.columns):
-        raise ValueError("G5_STABLE_ID_MAP_SCHEMA_INVALID")
+        raise ValueError("CANDIDATE_STABLE_ID_MAP_SCHEMA_INVALID")
     if identity_map.filter(
         F.col("entity_type").isNull() |
         ~F.col("entity_type").isin("PERSON", "VISIT_OCCURRENCE") |
@@ -216,7 +216,7 @@ def build_omop_candidates(
         F.col("source_business_key").isNull() |
         (F.trim(F.col("source_business_key")) == "")
     ).limit(1).count():
-        raise ValueError("G5_STABLE_ID_MAP_INVALID_SOURCE")
+        raise ValueError("CANDIDATE_STABLE_ID_MAP_INVALID_SOURCE")
 
     # Global Person ID uniqueness is not guaranteed by Fabric Warehouse's
     # NOT ENFORCED unique constraints. Check all hospitals, not just ours.
@@ -224,21 +224,21 @@ def build_omop_candidates(
     if persons_all.groupBy(
         "hospital_id", "source_system", "source_business_key"
     ).count().filter("count != 1").limit(1).count():
-        raise ValueError("G5_STABLE_ID_MAP_DUPLICATE_SOURCE")
+        raise ValueError("CANDIDATE_STABLE_ID_MAP_DUPLICATE_SOURCE")
     if persons_all.groupBy(
         F.lower(F.col("hospital_id")), F.lower(F.col("source_system")),
         F.lower(F.col("source_business_key"))
     ).count().filter("count != 1").limit(1).count():
-        raise ValueError("G5_STABLE_ID_MAP_COLLATION_COLLISION")
+        raise ValueError("CANDIDATE_STABLE_ID_MAP_COLLATION_COLLISION")
     if persons_all.filter(
         F.col("omop_id").isNull() |
         (F.col("omop_id") <= 0) | (F.col("omop_id") > 2147483647) |
         (F.col("omop_id") != F.col("omop_id").cast("int"))
     ).limit(1).count():
-        raise ValueError("G5_STABLE_ID_MAP_INVALID_PERSON_ID")
+        raise ValueError("CANDIDATE_STABLE_ID_MAP_INVALID_PERSON_ID")
     if persons_all.groupBy("omop_id").count().filter(
             "count != 1").limit(1).count():
-        raise ValueError("G5_STABLE_ID_MAP_DUPLICATE_PERSON_ID")
+        raise ValueError("CANDIDATE_STABLE_ID_MAP_DUPLICATE_PERSON_ID")
 
     ids = persons_all.filter(
         (F.col("hospital_id") == hospital_id) &
@@ -255,7 +255,7 @@ def build_omop_candidates(
         (F.col("p.source_record_id") == F.col("i.source_person_id")), "left")
     if joined_p.count() != pc or joined_p.filter(
             F.col("i.person_id").isNull()).limit(1).count():
-        raise ValueError("G5_STABLE_PERSON_ID_NOT_FOUND")
+        raise ValueError("CANDIDATE_STABLE_PERSON_ID_NOT_FOUND")
     reference = ids.select(
         "hospital_id", "source_system", "source_person_id", "person_id")
     joined_e = encounters.alias("e").join(
@@ -265,7 +265,7 @@ def build_omop_candidates(
         (F.col("e.source_person_id") == F.col("i.source_person_id")), "left")
     if joined_e.count() != ec or joined_e.filter(
             F.col("i.person_id").isNull()).limit(1).count():
-        raise ValueError("G5_VISIT_PERSON_FK_NOT_FOUND")
+        raise ValueError("CANDIDATE_VISIT_PERSON_FK_NOT_FOUND")
 
     person = joined_p.select(
         F.col("i.person_id").cast("int").alias("person_id"),
@@ -326,5 +326,5 @@ def build_omop_candidates(
         F.col("e.source_file_size_bytes"),
     )
     if person.count() != pc or visit.count() != ec:
-        raise ValueError("G5_OMOP_CANDIDATE_ROW_COUNT_CHANGED")
+        raise ValueError("OMOP_CANDIDATE_ROW_COUNT_CHANGED")
     return OmopCandidates(person, visit, mapping_profile_sha256, pc, ec)

@@ -1,0 +1,278 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "identifier": {
+    "system": "urn:healthcare-data-platform:synthetic-batches",
+    "value": "semantic-migration-20261115-unique-eight-v1"
+  },
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:20261115-1111-4111-8111-000000000001",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "semantic-20261115-p01",
+        "gender": "female",
+        "birthDate": "1986-01-11",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "2106-3",
+                  "display": "White"
+                }
+              }
+            ]
+          },
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "2186-5",
+                  "display": "Not Hispanic or Latino"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:20261115-1111-4111-8111-000000000002",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "semantic-20261115-p02",
+        "gender": "male",
+        "birthDate": "1987-02-12",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "2054-5",
+                  "display": "Black or African American"
+                }
+              }
+            ]
+          },
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "2186-5",
+                  "display": "Not Hispanic or Latino"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:20261115-1111-4111-8111-000000000003",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "semantic-20261115-p03",
+        "gender": "female",
+        "birthDate": "1988-03-13",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "2028-9",
+                  "display": "Asian"
+                }
+              }
+            ]
+          },
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "2186-5",
+                  "display": "Not Hispanic or Latino"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:20261115-1111-4111-8111-000000000004",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "semantic-20261115-p04",
+        "gender": "male",
+        "birthDate": "1989-04-14",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "1002-5",
+                  "display": "American Indian or Alaska Native"
+                }
+              }
+            ]
+          },
+          {
+            "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+            "extension": [
+              {
+                "url": "ombCategory",
+                "valueCoding": {
+                  "system": "urn:oid:2.16.840.1.113883.6.238",
+                  "code": "2186-5",
+                  "display": "Not Hispanic or Latino"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:20261115-2222-4222-8222-000000000001",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "semantic-20261115-e01",
+        "status": "finished",
+        "subject": {
+          "reference": "urn:uuid:20261115-1111-4111-8111-000000000001"
+        },
+        "period": {
+          "start": "2026-11-11T09:00:00Z",
+          "end": "2026-11-11T10:15:00Z"
+        },
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "185349003"
+              }
+            ],
+            "text": "New synthetic migration test encounter"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:20261115-2222-4222-8222-000000000002",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "semantic-20261115-e02",
+        "status": "finished",
+        "subject": {
+          "reference": "Patient/semantic-20261115-p02"
+        },
+        "period": {
+          "start": "2026-11-12T09:00:00Z",
+          "end": "2026-11-12T10:15:00Z"
+        },
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "IMP"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "32485007"
+              }
+            ],
+            "text": "New synthetic migration test encounter"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:20261115-2222-4222-8222-000000000003",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "semantic-20261115-e03",
+        "status": "finished",
+        "subject": {
+          "reference": "urn:uuid:20261115-1111-4111-8111-000000000003"
+        },
+        "period": {
+          "start": "2026-11-13T09:00:00Z",
+          "end": "2026-11-13T10:15:00Z"
+        },
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "AMB"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "185349003"
+              }
+            ],
+            "text": "New synthetic migration test encounter"
+          }
+        ]
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:20261115-2222-4222-8222-000000000004",
+      "resource": {
+        "resourceType": "Encounter",
+        "id": "semantic-20261115-e04",
+        "status": "finished",
+        "subject": {
+          "reference": "Patient/semantic-20261115-p04"
+        },
+        "period": {
+          "start": "2026-11-14T09:00:00Z",
+          "end": "2026-11-14T10:15:00Z"
+        },
+        "class": {
+          "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+          "code": "IMP"
+        },
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "32485007"
+              }
+            ],
+            "text": "New synthetic migration test encounter"
+          }
+        ]
+      }
+    }
+  ]
+}

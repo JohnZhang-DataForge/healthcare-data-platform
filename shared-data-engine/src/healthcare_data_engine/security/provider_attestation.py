@@ -123,7 +123,7 @@ class TrustedTechnicalScope:
                            self.f1_release_metadata_sha256,
                            self.f2_identity_snapshot_fingerprint,
                            self.technical_evidence_sha256))):
-            raise TransportHold("G5_TRANSPORT_TRUSTED_STAGE_SCOPE_INVALID")
+            raise TransportHold("TECHNICAL_TRANSPORT_TRUSTED_STAGE_SCOPE_INVALID")
 
 
 @dataclass(frozen=True)
@@ -173,44 +173,44 @@ def canonical_json(value: object) -> bytes:
         return json.dumps(value, ensure_ascii=False, sort_keys=True,
                           separators=(",", ":"), allow_nan=False).encode("utf-8")
     except (ValueError, TypeError, OverflowError):
-        raise TransportHold("G5_TRANSPORT_CANONICAL_JSON_INVALID") from None
+        raise TransportHold("TECHNICAL_TRANSPORT_CANONICAL_JSON_INVALID") from None
 
 
 def _unique_pairs(pairs):
     result = {}
     for key, value in pairs:
         if key in result:
-            raise TransportHold("G5_TRANSPORT_DUPLICATE_JSON_KEY")
+            raise TransportHold("TECHNICAL_TRANSPORT_DUPLICATE_JSON_KEY")
         result[key] = value
     return result
 
 
 def _decode(raw: bytes) -> dict:
     if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_ENVELOPE_BYTES:
-        raise TransportHold("G5_TRANSPORT_ENVELOPE_BYTES_INVALID")
+        raise TransportHold("TECHNICAL_TRANSPORT_ENVELOPE_BYTES_INVALID")
     try:
         value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_pairs,
                            parse_constant=lambda _: (_ for _ in ()).throw(
-                               TransportHold("G5_TRANSPORT_NONFINITE_JSON")))
+                               TransportHold("TECHNICAL_TRANSPORT_NONFINITE_JSON")))
     except (UnicodeDecodeError, ValueError, TypeError, OverflowError):
-        raise TransportHold("G5_TRANSPORT_ENVELOPE_JSON_INVALID") from None
+        raise TransportHold("TECHNICAL_TRANSPORT_ENVELOPE_JSON_INVALID") from None
     if not isinstance(value, dict) or set(value) != ENVELOPE_FIELDS:
-        raise TransportHold("G5_TRANSPORT_ENVELOPE_SCHEMA_INVALID")
+        raise TransportHold("TECHNICAL_TRANSPORT_ENVELOPE_SCHEMA_INVALID")
     if canonical_json(value) != raw:
-        raise TransportHold("G5_TRANSPORT_NONCANONICAL_BYTES")
+        raise TransportHold("TECHNICAL_TRANSPORT_NONCANONICAL_BYTES")
     return value
 
 
 def _utc(text: object) -> datetime:
     if (not isinstance(text, str) or len(text) > 32 or not text.endswith("Z")):
-        raise TransportHold("G5_TRANSPORT_TIMESTAMP_INVALID")
+        raise TransportHold("TECHNICAL_TRANSPORT_TIMESTAMP_INVALID")
     try:
         stamp = datetime.fromisoformat(text[:-1] + "+00:00")
     except ValueError:
-        raise TransportHold("G5_TRANSPORT_TIMESTAMP_INVALID") from None
+        raise TransportHold("TECHNICAL_TRANSPORT_TIMESTAMP_INVALID") from None
     if (stamp.tzinfo is None or stamp.utcoffset() != timedelta(0)
             or stamp.isoformat(timespec="seconds").replace("+00:00", "Z") != text):
-        raise TransportHold("G5_TRANSPORT_TIMESTAMP_NONCANONICAL")
+        raise TransportHold("TECHNICAL_TRANSPORT_TIMESTAMP_NONCANONICAL")
     return stamp
 
 
@@ -226,7 +226,7 @@ def _validate_payload(payload: object, *, expected_provider_commit: str,
         and set(payload) == PAYLOAD_FIELDS else None
     )
     if fields is None or set(payload) != fields:
-        raise TransportHold("G5_TRANSPORT_PAYLOAD_SCHEMA_INVALID")
+        raise TransportHold("TECHNICAL_TRANSPORT_PAYLOAD_SCHEMA_INVALID")
     required = {
         "schema_version": (
             schema if schema in (TECHNICAL_SCHEMA, DYNAMIC_TECHNICAL_SCHEMA)
@@ -240,7 +240,7 @@ def _validate_payload(payload: object, *, expected_provider_commit: str,
         # New FHIR/HL7 batches must be pinned from a distinct trusted source.
         # A signature alone authenticates only the issuer, NOT business facts.
         if type(expected_technical_scope) is not TrustedTechnicalScope:
-            raise TransportHold("G5_TRANSPORT_TRUSTED_STAGE_SCOPE_REQUIRED")
+            raise TransportHold("TECHNICAL_TRANSPORT_TRUSTED_STAGE_SCOPE_REQUIRED")
         expected_technical_scope.validate()
         required.update({
             field: getattr(expected_technical_scope, field)
@@ -261,7 +261,7 @@ def _validate_payload(payload: object, *, expected_provider_commit: str,
             "mapping_profile_sha256": MAPPING_PROFILE_SHA,
         })
     if any(payload.get(field) != value for field, value in required.items()):
-        raise TransportHold("G5_TRANSPORT_SCOPE_OR_CODE_PIN_DRIFT")
+        raise TransportHold("TECHNICAL_TRANSPORT_SCOPE_OR_CODE_PIN_DRIFT")
     evidence_fields = (
         ("clinical_review_sha256", "license_review_sha256")
         if schema == SCHEMA else ("technical_evidence_sha256",)
@@ -271,22 +271,22 @@ def _validate_payload(payload: object, *, expected_provider_commit: str,
         *evidence_fields, "native_controller_sha256",
     ):
         if not isinstance(payload[field], str) or not SHA64.fullmatch(payload[field]):
-            raise TransportHold("G5_TRANSPORT_EVIDENCE_DIGEST_INVALID")
+            raise TransportHold("TECHNICAL_TRANSPORT_EVIDENCE_DIGEST_INVALID")
     if (not isinstance(payload["provider_commit_sha"], str)
             or not SHA40.fullmatch(payload["provider_commit_sha"])
             or not isinstance(payload["nonce_hex"], str)
             or not NONCE.fullmatch(payload["nonce_hex"])):
-        raise TransportHold("G5_TRANSPORT_PROVENANCE_NONCE_INVALID")
+        raise TransportHold("TECHNICAL_TRANSPORT_PROVENANCE_NONCE_INVALID")
     issued = _utc(payload["issued_at_utc"])
     expires = _utc(payload["expires_at_utc"])
     if (not isinstance(now, datetime) or now.tzinfo is None
             or now.utcoffset() != timedelta(0)):
-        raise TransportHold("G5_TRANSPORT_TRUSTED_CLOCK_REQUIRED")
+        raise TransportHold("TECHNICAL_TRANSPORT_TRUSTED_CLOCK_REQUIRED")
     if (not issued < expires
             or expires - issued > timedelta(seconds=MAX_TTL_SECONDS)
             or issued > now + timedelta(seconds=CLOCK_SKEW_SECONDS)
             or expires <= now):
-        raise TransportHold("G5_TRANSPORT_EXPIRED_FUTURE_OR_UNBOUNDED")
+        raise TransportHold("TECHNICAL_TRANSPORT_EXPIRED_FUTURE_OR_UNBOUNDED")
     return expires
 
 
@@ -311,7 +311,7 @@ def _verify_source_only(
             or not isinstance(expected_controller_sha256, str)
             or not SHA64.fullmatch(expected_controller_sha256)
             or not callable(atomic_durable_nonce_claim)):
-        raise TransportHold("G5_TRANSPORT_NATIVE_TRUST_OR_LEDGER_NOT_ONBOARDED")
+        raise TransportHold("TECHNICAL_TRANSPORT_NATIVE_TRUST_OR_LEDGER_NOT_ONBOARDED")
     envelope = _decode(raw)
     payload = envelope["payload"]
     expiry = _validate_payload(
@@ -321,19 +321,19 @@ def _verify_source_only(
     )
     key_id = envelope["key_id"]
     if not isinstance(key_id, str) or not SHA64.fullmatch(key_id):
-        raise TransportHold("G5_TRANSPORT_KEY_ID_INVALID")
+        raise TransportHold("TECHNICAL_TRANSPORT_KEY_ID_INVALID")
     public = pinned_keys.get(key_id)
     if (not isinstance(public, bytes) or len(public) != 32
             or hashlib.sha256(public).hexdigest() != key_id):
-        raise TransportHold("G5_TRANSPORT_PROVIDER_KEY_NOT_PINNED")
+        raise TransportHold("TECHNICAL_TRANSPORT_PROVIDER_KEY_NOT_PINNED")
     signature = envelope["signature_ed25519"]
     if not isinstance(signature, str) or not B64.fullmatch(signature):
-        raise TransportHold("G5_TRANSPORT_SIGNATURE_ENCODING_INVALID")
+        raise TransportHold("TECHNICAL_TRANSPORT_SIGNATURE_ENCODING_INVALID")
     try:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
         from cryptography.exceptions import InvalidSignature
     except ImportError:
-        raise TransportHold("G5_TRANSPORT_VERIFIER_DEPENDENCY_MISSING") from None
+        raise TransportHold("TECHNICAL_TRANSPORT_VERIFIER_DEPENDENCY_MISSING") from None
     try:
         sig = base64.b64decode(signature, validate=True)
         if len(sig) != 64 or base64.b64encode(sig).decode("ascii") != signature:
@@ -341,7 +341,7 @@ def _verify_source_only(
         Ed25519PublicKey.from_public_bytes(public).verify(
             sig, canonical_json(payload))
     except (InvalidSignature, ValueError, binascii.Error):
-        raise TransportHold("G5_TRANSPORT_SIGNATURE_INVALID") from None
+        raise TransportHold("TECHNICAL_TRANSPORT_SIGNATURE_INVALID") from None
     # Durable GLOBAL nonce reservation belongs to a trusted controller, not
     # per-process memory or a caller-supplied boolean, and is required even
     # for a transport-only receipt. Claim AFTER verifying all other evidence.
@@ -351,16 +351,16 @@ def _verify_source_only(
     try:
         accepted = atomic_durable_nonce_claim(claim_key, expiry)
     except Exception:
-        raise TransportHold("G5_TRANSPORT_REPLAY_LEDGER_UNAVAILABLE") from None
+        raise TransportHold("TECHNICAL_TRANSPORT_REPLAY_LEDGER_UNAVAILABLE") from None
     if accepted is not True:
-        raise TransportHold("G5_TRANSPORT_REPLAY_OR_LEDGER_HOLD")
+        raise TransportHold("TECHNICAL_TRANSPORT_REPLAY_OR_LEDGER_HOLD")
     if payload["schema_version"] in (TECHNICAL_SCHEMA, DYNAMIC_TECHNICAL_SCHEMA):
         dynamic = payload["schema_version"] == DYNAMIC_TECHNICAL_SCHEMA
         return VerifiedTechnicalTransport(
             status=(
-                "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"
+                "DYNAMIC_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"
                 if dynamic else
-                "G5_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"),
+                "FROZEN_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"),
             attestation_sha256=hashlib.sha256(raw).hexdigest(),
             mapping_profile_sha256=payload["mapping_profile_sha256"],
             f1_release_metadata_sha256=payload["f1_release_metadata_sha256"],
@@ -377,7 +377,7 @@ def _verify_source_only(
             stage=payload["stage"] if dynamic else None,
         )
     return VerifiedTransport(
-        status="G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
+        status="TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
         attestation_sha256=hashlib.sha256(raw).hexdigest(),
         mapping_profile_sha256=payload["mapping_profile_sha256"],
         f1_release_metadata_sha256=payload["f1_release_metadata_sha256"],
@@ -399,7 +399,7 @@ def verify_native_handoff_source_only(raw: bytes) -> VerifiedTransport | Verifie
     if (not NATIVE_TRUSTED_PROVIDER_KEYS or not NATIVE_PINNED_PROVIDER_COMMIT
             or not NATIVE_PINNED_CONTROLLER_SHA256
             or NATIVE_ATOMIC_DURABLE_NONCE_CLAIM is None):
-        raise TransportHold("G5_TRANSPORT_NATIVE_TRUST_OR_LEDGER_NOT_ONBOARDED")
+        raise TransportHold("TECHNICAL_TRANSPORT_NATIVE_TRUST_OR_LEDGER_NOT_ONBOARDED")
     return _verify_source_only(
         raw,
         pinned_keys=NATIVE_TRUSTED_PROVIDER_KEYS,

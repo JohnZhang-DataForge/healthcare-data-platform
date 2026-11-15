@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **当前候选状态（2026-11-07）：Shared 新映射源码候选版本为 0.1.11，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前候选状态（2026-11-15）：Shared 语义重构源码候选版本为 0.1.15，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 当前源码候选 0.1.11；Native Environment Git 唯一旧 Wheel 0.1.7 未被本轮修改；历史 0.1.6 Git 定义/Import 只读 Smoke 已验收；Candidate/Gold 未验收 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 当前源码候选 0.1.15；Native Environment Git 唯一旧 Wheel 0.1.7 未被本轮修改；历史 0.1.6 Git 定义/Import 只读 Smoke 已验收；Candidate/Gold 未验收 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |
@@ -37,6 +37,9 @@
 | [src/healthcare_data_engine/reconciliation/replay.py](../../../../shared-data-engine/src/healthcare_data_engine/reconciliation/replay.py) | NEW/SKIP/Conflict/Hold/ACK 只读重试策略 |
 | [tests/fixtures/fhir_r4/patient_encounters_bundle.json](../../../../shared-data-engine/tests/fixtures/fhir_r4/patient_encounters_bundle.json) | 完全合成 FHIR Bundle Fixture |
 | [tests/test_fhir_r4_contract.py](../../../../shared-data-engine/tests/test_fhir_r4_contract.py) | 来源、负向、去重、Contract 和 replay tests |
+| [quality fixtures/fhir_r4/semantic-migration-20261115-eight-resources.json](../../../../.github/quality/fixtures/fhir_r4/semantic-migration-20261115-eight-resources.json) | 全新 4 Patient + 4 Encounter 合成资源，独立身份/批次，禁止真实临床数据 |
+| [quality/test_semantic_migration_fhir_eight.py](../../../../.github/quality/tests/shared-data-engine/mapping/test_semantic_migration_fhir_eight.py) | 新 Bundle 的 Canonical Person/Encounter PK/FK、Replay、坏引用零写入的纯测试 |
+| [quality/test_semantic_migration_identifiers.py](../../../../.github/quality/tests/shared-data-engine/mapping/test_semantic_migration_identifiers.py) | Shared/Notebook 阶段编号源码防回归，区别保留的签名 Wire 契约 |
 | [tests/test_spark_dataframe.py](../../../../shared-data-engine/tests/test_spark_dataframe.py) | PySpark Schema、输出及两表 FK |
 | [requirements-test.txt](../../../../shared-data-engine/requirements-test.txt) | 固定 Python 3.11/PySpark 3.5.7/构建依赖 |
 | [src/healthcare_data_engine/mapping/omop/registry.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/registry.py) | 0.1.4 引入的源码模块（0.1.5 继续保留）：显式 Person/Visit Entity Registry、依赖顺序、多 OMOP Target 定义和确定性派生来源键；无 ID 分配/物理写入 |
