@@ -211,7 +211,7 @@ def build_mapping_coverage_review(
 
     Input is a **caller-provided** full, aggregate-only canonical Silver
     inventory. This pure function validates field totals and code coverage;
-    it CANNOT prove the physical Silver approval, clinical signoff, or an F1
+    it CANNOT prove the physical Silver approval, clinical signoff, or an Vocabulary
     Vocabulary release. Callers must independently read physical Silver.
     The supplied source_meanings are descriptive review hints, NEVER target IDs.
     """
