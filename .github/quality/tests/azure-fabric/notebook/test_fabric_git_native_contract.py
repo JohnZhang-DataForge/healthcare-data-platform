@@ -36,7 +36,7 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertEqual(env_platform["metadata"]["displayName"], "env_healthcare")
         self.assertIn('if engine_version != "0.1.7":', nb)
         self.assertIn('run_mode = "HALT"', nb)
-        self.assertIn("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED", nb)
+        self.assertIn("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED", nb)
         self.assertNotIn("write_authorized = True", nb)
 
     def test_native_notebook_contains_one_business_implementation(self):
@@ -46,7 +46,7 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertIn("# CELL ********************", content)
         self.assertIn('"tags": [', content)
         self.assertIn('def execute_native_notebook(', content)
-        self.assertIn('HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED', content)
+        self.assertIn('HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED', content)
         self.assertNotIn("def execute_native_notebook(", candidate)
         self.assertNotIn("write_authorized = True", content)
 
@@ -61,7 +61,7 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertIn('run_mode = "HALT"', content)
         self.assertIn('write_authorized = False', content)
         self.assertIn('retention_preflight_verified = False', content)
-        self.assertIn('HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED', content)
+        self.assertIn('HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED', content)
 
     def test_native_notebook_fabric_cell_source_round_trip_structure(self):
         # Git-aware Notebook parser requires a metadata JSON block per cell.
@@ -92,7 +92,7 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertIn("def execute_native_notebook(", chunks[1])
         self.assertIn('# PARAMETERS CELL ********************', chunks[2])
         self.assertIn('run_mode = "HALT"', chunks[2])
-        self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', chunks[3])
+        self.assertIn('raise RuntimeError("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED")', chunks[3])
 
     def test_fabric_source_section_separators_match_official_samples(self):
         # This is a serialization preflight, NOT a proof of Fabric round-trip.
@@ -104,7 +104,7 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertIn('# META }\n\n# PARAMETERS CELL ********************', content)
         self.assertIn('# META }\n\n# CELL ********************', content)
         self.assertIn('def execute_native_notebook(', content)
-        self.assertIn('HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED', content)
+        self.assertIn('HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED', content)
 
     def test_pipeline_is_wired_to_existing_notebook_without_retry(self):
         data = json.loads((GIT_ROOT / "pl_fhir_ingest.DataPipeline/pipeline-content.json").read_text())
@@ -172,7 +172,7 @@ class FabricGitNativeContract(unittest.TestCase):
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
         self.assertIn('run_mode = "HALT"', content)
         self.assertIn('write_authorized = False', content)
-        self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', content)
+        self.assertIn('raise RuntimeError("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED")', content)
         self.assertIn("notebookutils.notebook.exit(smoke_exit)", content)
 
     def test_fhir_intake_readonly_requires_frozen_request_no_mutations(self):
@@ -211,7 +211,7 @@ class FabricGitNativeContract(unittest.TestCase):
         self.assertIn('elif run_mode == "INTAKE_READONLY":', content)
         self.assertIn('run_mode = "HALT"', content)
         self.assertIn("notebookutils.notebook.exit(intake_exit)", content)
-        self.assertIn('raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")', content)
+        self.assertIn('raise RuntimeError("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED")', content)
 
     def test_native_environment_has_exact_hashed_custom_wheel(self):
         import hashlib
