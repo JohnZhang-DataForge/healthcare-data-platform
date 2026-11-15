@@ -279,7 +279,7 @@ def classify_mapping_failure(code: str) -> str:
     if not isinstance(code, str) or not code:
         raise CandidatePublicationHold("CANDIDATE_PUBLICATION_FAILURE_CODE_INVALID")
     # Translate only known diagnostic prefixes from the EXISTING strict
-    # Mapper/P1 validator. Their suffixes name a source COLUMN, not a patient
+    # Mapper/source code validator. Their suffixes name a source COLUMN, not a patient
     # value. The caller still keeps its strict batch HOLD until a separately
     # approved record-level DQ/Quarantine contract is implemented.
     source_columns = {"gender_code", "race_code", "ethnicity_code",
