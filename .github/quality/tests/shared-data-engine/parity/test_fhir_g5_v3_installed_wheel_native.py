@@ -133,9 +133,9 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
         # In-place replacement of GA 0.1.7 would break historic G4 reads.
         # This explicitly forces isolated runtime/Environment commissioning.
         spark = Mock()
-        fn = self.native["verify_fhir_g4_silver"]
+        fn = self.native["process_fhir_silver_publication"]
         with self.assertRaisesRegex(
-            RuntimeError, "HOLD_G4_ENGINE_OR_MANIFEST_PIN"
+            RuntimeError, "HOLD_SILVER_ENGINE_OR_MANIFEST_PIN"
         ):
             fn(
                 spark, request="atlanta-fhir-gh-41552666929",
