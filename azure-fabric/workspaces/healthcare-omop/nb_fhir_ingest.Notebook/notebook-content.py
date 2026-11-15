@@ -323,7 +323,7 @@ def _write_delta(df, path: str) -> None:
 
 
 
-# G3: one request-scoped immutable-mode RAW BYTE snapshot + receipt,
+# Bronze: one request-scoped immutable-mode RAW BYTE snapshot + receipt,
 # not a Silver publication or proof of Azure container-level WORM.
 # The exact source bytes and provenance commit atomically into Lakehouse Delta.
 _FHIR_SOURCE_LANDING_ROOT = "Files/fhir_landing"
@@ -395,7 +395,7 @@ def process_fhir_bronze_snapshot(spark, *, request: str, manifest_sha: str,
                           mode: str, allow_write: bool, retention_ok: bool,
                           manifest_override: str, source_override: str,
                           target_override: str, strategy: str) -> NotebookOutcome:
-    """G3 path-pinned raw FHIR Delta snapshot, replay and separate readback.
+    """Bronze path-pinned raw FHIR Delta snapshot, replay and separate readback.
 
     The external Azure container did NOT show locked WORM/Legal Hold (G0 HOLD).
     The approved dev alternative *atomically stores original verified bytes*
@@ -494,7 +494,7 @@ def process_fhir_bronze_snapshot(spark, *, request: str, manifest_sha: str,
 
 
 
-# G4: reuse Shared Engine's canonical transform, existing G3 raw-byte snapshot
+# Silver: reuse Shared Engine's canonical transform, existing Bronze raw-byte snapshot
 # verification and native Delta writing. Only this publication coordinator is new.
 _SILVER_PROCESSING = "fhir-silver-canonical-v1:engine-0.1.1"
 _FHIR_SILVER_PUBLICATION_ROOT = "Files/silver/fhir_r4"
@@ -538,7 +538,7 @@ def _canonical_silver_approval_row(
 def _silver_approval_row(context: BatchContext, batch: PreparedBatch,
                      patient_contract_bytes: bytes,
                      encounter_contract_bytes: bytes) -> dict:
-    """Retain the exact historical FHIR G4 approval payload."""
+    """Retain the exact historical FHIR Silver approval payload."""
     return _canonical_silver_approval_row(
         batch, patient_contract_bytes, encounter_contract_bytes,
         source_preservation_strategy="DELTA_RAW_SNAPSHOT_V1")
@@ -583,7 +583,7 @@ def _write_verified_canonical_silver(
     This is an internal physical I/O primitive, NOT a source authorization
     endpoint. Callers must independently pin/read back immutable source,
     establish exclusive publication ownership and DQ-pass before invoking.
-    FHIR G4 retains its source-specific guards and replay recovery; HL7 has
+    FHIR Silver retains its source-specific guards and replay recovery; HL7 has
     no cloud dispatcher/authorization in this source-only change.
     """
     if (not isinstance(context, BatchContext)
@@ -875,7 +875,7 @@ def _verify_silver_publication_readback(spark, paths: dict[str, str],
 
 
 
-# G4.c physical Delta rejection of isolated synthetic missing-DOB source.
+# Silver DQ physical Delta rejection of isolated synthetic missing-DOB source.
 # Transform/conversion remains wholly inside Shared Engine 0.1.7.
 def verify_fhir_silver_dq_negative(spark, *, request: str, manifest_sha: str,
                                derivation_sha: str, mode: str,
@@ -1063,7 +1063,7 @@ def process_fhir_silver_publication(spark, *, request: str, manifest_sha: str,
     except Exception:
         return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
                                context.processing_version, None, metrics,
-                               ("G4 Delta path status uncertain",))
+                               ("Silver Delta path status uncertain",))
     if any(exists.values()):
         if exists["bronze"]:
             try:
@@ -1072,7 +1072,7 @@ def process_fhir_silver_publication(spark, *, request: str, manifest_sha: str,
             except Exception:
                 return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
                                        context.processing_version, None, metrics,
-                                       ("G4 persisted source readback uncertain",))
+                                       ("Silver persisted source readback uncertain",))
             if not valid:
                 return NotebookOutcome("HOLD_REQUEST_DRIFT", context.source_batch_id,
                                        context.processing_version, None, metrics,
@@ -1127,7 +1127,7 @@ def process_fhir_silver_publication(spark, *, request: str, manifest_sha: str,
         except Exception:
             return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
                                    context.processing_version, None, metrics,
-                                   ("G4 quarantine ACK/readback uncertain",))
+                                   ("Silver quarantine ACK/readback uncertain",))
         return NotebookOutcome("HOLD_DQ", batch.source_batch_id,
                                batch.processing_version, None, metrics,
                                tuple(f"{x[0]}:{x[1]}" for x in reasons))
@@ -1168,7 +1168,7 @@ def process_fhir_silver_publication(spark, *, request: str, manifest_sha: str,
 
 
 # HL7 P2.3: approved bounded source scopes, one verified candidate transport,
-# same physical Silver Delta writer as G4. Never an independent Writer/Mapper.
+# same physical Silver Delta writer as Silver. Never an independent Writer/Mapper.
 _HL7_REAL_REQUEST = "johnscreek-hl7-gh-42410482514"
 _HL7_REAL_MANIFEST_SHA = "dfb9895554470b0cb31536a041cd38aef5aaedd11ff762f491ce54e6dd1df114"
 _HL7_REAL_SOURCE_SHA = "3999e773321a76a5d8421d62af23d24d833261a65812ea24e14e7e828f960a93"
@@ -1596,9 +1596,9 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
                             "encounter": prepared.encounter_count}, ())
 
 
-# G5 source boundary only. This does NOT query an OMOP identity map, map
+# Candidate source boundary only. This does NOT query an OMOP identity map, map
 # clinical Concepts, persist Candidate Delta or authorize Warehouse Gold.
-# Historical G4 processing=engine-0.1.1 MUST stay pinned for existing Delta.
+# Historical Silver processing=engine-0.1.1 MUST stay pinned for existing Delta.
 _PINNED_FHIR_REQUEST = "atlanta-fhir-gh-41552666929"
 _PINNED_FHIR_MANIFEST_SHA = (
     "425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1")
@@ -1629,7 +1629,7 @@ def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> di
 
     SOURCE_ONLY: deriving deterministic output paths is never a publication
     approval, Stage release token, proof of Silver, or Delta write capability.
-    The protected controller must later verify the physical Silver, F1/F2,
+    The protected controller must later verify the physical Silver, Vocabulary/Identity,
     source Manifest and Blob Claim before invoking any Native Writer.
     Existing frozen P100/E5918 readback and Candidate paths stay unchanged.
     """
@@ -1687,14 +1687,14 @@ def verify_fhir_dynamic_silver_source_readonly(
     spark, *, scope, trusted_scope, source_ingest_date,
     patient_contract_json: str, encounter_contract_json: str,
 ) -> str:
-    """Reopen and independently recompute NEW FHIR G4 Silver, SOURCE_ONLY.
+    """Reopen and independently recompute NEW FHIR Silver Silver, SOURCE_ONLY.
 
     The trusted controller must supply exact previously persisted Stage/Batch
     identity and original source-ingest date. All actual source objects are
     reread from durable Bronze bytes and reprocessed through the SINGLE
     existing Shared FHIR adapter and Canonical engine. Persisted Patient,
     Encounter, Quarantine absence and exact Approval-LAST are independently
-    reopened and checked. This function does NOT verify F1/F2 Gold authority,
+    reopened and checked. This function does NOT verify Vocabulary/Identity Gold authority,
     Azure external Blob WORM, Stage Claim/Lease or receipt; NO Writer dispatch.
     """
     # Read-only verification keeps the HALT/write fence. Typed API checks
@@ -1850,7 +1850,7 @@ def _validate_candidate_rows(person_rows, visit_rows, handoff) -> None:
 
 def _verify_candidate_mapper_payload(mapper_result, person_candidate,
                                         visit_candidate, scope) -> None:
-    """Require every proposed Delta payload field to equal the sole F1 Mapper.
+    """Require every proposed Delta payload field to equal the sole Vocabulary Mapper.
 
     Identity proposal adds ONLY explicitly declared provisional state/Visit ID
     columns; it must never replace a mapped Concept, date, source value, or
@@ -1892,7 +1892,7 @@ def plan_and_write_omop_candidate_delta(
     technical_evidence_sha256: str | None = None,
     trusted_technical_release_gate: Callable | None = None,
 ) -> str:
-    """Real G5 Delta writer, never a Notebook/Pipeline parameter entrypoint.
+    """Real Candidate Delta writer, never a Notebook/Pipeline parameter entrypoint.
 
     The current route binds ONE externally authenticated technical witness,
     without Clinical/License human signoffs. Legacy signed-v1 remains optional
@@ -1977,7 +1977,7 @@ def plan_and_write_omop_candidate_delta(
                   "APPROVAL_DELTA_PASS_20261104"):
         raise RuntimeError("HOLD_CANDIDATE_SILVER_NOT_APPROVED")
 
-    # Strict source Mapper + F2 preview already produced these frames. We
+    # Strict source Mapper + Identity preview already produced these frames. We
     # deliberately DO NOT invent missing clinical values or durable IDs.
     psha, p_rows = _candidate_delta_content(
         person_candidate, key="person_id", expected=scope.patient_count)
@@ -2111,14 +2111,14 @@ def plan_and_write_omop_candidate_delta(
 def verify_candidate_transport_source_only(
     spark, *, provider=None, mode: str, attestation_bytes: bytes | None = None,
 ) -> str:
-    """P3.20 fail-closed Native transport-only preflight, NOT a business entry.
+    """technical transport fail-closed Native transport-only preflight, NOT a business entry.
 
     Legacy duck-typed provider calls for "verified" clinical/license and
     six-table string-receipt bridge were never an authenticated trust boundary:
     a caller could forge all returned dictionaries. No caller-supplied
     provider is EVER allowed here.
 
-    P3.19 remains OPEN: technical F1 source audit, F2 fresh transaction
+    technical evidence remains OPEN: technical Vocabulary source audit, Identity fresh transaction
     fence, managed provider keys, durable atomic nonce claim, and native
     Wheel Publish have not been accepted. The only eventual positive result
     from this function is SOURCE-ONLY verification, not Candidate or Gold.
@@ -2156,7 +2156,7 @@ def verify_candidate_transport_source_only(
             or verified.gold_committed is not False
             or verified.provisional_ids_persisted is not False):
         raise RuntimeError("HOLD_CANDIDATE_NATIVE_NON_SOURCE_ONLY_ATTESTATION")
-    # No provider calls, no source Silver read, no Concept/F2 SQL, no Candidate
+    # No provider calls, no source Silver read, no Concept/Identity SQL, no Candidate
     # writer, and NO capability is returned to execute_person_visit_candidate_publication.
     return "CANDIDATE_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED"
 
@@ -2174,9 +2174,9 @@ def execute_person_visit_candidate_publication(
     technical_evidence_sha256: str | None = None,
     trusted_technical_release_gate: Callable | None = None,
 ) -> str:
-    """P3 physical Silver -> the ONE Shared Mapper -> technical Candidate Delta.
+    """Candidate physical Silver -> the ONE Shared Mapper -> technical Candidate Delta.
 
-    Current path uses verified technical F1/F2 source evidence, not two human
+    Current path uses verified technical Vocabulary/Identity source evidence, not two human
     Clinical/License signatures. An untrusted SHA/Boolean from Notebook
     parameters still cannot grant writes: the protected Stage owner must
     supply an independent release gate; __main__/Pipeline remain HALT.
@@ -2224,7 +2224,7 @@ def execute_person_visit_candidate_publication(
             or not raw_publish_run_id
             or raw_publish_run_id != raw_publish_run_id.strip()):
         raise RuntimeError("HOLD_CANDIDATE_BUSINESS_RAW_PUBLICATION_UNPINNED")
-    # Only ever read the physical G4 DataFrames after rechecking exact
+    # Only ever read the physical Silver DataFrames after rechecking exact
     # original Manifest, Approval, row counts, source keys and FK.
     verify_fhir_candidate_source_readonly(
         spark, request=scope.request_id,
@@ -2253,7 +2253,7 @@ def execute_person_visit_candidate_publication(
     if (concepts_from_verified_warehouse is None
             or not hasattr(concepts_from_verified_warehouse, "columns")):
         raise RuntimeError("HOLD_CANDIDATE_BUSINESS_VOCABULARY_SNAPSHOT_MISSING")
-    # F2 provisional IDs stay explicit and are never persisted as Warehouse
+    # Identity provisional IDs stay explicit and are never persisted as Warehouse
     # Gold or treated as existing committed etl.identity_map records.
     if not handoff.person_lookup or not handoff.batch_visits:
         raise RuntimeError("HOLD_CANDIDATE_BUSINESS_IDENTITY_LOOKUP_EMPTY")
@@ -2283,7 +2283,7 @@ def execute_person_visit_candidate_publication(
             handoff, mapped, feed_id=scope.feed_id,
             request_id=scope.request_id) != scope:
         raise RuntimeError("HOLD_CANDIDATE_BUSINESS_MAPPER_IDENTITY_SCOPE_CONFLICT")
-    # F2 proposes IDs, Shared Mapper owns every OMOP clinical data column.
+    # Identity proposes IDs, Shared Mapper owns every OMOP clinical data column.
     # Never rewrite mapped output fields in this native coordinator.
     persons = spark.createDataFrame(
         [(p.person_id, p.state) for p in handoff.batch_persons],
@@ -2322,10 +2322,10 @@ def verify_fhir_candidate_source_readonly(
     source_override: str, target_override: str,
     patient_contract_json: str, encounter_contract_json: str,
 ) -> str:
-    """Physically re-open G4 Approved Silver; NO Candidate/Gold permissions.
+    """Physically re-open Silver Approved Silver; NO Candidate/Gold permissions.
 
-    G4's verified source-byte and independent Delta readback remain the
-    single authoritative source of clinical approval. G5 *then* reopens
+    Silver's verified source-byte and independent Delta readback remain the
+    single authoritative source of clinical approval. Candidate *then* reopens
     all three persisted Delta tables to check this handoff's exact batch,
     namespace, counts, uniqueness and Encounter-to-Patient FK. The result
     means SOURCE_READONLY_PASS, not an OMOP mapping/commit receipt.
@@ -2350,9 +2350,9 @@ def verify_fhir_candidate_source_readonly(
     load_pinned_contract(patient_bytes, "patient")
     load_pinned_contract(encounter_bytes, "encounter")
 
-    # G4 independently verifies delivered manifest bytes, Bronze snapshot,
+    # Silver independently verifies delivered manifest bytes, Bronze snapshot,
     # re-computed canonical data, persisted Approval and Quarantine fence.
-    # Existing approved G4 physical data is NEVER written/overwritten.
+    # Existing approved Silver physical data is NEVER written/overwritten.
     silver_publication = process_fhir_silver_publication(
         spark, request=request, manifest_sha=manifest_sha,
         mode="SILVER_READBACK_ONLY", allow_write=False,
@@ -2369,7 +2369,7 @@ def verify_fhir_candidate_source_readonly(
             or not silver_publication.publication_id):
         raise RuntimeError("HOLD_CANDIDATE_SILVER_PHYSICAL_APPROVAL_NOT_VERIFIED")
 
-    # Independent new Spark physical scans, not the G4 in-memory frames.
+    # Independent new Spark physical scans, not the Silver in-memory frames.
     from pyspark.sql import functions as F
     paths = _silver_publication_paths(request)
     patient = spark.read.format("delta").load(paths["patient"])
@@ -2440,12 +2440,12 @@ def verify_fhir_candidate_source_readonly(
 
 
 def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> str:
-    """P1 real G4 Silver code inventory; NEVER maps IDs, Concepts or writes.
+    """P1 real Silver Silver code inventory; NEVER maps IDs, Concepts or writes.
 
-    Only run AFTER the exact G5 source physical gate has independently verified
-    the G4 Manifest, Delta Patient/Encounter, one Approval and P100/E5918/Q0.
+    Only run AFTER the exact Candidate source physical gate has independently verified
+    the Silver Manifest, Delta Patient/Encounter, one Approval and P100/E5918/Q0.
     Raw patient/encounter identifiers are NOT returned. Source codes are
-    synthetic G4 terminology data, with bounded output and no clinical IDs.
+    synthetic Silver terminology data, with bounded output and no clinical IDs.
     """
     accepted = verify_fhir_candidate_source_readonly(
         spark, **read_only_args)
@@ -2537,7 +2537,7 @@ def verify_fhir_bronze_negative_readonly(spark, *, request: str,
                                      strategy: str, manifest_override: str,
                                      source_override: str,
                                      target_override: str) -> str:
-    """G3 synthetic counterfactual same-request drift and recovery probes.
+    """Bronze synthetic counterfactual same-request drift and recovery probes.
 
     This does NOT mutate Azure Blob or Delta, nor claim actual Blob corruption.
     It applies a deliberately altered receipt to the ALREADY persisted real
