@@ -44,23 +44,23 @@ class G3PhysicalProbe(unittest.TestCase):
             manifest_override="", source_override="", target_override="")
 
     def execute(self, **diff):
-        g = nb.verify_fhir_g3_negative_readonly.__globals__
+        g = nb.verify_fhir_bronze_negative_readonly.__globals__
         with patch.dict(g, {
-            "_G3_NEGATIVE_MANIFEST_SHA": self.args["manifest_sha"],
+            "_BRONZE_NEGATIVE_MANIFEST_SHA": self.args["manifest_sha"],
             "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "_write_delta": lambda df, path: self.fail("read-only probe attempted a write"),
         }):
-            return nb.verify_fhir_g3_negative_readonly(
+            return nb.verify_fhir_bronze_negative_readonly(
                 self.spark, **{**self.args, **diff})
 
     def test_actual_saved_delta_rejects_counterfactual_same_request_drift(self):
         self.assertEqual(self.execute(),
-                         "FHIR_G3_COUNTERFACTUAL_REQUEST_DRIFT_HOLD_5_DELTA_PASS_20261102")
+                         "FHIR_BRONZE_COUNTERFACTUAL_REQUEST_DRIFT_HOLD_5_DELTA_PASS_20261102")
 
     def test_readonly_unknown_ack_recovery_path_reopens_stored_bytes(self):
         self.assertEqual(
             self.execute(scenario="BRONZE_ACK_RECOVERY_PROBE"),
-            "FHIR_G3_READONLY_ACK_RECOVERY_PATH_VERIFIED_5_DELTA_PASS_20261102")
+            "FHIR_BRONZE_READONLY_ACK_RECOVERY_PATH_VERIFIED_5_DELTA_PASS_20261102")
 
     def test_corrupt_raw_snapshot_never_passes_recovery_or_drift(self):
         path = nb._bronze_source_receipt_path(REQUEST)
