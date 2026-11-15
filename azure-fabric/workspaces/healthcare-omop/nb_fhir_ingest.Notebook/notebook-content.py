@@ -1661,7 +1661,7 @@ def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> di
             or scope.manifest_sha256 != trusted_scope.manifest_sha256
             or scope.mapping_sha256 != trusted_scope.mapping_profile_sha256
             or scope.identity_snapshot_fingerprint
-                != trusted_scope.f2_identity_snapshot_fingerprint):
+                != trusted_scope.identity_snapshot_fingerprint):
         raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_STAGE_BATCH_OR_EVIDENCE_DRIFT")
     # The existing small-batch physical content verifier caps each table at
     # 10k rows. Larger batches require a separately reviewed chunked writer.
