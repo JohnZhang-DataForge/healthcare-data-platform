@@ -1,10 +1,10 @@
-"""Derive a G5 mapping-profile DRAFT from authoritative legacy LocalDP rules.
+"""Derive a OMOP mapping-profile DRAFT from authoritative legacy LocalDP rules.
 
 The LocalDP demographic dictionaries and Visit JSON are supplied *as inputs*,
 rather than copied into a second hard-coded Concept table. FHIR-specific
 source-code aliases describe translation to existing LocalDP semantic keys.
 This is a pure, platform-neutral helper. It grants no clinical approval,
-Vocabulary rights, P3 Candidate publication, SQL write or OMOP Gold COMMIT.
+Vocabulary rights, Candidate publication, SQL write or OMOP Gold COMMIT.
 
 Unknown / unreviewed source codes remain unresolved and fail-closed. A draft
 must not be mistaken for a signed, approved mapping profile.
@@ -84,7 +84,7 @@ def build_localdp_mapping_draft(
     aliases: Mapping[str, Mapping[str, str]],
     observed_codes: Mapping[str, Mapping[str, int]],
 ) -> LocalProfileDraft:
-    """Produce the exact existing Shared G5 Mapper profile schema, byte-pinned.
+    """Produce the exact existing Shared OMOP Mapper profile schema, byte-pinned.
 
     Inputs come from the unmodified LocalDP `spark/common/omop.py` and
     `spark/contracts/omop/visit-class-v1.json`; this helper doesn't import
@@ -155,7 +155,7 @@ def build_localdp_mapping_draft(
     }
     raw = json.dumps(profile, ensure_ascii=False, sort_keys=True,
                      separators=(",", ":"), allow_nan=False).encode("utf-8")
-    # Do not return an approval object, only the existing G5 Mapper's
+    # Do not return an approval object, only the existing OMOP Mapper's
     # structural profile bytes and the explicit unresolved source codes.
     from healthcare_data_engine.mapping.omop.candidates import (
         load_omop_mapping_profile,
@@ -174,7 +174,7 @@ class MappingReviewGap:
     source_code: str
     observed_count: int
     source_meaning: str = "UNREVIEWED"
-    disposition: str = "REQUIRES_CLINICAL_AND_F1_VOCABULARY_REVIEW"
+    disposition: str = "REQUIRES_CLINICAL_AND_VOCABULARY_REVIEW"
 
 
 @dataclass(frozen=True)
@@ -207,7 +207,7 @@ def build_mapping_coverage_review(
     patient_count: int, encounter_count: int,
     source_meanings: Mapping[tuple[str, str], str] | None = None,
 ) -> MappingCoverageReview:
-    """Bound source-code review to an exact source batch, manifest and G5 SHA.
+    """Bound source-code review to an exact source batch, manifest and OMOP mapping SHA.
 
     Input is a **caller-provided** full, aggregate-only canonical Silver
     inventory. This pure function validates field totals and code coverage;
