@@ -87,7 +87,7 @@ def propose_race_resolution(
     observed_race_coding_systems: Mapping[str, Mapping[str, int]],
     as_of: date,
 ) -> RaceResolutionDraft:
-    """Require exact source+profile+F1 Concept evidence, but return *draft*.
+    """Require exact source+profile+Vocabulary Concept evidence, but return *draft*.
 
     `observed_race_coding_systems` must be derived by a caller from
     immutable, independently verified raw FHIR codings; the existing
