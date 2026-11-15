@@ -261,7 +261,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
 
     def test_p1_inventory_denies_tampered_approval_and_person_source_width(self):
         from pyspark.sql import functions as F
-        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_APPROVAL_CHANGED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_SOURCE_CODE_INVENTORY_APPROVAL_CHANGED"):
             self._inventory(self.frames(**{
                 **{"patient": self._code_frames()[PATHS["patient"]],
                    "encounter": self._code_frames()[PATHS["encounter"]]},
@@ -272,7 +272,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
             "source_record_id",
             F.when(F.col("source_record_id") == "p000", F.lit("p" * 51))
              .otherwise(F.col("source_record_id")))
-        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_PERSON_SOURCE_VALUE_TOO_LONG"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_SOURCE_CODE_INVENTORY_PERSON_SOURCE_VALUE_TOO_LONG"):
             self._inventory(frames)
 
     def test_p1_inventory_denies_unmapped_or_casefold_ambiguous_codes(self):
@@ -282,7 +282,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
             "encounter_class",
             F.when(F.col("source_encounter_id") == "e00000", F.lit("SYNTHETIC-V"))
              .otherwise(F.col("encounter_class")))
-        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_SOURCE_CODE_COLLATION_CONFLICT"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_SOURCE_CODE_INVENTORY_SOURCE_CODE_COLLATION_CONFLICT"):
             self._inventory(frames)
 
 
