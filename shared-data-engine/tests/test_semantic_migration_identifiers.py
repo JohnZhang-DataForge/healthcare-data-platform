@@ -17,8 +17,8 @@ RENAME_MAP = ROOT / "docs/development/shared-notebook-semantic-rename-map.tsv"
 
 
 class SemanticIdentifiersTests(unittest.TestCase):
-    def test_shared_code_owns_no_stage_numbered_g5_p3_error_or_identity_api(self):
-        stage_status = re.compile(r"(?:G5_|P3_|IDENTITY_F2_)")
+    def test_shared_code_owns_no_stage_numbered_candidate_api(self):
+        stage_token_pattern = re.compile(r"(?:G5_|P3_|IDENTITY_F2_)")
         old_api = re.compile(
             r"^\s*(?:def|class)\s+\w*(?:g5|p3|f1_lookup|bridge_f2)\w*\s*\(",
             re.MULTILINE | re.IGNORECASE,
@@ -26,7 +26,7 @@ class SemanticIdentifiersTests(unittest.TestCase):
         for path in sorted(PACKAGE.rglob("*.py")):
             text = path.read_text(encoding="utf-8")
             with self.subTest(path=str(path.relative_to(ROOT))):
-                self.assertIsNone(stage_status.search(text))
+                self.assertIsNone(stage_token_pattern.search(text))
                 self.assertIsNone(old_api.search(text))
 
     def test_notebook_candidate_functions_are_canonical_without_alias(self):
