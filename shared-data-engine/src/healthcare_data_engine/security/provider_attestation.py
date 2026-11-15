@@ -358,9 +358,9 @@ def _verify_source_only(
         dynamic = payload["schema_version"] == DYNAMIC_TECHNICAL_SCHEMA
         return VerifiedTechnicalTransport(
             status=(
-                "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"
+                "DYNAMIC_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"
                 if dynamic else
-                "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"),
+                "FROZEN_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"),
             attestation_sha256=hashlib.sha256(raw).hexdigest(),
             mapping_profile_sha256=payload["mapping_profile_sha256"],
             f1_release_metadata_sha256=payload["f1_release_metadata_sha256"],
