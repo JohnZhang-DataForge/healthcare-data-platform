@@ -2453,14 +2453,14 @@ def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> st
         "FHIR_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
         "APPROVAL_DELTA_PASS_20261104"
     ):
-        raise RuntimeError("HOLD_P1_SOURCE_PHYSICAL_GATE_NOT_VERIFIED")
+        raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_PHYSICAL_GATE_NOT_VERIFIED")
     from pyspark.sql import functions as F
     paths = _silver_publication_paths(read_only_args["request"])
     patient = spark.read.format("delta").load(paths["patient"])
     encounter = spark.read.format("delta").load(paths["encounter"])
     approvals = spark.read.format("delta").load(paths["approval"]).collect()
     if len(approvals) != 1:
-        raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
+        raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_APPROVAL_CHANGED")
     approval = approvals[0].asDict(recursive=True)
     if (approval.get("status") != "SILVER_APPROVED"
             or approval.get("manifest_sha256") != _PINNED_FHIR_MANIFEST_SHA
@@ -2468,17 +2468,17 @@ def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> st
             or approval.get("patient_count") != _PINNED_FHIR_PATIENTS
             or approval.get("encounter_count") != _PINNED_FHIR_ENCOUNTERS
             or approval.get("quarantine_count") != 0):
-        raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
+        raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_APPROVAL_CHANGED")
     if patient.count() != _PINNED_FHIR_PATIENTS or (
             encounter.count() != _PINNED_FHIR_ENCOUNTERS):
-        raise RuntimeError("HOLD_P1_SOURCE_ROW_COUNT_CHANGED")
+        raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_ROW_COUNT_CHANGED")
 
     if "source_record_id" not in patient.columns or patient.filter(
         F.col("source_record_id").isNull()
         | (F.length(F.col("source_record_id")) > 50)
     ).limit(1).count():
         # Person.person_source_value in official CDM 5.4 is VARCHAR(50).
-        raise RuntimeError("HOLD_P1_PERSON_SOURCE_VALUE_TOO_LONG_OR_NULL")
+        raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_PERSON_SOURCE_VALUE_TOO_LONG_OR_NULL")
     roles = (
         ("gender_code", patient, _PINNED_FHIR_PATIENTS),
         ("race_code", patient, _PINNED_FHIR_PATIENTS),
@@ -2489,25 +2489,25 @@ def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> st
     counts = {}
     for field, frame, expected in roles:
         if field not in frame.columns:
-            raise RuntimeError("HOLD_P1_CANONICAL_CODE_COLUMN_MISSING")
+            raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_CANONICAL_CODE_COLUMN_MISSING")
         pairs = frame.groupBy(field).count().collect()
         if not pairs or len(pairs) > 128:
-            raise RuntimeError("HOLD_P1_SOURCE_CODE_CARDINALITY_UNBOUNDED")
+            raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_CODE_CARDINALITY_UNBOUNDED")
         values, total, folded = {}, 0, set()
         for row in pairs:
             code, frequency = row[field], row["count"]
             if (not isinstance(code, str) or not code or code != code.strip()
                     or len(code) > 50 or any(ord(ch) < 32 for ch in code)):
-                raise RuntimeError("HOLD_P1_SOURCE_CODE_INVALID_OR_TOO_LONG")
+                raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_CODE_INVALID_OR_TOO_LONG")
             if code.casefold() in folded:
-                raise RuntimeError("HOLD_P1_SOURCE_CODE_COLLATION_CONFLICT")
+                raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_CODE_COLLATION_CONFLICT")
             folded.add(code.casefold())
             if type(frequency) is not int or frequency <= 0:
-                raise RuntimeError("HOLD_P1_SOURCE_CODE_FREQUENCY_INVALID")
+                raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_CODE_FREQUENCY_INVALID")
             values[code] = frequency
             total += frequency
         if total != expected:
-            raise RuntimeError("HOLD_P1_SOURCE_CODE_FREQUENCY_COUNT_DRIFT")
+            raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_CODE_FREQUENCY_COUNT_DRIFT")
         counts[field] = dict(sorted(values.items()))
 
     source_system = "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID
@@ -2524,7 +2524,7 @@ def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> st
         "code_counts": counts,
     }, sort_keys=True, separators=(",", ":"))
     if len(payload.encode("utf-8")) > 16000:
-        raise RuntimeError("HOLD_P1_SOURCE_INVENTORY_RECEIPT_TOO_LARGE")
+        raise RuntimeError("HOLD_SOURCE_CODE_INVENTORY_SOURCE_INVENTORY_RECEIPT_TOO_LARGE")
     return "FHIR_CANDIDATE_CONCEPT_SOURCE_INVENTORY_READONLY_PASS|" + payload
 
 _BRONZE_NEGATIVE_REQUEST = "atlanta-fhir-gh-41539769718"
@@ -2731,7 +2731,7 @@ def validate_read_only_runtime_smoke(*, mode: str, allow_write: bool,
     HALT stays the default and every non-smoke mode is rejected.
     """
     if mode != "RUNTIME_SMOKE":
-        raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
+        raise RuntimeError("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED")
     if (allow_write is not False or retention_ok is not False
             or any(value != "" for value in (request, manifest, source, target))):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_UNSAFE_PARAMETERS")
@@ -3006,7 +3006,7 @@ if __name__ == "__main__":
         )
         notebookutils.notebook.exit(canonical_exit)
     else:
-        raise RuntimeError("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED")
+        raise RuntimeError("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED")
 
 # METADATA ********************
 
