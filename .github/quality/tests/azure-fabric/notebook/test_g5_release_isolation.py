@@ -43,42 +43,46 @@ class G5NativeWheelIsolation(unittest.TestCase):
         cls.native = runpy.run_path(
             str(NATIVE), run_name="_g5_017_native_business_source_isolation")
 
-    def test_semantic_public_names_preserve_legacy_identity_and_halt(self):
-        aliases = {
-            "process_fhir_bronze_snapshot": "verify_fhir_g3_bronze",
-            "process_fhir_silver_publication": "verify_fhir_g4_silver",
-            "verify_fhir_dynamic_silver_source_readonly":
-                "verify_fhir_g5_dynamic_silver_source_readonly",
-            "plan_and_write_omop_candidate_delta": "plan_and_write_g5_candidate_delta",
-            "verify_candidate_transport_source_only":
-                "execute_g5_candidate_from_trusted_controller",
-            "execute_person_visit_candidate_publication":
-                "execute_g5_person_visit_business",
-            "verify_fhir_candidate_source_readonly":
-                "verify_fhir_g5_candidate_source_readonly",
-            "verify_fhir_concept_source_inventory_readonly":
-                "verify_fhir_g5_concept_source_inventory_readonly",
-            "verify_fhir_bronze_negative_readonly":
-                "verify_fhir_g3_negative_readonly",
-        }
-        for semantic, legacy in aliases.items():
-            with self.subTest(semantic=semantic):
-                self.assertIs(self.native[semantic], self.native[legacy])
-                self.assertTrue(callable(self.native[semantic]))
+    def test_candidate_functions_are_semantic_canonical_and_halt(self):
+        # Active candidate/read-only functions have one canonical business name,
+        # not a phase-numbered implementation hidden behind an alias.
+        canonical = (
+            "verify_fhir_dynamic_silver_source_readonly",
+            "plan_and_write_omop_candidate_delta",
+            "verify_candidate_transport_source_only",
+            "execute_person_visit_candidate_publication",
+            "verify_fhir_candidate_source_readonly",
+            "verify_fhir_concept_source_inventory_readonly",
+        )
+        removed = (
+            "verify_fhir_g5_dynamic_silver_source_readonly",
+            "plan_and_write_g5_candidate_delta",
+            "execute_g5_candidate_from_trusted_controller",
+            "execute_g5_person_visit_business",
+            "verify_fhir_g5_candidate_source_readonly",
+            "verify_fhir_g5_concept_source_inventory_readonly",
+        )
+        for name in canonical:
+            with self.subTest(name=name):
+                self.assertTrue(callable(self.native[name]))
+        for name in removed:
+            with self.subTest(removed=name):
+                self.assertNotIn(name, self.native)
+        # Historical Bronze/Silver aliases have separate frozen contracts.
+        self.assertIs(self.native["process_fhir_bronze_snapshot"],
+                      self.native["verify_fhir_g3_bronze"])
+        self.assertIs(self.native["process_fhir_silver_publication"],
+                      self.native["verify_fhir_g4_silver"])
         self.assertEqual(self.native["run_mode"], "HALT")
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
         main = NATIVE.read_text(encoding="utf-8").split(
             'if __name__ == "__main__":', 1)[1]
-        # The legacy Bronze/Silver main dispatch retains frozen HOLD_G3/G4
-        # error string compatibility until the Tier C protocol migration.
-        for semantic in (
+        for name in (
             "verify_fhir_candidate_source_readonly",
             "verify_fhir_concept_source_inventory_readonly",
-            "verify_fhir_bronze_negative_readonly",
         ):
-            self.assertIn(semantic + "(", main)
-            self.assertNotIn(aliases[semantic] + "(", main)
+            self.assertIn(name + "(", main)
 
     def test_fhir_storage_constant_names_keep_frozen_values(self):
         fixed = {
@@ -147,15 +151,15 @@ class G5NativeWheelIsolation(unittest.TestCase):
 
         legacy_silver_read_guard = Mock(side_effect=AssertionError("NO_G4_SPARK_READ_ALLOWED"))
         with patch.dict(
-            self.native["verify_fhir_g5_candidate_source_readonly"].__globals__,
+            self.native["verify_fhir_candidate_source_readonly"].__globals__,
             {"engine_version": LEGACY_VERSION,
              "verify_fhir_g4_silver": legacy_silver_read_guard},
         ):
             with self.assertRaisesRegex(RuntimeError, "HOLD_G5_SOURCE_PIN"):
-                self.native["verify_fhir_g5_candidate_source_readonly"](
+                self.native["verify_fhir_candidate_source_readonly"](
                     object(),
-                    request=self.native["_G5_APPROVED_REQUEST"],
-                    manifest_sha=self.native["_G5_APPROVED_MANIFEST_SHA"],
+                    request=self.native["_PINNED_FHIR_REQUEST"],
+                    manifest_sha=self.native["_PINNED_FHIR_MANIFEST_SHA"],
                     allow_write=False, retention_ok=False,
                     strategy="DELTA_RAW_SNAPSHOT_V1",
                     manifest_override="", source_override="",
@@ -179,7 +183,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
     def test_g5_native_legacy_provider_write_denied_before_any_callback(self):
         # The old duck-typed provider was never a trust boundary. Even a
         # convincing fake approval/SQL connection cannot enter a write path.
-        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        method = self.native["verify_candidate_transport_source_only"]
         malicious = Mock()
         malicious.load_pinned_inputs.return_value = {
             "status": "SIGNED_CLINICAL_APPROVED",
@@ -202,7 +206,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         spark.sql.assert_not_called()
 
     def test_g5_native_readback_rejects_fake_provider_and_spark(self):
-        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        method = self.native["verify_candidate_transport_source_only"]
         poisoned_provider = Mock()
         spark = Mock()
         with self.assertRaisesRegex(
@@ -219,7 +223,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         spark.sql.assert_not_called()
 
     def test_g5_native_transport_cannot_bypass_effective_wheel_halt(self):
-        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        method = self.native["verify_candidate_transport_source_only"]
         with self.assertRaisesRegex(
                 RuntimeError,
                 "HOLD_G5_NATIVE_SIGNED_(VERIFIER_NOT_PUBLISHED|TRANSPORT_OR_REPLAY)"):
@@ -244,12 +248,12 @@ class G5NativeWheelIsolation(unittest.TestCase):
                            attestation_bytes=bad)
         source = NATIVE.read_text(encoding="utf-8")
         body = source.split(
-            "def execute_g5_candidate_from_trusted_controller(", 1)[1].split(
-            "\ndef execute_g5_person_visit_business(", 1)[0]
+            "def verify_candidate_transport_source_only(", 1)[1].split(
+            "\ndef execute_person_visit_candidate_publication(", 1)[0]
         self.assertNotIn("provider.verify_signed_clinical_review(", body)
         self.assertNotIn("provider.verify_license_rights(", body)
         self.assertNotIn("provider.capture_full_warehouse_snapshot(", body)
-        self.assertNotIn("execute_g5_person_visit_business(", body)
+        self.assertNotIn("execute_person_visit_candidate_publication(", body)
         self.assertIn("G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED", body)
 
 
@@ -260,7 +264,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         The synthetic module stands in only for the import contract. It is NOT
         a real signature, identity proof, physical Silver or release receipt.
         """
-        method = self.native["execute_g5_candidate_from_trusted_controller"]
+        method = self.native["verify_candidate_transport_source_only"]
         class LegacyVerified:
             pass
 
@@ -381,7 +385,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         }
 
     def test_g5_technical_stage_proof_reaches_real_silver_fence_no_humans(self):
-        method = self.native["plan_and_write_g5_candidate_delta"]
+        method = self.native["plan_and_write_omop_candidate_delta"]
         arguments = self._candidate_technical_args()
         release = Mock(return_value=True)
         arguments["trusted_technical_release_gate"] = release
@@ -393,7 +397,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
                 "person": "synthetic-person", "visit": "synthetic-visit",
                 "approval": "synthetic-approval",
             },
-            "verify_fhir_g5_candidate_source_readonly": physical,
+            "verify_fhir_candidate_source_readonly": physical,
         }):
             with self.assertRaisesRegex(RuntimeError, "REACHED_PHYSICAL_SILVER_FENCE"):
                 method(None, **arguments)
@@ -404,7 +408,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         self.assertEqual(self.native["run_mode"], "HALT")
 
     def test_g5_technical_release_rejects_missing_or_untrusted_owner(self):
-        method = self.native["plan_and_write_g5_candidate_delta"]
+        method = self.native["plan_and_write_omop_candidate_delta"]
         arguments = self._candidate_technical_args()
         with self.assertRaisesRegex(RuntimeError, "STAGE_RELEASE_UNTRUSTED"):
             method(None, **arguments)
@@ -415,7 +419,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         release.assert_called_once()
 
     def test_g5_technical_bad_f2_and_fake_review_hold_before_callback(self):
-        method = self.native["plan_and_write_g5_candidate_delta"]
+        method = self.native["plan_and_write_omop_candidate_delta"]
         arguments = self._candidate_technical_args()
         release = Mock(side_effect=AssertionError("UNTRUSTED_CALLBACK"))
         arguments["trusted_technical_release_gate"] = release
@@ -433,7 +437,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
         release.assert_not_called()
 
     def test_g5_business_accepts_technical_evidence_shape_without_reviewer(self):
-        method = self.native["execute_g5_person_visit_business"]
+        method = self.native["execute_person_visit_candidate_publication"]
         args = self._candidate_technical_args()
         arguments = {
             "scope": args["scope"], "handoff": args["handoff"],
