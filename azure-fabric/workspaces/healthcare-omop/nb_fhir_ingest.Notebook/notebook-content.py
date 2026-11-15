@@ -1599,20 +1599,20 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
 # G5 source boundary only. This does NOT query an OMOP identity map, map
 # clinical Concepts, persist Candidate Delta or authorize Warehouse Gold.
 # Historical G4 processing=engine-0.1.1 MUST stay pinned for existing Delta.
-_G5_APPROVED_REQUEST = "atlanta-fhir-gh-41552666929"
-_G5_APPROVED_MANIFEST_SHA = (
+_PINNED_FHIR_REQUEST = "atlanta-fhir-gh-41552666929"
+_PINNED_FHIR_MANIFEST_SHA = (
     "425a25a6337e86a2df39c1f7993d46fd0555cfed9107dde415521fde755ff2f1")
-_G5_APPROVED_PATIENTS = 100
-_G5_APPROVED_ENCOUNTERS = 5918
+_PINNED_FHIR_PATIENTS = 100
+_PINNED_FHIR_ENCOUNTERS = 5918
 
 
 def _frozen_fhir_candidate_paths(scope) -> dict[str, str]:
     _bronze_source_receipt_path(scope.request_id)  # no traversal or unapproved request
-    if (scope.request_id != _G5_APPROVED_REQUEST
-            or scope.manifest_sha256 != _G5_APPROVED_MANIFEST_SHA
+    if (scope.request_id != _PINNED_FHIR_REQUEST
+            or scope.manifest_sha256 != _PINNED_FHIR_MANIFEST_SHA
             or scope.silver_processing_version != _G4_PROCESSING
-            or scope.patient_count != _G5_APPROVED_PATIENTS
-            or scope.encounter_count != _G5_APPROVED_ENCOUNTERS
+            or scope.patient_count != _PINNED_FHIR_PATIENTS
+            or scope.encounter_count != _PINNED_FHIR_ENCOUNTERS
             or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
             or scope.feed_id != _FHIR_SOURCE_FEED_ID
             or scope.source_system != "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID):
@@ -1683,7 +1683,7 @@ def _plan_fhir_candidate_paths_from_trusted_scope(scope, *, trusted_scope) -> di
     }
 
 
-def verify_fhir_g5_dynamic_silver_source_readonly(
+def verify_fhir_dynamic_silver_source_readonly(
     spark, *, scope, trusted_scope, source_ingest_date,
     patient_contract_json: str, encounter_contract_json: str,
 ) -> str:
@@ -1880,7 +1880,7 @@ def _verify_candidate_mapper_payload(mapper_result, person_candidate,
             raise RuntimeError("HOLD_G5_MAPPER_CANDIDATE_PAYLOAD_CHANGED")
 
 
-def plan_and_write_g5_candidate_delta(
+def plan_and_write_omop_candidate_delta(
     spark, *, scope, handoff, mapper_result, person_candidate, visit_candidate,
     mode: str, write_authorized: bool,
     clinically_reviewed: bool = False, license_reviewed: bool = False,
@@ -1966,7 +1966,7 @@ def plan_and_write_g5_candidate_delta(
         elif not (clinically_reviewed and license_reviewed):
             raise RuntimeError("HOLD_G5_LEGACY_SIGNED_RELEASE_INCOMPLETE")
     paths = _frozen_fhir_candidate_paths(scope)
-    source = verify_fhir_g5_candidate_source_readonly(
+    source = verify_fhir_candidate_source_readonly(
         spark, request=scope.request_id, manifest_sha=scope.manifest_sha256,
         allow_write=False, retention_ok=False,
         strategy="DELTA_RAW_SNAPSHOT_V1",
@@ -2108,7 +2108,7 @@ def plan_and_write_g5_candidate_delta(
 
 
 
-def execute_g5_candidate_from_trusted_controller(
+def verify_candidate_transport_source_only(
     spark, *, provider=None, mode: str, attestation_bytes: bytes | None = None,
 ) -> str:
     """P3.20 fail-closed Native transport-only preflight, NOT a business entry.
@@ -2157,11 +2157,11 @@ def execute_g5_candidate_from_trusted_controller(
             or verified.provisional_ids_persisted is not False):
         raise RuntimeError("HOLD_G5_NATIVE_NON_SOURCE_ONLY_ATTESTATION")
     # No provider calls, no source Silver read, no Concept/F2 SQL, no Candidate
-    # writer, and NO capability is returned to execute_g5_person_visit_business.
+    # writer, and NO capability is returned to execute_person_visit_candidate_publication.
     return "G5_NATIVE_ATTESTATION_SOURCE_ONLY_VERIFIED_NOT_DISPATCHED"
 
 
-def execute_g5_person_visit_business(
+def execute_person_visit_candidate_publication(
     spark, *, scope, handoff, concepts_from_verified_warehouse,
     mapping_profile_bytes: bytes, raw_publish_run_id: str,
     patient_contract_json: str, encounter_contract_json: str,
@@ -2226,7 +2226,7 @@ def execute_g5_person_visit_business(
         raise RuntimeError("HOLD_G5_BUSINESS_RAW_PUBLICATION_UNPINNED")
     # Only ever read the physical G4 DataFrames after rechecking exact
     # original Manifest, Approval, row counts, source keys and FK.
-    verify_fhir_g5_candidate_source_readonly(
+    verify_fhir_candidate_source_readonly(
         spark, request=scope.request_id,
         manifest_sha=scope.manifest_sha256,
         allow_write=False, retention_ok=False,
@@ -2298,7 +2298,7 @@ def execute_g5_person_visit_business(
     candidate_person = mapped.person.join(persons, "person_id", "inner")
     candidate_visit = mapped.visit.join(
         visits, ["source_system", "source_encounter_id"], "inner")
-    return plan_and_write_g5_candidate_delta(
+    return plan_and_write_omop_candidate_delta(
         spark, scope=scope, handoff=handoff, mapper_result=mapped,
         person_candidate=candidate_person,
         visit_candidate=candidate_visit, mode=mode,
@@ -2316,7 +2316,7 @@ def execute_g5_person_visit_business(
 
 
 
-def verify_fhir_g5_candidate_source_readonly(
+def verify_fhir_candidate_source_readonly(
     spark, *, request: str, manifest_sha: str, allow_write: bool,
     retention_ok: bool, strategy: str, manifest_override: str,
     source_override: str, target_override: str,
@@ -2330,8 +2330,8 @@ def verify_fhir_g5_candidate_source_readonly(
     namespace, counts, uniqueness and Encounter-to-Patient FK. The result
     means SOURCE_READONLY_PASS, not an OMOP mapping/commit receipt.
     """
-    if (request != _G5_APPROVED_REQUEST
-            or manifest_sha != _G5_APPROVED_MANIFEST_SHA
+    if (request != _PINNED_FHIR_REQUEST
+            or manifest_sha != _PINNED_FHIR_MANIFEST_SHA
             or engine_version != "0.1.7"
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or allow_write is not False
@@ -2362,8 +2362,8 @@ def verify_fhir_g5_candidate_source_readonly(
         encounter_contract_json=encounter_contract_json)
     if (g4.status != "SILVER_SKIP_VERIFIED"
             or g4.processing_version != _G4_PROCESSING
-            or g4.metrics.get("patient") != _G5_APPROVED_PATIENTS
-            or g4.metrics.get("encounter") != _G5_APPROVED_ENCOUNTERS
+            or g4.metrics.get("patient") != _PINNED_FHIR_PATIENTS
+            or g4.metrics.get("encounter") != _PINNED_FHIR_ENCOUNTERS
             or g4.metrics.get("quarantine_or_reject") != 0
             or not isinstance(g4.publication_id, str)
             or not g4.publication_id):
@@ -2384,8 +2384,8 @@ def verify_fhir_g5_candidate_source_readonly(
         "manifest_sha256": manifest_sha,
         "processing_version": _G4_PROCESSING,
         "publication_id": g4.publication_id,
-        "patient_count": _G5_APPROVED_PATIENTS,
-        "encounter_count": _G5_APPROVED_ENCOUNTERS,
+        "patient_count": _PINNED_FHIR_PATIENTS,
+        "encounter_count": _PINNED_FHIR_ENCOUNTERS,
         "quarantine_count": 0,
         "patient_contract_sha256": hashlib.sha256(patient_bytes).hexdigest(),
         "encounter_contract_sha256": hashlib.sha256(encounter_bytes).hexdigest(),
@@ -2399,8 +2399,8 @@ def verify_fhir_g5_candidate_source_readonly(
     if (not required_patient.issubset(patient.columns)
             or not required_encounter.issubset(encounter.columns)):
         raise RuntimeError("HOLD_G5_CANONICAL_COLUMNS_DRIFT")
-    if (patient.count() != _G5_APPROVED_PATIENTS
-            or encounter.count() != _G5_APPROVED_ENCOUNTERS):
+    if (patient.count() != _PINNED_FHIR_PATIENTS
+            or encounter.count() != _PINNED_FHIR_ENCOUNTERS):
         raise RuntimeError("HOLD_G5_SILVER_COUNTS_DRIFT")
     source_system = "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID
     for frame, key, name in (
@@ -2439,7 +2439,7 @@ def verify_fhir_g5_candidate_source_readonly(
 
 
 
-def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) -> str:
+def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> str:
     """P1 real G4 Silver code inventory; NEVER maps IDs, Concepts or writes.
 
     Only run AFTER the exact G5 source physical gate has independently verified
@@ -2447,7 +2447,7 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
     Raw patient/encounter identifiers are NOT returned. Source codes are
     synthetic G4 terminology data, with bounded output and no clinical IDs.
     """
-    accepted = verify_fhir_g5_candidate_source_readonly(
+    accepted = verify_fhir_candidate_source_readonly(
         spark, **read_only_args)
     if accepted != (
         "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
@@ -2463,14 +2463,14 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
         raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
     approval = approvals[0].asDict(recursive=True)
     if (approval.get("status") != "SILVER_APPROVED"
-            or approval.get("manifest_sha256") != _G5_APPROVED_MANIFEST_SHA
+            or approval.get("manifest_sha256") != _PINNED_FHIR_MANIFEST_SHA
             or approval.get("processing_version") != _G4_PROCESSING
-            or approval.get("patient_count") != _G5_APPROVED_PATIENTS
-            or approval.get("encounter_count") != _G5_APPROVED_ENCOUNTERS
+            or approval.get("patient_count") != _PINNED_FHIR_PATIENTS
+            or approval.get("encounter_count") != _PINNED_FHIR_ENCOUNTERS
             or approval.get("quarantine_count") != 0):
         raise RuntimeError("HOLD_P1_APPROVAL_CHANGED")
-    if patient.count() != _G5_APPROVED_PATIENTS or (
-            encounter.count() != _G5_APPROVED_ENCOUNTERS):
+    if patient.count() != _PINNED_FHIR_PATIENTS or (
+            encounter.count() != _PINNED_FHIR_ENCOUNTERS):
         raise RuntimeError("HOLD_P1_SOURCE_ROW_COUNT_CHANGED")
 
     if "source_record_id" not in patient.columns or patient.filter(
@@ -2480,11 +2480,11 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
         # Person.person_source_value in official CDM 5.4 is VARCHAR(50).
         raise RuntimeError("HOLD_P1_PERSON_SOURCE_VALUE_TOO_LONG_OR_NULL")
     roles = (
-        ("gender_code", patient, _G5_APPROVED_PATIENTS),
-        ("race_code", patient, _G5_APPROVED_PATIENTS),
-        ("ethnicity_code", patient, _G5_APPROVED_PATIENTS),
-        ("encounter_class", encounter, _G5_APPROVED_ENCOUNTERS),
-        ("source_code", encounter, _G5_APPROVED_ENCOUNTERS),
+        ("gender_code", patient, _PINNED_FHIR_PATIENTS),
+        ("race_code", patient, _PINNED_FHIR_PATIENTS),
+        ("ethnicity_code", patient, _PINNED_FHIR_PATIENTS),
+        ("encounter_class", encounter, _PINNED_FHIR_ENCOUNTERS),
+        ("source_code", encounter, _PINNED_FHIR_ENCOUNTERS),
     )
     counts = {}
     for field, frame, expected in roles:
@@ -2514,13 +2514,13 @@ def verify_fhir_g5_concept_source_inventory_readonly(spark, **read_only_args) ->
     payload = json.dumps({
         "status": "P1_G4_CODE_INVENTORY_PHYSICAL_READONLY_ONLY",
         "request_id": read_only_args["request"],
-        "delivered_manifest_sha256": _G5_APPROVED_MANIFEST_SHA,
+        "delivered_manifest_sha256": _PINNED_FHIR_MANIFEST_SHA,
         "source_batch_id": approval["source_batch_id"],
         "processing_version": _G4_PROCESSING,
         "source_system": source_system,
         "hospital_id": _FHIR_SOURCE_HOSPITAL_ID,
-        "patient_count": _G5_APPROVED_PATIENTS,
-        "encounter_count": _G5_APPROVED_ENCOUNTERS,
+        "patient_count": _PINNED_FHIR_PATIENTS,
+        "encounter_count": _PINNED_FHIR_ENCOUNTERS,
         "code_counts": counts,
     }, sort_keys=True, separators=(",", ":"))
     if len(payload.encode("utf-8")) > 16000:
@@ -2866,12 +2866,6 @@ def verify_fhir_canonical_readonly(spark, *, request: str, allow_write: bool,
 # alias identity preserves signatures, guards, Stage authority, and exceptions.
 process_fhir_bronze_snapshot = verify_fhir_g3_bronze
 process_fhir_silver_publication = verify_fhir_g4_silver
-verify_fhir_dynamic_silver_source_readonly = verify_fhir_g5_dynamic_silver_source_readonly
-plan_and_write_omop_candidate_delta = plan_and_write_g5_candidate_delta
-verify_candidate_transport_source_only = execute_g5_candidate_from_trusted_controller
-execute_person_visit_candidate_publication = execute_g5_person_visit_business
-verify_fhir_candidate_source_readonly = verify_fhir_g5_candidate_source_readonly
-verify_fhir_concept_source_inventory_readonly = verify_fhir_g5_concept_source_inventory_readonly
 verify_fhir_bronze_negative_readonly = verify_fhir_g3_negative_readonly
 
 if __name__ == "__main__":
