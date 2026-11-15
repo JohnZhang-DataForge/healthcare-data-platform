@@ -1,1 +1,1 @@
-"""G5 source-only signed evidence transport; no writer capabilities."""
+"""source-only signed evidence transport; no writer capabilities."""
