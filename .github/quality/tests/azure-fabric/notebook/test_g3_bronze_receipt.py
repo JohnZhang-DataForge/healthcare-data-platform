@@ -129,7 +129,7 @@ class G3OfflineTests(unittest.TestCase):
                 ("manifest_sha", "bad"), ("strategy", "HALT")):
             with self.subTest(key=key):
                 other = dict(self.params, **{key: value})
-                with self.assertRaisesRegex(RuntimeError, "HOLD_G3"):
+                with self.assertRaisesRegex(RuntimeError, "HOLD_BRONZE"):
                     nb.process_fhir_bronze_snapshot(object(), **other)
 
     def test_real_manifest_five_source_sha_and_new_receipt(self):
