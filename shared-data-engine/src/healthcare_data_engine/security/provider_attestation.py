@@ -44,6 +44,13 @@ MAX_ENVELOPE_BYTES = 8192
 MAX_TTL_SECONDS = 300
 CLOCK_SKEW_SECONDS = 30
 
+# Translate only at the frozen signed-wire boundary; internal Python names
+# describe capabilities, not the historical development milestones.
+_LEGACY_SIGNED_WIRE_TO_SCOPE_ATTRIBUTE = {
+    "f1_release_metadata_sha256": "vocabulary_release_metadata_sha256",
+    "f2_identity_snapshot_fingerprint": "identity_snapshot_fingerprint",
+}
+
 PAYLOAD_FIELDS = frozenset({
     "schema_version", "issuer", "audience", "purpose",
     "workspace_id", "warehouse_id", "request_id", "source_batch_id",
@@ -98,8 +105,8 @@ class TrustedTechnicalScope:
     source_format: str
     source_system: str
     stage: str
-    f1_release_metadata_sha256: str
-    f2_identity_snapshot_fingerprint: str
+    vocabulary_release_metadata_sha256: str
+    identity_snapshot_fingerprint: str
     technical_evidence_sha256: str
     workspace_id: str = WORKSPACE_ID
     warehouse_id: str = WAREHOUSE_ID
@@ -120,8 +127,8 @@ class TrustedTechnicalScope:
                        for value in (
                            self.source_batch_id, self.manifest_sha256,
                            self.mapping_profile_sha256, self.stage_scope_version,
-                           self.f1_release_metadata_sha256,
-                           self.f2_identity_snapshot_fingerprint,
+                           self.vocabulary_release_metadata_sha256,
+                           self.identity_snapshot_fingerprint,
                            self.technical_evidence_sha256))):
             raise TransportHold("TECHNICAL_TRANSPORT_TRUSTED_STAGE_SCOPE_INVALID")
 
@@ -133,8 +140,8 @@ class VerifiedTransport:
     status: str
     attestation_sha256: str
     mapping_profile_sha256: str
-    f1_release_metadata_sha256: str
-    f2_identity_snapshot_fingerprint: str
+    vocabulary_release_metadata_sha256: str
+    identity_snapshot_fingerprint: str
     clinical_review_sha256: str
     license_review_sha256: str
     provider_commit_sha: str
@@ -150,8 +157,8 @@ class VerifiedTechnicalTransport:
     status: str
     attestation_sha256: str
     mapping_profile_sha256: str
-    f1_release_metadata_sha256: str
-    f2_identity_snapshot_fingerprint: str
+    vocabulary_release_metadata_sha256: str
+    identity_snapshot_fingerprint: str
     technical_evidence_sha256: str
     provider_commit_sha: str
     expires_at_utc: str
@@ -243,7 +250,8 @@ def _validate_payload(payload: object, *, expected_provider_commit: str,
             raise TransportHold("TECHNICAL_TRANSPORT_TRUSTED_STAGE_SCOPE_REQUIRED")
         expected_technical_scope.validate()
         required.update({
-            field: getattr(expected_technical_scope, field)
+            field: getattr(expected_technical_scope,
+                           _LEGACY_SIGNED_WIRE_TO_SCOPE_ATTRIBUTE.get(field, field))
             for field in (
                 "request_id", "source_batch_id", "manifest_sha256",
                 "mapping_profile_sha256", "source_format", "source_system",
@@ -363,8 +371,8 @@ def _verify_source_only(
                 "FROZEN_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE"),
             attestation_sha256=hashlib.sha256(raw).hexdigest(),
             mapping_profile_sha256=payload["mapping_profile_sha256"],
-            f1_release_metadata_sha256=payload["f1_release_metadata_sha256"],
-            f2_identity_snapshot_fingerprint=payload["f2_identity_snapshot_fingerprint"],
+            vocabulary_release_metadata_sha256=payload["f1_release_metadata_sha256"],
+            identity_snapshot_fingerprint=payload["f2_identity_snapshot_fingerprint"],
             technical_evidence_sha256=payload["technical_evidence_sha256"],
             provider_commit_sha=payload["provider_commit_sha"],
             expires_at_utc=payload["expires_at_utc"],
@@ -380,8 +388,8 @@ def _verify_source_only(
         status="TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
         attestation_sha256=hashlib.sha256(raw).hexdigest(),
         mapping_profile_sha256=payload["mapping_profile_sha256"],
-        f1_release_metadata_sha256=payload["f1_release_metadata_sha256"],
-        f2_identity_snapshot_fingerprint=payload["f2_identity_snapshot_fingerprint"],
+        vocabulary_release_metadata_sha256=payload["f1_release_metadata_sha256"],
+        identity_snapshot_fingerprint=payload["f2_identity_snapshot_fingerprint"],
         clinical_review_sha256=payload["clinical_review_sha256"],
         license_review_sha256=payload["license_review_sha256"],
         provider_commit_sha=payload["provider_commit_sha"],
