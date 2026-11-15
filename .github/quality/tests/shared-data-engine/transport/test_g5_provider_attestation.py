@@ -96,8 +96,8 @@ class G5ProviderAttestationOffline(unittest.TestCase):
         result = self.check(self.sign())
         self.assertEqual(result.status, "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY")
         self.assertEqual(result.mapping_profile_sha256, t.MAPPING_PROFILE_SHA)
-        self.assertEqual(result.f1_release_metadata_sha256, "3" * 64)
-        self.assertEqual(result.f2_identity_snapshot_fingerprint, "4" * 64)
+        self.assertEqual(result.vocabulary_release_metadata_sha256, "3" * 64)
+        self.assertEqual(result.identity_snapshot_fingerprint, "4" * 64)
         self.assertFalse(result.candidate_write_authorized)
         self.assertFalse(result.provisional_ids_persisted)
         self.assertFalse(result.gold_committed)
@@ -185,8 +185,8 @@ class G5ProviderAttestationOffline(unittest.TestCase):
             source_format=p["source_format"],
             source_system=p["source_system"],
             stage=p["stage"],
-            f1_release_metadata_sha256=p["f1_release_metadata_sha256"],
-            f2_identity_snapshot_fingerprint=p["f2_identity_snapshot_fingerprint"],
+            vocabulary_release_metadata_sha256=p["f1_release_metadata_sha256"],
+            identity_snapshot_fingerprint=p["f2_identity_snapshot_fingerprint"],
             technical_evidence_sha256=p["technical_evidence_sha256"],
         )
         return p, scope
