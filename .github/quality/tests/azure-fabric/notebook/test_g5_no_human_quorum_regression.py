@@ -38,7 +38,7 @@ class G5NoHumanQuorumRegression(unittest.TestCase):
         source = NOTEBOOK.read_text(encoding="utf-8")
         tree = ast.parse(source)
         functions = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
-        writer = functions["plan_and_write_g5_candidate_delta"]
+        writer = functions["plan_and_write_omop_candidate_delta"]
         text = ast.get_source_segment(source, writer)
         self.assertIn("technical_evidence_sha256 is not None", text)
         self.assertIn("trusted_technical_release_gate", text)
