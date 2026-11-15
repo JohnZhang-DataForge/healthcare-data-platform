@@ -2150,8 +2150,8 @@ def verify_candidate_transport_source_only(
     if (not isinstance(verified, (VerifiedTransport, VerifiedTechnicalTransport))
             or verified.status not in (
                 "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY",
-                "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE",
-                "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
+                "DYNAMIC_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE",
+                "FROZEN_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
             or verified.candidate_write_authorized is not False
             or verified.gold_committed is not False
             or verified.provisional_ids_persisted is not False):
