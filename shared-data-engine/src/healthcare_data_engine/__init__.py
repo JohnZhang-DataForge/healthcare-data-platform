@@ -20,7 +20,7 @@ __all__ = [
     "PublicationRecord", "decide_replay", "reconcile_patient_encounter", "PatientEncounterReconciliation",
 ]
 
-# G5 OMOP mapping API is pure PySpark and has no platform I/O.
+# OMOP Candidate OMOP mapping API is pure PySpark and has no platform I/O.
 from healthcare_data_engine.mapping.omop.candidates import (
     OmopCandidates, load_omop_mapping_profile, build_omop_candidates,
 )
@@ -69,7 +69,7 @@ __all__ += [
     "inspect_target_concepts",
 ]
 
-# Source-only G5/F2 provisional-ID candidate handoff. Not a Gold map.
+# Source-only OMOP Candidate/Identity provisional-ID candidate handoff. Not a Gold map.
 from healthcare_data_engine.identity.candidate_handoff import (
     CandidateIdentityHold, CandidatePersonId, CandidateVisitId,
     PersonVisitCandidateHandoff, plan_candidate_identity_handoff,
@@ -79,7 +79,7 @@ __all__ += [
     "PersonVisitCandidateHandoff", "plan_candidate_identity_handoff",
 ]
 
-# P3 immutable Candidate release/replay planner, pure business code.
+# Candidate immutable Candidate release/replay planner, pure business code.
 # This API has no filesystem/Spark/SQL/Fabric I/O and cannot grant Gold.
 from healthcare_data_engine.mapping.omop.candidate_publication import (
     CandidatePublicationHold, CandidatePublicationPlan, FrozenCandidateScope,
