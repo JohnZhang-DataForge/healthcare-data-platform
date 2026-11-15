@@ -132,7 +132,7 @@ class NegativeBeforeAnySparkRead(unittest.TestCase):
             with self.subTest(g4=x):
                 stub = Mock(return_value=g4_fixture(**x))
                 with patch.dict(CHECK.__globals__, {"verify_fhir_g4_silver": stub}):
-                    with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_G4_PHYSICAL"):
+                    with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_SILVER_PHYSICAL"):
                         CHECK(object(), **args())
                 self.assertEqual(stub.call_count, 1)
                 self.assertEqual(stub.call_args.kwargs["mode"], "SILVER_READBACK_ONLY")
