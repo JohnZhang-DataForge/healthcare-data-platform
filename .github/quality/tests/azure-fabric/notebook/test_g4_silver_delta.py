@@ -337,7 +337,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             hospital_id=hospital, feed_id=feed, source_system=source,
             request_id="atlanta-fhir-gh-41552666929",
             source_batch_id="a"*64,
-            manifest_sha256=nb._G5_APPROVED_MANIFEST_SHA,
+            manifest_sha256=nb._PINNED_FHIR_MANIFEST_SHA,
             silver_processing_version=nb._G4_PROCESSING,
             silver_publication_id="synthetic-silver-approval",
             mapping_sha256="c"*64,
@@ -415,12 +415,12 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             encounter_contract_json="synthetic-contract-for-offline-only",
         )
         args.update(overrides)
-        with patch.dict(nb.plan_and_write_g5_candidate_delta.__globals__, {
+        with patch.dict(nb.plan_and_write_omop_candidate_delta.__globals__, {
             "_write_delta": self.write,
             "_delta_snapshot_exists": lambda spark, path: path in self.spark.delta,
-            "verify_fhir_g5_candidate_source_readonly": self.fake_source_fence,
+            "verify_fhir_candidate_source_readonly": self.fake_source_fence,
         }):
-            return nb.plan_and_write_g5_candidate_delta(self.spark, **args)
+            return nb.plan_and_write_omop_candidate_delta(self.spark, **args)
 
     def test_p3_first_write_approval_last_then_replay_skip(self):
         self.assertEqual(self.invoke(), "G5_CANDIDATE_APPROVED_DELTA_ONLY_NOT_GOLD")
@@ -595,7 +595,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
     def test_real_business_entry_fails_on_missing_technical_release_before_spark(self):
         with self.assertRaisesRegex(RuntimeError,
                                     "HOLD_G5_BUSINESS_TECHNICAL_STAGE_RELEASE_MISSING"):
-            nb.execute_g5_person_visit_business(
+            nb.execute_person_visit_candidate_publication(
                 self.spark, scope=self.scope, handoff=self.handoff,
                 concepts_from_verified_warehouse=None,
                 mapping_profile_bytes=b"{}",
@@ -612,7 +612,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
     def test_real_business_entry_rejects_unpinned_mapping_before_spark(self):
         with self.assertRaisesRegex(RuntimeError,
                                     "HOLD_G5_BUSINESS_MAPPING_PROFILE_BYTES"):
-            nb.execute_g5_person_visit_business(
+            nb.execute_person_visit_candidate_publication(
                 self.spark, scope=self.scope, handoff=self.handoff,
                 concepts_from_verified_warehouse=None,
                 mapping_profile_bytes=b'{"unapproved": true}',
@@ -630,9 +630,9 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
 
     def test_p3_notebook_has_no_write_runmode_dispatch(self):
         import inspect
-        src = inspect.getsource(nb.plan_and_write_g5_candidate_delta)
+        src = inspect.getsource(nb.plan_and_write_omop_candidate_delta)
         self.assertIn("G5_CANDIDATE_WRITE", src)
-        self.assertTrue(callable(nb.execute_g5_person_visit_business))
+        self.assertTrue(callable(nb.execute_person_visit_candidate_publication))
         self.assertIn("_write_delta(person_candidate", src)
         self.assertIn("_write_delta(approval, paths", src)
         native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"
@@ -706,10 +706,10 @@ class G5TrustedControllerOffline(unittest.TestCase):
             self.business_calls.append(kwargs)
             return "SYNTHETIC_P3_BUSINESS_ENTRY_CALLED_NOT_CLOUD"
         with patch.dict(
-            nb.execute_g5_candidate_from_trusted_controller.__globals__,
-            {"execute_g5_person_visit_business": business},
+            nb.verify_candidate_transport_source_only.__globals__,
+            {"execute_person_visit_candidate_publication": business},
         ):
-            return nb.execute_g5_candidate_from_trusted_controller(
+            return nb.verify_candidate_transport_source_only(
                 self.spark, provider=provider, mode=mode)
 
     def test_g5_controller_missing_provider_holds_before_spark(self):
@@ -799,7 +799,7 @@ class G5TrustedControllerOffline(unittest.TestCase):
         native = (ROOT / "azure-fabric/workspaces/healthcare-omop/"
                   "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
         main = native.split('if __name__ == "__main__":')[-1]
-        self.assertNotIn("execute_g5_candidate_from_trusted_controller(", main)
+        self.assertNotIn("verify_candidate_transport_source_only(", main)
         self.assertNotIn('run_mode == "G5_CANDIDATE_WRITE"', main)
         self.assertIn('run_mode = "HALT"', native)
 
