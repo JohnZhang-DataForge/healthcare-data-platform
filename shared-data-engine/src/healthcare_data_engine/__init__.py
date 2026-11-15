@@ -45,7 +45,7 @@ __all__ += [
 # Pure source-only Identity/Concept/FK preflight, not actual Gold allocation.
 from healthcare_data_engine.identity.preview import (
     IdentityPreviewHold, PersistedIdentity, IdentitySnapshot, PlannedIdentity,
-    IdentityPreview, verify_allocation_proposal, bridge_f2_person_visit_allocation,
+    IdentityPreview, verify_allocation_proposal,
     adapt_person_visit_allocation_preview, require_preview_snapshot_unchanged,
 )
 from healthcare_data_engine.identity.references import (
@@ -60,7 +60,7 @@ from healthcare_data_engine.mapping.omop.target_concepts import (
 __all__ += [
     "IdentityPreviewHold", "PersistedIdentity", "IdentitySnapshot",
     "PlannedIdentity", "IdentityPreview", "verify_allocation_proposal",
-    "bridge_f2_person_visit_allocation", "adapt_person_visit_allocation_preview",
+    "adapt_person_visit_allocation_preview",
     "require_preview_snapshot_unchanged",
     "ReferenceHold", "ResolvedParent", "resolve_parent_reference",
     "resolve_declared_dependencies",
