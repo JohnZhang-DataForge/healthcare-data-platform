@@ -195,14 +195,14 @@ class SnapshotAndIdentityPreviewTests(unittest.TestCase):
     def test_bridge_rejects_unreviewed_target_or_broken_proposal(self):
         result = plan_ids([legacy_key()], (), {"PERSON": 1, "VISIT_OCCURRENCE": 1},
                           {"PERSON": [], "VISIT_OCCURRENCE": []})
-        with self.assertRaisesRegex(IdentityPreviewHold, "F2_SCOPE_PERSON_VISIT_ONLY"):
+        with self.assertRaisesRegex(IdentityPreviewHold, "ALLOCATION_SCOPE_PERSON_VISIT_ONLY"):
             future = condition_registry()
             extra = IdentitySnapshot(
                 (), ((PERSON, 1), (VISIT, 1), ("cdm.condition_occurrence", 1)),
                 ((PERSON, ()), (VISIT, ()), ("cdm.condition_occurrence", ())),
                 SHA_A, SHA_B, future)
             adapt_person_visit_allocation_preview(result, extra)
-        with self.assertRaisesRegex(IdentityPreviewHold, "F2_COUNTERS_INVALID"):
+        with self.assertRaisesRegex(IdentityPreviewHold, "ALLOCATION_COUNTERS_INVALID"):
             broken = replace(result, next_free=(("UNKNOWN", 2),))
             adapt_person_visit_allocation_preview(broken, snapshot())
 
