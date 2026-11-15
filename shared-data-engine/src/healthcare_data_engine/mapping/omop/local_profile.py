@@ -236,7 +236,7 @@ def build_mapping_coverage_review(
         profile = load_omop_mapping_profile(
             draft.profile_bytes, draft.profile_sha256, source_system)
     except (UnicodeDecodeError, ValueError, KeyError, TypeError):
-        raise LocalProfileHold("LOCALDP_REVIEW_G5_PROFILE_INVALID") from None
+        raise LocalProfileHold("LOCALDP_REVIEW_CANDIDATE_PROFILE_INVALID") from None
 
     if (not isinstance(observed_codes, Mapping)
             or set(observed_codes) != set(_FIELDS)
