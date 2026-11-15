@@ -12,8 +12,15 @@ import json
 from pathlib import Path
 import unittest
 
-from pyspark.sql import SparkSession
-from pyspark.sql import functions as F
+try:
+    from pyspark.sql import SparkSession
+    from pyspark.sql import functions as F
+except ImportError:
+    # The 3.13 pure-registry discovery runs before Spark is installed.
+    # Spark tests execute under the pinned 3.11 runtime (and separately
+    # under the actual 3.13 Spark runtime after installation).
+    SparkSession = None
+    F = None
 
 from healthcare_data_engine.canonical.validation import accepted_dataframe
 from healthcare_data_engine.mapping.omop.candidates import build_omop_candidates
@@ -22,6 +29,7 @@ from test_semantic_migration_fhir_eight import canonicalize, source_context
 ROOT = Path(__file__).resolve().parents[5]
 
 
+@unittest.skipIf(SparkSession is None, "PySpark not installed in pure contract environment")
 class SyntheticFhirToOmopCandidateTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
