@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "azure-fabric/warehouse/omop-foundation/writer"))
 from identity_plan import IdentityKey, plan_ids
 from healthcare_data_engine.identity.preview import (
     IdentityPreview, IdentityPreviewHold, IdentitySnapshot, PersistedIdentity,
-    PlannedIdentity, bridge_f2_person_visit_allocation, adapt_person_visit_allocation_preview,
+    PlannedIdentity, adapt_person_visit_allocation_preview,
     verify_allocation_proposal,
     require_preview_snapshot_unchanged,
 )
@@ -83,16 +83,13 @@ def condition_registry():
 
 
 class SnapshotAndIdentityPreviewTests(unittest.TestCase):
-    def test_semantic_preview_adapter_is_exact_legacy_callable(self):
+    def test_identity_preview_adapter_has_one_semantic_export(self):
         import healthcare_data_engine as engine
         self.assertIs(
-            adapt_person_visit_allocation_preview,
-            bridge_f2_person_visit_allocation,
-        )
-        self.assertIs(
             engine.adapt_person_visit_allocation_preview,
-            engine.bridge_f2_person_visit_allocation,
+            adapt_person_visit_allocation_preview,
         )
+        self.assertFalse(hasattr(engine, "bridge_f2_person_visit_allocation"))
 
 
     def test_first_person_visit_batch_id_preview_not_commit(self):
@@ -204,10 +201,10 @@ class SnapshotAndIdentityPreviewTests(unittest.TestCase):
                 (), ((PERSON, 1), (VISIT, 1), ("cdm.condition_occurrence", 1)),
                 ((PERSON, ()), (VISIT, ()), ("cdm.condition_occurrence", ())),
                 SHA_A, SHA_B, future)
-            bridge_f2_person_visit_allocation(result, extra)
+            adapt_person_visit_allocation_preview(result, extra)
         with self.assertRaisesRegex(IdentityPreviewHold, "F2_COUNTERS_INVALID"):
             broken = replace(result, next_free=(("UNKNOWN", 2),))
-            bridge_f2_person_visit_allocation(broken, snapshot())
+            adapt_person_visit_allocation_preview(broken, snapshot())
 
     def test_arbitrary_third_target_plan_can_be_checked_not_allocated(self):
         reg = condition_registry()
