@@ -6,6 +6,7 @@ no claim is made that historic external signers have been migrated.
 from __future__ import annotations
 
 from pathlib import Path
+import ast
 import re
 import unittest
 
@@ -51,6 +52,48 @@ class SemanticIdentifiersTests(unittest.TestCase):
             self.assertNotIn(old, text)
         self.assertNotIn("HOLD_G5_", text)
         self.assertNotIn("_G5_APPROVED_", text)
+
+    def test_all_shared_and_fhir_notebook_business_symbols_are_stage_free(self):
+        """Inspect actual Python symbols, not PR diff or comment-only matches."""
+        phase = re.compile(r"(?:^|_)(?:g[1-9]\\d?|f[1-9]\\d?|p[1-9]\\d?)(?:_|$)", re.I)
+        # These two symbols are signed wire keys/attributes in existing external
+        # attestation payloads; changing them without issuer migration breaks signatures.
+        signed_wire = {"f1_release_metadata_sha256",
+                       "f2_identity_snapshot_fingerprint"}
+        for path in (*sorted(PACKAGE.rglob("*.py")), NOTEBOOK):
+            source = path.read_text(encoding="utf-8")
+            syntax = ast.parse(source, filename=str(path))
+            found = []
+            for node in ast.walk(syntax):
+                symbol = None
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                    symbol = node.name
+                elif isinstance(node, (ast.Name, ast.Attribute)):
+                    symbol = node.id if isinstance(node, ast.Name) else node.attr
+                elif isinstance(node, ast.arg):
+                    symbol = node.arg
+                elif isinstance(node, ast.keyword):
+                    symbol = node.arg
+                if symbol and phase.search(symbol) and symbol not in signed_wire:
+                    found.append((getattr(node, "lineno", None), symbol))
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                self.assertEqual(found, [])
+            if path == NOTEBOOK:
+                for prefix in ("HOLD_G3_", "HOLD_G4_", "HOLD_G5_",
+                               "HOLD_P1_", "HOLD_P2_", "FHIR_G3_", "FHIR_G4_"):
+                    self.assertNotIn(prefix, source)
+        # One canonical callable per source boundary: no legacy G3/G4 alias.
+        notebook = NOTEBOOK.read_text(encoding="utf-8")
+        for fn in ("process_fhir_bronze_snapshot",
+                   "process_fhir_silver_publication",
+                   "verify_fhir_bronze_negative_readonly",
+                   "verify_fhir_silver_dq_negative"):
+            self.assertEqual(notebook.count("def " + fn + "("), 1)
+        for old in ("verify_fhir_" + "g3_bronze",
+                    "verify_fhir_" + "g4_silver",
+                    "verify_fhir_" + "g4_dq_negative",
+                    "verify_fhir_" + "g3_negative_readonly"):
+            self.assertNotIn(old, notebook)
 
     def test_rename_map_has_unique_old_keys_and_declares_wire_exceptions(self):
         lines = RENAME_MAP.read_text(encoding="utf-8").splitlines()
