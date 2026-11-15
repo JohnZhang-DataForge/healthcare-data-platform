@@ -20,8 +20,8 @@ NB = ROOT / "azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/not
 PATIENT = ROOT / "local-data-platform/spark/contracts/canonical/patient-v1.json"
 ENCOUNTER = ROOT / "local-data-platform/spark/contracts/canonical/encounter-v1.json"
 CODE = runpy.run_path(str(NB), run_name="_g5_synthetic_no_fabric_execution")
-CHECK = CODE["verify_fhir_g5_candidate_source_readonly"]
-INVENTORY = CODE["verify_fhir_g5_concept_source_inventory_readonly"]
+CHECK = CODE["verify_fhir_candidate_source_readonly"]
+INVENTORY = CODE["verify_fhir_concept_source_inventory_readonly"]
 PATHS = CODE["_silver_publication_paths"]("atlanta-fhir-gh-41552666929")
 BATCH = "a" * 64
 SOURCE = "synthea-fhir:atlanta-hospital-a:atlanta-hospital-a-fhir-r4"
@@ -238,7 +238,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
             "FHIR_G5_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
             "APPROVAL_DELTA_PASS_20261104"))
         with patch.dict(INVENTORY.__globals__, {
-            "verify_fhir_g5_candidate_source_readonly": verified
+            "verify_fhir_candidate_source_readonly": verified
         }):
             result = INVENTORY(OnlyReads(frames), **dict(args(), **parameters))
         self.assertEqual(verified.call_count, 1)
