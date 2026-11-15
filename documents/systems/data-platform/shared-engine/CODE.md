@@ -39,6 +39,7 @@
 | [tests/test_fhir_r4_contract.py](../../../../shared-data-engine/tests/test_fhir_r4_contract.py) | 来源、负向、去重、Contract 和 replay tests |
 | [tests/fixtures/fhir_r4/semantic-migration-20261115-eight-resources.json](../../../../shared-data-engine/tests/fixtures/fhir_r4/semantic-migration-20261115-eight-resources.json) | 全新 4 Patient + 4 Encounter 合成资源，独立身份/批次，禁止真实临床数据 |
 | [tests/test_semantic_migration_fhir_eight.py](../../../../shared-data-engine/tests/test_semantic_migration_fhir_eight.py) | 新 Bundle 的 Canonical Person/Encounter PK/FK、Replay、坏引用零写入的纯测试 |
+| [tests/test_semantic_migration_identifiers.py](../../../../shared-data-engine/tests/test_semantic_migration_identifiers.py) | Shared/Notebook 阶段编号源码防回归，区别保留的签名 Wire 契约 |
 | [tests/test_spark_dataframe.py](../../../../shared-data-engine/tests/test_spark_dataframe.py) | PySpark Schema、输出及两表 FK |
 | [requirements-test.txt](../../../../shared-data-engine/requirements-test.txt) | 固定 Python 3.11/PySpark 3.5.7/构建依赖 |
 | [src/healthcare_data_engine/mapping/omop/registry.py](../../../../shared-data-engine/src/healthcare_data_engine/mapping/omop/registry.py) | 0.1.4 引入的源码模块（0.1.5 继续保留）：显式 Person/Visit Entity Registry、依赖顺序、多 OMOP Target 定义和确定性派生来源键；无 ID 分配/物理写入 |
