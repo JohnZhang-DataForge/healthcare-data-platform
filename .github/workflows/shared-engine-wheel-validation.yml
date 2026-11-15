@@ -182,7 +182,7 @@ jobs:
   fabric-runtime2-python313-source-probe:
     name: Fabric Runtime 2.0 Python 3.13 source and installed Wheel compatibility
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -227,6 +227,9 @@ jobs:
           python -m pip install 'pyspark==4.1.1'
           python -m unittest discover -s shared-data-engine/tests -p 'test_spark_dataframe.py' -v
           python -m unittest discover -s shared-data-engine/tests -p 'test_omop_candidates.py' -v
+          # This Spark-backed test is skipped during the earlier pure-only
+          # registry discovery and runs here after PySpark has been installed.
+          python -m unittest discover -s .github/quality/tests/shared-data-engine/mapping -p 'test_semantic_fhir_eight_omop_candidates.py' -v
           python - <<'PY'
           import unittest
           suite = unittest.defaultTestLoader.discover(
