@@ -146,15 +146,15 @@ class OmopCandidateSparkTest(unittest.TestCase):
         ):
             with self.subTest(update=update):
                 approval = {**self.approval, **update}
-                with self.assertRaisesRegex(ValueError, "G5_SILVER_APPROVAL"):
+                with self.assertRaisesRegex(ValueError, "CANDIDATE_SILVER_APPROVAL"):
                     self.build(approval=approval)
 
     def test_fhir_profile_checksum_schema_and_namespace_fail_closed(self):
         for kwargs, expected in (
-            ({"mapping_profile_sha256": "0" * 64}, "G5_MAPPING_PROFILE_SHA_CONFLICT"),
-            ({"mapping_profile_sha256": ""}, "G5_MAPPING_PROFILE_PIN_MISSING"),
+            ({"mapping_profile_sha256": "0" * 64}, "OMOP_MAPPING_PROFILE_SHA_CONFLICT"),
+            ({"mapping_profile_sha256": ""}, "OMOP_MAPPING_PROFILE_PIN_MISSING"),
             ({"source_system": "synthetic:hospital-b:fhir-r4"},
-             "G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH"),
+             "CANDIDATE_HOSPITAL_SOURCE_CONTEXT_MISMATCH"),
         ):
             with self.subTest(kwargs=kwargs):
                 with self.assertRaisesRegex(ValueError, expected):
@@ -162,14 +162,14 @@ class OmopCandidateSparkTest(unittest.TestCase):
         foreign_profile = deepcopy(self.profile)
         foreign_profile["source_system"] = "synthetic:hospital-b:fhir-r4"
         foreign_raw = json.dumps(foreign_profile, sort_keys=True).encode()
-        with self.assertRaisesRegex(ValueError, "G5_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH"):
+        with self.assertRaisesRegex(ValueError, "OMOP_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH"):
             self.build(mapping_profile_bytes=foreign_raw,
                        mapping_profile_sha256=hashlib.sha256(foreign_raw).hexdigest())
         duplicate = (b'{"mapping_name":"one","mapping_name":"two"}')
-        with self.assertRaisesRegex(ValueError, "G5_MAPPING_PROFILE_SHA_CONFLICT"):
+        with self.assertRaisesRegex(ValueError, "OMOP_MAPPING_PROFILE_SHA_CONFLICT"):
             load_omop_mapping_profile(
                 duplicate, self.profile_sha, self.system)
-        with self.assertRaisesRegex(ValueError, "G5_MAPPING_PROFILE_DUPLICATE_KEY"):
+        with self.assertRaisesRegex(ValueError, "OMOP_MAPPING_PROFILE_DUPLICATE_KEY"):
             load_omop_mapping_profile(
                 duplicate, hashlib.sha256(duplicate).hexdigest(), self.system)
 
@@ -177,7 +177,7 @@ class OmopCandidateSparkTest(unittest.TestCase):
         profile = deepcopy(self.profile)
         profile["race_concepts"] = {"white": 8527}  # local code, NOT FHIR code
         raw = json.dumps(profile, sort_keys=True).encode()
-        with self.assertRaisesRegex(ValueError, "G5_UNKNOWN_MAPPING_CODE:race_code"):
+        with self.assertRaisesRegex(ValueError, "OMOP_UNKNOWN_MAPPING_CODE:race_code"):
             self.build(mapping_profile_bytes=raw,
                        mapping_profile_sha256=hashlib.sha256(raw).hexdigest())
 
@@ -186,10 +186,10 @@ class OmopCandidateSparkTest(unittest.TestCase):
             [(cid, "S" if cid != 9202 else "C", None)
              for cid in (8507, 8527, 38003564, 9202, 32827)],
             "concept_id int, standard_concept string, invalid_reason string")
-        with self.assertRaisesRegex(ValueError, "G5_OMOP_STANDARD_CONCEPT"):
+        with self.assertRaisesRegex(ValueError, "OMOP_STANDARD_CONCEPT"):
             self.build(concepts=invalid)
         missing = self.concepts.filter("concept_id != 32827")
-        with self.assertRaisesRegex(ValueError, "G5_OMOP_STANDARD_CONCEPT"):
+        with self.assertRaisesRegex(ValueError, "OMOP_STANDARD_CONCEPT"):
             self.build(concepts=missing)
 
     def test_missing_duplicate_or_cross_hospital_ids_hold(self):
@@ -198,9 +198,9 @@ class OmopCandidateSparkTest(unittest.TestCase):
         cross = self.identity.withColumn(
             "hospital_id", F.lit("hospital-b"))
         for ids, diagnostic in (
-            (missing, "G5_STABLE_PERSON_ID_NOT_FOUND"),
-            (duplicate, "G5_STABLE_ID_MAP_DUPLICATE_SOURCE"),
-            (cross, "G5_STABLE_PERSON_ID_NOT_FOUND"),
+            (missing, "CANDIDATE_STABLE_PERSON_ID_NOT_FOUND"),
+            (duplicate, "CANDIDATE_STABLE_ID_MAP_DUPLICATE_SOURCE"),
+            (cross, "CANDIDATE_STABLE_PERSON_ID_NOT_FOUND"),
         ):
             with self.subTest(diagnostic=diagnostic):
                 with self.assertRaisesRegex(ValueError, diagnostic):
@@ -210,9 +210,9 @@ class OmopCandidateSparkTest(unittest.TestCase):
         for proposed in ("hospital-b", "", "hospital-a ", "hospital-a:fhir-r4"):
             with self.subTest(proposed=proposed):
                 with self.assertRaisesRegex(
-                        ValueError, "G5_HOSPITAL_(ID_REQUIRED|SOURCE_CONTEXT_MISMATCH)"):
+                        ValueError, "CANDIDATE_HOSPITAL_(ID_REQUIRED|SOURCE_CONTEXT_MISMATCH)"):
                     self.build(hospital_id=proposed)
-        with self.assertRaisesRegex(ValueError, "G5_HOSPITAL_SOURCE_CONTEXT_MISMATCH"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_HOSPITAL_SOURCE_CONTEXT_MISMATCH"):
             self.build(source_system="synthetic:hospital-b:fhir-r4")
 
     def test_real_f1_warehouse_schema_and_global_person_id_uniqueness(self):
@@ -225,31 +225,31 @@ class OmopCandidateSparkTest(unittest.TestCase):
             identity_map=self.identity.unionByName(another)).person.first().person_id,
             123456)
         same_id = another.withColumn("omop_id", F.lit(123456))
-        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_DUPLICATE_PERSON_ID"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STABLE_ID_MAP_DUPLICATE_PERSON_ID"):
             self.build(identity_map=self.identity.unionByName(same_id))
         collision = another.withColumn(
             "hospital_id", F.lit("HOSPITAL-A")).withColumn(
             "source_business_key",
             F.upper(F.col("source_business_key")))
-        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_COLLATION_COLLISION"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STABLE_ID_MAP_COLLATION_COLLISION"):
             self.build(identity_map=self.identity.unionByName(collision))
 
     def test_wrong_entity_or_missing_map_fields_cannot_publish(self):
         visit_only = self.identity.withColumn("entity_type", F.lit("VISIT_OCCURRENCE"))
-        with self.assertRaisesRegex(ValueError, "G5_STABLE_PERSON_ID_NOT_FOUND"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STABLE_PERSON_ID_NOT_FOUND"):
             self.build(identity_map=visit_only)
-        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_SCHEMA_INVALID"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STABLE_ID_MAP_SCHEMA_INVALID"):
             self.build(identity_map=self.identity.drop("hospital_id"))
-        with self.assertRaisesRegex(ValueError, "G5_STABLE_ID_MAP_INVALID_SOURCE"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STABLE_ID_MAP_INVALID_SOURCE"):
             self.build(identity_map=self.identity.withColumn(
                 "source_business_key", F.lit(None).cast("string")))
 
     def test_invalid_fk_and_duplicate_encounter_hold(self):
         foreign = self.encounters.withColumn(
             "source_person_id", F.lit("different-person"))
-        with self.assertRaisesRegex(ValueError, "G5_VISIT_PERSON_FK_NOT_FOUND"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_VISIT_PERSON_FK_NOT_FOUND"):
             self.build(encounters=foreign)
-        with self.assertRaisesRegex(ValueError, "G5_ENCOUNTER_DUPLICATE_PK"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_ENCOUNTER_DUPLICATE_PK"):
             self.build(encounters=self.encounters.unionByName(self.encounters))
 
 
