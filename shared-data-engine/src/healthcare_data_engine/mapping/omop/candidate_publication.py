@@ -1,4 +1,4 @@
-"""Pure, Vocabulary-version-agnostic P3 Candidate publication/replay plan.
+"""Pure, Vocabulary-version-agnostic Candidate Candidate publication/replay plan.
 
 Shared Engine owns ONLY deterministic business admission decisions. Fabric
 Notebook owns actual Delta errorifexists writes, independent physical readback,
@@ -106,7 +106,7 @@ def freeze_candidate_scope(
     handoff: PersonVisitCandidateHandoff, candidates: OmopCandidates, *,
     feed_id: str, request_id: str,
 ) -> FrozenCandidateScope:
-    """Bridge existing F2 preview + strict Mapper without recomputing either."""
+    """Bridge existing Identity preview + strict Mapper without recomputing either."""
     if (not isinstance(handoff, PersonVisitCandidateHandoff)
             or handoff.status != "CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
             or not isinstance(candidates, OmopCandidates)
