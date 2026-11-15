@@ -70,8 +70,8 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
             str(NATIVE), run_name="_g5_0113_wheel_native_pure_parity")
 
     def test_runtime_013_and_native_halt_fence(self):
-        self.assertEqual(engine.__version__, "0.1.14")
-        self.assertEqual(self.native["engine_version"], "0.1.14")
+        self.assertEqual(engine.__version__, "0.1.15")
+        self.assertEqual(self.native["engine_version"], "0.1.15")
         self.assertEqual(self.native["run_mode"], "HALT")
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
