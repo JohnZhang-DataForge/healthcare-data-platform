@@ -98,7 +98,7 @@ class F2CandidateIdentityHandoffTests(unittest.TestCase):
     def test_first_batch_uses_provisional_1_2_without_persisting(self):
         result = prepare(fixture())
         self.assertEqual(result.status,
-                         "G5_CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED")
+                         "CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED")
         self.assertEqual(len(result.batch_persons), 2)
         self.assertEqual(len(result.batch_visits), 4)
         self.assertEqual({x.state for x in result.batch_persons},
