@@ -55,8 +55,8 @@ def synthetic_scopes():
         source_format="FHIR_R4",
         source_system=scope.source_system,
         stage="CANDIDATE_APPROVED",
-        f1_release_metadata_sha256="e" * 64,
-        f2_identity_snapshot_fingerprint=scope.identity_snapshot_fingerprint,
+        vocabulary_release_metadata_sha256="e" * 64,
+        identity_snapshot_fingerprint=scope.identity_snapshot_fingerprint,
         technical_evidence_sha256="f" * 64,
     )
     technical.validate()
@@ -70,8 +70,8 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
             str(NATIVE), run_name="_g5_0113_wheel_native_pure_parity")
 
     def test_runtime_013_and_native_halt_fence(self):
-        self.assertEqual(engine.__version__, "0.1.16")
-        self.assertEqual(self.native["engine_version"], "0.1.16")
+        self.assertEqual(engine.__version__, "0.1.17")
+        self.assertEqual(self.native["engine_version"], "0.1.17")
         self.assertEqual(self.native["run_mode"], "HALT")
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
@@ -106,7 +106,7 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
         invalids = (
             replace(trusted, source_format="HL7_V2"),
             replace(trusted, stage="GOLD_COMMITTED"),
-            replace(trusted, f2_identity_snapshot_fingerprint="4" * 64),
+            replace(trusted, identity_snapshot_fingerprint="4" * 64),
             replace(trusted, manifest_sha256="5" * 64),
         )
         for altered in invalids:
