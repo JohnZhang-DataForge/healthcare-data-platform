@@ -324,7 +324,7 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
             self.local_person(patients=bad)
             .filter(F.col("gender_concept_id").isNull()).count(), 1
         )
-        with self.assertRaisesRegex(ValueError, "G5_UNKNOWN_MAPPING_CODE:gender_code"):
+        with self.assertRaisesRegex(ValueError, "OMOP_UNKNOWN_MAPPING_CODE:gender_code"):
             self.shared(patients=bad)
 
     def test_unknown_visit_class_is_fail_closed_by_shared(self):
@@ -332,17 +332,17 @@ class LocalSharedPersonVisitParity(unittest.TestCase):
         self.assertEqual(
             self.local_visit(unknown).filter(F.col("visit_concept_id").isNull()).count(), 2
         )
-        with self.assertRaisesRegex(ValueError, "G5_UNKNOWN_MAPPING_CODE:encounter_class"):
+        with self.assertRaisesRegex(ValueError, "OMOP_UNKNOWN_MAPPING_CODE:encounter_class"):
             self.shared(encounters=unknown)
 
     def test_foreign_hospital_identity_is_rejected_by_shared(self):
         foreign = self.ids.withColumn("hospital_id", F.lit("hospital-b"))
-        with self.assertRaisesRegex(ValueError, "G5_STABLE_PERSON_ID_NOT_FOUND"):
+        with self.assertRaisesRegex(ValueError, "CANDIDATE_STABLE_PERSON_ID_NOT_FOUND"):
             self.shared(identity_map=foreign)
 
     def test_missing_standard_concept_fails_before_candidate(self):
         without_standard = self.concepts.withColumn("standard_concept", F.lit("C"))
-        with self.assertRaisesRegex(ValueError, "G5_OMOP_STANDARD_CONCEPT"):
+        with self.assertRaisesRegex(ValueError, "OMOP_STANDARD_CONCEPT"):
             self.shared(concepts=without_standard)
 
 
