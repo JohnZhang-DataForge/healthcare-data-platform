@@ -336,7 +336,7 @@ _FHIR_BRONZE_PROCESSING_VERSION = "fhir-bronze-raw-snapshot-v1:engine-0.1.1"
 def _bronze_source_receipt_path(request: str) -> str:
     import re
     if not isinstance(request, str) or not re.fullmatch(r"atlanta-fhir-gh-[0-9]{8,14}", request):
-        raise RuntimeError("HOLD_G3_UNAPPROVED_REQUEST_NAMESPACE")
+        raise RuntimeError("HOLD_BRONZE_UNAPPROVED_REQUEST_NAMESPACE")
     return (f"{_FHIR_BRONZE_SNAPSHOT_ROOT}/{_FHIR_SOURCE_HOSPITAL_ID}/{_FHIR_SOURCE_FEED_ID}/"
             f"{request}/bronze_source_snapshot")
 
@@ -391,7 +391,7 @@ def _verify_bronze_receipt_readback(spark, path: str, expected: list[dict]) -> b
     return True
 
 
-def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
+def process_fhir_bronze_snapshot(spark, *, request: str, manifest_sha: str,
                           mode: str, allow_write: bool, retention_ok: bool,
                           manifest_override: str, source_override: str,
                           target_override: str, strategy: str) -> NotebookOutcome:
@@ -407,18 +407,18 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
     if (mode not in ("BRONZE_RECEIPT", "BRONZE_READBACK_ONLY")
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or any(x != "" for x in (manifest_override, source_override, target_override))):
-        raise RuntimeError("HOLD_G3_UNSAFE_PATH_OR_MODE")
+        raise RuntimeError("HOLD_BRONZE_UNSAFE_PATH_OR_MODE")
     path = _bronze_source_receipt_path(request)
     if (mode == "BRONZE_RECEIPT" and
             (allow_write is not True or retention_ok is not True)):
-        raise RuntimeError("HOLD_G3_WRITE_OR_RETENTION_NOT_VERIFIED")
+        raise RuntimeError("HOLD_BRONZE_WRITE_OR_RETENTION_NOT_VERIFIED")
     if (mode == "BRONZE_READBACK_ONLY" and
             (allow_write is not False or retention_ok is not False)):
-        raise RuntimeError("HOLD_G3_READBACK_FLAGS_NOT_READONLY")
+        raise RuntimeError("HOLD_BRONZE_READBACK_FLAGS_NOT_READONLY")
     if (engine_version != "0.1.7" or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
-        raise RuntimeError("HOLD_G3_ENGINE_OR_MANIFEST_PIN_INVALID")
+        raise RuntimeError("HOLD_BRONZE_ENGINE_OR_MANIFEST_PIN_INVALID")
 
     from datetime import date, datetime, timezone
     context = BatchContext(
@@ -432,11 +432,11 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
             f"{_FHIR_SOURCE_FEED_ID}/{request}/landing-manifest.json")
     manifest_rows = spark.read.format("binaryFile").load(root).select("content").collect()
     if len(manifest_rows) != 1:
-        raise RuntimeError("HOLD_G3_MANIFEST_NOT_ONE_FILE")
+        raise RuntimeError("HOLD_BRONZE_MANIFEST_NOT_ONE_FILE")
     raw = bytes(manifest_rows[0].content)
     specs = _manifest_objects(raw, context)   # validates delivered manifest SHA
     if not 5 <= len(specs) <= 10:
-        raise RuntimeError("HOLD_G3_NOT_A_5_TO_10_OBJECT_BATCH")
+        raise RuntimeError("HOLD_BRONZE_NOT_A_5_TO_10_OBJECT_BATCH")
     expected = _expected_bronze_source_receipts(context, specs)
     metrics = {"patient": 0, "encounter": 0, "quarantine_or_reject": 0,
                "source_objects": len(specs)}
@@ -466,10 +466,10 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
             spark, source_root=_FHIR_SOURCE_LANDING_ROOT, manifest_bytes=raw, context=context)
         verified = verify_source_objects(raw, sources, context)
         if verified != tuple(specs):
-            raise ValueError("G3_SOURCE_RECEIPTS_CHANGED")
+            raise ValueError("BRONZE_SOURCE_RECEIPTS_CHANGED")
         by_path = {obj.source_file: obj.payload for obj in sources}
         if set(by_path) != {r["source_path"] for r in expected}:
-            raise ValueError("G3_RAW_SNAPSHOT_SOURCE_PATHS_CHANGED")
+            raise ValueError("BRONZE_RAW_SNAPSHOT_SOURCE_PATHS_CHANGED")
         complete = [{**row, "source_payload": by_path[row["source_path"]]}
                     for row in expected]
         columns = ("source_path string, source_sha256 string, source_size_bytes long, "
@@ -482,7 +482,7 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
         bronze_df = spark.createDataFrame(values, columns)
         _write_delta(bronze_df, path)  # one atomic raw+receipt Delta commit, errorifexists
         if not _verify_bronze_receipt_readback(spark, path, complete):
-            raise ValueError("G3_POSTWRITE_RAW_BYTE_READBACK_MISMATCH")
+            raise ValueError("BRONZE_POSTWRITE_RAW_BYTE_READBACK_MISMATCH")
     except Exception:
         # A write may have committed before a timeout or exception.
         # A new write is forbidden until an independent READBACK_ONLY Job.
@@ -496,13 +496,13 @@ def verify_fhir_g3_bronze(spark, *, request: str, manifest_sha: str,
 
 # G4: reuse Shared Engine's canonical transform, existing G3 raw-byte snapshot
 # verification and native Delta writing. Only this publication coordinator is new.
-_G4_PROCESSING = "fhir-silver-canonical-v1:engine-0.1.1"
+_SILVER_PROCESSING = "fhir-silver-canonical-v1:engine-0.1.1"
 _FHIR_SILVER_PUBLICATION_ROOT = "Files/silver/fhir_r4"
 
 
 def _silver_publication_paths(request: str) -> dict[str, str]:
     _bronze_source_receipt_path(request)  # namespace/path traversal validation
-    digest = hashlib.sha256(_G4_PROCESSING.encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(_SILVER_PROCESSING.encode("utf-8")).hexdigest()
     prefix = (f"{_FHIR_SILVER_PUBLICATION_ROOT}/{_FHIR_SOURCE_HOSPITAL_ID}/{_FHIR_SOURCE_FEED_ID}/"
               f"{request}/processing={digest}")
     return {"bronze": _bronze_source_receipt_path(request),
@@ -548,7 +548,7 @@ def _snapshot_silver_source_objects(spark, path: str,
                                 expected: list[dict],
                                 context: BatchContext) -> tuple[SourceObject, ...]:
     if not _verify_bronze_receipt_readback(spark, path, expected):
-        raise ValueError("G4_BRONZE_SOURCE_BYTES_OR_RECEIPTS_CHANGED")
+        raise ValueError("SILVER_BRONZE_SOURCE_BYTES_OR_RECEIPTS_CHANGED")
     # This is a NEW physical Delta scan, not reuse of the source input DataFrame.
     rows = spark.read.format("delta").load(path).collect()
     return tuple(SourceObject(
@@ -565,12 +565,12 @@ def _validate_silver_delta_contents(expected, actual, name: str) -> None:
     drift just because processed_at/processing_run_id changed.
     """
     if set(expected.columns) != set(actual.columns):
-        raise ValueError("G4_DELTA_CANONICAL_SCHEMA_CHANGED:" + name)
+        raise ValueError("SILVER_DELTA_CANONICAL_SCHEMA_CHANGED:" + name)
     columns = [c for c in expected.columns
                if c not in ("processed_at", "processing_run_id")]
     if (expected.select(*columns).exceptAll(actual.select(*columns)).count()
             or actual.select(*columns).exceptAll(expected.select(*columns)).count()):
-        raise ValueError("G4_DELTA_CANONICAL_CONTENT_MISMATCH:" + name)
+        raise ValueError("SILVER_DELTA_CANONICAL_CONTENT_MISMATCH:" + name)
 
 
 def _write_verified_canonical_silver(
@@ -859,7 +859,7 @@ def _verify_silver_publication_readback(spark, paths: dict[str, str],
         encounter_contract_bytes=encounter_contract_bytes)
     if (batch.findings or batch.patient_count != 100
             or batch.encounter_count < 100):
-        raise ValueError("G4_SILVER_RECOMPUTED_DQ_HOLD")
+        raise ValueError("SILVER_RECOMPUTED_DQ_HOLD")
     patient = spark.read.format("delta").load(paths["patient"])
     encounter = spark.read.format("delta").load(paths["encounter"])
     validate_silver_readback(patient, encounter, batch, context)
@@ -870,14 +870,14 @@ def _verify_silver_publication_readback(spark, paths: dict[str, str],
         context, batch, patient_contract_bytes, encounter_contract_bytes)
     if (len(approvals) != 1 or
             approvals[0].asDict(recursive=True) != expected_approval):
-        raise ValueError("G4_SILVER_APPROVAL_FENCE_INVALID")
+        raise ValueError("SILVER_APPROVAL_FENCE_INVALID")
     return batch
 
 
 
 # G4.c physical Delta rejection of isolated synthetic missing-DOB source.
 # Transform/conversion remains wholly inside Shared Engine 0.1.7.
-def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
+def verify_fhir_silver_dq_negative(spark, *, request: str, manifest_sha: str,
                                derivation_sha: str, mode: str,
                                allow_write: bool, retention_ok: bool,
                                strategy: str, manifest_override: str,
@@ -890,7 +890,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
                            "atlanta-fhir-gh-41539769718")
             or any(x != "" for x in (
                 manifest_override, source_override, target_override))):
-        raise RuntimeError("HOLD_G4_DQ_MODE_NAMESPACE_OR_OVERRIDE")
+        raise RuntimeError("HOLD_SILVER_DQ_MODE_NAMESPACE_OR_OVERRIDE")
     paths = _silver_publication_paths(request)
     writable = mode == "SILVER_DQ_QUARANTINE_WRITE"
     if (allow_write is not writable or retention_ok is not writable
@@ -900,12 +900,12 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
             or len(manifest_sha) != 64 or len(derivation_sha) != 64
             or any(c not in "0123456789abcdef"
                    for c in manifest_sha + derivation_sha)):
-        raise RuntimeError("HOLD_G4_DQ_SHA_AND_BOOLEAN_GATES")
+        raise RuntimeError("HOLD_SILVER_DQ_SHA_AND_BOOLEAN_GATES")
     if (not isinstance(patient_contract_json, str)
             or not isinstance(encounter_contract_json, str)
             or not 0 < len(patient_contract_json) <= 5000
             or not 0 < len(encounter_contract_json) <= 5000):
-        raise RuntimeError("HOLD_G4_DQ_CONTRACT_PARAMETERS")
+        raise RuntimeError("HOLD_SILVER_DQ_CONTRACT_PARAMETERS")
     pb, eb = patient_contract_json.encode(), encounter_contract_json.encode()
     load_pinned_contract(pb, "patient")
     load_pinned_contract(eb, "encounter")
@@ -913,7 +913,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
     context = BatchContext(
         hospital_id=_FHIR_SOURCE_HOSPITAL_ID, feed_id=_FHIR_SOURCE_FEED_ID,
         source_system="synthea-fhir", request_id=request,
-        manifest_sha256=manifest_sha, processing_version=_G4_PROCESSING,
+        manifest_sha256=manifest_sha, processing_version=_SILVER_PROCESSING,
         processing_run_id="g4:" + request, source_version="FHIR_R4",
         source_ingest_date=date(2026, 11, 2),
         processed_at=datetime.now(timezone.utc))
@@ -922,12 +922,12 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
     raw = spark.read.format("binaryFile").load(
         source_file).select("content").collect()
     if len(raw) != 1:
-        raise RuntimeError("HOLD_G4_DQ_SOURCE_MANIFEST_MISSING")
+        raise RuntimeError("HOLD_SILVER_DQ_SOURCE_MANIFEST_MISSING")
     manifest_bytes = bytes(raw[0].content)
     specs = _manifest_objects(manifest_bytes, context)
     if len(specs) != 100 or json.loads(
             manifest_bytes).get("source_manifest_sha256") != derivation_sha:
-        raise RuntimeError("HOLD_G4_DQ_100_SOURCE_OR_RECIPE_SHA")
+        raise RuntimeError("HOLD_SILVER_DQ_100_SOURCE_OR_RECIPE_SHA")
     zeros = {"patient": 0, "encounter": 0, "quarantine_or_reject": 0,
              "source_objects": 100}
     try:
@@ -948,7 +948,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
     if not exists["quarantine"]:
         # Invoke EXISTING native Silver writer, not a second converter/writer.
         # That writer persists only Quarantine when any DQ finding exists.
-        result = verify_fhir_g4_silver(
+        result = process_fhir_silver_publication(
             spark, request=request, manifest_sha=manifest_sha,
             mode="SILVER_WRITE", allow_write=True, retention_ok=True,
             strategy=strategy, manifest_override="", source_override="",
@@ -973,7 +973,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
                  and "FHIR_DATE_REQUIRED" in f.detail]
         if (batch.patient_count != 99 or len(found) != 1
                 or not batch.findings or len(batch.source_receipts) != 100):
-            raise ValueError("G4_DQ_MISSING_ONE_BIRTHDATE_NOT_CONFIRMED")
+            raise ValueError("SILVER_DQ_MISSING_ONE_BIRTHDATE_NOT_CONFIRMED")
         cols = ("classification", "reason", "detail", "resource_type",
                 "resource_id", "source_file", "source_batch_id",
                 "processing_version")
@@ -985,10 +985,10 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
             paths["quarantine"]).select(*cols).collect()
         actual = sorted(tuple(getattr(row, k) for k in cols) for row in rows)
         if actual != expected:
-            raise ValueError("G4_DQ_QUARANTINE_PHYSICAL_ROWS_OR_REASON_CHANGED")
+            raise ValueError("SILVER_DQ_QUARANTINE_PHYSICAL_ROWS_OR_REASON_CHANGED")
         for k in ("bronze", "patient", "encounter", "approval"):
             if _delta_snapshot_exists(spark, paths[k]):
-                raise ValueError("G4_DQ_FORBIDDEN_APPROVAL_OR_SILVER_EXISTS")
+                raise ValueError("SILVER_DQ_FORBIDDEN_APPROVAL_OR_SILVER_EXISTS")
     except Exception:
         return NotebookOutcome("VERIFY_READONLY",
                                context.source_batch_id,
@@ -1002,7 +1002,7 @@ def verify_fhir_g4_dq_negative(spark, *, request: str, manifest_sha: str,
 
 
 
-def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
+def process_fhir_silver_publication(spark, *, request: str, manifest_sha: str,
                           mode: str, allow_write: bool, retention_ok: bool,
                           strategy: str, manifest_override: str,
                           source_override: str, target_override: str,
@@ -1017,22 +1017,22 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or any(x != "" for x in (
                 manifest_override, source_override, target_override))):
-        raise RuntimeError("HOLD_G4_MODE_STRATEGY_OR_ROOT_NOT_AUTHORIZED")
+        raise RuntimeError("HOLD_SILVER_MODE_STRATEGY_OR_ROOT_NOT_AUTHORIZED")
     paths = _silver_publication_paths(request)
     if ((mode == "SILVER_WRITE" and
          (allow_write is not True or retention_ok is not True))
             or (mode == "SILVER_READBACK_ONLY" and
                 (allow_write is not False or retention_ok is not False))):
-        raise RuntimeError("HOLD_G4_BOOLEAN_WRITE_GATES")
+        raise RuntimeError("HOLD_SILVER_BOOLEAN_WRITE_GATES")
     if (engine_version != "0.1.7" or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
-        raise RuntimeError("HOLD_G4_ENGINE_OR_MANIFEST_PIN")
+        raise RuntimeError("HOLD_SILVER_ENGINE_OR_MANIFEST_PIN")
     if (not isinstance(patient_contract_json, str)
             or not isinstance(encounter_contract_json, str)
             or not 0 < len(patient_contract_json) <= 5000
             or not 0 < len(encounter_contract_json) <= 5000):
-        raise RuntimeError("HOLD_G4_CONTRACT_INPUT_INVALID")
+        raise RuntimeError("HOLD_SILVER_CONTRACT_INPUT_INVALID")
     pb = patient_contract_json.encode("utf-8")
     eb = encounter_contract_json.encode("utf-8")
     load_pinned_contract(pb, "patient")
@@ -1041,7 +1041,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
     context = BatchContext(
         hospital_id=_FHIR_SOURCE_HOSPITAL_ID, feed_id=_FHIR_SOURCE_FEED_ID,
         source_system="synthea-fhir", request_id=request,
-        manifest_sha256=manifest_sha, processing_version=_G4_PROCESSING,
+        manifest_sha256=manifest_sha, processing_version=_SILVER_PROCESSING,
         processing_run_id="g4:" + request, source_version="FHIR_R4",
         source_ingest_date=date(2026, 11, 2),
         processed_at=datetime.now(timezone.utc))
@@ -1051,12 +1051,12 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
             f"{_FHIR_SOURCE_FEED_ID}/{request}/landing-manifest.json")
     data = spark.read.format("binaryFile").load(root).select("content").collect()
     if len(data) != 1:
-        raise RuntimeError("HOLD_G4_MANIFEST_SOURCE_NOT_ONE")
+        raise RuntimeError("HOLD_SILVER_MANIFEST_SOURCE_NOT_ONE")
     manifest_raw = bytes(data[0].content)
     # Manifest changed => fail before any Delta read/write, not a new batch path.
     specs = _manifest_objects(manifest_raw, context)
     if len(specs) != 100:
-        raise RuntimeError("HOLD_G4_SOURCE_NOT_100_OBJECTS")
+        raise RuntimeError("HOLD_SILVER_SOURCE_NOT_100_OBJECTS")
     expected = _expected_bronze_source_receipts(context, specs)
     try:
         exists = {k: _delta_snapshot_exists(spark, v) for k, v in paths.items()}
@@ -1112,7 +1112,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
             f.resource_id, f.source_file, context.source_batch_id,
             context.processing_version) for f in batch.findings]
         if not reasons:
-            reasons = [("HOLD", "G4_POPULATION_OR_ENCOUNTER_COUNT",
+            reasons = [("HOLD", "SILVER_POPULATION_OR_ENCOUNTER_COUNT",
                         "100 Patient and >=100 Encounter required", "", "",
                         "", context.source_batch_id, context.processing_version)]
         try:
@@ -1123,7 +1123,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
                 "source_batch_id string, processing_version string")
             _write_delta(quarantine, paths["quarantine"])
             if spark.read.format("delta").load(paths["quarantine"]).count() != len(reasons):
-                raise ValueError("G4_QUARANTINE_READBACK_INVALID")
+                raise ValueError("SILVER_QUARANTINE_READBACK_INVALID")
         except Exception:
             return NotebookOutcome("VERIFY_READONLY", context.source_batch_id,
                                    context.processing_version, None, metrics,
@@ -1136,7 +1136,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
     try:
         by_path = {o.source_file: o.payload for o in sources}
         if set(by_path) != {x["source_path"] for x in expected}:
-            raise ValueError("G4_SOURCE_FILE_SET_CHANGED")
+            raise ValueError("SILVER_SOURCE_FILE_SET_CHANGED")
         raw_records = [{**row, "source_payload": by_path[row["source_path"]]}
                        for row in expected]
         column_schema = (
@@ -1149,7 +1149,7 @@ def verify_fhir_g4_silver(spark, *, request: str, manifest_sha: str,
         _write_delta(raw_df, paths["bronze"])
         if not _verify_bronze_receipt_readback(
                 spark, paths["bronze"], raw_records):
-            raise ValueError("G4_POSTWRITE_RAW_SNAPSHOT_MISMATCH")
+            raise ValueError("SILVER_POSTWRITE_RAW_SNAPSHOT_MISMATCH")
         _write_verified_canonical_silver(
             spark, context=context, batch=batch, paths=paths,
             patient_contract_bytes=pb, encounter_contract_bytes=eb,
@@ -1610,7 +1610,7 @@ def _frozen_fhir_candidate_paths(scope) -> dict[str, str]:
     _bronze_source_receipt_path(scope.request_id)  # no traversal or unapproved request
     if (scope.request_id != _PINNED_FHIR_REQUEST
             or scope.manifest_sha256 != _PINNED_FHIR_MANIFEST_SHA
-            or scope.silver_processing_version != _G4_PROCESSING
+            or scope.silver_processing_version != _SILVER_PROCESSING
             or scope.patient_count != _PINNED_FHIR_PATIENTS
             or scope.encounter_count != _PINNED_FHIR_ENCOUNTERS
             or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
@@ -1706,7 +1706,7 @@ def verify_fhir_dynamic_silver_source_readonly(
             or scope is None
             or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
             or scope.feed_id != _FHIR_SOURCE_FEED_ID
-            or scope.silver_processing_version != _G4_PROCESSING):
+            or scope.silver_processing_version != _SILVER_PROCESSING):
         raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_SILVER_SOURCE_VERSION_OR_DATE")
     # This planner is a pure, typed v3 trust-scope/batch boundary. It never
     # returns authority to publish and is deliberately not the Writer path.
@@ -1726,7 +1726,7 @@ def verify_fhir_dynamic_silver_source_readonly(
         feed_id=scope.feed_id,
         source_system="synthea-fhir", request_id=scope.request_id,
         manifest_sha256=scope.manifest_sha256,
-        processing_version=_G4_PROCESSING,
+        processing_version=_SILVER_PROCESSING,
         processing_run_id="g4:" + scope.request_id,
         source_version="FHIR_R4",
         source_ingest_date=source_ingest_date,
@@ -2024,7 +2024,7 @@ def plan_and_write_omop_candidate_delta(
         }
         if technical:
             required.update({
-                "evidence_contract": "CANDIDATE_TECHNICAL_F1F2_V1",
+                "evidence_contract": "CANDIDATE_TECHNICAL_VOCABULARY_IDENTITY_V1",
                 "technical_evidence_sha256": technical_evidence_sha256,
             })
         else:
@@ -2072,7 +2072,7 @@ def plan_and_write_omop_candidate_delta(
             receipt = (
                 scope.receipt_key, scope.source_batch_id,
                 scope.mapping_sha256, scope.identity_snapshot_fingerprint,
-                "CANDIDATE_TECHNICAL_F1F2_V1", technical_evidence_sha256,
+                "CANDIDATE_TECHNICAL_VOCABULARY_IDENTITY_V1", technical_evidence_sha256,
                 scope.patient_count, scope.encounter_count, psha, vsha,
                 "CANDIDATE_APPROVED",
             )
@@ -2353,7 +2353,7 @@ def verify_fhir_candidate_source_readonly(
     # G4 independently verifies delivered manifest bytes, Bronze snapshot,
     # re-computed canonical data, persisted Approval and Quarantine fence.
     # Existing approved G4 physical data is NEVER written/overwritten.
-    silver_publication = verify_fhir_g4_silver(
+    silver_publication = process_fhir_silver_publication(
         spark, request=request, manifest_sha=manifest_sha,
         mode="SILVER_READBACK_ONLY", allow_write=False,
         retention_ok=False, strategy=strategy,
@@ -2361,7 +2361,7 @@ def verify_fhir_candidate_source_readonly(
         patient_contract_json=patient_contract_json,
         encounter_contract_json=encounter_contract_json)
     if (silver_publication.status != "SILVER_SKIP_VERIFIED"
-            or silver_publication.processing_version != _G4_PROCESSING
+            or silver_publication.processing_version != _SILVER_PROCESSING
             or silver_publication.metrics.get("patient") != _PINNED_FHIR_PATIENTS
             or silver_publication.metrics.get("encounter") != _PINNED_FHIR_ENCOUNTERS
             or silver_publication.metrics.get("quarantine_or_reject") != 0
@@ -2382,7 +2382,7 @@ def verify_fhir_candidate_source_readonly(
         "status": "SILVER_APPROVED",
         "source_batch_id": silver_publication.source_batch_id,
         "manifest_sha256": manifest_sha,
-        "processing_version": _G4_PROCESSING,
+        "processing_version": _SILVER_PROCESSING,
         "publication_id": silver_publication.publication_id,
         "patient_count": _PINNED_FHIR_PATIENTS,
         "encounter_count": _PINNED_FHIR_ENCOUNTERS,
@@ -2464,7 +2464,7 @@ def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> st
     approval = approvals[0].asDict(recursive=True)
     if (approval.get("status") != "SILVER_APPROVED"
             or approval.get("manifest_sha256") != _PINNED_FHIR_MANIFEST_SHA
-            or approval.get("processing_version") != _G4_PROCESSING
+            or approval.get("processing_version") != _SILVER_PROCESSING
             or approval.get("patient_count") != _PINNED_FHIR_PATIENTS
             or approval.get("encounter_count") != _PINNED_FHIR_ENCOUNTERS
             or approval.get("quarantine_count") != 0):
@@ -2512,11 +2512,11 @@ def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> st
 
     source_system = "synthea-fhir:" + _FHIR_SOURCE_HOSPITAL_ID + ":" + _FHIR_SOURCE_FEED_ID
     payload = json.dumps({
-        "status": "P1_G4_CODE_INVENTORY_PHYSICAL_READONLY_ONLY",
+        "status": "VOCABULARY_CODE_INVENTORY_PHYSICAL_READONLY_ONLY",
         "request_id": read_only_args["request"],
         "delivered_manifest_sha256": _PINNED_FHIR_MANIFEST_SHA,
         "source_batch_id": approval["source_batch_id"],
-        "processing_version": _G4_PROCESSING,
+        "processing_version": _SILVER_PROCESSING,
         "source_system": source_system,
         "hospital_id": _FHIR_SOURCE_HOSPITAL_ID,
         "patient_count": _PINNED_FHIR_PATIENTS,
@@ -2527,11 +2527,11 @@ def verify_fhir_concept_source_inventory_readonly(spark, **read_only_args) -> st
         raise RuntimeError("HOLD_P1_SOURCE_INVENTORY_RECEIPT_TOO_LARGE")
     return "FHIR_CANDIDATE_CONCEPT_SOURCE_INVENTORY_READONLY_PASS|" + payload
 
-_G3_NEGATIVE_REQUEST = "atlanta-fhir-gh-41539769718"
-_G3_NEGATIVE_MANIFEST_SHA = "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
+_BRONZE_NEGATIVE_REQUEST = "atlanta-fhir-gh-41539769718"
+_BRONZE_NEGATIVE_MANIFEST_SHA = "2f9ef5a555f164464a79a5dc457a6d7f9ef79156edca11b2f1fb49789c785c35"
 
 
-def verify_fhir_g3_negative_readonly(spark, *, request: str,
+def verify_fhir_bronze_negative_readonly(spark, *, request: str,
                                      manifest_sha: str, scenario: str,
                                      allow_write: bool, retention_ok: bool,
                                      strategy: str, manifest_override: str,
@@ -2546,23 +2546,23 @@ def verify_fhir_g3_negative_readonly(spark, *, request: str,
     recovery *mechanism*, not a real intercepted network ACK.
     """
     if (scenario not in ("BRONZE_DRIFT_PROBE", "BRONZE_ACK_RECOVERY_PROBE")
-            or request != _G3_NEGATIVE_REQUEST
-            or manifest_sha != _G3_NEGATIVE_MANIFEST_SHA
+            or request != _BRONZE_NEGATIVE_REQUEST
+            or manifest_sha != _BRONZE_NEGATIVE_MANIFEST_SHA
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or allow_write is not False or retention_ok is not False
             or any(x != "" for x in (
                 manifest_override, source_override, target_override))):
-        raise RuntimeError("HOLD_G3_NEGATIVE_READONLY_GATES")
-    original = verify_fhir_g3_bronze(
+        raise RuntimeError("HOLD_BRONZE_NEGATIVE_READONLY_GATES")
+    original = process_fhir_bronze_snapshot(
         spark, request=request, manifest_sha=manifest_sha,
         mode="BRONZE_READBACK_ONLY", allow_write=False,
         retention_ok=False, manifest_override="", source_override="",
         target_override="", strategy=strategy)
     if original.status != "BRONZE_SKIP_VERIFIED" or original.metrics["source_objects"] != 5:
-        raise RuntimeError("HOLD_G3_NEGATIVE_BASELINE_DELTA_NOT_VERIFIED")
+        raise RuntimeError("HOLD_BRONZE_NEGATIVE_BASELINE_DELTA_NOT_VERIFIED")
     path = _bronze_source_receipt_path(request)
     if scenario == "BRONZE_ACK_RECOVERY_PROBE":
-        return "FHIR_G3_READONLY_ACK_RECOVERY_PATH_VERIFIED_5_DELTA_PASS_20261102"
+        return "FHIR_BRONZE_READONLY_ACK_RECOVERY_PATH_VERIFIED_5_DELTA_PASS_20261102"
     # Exercise the *physical* persisted row/byte comparison with an altered
     # receipt for this SAME request, not by mutating the Azure source object.
     rows = spark.read.format("delta").load(path).collect()
@@ -2571,8 +2571,8 @@ def verify_fhir_g3_negative_readonly(spark, *, request: str,
     altered = [{**r, "manifest_sha256": "f" * 64,
                 "source_batch_id": "f" * 64} for r in expected]
     if _verify_bronze_receipt_readback(spark, path, altered):
-        raise RuntimeError("HOLD_G3_DRIFT_WAS_NOT_REJECTED")
-    return "FHIR_G3_COUNTERFACTUAL_REQUEST_DRIFT_HOLD_5_DELTA_PASS_20261102"
+        raise RuntimeError("HOLD_BRONZE_DRIFT_WAS_NOT_REJECTED")
+    return "FHIR_BRONZE_COUNTERFACTUAL_REQUEST_DRIFT_HOLD_5_DELTA_PASS_20261102"
 
 
 def execute_native_notebook(spark, *, context: BatchContext, manifest_bytes: bytes,
@@ -2861,12 +2861,7 @@ def verify_fhir_canonical_readonly(spark, *, request: str, allow_write: bool,
     return f"FHIR_CANONICAL_READONLY_{expected_objects}_SPARK_PK_FK_PASS_20261102"
 
 
-# Semantic public call sites. Keep the established legacy function objects
-# callable under their historical names for fixed Workflow/Notebook consumers;
-# alias identity preserves signatures, guards, Stage authority, and exceptions.
-process_fhir_bronze_snapshot = verify_fhir_g3_bronze
-process_fhir_silver_publication = verify_fhir_g4_silver
-verify_fhir_bronze_negative_readonly = verify_fhir_g3_negative_readonly
+# All active Bronze and Silver business entrypoints are defined under semantic names.
 
 if __name__ == "__main__":
     if run_mode == "RUNTIME_SMOKE":
@@ -2884,24 +2879,24 @@ if __name__ == "__main__":
         )
         notebookutils.notebook.exit(intake_exit)
     elif run_mode in ("BRONZE_RECEIPT", "BRONZE_READBACK_ONLY"):
-        g3 = verify_fhir_g3_bronze(
+        bronze_snapshot = process_fhir_bronze_snapshot(
             spark, request=request_id, manifest_sha=manifest_sha256,
             mode=run_mode, allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
             manifest_override=manifest_json, source_override=source_root,
             target_override=silver_root,
             strategy=source_preservation_strategy)
-        print("FHIR_G3_BRONZE_STATUS=" + g3.status)
-        print("FHIR_G3_BRONZE_SOURCE_BATCH_ID=" + g3.source_batch_id)
-        print("FHIR_G3_BRONZE_SOURCE_OBJECTS=" + str(g3.metrics["source_objects"]))
-        print("FHIR_G3_BRONZE_DELTA_PATH=" + _bronze_source_receipt_path(request_id))
-        if g3.status in ("BRONZE_WRITTEN", "BRONZE_SKIP_VERIFIED"):
+        print("FHIR_BRONZE_STATUS=" + bronze_snapshot.status)
+        print("FHIR_BRONZE_SOURCE_BATCH_ID=" + bronze_snapshot.source_batch_id)
+        print("FHIR_BRONZE_SOURCE_OBJECTS=" + str(bronze_snapshot.metrics["source_objects"]))
+        print("FHIR_BRONZE_DELTA_PATH=" + _bronze_source_receipt_path(request_id))
+        if bronze_snapshot.status in ("BRONZE_WRITTEN", "BRONZE_SKIP_VERIFIED"):
             notebookutils.notebook.exit(
-                "FHIR_G3_" + g3.status + "_" +
-                str(g3.metrics["source_objects"]) + "_DELTA_READBACK_PASS_20261102")
-        raise RuntimeError("HOLD_FHIR_G3_" + g3.status)
+                "FHIR_BRONZE_" + bronze_snapshot.status + "_" +
+                str(bronze_snapshot.metrics["source_objects"]) + "_DELTA_READBACK_PASS_20261102")
+        raise RuntimeError("HOLD_FHIR_BRONZE_" + bronze_snapshot.status)
     elif run_mode in ("SILVER_DQ_QUARANTINE_WRITE", "SILVER_DQ_READBACK_ONLY"):
-        dq = verify_fhir_g4_dq_negative(
+        dq = verify_fhir_silver_dq_negative(
             spark, request=request_id, manifest_sha=manifest_sha256,
             derivation_sha=dq_derivation_sha256, mode=run_mode,
             allow_write=write_authorized,
@@ -2910,21 +2905,21 @@ if __name__ == "__main__":
             manifest_override=manifest_json, source_override=source_root,
             target_override=silver_root, patient_contract_json=patient_contract_json,
             encounter_contract_json=encounter_contract_json)
-        print("FHIR_G4_DQ_STATUS=" + dq.status)
-        print("FHIR_G4_DQ_PATIENTS=" + str(dq.metrics["patient"]))
-        print("FHIR_G4_DQ_ENCOUNTERS=" + str(dq.metrics["encounter"]))
-        print("FHIR_G4_DQ_QUARANTINED=" +
+        print("FHIR_SILVER_DQ_STATUS=" + dq.status)
+        print("FHIR_SILVER_DQ_PATIENTS=" + str(dq.metrics["patient"]))
+        print("FHIR_SILVER_DQ_ENCOUNTERS=" + str(dq.metrics["encounter"]))
+        print("FHIR_SILVER_DQ_QUARANTINED=" +
               str(dq.metrics["quarantine_or_reject"]))
-        print("FHIR_G4_DQ_PHYSICAL_PATH=" + _silver_publication_paths(request_id)["quarantine"])
+        print("FHIR_SILVER_DQ_PHYSICAL_PATH=" + _silver_publication_paths(request_id)["quarantine"])
         if dq.status in ("DQ_QUARANTINED", "DQ_READBACK_VERIFIED",
                          "DQ_SKIP_VERIFIED"):
             notebookutils.notebook.exit(
-                f"FHIR_G4_{dq.status}_P{dq.metrics['patient']}_"
+                f"FHIR_SILVER_{dq.status}_P{dq.metrics['patient']}_"
                 f"E{dq.metrics['encounter']}_Q{dq.metrics['quarantine_or_reject']}_"
                 "APPROVAL_DENIED_DELTA_PASS_20261102")
-        raise RuntimeError("HOLD_FHIR_G4_" + dq.status)
+        raise RuntimeError("HOLD_FHIR_SILVER_" + dq.status)
     elif run_mode in ("SILVER_WRITE", "SILVER_READBACK_ONLY"):
-        g4 = verify_fhir_g4_silver(
+        silver_snapshot = process_fhir_silver_publication(
             spark, request=request_id, manifest_sha=manifest_sha256,
             mode=run_mode, allow_write=write_authorized,
             retention_ok=retention_preflight_verified,
@@ -2933,20 +2928,20 @@ if __name__ == "__main__":
             target_override=silver_root,
             patient_contract_json=patient_contract_json,
             encounter_contract_json=encounter_contract_json)
-        print("FHIR_G4_SILVER_STATUS=" + g4.status)
-        print("FHIR_G4_SILVER_SOURCE_BATCH_ID=" + g4.source_batch_id)
-        print("FHIR_G4_SILVER_PUBLICATION_ID=" + str(g4.publication_id))
-        print("FHIR_G4_SILVER_PATIENTS=" + str(g4.metrics["patient"]))
-        print("FHIR_G4_SILVER_ENCOUNTERS=" + str(g4.metrics["encounter"]))
-        print("FHIR_G4_SILVER_QUARANTINE=" + str(g4.metrics["quarantine_or_reject"]))
-        print("FHIR_G4_SILVER_DELTA_PATHS=" +
+        print("FHIR_SILVER_STATUS=" + silver_snapshot.status)
+        print("FHIR_SILVER_SOURCE_BATCH_ID=" + silver_snapshot.source_batch_id)
+        print("FHIR_SILVER_PUBLICATION_ID=" + str(silver_snapshot.publication_id))
+        print("FHIR_SILVER_PATIENTS=" + str(silver_snapshot.metrics["patient"]))
+        print("FHIR_SILVER_ENCOUNTERS=" + str(silver_snapshot.metrics["encounter"]))
+        print("FHIR_SILVER_QUARANTINE=" + str(silver_snapshot.metrics["quarantine_or_reject"]))
+        print("FHIR_SILVER_DELTA_PATHS=" +
               json.dumps(_silver_publication_paths(request_id), sort_keys=True))
-        if g4.status in ("SILVER_APPROVED", "SILVER_SKIP_VERIFIED"):
+        if silver_snapshot.status in ("SILVER_APPROVED", "SILVER_SKIP_VERIFIED"):
             notebookutils.notebook.exit(
-                f"FHIR_G4_{g4.status}_P{g4.metrics['patient']}_"
-                f"E{g4.metrics['encounter']}_"
-                f"Q{g4.metrics['quarantine_or_reject']}_DELTA_PASS_20261102")
-        raise RuntimeError("HOLD_FHIR_G4_" + g4.status)
+                f"FHIR_SILVER_{silver_snapshot.status}_P{silver_snapshot.metrics['patient']}_"
+                f"E{silver_snapshot.metrics['encounter']}_"
+                f"Q{silver_snapshot.metrics['quarantine_or_reject']}_DELTA_PASS_20261102")
+        raise RuntimeError("HOLD_FHIR_SILVER_" + silver_snapshot.status)
     elif run_mode in ("HL7_SILVER_WRITE", "HL7_SILVER_READBACK_ONLY"):
         hl7 = verify_hl7_real_silver(
             spark, request=request_id, manifest_sha=manifest_sha256,
