@@ -1,7 +1,7 @@
 """FHIR R4 source vocabulary aliases to *existing LocalDP semantic keys*.
 
 This is source-specific lexical normalization, NOT an OMOP Concept mapping.
-The Shared G5 OMOP Mapper and the platform-specific Writers do not own
+The Shared OMOP Candidate OMOP Mapper and the platform-specific Writers do not own
 FHIR/HL7/CSV input syntax. No Concept IDs, clinical defaults or runtime I/O.
 The prospective semantic equivalence of each alias still needs reviewer approval.
 """
