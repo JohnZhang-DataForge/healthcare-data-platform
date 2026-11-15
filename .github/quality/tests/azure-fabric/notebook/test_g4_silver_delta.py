@@ -156,7 +156,7 @@ class G4Offline(unittest.TestCase):
 
     def execute(self, **kwargs):
         params = {**self.params, **kwargs}
-        g = nb.verify_fhir_g4_silver.__globals__
+        g = nb.process_fhir_silver_publication.__globals__
         def write(df, path):
             if path in self.spark.delta:
                 raise FileExistsError("errorifexists")
@@ -168,7 +168,7 @@ class G4Offline(unittest.TestCase):
             "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "_write_delta": write,
         }):
-            return nb.verify_fhir_g4_silver(self.spark, **params)
+            return nb.process_fhir_silver_publication(self.spark, **params)
 
     def test_physical_paths_stable_and_path_traversal_rejected(self):
         paths = nb._silver_publication_paths(REQUEST)
@@ -180,7 +180,7 @@ class G4Offline(unittest.TestCase):
         self.assertIn("/" + REQUEST + "/processing=", paths["patient"])
         for bad in ("../sibling", "atlanta-fhir-gh-123/evil", ""):
             with self.subTest(bad=bad), self.assertRaisesRegex(
-                    RuntimeError, "HOLD_G3_UNAPPROVED_REQUEST_NAMESPACE"):
+                    RuntimeError, "HOLD_BRONZE_UNAPPROVED_REQUEST_NAMESPACE"):
                 nb._silver_publication_paths(bad)
 
     def test_fail_closed_parameter_and_contract_checks_before_source_read(self):
@@ -239,7 +239,7 @@ class G4Offline(unittest.TestCase):
             recorded.append("shared-writer-called")
             return shared(*args, **kwargs)
 
-        with patch.dict(nb.verify_fhir_g4_silver.__globals__, {
+        with patch.dict(nb.process_fhir_silver_publication.__globals__, {
                 "_write_verified_canonical_silver": guarded_writer}):
             result = self.execute()
         self.assertEqual(result.status, "SILVER_APPROVED")
@@ -338,7 +338,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             request_id="atlanta-fhir-gh-41552666929",
             source_batch_id="a"*64,
             manifest_sha256=nb._PINNED_FHIR_MANIFEST_SHA,
-            silver_processing_version=nb._G4_PROCESSING,
+            silver_processing_version=nb._SILVER_PROCESSING,
             silver_publication_id="synthetic-silver-approval",
             mapping_sha256="c"*64,
             identity_snapshot_fingerprint="b"*64,
@@ -457,7 +457,7 @@ class G5CandidateNativeDeltaStagedOffline(unittest.TestCase):
             paths["person"], paths["visit"], paths["approval"]])
         receipt = self.spark.delta[paths["approval"]].rows[0]
         self.assertEqual(
-            receipt["evidence_contract"], "CANDIDATE_TECHNICAL_F1F2_V1")
+            receipt["evidence_contract"], "CANDIDATE_TECHNICAL_VOCABULARY_IDENTITY_V1")
         self.assertEqual(
             receipt["technical_evidence_sha256"], "f" * 64)
         self.assertNotIn("clinical_review_sha256", receipt)

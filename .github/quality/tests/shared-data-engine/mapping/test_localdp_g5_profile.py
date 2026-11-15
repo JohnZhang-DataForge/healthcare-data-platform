@@ -321,8 +321,8 @@ def race_proposal(**overrides):
     args = dict(
         coverage=coverage(),
         draft=make(),
-        proposed_f1_concept_row=F1_CANDIDATE,
-        f1_release_metadata_sha256="d" * 64,
+        proposed_vocabulary_concept_row=F1_CANDIDATE,
+        vocabulary_release_metadata_sha256="d" * 64,
         observed_race_coding_systems={
             "1002-5": {CDC_RACE_CODE_SYSTEM: 1},
             "UNK": {HL7_NULLFLAVOR_CODE_SYSTEM: 2},
@@ -337,7 +337,7 @@ class RaceF1AndMissingValueSourceReviewTests(unittest.TestCase):
     def test_reviewed_standard_target_draft_adds_1002_only_and_never_unk_zero(self):
         result = race_proposal()
         self.assertEqual(result.status,
-                         "RACE_MAPPING_DRAFT_ONLY_F1_PHYSICAL_AND_CLINICAL_HOLD")
+                         "RACE_MAPPING_DRAFT_ONLY_VOCABULARY_PHYSICAL_AND_CLINICAL_HOLD")
         self.assertFalse(result.candidate_write_authorized)
         self.assertFalse(result.clinically_approved)
         self.assertEqual(result.original_profile_sha256, make().profile_sha256)
@@ -359,7 +359,7 @@ class RaceF1AndMissingValueSourceReviewTests(unittest.TestCase):
 
     def test_source_and_semantic_authority_separated(self):
         self.assertEqual(
-            race_proposal().claimed_f1_release_sha256, "d" * 64)
+            race_proposal().claimed_vocabulary_release_sha256, "d" * 64)
         from healthcare_data_engine.mapping.omop import race_resolution
         source = Path(race_resolution.__file__).read_text()
         # The shared logic must not copy target Concept numbers from HL7 IG.
@@ -402,7 +402,7 @@ class RaceF1AndMissingValueSourceReviewTests(unittest.TestCase):
                 row = dict(F1_CANDIDATE, **field_update)
                 with self.assertRaisesRegex(LocalProfileHold,
                                             "NONSTANDARD_OR_WRONG_SEMANTICS"):
-                    race_proposal(proposed_f1_concept_row=row)
+                    race_proposal(proposed_vocabulary_concept_row=row)
 
     def test_f1_date_window_and_schema_hold(self):
         for row in (
@@ -413,13 +413,13 @@ class RaceF1AndMissingValueSourceReviewTests(unittest.TestCase):
         ):
             with self.subTest(row=row):
                 with self.assertRaises(LocalProfileHold):
-                    race_proposal(proposed_f1_concept_row=row)
+                    race_proposal(proposed_vocabulary_concept_row=row)
         with self.assertRaisesRegex(LocalProfileHold, "DATE_INVALID"):
             race_proposal(as_of="2026-11-07-other")
 
     def test_wrong_batch_manifest_f1_metadata_sha_or_profile_hold(self):
         for change in (
-            {"f1_release_metadata_sha256": "fake"},
+            {"vocabulary_release_metadata_sha256": "fake"},
             {"draft": replace(make(), profile_sha256="a"*64)},
             {"draft": replace(make(), unresolved_source_codes=())},
             {"coverage": replace(coverage(), profile_sha256="f"*64)},

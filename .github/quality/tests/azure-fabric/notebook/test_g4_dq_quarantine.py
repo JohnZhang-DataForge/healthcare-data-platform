@@ -41,7 +41,7 @@ class G4DQOffline(unittest.TestCase):
                        patient_count=99, findings=(self.finding,))
 
     def execute(self, **updates):
-        g = nb.verify_fhir_g4_dq_negative.__globals__
+        g = nb.verify_fhir_silver_dq_negative.__globals__
         def persist(df, path):
             if path in self.spark.delta:
                 raise FileExistsError("Delta errorifexists")
@@ -53,7 +53,7 @@ class G4DQOffline(unittest.TestCase):
             "_write_delta": persist,
             "validate_silver_readback": lambda *_args, **kw: None,
         }):
-            return nb.verify_fhir_g4_dq_negative(
+            return nb.verify_fhir_silver_dq_negative(
                 self.spark, **{**self.params, **updates})
 
     def test_quarantine_first_writer_denies_all_silver_and_approval(self):

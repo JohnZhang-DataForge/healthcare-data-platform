@@ -103,13 +103,13 @@ class G3OfflineTests(unittest.TestCase):
 
     def execute(self, **updates):
         parameters = dict(self.params, **updates)
-        g = nb.verify_fhir_g3_bronze.__globals__
+        g = nb.process_fhir_bronze_snapshot.__globals__
         with patch.dict(g, {
             "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "read_source_objects_native": lambda spark, **kw: self.objects,
             "_write_delta": lambda df, path: self.spark.delta.setdefault(path, df),
         }):
-            return nb.verify_fhir_g3_bronze(self.spark, **parameters)
+            return nb.process_fhir_bronze_snapshot(self.spark, **parameters)
 
     def test_pinned_path_is_request_scoped_and_traversal_rejected(self):
         self.assertEqual(nb._bronze_source_receipt_path(REQUEST),
@@ -129,8 +129,8 @@ class G3OfflineTests(unittest.TestCase):
                 ("manifest_sha", "bad"), ("strategy", "HALT")):
             with self.subTest(key=key):
                 other = dict(self.params, **{key: value})
-                with self.assertRaisesRegex(RuntimeError, "HOLD_G3"):
-                    nb.verify_fhir_g3_bronze(object(), **other)
+                with self.assertRaisesRegex(RuntimeError, "HOLD_BRONZE"):
+                    nb.process_fhir_bronze_snapshot(object(), **other)
 
     def test_real_manifest_five_source_sha_and_new_receipt(self):
         result = self.execute()
@@ -169,13 +169,13 @@ class G3OfflineTests(unittest.TestCase):
         def unknown_ack(df, path):
             self.spark.delta[path] = df
             raise TimeoutError("simulated unknown ACK")
-        g = nb.verify_fhir_g3_bronze.__globals__
+        g = nb.process_fhir_bronze_snapshot.__globals__
         with patch.dict(g, {
             "_delta_snapshot_exists": lambda spark, path: path in spark.delta,
             "read_source_objects_native": lambda spark, **kw: self.objects,
             "_write_delta": unknown_ack,
         }):
-            outcome = nb.verify_fhir_g3_bronze(self.spark, **self.params)
+            outcome = nb.process_fhir_bronze_snapshot(self.spark, **self.params)
         self.assertEqual(outcome.status, "VERIFY_READONLY")
         self.assertEqual(self.execute(mode="BRONZE_READBACK_ONLY",
                                       allow_write=False, retention_ok=False).status,

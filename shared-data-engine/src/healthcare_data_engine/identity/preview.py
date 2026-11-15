@@ -1,6 +1,6 @@
-"""Pure multi-entity ID snapshot and existing Fabric F2 planner result bridge.
+"""Pure multi-entity ID snapshot and existing Fabric identity planner result bridge.
 
-The current single allocator remains Fabric F2 identity_plan.plan_ids.
+The current single allocator remains Fabric identity_plan.plan_ids.
 This module validates its output; it NEVER reserves IDs, reads SQL, or grants
 Gold COMMIT. Physical snapshot readback and single-writer locking belong to
 the Warehouse runtime, which MUST re-read all state inside its transaction.
@@ -169,10 +169,10 @@ def verify_allocation_proposal(
     inserted: Sequence[tuple[DerivedRowKey, int]],
     proposed_next: Mapping[str, int],
 ) -> IdentityPreview:
-    """Check F2's proposal, NOT implement a second allocator.
+    """Check identity planner's proposal, NOT implement a second allocator.
 
     Enforce monotonic, contiguous new IDs in the same source-key ordering as
-    F2. Any changed Map/Gold/Ledger/Allocator readback must invalidate this
+    allocator. Any changed Map/Gold/Ledger/Allocator readback must invalidate this
     fingerprint and make the eventual writer HOLD until re-planned.
     """
     if not isinstance(snapshot, IdentitySnapshot):
@@ -241,15 +241,15 @@ def verify_allocation_proposal(
 
 
 def adapt_person_visit_allocation_preview(
-    f2_allocation: Any, snapshot: IdentitySnapshot,
+    allocation_plan: Any, snapshot: IdentitySnapshot,
 ) -> IdentityPreview:
-    """Translate the EXISTING Fabric F2 AllocationPlan without importing it.
+    """Translate the EXISTING Fabric AllocationPlan without importing it.
 
     Future entity kinds are held, not implicitly allocated with this adapter.
     """
     if set(dict(snapshot.next_free)) != set(_PERSON_VISIT_TARGETS.values()):
         raise IdentityPreviewHold("IDENTITY_ALLOCATION_SCOPE_PERSON_VISIT_ONLY")
-    if not all(hasattr(f2_allocation, attr)
+    if not all(hasattr(allocation_plan, attr)
                for attr in ("assigned", "inserted", "next_free")):
         raise IdentityPreviewHold("IDENTITY_ALLOCATION_ALLOCATION_INVALID")
 
@@ -268,13 +268,13 @@ def adapt_person_visit_allocation_preview(
 
     try:
         next_free = {_PERSON_VISIT_TARGETS[kind]: number
-                     for kind, number in f2_allocation.next_free}
+                     for kind, number in allocation_plan.next_free}
     except (KeyError, TypeError, ValueError) as exc:
         raise IdentityPreviewHold("IDENTITY_ALLOCATION_COUNTERS_INVALID") from exc
     if len(next_free) != len(_PERSON_VISIT_TARGETS):
         raise IdentityPreviewHold("IDENTITY_ALLOCATION_COUNTERS_INVALID")
-    return verify_allocation_proposal(snapshot, rows(f2_allocation.assigned),
-                                      rows(f2_allocation.inserted), next_free)
+    return verify_allocation_proposal(snapshot, rows(allocation_plan.assigned),
+                                      rows(allocation_plan.inserted), next_free)
 
 
 

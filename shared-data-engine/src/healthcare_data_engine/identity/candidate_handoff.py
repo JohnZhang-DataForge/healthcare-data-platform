@@ -1,6 +1,6 @@
-"""Strict, platform-neutral F2 preview -> G5 Candidate ID handoff.
+"""Strict, platform-neutral Identity preview -> OMOP Candidate Candidate ID handoff.
 
-A first batch has no persisted Person/Visit ID map. The existing F2 planner
+A first batch has no persisted Person/Visit ID map. The existing Identity planner
 may propose IDs against a COMPLETE caller-supplied Warehouse snapshot; this
 function reconciles those proposals with independently approved Canonical
 source keys WITHOUT passing provisional IDs off as durable mappings.
@@ -94,7 +94,7 @@ class PersonVisitCandidateHandoff:
     status: str = "CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
 
     def person_lookup_rows(self) -> tuple[tuple[str, str, str, str, int, str], ...]:
-        """Legacy mapper-compatible columns + `identity_state` (never F1 DML)."""
+        """Legacy mapper-compatible columns + `identity_state` (never Vocabulary DML)."""
         return tuple(row.person_identity_lookup_row() for row in self.person_lookup)
 
     def visit_id_rows(self) -> tuple[tuple[str, str, int, str], ...]:
@@ -118,7 +118,7 @@ def plan_candidate_identity_handoff(
     snapshot: IdentitySnapshot,
     preview: IdentityPreview,
 ) -> PersonVisitCandidateHandoff:
-    """Reconcile a COMPLETE F2 ID preview against source-only G4 acceptance.
+    """Reconcile a COMPLETE Identity ID preview against source-only Silver acceptance.
 
     \`approval\` / snapshot / source rows come from the caller. This checks
     internal integrity but cannot prove a physical readback; runtime must
@@ -162,7 +162,7 @@ def plan_candidate_identity_handoff(
             != {table for table, _ in snapshot.next_free}):
         raise CandidateIdentityHold("CANDIDATE_IDENTITY_ALLOCATOR_SCOPE_INVALID")
 
-    # Build the exact proposal lookup once: G4 currently contains 5,918
+    # Build the exact proposal lookup once: Silver currently contains 5,918
     # encounters, and repeated IdentityPreview.for_key scans would be O(n²).
     proposals = {}
     folded_proposals = set()
@@ -202,7 +202,7 @@ def plan_candidate_identity_handoff(
         )
 
     # The candidate handoff must also reject a forged Preview with two
-    # Visit IDs or two Person IDs mapped to the same per-target INT. F2's
+    # Visit IDs or two Person IDs mapped to the same per-target INT. Identity's
     # legitimate proposal already enforces this, but this boundary is public.
     target_ids = {(key.target_table, item.omop_id)
                   for key, item in proposals.items()}
@@ -262,7 +262,7 @@ def plan_candidate_identity_handoff(
             _VISIT, hospital_id, source_system, source_visit))
         if target is None:
             raise CandidateIdentityHold("CANDIDATE_IDENTITY_VISIT_ID_NOT_FOUND")
-        # The F2 preview must be exact and must not be allowed to switch a
+        # The Identity preview must be exact and must not be allowed to switch a
         # proposed ID to PERSISTED when there is no matching Warehouse map.
         original = persisted.get(target.key)
         if ((target.state == "PERSISTED" and original != target.omop_id)

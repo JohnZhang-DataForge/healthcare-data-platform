@@ -1,6 +1,6 @@
 """OFFLINE ONLY: pinned Published 0.1.7 Native Notebook, historical 0.1.6 runtime HOLD.
 
-Tests load the sole effective 0.1.7 GA Wheel while candidate source is 0.1.15; simulate prior
+Tests load the sole effective 0.1.7 GA Wheel while candidate source is 0.1.16; simulate prior
 0.1.6 runtime mismatch, without executing any cloud job. These probes
 must NEVER try a Fabric git sync, Environment Publish, Notebook execution,
 Delta read/write, Warehouse SQL, or ID allocation.
@@ -28,7 +28,7 @@ LIBS = ROOT / (
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
 PUBLISHED_VERSION = "0.1.7"
 LEGACY_VERSION = "0.1.6"
-SOURCE_CANDIDATE_VERSION = "0.1.15"
+SOURCE_CANDIDATE_VERSION = "0.1.16"
 PINNED_WHEEL_SHA256 = (
     "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
 PINNED_REVIEW_ONLY_017_SHA256 = (
@@ -68,11 +68,13 @@ class G5NativeWheelIsolation(unittest.TestCase):
         for name in removed:
             with self.subTest(removed=name):
                 self.assertNotIn(name, self.native)
-        # Historical Bronze/Silver aliases have separate frozen contracts.
-        self.assertIs(self.native["process_fhir_bronze_snapshot"],
-                      self.native["verify_fhir_g3_bronze"])
-        self.assertIs(self.native["process_fhir_silver_publication"],
-                      self.native["verify_fhir_g4_silver"])
+        # Canonical names are the actual implementation, not a legacy alias.
+        self.assertTrue(callable(self.native["process_fhir_bronze_snapshot"]))
+        self.assertTrue(callable(self.native["process_fhir_silver_publication"]))
+        self.assertTrue(callable(self.native["verify_fhir_bronze_negative_readonly"]))
+        for forbidden in ("verify_fhir_" + "g3_bronze",
+                          "verify_fhir_" + "g4_silver"):
+            self.assertNotIn(forbidden, self.native)
         self.assertEqual(self.native["run_mode"], "HALT")
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
@@ -95,9 +97,9 @@ class G5NativeWheelIsolation(unittest.TestCase):
             "_FHIR_SILVER_PUBLICATION_ROOT": "Files/silver/fhir_r4",
         }
         historical_names = (
-            "_G3_SOURCE_ROOT", "_G3_BRONZE_ROOT",
-            "_G3_HOSPITAL", "_G3_FEED", "_G3_PROCESSING",
-            "_G4_SILVER_ROOT",
+            "_BRONZE_SOURCE_ROOT", "_BRONZE_ROOT",
+            "_BRONZE_HOSPITAL", "_BRONZE_FEED", "_BRONZE_PROCESSING",
+            "_SILVER_ROOT",
         )
         for name, value in fixed.items():
             with self.subTest(name=name):
@@ -149,11 +151,11 @@ class G5NativeWheelIsolation(unittest.TestCase):
                     source_objects=(), patient_contract_bytes=b"",
                     encounter_contract_bytes=b"")
 
-        legacy_silver_read_guard = Mock(side_effect=AssertionError("NO_G4_SPARK_READ_ALLOWED"))
+        legacy_silver_read_guard = Mock(side_effect=AssertionError("NO_SILVER_SPARK_READ_ALLOWED"))
         with patch.dict(
             self.native["verify_fhir_candidate_source_readonly"].__globals__,
             {"engine_version": LEGACY_VERSION,
-             "verify_fhir_g4_silver": legacy_silver_read_guard},
+             "process_fhir_silver_publication": legacy_silver_read_guard},
         ):
             with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_SOURCE_PIN"):
                 self.native["verify_fhir_candidate_source_readonly"](

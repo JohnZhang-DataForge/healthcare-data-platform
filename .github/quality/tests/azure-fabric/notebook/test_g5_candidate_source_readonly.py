@@ -102,7 +102,7 @@ class NegativeBeforeAnySparkRead(unittest.TestCase):
         ):
             with self.subTest(key=key, value=value):
                 g4 = Mock(side_effect=AssertionError("must not call G4"))
-                with patch.dict(CHECK.__globals__, {"verify_fhir_g4_silver": g4}):
+                with patch.dict(CHECK.__globals__, {"process_fhir_silver_publication": g4}):
                     with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_SOURCE_PIN"):
                         CHECK(object(), **dict(args(), **{key: value}))
                 g4.assert_not_called()
@@ -113,7 +113,7 @@ class NegativeBeforeAnySparkRead(unittest.TestCase):
                 case = args()
                 case[name] = ""
                 with patch.dict(CHECK.__globals__, {
-                    "verify_fhir_g4_silver": Mock(side_effect=AssertionError("G4 called"))
+                    "process_fhir_silver_publication": Mock(side_effect=AssertionError("G4 called"))
                 }):
                     with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_CANONICAL"):
                         CHECK(object(), **case)
@@ -131,7 +131,7 @@ class NegativeBeforeAnySparkRead(unittest.TestCase):
         ):
             with self.subTest(g4=x):
                 stub = Mock(return_value=g4_fixture(**x))
-                with patch.dict(CHECK.__globals__, {"verify_fhir_g4_silver": stub}):
+                with patch.dict(CHECK.__globals__, {"process_fhir_silver_publication": stub}):
                     with self.assertRaisesRegex(RuntimeError, "HOLD_CANDIDATE_SILVER_PHYSICAL"):
                         CHECK(object(), **args())
                 self.assertEqual(stub.call_count, 1)
@@ -178,7 +178,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
 
     def invoke(self, frames):
         with patch.dict(CHECK.__globals__, {
-            "verify_fhir_g4_silver": Mock(return_value=g4_fixture())
+            "process_fhir_silver_publication": Mock(return_value=g4_fixture())
         }):
             return CHECK(OnlyReads(frames), **args())
 
@@ -251,7 +251,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
         prefix = "FHIR_CANDIDATE_CONCEPT_SOURCE_INVENTORY_READONLY_PASS|"
         self.assertTrue(result.startswith(prefix))
         info = json.loads(result[len(prefix):])
-        self.assertEqual(info["status"], "P1_G4_CODE_INVENTORY_PHYSICAL_READONLY_ONLY")
+        self.assertEqual(info["status"], "VOCABULARY_CODE_INVENTORY_PHYSICAL_READONLY_ONLY")
         self.assertEqual((info["patient_count"], info["encounter_count"]), (100, 5918))
         self.assertEqual(info["code_counts"]["gender_code"], {"synthetic-g": 100})
         self.assertEqual(info["code_counts"]["encounter_class"], {"synthetic-v": 5918})
@@ -261,7 +261,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
 
     def test_p1_inventory_denies_tampered_approval_and_person_source_width(self):
         from pyspark.sql import functions as F
-        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_APPROVAL_CHANGED"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_SOURCE_CODE_INVENTORY_APPROVAL_CHANGED"):
             self._inventory(self.frames(**{
                 **{"patient": self._code_frames()[PATHS["patient"]],
                    "encounter": self._code_frames()[PATHS["encounter"]]},
@@ -272,7 +272,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
             "source_record_id",
             F.when(F.col("source_record_id") == "p000", F.lit("p" * 51))
              .otherwise(F.col("source_record_id")))
-        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_PERSON_SOURCE_VALUE_TOO_LONG"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_SOURCE_CODE_INVENTORY_PERSON_SOURCE_VALUE_TOO_LONG"):
             self._inventory(frames)
 
     def test_p1_inventory_denies_unmapped_or_casefold_ambiguous_codes(self):
@@ -282,7 +282,7 @@ class SyntheticDeltaFrames(unittest.TestCase):
             "encounter_class",
             F.when(F.col("source_encounter_id") == "e00000", F.lit("SYNTHETIC-V"))
              .otherwise(F.col("encounter_class")))
-        with self.assertRaisesRegex(RuntimeError, "HOLD_P1_SOURCE_CODE_COLLATION_CONFLICT"):
+        with self.assertRaisesRegex(RuntimeError, "HOLD_SOURCE_CODE_INVENTORY_SOURCE_CODE_COLLATION_CONFLICT"):
             self._inventory(frames)
 
 

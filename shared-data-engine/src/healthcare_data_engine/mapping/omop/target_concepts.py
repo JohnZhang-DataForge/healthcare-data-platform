@@ -2,7 +2,7 @@
 
 Operates only on supplied, cryptographically pinned profile bytes, observed
 codes and independently obtained Vocabulary rows. No cloud I/O, lexical
-matching, Concept guessing or writes. This complements existing FHIR P1
+matching, Concept guessing or writes. This complements existing FHIR source validation
 preflight without replacing its frozen Person/Visit input contract.
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ from healthcare_data_engine.mapping.omop.registry import EntityRegistry, DEFAULT
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _NAME = re.compile(r"[a-z][a-z0-9_]*\Z")
 _TABLE = re.compile(r"cdm\.[a-z][a-z0-9_]*\Z")
-# These OMOP field domains are non-negotiable in the current accepted P1.
+# These OMOP field domains are non-negotiable in the current accepted source validation.
 DEFAULT_FIELD_DOMAINS = {
     ("cdm.person", "gender_concept_id"): "Gender",
     ("cdm.person", "race_concept_id"): "Race",

@@ -69,9 +69,9 @@ class PipelineReadOnlyContract(unittest.TestCase):
         self.assertIn('run_mode = "HALT"', text)
         self.assertIn("elif run_mode in (\"SILVER_WRITE\", \"SILVER_READBACK_ONLY\"):", text)
         self.assertIn('elif run_mode in ("SILVER_WRITE", "SILVER_READBACK_ONLY"):', text)
-        self.assertIn("HOLD_G4_BOOLEAN_WRITE_GATES", text)
-        self.assertIn("HOLD_P2_RUNTIME_RELEASE_NOT_VERIFIED", text)
-        self.assertIn("raise RuntimeError(\"HOLD_FHIR_G4_\" + g4.status)", text)
+        self.assertIn("HOLD_SILVER_BOOLEAN_WRITE_GATES", text)
+        self.assertIn("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED", text)
+        self.assertIn("raise RuntimeError(\"HOLD_FHIR_SILVER_\" + silver_snapshot.status)", text)
 
 
 if __name__ == "__main__":

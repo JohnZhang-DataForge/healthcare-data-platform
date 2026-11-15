@@ -1,11 +1,11 @@
-"""Source-only FHIR Race resolution review against a supplied F1 vocabulary row.
+"""Source-only FHIR Race resolution review against a supplied Vocabulary concept row.
 
-This is NOT a clinical approval, an F1 SQL readback, a release signature,
+This is NOT a clinical approval, an Vocabulary SQL readback, a release signature,
 a Candidate writer, or a license grant. A proposal for 1002-5 can be rendered
-as a NEW G5 profile draft only after strict structural/domain/valid-date
+as a NEW OMOP profile draft only after strict structural/domain/valid-date
 checks. HL7 NullFlavor UNK remains unresolved; the CDM54 Concept 0 convention
-is documented here as a *review question*, never inserted into the G5 mapper.
-The input F1 row and source coding counts are CALLER-SUPPLIED and must later
+is documented here as a *review question*, never inserted into the OMOP mapper.
+The input Vocabulary row and source coding counts are CALLER-SUPPLIED and must later
 be proven by independent physical SQL and immutable FHIR source readback.
 """
 from __future__ import annotations
@@ -44,13 +44,13 @@ class RaceResolutionDraft:
     source_batch_id: str
     manifest_sha256: str
     source_inventory_sha256: str
-    claimed_f1_release_sha256: str
+    claimed_vocabulary_release_sha256: str
     proposed_standard_race_concept_id: int
     claimed_source_coding_sha256: str
     unresolved_source_codes: tuple[str, ...]
     pending_no_information_source_count: int
     pending_no_information_policy: str = "UNK_OMOP_CDM54_ZERO_REQUIRES_EXPLICIT_REVIEW"
-    status: str = "RACE_MAPPING_DRAFT_ONLY_F1_PHYSICAL_AND_CLINICAL_HOLD"
+    status: str = "RACE_MAPPING_DRAFT_ONLY_VOCABULARY_PHYSICAL_AND_CLINICAL_HOLD"
 
     @property
     def candidate_write_authorized(self) -> bool:
@@ -72,7 +72,7 @@ def _date(value: object) -> date:
         else:
             if parsed.isoformat() == value:
                 return parsed
-    raise LocalProfileHold("RACE_MAPPING_F1_DATE_INVALID")
+    raise LocalProfileHold("RACE_MAPPING_VOCABULARY_DATE_INVALID")
 
 
 def _canonical(value: dict) -> bytes:
@@ -82,12 +82,12 @@ def _canonical(value: dict) -> bytes:
 
 def propose_race_resolution(
     coverage: MappingCoverageReview, draft: LocalProfileDraft, *,
-    proposed_f1_concept_row: Mapping[str, object],
-    f1_release_metadata_sha256: str,
+    proposed_vocabulary_concept_row: Mapping[str, object],
+    vocabulary_release_metadata_sha256: str,
     observed_race_coding_systems: Mapping[str, Mapping[str, int]],
     as_of: date,
 ) -> RaceResolutionDraft:
-    """Require exact source+profile+F1 Concept evidence, but return *draft*.
+    """Require exact source+profile+Vocabulary Concept evidence, but return *draft*.
 
     `observed_race_coding_systems` must be derived by a caller from
     immutable, independently verified raw FHIR codings; the existing
@@ -107,9 +107,9 @@ def propose_race_resolution(
             or not _SHA256.fullmatch(coverage.source_batch_id)
             or type(coverage.manifest_sha256) is not str
             or not _SHA256.fullmatch(coverage.manifest_sha256)
-            or not isinstance(f1_release_metadata_sha256, str)
-            or not _SHA256.fullmatch(f1_release_metadata_sha256)):
-        raise LocalProfileHold("RACE_MAPPING_SOURCE_PROFILE_OR_F1_PIN_INVALID")
+            or not isinstance(vocabulary_release_metadata_sha256, str)
+            or not _SHA256.fullmatch(vocabulary_release_metadata_sha256)):
+        raise LocalProfileHold("RACE_MAPPING_SOURCE_PROFILE_OR_VOCABULARY_PIN_INVALID")
     try:
         original = json.loads(draft.profile_bytes.decode("utf-8"))
         source_system = original["source_system"]
@@ -143,15 +143,15 @@ def propose_race_resolution(
             raise LocalProfileHold("RACE_MAPPING_RAW_CODING_SYSTEM_MISMATCH")
         coding[code] = {expected: count}
 
-    if not isinstance(proposed_f1_concept_row, Mapping):
-        raise LocalProfileHold("RACE_MAPPING_F1_ROW_MISSING")
+    if not isinstance(proposed_vocabulary_concept_row, Mapping):
+        raise LocalProfileHold("RACE_MAPPING_VOCABULARY_ROW_MISSING")
     required = {
         "concept_id", "concept_name", "domain_id", "standard_concept",
         "invalid_reason", "valid_start_date", "valid_end_date", "vocabulary_id",
     }
-    if set(proposed_f1_concept_row) != required:
-        raise LocalProfileHold("RACE_MAPPING_F1_ROW_SCHEMA_MISMATCH")
-    row = proposed_f1_concept_row
+    if set(proposed_vocabulary_concept_row) != required:
+        raise LocalProfileHold("RACE_MAPPING_VOCABULARY_ROW_SCHEMA_MISMATCH")
+    row = proposed_vocabulary_concept_row
     concept_id = row["concept_id"]
     if (type(concept_id) is not int or not 1 <= concept_id <= 2147483647
             or row["concept_name"] != _REVIEWED_SOURCE_MEANING
@@ -159,10 +159,10 @@ def propose_race_resolution(
             or row["vocabulary_id"] != "Race"
             or row["standard_concept"] != "S"
             or row["invalid_reason"] is not None):
-        raise LocalProfileHold("RACE_MAPPING_F1_NONSTANDARD_OR_WRONG_SEMANTICS")
+        raise LocalProfileHold("RACE_MAPPING_VOCABULARY_NONSTANDARD_OR_WRONG_SEMANTICS")
     as_of_date = _date(as_of)
     if not _date(row["valid_start_date"]) <= as_of_date <= _date(row["valid_end_date"]):
-        raise LocalProfileHold("RACE_MAPPING_F1_OUTSIDE_EFFECTIVE_DATE")
+        raise LocalProfileHold("RACE_MAPPING_VOCABULARY_OUTSIDE_EFFECTIVE_DATE")
     if ("1002-5" in original["race_concepts"] or
             "UNK" in original["race_concepts"]):
         raise LocalProfileHold("RACE_MAPPING_PROFILE_MUST_BE_UNRESOLVED")
@@ -197,7 +197,7 @@ def propose_race_resolution(
         source_batch_id=coverage.source_batch_id,
         manifest_sha256=coverage.manifest_sha256,
         source_inventory_sha256=coverage.inventory_sha256,
-        claimed_f1_release_sha256=f1_release_metadata_sha256,
+        claimed_vocabulary_release_sha256=vocabulary_release_metadata_sha256,
         proposed_standard_race_concept_id=concept_id,
         claimed_source_coding_sha256=hashlib.sha256(_canonical(coding)).hexdigest(),
         unresolved_source_codes=expected_unresolved,

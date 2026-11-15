@@ -1,4 +1,4 @@
-"""No-I/O v1 contract boundary: Approved Fabric Silver -> independent OMOP F1.
+"""No-I/O v1 contract boundary: Approved Fabric Silver -> independent OMOP Vocabulary/Identity.
 
 This module NEVER opens Spark/Delta/Fabric/SQL, allocates OMOP IDs, validates
 physical data, or authorizes a Candidate/Gold write. All results are
@@ -227,7 +227,7 @@ def validate_handoff_envelope(contract: Mapping[str, Any],
 
 
 def source_replay_identity(envelope: Mapping[str, Any]) -> tuple[str, ...]:
-    """A *source* identity for F2 ledger comparison, not an OMOP stable ID."""
+    """A *source* identity for identity ledger comparison, not an OMOP stable ID."""
     producer = _exact(envelope["producer"], SOURCE_KEYS, "SOURCE")
     return tuple(producer[key] for key in (
         "hospital_id", "feed_id", "raw_source_system", "request_id"))

@@ -70,8 +70,8 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
             str(NATIVE), run_name="_g5_0113_wheel_native_pure_parity")
 
     def test_runtime_013_and_native_halt_fence(self):
-        self.assertEqual(engine.__version__, "0.1.15")
-        self.assertEqual(self.native["engine_version"], "0.1.15")
+        self.assertEqual(engine.__version__, "0.1.16")
+        self.assertEqual(self.native["engine_version"], "0.1.16")
         self.assertEqual(self.native["run_mode"], "HALT")
         self.assertIs(self.native["write_authorized"], False)
         self.assertIs(self.native["retention_preflight_verified"], False)
@@ -133,9 +133,9 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
         # In-place replacement of GA 0.1.7 would break historic G4 reads.
         # This explicitly forces isolated runtime/Environment commissioning.
         spark = Mock()
-        fn = self.native["verify_fhir_g4_silver"]
+        fn = self.native["process_fhir_silver_publication"]
         with self.assertRaisesRegex(
-            RuntimeError, "HOLD_G4_ENGINE_OR_MANIFEST_PIN"
+            RuntimeError, "HOLD_SILVER_ENGINE_OR_MANIFEST_PIN"
         ):
             fn(
                 spark, request="atlanta-fhir-gh-41552666929",

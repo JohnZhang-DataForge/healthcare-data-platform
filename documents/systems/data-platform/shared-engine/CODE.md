@@ -1,6 +1,6 @@
 # Shared Data Engine — CODE / 唯一源码地图
 
-> **当前候选状态（2026-11-15）：Shared 语义重构源码候选版本为 0.1.15，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 未发布或切换 Native Notebook/Environment。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
+> **当前候选状态（2026-11-15）：Shared 全阶段业务标识重构源码候选版本为 0.1.16，现有 Fabric Environment Git CustomLibraries 保留唯一 0.1.7 Wheel；本次 PR 不发布或切换生产 Native Notebook/Environment；独立隔离 Environment 0.1.15 已在 Fabric 通过 4 Patient / 4 Encounter → 4 Person / 4 Visit 合成 Spark 验收，本轮 0.1.16 尚未云端发布。历史 0.1.6 Publish 与只读 Smoke 验收仍有效，但不能当作最新版本。Local 生产链尚未整体迁移 Shared；Fabric Candidate/Gold/Pipeline E2E 仍 OPEN。** `shared-data-engine/` 已包含真实共享包源码及合成测试；它不包含第二份 Local Canonical Contract、Fabric I/O 或云端发布。所有新增或移动的源码必须在同一 PR 中维护本唯一源码地图。
 
 ## 当前源码、测试和治理
 
@@ -23,7 +23,7 @@
 
 | 源码/测试文件 | 唯一业务归属 |
 | --- | --- |
-| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 当前源码候选 0.1.15；Native Environment Git 唯一旧 Wheel 0.1.7 未被本轮修改；历史 0.1.6 Git 定义/Import 只读 Smoke 已验收；Candidate/Gold 未验收 |
+| [pyproject.toml](../../../../shared-data-engine/pyproject.toml) | 单一共享 Wheel 当前源码候选 0.1.16；Native Environment Git 唯一旧 Wheel 0.1.7 未被本轮修改；历史 0.1.6 Git 定义/Import 只读 Smoke 已验收；Candidate/Gold 未验收 |
 | [src/healthcare_data_engine/__init__.py](../../../../shared-data-engine/src/healthcare_data_engine/__init__.py) | 公共 API，无导入时副作用 |
 | [src/healthcare_data_engine/models/batch_context.py](../../../../shared-data-engine/src/healthcare_data_engine/models/batch_context.py) | Source/Processing/Publication 显式身份与源字节 receipt |
 | [src/healthcare_data_engine/quality/result.py](../../../../shared-data-engine/src/healthcare_data_engine/quality/result.py) | Accepted/Quarantined/Rejected/metrics 类型 |

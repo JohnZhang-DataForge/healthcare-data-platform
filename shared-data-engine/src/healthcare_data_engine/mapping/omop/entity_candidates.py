@@ -1,4 +1,4 @@
-"""Compatibility bridge from frozen G5 Person/Visit candidates to target-indexed output.
+"""Compatibility bridge from frozen OMOP Candidate Person/Visit candidates to target-indexed output.
 
 The same existing strict Silver/Concept/ID mapper runs first. This module does
 not allocate Visit IDs, approve clinical mapping or publish physical Gold.
@@ -105,7 +105,7 @@ def build_registered_person_visit_candidates(
     mapping_profile_sha256: str, raw_publish_run_id: str,
     registry: EntityRegistry = DEFAULT_OMOP_REGISTRY,
 ) -> EntityCandidateSet:
-    """Execute the identical legacy G5 fail-closed mapper before wrapping.
+    """Execute the identical legacy OMOP Candidate fail-closed mapper before wrapping.
 
     `registry` only checks output ownership and dependencies. Physical Silver
     verification is still the caller's responsibility; no Gold entitlement.

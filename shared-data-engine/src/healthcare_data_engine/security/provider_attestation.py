@@ -1,4 +1,4 @@
-"""P3.18 SOURCE-ONLY Ed25519 evidence transport contract for Fabric G5.
+"""Source-only Ed25519 technical evidence transport contract for Fabric OMOP Candidates.
 
 No production issuer key, trusted Native replay store, writer capability,
 clinical/license authorization, Fabric I/O or durable ID allocation here.
@@ -58,7 +58,7 @@ TECHNICAL_PAYLOAD_FIELDS = (
     PAYLOAD_FIELDS - {"clinical_review_sha256", "license_review_sha256"}
     | {"technical_evidence_sha256"}
 )
-# New-batch v3 is source-neutral: exact FHIR/HL7 StageScope and verified F1/F2
+# New-batch v3 is source-neutral: exact FHIR/HL7 StageScope and verified Vocabulary/Identity
 # fingerprints are independently pinned by the controller, never trusted
 # merely because the provider signed a caller-supplied JSON dictionary.
 DYNAMIC_TECHNICAL_FIELDS = TECHNICAL_PAYLOAD_FIELDS | {
@@ -88,7 +88,7 @@ class TrustedTechnicalScope:
 
     Neither this structure alone nor a signed transport permits SQL/Delta
     writes. Only a trusted controller may construct it from independently
-    validated physical Batch/Manifest/StageScope + F1/F2/Concept evidence.
+    validated physical Batch/Manifest/StageScope + Vocabulary/Identity/Concept evidence.
     """
     request_id: str
     source_batch_id: str

@@ -138,7 +138,7 @@ def build_omop_candidates(
     # Canonical v1 Person/Encounter tables deliberately do not duplicate
     # hospital_id: they carry BatchContext.namespaced_source_system instead.
     # Verify the exact hospital from the *independently approved* batch context
-    # and then join to the real Warehouse F1 map on all namespace dimensions.
+    # and then join to the real Warehouse Vocabulary map on all namespace dimensions.
     if (not isinstance(hospital_id, str) or not hospital_id
             or hospital_id != hospital_id.strip()):
         raise ValueError("CANDIDATE_HOSPITAL_ID_REQUIRED")
