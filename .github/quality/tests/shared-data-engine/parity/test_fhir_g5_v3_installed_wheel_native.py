@@ -119,7 +119,7 @@ class FhirNativeWheelV3Parity(unittest.TestCase):
     def test_dynamic_readback_bad_date_fails_before_spark_io(self):
         source, trusted = synthetic_scopes()
         spark = Mock()
-        fn = self.native["verify_fhir_g5_dynamic_silver_source_readonly"]
+        fn = self.native["verify_fhir_dynamic_silver_source_readonly"]
         with self.assertRaisesRegex(
             RuntimeError, "G4_SOURCE_VERSION_OR_DATE"
         ):
