@@ -4,6 +4,9 @@ on:
     paths:
       - 'shared-data-engine/**'
       - '.github/quality/tests/shared-data-engine/parity/**'
+      - '.github/quality/tests/shared-data-engine/mapping/**'
+      - '.github/quality/fixtures/fhir_r4/**'
+      - 'documents/systems/data-platform/shared-engine/semantic-rename-map.tsv'
       - '.github/workflows/shared-engine-wheel-validation.yml'
       - 'documents/systems/data-platform/shared-engine/CODE.md'
 permissions:
