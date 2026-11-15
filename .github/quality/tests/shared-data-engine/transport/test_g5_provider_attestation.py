@@ -94,7 +94,7 @@ class G5ProviderAttestationOffline(unittest.TestCase):
 
     def test_valid_transport_only_not_a_writer_capability(self):
         result = self.check(self.sign())
-        self.assertEqual(result.status, "G5_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY")
+        self.assertEqual(result.status, "TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE_AUTHORITY")
         self.assertEqual(result.mapping_profile_sha256, t.MAPPING_PROFILE_SHA)
         self.assertEqual(result.f1_release_metadata_sha256, "3" * 64)
         self.assertEqual(result.f2_identity_snapshot_fingerprint, "4" * 64)
@@ -200,7 +200,7 @@ class G5ProviderAttestationOffline(unittest.TestCase):
                 self.assertIsInstance(result, t.VerifiedTechnicalTransport)
                 self.assertEqual(
                     result.status,
-                    "G5_DYNAMIC_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
+                    "DYNAMIC_SCOPE_TECHNICAL_TRANSPORT_VERIFIED_SOURCE_ONLY_NOT_RELEASE")
                 self.assertEqual(result.source_format, source_format)
                 self.assertEqual(result.source_batch_id, scope.source_batch_id)
                 self.assertEqual(result.stage_scope_version, scope.stage_scope_version)
