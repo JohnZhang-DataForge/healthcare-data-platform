@@ -72,7 +72,7 @@ def _date(value: object) -> date:
         else:
             if parsed.isoformat() == value:
                 return parsed
-    raise LocalProfileHold("G5_RACE_F1_DATE_INVALID")
+    raise LocalProfileHold("RACE_MAPPING_F1_DATE_INVALID")
 
 
 def _canonical(value: dict) -> bytes:
@@ -109,16 +109,16 @@ def propose_race_resolution(
             or not _SHA256.fullmatch(coverage.manifest_sha256)
             or not isinstance(f1_release_metadata_sha256, str)
             or not _SHA256.fullmatch(f1_release_metadata_sha256)):
-        raise LocalProfileHold("G5_RACE_SOURCE_PROFILE_OR_F1_PIN_INVALID")
+        raise LocalProfileHold("RACE_MAPPING_SOURCE_PROFILE_OR_F1_PIN_INVALID")
     try:
         original = json.loads(draft.profile_bytes.decode("utf-8"))
         source_system = original["source_system"]
         load_omop_mapping_profile(draft.profile_bytes, draft.profile_sha256,
                                   source_system)
     except (ValueError, KeyError, TypeError, UnicodeDecodeError):
-        raise LocalProfileHold("G5_RACE_PROFILE_INVALID") from None
+        raise LocalProfileHold("RACE_MAPPING_PROFILE_INVALID") from None
     if source_system != coverage.source_system:
-        raise LocalProfileHold("G5_RACE_SOURCE_SCOPE_MISMATCH")
+        raise LocalProfileHold("RACE_MAPPING_SOURCE_SCOPE_MISMATCH")
 
     # Be deliberately narrow: this Change does not resolve arbitrary codes
     # or additional missing-value types by extrapolating from known examples.
@@ -128,11 +128,11 @@ def propose_race_resolution(
             or set(gaps) - {("race_code", "1002-5"), ("race_code", "UNK")}
             or ("race_code", "1002-5") not in gaps
             or any(type(n) is not int or n <= 0 for n in gaps.values())):
-        raise LocalProfileHold("G5_RACE_GAP_SCOPE_NOT_VERIFIED")
+        raise LocalProfileHold("RACE_MAPPING_GAP_SCOPE_NOT_VERIFIED")
     unknown_count = gaps.get(("race_code", "UNK"), 0)
     if (not isinstance(observed_race_coding_systems, Mapping)
             or set(observed_race_coding_systems) != {code for _, code in gaps}):
-        raise LocalProfileHold("G5_RACE_RAW_CODING_SYSTEM_INCOMPLETE")
+        raise LocalProfileHold("RACE_MAPPING_RAW_CODING_SYSTEM_INCOMPLETE")
     coding = {}
     for (_, code), count in sorted(gaps.items()):
         systems = observed_race_coding_systems[code]
@@ -140,17 +140,17 @@ def propose_race_resolution(
         if (not isinstance(systems, Mapping) or set(systems) != {expected}
                 or type(systems[expected]) is not int
                 or systems[expected] != count):
-            raise LocalProfileHold("G5_RACE_RAW_CODING_SYSTEM_MISMATCH")
+            raise LocalProfileHold("RACE_MAPPING_RAW_CODING_SYSTEM_MISMATCH")
         coding[code] = {expected: count}
 
     if not isinstance(proposed_f1_concept_row, Mapping):
-        raise LocalProfileHold("G5_RACE_F1_ROW_MISSING")
+        raise LocalProfileHold("RACE_MAPPING_F1_ROW_MISSING")
     required = {
         "concept_id", "concept_name", "domain_id", "standard_concept",
         "invalid_reason", "valid_start_date", "valid_end_date", "vocabulary_id",
     }
     if set(proposed_f1_concept_row) != required:
-        raise LocalProfileHold("G5_RACE_F1_ROW_SCHEMA_MISMATCH")
+        raise LocalProfileHold("RACE_MAPPING_F1_ROW_SCHEMA_MISMATCH")
     row = proposed_f1_concept_row
     concept_id = row["concept_id"]
     if (type(concept_id) is not int or not 1 <= concept_id <= 2147483647
@@ -159,13 +159,13 @@ def propose_race_resolution(
             or row["vocabulary_id"] != "Race"
             or row["standard_concept"] != "S"
             or row["invalid_reason"] is not None):
-        raise LocalProfileHold("G5_RACE_F1_NONSTANDARD_OR_WRONG_SEMANTICS")
+        raise LocalProfileHold("RACE_MAPPING_F1_NONSTANDARD_OR_WRONG_SEMANTICS")
     as_of_date = _date(as_of)
     if not _date(row["valid_start_date"]) <= as_of_date <= _date(row["valid_end_date"]):
-        raise LocalProfileHold("G5_RACE_F1_OUTSIDE_EFFECTIVE_DATE")
+        raise LocalProfileHold("RACE_MAPPING_F1_OUTSIDE_EFFECTIVE_DATE")
     if ("1002-5" in original["race_concepts"] or
             "UNK" in original["race_concepts"]):
-        raise LocalProfileHold("G5_RACE_PROFILE_MUST_BE_UNRESOLVED")
+        raise LocalProfileHold("RACE_MAPPING_PROFILE_MUST_BE_UNRESOLVED")
 
     # This *proposes* a separate candidate profile, does not mutate LocalDP
     # or return any write capability. An unsigned/claimed SQL row is never
@@ -176,7 +176,7 @@ def propose_race_resolution(
     }
     proposed["mapping_version"] = original["mapping_version"] + "-race-review-v1"
     if len(proposed["mapping_version"]) > 128:
-        raise LocalProfileHold("G5_RACE_PROFILE_VERSION_OVERFLOW")
+        raise LocalProfileHold("RACE_MAPPING_PROFILE_VERSION_OVERFLOW")
     serialized = _canonical(proposed)
     proposed_sha = hashlib.sha256(serialized).hexdigest()
     load_omop_mapping_profile(serialized, proposed_sha, source_system)
@@ -187,7 +187,7 @@ def propose_race_resolution(
     # LocalDP draft MUST agree; no unexplained or missing source code.
     if tuple(sorted(draft.unresolved_source_codes)) != tuple(sorted(
             f + ":" + c for f, c in gaps)):
-        raise LocalProfileHold("G5_RACE_PROFILE_INVENTORY_GAP_DRIFT")
+        raise LocalProfileHold("RACE_MAPPING_PROFILE_INVENTORY_GAP_DRIFT")
 
     return RaceResolutionDraft(
         proposed_profile_bytes=serialized,
