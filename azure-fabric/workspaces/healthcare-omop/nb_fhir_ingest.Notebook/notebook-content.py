@@ -1707,7 +1707,7 @@ def verify_fhir_dynamic_silver_source_readonly(
             or scope.hospital_id != _FHIR_SOURCE_HOSPITAL_ID
             or scope.feed_id != _FHIR_SOURCE_FEED_ID
             or scope.silver_processing_version != _G4_PROCESSING):
-        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_G4_SOURCE_VERSION_OR_DATE")
+        raise RuntimeError("HOLD_CANDIDATE_DYNAMIC_SILVER_SOURCE_VERSION_OR_DATE")
     # This planner is a pure, typed v3 trust-scope/batch boundary. It never
     # returns authority to publish and is deliberately not the Writer path.
     _plan_fhir_candidate_paths_from_trusted_scope(
@@ -1926,7 +1926,7 @@ def plan_and_write_omop_candidate_delta(
                 p.state == "PROVISIONAL" for p in handoff.batch_persons)
             or scope.provisional_visit_count != sum(
                 visit.state == "PROVISIONAL" for visit in handoff.batch_visits)):
-        raise RuntimeError("HOLD_CANDIDATE_F2_SCOPE_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_IDENTITY_SCOPE_DRIFT")
     from re import fullmatch
     if (mode not in ("CANDIDATE_WRITE", "CANDIDATE_READBACK_ONLY")
             or type(write_authorized) is not bool
@@ -1975,7 +1975,7 @@ def plan_and_write_omop_candidate_delta(
         encounter_contract_json=encounter_contract_json)
     if source != ("FHIR_CANDIDATE_SOURCE_READONLY_P100_E5918_Q0_"
                   "APPROVAL_DELTA_PASS_20261104"):
-        raise RuntimeError("HOLD_CANDIDATE_G4_NOT_APPROVED")
+        raise RuntimeError("HOLD_CANDIDATE_SILVER_NOT_APPROVED")
 
     # Strict source Mapper + F2 preview already produced these frames. We
     # deliberately DO NOT invent missing clinical values or durable IDs.
@@ -2193,7 +2193,7 @@ def execute_person_visit_candidate_publication(
             or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
             or scope.mapping_sha256 is None
             or mode not in ("CANDIDATE_WRITE", "CANDIDATE_READBACK_ONLY")):
-        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_RELEASE_OR_F2_SCOPE")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_RELEASE_OR_IDENTITY_SCOPE")
     # Preserve clinical data integrity but do not require two humans.
     # A digest by itself is NEVER a release; the actual Stage owner must
     # independently authenticate it and provide the protected callback.
@@ -2239,7 +2239,7 @@ def execute_person_visit_candidate_publication(
     encounter = spark.read.format("delta").load(paths["encounter"])
     approval_rows = spark.read.format("delta").load(paths["approval"]).collect()
     if len(approval_rows) != 1:
-        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_G4_APPROVAL_NOT_UNIQUE")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_SILVER_APPROVAL_NOT_UNIQUE")
     approval = approval_rows[0].asDict(recursive=True)
     if (approval.get("status") != "SILVER_APPROVED"
             or approval.get("publication_id") != scope.silver_publication_id
@@ -2249,14 +2249,14 @@ def execute_person_visit_candidate_publication(
             or approval.get("patient_count") != scope.patient_count
             or approval.get("encounter_count") != scope.encounter_count
             or approval.get("quarantine_count") != 0):
-        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_G4_APPROVAL_DRIFT")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_SILVER_APPROVAL_DRIFT")
     if (concepts_from_verified_warehouse is None
             or not hasattr(concepts_from_verified_warehouse, "columns")):
-        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_F1_CONCEPT_SNAPSHOT_MISSING")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_VOCABULARY_SNAPSHOT_MISSING")
     # F2 provisional IDs stay explicit and are never persisted as Warehouse
     # Gold or treated as existing committed etl.identity_map records.
     if not handoff.person_lookup or not handoff.batch_visits:
-        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_F2_ID_LOOKUP_EMPTY")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_IDENTITY_LOOKUP_EMPTY")
     for person_id in (r.person_id for r in handoff.person_lookup):
         if type(person_id) is not int or not 0 < person_id <= 2147483647:
             raise RuntimeError("HOLD_CANDIDATE_BUSINESS_PERSON_INT_RANGE")
@@ -2282,7 +2282,7 @@ def execute_person_visit_candidate_publication(
     if freeze_candidate_scope(
             handoff, mapped, feed_id=scope.feed_id,
             request_id=scope.request_id) != scope:
-        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_MAPPER_F2_SCOPE_CONFLICT")
+        raise RuntimeError("HOLD_CANDIDATE_BUSINESS_MAPPER_IDENTITY_SCOPE_CONFLICT")
     # F2 proposes IDs, Shared Mapper owns every OMOP clinical data column.
     # Never rewrite mapped output fields in this native coordinator.
     persons = spark.createDataFrame(
@@ -2353,21 +2353,21 @@ def verify_fhir_candidate_source_readonly(
     # G4 independently verifies delivered manifest bytes, Bronze snapshot,
     # re-computed canonical data, persisted Approval and Quarantine fence.
     # Existing approved G4 physical data is NEVER written/overwritten.
-    g4 = verify_fhir_g4_silver(
+    silver_publication = verify_fhir_g4_silver(
         spark, request=request, manifest_sha=manifest_sha,
         mode="SILVER_READBACK_ONLY", allow_write=False,
         retention_ok=False, strategy=strategy,
         manifest_override="", source_override="", target_override="",
         patient_contract_json=patient_contract_json,
         encounter_contract_json=encounter_contract_json)
-    if (g4.status != "SILVER_SKIP_VERIFIED"
-            or g4.processing_version != _G4_PROCESSING
-            or g4.metrics.get("patient") != _PINNED_FHIR_PATIENTS
-            or g4.metrics.get("encounter") != _PINNED_FHIR_ENCOUNTERS
-            or g4.metrics.get("quarantine_or_reject") != 0
-            or not isinstance(g4.publication_id, str)
-            or not g4.publication_id):
-        raise RuntimeError("HOLD_CANDIDATE_G4_PHYSICAL_APPROVAL_NOT_VERIFIED")
+    if (silver_publication.status != "SILVER_SKIP_VERIFIED"
+            or silver_publication.processing_version != _G4_PROCESSING
+            or silver_publication.metrics.get("patient") != _PINNED_FHIR_PATIENTS
+            or silver_publication.metrics.get("encounter") != _PINNED_FHIR_ENCOUNTERS
+            or silver_publication.metrics.get("quarantine_or_reject") != 0
+            or not isinstance(silver_publication.publication_id, str)
+            or not silver_publication.publication_id):
+        raise RuntimeError("HOLD_CANDIDATE_SILVER_PHYSICAL_APPROVAL_NOT_VERIFIED")
 
     # Independent new Spark physical scans, not the G4 in-memory frames.
     from pyspark.sql import functions as F
@@ -2380,10 +2380,10 @@ def verify_fhir_candidate_source_readonly(
     approval = approvals[0].asDict(recursive=True)
     expected = {
         "status": "SILVER_APPROVED",
-        "source_batch_id": g4.source_batch_id,
+        "source_batch_id": silver_publication.source_batch_id,
         "manifest_sha256": manifest_sha,
         "processing_version": _G4_PROCESSING,
-        "publication_id": g4.publication_id,
+        "publication_id": silver_publication.publication_id,
         "patient_count": _PINNED_FHIR_PATIENTS,
         "encounter_count": _PINNED_FHIR_ENCOUNTERS,
         "quarantine_count": 0,
@@ -2411,7 +2411,7 @@ def verify_fhir_candidate_source_readonly(
             F.col("source_system").isNull()
             | (F.col("source_system") != source_system)
             | F.col("source_batch_id").isNull()
-            | (F.col("source_batch_id") != g4.source_batch_id)
+            | (F.col("source_batch_id") != silver_publication.source_batch_id)
             | F.col(key).isNull()
             | (F.trim(F.col(key)) == "")
         ).limit(1).count():
