@@ -18,6 +18,42 @@ RENAME_MAP = ROOT / "documents/systems/data-platform/shared-engine/semantic-rena
 
 
 class SemanticIdentifiersTests(unittest.TestCase):
+    @staticmethod
+    def _phase_symbol_pattern():
+        # Single backslash: Python regex digit class, not a literal '\\d'.
+        # Match both snake_case stage tokens and embedded CamelCase stage names.
+        return re.compile(
+            r"(?:^|_)(?:g[1-9]\d?|f[1-9]\d?|p[1-9]\d?)(?=_|$)"
+            r"|[GgFfPp][1-9]\d?(?=[A-Z])",
+            re.IGNORECASE,
+        )
+
+    def test_phase_identifier_pattern_has_independent_negative_and_positive_controls(self):
+        phase = self._phase_symbol_pattern()
+        # A working gate must catch regressions before scanning real sources.
+        for bad in (
+            "execute_g5_person_visit_business",
+            "verify_fhir_g3_bronze",
+            "bridge_f2_person_visit_allocation",
+            "f1_lookup",
+            "_P3_CANDIDATE_RELEASE",
+            "CandidateG5Publisher",
+            "processP2Scope",
+        ):
+            with self.subTest(should_block=bad):
+                self.assertIsNotNone(phase.search(bad))
+        for allowed in (
+            "execute_person_visit_candidate_publication",
+            "identity_snapshot_fingerprint",
+            "vocabulary_release_metadata_sha256",
+            "fhir_r4_adapter",
+            "hl7_v2_parser",
+            "s3_bucket",
+            "request_id",
+        ):
+            with self.subTest(should_allow=allowed):
+                self.assertIsNone(phase.search(allowed))
+
     def test_shared_code_owns_no_stage_numbered_candidate_api(self):
         stage_token_pattern = re.compile(r"(?:G5_|P3_|IDENTITY_F2_)")
         old_api = re.compile(
@@ -55,7 +91,7 @@ class SemanticIdentifiersTests(unittest.TestCase):
 
     def test_all_shared_and_fhir_notebook_business_symbols_are_stage_free(self):
         """Inspect actual Python symbols, not PR diff or comment-only matches."""
-        phase = re.compile(r"(?:^|_)(?:g[1-9]\\d?|f[1-9]\\d?|p[1-9]\\d?)(?:_|$)", re.I)
+        phase = self._phase_symbol_pattern()
         # No production Python symbol exemptions: frozen legacy names are
         # JSON payload keys only, not classes, function parameters or attributes.
         for path in (*sorted(PACKAGE.rglob("*.py")), NOTEBOOK):
