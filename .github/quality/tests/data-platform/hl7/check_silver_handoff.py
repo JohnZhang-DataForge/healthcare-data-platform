@@ -260,10 +260,13 @@ def main() -> None:
             patient_contract_json=p_contract.decode(),
             encounter_contract_json=e_contract.decode())
         native_globals = native.verify_hl7_real_silver.__globals__
+        # Isolate the synthetic Request inside the test's temporary module
+        # globals; do NOT broaden the two real cloud source allowlist entries.
         with mock_patch.dict(native_globals, {
                 "engine_version": "0.1.7",
-                "_HL7_REAL_REQUEST": context.request_id,
-                "_hl7_source_context": lambda: context,
+                "_HL7_SOURCE_SCOPES": {
+                    context.request_id: {"raw_count": len(source_receipts)}},
+                "_hl7_source_context": lambda _request: context,
                 "_hl7_real_paths": lambda _scope: native_mode_paths,
                 "_hl7_transfer_root": lambda _scope: root,
                 "_hl7_verified_original_raw": lambda _spark, _ctx: source_receipts,
