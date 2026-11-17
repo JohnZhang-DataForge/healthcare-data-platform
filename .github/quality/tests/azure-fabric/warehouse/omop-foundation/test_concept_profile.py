@@ -73,10 +73,10 @@ class ConceptProfileGateTests(unittest.TestCase):
         self.hold("P1_VOCABULARY_MANIFEST_NOT_PINNED",
                   vocabulary_manifest_sha256="not-an-actual-sha")
         self.hold("P1_VOCABULARY_RELEASE_NOT_PINNED", vocabulary_release_id="")
-        self.hold("G5_MAPPING_PROFILE_SHA_CONFLICT", mapping_profile_sha256="0" * 64)
+        self.hold("OMOP_MAPPING_PROFILE_SHA_CONFLICT", mapping_profile_sha256="0" * 64)
 
     def test_profile_source_namespace_mismatch_holds(self):
-        self.hold("G5_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH",
+        self.hold("OMOP_MAPPING_PROFILE_SOURCE_NAMESPACE_MISMATCH",
                   source_system="synthetic:hospital-B:fhir-r4")
 
     def test_source_unknown_missing_or_bad_frequency_holds(self):
