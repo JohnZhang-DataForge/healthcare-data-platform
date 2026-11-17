@@ -12,6 +12,7 @@
 - [x] 2.4 实施 bounded exact-key Azure GET-only Reader，复用现有 Intake/Parser，负向测试验证后提交 PR/CI；本项仅 Source/Hosted synthetic Test，不执行远端。
 - [x] 2.2 原 42 条真实 HL7 + 固定 Azure Landing/Source Manifest SHA 实际读回；临床来源 42 行、local Delta+Replay SKIP、dbt 5 Models+Data Tests、Patient 18/Encounter 27 字段合同及独立物理 Delta 读回全部 PASS。真实 Run #42488836550。输出为 GitHub-hosted 临时数据，已清理；不等于正式 Silver/OMOP。
 - [ ] 2.3 接入现有统一 Silver DQ/quarantine/Approval/Single Writer，后续与 FHIR 在已批准 Canonical 汇合；真实 Silver/OMOP 写入需要明确审批与独占窗口。
+- [ ] 2.3.7 **HL7 → Shared OMOP 汇合业务回归（离线）**：在现有 ten-patient HL7 Parser → local Delta/dbt → Canonical Silver Approval-LAST 的冷读回后，直接调用唯一 `healthcare_data_engine.mapping.omop.candidates.build_omop_candidates`，使用仅供测试的稳定 Person ID、Concept Lookup 和 Profile，检查 10 Person / 7 Visit、Replay、缺失 Identity/Concept、未批准 Silver 均准确拒绝。禁止新增业务 Mapper、临床审核、G5/F2 阶段命名或 Fabric/Gold 写入。**PR/CI 通过前仍 OPEN；这不是已获准的正式临床 Concept Profile。**
 
 ## 2026-11-07 ET — Actual offline physical Local Delta/dbt acceptance (PR #809)
 

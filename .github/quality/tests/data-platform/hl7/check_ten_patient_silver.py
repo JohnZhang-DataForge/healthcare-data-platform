@@ -29,6 +29,114 @@ from write_staging_delta import _spark, _warehouse
 import fhir_ingest_notebook as native
 
 
+def verify_shared_omop_candidate(spark, paths: dict[str, str], context: BatchContext) -> None:
+    """Test-only HL7 Canonical Silver → existing shared OMOP mapper.
+
+    This does not sign off clinical concepts, allocate Warehouse IDs, or
+    publish Candidate/Gold. All IDs and concepts below are synthetic fixtures.
+    """
+    from pyspark.sql import functions as F
+    from healthcare_data_engine.mapping.omop.candidates import build_omop_candidates
+
+    patients = spark.read.format("delta").load(paths["patient"])
+    encounters = spark.read.format("delta").load(paths["encounter"])
+    persisted = spark.read.format("delta").load(paths["approval"]).collect()
+    if len(persisted) != 1:
+        raise RuntimeError("HL7_OMOP_SILVER_APPROVAL_READBACK_MISSING")
+    approval = persisted[0].asDict(recursive=True)
+    if (approval["status"] != "SILVER_APPROVED"
+            or approval["patient_count"] != 10
+            or approval["encounter_count"] != 7
+            or patients.count() != 10 or encounters.count() != 7):
+        raise RuntimeError("HL7_OMOP_SOURCE_COUNTS_OR_APPROVAL_CHANGED")
+
+    def code_profile(frame, name: str, seed: int) -> dict[str, int]:
+        codes = sorted(row[0] for row in frame.select(name).distinct().collect())
+        if not codes or any(not isinstance(code, str) or not code for code in codes):
+            raise RuntimeError("HL7_OMOP_SYNTHETIC_CODE_INPUT_INVALID:" + name)
+        return {code: seed + i for i, code in enumerate(codes)}
+
+    profile = {
+        "mapping_name": "synthetic-hl7-canonical-convergence",
+        "mapping_version": "test-only",
+        "source_system": context.namespaced_source_system,
+        "gender_concepts": code_profile(patients, "gender_code", 10100),
+        "race_concepts": code_profile(patients, "race_code", 10200),
+        "ethnicity_concepts": code_profile(patients, "ethnicity_code", 10300),
+        "visit_class_concepts": code_profile(encounters, "encounter_class", 10400),
+        "visit_type_concept_id": 10500,
+    }
+    profile_bytes = json.dumps(profile, sort_keys=True, separators=(",", ":")).encode()
+    profile_sha = hashlib.sha256(profile_bytes).hexdigest()
+    concept_ids = {profile["visit_type_concept_id"]}
+    for key in ("gender_concepts", "race_concepts", "ethnicity_concepts",
+                "visit_class_concepts"):
+        concept_ids.update(profile[key].values())
+    concepts = spark.createDataFrame(
+        [(cid, "S", None) for cid in sorted(concept_ids)],
+        "concept_id int, standard_concept string, invalid_reason string")
+    person_keys = sorted(
+        row[0] for row in patients.select("source_record_id").collect())
+    identity = spark.createDataFrame(
+        [("PERSON", context.hospital_id, context.namespaced_source_system,
+          key, 100000 + i) for i, key in enumerate(person_keys, 1)],
+        "entity_type string, hospital_id string, source_system string, "
+        "source_business_key string, omop_id int")
+    params = dict(
+        approval=approval, hospital_id=context.hospital_id,
+        source_system=context.namespaced_source_system,
+        source_batch_id=context.source_batch_id,
+        manifest_sha256=context.manifest_sha256,
+        processing_version=context.processing_version,
+        mapping_profile_bytes=profile_bytes, mapping_profile_sha256=profile_sha,
+        raw_publish_run_id="synthetic-local-raw-only",
+    )
+
+    def project(identity_rows=identity, concept_rows=concepts, silver=approval):
+        return build_omop_candidates(
+            patients, encounters, identity_rows, concept_rows,
+            **{**params, "approval": silver})
+
+    first = project()
+    second = project()
+    if (first.person_count != 10 or first.visit_count != 7
+            or first.status != "OMOP_CANDIDATE_ONLY_NOT_PUBLISHED"
+            or first.person.orderBy("person_id").collect()
+               != second.person.orderBy("person_id").collect()
+            or first.visit.orderBy("person_id", "source_encounter_id").collect()
+               != second.visit.orderBy("person_id", "source_encounter_id").collect()):
+        raise RuntimeError("HL7_OMOP_SHARED_CANDIDATE_REPLAY_OR_COUNTS_CHANGED")
+    # Missing a source-owned Person ID must reject the entire batch.
+    try:
+        project(identity_rows=identity.filter(
+            F.col("source_business_key") != person_keys[0]))
+    except ValueError as exc:
+        if "CANDIDATE_STABLE_PERSON_ID_NOT_FOUND" not in str(exc):
+            raise
+    else:
+        raise RuntimeError("HL7_OMOP_MISSING_IDENTITY_NOT_REJECTED")
+    # The same Shared mapper must reject unverified synthetic concepts.
+    try:
+        project(concept_rows=concepts.filter(
+            F.col("concept_id") != min(concept_ids)))
+    except ValueError as exc:
+        if "OMOP_STANDARD_CONCEPT_LOOKUP_NOT_VERIFIED" not in str(exc):
+            raise
+    else:
+        raise RuntimeError("HL7_OMOP_UNKNOWN_CONCEPT_NOT_REJECTED")
+    try:
+        project(silver={**approval, "status": "CANDIDATE_ONLY"})
+    except ValueError as exc:
+        if "CANDIDATE_SILVER_APPROVAL_DENIED_OR_CONFLICT" not in str(exc):
+            raise
+    else:
+        raise RuntimeError("HL7_OMOP_UNAPPROVED_SILVER_NOT_REJECTED")
+    print("HL7_CANONICAL_TO_SHARED_OMOP_PERSON10_VISIT7_REPLAY_NEGATIVE=PASS")
+    print("HL7_OMOP_SYNTHETIC_ONLY_NO_CLINICAL_RELEASE_OR_GOLD=YES")
+
+
+
+
 def main() -> None:
     manifest_path = Path(os.environ["HL7_LOCAL_MANIFEST_PATH"])
     original = manifest_path.read_bytes()
@@ -196,6 +304,7 @@ def main() -> None:
         if (cold.publication_id != prepared.publication_id
                 or cold.patient_count != 10 or cold.encounter_count != 7):
             raise RuntimeError("HL7_V2_TEN_COLD_SILVER_REPLAY_HOLD")
+        verify_shared_omop_candidate(spark, paths, context)
         try:
             native._write_verified_canonical_silver(
                 spark, context=context, batch=prepared, paths=paths,
