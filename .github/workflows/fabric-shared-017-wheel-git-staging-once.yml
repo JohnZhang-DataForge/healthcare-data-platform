@@ -1,0 +1,92 @@
+name: Fabric Shared Engine 0.1.17 Git Wheel Staging Once
+on:
+  pull_request:
+    paths: ['.github/workflows/fabric-shared-017-wheel-git-staging-once.yml']
+  push:
+    branches: [main]
+    paths: ['.github/workflows/fabric-shared-017-wheel-git-staging-once.yml']
+permissions:
+  contents: read
+concurrency:
+  group: fabric-shared-017-wheel-git
+  cancel-in-progress: false
+env:
+  SOURCE_DATE_EPOCH: '1704067200'
+  SOURCE_TREE: 4ef90c48f9dd08328aeaf484acdcbecd3a22962d
+  OLD_WHEEL: healthcare_data_engine-0.1.7-py3-none-any.whl
+  OLD_SHA: 0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301
+  NEW_WHEEL: healthcare_data_engine-0.1.17-py3-none-any.whl
+  LIBS: azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries
+jobs:
+  offline-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify source and two byte-identical wheels
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD:shared-data-engine)" = "$SOURCE_TREE"
+          grep -qx 'version = "0.1.17"' shared-data-engine/pyproject.toml
+          test "$(find "$LIBS" -maxdepth 1 -name '*.whl' | wc -l)" = 1
+          echo "$OLD_SHA  $LIBS/$OLD_WHEEL" | sha256sum -c -
+          python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1'
+          mkdir -p wheel-a wheel-b
+          python -m pip wheel --no-deps --no-build-isolation -w wheel-a shared-data-engine/
+          python -m pip wheel --no-deps --no-build-isolation -w wheel-b shared-data-engine/
+          cmp "wheel-a/$NEW_WHEEL" "wheel-b/$NEW_WHEEL"
+          python -m pip install --no-deps --force-reinstall "wheel-a/$NEW_WHEEL"
+          ( cd "$RUNNER_TEMP" && PYTHONPATH= python -c 'import healthcare_data_engine as h; assert h.__version__ == "0.1.17"' )
+  stage-review-branch:
+    if: >-
+      github.event_name == 'push' &&
+      github.repository == 'JohnZhang-DataForge/healthcare-data-platform' &&
+      github.ref == 'refs/heads/main' &&
+      github.run_attempt == 1 &&
+      startsWith(github.event.head_commit.message, 'FABRIC_SHARED_017_WHEEL_GIT_STAGING_ONCE_20261117')
+    needs: offline-source
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Create only one native Wheel A/D pair on Git review branch
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD:shared-data-engine)" = "$SOURCE_TREE"
+          echo "$OLD_SHA  $LIBS/$OLD_WHEEL" | sha256sum -c -
+          python -m pip install 'setuptools==75.8.2' 'wheel==0.45.1'
+          mkdir -p wheel-a wheel-b
+          python -m pip wheel --no-deps --no-build-isolation -w wheel-a shared-data-engine/
+          python -m pip wheel --no-deps --no-build-isolation -w wheel-b shared-data-engine/
+          cmp "wheel-a/$NEW_WHEEL" "wheel-b/$NEW_WHEEL"
+          BRANCH="release/fabric-shared-017-native-wheel-20261117"
+          git switch -c "$BRANCH"
+          git rm -- "$LIBS/$OLD_WHEEL"
+          mkdir -p "$LIBS"
+          cp "wheel-a/$NEW_WHEEL" "$LIBS/$NEW_WHEEL"
+          git add -A -- "$LIBS"
+          python - <<'PY'
+          import os,subprocess
+          actual={tuple(x.split("\t",1)) for x in subprocess.check_output(
+              ("git","diff","--cached","--name-status","--no-renames"),text=True).splitlines()}
+          libs=os.environ["LIBS"]
+          expected={("D",libs+"/"+os.environ["OLD_WHEEL"]),("A",libs+"/"+os.environ["NEW_WHEEL"])}
+          if actual!=expected:raise SystemExit("HOLD_UNEXPECTED_GIT_WHEEL_DIFF")
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build(fabric): stage reviewed Shared Engine 0.1.17 native Wheel'
+          git push origin "HEAD:refs/heads/$BRANCH"
+          sha256sum "wheel-a/$NEW_WHEEL" >> "$GITHUB_STEP_SUMMARY"
+          echo "NATIVE_WHEEL_REVIEW_BRANCH=$BRANCH NO_FABRIC_WRITE=TRUE" >> "$GITHUB_STEP_SUMMARY"
