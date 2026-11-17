@@ -226,7 +226,7 @@ def main() -> None:
                 raise
         else:
             raise RuntimeError("HL7_LOCAL_BAD_DQ_WROTE_SILVER")
-        if any(native._g3_delta_exists(spark, value)
+        if any(native._delta_snapshot_exists(spark, value)
                for value in bad_paths.values()):
             raise RuntimeError("HL7_LOCAL_BAD_DQ_LEFT_ANY_DELTA")
         # Also exercise the pinned Native Notebook HL7 run modes via the
