@@ -43,6 +43,8 @@ Self-Runner now has a distinct unsigned technical source/read-only F1/F2 code pa
 - [ ] 4.2 真正 Fabric Pipeline Run、独立读回及同 Request Replay SKIP；容量建立 Spark Session 前的失败单独记录，POST uncertain ACK 先 GET。
 - [ ] 4.3 检查 PR Required CI / 目标 SHA 后合并 main，准确写入实际 Run/Artifacts，不提前核销未实机验证的 Task。
 - [ ] 4.4 Gold Warehouse 单事务与 Azure WORM / Blob 漂移 / 真实网络 ACK 均作为独立后续验收；不把本 Change Candidate PASS 标为 Gold COMMITTED。
+- [x] 4.5 **FHIR / HL7 共用 Candidate 物理读回 → 现有 Warehouse Gold Writer 的 SOURCE/OFFLINE 业务连接**：由独立重开的 Person/Visit Candidate 行集及 Approval-last 技术记录重算完整行 SHA；严格校验唯一 Shared Identity Handoff（含 PROVISIONAL / PERSISTED 状态与 Person/Visit FK）、原始 Manifest/Batch/Mapping Snapshot，生成现有 `GoldBatch`，调用既有单事务 `execute_gold_transaction`、独立 SQL `independent_gold_readback`；仅第二连接确认后才报告 COMMITTED，已提交批次只允许真实读回 SKIP，Unknown ACK 只能只读核实。现有 `test_gold_technical_release.py` 扩展 10 合成 Person / 7 Visit、审批漂移/身份/Concept 负向以及提交/幂等/异常 ACK 测试，并修复调用已经语义化的 Shared Identity API 与 Concept 异常代码的老测试。**已验证的源码业务证据：Healthcare PR #943、Fabric OMOP Identity Schema Offline [Run #44085786858](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/44085786858) 全套 39 项测试 SUCCESS（含 5 项新增 Gold Bridge）。本项仅源代码和离线 CI；不代表真实 Fabric Candidate Delta、F1 技术来源、F2 物理快照、合法 Vocabulary 使用边界或 Warehouse Gold 实机 COMMIT 已通过；4.1–4.4 全部继续 OPEN。**
+
 
 ## 2026-11-03 G5 Shared Engine candidate offline evidence (NOT Fabric deployment)
 

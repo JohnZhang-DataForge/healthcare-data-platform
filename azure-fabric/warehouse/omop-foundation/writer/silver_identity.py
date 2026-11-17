@@ -297,7 +297,7 @@ def plan_silver_identity_with_f2_bridge(
     caller boolean is true. Do not feed provisional IDs directly to Gold.
     """
     from healthcare_data_engine.identity.preview import (
-        bridge_f2_person_visit_allocation, require_preview_snapshot_unchanged,
+        adapt_person_visit_allocation_preview, require_preview_snapshot_unchanged,
     )
     from healthcare_data_engine.mapping.omop.registry import DerivedRowKey
 
@@ -339,7 +339,7 @@ def plan_silver_identity_with_f2_bridge(
         existing=tuple(existing), next_free=next_free, gold_ids=gold,
     )
     try:
-        shared = bridge_f2_person_visit_allocation(silver.allocation, snapshot)
+        shared = adapt_person_visit_allocation_preview(silver.allocation, snapshot)
         require_preview_snapshot_unchanged(shared, snapshot)
     except Exception:
         raise PlanningHold("F2_SHARED_ALLOCATION_PREVIEW_MISMATCH") from None

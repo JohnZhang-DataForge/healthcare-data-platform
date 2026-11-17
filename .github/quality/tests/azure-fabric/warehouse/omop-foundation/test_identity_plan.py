@@ -297,7 +297,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[6] /
                        "shared-data-engine/src"))
 from silver_identity import bridge_f2_sql_readback_rows
 from healthcare_data_engine.identity.preview import (
-    bridge_f2_person_visit_allocation, require_preview_snapshot_unchanged,
+    adapt_person_visit_allocation_preview, require_preview_snapshot_unchanged,
 )
 from healthcare_data_engine.mapping.omop.registry import DerivedRowKey
 
@@ -370,7 +370,7 @@ class F2PhysicalToSharedBridgeTests(unittest.TestCase):
         plan = plan_ids([old, new], physical_existing,
                         {"PERSON": 42, "VISIT_OCCURRENCE": 91},
                         {"PERSON": (41,), "VISIT_OCCURRENCE": (90,)})
-        shared = bridge_f2_person_visit_allocation(plan, source.snapshot)
+        shared = adapt_person_visit_allocation_preview(plan, source.snapshot)
         self.assertEqual(shared.for_key(DerivedRowKey(
             "cdm.person", "hospital-a", "fhir:hospital-a:feed1",
             "p1")).state, "PERSISTED")
@@ -451,7 +451,7 @@ class F2PhysicalToSharedBridgeTests(unittest.TestCase):
         key = IdentityKey("PERSON", "h", "fhir:h:f", "p")
         proposed = plan_ids([key], (), {"PERSON": 1, "VISIT_OCCURRENCE": 1},
                             {"PERSON": (), "VISIT_OCCURRENCE": ()})
-        preview = bridge_f2_person_visit_allocation(proposed, bridge.snapshot)
+        preview = adapt_person_visit_allocation_preview(proposed, bridge.snapshot)
         self.assertEqual(preview.status, "ID_PREVIEW_ONLY_NOT_PERSISTED")
         changed_rows = dict(rows, allocator=(("PERSON", 1, "v1"),
                                             ("VISIT_OCCURRENCE", 1, "v1")))

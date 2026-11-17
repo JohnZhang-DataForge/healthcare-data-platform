@@ -12,6 +12,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
+import decimal
+import hashlib
+import json
 from typing import Callable, Mapping, Sequence
 
 from identity_plan import BatchFence, IdentityKey, PlanningHold, plan_ids, replay, Receipt, SHA
@@ -340,3 +343,213 @@ def execute_gold_transaction(connection, batch: GoldBatch, *,
             return "GOLD_UNKNOWN_COMMIT_ACK_VERIFY_READONLY"
         connection.rollback()
         raise
+
+
+
+def _candidate_rows_digest(rows: Sequence[Mapping[str, object]], key: str,
+                           expected: int) -> str:
+    """Match the Native Candidate Delta writer's sorted full-row SHA-256.
+
+    Only a caller's independently reopened Delta rows are acceptable input.
+    This pure comparison is NOT itself evidence of a physical read.
+    """
+    if (not isinstance(rows, (tuple, list)) or type(expected) is not int
+            or expected < 1 or len(rows) != expected):
+        raise GoldHold("GOLD_CANDIDATE_ROWS_COUNT")
+    if any(not isinstance(row, Mapping) for row in rows):
+        raise GoldHold("GOLD_CANDIDATE_ROWS_SCHEMA")
+    columns = set(rows[0])
+    if key not in columns or any(set(row) != columns for row in rows):
+        raise GoldHold("GOLD_CANDIDATE_ROWS_SCHEMA")
+    ids = [row.get(key) for row in rows]
+    if any(type(value) is not int or not 0 < value <= 2147483647
+           for value in ids) or len(set(ids)) != expected:
+        raise GoldHold("GOLD_CANDIDATE_IDS_INVALID_OR_DUPLICATE")
+
+    def encode(value):
+        if isinstance(value, (date, datetime)):
+            return value.isoformat()
+        if isinstance(value, decimal.Decimal):
+            return str(value)
+        if isinstance(value, (bytes, bytearray)):
+            return bytes(value).hex()
+        raise TypeError("GOLD_CANDIDATE_UNSUPPORTED_DATATYPE")
+
+    digest = hashlib.sha256()
+    try:
+        for row in sorted(rows, key=lambda item: item[key]):
+            raw = json.dumps(row, sort_keys=True, separators=(",", ":"),
+                             default=encode, allow_nan=False).encode("utf-8")
+            digest.update(len(raw).to_bytes(8, "big"))
+            digest.update(raw)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise GoldHold("GOLD_CANDIDATE_ROWS_NOT_CANONICAL") from exc
+    return digest.hexdigest()
+
+
+def prepare_gold_batch_from_candidate_readback(
+    *, scope, handoff, candidate_approval: Mapping[str, object],
+    person_rows: Sequence[Mapping[str, object]],
+    visit_rows: Sequence[Mapping[str, object]],
+    mapping_version: str, writer_version: str,
+    technical_evidence_sha256: str,
+) -> GoldBatch:
+    """One source-neutral Candidate->existing Gold transaction handoff.
+
+    The caller independently reopens physical Person/Visit/Approval Delta and
+    Warehouse vocabulary/identity evidence; neither a SHA nor this converter
+    authorizes COMMIT. The external trusted release_gate authenticates those
+    sources and any applicable vocabulary-use rights before SQL begins.
+    No source-specific OMOP mapper, new ID allocator, or review signatures.
+    """
+    from healthcare_data_engine.identity.candidate_handoff import (
+        PersonVisitCandidateHandoff,
+    )
+    from healthcare_data_engine.mapping.omop.candidate_publication import (
+        FrozenCandidateScope,
+    )
+    if (not isinstance(scope, FrozenCandidateScope)
+            or not isinstance(handoff, PersonVisitCandidateHandoff)
+            or handoff.status != "CANDIDATE_ID_HANDOFF_ONLY_NOT_PERSISTED"
+            or scope.hospital_id != handoff.hospital_id
+            or scope.source_system != handoff.source_system
+            or scope.source_batch_id != handoff.source_batch_id
+            or scope.manifest_sha256 != handoff.manifest_sha256
+            or scope.silver_processing_version != handoff.processing_version
+            or scope.silver_publication_id != handoff.silver_publication_id
+            or scope.identity_snapshot_fingerprint != handoff.snapshot_fingerprint
+            or scope.patient_count != len(handoff.batch_persons)
+            or scope.encounter_count != len(handoff.batch_visits)):
+        raise GoldHold("GOLD_CANDIDATE_SCOPE_OR_IDENTITY_DRIFT")
+    if not isinstance(technical_evidence_sha256, str) or not SHA.fullmatch(
+            technical_evidence_sha256):
+        raise GoldHold("GOLD_CANDIDATE_TECHNICAL_EVIDENCE_INVALID")
+    person_sha = _candidate_rows_digest(person_rows, "person_id",
+                                         scope.patient_count)
+    visit_sha = _candidate_rows_digest(visit_rows, "visit_occurrence_id",
+                                        scope.encounter_count)
+    required = {
+        "scope_receipt_key": scope.receipt_key,
+        "source_batch_id": scope.source_batch_id,
+        "mapping_sha256": scope.mapping_sha256,
+        "snapshot_fingerprint": scope.identity_snapshot_fingerprint,
+        "evidence_contract": "CANDIDATE_TECHNICAL_VOCABULARY_IDENTITY_V1",
+        "technical_evidence_sha256": technical_evidence_sha256,
+        "person_count": scope.patient_count,
+        "visit_count": scope.encounter_count,
+        "person_sha256": person_sha,
+        "visit_sha256": visit_sha,
+        "status": "CANDIDATE_APPROVED",
+    }
+    if (not isinstance(candidate_approval, Mapping)
+            or dict(candidate_approval) != required):
+        raise GoldHold("GOLD_CANDIDATE_APPROVAL_OR_PHYSICAL_DIGEST_DRIFT")
+
+    persons = {(p.person_id, p.source_business_key, p.state): p
+               for p in handoff.batch_persons}
+    visits = {(v.visit_occurrence_id, v.person_id, v.source_encounter_id,
+               v.source_person_id, v.state, v.parent_state): v
+              for v in handoff.batch_visits}
+    if len(persons) != scope.patient_count or len(visits) != scope.encounter_count:
+        raise GoldHold("GOLD_CANDIDATE_DUPLICATE_HANDOFF_IDS")
+    mapped_persons = []
+    for row in person_rows:
+        if set(row) != set(PERSON_COLS) | P_EXTRA:
+            raise GoldHold("GOLD_CANDIDATE_PERSON_COLUMNS_DRIFT")
+        key = (row["person_id"], row["person_source_value"],
+               row["identity_state"])
+        if key not in persons:
+            raise GoldHold("GOLD_CANDIDATE_PERSON_IDENTITY_DRIFT")
+        mapped_persons.append({k: row[k] for k in PERSON_COLS}
+                              | {"identity_state": row["identity_state"]})
+
+    expected_visit_cols = set(VISIT_COLS) | V_EXTRA | {"source_batch_id"}
+    mapped_visits = []
+    for row in visit_rows:
+        if not expected_visit_cols.issubset(row):
+            raise GoldHold("GOLD_CANDIDATE_VISIT_COLUMNS_MISSING")
+        key = (row["visit_occurrence_id"], row["person_id"],
+               row["source_encounter_id"], row["source_person_id"],
+               row["identity_state"], row["parent_identity_state"])
+        if (key not in visits or row["source_system"] != scope.source_system
+                or row["source_batch_id"] != scope.source_batch_id):
+            raise GoldHold("GOLD_CANDIDATE_VISIT_IDENTITY_OR_SOURCE_DRIFT")
+        mapped_visits.append({k: row[k] for k in VISIT_COLS}
+                             | {k: row[k] for k in V_EXTRA})
+
+    identity_pairs = tuple(sorted((
+        (IdentityKey("PERSON", scope.hospital_id, scope.source_system,
+                     p.source_business_key), p.person_id)
+        for p in handoff.batch_persons
+    ), key=lambda item: item[0]))
+    identity_pairs += tuple(sorted((
+        (IdentityKey("VISIT_OCCURRENCE", scope.hospital_id, scope.source_system,
+                     v.source_encounter_id), v.visit_occurrence_id)
+        for v in handoff.batch_visits
+    ), key=lambda item: item[0]))
+    fence = BatchFence(
+        scope.hospital_id, scope.source_system, scope.source_batch_id,
+        scope.manifest_sha256, scope.mapping_sha256, writer_version,
+        scope.patient_count, scope.encounter_count,
+    )
+    receipt_sha = hashlib.sha256(json.dumps(
+        required, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    batch = GoldBatch(
+        fence=fence, identities=identity_pairs,
+        persons=tuple(mapped_persons), visits=tuple(mapped_visits),
+        mapping_version=mapping_version,
+        technical_evidence_sha256=technical_evidence_sha256,
+        candidate_approval_sha256=receipt_sha,
+    )
+    _require_batch(batch)
+    return batch
+
+
+def commit_gold_from_candidate_readback(
+    connection, independent_connection: Callable[[], object], *,
+    single_writer_fence: Callable[[], bool],
+    release_gate: Callable[[GoldBatch], bool],
+    scope, handoff, candidate_approval: Mapping[str, object],
+    person_rows: Sequence[Mapping[str, object]],
+    visit_rows: Sequence[Mapping[str, object]],
+    mapping_version: str, writer_version: str,
+    technical_evidence_sha256: str,
+) -> str:
+    """First write + replay use ONE existing Warehouse transaction engine.
+
+    First authenticated readback may verify a prior commit and safely SKIP.
+    SQL commit ACK alone is never success; a SECOND independent connection
+    must verify Map, Ledger, both Gold tables and audit counts. Unknown ACK
+    must be resolved read-only, never auto-retried.
+    """
+    batch = prepare_gold_batch_from_candidate_readback(
+        scope=scope, handoff=handoff,
+        candidate_approval=candidate_approval,
+        person_rows=person_rows, visit_rows=visit_rows,
+        mapping_version=mapping_version, writer_version=writer_version,
+        technical_evidence_sha256=technical_evidence_sha256,
+    )
+    if (not callable(single_writer_fence) or not callable(release_gate)
+            or single_writer_fence() is not True
+            or release_gate(batch) is not True):
+        raise GoldHold("GOLD_RELEASE_OR_SINGLE_WRITER_HOLD")
+    try:
+        if independent_gold_readback(independent_connection, batch):
+            return "GOLD_VERIFIED_REPLAY_SKIP"
+    except Exception:
+        # A failed connection is not proof that Gold is absent. Do not write.
+        return "GOLD_INITIAL_READBACK_UNAVAILABLE_NO_WRITE"
+    ack = execute_gold_transaction(
+        connection, batch, single_writer_fence=single_writer_fence,
+        release_gate=release_gate,
+    )
+    if ack != "GOLD_COMMIT_ACK_VERIFY_INDEPENDENT_SQL_NOT_ACCEPTED":
+        return ack
+    try:
+        if independent_gold_readback(independent_connection, batch):
+            return "GOLD_COMMITTED_AND_INDEPENDENT_READBACK_PASS"
+    except Exception:
+        pass
+    # Connection or row readback cannot establish acceptance; no blind retry.
+    return "GOLD_COMMIT_ACK_UNVERIFIED_READONLY_RECONCILE"
