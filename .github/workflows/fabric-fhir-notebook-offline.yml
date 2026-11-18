@@ -212,6 +212,9 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
+          # Run immutable 0.1.7 regression tests against their own historical Wheel,
+          # not against the current 0.1.17 package with renamed error contracts.
+          python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-017/healthcare_data_engine-0.1.7-py3-none-any.whl"
           cd "$RUNNER_TEMP"
           PYTHONPATH= python -m unittest discover -s "$RUNNER_TEMP/fabric-engine-017/shared-data-engine/tests" -p 'test_omop_candidates.py' -v
           echo 'G5_017_INSTALLED_SOURCE_MAPPER_OFFLINE_TESTS=PASS' >> "$GITHUB_STEP_SUMMARY"
