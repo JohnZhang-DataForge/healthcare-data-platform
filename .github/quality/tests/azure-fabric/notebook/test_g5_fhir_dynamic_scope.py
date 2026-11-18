@@ -101,7 +101,7 @@ class DynamicG5SourceOnly(unittest.TestCase):
             ):
                 method(scope, trusted_scope=trusted)
         # Installed GA can still run legacy paths without gaining write authority.
-        self.assertEqual(self.nb["engine_version"], "0.1.7")
+        self.assertEqual(self.nb["engine_version"], "0.1.17")
         self.assertEqual(self.nb["run_mode"], "HALT")
         self.assertIs(self.nb["write_authorized"], False)
 
