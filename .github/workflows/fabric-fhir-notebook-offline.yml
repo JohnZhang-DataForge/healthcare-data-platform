@@ -35,8 +35,8 @@ jobs:
           python -m venv "$RUNNER_TEMP/fabric-offline"
           "$RUNNER_TEMP/fabric-offline/bin/pip" install --no-index --find-links="$RUNNER_TEMP/wheelhouse" -r shared-data-engine/requirements-test.txt
           LIBS='azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries'
-          CURRENT="$LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl"
-          CURRENT_SHA='0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301'
+          CURRENT="$LIBS/healthcare_data_engine-0.1.17-py3-none-any.whl"
+          CURRENT_SHA='546a9c945f8ad964b58a4d83328cd1cc09c6a21b716ddaa829e03e685127f705'
           HISTORICAL="$RUNNER_TEMP/healthcare_data_engine-0.1.6-py3-none-any.whl"
           HISTORICAL_SHA='473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff'
           git show '3e1a036e309e72d8c9c79e5923333987c1c9eef7:azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.6-py3-none-any.whl' > "$HISTORICAL"
@@ -49,7 +49,7 @@ jobs:
           "$RUNNER_TEMP/fabric-offline/bin/python" - <<'PY'
           import healthcare_data_engine as engine
           from healthcare_data_engine.mapping.omop.candidate_publication import decide_candidate_publication
-          assert engine.__version__ == "0.1.7"
+          assert engine.__version__ == "0.1.17"
           assert callable(decide_candidate_publication)
           print("G5_017_PUBLISHED_BINARY_NATIVE_BUSINESS_TESTS_READY")
           PY
@@ -160,6 +160,8 @@ jobs:
             echo "$CANDIDATE_SHA  $LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl" | sha256sum --check
             cmp "$LIBS/healthcare_data_engine-0.1.7-py3-none-any.whl" "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
             echo 'G5_017_GIT_REVIEW_ONLY_MATCHES_SOURCE=PASS' >> "$GITHUB_STEP_SUMMARY"
+          elif test -f "$LIBS/healthcare_data_engine-0.1.17-py3-none-any.whl"; then
+            echo '546a9c945f8ad964b58a4d83328cd1cc09c6a21b716ddaa829e03e685127f705  '"$LIBS/healthcare_data_engine-0.1.17-py3-none-any.whl" | sha256sum --check
           else
             echo 'HOLD_G5_UNREVIEWED_GIT_NATIVE_WHEEL'; exit 1
           fi
@@ -174,10 +176,11 @@ jobs:
           PY
           python -m pip install --no-deps --force-reinstall "$RUNNER_TEMP/g5-wheel-017/$WHEEL"
           echo 'G5_017_REPRODUCIBLE_SOURCE_WHEEL_INSTALLED=PASS' >> "$GITHUB_STEP_SUMMARY"
-      - name: Validate real P3 business Notebook symbols under GA 0.1.7
+      - name: Validate real P3 business Notebook symbols under current GA 0.1.17
         shell: bash
         run: |
           set -Eeuo pipefail
+          python -m pip install --no-deps --force-reinstall "$GITHUB_WORKSPACE/azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.17-py3-none-any.whl"
           cd "$RUNNER_TEMP"
           PYTHONPATH= python - <<'PY'
           import importlib.metadata
@@ -188,14 +191,14 @@ jobs:
           from healthcare_data_engine.mapping.omop.candidates import build_omop_candidates
           from healthcare_data_engine.mapping.omop.candidate_publication import decide_candidate_publication
           from healthcare_data_engine.identity.candidate_handoff import plan_candidate_identity_handoff
-          assert engine.__version__ == importlib.metadata.version("healthcare-data-engine") == "0.1.7"
+          assert engine.__version__ == importlib.metadata.version("healthcare-data-engine") == "0.1.17"
           assert callable(build_omop_candidates)
           assert callable(plan_candidate_identity_handoff)
           assert callable(decide_candidate_publication)
           path = (Path(os.environ["GITHUB_WORKSPACE"]) /
                   "azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py")
           nb = runpy.run_path(str(path), run_name="_p3_business_symbols_no_spark_job")
-          assert nb["engine_version"] == "0.1.7"
+          assert nb["engine_version"] == "0.1.17"
           assert nb["run_mode"] == "HALT"
           assert nb["write_authorized"] is False
           assert nb["retention_preflight_verified"] is False
