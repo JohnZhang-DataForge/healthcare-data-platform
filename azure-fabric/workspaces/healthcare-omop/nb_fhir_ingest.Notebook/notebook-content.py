@@ -29,6 +29,9 @@
 """Git-native FHIR Notebook; staged, not released for cloud writes."""
 from __future__ import annotations
 
+# Update this single value when deploying a new Shared Engine release.
+EXPECTED_SHARED_ENGINE_VERSION = "0.1.17"
+
 # Git-to-Fabric transport smoke marker (2026-11-01): no runtime/write authorization.
 # Event-triggered sync smoke (2026-11-01): inert comment, no runtime behavior change.
 from dataclasses import dataclass
@@ -415,7 +418,7 @@ def process_fhir_bronze_snapshot(spark, *, request: str, manifest_sha: str,
     if (mode == "BRONZE_READBACK_ONLY" and
             (allow_write is not False or retention_ok is not False)):
         raise RuntimeError("HOLD_BRONZE_READBACK_FLAGS_NOT_READONLY")
-    if (engine_version != "0.1.7" or not isinstance(manifest_sha, str)
+    if (engine_version != EXPECTED_SHARED_ENGINE_VERSION or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
         raise RuntimeError("HOLD_BRONZE_ENGINE_OR_MANIFEST_PIN_INVALID")
@@ -894,7 +897,7 @@ def verify_fhir_silver_dq_negative(spark, *, request: str, manifest_sha: str,
     paths = _silver_publication_paths(request)
     writable = mode == "SILVER_DQ_QUARANTINE_WRITE"
     if (allow_write is not writable or retention_ok is not writable
-            or engine_version != "0.1.7"
+            or engine_version != EXPECTED_SHARED_ENGINE_VERSION
             or not isinstance(manifest_sha, str)
             or not isinstance(derivation_sha, str)
             or len(manifest_sha) != 64 or len(derivation_sha) != 64
@@ -1024,7 +1027,7 @@ def process_fhir_silver_publication(spark, *, request: str, manifest_sha: str,
             or (mode == "SILVER_READBACK_ONLY" and
                 (allow_write is not False or retention_ok is not False))):
         raise RuntimeError("HOLD_SILVER_BOOLEAN_WRITE_GATES")
-    if (engine_version != "0.1.7" or not isinstance(manifest_sha, str)
+    if (engine_version != EXPECTED_SHARED_ENGINE_VERSION or not isinstance(manifest_sha, str)
             or len(manifest_sha) != 64 or
             any(c not in "0123456789abcdef" for c in manifest_sha)):
         raise RuntimeError("HOLD_SILVER_ENGINE_OR_MANIFEST_PIN")
@@ -1507,7 +1510,7 @@ def verify_hl7_real_silver(spark, *, request: str, manifest_sha: str,
                 (allow_write is not True or retention_ok is not True))
             or (mode == "HL7_SILVER_READBACK_ONLY" and
                 (allow_write is not False or retention_ok is not False))
-            or engine_version != "0.1.7"
+            or engine_version != EXPECTED_SHARED_ENGINE_VERSION
             or not isinstance(manifest_sha, str)
             or not re.fullmatch(r"[0-9a-f]{64}", manifest_sha)):
         raise RuntimeError("HOLD_HL7_RELEASE_MODE_OR_SOURCE_FENCE")
@@ -2186,7 +2189,7 @@ def execute_person_visit_candidate_publication(
     from healthcare_data_engine.mapping.omop.candidate_publication import (
         FrozenCandidateScope, PersonVisitCandidateHandoff,
         freeze_candidate_scope)
-    if (engine_version != "0.1.7"
+    if (engine_version != EXPECTED_SHARED_ENGINE_VERSION
             or not isinstance(scope, FrozenCandidateScope)
             or not isinstance(handoff, PersonVisitCandidateHandoff)
             or scope.source_batch_id != handoff.source_batch_id
@@ -2332,7 +2335,7 @@ def verify_fhir_candidate_source_readonly(
     """
     if (request != _PINNED_FHIR_REQUEST
             or manifest_sha != _PINNED_FHIR_MANIFEST_SHA
-            or engine_version != "0.1.7"
+            or engine_version != EXPECTED_SHARED_ENGINE_VERSION
             or strategy != "DELTA_RAW_SNAPSHOT_V1"
             or allow_write is not False
             or retention_ok is not False
@@ -2736,7 +2739,7 @@ def validate_read_only_runtime_smoke(*, mode: str, allow_write: bool,
             or any(value != "" for value in (request, manifest, source, target))):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_UNSAFE_PARAMETERS")
     import pyspark
-    if engine_version != "0.1.7":
+    if engine_version != EXPECTED_SHARED_ENGINE_VERSION:
         raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_ENGINE_VERSION")
     if not pyspark.__version__.startswith("4.1."):
         raise RuntimeError("HOLD_RUNTIME_SMOKE_WRONG_SPARK_VERSION")
@@ -2757,7 +2760,7 @@ def _frozen_fhir_source_context(spark, request: str):
     }
     if not isinstance(request, str) or request not in frozen:
         raise RuntimeError("HOLD_FHIR_INTAKE_REQUEST_NOT_PINNED")
-    if engine_version != "0.1.7":
+    if engine_version != EXPECTED_SHARED_ENGINE_VERSION:
         raise RuntimeError("HOLD_FHIR_INTAKE_WHEEL_MISMATCH")
     expected_manifest_sha, expected_objects = frozen[request]
     prefix = "Files/fhir_landing/clinical/v1/atlanta-hospital-a/atlanta-hospital-a-fhir-r4/" + request
