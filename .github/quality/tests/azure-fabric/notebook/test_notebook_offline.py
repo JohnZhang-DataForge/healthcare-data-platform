@@ -227,7 +227,7 @@ class OfflineSparkCanonical(unittest.TestCase):
         # The installed GA Wheel is distinct from the serialized Adapter
         # record version; pure conversion rejects missing APIs, not a version
         # string that has no authority to publish.
-        self.assertEqual(ingest.engine_version, "0.1.7")
+        self.assertEqual(ingest.engine_version, "0.1.17")
         ctx, manifest, obj = make_batch()
         with patch.dict(ingest.prepare_batch.__globals__, {"parse_fhir_resources": None}):
             with self.assertRaisesRegex(ValueError, "SHARED_FHIR_CONVERTER_CAPABILITY_UNAVAILABLE"):
