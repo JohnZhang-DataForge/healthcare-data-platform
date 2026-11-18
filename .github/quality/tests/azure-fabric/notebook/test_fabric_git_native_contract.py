@@ -34,7 +34,7 @@ class FabricGitNativeContract(unittest.TestCase):
             "workspaceId": "00000000-0000-0000-0000-000000000000"
         })
         self.assertEqual(env_platform["metadata"]["displayName"], "env_healthcare")
-        self.assertIn('if engine_version != "0.1.7":', nb)
+        self.assertIn('if engine_version != EXPECTED_SHARED_ENGINE_VERSION:', nb)
         self.assertIn('run_mode = "HALT"', nb)
         self.assertIn("HOLD_FABRIC_RUNTIME_RELEASE_NOT_VERIFIED", nb)
         self.assertNotIn("write_authorized = True", nb)
@@ -52,7 +52,7 @@ class FabricGitNativeContract(unittest.TestCase):
 
     def test_g5_engine_package_016_is_distinct_from_adapter_record_010(self):
         content = (GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py").read_text()
-        self.assertEqual(content.count('if engine_version != "0.1.7":'), 2)  # old P2 runtime and G4 intake still pinned
+        self.assertEqual(content.count('if engine_version != EXPECTED_SHARED_ENGINE_VERSION:'), 2)  # old P2 runtime and G4 intake still pinned
         self.assertIn("SHARED_FHIR_CONVERTER_CAPABILITY_UNAVAILABLE", content)
         self.assertNotIn('if engine_version != "0.1.0":', content)
         self.assertIn('(F.col("adapter_version") != "0.1.0")', content)
@@ -228,6 +228,8 @@ class FabricGitNativeContract(unittest.TestCase):
                 "473df0171de89a1260ce8bd4b58de301802a23f28cd7c6007c8f9563772748ff",
             "healthcare_data_engine-0.1.7-py3-none-any.whl":
                 "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301",
+            "healthcare_data_engine-0.1.17-py3-none-any.whl":
+                "546a9c945f8ad964b58a4d83328cd1cc09c6a21b716ddaa829e03e685127f705",
         }
         lib = wheels[0]
         self.assertIn(lib.name, pinned, "HOLD_UNREVIEWED_GIT_NATIVE_WHEEL")
@@ -238,13 +240,13 @@ class FabricGitNativeContract(unittest.TestCase):
             self.assertTrue(any(n.endswith(".dist-info/METADATA") for n in names))
             self.assertTrue(any(n.startswith("healthcare_data_engine/") for n in names))
             p3 = "healthcare_data_engine/mapping/omop/candidate_publication.py"
-            self.assertEqual(p3 in names, "0.1.7" in lib.name)
+            self.assertEqual(p3 in names, any(v in lib.name for v in ("0.1.7", "0.1.17")))
         # Existing HALT Native business Notebook now pins Published 0.1.7. A
         # real GA Published 0.1.7 Wheel does NOT lift HALT or authorize writes.
         notebook = (
             GIT_ROOT / "nb_fhir_ingest.Notebook/notebook-content.py"
         ).read_text()
-        self.assertIn('if engine_version != "0.1.7":', notebook)
+        self.assertIn('if engine_version != EXPECTED_SHARED_ENGINE_VERSION:', notebook)
         self.assertIn('run_mode = "HALT"', notebook)
         self.assertIn('write_authorized = False', notebook)
 
