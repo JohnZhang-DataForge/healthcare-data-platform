@@ -10,7 +10,7 @@
 | --- | --- |
 | [env_healthcare.Environment/.platform](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/.platform) | Fabric Git 原生 Environment 元数据，保持 `logicalId` 不变 |
 | [env_healthcare.Environment/Setting/Sparkcompute.yml](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Setting/Sparkcompute.yml) | Spark compute 声明；真实 Staging 读回 Runtime 2.0 |
-| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl) | 唯一 Git Native **Shared Engine 0.1.7**；2026-11-07 已经真实 Fabric Cloud Staging、GA Publish + 第三次独立 GET-only 读回确认 Published=Staging=0.1.7。原 0.1.6 GA 可通过 Git SHA 固定历史基线读取，但并非当前有效 Library。Git/CI Wheel SHA256 `0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301`，发布后的 Library List 只验证**库名称**，不直接提供 Wheel 文件内容 SHA |
+| [env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.17-py3-none-any.whl](../../../../azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.17-py3-none-any.whl) | 唯一 Git Native **Shared Engine 0.1.17**；正式 Fabric env_healthcare 于 2026-11-17 在 Self-Runner [GA Run #44151663397](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/44151663397) 已实际完成 Staging + Published Library=0.1.17 读回 PASS，Wheel 双次独立构建 SHA256 `546a9c945f8ad964b58a4d83328cd1cc09c6a21b716ddaa829e03e685127f705`。该 Git Wheel 二进制由 [Run #44154551356](https://github.com/JohnZhang-DataForge/healthcare-data-platform/actions/runs/44154551356) 生成；正式 Spark import 曾在首个发布流程后失败，待独立实际验证，不能标为 PASS；本 Git 提交不表示已进行后续 updateFromGit。历史 0.1.7 Wheel 仍可从不可变历史 Git commit 恢复，不与新版共存。 |
 
 新增原生定义要在 CODE 映射中注册。Shared 源码只能在 `shared-data-engine/` 维护，Environment 的 `CustomLibraries/` 仅保存已构建版本制品；避免复制源码或同时保留多个 Wheel。
 
@@ -69,3 +69,10 @@ A separately reviewed Git main sync and Publish is needed.
 - **GA 有效 Publish**：[Self-Runner PR #570](https://github.com/JohnZhang-DataForge/Self-Runner/pull/570) / [真实 Run #42370523153](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42370523153) **SUCCESS**：唯一 Publish POST HTTP202 → LRO 及 Library `publishDetails.state=Success`、`sparkLibraries.state=Success`、`targetVersion` 验证、Runtime 2.0；Controller 结果 `G5_ENV_017_GA_PUBLISHED=PASS SOLE_CUSTOM_WHEEL_017=TRUE`。受审底层 0.1.3 方法仍输出旧的 `013` 常量诊断标签，**应以本次 0.1.7 顶层 Controller 的严格 PIN 与独立真实读回为准**。
 - **发布后第三次独立云端 GET-only**：[Run #42369698228 第 3 次](https://github.com/JohnZhang-DataForge/Self-Runner/actions/runs/42369698228) **SUCCESS**：`G5_ENV_PUBLISHED=0.1.7`、`G5_ENV_STAGING=0.1.7`、Git synced/remote/workspace HEAD 均为 `15aef042bc23bc67b8545f5cb32b26ac7410fd62`、原四项 Workspace-local 修改不变，`G5_GIT_CHANGES=4 REMOTE=0 WORKSPACE=4 UNKNOWN=0`、`CLOUD_WRITES=0`。Library API 不返回 Wheel 原字节 SHA，因此上述 SHA 证明属于受审 Git/CI 包，**不能借 Published 文件名宣称 Spark session 已经加载此包**。
 - **剩余独立 Gate（OPEN）**：Fabric Spark 4.1 隔离 Notebook 真实 `healthcare-data-engine==0.1.7` Import、正式 `nb_fhir_ingest` 从 0.1.6 → 0.1.7 版本守卫迁移及独立运行时 `RUNTIME_SMOKE`。当前正式 Notebook 仍 `engine_version==0.1.6`，默认 `HALT`、写入授权 False，不应尝试业务运行；0.1.7 发布**未**执行 Candidate Delta、临床 Mapping Approval、Warehouse Gold COMMIT 或 Pipeline E2E。
+
+
+## Shared Engine 0.1.17 GA 发布时间与 Git 二进制一致性
+
+- Fabric `env_healthcare` 的正式 Staging 与 Published 均已独立 GET 读回唯一 `healthcare-data-engine 0.1.17`，GA Run #44151663397；这只是有效库版本，不证明临床 Notebook 或 Gold 数据运行。
+- 此 CODE 映射指向当前唯一 Git Native Wheel 0.1.17，SHA256 `546a9c945f8ad964b58a4d83328cd1cc09c6a21b716ddaa829e03e685127f705`；避免后续 Git 同步恢复旧版。
+- 正式 Spark import 和 Git HEAD 同步状态仍分别等待真实读回。默认 HALT、零 Candidate/Gold 写入不变。

@@ -26,11 +26,11 @@ LIBS = ROOT / (
     "azure-fabric/workspaces/healthcare-omop/"
     "env_healthcare.Environment/Libraries/CustomLibraries")
 SOURCE_METADATA = ROOT / "shared-data-engine/pyproject.toml"
-PUBLISHED_VERSION = "0.1.7"
+PUBLISHED_VERSION = "0.1.17"
 LEGACY_VERSION = "0.1.6"
 SOURCE_CANDIDATE_VERSION = "0.1.17"
 PINNED_WHEEL_SHA256 = (
-    "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
+    "546a9c945f8ad964b58a4d83328cd1cc09c6a21b716ddaa829e03e685127f705")
 PINNED_REVIEW_ONLY_017_SHA256 = (
     "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301")
 REVIEW_ONLY_VERSION = "0.1.7"
@@ -125,13 +125,13 @@ class G5NativeWheelIsolation(unittest.TestCase):
         # Environment, not merely a review-only Git staging artifact.
         self.assertEqual(
             [x.name for x in wheel_files],
-            ["healthcare_data_engine-0.1.7-py3-none-any.whl"])
+            ["healthcare_data_engine-0.1.17-py3-none-any.whl"])
         self.assertEqual(
             hashlib.sha256(wheel_files[0].read_bytes()).hexdigest(),
             PINNED_WHEEL_SHA256)
         source = NATIVE.read_text(encoding="utf-8")
         self.assertEqual(
-            source.count('if engine_version != "0.1.7":'), 2)
+            source.count('if engine_version != EXPECTED_SHARED_ENGINE_VERSION:'), 2)
         self.assertIn("SHARED_FHIR_CONVERTER_CAPABILITY_UNAVAILABLE", source)
         self.assertIn('run_mode = "HALT"', source)
         self.assertIn('fhir-silver-canonical-v1:engine-0.1.1', source)
@@ -339,7 +339,7 @@ class G5NativeWheelIsolation(unittest.TestCase):
                                        attestation_bytes=b"synthetic-envelope-only")
 
         # The actual 0.1.7 remains a strict HOLD, regardless of fake bytes.
-        self.assertEqual(self.native["engine_version"], "0.1.7")
+        self.assertEqual(self.native["engine_version"], "0.1.17")
 
 
 

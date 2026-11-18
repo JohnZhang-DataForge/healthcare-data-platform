@@ -26,12 +26,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Import exact GA Shared Engine 0.1.7 and execute source / writer contracts
+      - name: Import exact GA Shared Engine 0.1.17 and execute source / writer contracts
         shell: bash
         run: |
           set -Eeuo pipefail
-          wheel=azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl
-          echo "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301  $wheel" | sha256sum --check
+          wheel=azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.17-py3-none-any.whl
+          echo "546a9c945f8ad964b58a4d83328cd1cc09c6a21b716ddaa829e03e685127f705  $wheel" | sha256sum --check
           python -m pip install --no-deps "$wheel"
           python -m py_compile azure-fabric/workspaces/healthcare-omop/nb_fhir_ingest.Notebook/notebook-content.py
           PYTHONPATH="$GITHUB_WORKSPACE/azure-fabric/notebook-development" python -m unittest discover \
