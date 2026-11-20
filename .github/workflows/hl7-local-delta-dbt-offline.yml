@@ -102,19 +102,29 @@ jobs:
           python "$GITHUB_WORKSPACE/.github/quality/tests/data-platform/hl7/check_ten_patient_silver.py"
           echo "HL7_V2_TEN_NEW_FHIR_PATIENT_SINGLE_SILVER_LOCAL_E2E=PASS"
           echo "HL7_V2_OIE_BLOB_FABRIC_REMOTE_WRITES=NO"
-      # The formal Notebook workflow's source-version gate still assumes
-      # Shared Engine 0.1.7, while current shared SOURCE is 0.1.10.
-      # Independently test FHIR G4 compatibility with the exact native
-      # Published/GA 0.1.7 Wheel instead of altering either release version.
-      - name: FHIR G4 shared-writer regression with pinned native GA Wheel (offline)
+      # Exercise the currently published native wheel, matching the Notebook
+      # runtime contract. Do not reinstall an obsolete removed 0.1.7 wheel.
+      - name: FHIR shared-writer regression with current native Wheel (offline)
         run: |
           set -Eeuo pipefail
           cd "$GITHUB_WORKSPACE"
-          NATIVE_WHEEL="azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.7-py3-none-any.whl"
-          echo "0ae651aab21ce52592ac7462e365554dfc4a8cb0e65d44dd5ba9a39cb448c301  $NATIVE_WHEEL" | sha256sum --check
+          NATIVE_WHEEL="azure-fabric/workspaces/healthcare-omop/env_healthcare.Environment/Libraries/CustomLibraries/healthcare_data_engine-0.1.17-py3-none-any.whl"
+          python - "$NATIVE_WHEEL" <<'PY'
+          import sys, zipfile
+          from pathlib import Path
+          path = Path(sys.argv[1])
+          if not path.is_file():
+              raise SystemExit("CURRENT_SHARED_WHEEL_MISSING")
+          with zipfile.ZipFile(path) as wheel:
+              bad = wheel.testzip()
+              metadata = wheel.read("healthcare_data_engine-0.1.17.dist-info/METADATA")
+              if bad or b"Version: 0.1.17" not in metadata:
+                  raise SystemExit("CURRENT_SHARED_WHEEL_INVALID")
+          print("CURRENT_SHARED_WHEEL_STRUCTURE_AND_VERSION=PASS")
+          PY
           python -m pip install --no-deps --force-reinstall "$NATIVE_WHEEL"
           PYTHONPATH="$GITHUB_WORKSPACE/azure-fabric/notebook-development" \
             python -m unittest discover \
               -s "$GITHUB_WORKSPACE/.github/quality/tests/azure-fabric/notebook" \
               -p "test_g4_*.py" -v
-          echo "FHIR_G4_ONE_SILVER_WRITER_GA_017_OFFLINE=PASS"
+          echo "FHIR_ONE_SILVER_WRITER_CURRENT_017_OFFLINE=PASS"

@@ -128,3 +128,95 @@ def prepare_hl7_candidate_transport(
     }
     blobs["candidate_manifest.json"] = _json_bytes(manifest)
     return blobs
+
+
+def verify_hl7_candidate_transport(
+        blobs: Mapping[str, bytes], *, context: BatchContext,
+        patient_contract_bytes: bytes, encounter_contract_bytes: bytes,
+) -> dict[str, list[dict]]:
+    """Independently verify a received immutable Canonical transport envelope.
+
+    No I/O, publishing, OMOP mapping or trust in manifest-supplied counts.
+    Return canonical wire rows only after all three blobs and pinned contracts
+    match the caller's independently verified source context.
+    """
+    if not isinstance(blobs, Mapping) or set(blobs) != set(NAMES):
+        raise HL7HandoffHold("TRANSFER_RECEIVED_FILE_SET_DRIFT")
+    if any(not isinstance(blobs[name], bytes) or
+           len(blobs[name]) == 0 or len(blobs[name]) > MAX_ENTITY_BYTES
+           for name in NAMES):
+        raise HL7HandoffHold("TRANSFER_RECEIVED_BYTES_BOUNDS")
+    try:
+        manifest = json.loads(blobs["candidate_manifest.json"])
+    except (ValueError, UnicodeError):
+        raise HL7HandoffHold("TRANSFER_MANIFEST_JSON_INVALID") from None
+    expected = {
+        "schema": SCHEMA, "hospital_id": context.hospital_id,
+        "feed_id": context.feed_id, "source_system": context.source_system,
+        "request_id": context.request_id,
+        "source_batch_id": context.source_batch_id,
+        "source_manifest_sha256": context.manifest_sha256.lower(),
+        "processing_version": context.processing_version,
+        "source_version": context.source_version,
+        "adapter_version": context.adapter_version,
+        "canonical_version": context.canonical_version,
+        "patient_contract_sha256": _sha(patient_contract_bytes),
+        "encounter_contract_sha256": _sha(encounter_contract_bytes),
+        "status": "CANDIDATE_ONLY_NOT_SILVER_APPROVED",
+    }
+    if (not isinstance(manifest, dict)
+            or any(manifest.get(k) != v for k, v in expected.items())
+            or set(manifest) != set(expected) | {"publication_id", "entities"}
+            or not isinstance(manifest.get("entities"), dict)
+            or set(manifest["entities"]) != {"patient", "encounter"}):
+        raise HL7HandoffHold("TRANSFER_MANIFEST_CONTEXT_DRIFT")
+    contracts = {
+        "patient": load_pinned_contract(patient_contract_bytes, "patient"),
+        "encounter": load_pinned_contract(encounter_contract_bytes, "encounter"),
+    }
+    result = {}
+    for entity, key in (("patient", "source_record_id"),
+                        ("encounter", "source_encounter_id")):
+        filename = f"canonical_{entity}.json"
+        raw = blobs[filename]
+        try:
+            document = json.loads(raw)
+        except (ValueError, UnicodeError):
+            raise HL7HandoffHold("TRANSFER_ENTITY_JSON_INVALID") from None
+        if (not isinstance(document, dict)
+                or set(document) != {"entity", "rows", "schema"}
+                or document["entity"] != entity or document["schema"] != SCHEMA
+                or not isinstance(document["rows"], list)
+                or not 1 <= len(document["rows"]) <= MAX_ROWS_PER_ENTITY):
+            raise HL7HandoffHold("TRANSFER_ENTITY_SCHEMA_DRIFT")
+        rows = document["rows"]
+        if (any(not isinstance(row, dict)
+                or set(row) != {f["name"] for f in contracts[entity]["fields"]}
+                for row in rows)
+                or any(not isinstance(row.get(key), str) or not row[key]
+                       for row in rows)
+                or [row[key] for row in rows] != sorted(
+                    {row[key] for row in rows})):
+            raise HL7HandoffHold("TRANSFER_ENTITY_KEYS_DRIFT")
+        # Canonical bytes are re-encoded, preventing duplicate JSON keys,
+        # non-canonical numeric encoding and ambiguous transport documents.
+        if _json_bytes(document) != raw:
+            raise HL7HandoffHold("TRANSFER_ENTITY_NOT_CANONICAL")
+        item = manifest["entities"][entity]
+        if (not isinstance(item, dict)
+                or set(item) != {"file", "sha256", "bytes", "rows"}
+                or item != {"file": filename, "sha256": _sha(raw),
+                            "bytes": len(raw), "rows": len(rows)}):
+            raise HL7HandoffHold("TRANSFER_ENTITY_DIGEST_OR_COUNT_DRIFT")
+        result[entity] = rows
+    fingerprint = _sha(_json_bytes({
+        "source_batch_id": context.source_batch_id,
+        "processing_version": context.processing_version,
+        "patient_sha256": _sha(blobs["canonical_patient.json"]),
+        "encounter_sha256": _sha(blobs["canonical_encounter.json"]),
+    }))
+    if manifest.get("publication_id") != fingerprint:
+        raise HL7HandoffHold("TRANSFER_PUBLICATION_FINGERPRINT_DRIFT")
+    if _json_bytes(manifest) != blobs["candidate_manifest.json"]:
+        raise HL7HandoffHold("TRANSFER_MANIFEST_NOT_CANONICAL")
+    return result

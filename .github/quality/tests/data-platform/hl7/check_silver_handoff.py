@@ -263,7 +263,7 @@ def main() -> None:
         # Isolate the synthetic Request inside the test's temporary module
         # globals; do NOT broaden the two real cloud source allowlist entries.
         with mock_patch.dict(native_globals, {
-                "engine_version": "0.1.7",
+                "engine_version": native.EXPECTED_SHARED_ENGINE_VERSION,
                 "_HL7_SOURCE_SCOPES": {
                     context.request_id: {"raw_count": len(source_receipts)}},
                 "_hl7_source_context": lambda _request: context,

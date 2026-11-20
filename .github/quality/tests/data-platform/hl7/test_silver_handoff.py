@@ -231,6 +231,64 @@ class HL7SilverDQHandoffTests(unittest.TestCase):
             prepare_hl7_candidate_transport(plan(ctx=ctx), **{**params,
                                       "patient_contract_bytes": RAW_PATIENT + b" "})
 
+    def test_received_transport_independently_verifies_complete_envelope(self):
+        from candidate_transport import (
+            prepare_hl7_candidate_transport, verify_hl7_candidate_transport)
+        ctx = context()
+        kwargs = dict(context=ctx, patient_contract_bytes=RAW_PATIENT,
+                      encounter_contract_bytes=RAW_ENCOUNTER)
+        bundle = prepare_hl7_candidate_transport(plan(ctx=ctx), **kwargs)
+        observed = verify_hl7_candidate_transport(bundle, **kwargs)
+        self.assertEqual(len(observed["patient"]), 1)
+        self.assertEqual(len(observed["encounter"]), 1)
+        self.assertEqual(
+            observed, verify_hl7_candidate_transport(bundle, **kwargs))
+        for filename in bundle:
+            altered = dict(bundle)
+            altered[filename] = bundle[filename] + b" "
+            with self.subTest(filename=filename), self.assertRaises(
+                    HL7HandoffHold):
+                verify_hl7_candidate_transport(altered, **kwargs)
+        with self.assertRaisesRegex(
+                HL7HandoffHold, "FILE_SET_DRIFT"):
+            verify_hl7_candidate_transport(
+                {"candidate_manifest.json": bundle["candidate_manifest.json"]},
+                **kwargs)
+        with self.assertRaises(HL7HandoffHold):
+            verify_hl7_candidate_transport(bundle, **{
+                **kwargs, "context": context().__class__(
+                    **{**ctx.__dict__, "manifest_sha256": "c" * 64})})
+
+    def test_received_transport_rejects_rehashed_but_reordered_rows(self):
+        from candidate_transport import (
+            prepare_hl7_candidate_transport, verify_hl7_candidate_transport)
+        import hashlib
+        ctx = context()
+        kwargs = dict(context=ctx, patient_contract_bytes=RAW_PATIENT,
+                      encounter_contract_bytes=RAW_ENCOUNTER)
+        bundle = prepare_hl7_candidate_transport(plan(ctx=ctx), **kwargs)
+        changed = dict(bundle)
+        payload = json.loads(changed["canonical_patient.json"])
+        payload["rows"][0]["source_record_id"] = ""
+        raw = json.dumps(payload, sort_keys=True, ensure_ascii=True,
+                         separators=(",", ":"), allow_nan=False).encode()
+        changed["canonical_patient.json"] = raw
+        manifest = json.loads(changed["candidate_manifest.json"])
+        manifest["entities"]["patient"]["sha256"] = hashlib.sha256(raw).hexdigest()
+        manifest["entities"]["patient"]["bytes"] = len(raw)
+        manifest["publication_id"] = hashlib.sha256(json.dumps({
+            "source_batch_id": ctx.source_batch_id,
+            "processing_version": ctx.processing_version,
+            "patient_sha256": hashlib.sha256(raw).hexdigest(),
+            "encounter_sha256": hashlib.sha256(
+                changed["canonical_encounter.json"]).hexdigest(),
+        }, sort_keys=True, ensure_ascii=True, separators=(",", ":")).encode()).hexdigest()
+        changed["candidate_manifest.json"] = json.dumps(
+            manifest, sort_keys=True, ensure_ascii=True,
+            separators=(",", ":")).encode()
+        with self.assertRaisesRegex(HL7HandoffHold, "ENTITY_KEYS_DRIFT"):
+            verify_hl7_candidate_transport(changed, **kwargs)
+
     def test_transport_has_no_storage_network_or_approval_side_effects(self):
         import ast
         source = (ROOT / "local-data-platform/spark/apps/hl7/candidate_transport.py").read_text()
