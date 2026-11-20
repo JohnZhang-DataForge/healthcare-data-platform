@@ -160,3 +160,7 @@
 - **CPT4 使用与许可**：所有人不记得是否运行过 `cpt.bat/cpt.sh`；暂时将 CPT4 补全/许可审查延后到真正使用 CPT4 的临床映射/Procedure 时，不能因为源包有 `cpt4.jar` 就认定已补全或拥有授权；**不阻塞当前 Person/Visit 的源码与离线合成测试**。真实使用需另外确认。
 - **数据/算法界限**：Vocabulary 不存在匹配、Concept 已失效或 Domain 不匹配时保留原始来源并由 DQ 进入 HOLD/拟隔离，**不改变**公共 Mapper API、Stable INT 分配、Candidate Writer 的逻辑或允许假 Concept；当前严格 Mapper 仍会整批 HOLD。源码和测试无需等真实临床 Profile 批准；**任何真实临床 Candidate APPROVED/Gold COMMIT 继续需要实际 Release/Mapping/License/Identity/Approval 门禁通过**。
 - **来源 SQL 审计**：`audit.vocabulary_source_file=0/9` 为工程审计记录待补写，不可因为 Owner 的来源确认就伪称数据库已有九条审计、完整下载清单、审查者签名或法律授权。审计事务另行按权限评审，**不是通用 P3 代码开发依赖**。
+
+## FHIR Warehouse commit integration (current business delivery)
+
+- [ ] 9.1 Wire trusted FHIR candidate physical readback to the existing Gold writer; offline commit/replay boundary and CI added in PR #946, but live Fabric Candidate publication, SQL COMMIT, independent readback, and replay remain unverified. Do not mark complete before real evidence.
