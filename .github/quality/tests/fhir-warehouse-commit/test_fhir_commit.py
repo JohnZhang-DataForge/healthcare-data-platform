@@ -130,19 +130,20 @@ class FhirCommitTests(unittest.TestCase):
                 subject.commit_verified_fhir_batch(**args)
             writer.assert_called_once()
 
-    def test_gold_writer_verified_replay_precedes_new_write_gate(self):
+    def test_existing_gold_writer_retains_trusted_release_before_sql(self):
         with patch.object(gold, "prepare_gold_batch_from_candidate_readback",
                           return_value=object()), patch.object(
-            gold, "independent_gold_readback", return_value=True), patch.object(
+            gold, "independent_gold_readback", return_value=True) as read, patch.object(
             gold, "execute_gold_transaction") as transaction:
-            actual = gold.commit_gold_from_candidate_readback(
-                object(), lambda: object(),
-                single_writer_fence=Mock(side_effect=AssertionError("should not fence")),
-                release_gate=Mock(side_effect=AssertionError("stale precommit")),
-                scope=object(), handoff=object(), candidate_approval={},
-                person_rows=[], visit_rows=[], mapping_version="1",
-                writer_version="1", technical_evidence_sha256="e" * 64)
-            self.assertEqual(actual, subject.REPLAYED)
+            with self.assertRaises(gold.GoldHold):
+                gold.commit_gold_from_candidate_readback(
+                    object(), lambda: object(),
+                    single_writer_fence=lambda: True,
+                    release_gate=lambda _: False,
+                    scope=object(), handoff=object(), candidate_approval={},
+                    person_rows=[], visit_rows=[], mapping_version="1",
+                    writer_version="1", technical_evidence_sha256="e" * 64)
+            read.assert_not_called()
             transaction.assert_not_called()
 
     def test_gold_writer_new_write_still_requires_release(self):
