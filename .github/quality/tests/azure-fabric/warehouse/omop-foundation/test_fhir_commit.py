@@ -5,7 +5,7 @@ import sys
 from unittest.mock import Mock
 import pytest
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[6]
 WRITER = ROOT / "azure-fabric/warehouse/omop-foundation/writer"
 sys.path.insert(0, str(WRITER))
 import fhir_commit as subject
