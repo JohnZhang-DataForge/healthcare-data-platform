@@ -530,23 +530,16 @@ def commit_gold_from_candidate_readback(
         mapping_version=mapping_version, writer_version=writer_version,
         technical_evidence_sha256=technical_evidence_sha256,
     )
-    # A committed batch is *replayed* only after fresh independent SQL proof.
-    # The pre-commit identity snapshot is expected to have advanced after the
-    # first COMMIT. Requiring its old release gate before readback would make
-    # every legitimate replay fail and invite unsafe retry attempts.
-    if not callable(independent_connection):
-        raise GoldHold("GOLD_INDEPENDENT_SQL_CONNECTION_REQUIRED")
-    try:
-        if independent_gold_readback(independent_connection, batch):
-            return "GOLD_VERIFIED_REPLAY_SKIP"
-    except Exception:
-        # An unavailable readback is not evidence that a COMMIT did not happen.
-        return "GOLD_INITIAL_READBACK_UNAVAILABLE_NO_WRITE"
-    # Only a genuinely *new* write needs the current release and writer fence.
     if (not callable(single_writer_fence) or not callable(release_gate)
             or single_writer_fence() is not True
             or release_gate(batch) is not True):
         raise GoldHold("GOLD_RELEASE_OR_SINGLE_WRITER_HOLD")
+    try:
+        if independent_gold_readback(independent_connection, batch):
+            return "GOLD_VERIFIED_REPLAY_SKIP"
+    except Exception:
+        # A failed connection is not proof that Gold is absent. Do not write.
+        return "GOLD_INITIAL_READBACK_UNAVAILABLE_NO_WRITE"
     ack = execute_gold_transaction(
         connection, batch, single_writer_fence=single_writer_fence,
         release_gate=release_gate,
