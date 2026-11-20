@@ -25,7 +25,7 @@
 - [ ] 3.3 复核 HELD/QUARANTINE 统计、存储保留/重启恢复、事务证据与 Lineage；如需授权真实运行单独评估。
 
 ## 2026-11-20 — HL7 Canonical transport receive-side verification
-- [x] H.0 在既有 `candidate_transport.py` 增加纯函数 `verify_hl7_candidate_transport`：独立核验固定三文件集合、source BatchContext、Pinned Canonical Contract SHA、完整 Entity SHA/字节数/行数、唯一有序键、确定性 JSON、Publication fingerprint；正向、重放与篡改回归测试随 [PR #947](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/947) 提交。仅 Candidate 传输读回，不声称已发布 Fabric Silver 或 Gold。
+- [x] 4.1 在既有 `candidate_transport.py` 增加纯函数 `verify_hl7_candidate_transport`：独立核验固定三文件集合、source BatchContext、Pinned Canonical Contract SHA、完整 Entity SHA/字节数/行数、唯一有序键、确定性 JSON、Publication fingerprint；正向、重放与篡改回归测试随 [PR #947](https://github.com/JohnZhang-DataForge/healthcare-data-platform/pull/947) 提交。仅 Candidate 传输读回，不声称已发布 Fabric Silver 或 Gold。
  
 ## Separate product handoff
 - [ ] H.1 HL7 open-source Parser+dbt source-specific Candidate → One Canonical Silver Publisher 与 FHIR 汇合；dbt backend (DuckDB/Local Spark/remote Fabric) 选型保持 **PENDING**，此 Change 不实现 OMOP Mapper 或写正式 Silver。
