@@ -1,0 +1,34 @@
+name: FHIR Warehouse Commit Offline Tests
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/warehouse/omop-foundation/writer/fhir_commit.py'
+      - '.github/quality/tests/azure-fabric/warehouse/omop-foundation/test_fhir_commit.py'
+      - '.github/workflows/fhir-warehouse-commit-offline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'azure-fabric/warehouse/omop-foundation/writer/fhir_commit.py'
+      - '.github/quality/tests/azure-fabric/warehouse/omop-foundation/test_fhir_commit.py'
+      - '.github/workflows/fhir-warehouse-commit-offline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-commit-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate trusted FHIR commit, readback, and replay boundary
+        run: |
+          python -m unittest discover -s .github/quality/tests/azure-fabric/warehouse/omop-foundation -p test_fhir_commit.py -v
+          python -m py_compile azure-fabric/warehouse/omop-foundation/writer/fhir_commit.py
