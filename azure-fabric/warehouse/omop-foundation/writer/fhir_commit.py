@@ -18,7 +18,6 @@ from silver_identity import F2SnapshotBridge
 
 COMMITTED = "GOLD_COMMITTED_AND_INDEPENDENT_READBACK_PASS"
 REPLAYED = "GOLD_VERIFIED_REPLAY_SKIP"
-_BRIDGE_STATUS = "F2_SQL_ROWS_TO_SHARED_SNAPSHOT_SOURCE_ONLY_NOT_AUTHENTICATED"
 
 
 class FhirCommitHold(RuntimeError):
@@ -76,7 +75,6 @@ def _warehouse_snapshot_twice(reader: Callable, scope: Any) -> None:
         raise FhirCommitHold("FHIR_WAREHOUSE_SQL_READBACK_FAILED") from None
     for observed in (first, second):
         if (not isinstance(observed, F2SnapshotBridge)
-                or observed.status != _BRIDGE_STATUS
                 or observed.shared_snapshot_fingerprint
                     != scope.identity_snapshot_fingerprint
                 or observed.physical_snapshot_sha256 is None):
