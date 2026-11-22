@@ -9,3 +9,5 @@
 - [x] 1.6 Pin the reviewed HL7 ADT source-code → OMOP Standard Concept mapping as immutable, source-namespaced data. Add offline namespace/tamper tests. Real Warehouse Concept SQL validation remains required before Candidate publication.
 
 - [x] 1.7 Independently re-read real HL7 4/8 Silver approval and both full Warehouse SQL identity snapshots with Shared Engine 0.1.17, read-only evidence: Self-Runner run 45035617569. This is not Candidate or Gold publication.
+
+- [x] 1.8 Retire the never-published HL7 profile v1, which incorrectly used FHIR male/female labels; pin v2 to Parser's actual HL7 M/F values and enforce parser-to-profile tests before real Standard Concept SQL validation.
