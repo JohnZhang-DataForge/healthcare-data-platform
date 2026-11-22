@@ -1,0 +1,22 @@
+{
+  "mapping_name": "johns-creek-hl7-v2-adt-a01-a03",
+  "mapping_version": "johns-creek-hl7-omop-cdm54-v1",
+  "source_system": "johns-creek-hl7:johns-creek-hospital-b:johns-creek-hospital-b-hl7-v2",
+  "gender_concepts": {
+    "female": 8532,
+    "male": 8507
+  },
+  "race_concepts": {
+    "2028-9": 8515,
+    "2054-5": 8516,
+    "2106-3": 8527
+  },
+  "ethnicity_concepts": {
+    "2135-2": 38003563,
+    "2186-5": 38003564
+  },
+  "visit_class_concepts": {
+    "inpatient": 9201
+  },
+  "visit_type_concept_id": 32827
+}
