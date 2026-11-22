@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "shared-data-engine/src"))
 sys.path.insert(0, str(ROOT / "azure-fabric/warehouse/omop-foundation/writer"))
 
 from healthcare_data_engine.models.batch_context import BatchContext
+from healthcare_data_engine.canonical.validation import load_pinned_contract
 from healthcare_data_engine.identity.candidate_handoff import (
     CandidatePersonId, CandidateVisitId, PersonVisitCandidateHandoff)
 from healthcare_data_engine.mapping.omop.candidate_publication import FrozenCandidateScope
@@ -82,11 +83,36 @@ def fixture():
         adapter_version=subject.HL7_ADAPTER, canonical_version="v1",
         source_file_sha256="c" * 64,
     )
-    patient = dict(common, source_file=prefix + "patient-1-A01.hl7",
-                   source_record_id="patient-1")
-    encounter = dict(common, source_file=prefix + "visit-1-A03.hl7",
-                     source_encounter_id="visit-1",
-                     source_person_id="patient-1")
+    base_fields = dict(
+        source_ingest_date=ctx.source_ingest_date,
+        source_file_size_bytes=405,
+        processing_run_id=ctx.processing_run_id,
+        processed_at=ctx.processed_at,
+    )
+    patient = {
+        f["name"]: None
+        for f in load_pinned_contract(PATIENT_CONTRACT, "patient")["fields"]
+    }
+    patient.update(common, **base_fields)
+    patient.update(
+        source_file=prefix + "patient-1-A01.hl7",
+        source_record_id="patient-1",
+        birth_date=date(1981, 2, 3),
+        gender_code="female", race_code="2028-9",
+        ethnicity_code="2135-2",
+    )
+    encounter = {
+        f["name"]: None
+        for f in load_pinned_contract(ENCOUNTER_CONTRACT, "encounter")["fields"]
+    }
+    encounter.update(common, **base_fields)
+    encounter.update(
+        source_file=prefix + "visit-1-A03.hl7",
+        source_encounter_id="visit-1", source_person_id="patient-1",
+        start_datetime=datetime(2026, 11, 1, 12, 0, tzinfo=timezone.utc),
+        end_datetime=datetime(2026, 11, 3, 12, 0, tzinfo=timezone.utc),
+        encounter_class="inpatient", source_code="IMP",
+    )
     approval = {
         "source_batch_id": ctx.source_batch_id,
         "manifest_sha256": ctx.manifest_sha256,
@@ -213,6 +239,16 @@ class HL7GoldHandoffTests(unittest.TestCase):
                 with self.assertRaises(subject.HL7CommitHold):
                     subject.commit_verified_hl7_batch(**args)
                 writer.assert_not_called()
+
+    def test_full_canonical_contract_validation_rejects_missing_fact(self):
+        args, physical = fixture()
+        physical["canonical_patient"][0]["birth_date"] = None
+        args["read_silver_physical"] = Mock(return_value=physical)
+        with patch.object(subject, "commit_verified_fhir_batch") as writer:
+            with self.assertRaisesRegex(subject.HL7CommitHold,
+                                        "CANONICAL_CONTRACT_INVALID"):
+                subject.commit_verified_hl7_batch(**args)
+            writer.assert_not_called()
 
     def test_unverifiable_silver_or_contract_holds(self):
         args, _ = fixture()
