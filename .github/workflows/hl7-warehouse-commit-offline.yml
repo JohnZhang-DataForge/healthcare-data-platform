@@ -1,0 +1,38 @@
+name: HL7 Canonical to OMOP Gold Offline Contracts
+
+on:
+  pull_request:
+    paths:
+      - 'azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py'
+      - '.github/quality/tests/hl7-warehouse-commit/test_hl7_commit.py'
+      - '.github/workflows/hl7-warehouse-commit-offline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py'
+      - '.github/quality/tests/hl7-warehouse-commit/test_hl7_commit.py'
+      - '.github/workflows/hl7-warehouse-commit-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  hl7-warehouse-business-contract:
+    name: HL7 Silver / Candidate / Gold readback-and-replay offline contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Offline-only, no id-token or cloud credentials; Healthcare uses hosted CI.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile and test shared source-bound HL7 Gold integration
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python -m py_compile azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py
+          python -m unittest discover -s .github/quality/tests/hl7-warehouse-commit -p 'test_hl7_commit.py' -v
+          echo HL7_CANONICAL_GOLD_OFFLINE_CONTRACT=PASS
