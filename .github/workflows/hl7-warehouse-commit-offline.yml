@@ -5,12 +5,16 @@ on:
     paths:
       - 'azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py'
       - '.github/quality/tests/hl7-warehouse-commit/test_hl7_commit.py'
+      - '.github/quality/tests/hl7-warehouse-commit/test_hl7_mapping_profile.py'
+      - 'azure-fabric/warehouse/omop-foundation/mapping-profiles/johns-creek-hl7-v2-adt-a01-a03-v1.json'
       - '.github/workflows/hl7-warehouse-commit-offline.yml'
   push:
     branches: [main]
     paths:
       - 'azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py'
       - '.github/quality/tests/hl7-warehouse-commit/test_hl7_commit.py'
+      - '.github/quality/tests/hl7-warehouse-commit/test_hl7_mapping_profile.py'
+      - 'azure-fabric/warehouse/omop-foundation/mapping-profiles/johns-creek-hl7-v2-adt-a01-a03-v1.json'
       - '.github/workflows/hl7-warehouse-commit-offline.yml'
 
 permissions:
@@ -35,4 +39,5 @@ jobs:
           set -Eeuo pipefail
           python -m py_compile azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py
           python -m unittest discover -s .github/quality/tests/hl7-warehouse-commit -p 'test_hl7_commit.py' -v
+          python -m unittest discover -s .github/quality/tests/hl7-warehouse-commit -p 'test_hl7_mapping_profile.py' -v
           echo HL7_CANONICAL_GOLD_OFFLINE_CONTRACT=PASS
