@@ -17,11 +17,11 @@ sys.path.insert(0, str(REPO / "shared-data-engine/src"))
 from healthcare_data_engine.mapping.omop.candidates import load_omop_mapping_profile
 
 PROFILE = (REPO / "azure-fabric/warehouse/omop-foundation/mapping-profiles/"
-           "johns-creek-hl7-v2-adt-a01-a03-v1.json")
+           "johns-creek-hl7-v2-adt-a01-a03-v2.json")
 NAMESPACE = ("johns-creek-hl7:johns-creek-hospital-b:"
              "johns-creek-hospital-b-hl7-v2")
 EXPECTED = {
-    "gender_concepts": {"female": 8532, "male": 8507},
+    "gender_concepts": {"F": 8532, "M": 8507},
     "race_concepts": {"2028-9": 8515, "2054-5": 8516, "2106-3": 8527},
     "ethnicity_concepts": {"2135-2": 38003563, "2186-5": 38003564},
     "visit_class_concepts": {"inpatient": 9201},
@@ -37,7 +37,7 @@ class ReviewedHL7MappingContract(unittest.TestCase):
     def test_source_namespace_and_exact_standard_crosswalk(self):
         profile = self.load()
         self.assertEqual(profile["source_system"], NAMESPACE)
-        self.assertEqual(profile["mapping_version"], "johns-creek-hl7-omop-cdm54-v1")
+        self.assertEqual(profile["mapping_version"], "johns-creek-hl7-omop-cdm54-v2")
         for category, mapping in EXPECTED.items():
             self.assertEqual(profile[category], mapping)
         self.assertEqual(profile["visit_type_concept_id"], 32827)
@@ -55,6 +55,7 @@ class ReviewedHL7MappingContract(unittest.TestCase):
             REPO / "local-data-platform/spark/apps/hl7/parse_oie_v2.py"
         ).read_text()
         self.assertIn('"encounter_class": "inpatient"', source)
+        self.assertIn('if gender not in {"M", "F"}:', source)
 
     def test_fails_closed_for_foreign_source(self):
         raw = PROFILE.read_bytes()
