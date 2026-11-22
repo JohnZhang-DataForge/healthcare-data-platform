@@ -14,7 +14,7 @@ import hashlib
 import re
 from typing import Any
 
-from healthcare_data_engine.canonical.validation import load_pinned_contract
+from healthcare_data_engine.canonical.validation import load_pinned_contract, validate_row
 from healthcare_data_engine.identity.candidate_handoff import PersonVisitCandidateHandoff
 from healthcare_data_engine.mapping.omop.candidate_publication import FrozenCandidateScope
 from healthcare_data_engine.models.batch_context import BatchContext
@@ -121,11 +121,14 @@ def _verify_silver(reader: Callable[[], Mapping[str, object]],
             person_ids, encounter_ids = set(), set()
             prefix = ("clinical/v1/" + HL7_HOSPITAL + "/" + HL7_FEED +
                       "/" + context.request_id + "/HL7_V2/hl7/")
-            for rows, primary in ((patients, "source_record_id"),
-                                  (encounters, "source_encounter_id")):
+            for rows, primary, contract in (
+                    (patients, "source_record_id", patient_contract),
+                    (encounters, "source_encounter_id", encounter_contract)):
                 for row in rows:
                     if not isinstance(row, Mapping):
                         raise HL7CommitHold("HL7_GOLD_SILVER_ROW_TYPE_DRIFT")
+                    if validate_row(row, contract):
+                        raise HL7CommitHold("HL7_GOLD_SILVER_CANONICAL_CONTRACT_INVALID")
                     if (row.get("source_system") != context.namespaced_source_system
                             or row.get("source_batch_id") != scope.source_batch_id
                             or row.get("source_version") != HL7_FORMAT
