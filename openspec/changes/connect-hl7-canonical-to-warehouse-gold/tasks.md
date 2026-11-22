@@ -5,3 +5,5 @@
 - [ ] 1.3 Validate all required PR CI and naming gates, then merge `main`.
 - [ ] 1.4 Resolve Fabric Git Environment identity safely without overwriting local Workspace resources, and confirm real Notebook and published Wheel readiness.
 - [ ] 1.5 Run HL7 source → real Canonical Silver → shared Candidate → Warehouse Gold with independent SQL readback and idempotent replay; attach actual run evidence.
+
+- [x] 1.6 Pin the reviewed HL7 ADT source-code → OMOP Standard Concept mapping as immutable, source-namespaced data. Add offline namespace/tamper tests. Real Warehouse Concept SQL validation remains required before Candidate publication.
