@@ -6,7 +6,7 @@ on:
       - 'azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py'
       - '.github/quality/tests/hl7-warehouse-commit/test_hl7_commit.py'
       - '.github/quality/tests/hl7-warehouse-commit/test_hl7_mapping_profile.py'
-      - 'azure-fabric/warehouse/omop-foundation/mapping-profiles/johns-creek-hl7-v2-adt-a01-a03-v1.json'
+      - 'azure-fabric/warehouse/omop-foundation/mapping-profiles/johns-creek-hl7-v2-adt-a01-a03-v2.json'
       - '.github/workflows/hl7-warehouse-commit-offline.yml'
   push:
     branches: [main]
@@ -14,7 +14,7 @@ on:
       - 'azure-fabric/warehouse/omop-foundation/writer/hl7_commit.py'
       - '.github/quality/tests/hl7-warehouse-commit/test_hl7_commit.py'
       - '.github/quality/tests/hl7-warehouse-commit/test_hl7_mapping_profile.py'
-      - 'azure-fabric/warehouse/omop-foundation/mapping-profiles/johns-creek-hl7-v2-adt-a01-a03-v1.json'
+      - 'azure-fabric/warehouse/omop-foundation/mapping-profiles/johns-creek-hl7-v2-adt-a01-a03-v2.json'
       - '.github/workflows/hl7-warehouse-commit-offline.yml'
 
 permissions:

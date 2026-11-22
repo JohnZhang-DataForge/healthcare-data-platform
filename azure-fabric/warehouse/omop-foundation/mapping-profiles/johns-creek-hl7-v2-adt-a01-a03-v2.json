@@ -1,10 +1,10 @@
 {
   "mapping_name": "johns-creek-hl7-v2-adt-a01-a03",
-  "mapping_version": "johns-creek-hl7-omop-cdm54-v1",
+  "mapping_version": "johns-creek-hl7-omop-cdm54-v2",
   "source_system": "johns-creek-hl7:johns-creek-hospital-b:johns-creek-hospital-b-hl7-v2",
   "gender_concepts": {
-    "female": 8532,
-    "male": 8507
+    "F": 8532,
+    "M": 8507
   },
   "race_concepts": {
     "2028-9": 8515,
